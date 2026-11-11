@@ -31,6 +31,9 @@ let fixture: Awaited<
   ReturnType<(typeof import('../integration/harness'))['twoWorkspaceFixture']>
 >;
 let exerciseId: string;
+let orderGlobalName: string;
+let orderPrivateName: string;
+let orderPrefix: string;
 
 async function authenticate(
   page: Page,
@@ -90,6 +93,35 @@ test.beforeAll(async () => {
   });
   if (created.error) throw new Error(created.error.message);
   exerciseId = created.data.exercise_id as string;
+
+  orderPrefix = `S48 list ${randomUUID().slice(0, 8)}`;
+  orderGlobalName = `${orderPrefix} Alpha`;
+  orderPrivateName = `${orderPrefix} Bravo`;
+  const ordered = await fixture.po.client.rpc('catalog_create_exercise', {
+    p_operation_key: randomUUID(),
+    p_request: {
+      name_en: orderGlobalName,
+      primary_muscle_code: 'chest',
+      equipment_codes: ['barbell'],
+    },
+  });
+  if (ordered.error) throw new Error(ordered.error.message);
+  const workspaceOnly = await fixture.po.client.rpc(
+    'catalog_write_workspace_exercise',
+    {
+      p_workspace_id: fixture.wsA.id,
+      p_exercise_id: null,
+      p_expected_version: null,
+      p_operation_key: randomUUID(),
+      p_request: {
+        name_en: orderPrivateName,
+        primary_muscle_code: 'lats',
+        equipment_codes: ['cable'],
+      },
+    },
+  );
+  if (workspaceOnly.error) throw new Error(workspaceOnly.error.message);
+
   await mkdir(screenshotDir, { recursive: true });
 });
 
@@ -134,6 +166,46 @@ for (const locale of ['ar', 'en'] as const) {
           path: join(
             screenshotDir,
             `${locale}-${theme}-${viewport.name}-library.png`,
+          ),
+          fullPage: true,
+        });
+
+        await page.goto(
+          `/exercise-library?workspace=${fixture.wsA.id}&q=${encodeURIComponent(
+            orderPrefix,
+          )}`,
+        );
+        const globalRow = page.getByRole('link', { name: orderGlobalName });
+        const privateRow = page.getByRole('link', { name: orderPrivateName });
+        await expect(globalRow).toBeVisible();
+        await expect(privateRow).toBeVisible();
+        const visibleOrder = await page
+          .getByRole('link')
+          .evaluateAll(
+            (links, prefix) =>
+              links
+                .map((link) => link.textContent?.trim() ?? '')
+                .filter((text) => text.includes(prefix)),
+            orderPrefix,
+          );
+        expect(visibleOrder).toEqual([orderGlobalName, orderPrivateName]);
+        await expect(globalRow).toHaveAttribute(
+          'href',
+          new RegExp(
+            `^/exercise-library/[0-9a-f-]+\\?workspace=${fixture.wsA.id}$`,
+          ),
+        );
+        await expect(privateRow).toHaveAttribute(
+          'href',
+          new RegExp(
+            `^/exercise-library/[0-9a-f-]+\\?workspace=${fixture.wsA.id}&scope=workspace$`,
+          ),
+        );
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-workspace-library.png`,
           ),
           fullPage: true,
         });

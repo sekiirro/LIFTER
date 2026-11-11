@@ -6,12 +6,16 @@ import Page from '../../app/(app)/exercise-library/page';
 const m = vi.hoisted(() => ({
   actor: vi.fn(),
   search: vi.fn(),
+  workspaceLibrary: vi.fn(),
   cookies: vi.fn(),
   notFound: vi.fn(),
 }));
 
 vi.mock('../../lib/auth/actor', () => ({ requireActor: m.actor }));
-vi.mock('../../lib/catalog/server', () => ({ search: m.search }));
+vi.mock('../../lib/catalog/server', () => ({
+  search: m.search,
+  workspaceLibrary: m.workspaceLibrary,
+}));
 vi.mock('next/headers', () => ({ cookies: m.cookies }));
 vi.mock('next/navigation', () => ({ notFound: m.notFound }));
 vi.mock('../../app/(app)/exercise-library/ExerciseLibraryResults', () => ({
@@ -58,6 +62,7 @@ beforeEach(() => {
     throw new Error('404');
   });
   m.search.mockResolvedValue({ status: 'ok', data: [exercise] });
+  m.workspaceLibrary.mockResolvedValue({ status: 'ok', data: [] });
 });
 
 describe('production exercise library route', () => {
@@ -115,12 +120,14 @@ describe('production exercise library route', () => {
     expect(html).not.toContain('Barbell Bench Press');
   });
 
-  it('preserves an authorized workspace through search, Add, and pagination', async () => {
+  it('uses the merged workspace read with one cursor for search, Add, and pagination', async () => {
     const pageRows = Array.from({ length: 21 }, (_, index) => ({
       ...exercise,
       result_id: `33333333-3333-4333-8333-${String(index + 1).padStart(12, '0')}`,
+      result_kind: index === 0 ? 'private' : 'global',
+      result_cursor: `cursor-${String(index + 1).padStart(2, '0')}`,
     }));
-    m.search.mockResolvedValue({ status: 'ok', data: pageRows });
+    m.workspaceLibrary.mockResolvedValue({ status: 'ok', data: pageRows });
 
     const html = renderToStaticMarkup(
       await Page({
@@ -133,24 +140,36 @@ describe('production exercise library route', () => {
       }),
     );
 
-    expect(m.search).toHaveBeenCalledWith({
-      kind: 'workspace_exercise',
+    expect(m.search).not.toHaveBeenCalled();
+    expect(m.workspaceLibrary).toHaveBeenCalledWith({
+      workspaceId: ws,
       query: 'press',
       filters: {
         primary_muscle_code: 'chest',
         equipment_codes: ['barbell'],
-        page_size: 21,
       },
       cursor: null,
-      workspaceId: ws,
+      limit: 21,
     });
     expect(html).toContain(`data-workspace-id="${ws}"`);
     expect(html).toContain(
-      `data-next-href="/exercise-library?q=press&amp;muscle=chest&amp;equipment=barbell&amp;workspace=${ws}&amp;cursor=33333333-3333-4333-8333-000000000020"`,
+      `data-next-href="/exercise-library?q=press&amp;muscle=chest&amp;equipment=barbell&amp;workspace=${ws}&amp;cursor=cursor-20"`,
     );
     expect(html).toContain(
       `href="/exercise-library/new?scope=workspace&amp;workspace=${ws}"`,
     );
+  });
+
+  it('rejects malformed opaque workspace cursors before the read', async () => {
+    await expect(
+      Page({
+        searchParams: Promise.resolve({
+          workspace: ws,
+          cursor: 'not-a-cursor',
+        }),
+      }),
+    ).rejects.toThrow('404');
+    expect(m.workspaceLibrary).not.toHaveBeenCalled();
   });
 
   it('uses the raw page count when an unmappable lookahead row is returned', async () => {

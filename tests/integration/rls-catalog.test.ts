@@ -1226,3 +1226,23 @@ describe('registration security catalog', () => {
     expect(view!.reloptions).toContain('security_invoker=true');
   });
 });
+
+describe('catalog workspace library read catalog', () => {
+  it('hardens the merged workspace library RPC and grants only authenticated execute', async () => {
+    const [fn] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_catalog.pg_proc p
+      where p.oid = 'public.catalog_workspace_library(uuid,text,jsonb,text,integer)'::regprocedure`;
+    expect(fn).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(fn?.proconfig).toContain('search_path=""');
+  });
+});

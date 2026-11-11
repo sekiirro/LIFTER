@@ -33,7 +33,7 @@ describe('exercise library detail navigation', () => {
     );
   });
 
-  it('preserves explicit tenant scope when opening workspace exercise detail', () => {
+  it('opens a global entry in workspace context without private scope', () => {
     const html = renderToStaticMarkup(
       createElement(ExerciseLibraryResults, {
         locale: 'ar',
@@ -45,7 +45,24 @@ describe('exercise library detail navigation', () => {
       }),
     );
     expect(html).toContain(
-      'scope=workspace&amp;workspace=22222222-2222-4222-8222-222222222222',
+      'href="/exercise-library/55555555-5555-4555-8555-555555555555?workspace=22222222-2222-4222-8222-222222222222"',
+    );
+    expect(html).not.toContain('scope=workspace');
+  });
+
+  it('preserves explicit tenant scope for a workspace-private entry', () => {
+    const html = renderToStaticMarkup(
+      createElement(ExerciseLibraryResults, {
+        locale: 'ar',
+        items: [{ ...items[0]!, scope: 'workspace' as const }],
+        query: '',
+        filters: {},
+        workspaceId: '22222222-2222-4222-8222-222222222222',
+        nextHref: null,
+      }),
+    );
+    expect(html).toContain(
+      'href="/exercise-library/55555555-5555-4555-8555-555555555555?workspace=22222222-2222-4222-8222-222222222222&amp;scope=workspace"',
     );
   });
 });

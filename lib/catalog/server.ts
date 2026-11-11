@@ -21,7 +21,9 @@ export type CatalogSearchInput = {
   };
   cursor?: string | null;
   workspaceId?: string | null;
+  limit?: number;
 };
+export type WorkspaceLibraryInput = Omit<CatalogSearchInput, 'kind'>;
 export type CatalogMutation = {
   operationKey: string;
   workspaceId?: string;
@@ -241,6 +243,25 @@ export function createCatalogServer(deps: CatalogDependencies) {
           p_preparation_identity: input.preparationIdentity,
           p_weighing_state: input.weighingState,
           p_kcal: input.kcal,
+        });
+      })();
+    },
+    workspaceLibrary(input: WorkspaceLibraryInput) {
+      return (async (): Promise<CatalogResult> => {
+        const workspaceId = input.workspaceId ?? null;
+        const ready = await prepare(
+          (a) =>
+            coachingSomewhere(a) &&
+            (!workspaceId || isPO(a) || scoped(a, workspaceId)),
+        );
+        if (ready.result) return ready.result;
+        if (!workspaceId) return { status: 'invalid' };
+        return rpc(ready.client!, 'catalog_workspace_library', {
+          p_workspace_id: workspaceId,
+          p_query: input.query || null,
+          p_filters: input.filters ?? {},
+          p_cursor: input.cursor ?? null,
+          p_page_size: input.limit,
         });
       })();
     },
@@ -594,6 +615,7 @@ export const {
   authoringWorkspaces,
   foodDuplicateCandidates,
   search,
+  workspaceLibrary,
   exerciseDetail,
   createExercise,
   versionExercise,

@@ -170,6 +170,30 @@ describe('catalog server authorization and RPC boundary', () => {
     });
   });
 
+  it('forwards the merged workspace library request with one opaque cursor', async () => {
+    await catalog().workspaceLibrary({
+      workspaceId: ws,
+      query: 'press',
+      filters: { primary_muscle_code: 'chest' },
+      cursor: 'abc123',
+      limit: 21,
+    });
+    expect(rpc).toHaveBeenCalledWith('catalog_workspace_library', {
+      p_workspace_id: ws,
+      p_query: 'press',
+      p_filters: { primary_muscle_code: 'chest' },
+      p_cursor: 'abc123',
+      p_page_size: 21,
+    });
+  });
+
+  it('requires an explicit workspace for the merged workspace library', async () => {
+    await expect(
+      catalog().workspaceLibrary({ workspaceId: null, query: '' }),
+    ).resolves.toEqual({ status: 'invalid' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it('applies the role parity fixture to search and writes before calling RPC', async () => {
     const cases = [
       ['platform_owner', true],

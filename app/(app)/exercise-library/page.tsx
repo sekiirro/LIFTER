@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Alert } from '../../../components/ui/Alert';
 import { requireActor } from '../../../lib/auth/actor';
-import { search } from '../../../lib/catalog/server';
+import { search, workspaceLibrary } from '../../../lib/catalog/server';
 import type { CatalogExerciseListItem } from '../../../lib/catalog/list';
 import {
   LOCALE_COOKIE,
@@ -66,6 +66,10 @@ function exerciseRows(data: unknown): CatalogExerciseListItem[] {
       {
         id: row.result_id,
         kind: 'exercise' as const,
+        scope:
+          row.result_kind === 'private'
+            ? ('workspace' as const)
+            : ('global' as const),
         names: {
           ar: typeof nameAr === 'string' ? nameAr : '',
           en: nameEn,
@@ -74,6 +78,9 @@ function exerciseRows(data: unknown): CatalogExerciseListItem[] {
           payload.primary_muscle_code as CatalogExerciseListItem['primaryMuscle'],
         equipment: equipment as CatalogExerciseListItem['equipment'],
         lifecycleState: 'active' as const,
+        ...(typeof row.result_cursor === 'string'
+          ? { cursor: row.result_cursor }
+          : {}),
       },
     ];
   });
@@ -109,17 +116,28 @@ export default async function ExerciseLibraryPage({
     !actor.activeWorkspaceIds.includes(workspaceId)
   )
     notFound();
-  if (cursorValue && !UUID.test(cursorValue)) notFound();
-  const filters: Record<string, unknown> = { page_size: PAGE_SIZE + 1 };
+  const CURSOR_HEX = /^[0-9a-f]+$/i;
+  if (cursorValue && !(workspaceId ? CURSOR_HEX : UUID).test(cursorValue))
+    notFound();
+  const filters: Record<string, unknown> = workspaceId
+    ? {}
+    : { page_size: PAGE_SIZE + 1 };
   if (muscle) filters.primary_muscle_code = muscle;
   if (equipment) filters.equipment_codes = [equipment];
-  const result = await search({
-    kind: workspaceId ? 'workspace_exercise' : 'exercise',
-    query: q,
-    filters,
-    cursor: cursorValue || null,
-    ...(workspaceId ? { workspaceId } : {}),
-  });
+  const result = workspaceId
+    ? await workspaceLibrary({
+        workspaceId,
+        query: q,
+        filters,
+        cursor: cursorValue || null,
+        limit: PAGE_SIZE + 1,
+      })
+    : await search({
+        kind: 'exercise',
+        query: q,
+        filters,
+        cursor: cursorValue || null,
+      });
   if (result.status === 'not_permitted') notFound();
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
@@ -149,7 +167,12 @@ export default async function ExerciseLibraryPage({
   const rows = exerciseRows(rawRows);
   const page = rows.slice(0, PAGE_SIZE);
   const hasMore = rawRows.length > PAGE_SIZE;
-  const nextCursor = hasMore ? page.at(-1)?.id : undefined;
+  const lastRow = page.at(-1);
+  const nextCursor = hasMore
+    ? workspaceId
+      ? lastRow?.cursor
+      : lastRow?.id
+    : undefined;
   const nextParams = new URLSearchParams();
   if (q) nextParams.set('q', q);
   if (muscle) nextParams.set('muscle', muscle);

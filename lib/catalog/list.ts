@@ -22,6 +22,8 @@ export type CatalogFilterKey = 'muscleGroup' | 'equipment' | 'basis';
 export type CatalogExerciseListItem = {
   id: string;
   kind: 'exercise';
+  scope?: 'global' | 'workspace';
+  cursor?: string;
   names: Record<CatalogLocale, string>;
   primaryMuscle: MuscleGroupCode;
   equipment: EquipmentCode;

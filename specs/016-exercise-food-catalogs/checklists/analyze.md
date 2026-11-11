@@ -854,3 +854,12 @@ T900 has been marked complete only after its focused integration test passed on 
 - Entry check: PASS. `spec.md` has numbered FRs (FR-001/003/018/025/026/036), measurable SCs and Given/When/Then scenarios; the S48-PO-1/2/3/5/6/7 session records the copy sources and the per-field badge/reset decision and states that no ambiguity remains; `plan.md` covers the workspace detail editor and the eight fields; T040 is tagged FR-003/018/026/036; this analysis follows the last spec edit.
 - Review: every user-visible string ships byte-exact from `runs/s48-ds-f16-t040b/approved-copy.md` (nine new EN/AR rows) and no existing approved string changed. The override editor writes only touched fields through the existing CAS RPC; resets write the field's `null`. T040's row also includes the unified workspace list, which S48-PO-7 assigns to a backend read outside this UI lane, so T040 stays unticked and the task row is unchanged.
 - Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed for the implemented scope.
+
+
+## S48 T040 item 7 final acceptance analysis — 2026-11-11T18:17:01Z
+
+- Scope: the S48-PO-7 single workspace library read (migration `20261111193000_catalog_workspace_library.sql`), its UI wiring, and the T040 task tick/traceability record.
+- Entry check: PASS. `spec.md` has numbered FRs (FR-001/003/018/025/026/036) with measurable SCs and Given/When/Then coverage; the S48 session records S48-PO-1/2/3/5/6/7 and states no open ambiguity; `plan.md:83` covers the workspace library and detail editor; T040 is FR-tagged; this analysis follows the last spec/contract/task edit.
+- Review: the new read is SECURITY DEFINER with `search_path=''`, authorization first via `has_workspace_access(workspace_id,'coaching_work')`, one generic denial, no other-workspace rows, an A–Z effective-English-name order with id tiebreak, one opaque keyset cursor, and the `catalog_search` field set plus kind/cursor discriminators. The UI uses only this read for the workspace library and keeps the current list behaviour. No unstated product behavior was added.
+- Verification: Stack A RED was `42883` (function absent); GREEN 7/7. Mutations: dropping the membership check made a no-match foreign query return `[]` (test failed); reversing the id tiebreak failed the tie test; both restored and GREEN re-run. Regression baseline (2d610dcb) 210 failed / 23 suites vs candidate 209 / 22; normalized candidate-only failure IDs: 0.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed. Gate: PASS for the T040 tick, commit and normal push.
