@@ -91,3 +91,11 @@
 - PASS: FR-002/034/036 and SC-024/026 traceability points to the Stack C baseline/candidate tests and migration evidence.
 - PASS: S48-PO-10/R11 remain the governing decisions; no open product decision or ambiguity.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings.
+
+## 2026-11-11 S48 T077 E2E regression Analyze (19:15 Africa/Cairo)
+
+- Scope: record the focused Stack C Playwright pass for explicit-rank package and registration-link fixtures; no requirement or plan text changed.
+- PASS: the package acceptance flow explicitly selects Silver for each publication; no UI default was added.
+- PASS: the stale-terms registration-link fixture passes `tier_rank: 1` explicitly.
+- PASS: FR-002/034/036, SC-024/026 and T077 cross-references remain consistent; no open product question.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings.
