@@ -161,7 +161,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   >
   > Record this distinction in the constitution. No implementation changes yet.
 - Mandatory Spec Debate: the architect drafts the spec and architecture; an independent critique by a model other than the spec's author is mandatory for every feature (S30-PO-8 Q15; S36-PO-5). Sol Medium is used exclusively for this critique (see Development Workflow & Quality Gates above). Each invocation requires explicit PO approval before the critic is invoked; do not use a critic the PO has not approved or skip the critique. If approval is absent or no approved critic is available, stop and ask the PO and hold feature acceptance until the approved critique is complete. By default there is one response round, with more rounds only for significant unresolved issues. The architect incorporates critique and presents unresolved product/design decisions to the PO. Implementation starts only after PO approval and a completed plan/tasks. AI agreement never replaces PO approval; the architect remains the final technical authority.
-- Controlled Parallel Development: at most eight concurrent delegated agents (the orchestrating architect is not counted), of which at most five may write to pull requests at the same time. On-demand slots include the PO-approved Sol Medium critique, which keeps its per-invocation PO approval (S37-PO-15; S37-PO-12; S37-PO-13). Each writer uses an isolated worktree and branch and edits disjoint files. Only one
+- Controlled Parallel Development: at most nine concurrent delegated agents (the orchestrating architect is not counted), of which at most five may write to pull requests at the same time. On-demand slots include the PO-approved Sol Medium critique, which keeps its per-invocation PO approval (S37-PO-15; S37-PO-12; S37-PO-13). Each writer uses an isolated worktree and branch and edits disjoint files. Only one
   writer may hold a stack lock for Docker or Supabase operations that start, stop, restart, reset,
   provision, migrate, seed, or write shared DB state; other writers stay out of that stack while the
   lock is held. Use one DB user per stack. Feature branches integrate sequentially, each after
@@ -187,7 +187,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.13.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-11 (S47-PO-14)
+**Version**: 1.14.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-12 (S48-PO-22; S49-R28)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
@@ -311,3 +311,22 @@ Sync checklist: no dependent templates, commands, or docs are changed. The
 read the constitution at runtime and are not modified in this workflow. No other dependent-file
 sync is required by that checklist. The F20 spec and plan remain unchanged; their entry check is
 recorded in the external run report.
+
+### Sync impact report and amendment note - 2026-11-12 (S48-PO-22; S49-R28)
+
+MINOR (version 1.13.0 to 1.14.0): Controlled Parallel Development now permits at most nine
+concurrent delegated agents. The total cap accommodates the third concurrent Luna slot. The
+maximum of five PR writers, worktree isolation, disjoint-file editing, the stack lock, and
+per-invocation PO approval for Sol Medium remain unchanged. All merge gates remain unchanged.
+
+Authority: PO S48-PO-22, `C:/Users/NEW LAP/.lifter/runs/s48-po/s48-po-22.verbatim.txt`,
+SHA-256 `ea229789b02a9b05bd22e2e7f6a6bc3a07a8b9e72e5ddd216b32e72dcb70d548`. PO words:
+“Permanently allow 3 concurrent Luna slots, adjusting the total cap.”
+
+Architect mapping (S48-R28; not PO words): Luna concurrent slots 2 to 3; total delegated-agent
+cap 8 to 9 (adds the third Luna slot); PR writers <= 5 unchanged.
+
+Sync checklist: the current-rule mirror in `docs/08-agent-workflow.md` and the decision register
+in `docs/04-changes-and-questions.md` are updated. Worktree isolation, Sol per-invocation
+approval, and all merge gates are unchanged. No feature spec, workflow, or application code
+changed.
