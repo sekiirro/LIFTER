@@ -195,12 +195,6 @@ describe('workspace exercise tenant keys', () => {
         await tx`insert into public.workspace_exercise_versions (workspace_id, workspace_exercise_id, version, payload, created_by)
           values (${kendoId}, ${kendoExerciseId}, 1, '{"marker":"KENDO exercise"}'::jsonb, ${trainerA.userId}),
             (${tojiId}, ${tojiExerciseId}, 1, '{"marker":"TOJI exercise"}'::jsonb, ${trainerB.userId})`;
-        await tx`insert into public.exercise_variations (workspace_id, exercise_id, created_by, current_version)
-          values (${kendoId}, ${canonicalId}, ${trainerA.userId}, 1), (${tojiId}, ${canonicalId}, ${trainerB.userId}, 1)`;
-        await tx`insert into public.exercise_variation_versions (workspace_id, exercise_id, version, payload, created_by)
-          values (${kendoId}, ${canonicalId}, 1, '{"marker":"KENDO variation"}'::jsonb, ${trainerA.userId}),
-            (${tojiId}, ${canonicalId}, 1, '{"marker":"TOJI variation"}'::jsonb, ${trainerB.userId})`;
-
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
         const globalRows =
@@ -229,20 +223,24 @@ describe('workspace exercise tenant keys', () => {
             } },
           },
         ]);
-        const kendoVariations =
-          await tx`select result_id, result_workspace_id, result_payload
-          from public.catalog_search('variation', 'KENDO', '{}'::jsonb, null, ${kendoId})`;
-        expect(kendoVariations).toEqual([
-          {
-            result_id: canonicalId,
-            result_workspace_id: kendoId,
-            result_payload: { marker: 'KENDO variation' },
-          },
-        ]);
+        await tx`select public.catalog_write_exercise_override(
+          ${kendoId}, ${canonicalId}, 0, ${randomUUID()}, ${tx.json({ notes: 'KENDO variation' })}
+        )`;
+        const kendoVariations = await tx`select result_id, result_workspace_id, result_version,
+          result_payload #>> '{effective_fields,notes,value}' as notes,
+          result_payload #>> '{effective_fields,notes,source}' as notes_source
+          from public.catalog_search('variation', null, '{}'::jsonb, null, ${kendoId})`;
+        expect(kendoVariations, 'KENDO effective variation search').toEqual([{
+          result_id: canonicalId,
+          result_workspace_id: kendoId,
+          result_version: 1,
+          notes: 'KENDO variation',
+          notes_source: 'override',
+        }]);
         const countsA = await tx`select
             (select count(*)::int from public.workspace_exercises) as exercises,
             (select count(*)::int from public.exercise_variations) as variations`;
-        expect(countsA).toEqual([{ exercises: 1, variations: 1 }]);
+        expect(countsA).toEqual([{ exercises: 1, variations: 0 }]);
 
         const denied = async (scope: string | null) => {
           try {
@@ -267,6 +265,9 @@ describe('workspace exercise tenant keys', () => {
         expect(foreignDenied).toEqual(missingDenied);
 
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerB.userId, role: 'authenticated' })}, true)`;
+        await tx`select public.catalog_write_exercise_override(
+          ${tojiId}, ${canonicalId}, 0, ${randomUUID()}, ${tx.json({ notes: 'TOJI variation' })}
+        )`;
         const tojiRows =
           await tx`select result_id, result_workspace_id, result_payload
           from public.catalog_search('workspace_exercise', 'TOJI', '{}'::jsonb, null, ${tojiId})`;
@@ -283,10 +284,21 @@ describe('workspace exercise tenant keys', () => {
             } },
           },
         ]);
+        const tojiVariations = await tx`select result_id, result_workspace_id, result_version,
+          result_payload #>> '{effective_fields,notes,value}' as notes,
+          result_payload #>> '{effective_fields,notes,source}' as notes_source
+          from public.catalog_search('variation', null, '{}'::jsonb, null, ${tojiId})`;
+        expect(tojiVariations, 'TOJI effective variation search').toEqual([{
+          result_id: canonicalId,
+          result_workspace_id: tojiId,
+          result_version: 1,
+          notes: 'TOJI variation',
+          notes_source: 'override',
+        }]);
         const countsB = await tx`select
             (select count(*)::int from public.workspace_exercises) as exercises,
             (select count(*)::int from public.exercise_variations) as variations`;
-        expect(countsB).toEqual([{ exercises: 1, variations: 1 }]);
+        expect(countsB).toEqual([{ exercises: 1, variations: 0 }]);
         throw new Error(rollbackMarker);
       });
     } catch (error) {

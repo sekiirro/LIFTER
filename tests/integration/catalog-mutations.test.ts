@@ -231,7 +231,7 @@ describe('F16 mutation probes', () => {
         }
         stage = 'read-definition';
         const [functionDef] = await tx`
-          select pg_get_functiondef('public.catalog_search(text,text,jsonb,text,uuid)'::regprocedure) as definition
+          select pg_get_functiondef('app_private.catalog_search_pre_cutover(text,text,jsonb,text,uuid)'::regprocedure) as definition
         `;
         if (!functionDef?.definition)
           throw new Error('catalog_search definition missing');

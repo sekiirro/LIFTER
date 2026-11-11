@@ -182,7 +182,12 @@ describe('catalog variation actions', () => {
           result_id: validExerciseId,
           result_workspace_id: validWorkspaceId,
           result_version: 3,
-          result_payload: { video_url: 'https://youtu.be/abcdefghijk' },
+          result_payload: {
+            effective_fields: {
+              video: { value: 'https://youtu.be/abcdefghijk' },
+              notes: { value: 'Workspace note' },
+            },
+          },
         },
         {
           result_id: '44444444-4444-4444-8444-444444444444',
@@ -200,7 +205,7 @@ describe('catalog variation actions', () => {
           exerciseId: validExerciseId,
           version: 3,
           videoUrl: 'https://youtu.be/abcdefghijk',
-          note: '',
+          note: 'Workspace note',
         },
       ],
     });

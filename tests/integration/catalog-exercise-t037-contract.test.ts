@@ -904,5 +904,18 @@ describe('T037 remaining workspace and identity contracts', () => {
       select pg_catalog.to_regprocedure('public.catalog_write_variation(uuid,uuid,integer,uuid,jsonb)') as write,
         pg_catalog.to_regprocedure('public.catalog_transition_variation(uuid,uuid,integer,text,uuid)') as transition`;
     expect(legacyWriters[0]).toEqual({ write: null, transition: null });
+
+    // This test applies the pushed cutover migration directly; replay its
+    // forward security fix so later tests see the current invoker boundary.
+    const securityFix = await readFile(
+      join(process.cwd(), 'supabase/migrations/20261111015400_catalog_search_invoker_security.sql'),
+      'utf8',
+    );
+    await db.unsafe(securityFix);
+    const [searchSecurity] = await db`
+      select prosecdef from pg_catalog.pg_proc
+      where oid = 'public.catalog_search(text,text,jsonb,text,uuid)'::regprocedure
+    `;
+    expect(searchSecurity?.prosecdef).toBe(false);
   });
 });

@@ -45,6 +45,40 @@ beforeAll(async () => {
 afterAll(async () => Promise.all([db.end(), concurrentDb.end()]));
 
 describe('T054 PR #43 variation compatibility over F16 overrides', () => {
+  it('keeps workspace exercise and variation reads inside the trainer workspace under RLS', async () => {
+    const exerciseId = await createExercise();
+    const privateExerciseId = randomUUID();
+    await db.begin(async (tx) => {
+      await tx`insert into public.workspace_exercises(workspace_id, id, created_by, current_version)
+        values (${wsB}, ${privateExerciseId}, ${po.userId}, 1)`;
+      await tx`insert into public.workspace_exercise_versions(workspace_id, workspace_exercise_id, version, payload, created_by)
+        values (${wsB}, ${privateExerciseId}, 1, ${tx.json({ name_en: 'Foreign workspace exercise' })}, ${po.userId})`;
+    });
+    await asActor(po.userId, (tx) => tx`select public.catalog_write_exercise_override(
+      ${wsB}, ${exerciseId}, 0, ${randomUUID()}, ${tx.json({ notes: 'Foreign workspace variation' })}
+    )`);
+
+    await expect(asActor(trainerA.userId, (tx) => tx`
+      select id from public.workspace_exercises where workspace_id = ${wsB}
+    `)).resolves.toEqual([]);
+    await expect(asActor(trainerA.userId, (tx) => tx`
+      select exercise_id from public.exercise_overrides where workspace_id = ${wsB}
+    `)).resolves.toEqual([]);
+    await expect(asActor(trainerA.userId, (tx) => tx`
+      select * from public.catalog_search('workspace_exercise', null, '{}'::jsonb, null, ${wsB})
+    `)).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+    await expect(asActor(trainerA.userId, (tx) => tx`
+      select * from public.catalog_search('variation', null, '{}'::jsonb, null, ${wsB})
+    `)).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+  });
+
+  it('pins the variation helper to the supplied workspace', async () => {
+    const [helper] = await db`select pg_catalog.pg_get_functiondef(
+      'app_private.catalog_search_variation(text,jsonb,text,uuid)'::regprocedure
+    ) as definition`;
+    expect(helper?.definition).toMatch(/override\.workspace_id\s*=\s*p_workspace_id/i);
+  });
+
   it('retires legacy write RPCs and resolves the compatibility read from effective override values', async () => {
     const exerciseId = await createExercise();
     const request = { video_url: 'https://youtu.be/abcdefghijk', notes: 'workspace note' };
