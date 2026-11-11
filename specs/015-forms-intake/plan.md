@@ -28,7 +28,6 @@ Build a tenant-scoped Forms/Intake engine around immutable published form versio
 
 ### S25-PO-8 and S25-R4 alert delivery plan
 
-
 The PO approved In-App + Telegram, no Email, preservation of escalation rules and duplicate prevention, sensitive-data protection, and a disabled scheduler pending approval. In-app is mandatory for each authorized stage recipient. Telegram is an additional staff-only channel after one-time `/start` deep-link account linking; usernames do not establish identity. Link and webhook state uses hashed short-lived tokens, a verified webhook secret header and persisted chat IDs. Membership loss revokes the link; staff can unlink. Messages remain generic and link to the authorized in-app inbox. No client name, answer text or health data enters Telegram, jobs, audit or logs. Use a fake Telegram transport in tests; no test network calls. Server config key names are `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET`; values are managed outside the repository. Email is out of scope. Delivery idempotency is per occurrence/stage/recipient/channel. No migration activates the scheduler; separate PO approval is required.
 
 ## Technical Context
@@ -87,6 +86,8 @@ Use the existing F12 order whenever F12 rows are involved: **client → subscrip
 - F15 migrations must be `20261104000000` or later and strictly later than every F12 and F14 migration actually merged at implementation time, including later review fixes. Reinspect both full integrated histories before allocating any exact timestamp; this plan creates none.
 - F15 DB work uses the PO-approved Stack D exception only, after verifying isolation from Stacks A/B/C and the latest F12/F14 shared contracts. Never use Stack A, Stack B or Stack C for this lane.
 - Rebuild the full latest `audit_row_change()` body after F12 and F14 integration, preserving all mappings and scrubbed allow-lists; never copy a stale function body.
+
+<!-- prettier-ignore-start -->
 - Extend SQL `app_private.role_has_capability` and TypeScript `lib/auth/capabilities.ts` only after F12's Sales `approve_registration` removal and F14's `manage_branding` change are integrated. Add `assign_intake_form` for PO/WO/Trainer, deny Sales, and require bidirectional parity for known and unknown strings.
 - Capability additions approved by architect; keep their shared SQL/TypeScript mappings pending final F14/F13 reconciliation:
 
@@ -97,11 +98,14 @@ Use the existing F12 order whenever F12 rows are involved: **client → subscrip
   | `read_form_answers` | PO, WO, Trainer | `correction-matrix.md`, “Approved operations × roles × field classes”: current ordinary/sensitive answers and version history allow these staff roles in authorized workspace scope; Sales denies. PO scope requires an explicitly existing workspace. Clients read only their own assigned form through the client authorization path and are not granted this staff capability. PO final correction approval (2026-10-29) and Q1 relationship-end denial also apply. |
 
   These capability names and role sets are approved, but do not edit `role_has_capability` or `lib/auth/capabilities.ts` until F14 and F13 have merged and the full matrices can be reconciled.
+<!-- prettier-ignore-end -->
+
 - Extend `app_private.has_workspace_access` only from its latest integrated definition. PO global authority must additionally join a real existing workspace for workspace-scoped F15 actions.
 - Preserve F12 `f12_guard_client_transition`, private approval-event contract, `client_self_status()`/client access contracts and F14 branding contract. Use forward-only migrations; do not replace shared functions from stale branches.
 
 ## Cross-Feature Dependencies and Integration Order
 
+<!-- prettier-ignore-start -->
 | Area | F15 dependency / owner seam | Required order / guard |
 | --- | --- | --- |
 | Shared tables/FKs | F11 client/Auth binding; F12 clients, subscriptions, approval event; P2-owned workspace-bound templates, assignments, answers, SLA, jobs and alerts | F11 identity and F12 schema/functions must be merged and inspected before DB design is finalized. Consume F13 entitlement projection for actual renewed-subscription service start (including freeze shifts) and frozen/inactive state. No financial payload reads. |
@@ -112,11 +116,13 @@ Use the existing F12 order whenever F12 rows are involved: **client → subscrip
 | Branding | F14-8 published workspace brand contract | F14 merge first; per-request scope, neutral fallback, no shared actor/workspace cache. No editor/storage copied into F15. |
 | Alerts/delivery | P4 authoritative first-pair delivery facts; D4 client-late and existing Q4 D-03 policies; S25-PO-8 in-app/Telegram channels | Synthetic fixtures first; in-app always; Telegram only for explicitly linked staff. Late intake immediately notifies authorized owners. Client-to-Trainer assignment/routing and client-late Trainer alerts are deferred to F11/F12 under PDN-S39-F15-01; D-03 Trainer-late remains unchanged. Reauthorize at delivery/read; no email. Scheduler stays disabled pending PO activation approval. |
 | Retention/CI | F11 owner-only `pg_cron` pattern; docs/13 readiness gates; encrypted backups | Reuse pattern without activation in migration. 30-day legal/technical review and backup/PITR evidence block production real data. Private CI billing remains an external gate; do not change visibility. |
+<!-- prettier-ignore-end -->
 
 Merge readiness of F12 and F14 is not asserted by this plan; their latest integrated source must be revalidated at implementation time.
 
 ## OPEN Items, Exact Blocking Tasks, and Gates
 
+<!-- prettier-ignore-start -->
 | OPEN item | What it blocks |
 | --- | --- |
 | Remaining authored English translations | Only rows not approved by S31-R2/S32-PO-8 remain pending; do not invent or change them. Terms AR/EN and B06 sex labels are approved by S30-PO-1 Q2. The standalone health notice is superseded; minimal contextual health guidance may use the PO-given label where useful. |
@@ -124,6 +130,7 @@ Merge readiness of F12 and F14 is not asserted by this plan; their latest integr
 | Authoritative P4 first-pair delivery and responsible-Trainer coverage | T016 synthetic alert engine can proceed; T017 real-data scheduler activation and T025 production readiness stay blocked. |
 | Future attachment storage lifecycle | No MVP attachment task is authorized. FR-032 remains no attachment feature/storage until separately specified; future attachment implementation requires a new scoped decision/design and RET-2/3 proof. |
 | D1 exact deletion migration | DB-dependent implementation task T029 is blocked pending F12/F14 merge and verified Stack D. The pure DB-free selector task T026 is unblocked under D-29; no SQL or database operation is part of this lane. |
+<!-- prettier-ignore-end -->
 
 ## Project Structure
 
@@ -161,14 +168,11 @@ tests/e2e/                         # rendered user journeys and Design Gate
 
 D-29 approves a material Constitution VII expansion; the MINOR version bump to 1.4.0 follows the Constitution's semantic-version rule. D1's accepted loss of who-viewed evidence for the erased answer is recorded as a security consequence. The exact migration still requires F12/F14 merge and verified Stack D. Any missing DESIGN.md decision stops only its rendered-UI unit and is escalated through the Frontend Design Gate.
 
-
 ## S35 existing-PR remediation
 
 S35 fixes only verified CodeRabbit/hosted-CI defects within existing F15 requirements. T101 pins integration Vitest to the runner config loader because the native loader's Vite source-map formatter replaces the actionable setup/test error with `code.charCodeAt`. T102 validates derived N08 budget choices at server boundaries. T103 validates correction answer keys against the assignment snapshot in the RPC. T104 client-to-Trainer assignment/routing and the client-late Trainer alert are deferred to the F11/F12 specification work under PDN-S39-F15-01; S36-01=A preserves the existing F12 client assignment as the future authoritative source. T105 preserves the approved three-nonempty-name-component contract in SQL. T106-T111 repair tests and historical operator/evidence documentation. T112 guards the existing signup field blur validation while submission is pending, with no visual/copy change. T113 aligns the existing approved EN copy in the spec and provisioned starter. T114 keeps DOB tests exercising the future-date rule with a stable far-future fixture.
 
-
 S36 T136 repairs the F15 migration-source drift guard for both stacked heads. Prefer the localized N11 starter migration when present on B, then fall back to A's latest migration that defines the same function. This only restores test harness compatibility; it changes no product behavior or security checks.
-
 
 ### S36 N11 and ALERTS
 
@@ -182,7 +186,6 @@ For PR #57, first apply the PO-approved filename-only migration rename after aud
 
 Apply S40-PO-4's revised PDN-S40-03 mapping: retain only the SQL-proven minimal prefix at original versions, with per-file gate-check exceptions; restore those filenames with new `git mv` commits; preserve every pushed SQL blob; rename remaining migrations above main/all origin refs in original relative order; then use one all-refs-unique forward migration to reconcile main and approved F15 signup definitions. Verify with clean Stack D reset and migration replay, mutation/restore/diff evidence, and the three specified integration suites. Keep #58 and workflow files untouched.
 
-
 ## S40 F15 round-11 integration defects
 
 Keep T115's approved F15 normalized username rule aligned with its transaction mutation regression; update the matcher to the current function source without weakening the assertion. Complete existing T117 within the single forward migration: provide the SQL slider-label validator referenced by the latest builder validator, keep its null/missing-middle checks, and prove the missing-middle mutation fails and restores. These changes repair existing FR-004/006/038/039 implementation and test drift; no new product behavior is introduced.
@@ -190,7 +193,6 @@ Keep T115's approved F15 normalized username rule aligned with its transaction m
 ## S40 F15 round-13 CodeRabbit remediation
 
 Task T140 implements the four already-approved fixes in S40-R17 on existing PR #57, without changing product scope: align the client-late helper, inbox allow-list and integration drift guard with SQL evaluation to immediate PO+WO notices with no client-late Trainer or +24h/+48h stages while preserving D-03 and binding the accepted-submission check to app_private.form_submissions; serialize owner-membership revocation at enqueue; add correction RPC per-answer UTF-8 byte and snapshot charLimit checks before insert; return {"status":"invalid"} for inconsistent N08 draft answers before write; document local ffmpeg libaom-av1/libwebp prerequisites without skipping tests. All SQL changes are forward-only, new versions are unique across all origin refs, and Stack D direct-RPC/integration verification plus SECURITY DEFINER mutation evidence is required. No open ambiguities remain for these architect-approved fixes.
-
 
 ### S41 round-16 follow-up (T142)
 

@@ -33,22 +33,22 @@ The binding Session 12 and Session 13 PO decision files and the decision registe
 
 **Final PO decisions**
 
-* F15 Q2=C: Delete inapplicable answers from all versions/history. Flag immutable audit conflicts before implementation.
-* A1=B: If no Trainer assigned, notify PO + WO.
-* A2=Modified A: First overdue alert to Trainer 24h after form deadline; escalate to BOTH PO + WO 48h after deadline. On Trainer reassignment, transfer alert without resetting the clock.
-* A3=A: Notify whichever PO/WO remains authorized.
-* F1=A: Automatically resume recurring forms after freeze, without catching up missed forms.
-* F12 PR #18=A: Accept additional U1/T052 scope after review and tests.
-* CI: Use previously approved temporary public window, restore PRIVATE and verify. Preserve all merge gates.
-"Important: Intake Form submission deadline hasn't been decided. Present concise MCQ options with recommendations; don't invent a default. PO-1 remains pending Luna High review. Continue unblocked work. No merge without my explicit approval."
+- F15 Q2=C: Delete inapplicable answers from all versions/history. Flag immutable audit conflicts before implementation.
+- A1=B: If no Trainer assigned, notify PO + WO.
+- A2=Modified A: First overdue alert to Trainer 24h after form deadline; escalate to BOTH PO + WO 48h after deadline. On Trainer reassignment, transfer alert without resetting the clock.
+- A3=A: Notify whichever PO/WO remains authorized.
+- F1=A: Automatically resume recurring forms after freeze, without catching up missed forms.
+- F12 PR #18=A: Accept additional U1/T052 scope after review and tests.
+- CI: Use previously approved temporary public window, restore PRIVATE and verify. Preserve all merge gates.
+  "Important: Intake Form submission deadline hasn't been decided. Present concise MCQ options with recommendations; don't invent a default. PO-1 remains pending Luna High review. Continue unblocked work. No merge without my explicit approval."
 
 **Final PO decisions D1–D4 + PO-1**
 
-* D1=B: Delete inapplicable answers from all versions and related audit records. Review required constitutional amendments and security implications before implementation.
-* D2=A: Mandatory Intake deadline: 23:59 Cairo, third day after assignment.
-* D3=A: Other forms: configurable 1–14 days, default matching Intake; each recurring occurrence has its own deadline.
-* D4=A: Separate Client-late and Trainer-late alerts. Client: Trainer at +24h, PO+WO at +48h after deadline. Preserve existing Trainer-late rules.
-* PO-1: Existing JWTs may remain valid until expiry. On refund, deactivate client and block new sign-ins/refresh with safe failure handling. A+/C no longer applies.
+- D1=B: Delete inapplicable answers from all versions and related audit records. Review required constitutional amendments and security implications before implementation.
+- D2=A: Mandatory Intake deadline: 23:59 Cairo, third day after assignment.
+- D3=A: Other forms: configurable 1–14 days, default matching Intake; each recurring occurrence has its own deadline.
+- D4=A: Separate Client-late and Trainer-late alerts. Client: Trainer at +24h, PO+WO at +48h after deadline. Preserve existing Trainer-late rules.
+- PO-1: Existing JWTs may remain valid until expiry. On refund, deactivate client and block new sign-ins/refresh with safe failure handling. A+/C no longer applies.
 
 Architect note (not a PO decision): D1 requires a forward-only migration changing audit immutability enforcement. The constitutional amendment and security/DB design are PO-approved under D-29; the exact database work waits for F12/F14 merge and verified Stack D.
 
@@ -71,6 +71,7 @@ PO reference: `C:/Users/NEW LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md`, 
 - Telegram sends generic text and an in-app link only. Payload/message content contains IDs and allow-listed codes only; never a client name, answer text or health data.
 - The bot token is a server-only runtime secret. Use a fake transport in tests; never expose or persist token values in repository files, logs, jobs or audit.
 - Deduplicate delivery per `(alert stage, recipient, channel)`. Preserve D-03 and client-late escalation timing. Scheduler activation remains disabled until separate PO approval. Email is out of scope.
+
 ### F15 text/submission limits — PO approval (verbatim)
 
 > "Claude, F15 PO APPROVED: Q1=A (Short: 150 chars, Long: 1,000 chars), Q2=A (256 KiB max submission). Implement live character counters and enforce UTF-8 safety limits server-side. Test actual payload sizes, Arabic/English/emoji, boundary cases, and maximum 20 questions/section and 60/form. Record decisions and continue implementation. Escalate only confirmed conflicts."
@@ -193,7 +194,6 @@ As a client, I can see the Cairo submission deadline for each assigned form and 
 5. **Given** alert recipients overlap across the immediate, day-five and day-seven stages, **When** notifications are enqueued, **Then** deduplicate recipients while preserving each applicable alert stage and recheck current authorization.
 6. **Given** a client-late alert schedule when the client is closed, refunded, deactivated, or purged, **When** evaluation and lifecycle cleanup run, **Then** no client-late notification is enqueued and related alert rows are removed.
 
-
 ### User Story 8 — Receive approved N11 hunger feedback (Priority: P2)
 
 As a client completing the default intake in English, I see the approved hunger feedback for my selected 0–10 score.
@@ -202,7 +202,6 @@ As a client completing the default intake in English, I see the approved hunger 
 
 1. **Given** an English N11 score of 0, 2, 3, 4, 5, 6, 7, 8, 9 or 10, **When** feedback is resolved, **Then** return the exact PO-approved string for the inclusive band containing that score.
 2. **Given** an Arabic N11 score in the existing 0–10 range, **When** feedback is resolved, **Then** preserve the currently approved Arabic band copy.
-
 
 ### Edge Cases
 
@@ -270,6 +269,7 @@ Binding decisions: D-S14-1 through D-S14-5 and session-14 PO decisions (2026-10-
 
 The S14 starter material lists 26 parent IDs; IDs remain stable for questions retained across versions, but no form must keep every listed question. Your First Step may start with this material as editable content; authors may remove or replace questions and sections. P1 adds sex as B06, preserving existing IDs; its AR/EN labels were approved verbatim by S30-PO-1 Q2 as a non-canonical addendum. Child IDs count as questions for the approved 20-per-section / 60-per-form limits. Labels and choice copy resolve through the canonical fixture by section/ordinal; child copy is referenced by its fixture line. No question, option, or food label may be fabricated from this table. Requiredness is authored in the version; children are required only when their branch is applicable. Exact counts use parents plus children, so the configured form remains below approved caps.
 
+<!-- prettier-ignore-start -->
 | Stable ID | Section / copy locator | Answer shape | Units/options and conditional or computed rules |
 | --- | --- | --- | --- |
 | B01 | Basic 1 | Read-only profile-bound text | Sign-up full name; never editable in intake. |
@@ -311,6 +311,7 @@ The S14 starter material lists 26 parent IDs; IDs remain stable for questions re
 | N10 | Nutrition 10 | Three single-choice cards | Exact options in fixture. |
 | N11 | Nutrition 11 | Interactive integer slider | Range 0–10, step 1; live `X/10`; endpoint and midpoint labels exactly as fixture; feedback ranges 0–2, 3–4, 5–6, 7–8 and 9–10, with labels in fixture. Keyboard, screen-reader and mobile touch support. Smooth score feedback is requested; exact animation behavior must respect reduced-motion and must not invent timing/easing beyond DESIGN.md. |
 | N12 | Nutrition 12, last | Visual single-select image cards | Use the source-verified catalog in `tests/fixtures/forms/body-fat-derivative-manifest.json` to resolve each approved percentage to optimized WebP/AVIF derivatives in `public/images/body-fat/`, generated from the read-only YBS source by the reproducible media task. Derivatives target <=150 KB and are capped at 768 source pixels wide. Render image content at no more than 384 CSS pixels wide, keeping assets within 2x display width. Male selects the standard `male` series; female selects `female`; `male-cinematic` is unused. Original images are never committed. Show estimated percentage on each card, and the canonical fixture disclaimer. MUST remain last in Nutrition. Trainers can read the selected numeric percentage. |
+<!-- prettier-ignore-end -->
 
 ### EN translation — PO-approved copy
 
@@ -330,102 +331,102 @@ PO record: S33-PO-3 in the PO decision register, 2026-11-04. Verbatim:
 
 Clarification: these exact strings apply to Arabic only. The T03 digits are Western digits. N07 substitutes each selected meal number in the Arabic template. English T03 and N07 remain as approved in S32-PO-8. **No open ambiguities remain for T061–T063.**
 
-| Stable ID | EN-mode translation |
-| --- | --- |
-| B01 | Full name (three parts) |
-| B02 | Age |
-| B03 | Do you have any chronic conditions? |
-| B03.details | Please describe your chronic conditions. |
-| B04 | What is your current weight? |
-| B05 | What is your occupation? |
-| B06 | Gender |
-| T01 | What is your near-term goal? |
-| T02 | Do you have any injuries? |
-| T02.details | Tell us about the injury. |
-| T03 | How many days a week would you like to train? |
-| T04 | How much time can you set aside for a workout? |
-| T05 | Do you play a sport in addition to going to the gym? |
-| T05.sport | Which sport do you play? |
-| T06 | What do you consider your weak points? |
-| T07 | Which exercises do you like most and dislike most? |
-| T07.liked | Exercises you like |
-| T07.disliked | Exercises you dislike |
-| T08 | Training split |
-| T08.system | What training split would you like to follow? |
-| N01 | What is your goal for your nutrition plan? |
-| N01.cut.title | Fat loss |
-| N01.cut | Fat loss at a moderate rate while preserving as much muscle mass as possible. |
-| N01.cut_fast.title | Fast fat loss |
-| N01.cut_fast | Faster fat loss, with a higher chance of muscle loss or reduced performance. |
-| N01.bulk.title | Muscle gain |
-| N01.bulk | Increase muscle mass while limiting fat gain as much as possible. |
-| N01.bulk_fast.title | Fast muscle gain |
-| N01.bulk_fast | Increase body weight and muscle mass faster, with a higher chance of gaining fat. |
-| N01.recomposition.title | Body recomposition |
-| N01.recomposition | Increase muscle mass while reducing body-fat percentage at the same time. |
-| N02 | What is your height in centimeters? |
-| N03 | How active are you and how much do you move during the day? |
-| N04 | Are you allergic to any foods? |
-| N04.details | List the foods you are allergic to. |
-| N05 | Are you currently taking any medications or supplements? |
-| N05.medications | List the medications and supplements you take. |
-| N05.supplement_suggestion | Would you like us to suggest dietary supplements? |
-| N06 | Tell us what a typical day of eating looks like for you. |
-| N07 | How many meals would you like to eat per day? |
-| N07.training_timing | After which meal would you like to train? |
-| N08 | What’s your food budget? |
-| N08.foods | *(Food chips are shown within the N08 budget question; there is no separate question prompt.)* |
-| N09 | Which foods do you like most and dislike most? |
-| N09.liked | Foods you like |
-| N09.disliked | Foods you dislike |
-| N10 | Would you rather weigh food before or after cooking? |
-| N11 | How hungry do you feel, from 0 to 10? |
-| N11.feedback.0_2 | Very little hunger |
-| N11.feedback.3_4 | Mild hunger |
-| N11.feedback.5_6 | Moderate hunger |
-| N11.feedback.7_8 | High hunger |
-| N11.feedback.9_10 | Very strong hunger |
-| N12 | Choose the body-fat reference that most closely resembles your body shape. |
-| N12.disclaimer | This percentage is an estimate and is not a substitute for measuring body-fat percentage. |
+| Stable ID                 | EN-mode translation                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------- |
+| B01                       | Full name (three parts)                                                                        |
+| B02                       | Age                                                                                            |
+| B03                       | Do you have any chronic conditions?                                                            |
+| B03.details               | Please describe your chronic conditions.                                                       |
+| B04                       | What is your current weight?                                                                   |
+| B05                       | What is your occupation?                                                                       |
+| B06                       | Gender                                                                                         |
+| T01                       | What is your near-term goal?                                                                   |
+| T02                       | Do you have any injuries?                                                                      |
+| T02.details               | Tell us about the injury.                                                                      |
+| T03                       | How many days a week would you like to train?                                                  |
+| T04                       | How much time can you set aside for a workout?                                                 |
+| T05                       | Do you play a sport in addition to going to the gym?                                           |
+| T05.sport                 | Which sport do you play?                                                                       |
+| T06                       | What do you consider your weak points?                                                         |
+| T07                       | Which exercises do you like most and dislike most?                                             |
+| T07.liked                 | Exercises you like                                                                             |
+| T07.disliked              | Exercises you dislike                                                                          |
+| T08                       | Training split                                                                                 |
+| T08.system                | What training split would you like to follow?                                                  |
+| N01                       | What is your goal for your nutrition plan?                                                     |
+| N01.cut.title             | Fat loss                                                                                       |
+| N01.cut                   | Fat loss at a moderate rate while preserving as much muscle mass as possible.                  |
+| N01.cut_fast.title        | Fast fat loss                                                                                  |
+| N01.cut_fast              | Faster fat loss, with a higher chance of muscle loss or reduced performance.                   |
+| N01.bulk.title            | Muscle gain                                                                                    |
+| N01.bulk                  | Increase muscle mass while limiting fat gain as much as possible.                              |
+| N01.bulk_fast.title       | Fast muscle gain                                                                               |
+| N01.bulk_fast             | Increase body weight and muscle mass faster, with a higher chance of gaining fat.              |
+| N01.recomposition.title   | Body recomposition                                                                             |
+| N01.recomposition         | Increase muscle mass while reducing body-fat percentage at the same time.                      |
+| N02                       | What is your height in centimeters?                                                            |
+| N03                       | How active are you and how much do you move during the day?                                    |
+| N04                       | Are you allergic to any foods?                                                                 |
+| N04.details               | List the foods you are allergic to.                                                            |
+| N05                       | Are you currently taking any medications or supplements?                                       |
+| N05.medications           | List the medications and supplements you take.                                                 |
+| N05.supplement_suggestion | Would you like us to suggest dietary supplements?                                              |
+| N06                       | Tell us what a typical day of eating looks like for you.                                       |
+| N07                       | How many meals would you like to eat per day?                                                  |
+| N07.training_timing       | After which meal would you like to train?                                                      |
+| N08                       | What’s your food budget?                                                                       |
+| N08.foods                 | _(Food chips are shown within the N08 budget question; there is no separate question prompt.)_ |
+| N09                       | Which foods do you like most and dislike most?                                                 |
+| N09.liked                 | Foods you like                                                                                 |
+| N09.disliked              | Foods you dislike                                                                              |
+| N10                       | Would you rather weigh food before or after cooking?                                           |
+| N11                       | How hungry do you feel, from 0 to 10?                                                          |
+| N11.feedback.0_2          | Very little hunger                                                                             |
+| N11.feedback.3_4          | Mild hunger                                                                                    |
+| N11.feedback.5_6          | Moderate hunger                                                                                |
+| N11.feedback.7_8          | High hunger                                                                                    |
+| N11.feedback.9_10         | Very strong hunger                                                                             |
+| N12                       | Choose the body-fat reference that most closely resembles your body shape.                     |
+| N12.disclaimer            | This percentage is an estimate and is not a substitute for measuring body-fat percentage.      |
 
 The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
 
 #### EN option translations — PO review
 
-| Source option locator | EN-mode option |
-| --- | --- |
-| B06.male | Male |
-| B06.female | Female |
-| T03.2 | 2 days |
-| T03.3 | 3 days |
-| T03.4 | 4 days |
-| T03.5 | 5 days |
-| T03.6 | 6 days |
-| N03.1 | Sitting for most of the day |
-| N03.2 | Light movement and walking |
-| N03.3 | Moderate movement and walking |
-| N03.4 | A lot of movement or physically demanding work |
-| T04.less_than_90 | Less than an hour and a half |
-| T04.at_least_90 | An hour and a half or more |
-| N07.2 | Two meals *(pending PO review)* |
-| N07.3 | 3 meals *(pending PO review)* |
-| N07.4 | 4 meals *(pending PO review)* |
-| N07.5 | 5 meals *(pending PO review)* |
-| N07.before_first | Before the first meal |
-| N07.after_meal_n | After meal {n}, for each n from 1 through the selected meal count |
-| N07.no_fixed_time | I don't have a fixed time |
-| N08.low | Low budget |
-| N08.medium | Medium budget |
-| N08.high | High budget |
-| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread |
-| N08.medium.foods | Eggs / chicken / meat / toast / fish *(pending PO review)* |
-| N08.high.foods | Salmon / smoked turkey / steak / ribeye *(pending PO review)* |
-| N10.before | Before cooking |
-| N10.after | After cooking |
-| N10.no_preference | No preference |
-| N11.label.0 | I barely feel hungry |
-| N11.label.5 | Moderate hunger |
-| N11.label.10 | Very strong hunger |
+| Source option locator | EN-mode option                                                    |
+| --------------------- | ----------------------------------------------------------------- |
+| B06.male              | Male                                                              |
+| B06.female            | Female                                                            |
+| T03.2                 | 2 days                                                            |
+| T03.3                 | 3 days                                                            |
+| T03.4                 | 4 days                                                            |
+| T03.5                 | 5 days                                                            |
+| T03.6                 | 6 days                                                            |
+| N03.1                 | Sitting for most of the day                                       |
+| N03.2                 | Light movement and walking                                        |
+| N03.3                 | Moderate movement and walking                                     |
+| N03.4                 | A lot of movement or physically demanding work                    |
+| T04.less_than_90      | Less than an hour and a half                                      |
+| T04.at_least_90       | An hour and a half or more                                        |
+| N07.2                 | Two meals _(pending PO review)_                                   |
+| N07.3                 | 3 meals _(pending PO review)_                                     |
+| N07.4                 | 4 meals _(pending PO review)_                                     |
+| N07.5                 | 5 meals _(pending PO review)_                                     |
+| N07.before_first      | Before the first meal                                             |
+| N07.after_meal_n      | After meal {n}, for each n from 1 through the selected meal count |
+| N07.no_fixed_time     | I don't have a fixed time                                         |
+| N08.low               | Low budget                                                        |
+| N08.medium            | Medium budget                                                     |
+| N08.high              | High budget                                                       |
+| N08.low.foods         | Cottage cheese / plant protein / eggs / baladi bread              |
+| N08.medium.foods      | Eggs / chicken / meat / toast / fish _(pending PO review)_        |
+| N08.high.foods        | Salmon / smoked turkey / steak / ribeye _(pending PO review)_     |
+| N10.before            | Before cooking                                                    |
+| N10.after             | After cooking                                                     |
+| N10.no_preference     | No preference                                                     |
+| N11.label.0           | I barely feel hungry                                              |
+| N11.label.5           | Moderate hunger                                                   |
+| N11.label.10          | Very strong hunger                                                |
 
 The T04, N08 budget and food-chip, and N12 percentage-specific option records are authored from their exact fixture values; do not paraphrase or manufacture missing card choices. S34-PO-6 approves every English row in the pending intake review inventory, including these options, and preserves earlier approvals. Budget food chips are children of the N08 question, not a separate prompt.
 
@@ -577,13 +578,14 @@ F15 Q1 — A: No corrections allowed by any role after the client relationship e
 F15 Q2 — D: Remove irrelevant branching answers from the form, audit and history. Check for conflicts with immutable history requirements. Do not override my decision; return any conflict for PO resolution.
 
 F15 Q3 — D: Flexible Form Automation:
-* All active clients within the workspace.
-* New clients automatically on joining/onboarding.
-* Specific clients selected through search (single or multiple).
-* Custom recurring schedules, e.g. weekly check-ins.
-* Renewal-triggered delivery only when the renewed subscription actually starts, including freeze-related delays, never on early payment.
-* Stop recurring deliveries when the client's subscription becomes inactive or frozen.
-* Manual control over audience, timing, recurrence and stopping conditions.
+
+- All active clients within the workspace.
+- New clients automatically on joining/onboarding.
+- Specific clients selected through search (single or multiple).
+- Custom recurring schedules, e.g. weekly check-ins.
+- Renewal-triggered delivery only when the renewed subscription actually starts, including freeze-related delays, never on early payment.
+- Stop recurring deliveries when the client's subscription becomes inactive or frozen.
+- Manual control over audience, timing, recurrence and stopping conditions.
 
 F15 Q4 — Modified B: Initial alert to assigned Trainer. Seven-day catch-up, deduplication and reassignment handling. After 24 hours unresolved, escalate simultaneously to BOTH Platform Owner and Workspace Owner.
 
@@ -591,17 +593,17 @@ Q5 (follow-up, controls) — “F15 Q5: Approve your proposed technical limits, 
 
 Stack C — A APPROVED: Create it with verified isolation from Stacks A/B. F13 refund-session proof takes priority, then F15.
 
-| Decision | Binding outcome | Requirements / acceptance |
-| --- | --- | --- |
-| F15-1 | PO/WO/Trainer create, copy, edit, publish and retire workspace forms; Sales excluded. | FR-004, FR-030; SC-017; User Story 3 |
-| F15-2 + D-03 | Late at 00:00 Cairo after working day five; Friday alone is excluded; DST gap uses the first valid instant of that Cairo date. | FR-015/016; SC-005/006; User Story 4 |
-| F15-3 | Dedicated `assign_intake_form` capability for Trainer authorization, with TypeScript/SQL parity after F12 and F14 capability changes. | FR-022; SC-017 |
-| F15-4 | Historical decision: PO would supply initial Mandatory Intake/questions at implementation; superseded by S17 for the default form and starter content. S14 questions may be editable starter content; Your First Step is the ordinary editable Forms default. Every form has separate Arabic and English versions. | FR-004/006/026, FR-029/SC-013/021 |
-| F15-5 | Initial late alert to responsible Trainer, otherwise PO; if assigned Trainer remains delayed, superseded by Q4: simultaneous WO+PO escalation after 24 hours unresolved; deduplicate. | Superseded by final F15 Q4 below. |
-| F15-6 | Per-form trigger, target audience and recurrence configuration for onboarding, specific-client and recurring eligible individual/cohort forms. The implementation sequence must cover approved Q3=D behavior and is coordinated between T010 and T023. | Extended by final F15 Q3 below; FR-003/031; SC-018; BRD-06 conflict recorded below |
-| F15-7 | PO, WO, Trainer and Client have full correction permissions for submitted forms, including medical fields and attachments; enforce tenant isolation, authorized client scope and immutable version history/audit; Correction Matrix is approved; no further PO approval needed. | FR-013/021/024; SC-019; [approved correction matrix](correction-matrix.md) |
-| F15-8 + RET-1..3 | Keep necessary data while active; start 30 days at Closure/Refund/Deactivation; purge drafts/answers/correction content/attachments; retain templates and minimal legally required audit evidence; maximum 30 days over every recoverable copy including backups; feasibility/legal review before production. | FR-012/024/032/033; SC-014/020 |
-| PO-1 | Every successful refund deactivates the client, blocks login, revokes sessions, preserves financial/audit records, and supplies the authoritative relationship-end fact/time that starts RET-1. | FR-012/033; SC-020 |
+| Decision         | Binding outcome                                                                                                                                                                                                                                                                                                    | Requirements / acceptance                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| F15-1            | PO/WO/Trainer create, copy, edit, publish and retire workspace forms; Sales excluded.                                                                                                                                                                                                                              | FR-004, FR-030; SC-017; User Story 3                                               |
+| F15-2 + D-03     | Late at 00:00 Cairo after working day five; Friday alone is excluded; DST gap uses the first valid instant of that Cairo date.                                                                                                                                                                                     | FR-015/016; SC-005/006; User Story 4                                               |
+| F15-3            | Dedicated `assign_intake_form` capability for Trainer authorization, with TypeScript/SQL parity after F12 and F14 capability changes.                                                                                                                                                                              | FR-022; SC-017                                                                     |
+| F15-4            | Historical decision: PO would supply initial Mandatory Intake/questions at implementation; superseded by S17 for the default form and starter content. S14 questions may be editable starter content; Your First Step is the ordinary editable Forms default. Every form has separate Arabic and English versions. | FR-004/006/026, FR-029/SC-013/021                                                  |
+| F15-5            | Initial late alert to responsible Trainer, otherwise PO; if assigned Trainer remains delayed, superseded by Q4: simultaneous WO+PO escalation after 24 hours unresolved; deduplicate.                                                                                                                              | Superseded by final F15 Q4 below.                                                  |
+| F15-6            | Per-form trigger, target audience and recurrence configuration for onboarding, specific-client and recurring eligible individual/cohort forms. The implementation sequence must cover approved Q3=D behavior and is coordinated between T010 and T023.                                                             | Extended by final F15 Q3 below; FR-003/031; SC-018; BRD-06 conflict recorded below |
+| F15-7            | PO, WO, Trainer and Client have full correction permissions for submitted forms, including medical fields and attachments; enforce tenant isolation, authorized client scope and immutable version history/audit; Correction Matrix is approved; no further PO approval needed.                                    | FR-013/021/024; SC-019; [approved correction matrix](correction-matrix.md)         |
+| F15-8 + RET-1..3 | Keep necessary data while active; start 30 days at Closure/Refund/Deactivation; purge drafts/answers/correction content/attachments; retain templates and minimal legally required audit evidence; maximum 30 days over every recoverable copy including backups; feasibility/legal review before production.      | FR-012/024/032/033; SC-014/020                                                     |
+| PO-1             | Every successful refund deactivates the client, blocks login, revokes sessions, preserves financial/audit records, and supplies the authoritative relationship-end fact/time that starts RET-1.                                                                                                                    | FR-012/033; SC-020                                                                 |
 
 ### F15 Final PO APPROVAL (2026-10-29)
 
@@ -615,16 +617,16 @@ Status of resolved correction-matrix approval item: **DECIDED 2026-10-29 (Final 
 
 Workspace operations require current membership for WO/Trainer and a real existing workspace for PO workspace-scoped actions. Client is limited to assigned forms; Sales is excluded. Global reusable-template governance remains PO-only. A permitted global read/use is eligibility-checked and does not permit mutation or foreign workspace-copy/answer access.
 
-| Operation | Global: PO | Global: WO/Trainer | Global: Sales | Workspace: PO | Workspace: WO | Workspace: Trainer | Workspace: Sales | Client |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Create | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Copy eligible published version into workspace draft | Allow | Deny global mutation; may copy only if eligible in an authorized workspace | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Edit draft | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Publish | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Retire | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Read unpublished draft | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Read/use eligible published version | Allow | Eligible read/use only; no global mutation | Deny | Allow | Allow in membership | Allow in membership | Deny | Assigned snapshot only |
-| Read local published template/copy | N/A | No foreign-copy access | Deny | Allow | Allow in membership | Allow in membership | Deny | Assigned snapshot only |
+| Operation                                            | Global: PO | Global: WO/Trainer                                                         | Global: Sales | Workspace: PO | Workspace: WO       | Workspace: Trainer  | Workspace: Sales | Client                 |
+| ---------------------------------------------------- | ---------- | -------------------------------------------------------------------------- | ------------- | ------------- | ------------------- | ------------------- | ---------------- | ---------------------- |
+| Create                                               | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Copy eligible published version into workspace draft | Allow      | Deny global mutation; may copy only if eligible in an authorized workspace | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Edit draft                                           | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Publish                                              | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Retire                                               | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Read unpublished draft                               | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Read/use eligible published version                  | Allow      | Eligible read/use only; no global mutation                                 | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Assigned snapshot only |
+| Read local published template/copy                   | N/A        | No foreign-copy access                                                     | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Assigned snapshot only |
 
 ### Closed prior questions (ND status)
 
@@ -646,6 +648,7 @@ Only an automatic server-validated worker/function may execute erasure; human ro
 
 ## Open items and gates
 
+<!-- prettier-ignore-start -->
 | Open item | Classification | Handling |
 | --- | --- | --- |
 | D1 exact migration | Database implementation gate | F12/F14 must merge and Stack D must be verified before writing or executing the exact forward migration; no DB work in this lane. |
@@ -655,6 +658,7 @@ Only an automatic server-validated worker/function may execute erasure; human ro
 | Authoritative P4 first-pair delivery and responsible-Trainer coverage | Cross-feature dependency | P4 must provide complete authoritative facts before real-data late classification or alerts. |
 | Attachment feature and storage beyond MVP | Future design item | No upload/storage feature exists in this scope. Any future implementation needs a scoped design and RET-2/3 proof. |
 | ND-F5-1 | Separate retained production open item | Track through its existing owner and register; this F15 decision record does not resolve it. |
+<!-- prettier-ignore-end -->
 
 ### Attachment lifecycle
 
@@ -720,8 +724,6 @@ No deviation is proposed. Spec Debate is complete; this revision records the bin
 ### S17 F15 supersession (2026-10-30; PO decision section 3)
 
 Your First Step («خطوتك الأولى») is the default ordinary editable onboarding form in Forms. Its Arabic title is PO-approved verbatim by “Session 17 PO decision — F15 default form Arabic title”; the Arabic Forms section name «النماذج» is also PO-given. Workspace Owners may edit, replace, or select another onboarding form. Previously supplied S14 questions are editable starter content, not a fixed catalog. Assignment and delivery timing are configurable per form under Q3=D. There is no standalone health notice; use «عن بياناتك الصحية» / “About your health data” only where genuinely useful. This does not alter Terms Card consent. The T3 MCQ is closed. Published versions and assignment snapshots remain immutable.
-
-
 
 ## Clarifications - S40-PO-1/-2/-4 (2026-11-09)
 

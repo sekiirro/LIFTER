@@ -14,6 +14,7 @@
 ## PO-DECISION-NEEDED
 
 - None newly identified. Existing escalations from `S30-h6-verification.md` remain open unless the architect/PO records resolve them.
+
 ## NY4I / S30-R9 implementation
 
 - Added `tests/integration/function-drift-guard.ts` as the integration suite's global setup and teardown guard. It reads canonical function bodies from the latest migrations for `branding_publish`, `branding_asset_attach`, and `branding_gc_finalize`, checks `md5(pg_proc.prosrc)` against those migration bodies, restores drift from migration SQL using the migration role, then fails loudly.
@@ -39,69 +40,70 @@
 ## S30-PO-1 Q2 copy comparison
 
 Comparisons against commit `5084916` show B06 Arabic/English labels match byte-for-byte. Terms card copy fields remain identical; the `terms_copy_status` metadata changed to the approved status as directed. In `S14-terms-draft.md`, both the `بيانات الحساب والموافقة` and `Account use` text sections are byte-identical; only approval/status and surrounding inventory labels changed. `tests/unit/forms-approved-copy-s27.test.ts` pins exact AR/EN terms and sex strings and runs altered-copy mutants that must throw; the test is included in the green unit suite.
+
 - Initial full Stack D run produced failures while `npm run build`, `npm run build:edge`, unit, and lint work overlapped: a 30-second HTTP/RLS probe timeout in `client-accounts-recovery.test.ts`, one `forms-alert-mutations.test.ts` case, and one `client-accounts-admission.test.ts` case. The suite continues; exact output and isolated reruns will determine whether these are load effects or regressions. No timeout changes or code changes have been made for these failures.
 
 ## Frontend design gate
 
 Catalog review covered 54 skills. The PO-approved hierarchy in `DESIGN.md` and `specs/002-design-system/` controls; upstream visual skills marked `CONFLICT - PO decision` provide no authority to add styles/tokens. No rendered UI implementation was changed in h8; this gate reviews the existing changed FormPreview, QuestionFlow, and SignupForm surfaces.
 
-| Skill | Result | Reason |
-|---|---|---|
-| apple-design | NOT APPLICABLE | No motion or interaction physics change; catalog also flags PO conflict. |
-| ui-ux-pro-max | APPLIES (lookup only) | Queried for applicable UI guidance; did not generate or persist a design system. |
-| impeccable | APPLIES | Reviewed the existing form flow for hierarchy and polish within approved tokens. |
-| frontend-design | APPLIES | Reviewed the rendered AR/EN and theme-responsive surfaces. |
-| baseline-ui | APPLIES | Checked spacing, hierarchy, and edge states in screenshots. |
-| design-dna | NOT APPLICABLE | No design-system extraction or token changes. |
-| genjutsu | NOT APPLICABLE | No creative coding, motion, or visual-system work. |
-| emil-design-eng | APPLIES | Reviewed focus, input, and state details in the form experience. |
-| animate | NOT APPLICABLE | No animation added or requested. |
-| animate-expo | NOT APPLICABLE | Native Expo skill; this is Next.js web. |
-| review-animations | NOT APPLICABLE | No motion changed. |
-| improve-animations | NOT APPLICABLE | No motion changed. |
-| find-animation-opportunities | NOT APPLICABLE | No motion opportunities were in scope. |
-| animation-vocabulary | NOT APPLICABLE | No animation terminology needed. |
-| animation-performance | NOT APPLICABLE | No animation code changed. |
-| prototype | NOT APPLICABLE | No alternative visual concepts requested. |
-| mobile-native | NOT APPLICABLE | Responsive web capture only; no PWA/browser-native behavior changed. |
-| pick-ui-library | NOT APPLICABLE | No library selection or dependency change. |
-| ask-sonner | NOT APPLICABLE | No toast implementation changed. |
-| write-swift | NOT APPLICABLE | Swift skill; no native code. |
-| break-ui | NOT APPLICABLE | The task required visual-state review, not adding a dev-only worst-case data toggle. |
-| better-ui | APPLIES | Reviewed component consistency and surface polish; Design System wins over catalog conflict. |
-| better-typography | APPLIES | Reviewed Arabic/English text wrapping and hierarchy against approved fonts/tokens. |
-| better-colors | APPLIES | Reviewed light/dark contrast and semantic states using existing tokens only. |
-| better-accessibility | APPLIES | Reviewed keyboard/focus, labels, errors, and axe-backed UI tests. |
-| better-layout | APPLIES | Reviewed RTL/LTR reading order and mobile/desktop layouts. |
-| better-interface | APPLIES | Consolidated the domain review over the named rendered surfaces. |
-| better-writing | APPLIES | Checked existing Arabic/English labels and error copy; no copy was changed. |
-| interface-review | APPLIES | Reviewed only the changed UI surfaces in the requested branch scope; no code correctness/security claims are made here. |
-| visual-style-presets | NOT APPLICABLE | No visual direction or style preset change; catalog is advisory. |
-| glass-dark-ui | NOT APPLICABLE | No glass/gradient treatment requested or present in scope; catalog is advisory. |
-| progressive-blur | NOT APPLICABLE | No blur effect requested or present. |
-| motion-design | NOT APPLICABLE | No motion specified. |
-| css-animation | NOT APPLICABLE | No CSS animation requested. |
-| remotion-motion-graphics | NOT APPLICABLE | No video composition work. |
-| gsap-core | NOT APPLICABLE | No GSAP or motion work. |
-| threejs-fundamentals | NOT APPLICABLE | No 3D scene. |
-| threejs-animation | NOT APPLICABLE | No 3D or animation work. |
-| threejs-geometry | NOT APPLICABLE | No 3D geometry. |
-| threejs-interaction | NOT APPLICABLE | No 3D interaction. |
-| threejs-lighting | NOT APPLICABLE | No 3D lighting. |
-| threejs-loaders | NOT APPLICABLE | No 3D assets or loaders. |
-| threejs-materials | NOT APPLICABLE | No 3D materials. |
-| threejs-postprocessing | NOT APPLICABLE | No 3D postprocessing. |
-| threejs-shaders | NOT APPLICABLE | No shader work. |
-| threejs-textures | NOT APPLICABLE | No 3D textures. |
-| gsap-frameworks | NOT APPLICABLE | No GSAP animation or non-React framework. |
-| gsap-performance | NOT APPLICABLE | No GSAP animation. |
-| gsap-plugins | NOT APPLICABLE | No GSAP plugin use. |
-| gsap-react | NOT APPLICABLE | No GSAP animation. |
-| gsap-scrolltrigger | NOT APPLICABLE | No scroll-linked motion. |
-| gsap-timeline | NOT APPLICABLE | No animation sequencing. |
-| gsap-utils | NOT APPLICABLE | No GSAP utilities. |
-| lottie | NOT APPLICABLE | No Lottie/HyperFrames workflow. |
-| remotion-to-hyperframes | NOT APPLICABLE | No Remotion-to-HyperFrames migration. |
+| Skill                        | Result                | Reason                                                                                                                  |
+| ---------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| apple-design                 | NOT APPLICABLE        | No motion or interaction physics change; catalog also flags PO conflict.                                                |
+| ui-ux-pro-max                | APPLIES (lookup only) | Queried for applicable UI guidance; did not generate or persist a design system.                                        |
+| impeccable                   | APPLIES               | Reviewed the existing form flow for hierarchy and polish within approved tokens.                                        |
+| frontend-design              | APPLIES               | Reviewed the rendered AR/EN and theme-responsive surfaces.                                                              |
+| baseline-ui                  | APPLIES               | Checked spacing, hierarchy, and edge states in screenshots.                                                             |
+| design-dna                   | NOT APPLICABLE        | No design-system extraction or token changes.                                                                           |
+| genjutsu                     | NOT APPLICABLE        | No creative coding, motion, or visual-system work.                                                                      |
+| emil-design-eng              | APPLIES               | Reviewed focus, input, and state details in the form experience.                                                        |
+| animate                      | NOT APPLICABLE        | No animation added or requested.                                                                                        |
+| animate-expo                 | NOT APPLICABLE        | Native Expo skill; this is Next.js web.                                                                                 |
+| review-animations            | NOT APPLICABLE        | No motion changed.                                                                                                      |
+| improve-animations           | NOT APPLICABLE        | No motion changed.                                                                                                      |
+| find-animation-opportunities | NOT APPLICABLE        | No motion opportunities were in scope.                                                                                  |
+| animation-vocabulary         | NOT APPLICABLE        | No animation terminology needed.                                                                                        |
+| animation-performance        | NOT APPLICABLE        | No animation code changed.                                                                                              |
+| prototype                    | NOT APPLICABLE        | No alternative visual concepts requested.                                                                               |
+| mobile-native                | NOT APPLICABLE        | Responsive web capture only; no PWA/browser-native behavior changed.                                                    |
+| pick-ui-library              | NOT APPLICABLE        | No library selection or dependency change.                                                                              |
+| ask-sonner                   | NOT APPLICABLE        | No toast implementation changed.                                                                                        |
+| write-swift                  | NOT APPLICABLE        | Swift skill; no native code.                                                                                            |
+| break-ui                     | NOT APPLICABLE        | The task required visual-state review, not adding a dev-only worst-case data toggle.                                    |
+| better-ui                    | APPLIES               | Reviewed component consistency and surface polish; Design System wins over catalog conflict.                            |
+| better-typography            | APPLIES               | Reviewed Arabic/English text wrapping and hierarchy against approved fonts/tokens.                                      |
+| better-colors                | APPLIES               | Reviewed light/dark contrast and semantic states using existing tokens only.                                            |
+| better-accessibility         | APPLIES               | Reviewed keyboard/focus, labels, errors, and axe-backed UI tests.                                                       |
+| better-layout                | APPLIES               | Reviewed RTL/LTR reading order and mobile/desktop layouts.                                                              |
+| better-interface             | APPLIES               | Consolidated the domain review over the named rendered surfaces.                                                        |
+| better-writing               | APPLIES               | Checked existing Arabic/English labels and error copy; no copy was changed.                                             |
+| interface-review             | APPLIES               | Reviewed only the changed UI surfaces in the requested branch scope; no code correctness/security claims are made here. |
+| visual-style-presets         | NOT APPLICABLE        | No visual direction or style preset change; catalog is advisory.                                                        |
+| glass-dark-ui                | NOT APPLICABLE        | No glass/gradient treatment requested or present in scope; catalog is advisory.                                         |
+| progressive-blur             | NOT APPLICABLE        | No blur effect requested or present.                                                                                    |
+| motion-design                | NOT APPLICABLE        | No motion specified.                                                                                                    |
+| css-animation                | NOT APPLICABLE        | No CSS animation requested.                                                                                             |
+| remotion-motion-graphics     | NOT APPLICABLE        | No video composition work.                                                                                              |
+| gsap-core                    | NOT APPLICABLE        | No GSAP or motion work.                                                                                                 |
+| threejs-fundamentals         | NOT APPLICABLE        | No 3D scene.                                                                                                            |
+| threejs-animation            | NOT APPLICABLE        | No 3D or animation work.                                                                                                |
+| threejs-geometry             | NOT APPLICABLE        | No 3D geometry.                                                                                                         |
+| threejs-interaction          | NOT APPLICABLE        | No 3D interaction.                                                                                                      |
+| threejs-lighting             | NOT APPLICABLE        | No 3D lighting.                                                                                                         |
+| threejs-loaders              | NOT APPLICABLE        | No 3D assets or loaders.                                                                                                |
+| threejs-materials            | NOT APPLICABLE        | No 3D materials.                                                                                                        |
+| threejs-postprocessing       | NOT APPLICABLE        | No 3D postprocessing.                                                                                                   |
+| threejs-shaders              | NOT APPLICABLE        | No shader work.                                                                                                         |
+| threejs-textures             | NOT APPLICABLE        | No 3D textures.                                                                                                         |
+| gsap-frameworks              | NOT APPLICABLE        | No GSAP animation or non-React framework.                                                                               |
+| gsap-performance             | NOT APPLICABLE        | No GSAP animation.                                                                                                      |
+| gsap-plugins                 | NOT APPLICABLE        | No GSAP plugin use.                                                                                                     |
+| gsap-react                   | NOT APPLICABLE        | No GSAP animation.                                                                                                      |
+| gsap-scrolltrigger           | NOT APPLICABLE        | No scroll-linked motion.                                                                                                |
+| gsap-timeline                | NOT APPLICABLE        | No animation sequencing.                                                                                                |
+| gsap-utils                   | NOT APPLICABLE        | No GSAP utilities.                                                                                                      |
+| lottie                       | NOT APPLICABLE        | No Lottie/HyperFrames workflow.                                                                                         |
+| remotion-to-hyperframes      | NOT APPLICABLE        | No Remotion-to-HyperFrames migration.                                                                                   |
 
 ### Rendered self-review
 
@@ -115,6 +117,7 @@ Compared with `5084916` (`30906cfeff0105a48b803b8158936e2115ee1b99`), `app/regis
 
 ## RED/GREEN and mutation evidence by h7b fix commit
 
+<!-- prettier-ignore-start -->
 | Fix commit | RED evidence | GREEN evidence | Mutation cleanup / boundary |
 |---|---|---|---|
 | `6f683c6` completion contract | `tests/integration/forms-r3-submissions.test.ts` installs the re-added `basic/training/nutrition` loop in a rollback savepoint; the nonstandard-section submission assertion fails under that mutant (`completionMutationKilled=true`). | Same test submits the nonstandard required-answer form on the unmutated function; full Stack D suite passed the F15 submissions cases. | Savepoint rolled back; no persistent function drift. |
@@ -124,6 +127,7 @@ Compared with `5084916` (`30906cfeff0105a48b803b8158936e2115ee1b99`), `app/regis
 | `ac24831` alert batch filtering | `tests/integration/forms-alert-mutations.test.ts` committed mutants for finished schedules, clocks, owners, reassignment, duplicates, text exposure, races, dedupe, activation/lock and grants are each required to fail named assertions. | Full Stack D alert integration/mutation files passed, including all four mutation tests. | `withCommittedFunctionMutant` saves `pg_get_functiondef()` and its MD5 before mutation, restores in `finally`, verifies restored MD5, then closes the connection. |
 | `ba0f2ad` Telegram relink uniqueness | `tests/integration/forms-telegram-links.test.ts` replaces active-only uniqueness with global `UNIQUE(chat_id)` in a savepoint; relinking after revocation fails and kills the mutant. | Full Stack D integration passed the F15 Telegram link suite. | Savepoint rollback restored index/rows; guard teardown verifies migration-defined function hashes. |
 | `93d7be9` remaining UI/auth/delivery fixes | Added correction-state assertion to `tests/e2e/forms-authorized-route.spec.ts`. Temporarily restored `QuestionFlow.tsx` from `c976d66`; focused Playwright failed because “Unsaved changes.” remained after correction (RED, 1 failed). | Restored fix; same focused Playwright case passed (GREEN, 1 passed). A signup focus assertion was also added; it passed but did not fail on the `c976d66` component, so it is not counted as RED evidence. | Temporary source restores ran in `try/finally`; source bytes were restored. The full `FormPreview` numeric rendering and Telegram status/timeout cases did not receive separate c976d66 RED probes in this run. |
+<!-- prettier-ignore-end -->
 
 The RED evidence above uses executable rollback-scoped mutants for SQL behavior and c976d66 source reversion for the new correction-state UI assertion. A clean c976d66 database worktree was not used because the mandated wrapper targets the already-migrated shared Stack D.
 
@@ -156,7 +160,6 @@ Ran the six requested form/intake/register-related specs on port 3315: `forms-bu
 
 The sample brand test sets `#0F766E` through `BrandScope`, confirms the primary control maps to the brand token, verifies success/warning/error tokens remain unchanged in light and dark, and passes axe. This closes the sample-brand accessibility check in the design checklist.
 
-
 ## Follow-up review threads found on PR #44
 
 The unresolved-thread query on pushed head `3630e65` found NY4I plus two additional unresolved threads. NY4I was fixed and replied to, then resolved (`PRRT_kwDOVYgYQ86zNY4I`; reply cites `3630e65` and the 3-file / 40-test guard run). Po-c is being fixed in the signup keyboard-submission focus follow-up; it will be replied to/resolved only after its RED/GREEN result and pushed fix. Po-l is a product decision and remains unresolved; no copy/status was changed.
@@ -177,11 +180,11 @@ This section supersedes interim `Run status`, `Progress`, `Gate results in progr
 
 ### Final h8 RED/GREEN evidence
 
-| Change | RED | GREEN |
-|---|---|---|
-| `55736fa` — SignupForm post-render invalid focus | Reverted only `SignupForm.tsx` to `410bc71`; the Playwright focus-event assertion failed because the field had no rendered invalid state/description when focus fired (1 failed). Source restored in `finally`. | Focused signup Playwright on Stack D passed 1/1; the focus event observed `aria-invalid=true` and a present described error. The test then edits another field and verifies the existing focus-preservation behavior. |
-| `55736fa` — R9 activate/deactivate guard inventory | Temporarily omitted both schedule functions from the guard inventory; `function-drift-guard.test.ts` failed its explicit required-inventory assertion (1 failed). Inventory restored in `finally`. | Stack D `function-drift-guard.test.ts` plus `forms-alert-mutations.test.ts`: 2 files, 5 tests passed. The guard test simulates abandoned mutants for all seven identities and restores/verifies each original in its own `finally`. |
-| `55736fa` — mutation-test cleanup | The test protects its captured function definition even if mutation, guard, or assertion fails; cleanup reapplies the saved definition and checks its MD5. | The same 5-test focused integration run passed and the full suite global teardown reported no function drift. |
+| Change                                             | RED                                                                                                                                                                                                             | GREEN                                                                                                                                                                                                                               |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `55736fa` — SignupForm post-render invalid focus   | Reverted only `SignupForm.tsx` to `410bc71`; the Playwright focus-event assertion failed because the field had no rendered invalid state/description when focus fired (1 failed). Source restored in `finally`. | Focused signup Playwright on Stack D passed 1/1; the focus event observed `aria-invalid=true` and a present described error. The test then edits another field and verifies the existing focus-preservation behavior.               |
+| `55736fa` — R9 activate/deactivate guard inventory | Temporarily omitted both schedule functions from the guard inventory; `function-drift-guard.test.ts` failed its explicit required-inventory assertion (1 failed). Inventory restored in `finally`.              | Stack D `function-drift-guard.test.ts` plus `forms-alert-mutations.test.ts`: 2 files, 5 tests passed. The guard test simulates abandoned mutants for all seven identities and restores/verifies each original in its own `finally`. |
+| `55736fa` — mutation-test cleanup                  | The test protects its captured function definition even if mutation, guard, or assertion fails; cleanup reapplies the saved definition and checks its MD5.                                                      | The same 5-test focused integration run passed and the full suite global teardown reported no function drift.                                                                                                                       |
 
 The previous h7 commit-by-commit RED/GREEN/security-mutation table above remains the evidence for `6f683c6`, `07bb353`, `0f532cb`, `b5c5fd7`, `ac24831`, `ba0f2ad`, and `93d7be9`; notably, the 07bb353 B06/T&C payload comparison against `5084916` remains byte-identical, with only the Arabic typo and approved status metadata changed as detailed above.
 
@@ -218,14 +221,14 @@ The previous h7 commit-by-commit RED/GREEN/security-mutation table above remains
 - The complete 40-minute poll finished (40 minute-spaced checks plus the final check; one transient GraphQL query failure at poll 15 was followed by successful polls and final state confirmation). No code or thread actions were taken after new findings appeared.
 - The review left **8 unresolved threads**: 7 new technical findings plus the existing Terms retention PO decision `PRRT_kwDOVYgYQ86zPo-l`. New findings are classified below; none were replied to or resolved.
 
-| Thread | Classification |
-|---|---|
-| `PRRT_kwDOVYgYQ86zTsZD` — persisted form builder line 361 | **Valid, major functional gap.** Production creates a new draft with a client UUID, but the save RPC has no `forms`/version row to update, so first Save/Publish returns missing. Requires the intended create path via a forward migration or dedicated RPC; stop pending next authorized implementation unit. |
-| `PRRT_kwDOVYgYQ86zTsZL` — initial assignment conflict migration line 28 | **Valid, major deadline gap.** Approval-consumer assignments bypass policy materialization, leaving required policy facts/deadline null and no `client_late` schedule. Conflicts with FR-034’s D+3 deadline contract. |
-| `PRRT_kwDOVYgYQ86zTsZT` — cohort recurrence migration line 23 | **Valid recurrence validation bug.** Missing interval becomes SQL NULL, bypasses the `OR` rejection, and may materialize daily. A forward migration is required because the migration is pushed. |
-| `PRRT_kwDOVYgYQ86zTsYy` — persisted form validator line 178 | **Valid validator parity risk.** SQL may publish forms rejected by TypeScript: choices on non-choice types, `contains` on a non-multiChoice source, and a missing slider middle label. The slider `middle` optional/required rule is a new product-contract ambiguity: PO must decide whether it is required; recommendation is to follow the approved form contract and align both validators. **S30-PD-04** records this decision. |
-| `PRRT_kwDOVYgYQ86zTsZd` — Builder E2E lines 296/301/308 | **Valid test-data defect.** Three Arabic form/section/question fixtures are mojibaked, so the E2E publishes corrupted rather than Arabic values. |
-| `PRRT_kwDOVYgYQ86zTsZi` — signup transaction test line 188 | **Valid time-sensitive test defect.** Hard-coded `2027-01-01` stops being a future DOB in 2027 and then ceases to exercise rejection. |
-| `PRRT_kwDOVYgYQ86zTsZs` — default onboarding test line 5 | **Valid harness inconsistency.** That test module uses `process.env.DB_URL ?? ''` instead of the validated harness URL; with only `SUPABASE_DB_URL`, it connects to an empty URL rather than the selected local stack. This is not an unguarded explicit-DB_URL path because global setup rejects non-local explicit targets. |
+| Thread                                                                  | Classification                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PRRT_kwDOVYgYQ86zTsZD` — persisted form builder line 361               | **Valid, major functional gap.** Production creates a new draft with a client UUID, but the save RPC has no `forms`/version row to update, so first Save/Publish returns missing. Requires the intended create path via a forward migration or dedicated RPC; stop pending next authorized implementation unit.                                                                                                                      |
+| `PRRT_kwDOVYgYQ86zTsZL` — initial assignment conflict migration line 28 | **Valid, major deadline gap.** Approval-consumer assignments bypass policy materialization, leaving required policy facts/deadline null and no `client_late` schedule. Conflicts with FR-034’s D+3 deadline contract.                                                                                                                                                                                                                |
+| `PRRT_kwDOVYgYQ86zTsZT` — cohort recurrence migration line 23           | **Valid recurrence validation bug.** Missing interval becomes SQL NULL, bypasses the `OR` rejection, and may materialize daily. A forward migration is required because the migration is pushed.                                                                                                                                                                                                                                     |
+| `PRRT_kwDOVYgYQ86zTsYy` — persisted form validator line 178             | **Valid validator parity risk.** SQL may publish forms rejected by TypeScript: choices on non-choice types, `contains` on a non-multiChoice source, and a missing slider middle label. The slider `middle` optional/required rule is a new product-contract ambiguity: PO must decide whether it is required; recommendation is to follow the approved form contract and align both validators. **S30-PD-04** records this decision. |
+| `PRRT_kwDOVYgYQ86zTsZd` — Builder E2E lines 296/301/308                 | **Valid test-data defect.** Three Arabic form/section/question fixtures are mojibaked, so the E2E publishes corrupted rather than Arabic values.                                                                                                                                                                                                                                                                                     |
+| `PRRT_kwDOVYgYQ86zTsZi` — signup transaction test line 188              | **Valid time-sensitive test defect.** Hard-coded `2027-01-01` stops being a future DOB in 2027 and then ceases to exercise rejection.                                                                                                                                                                                                                                                                                                |
+| `PRRT_kwDOVYgYQ86zTsZs` — default onboarding test line 5                | **Valid harness inconsistency.** That test module uses `process.env.DB_URL ?? ''` instead of the validated harness URL; with only `SUPABASE_DB_URL`, it connects to an empty URL rather than the selected local stack. This is not an unguarded explicit-DB_URL path because global setup rejects non-local explicit targets.                                                                                                        |
 
 Per the h8 stop instruction, these findings are classified and no implementation or review-thread mutations continue in this run. Final review SHA: `bd38c08eafea9be9b656591a04f60067804a6ce4`; review state: `CHANGES_REQUESTED`; unresolved count on that reviewed SHA: **8** (7 new findings + S30-PD-03 Terms decision).

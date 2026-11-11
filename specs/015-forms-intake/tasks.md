@@ -79,16 +79,16 @@ These corrections are within the previously approved F15 scope. They do not add 
 ## Phase 2: Editable forms and per-form assignment automation
 
 - [x] T006 [P] [FR-004/007/030] RED test approved workspace/global Builder operations and immutable publication: PO/WO/Trainer within approved scope; Sales denied; Your First Step is a workspace Forms template and authorized WO may edit, replace, or select it; platform-global template governance remains PO-only where global templates exist. Test no immutable-catalog lock, global eligibility before local copy, scripts/cycles/over-bound definitions reject. GREEN with typed declarative rules, authored AR/EN content and immutable versions. Mutation evidence: unauthorized author, cross-workspace copy, script/cycle, or bound bypass must fail. **Owner files**: `lib/forms/mandatory-intake.ts`, `tests/unit/forms-builder.test.ts`, `tests/integration/forms-selection.test.ts`.
-  S18 r6 evidence: migrations `20261108230016_f15_default_retirement_guard.sql` and `20261108230017_f15_persisted_form_builder.sql` add designation/first-provision tracking, a retired-default configuration error, selected-default retirement refusal, draft CAS/idempotency, immutable publish, copy, retirement and the full persisted adapter seam. Focused Stack D tests cover reorder/remove/edit of sections/questions, option/condition round-trip, cycle/script/length/count rejection, audit rollback, idempotent writes, cross-workspace copy denial, Sales/unknown denial, and published-version immutability. S20 T049 capability positives are green. T006 production Builder routing is now evidenced below; platform-global template governance remains inapplicable because the branch has no global-template table.
-  S26-G3 T006 RED/GREEN: RED `tests/unit/forms-staff-production-boundary.test.ts` failed before route implementation because `app/(app)/forms/page.tsx` was absent. GREEN: production boundary unit passed; Stack D integration files `forms-builder-mutations.test.ts`, `forms-builder-persistence.test.ts`, and `forms-default-onboarding.test.ts` passed 32/32; five transactional mutants were killed: remove both author capability/workspace checks (Sales-denial assertion), omit workspace predicates from both copied form/version reads (expected missing-source assertion), accept an unknown executable question property (invalid-definition assertion), bypass the recursive conditional-cycle check (invalid-definition assertion), and raise the shortText limit from 150 to 1,000 (invalid-definition assertion). Each mutated SQL function was restored by rolling back its transaction. Stack D Playwright production route proof passed with a synthetic Workspace Owner, anonymous redirect, Sales 404/no route content, saved draft, default selection, and eight locale/theme/viewport captures; axe reported zero violations. The no-mock boundary test confirms the only app/components runtime import of `mock-staff-adapter` is `components/forms/FormsStaffDemo.tsx`; the production page binds `requireActor`, `author_forms`, active workspace scope, and the persisted RPC adapter. Existing DB tests cover immutable publication, snapshot preservation, declarative rule round-trip, script/cycle/bound rejection. No global template table exists on this branch, so PO-only global governance and global eligibility-before-copy are not applicable.
+      S18 r6 evidence: migrations `20261108230016_f15_default_retirement_guard.sql` and `20261108230017_f15_persisted_form_builder.sql` add designation/first-provision tracking, a retired-default configuration error, selected-default retirement refusal, draft CAS/idempotency, immutable publish, copy, retirement and the full persisted adapter seam. Focused Stack D tests cover reorder/remove/edit of sections/questions, option/condition round-trip, cycle/script/length/count rejection, audit rollback, idempotent writes, cross-workspace copy denial, Sales/unknown denial, and published-version immutability. S20 T049 capability positives are green. T006 production Builder routing is now evidenced below; platform-global template governance remains inapplicable because the branch has no global-template table.
+      S26-G3 T006 RED/GREEN: RED `tests/unit/forms-staff-production-boundary.test.ts` failed before route implementation because `app/(app)/forms/page.tsx` was absent. GREEN: production boundary unit passed; Stack D integration files `forms-builder-mutations.test.ts`, `forms-builder-persistence.test.ts`, and `forms-default-onboarding.test.ts` passed 32/32; five transactional mutants were killed: remove both author capability/workspace checks (Sales-denial assertion), omit workspace predicates from both copied form/version reads (expected missing-source assertion), accept an unknown executable question property (invalid-definition assertion), bypass the recursive conditional-cycle check (invalid-definition assertion), and raise the shortText limit from 150 to 1,000 (invalid-definition assertion). Each mutated SQL function was restored by rolling back its transaction. Stack D Playwright production route proof passed with a synthetic Workspace Owner, anonymous redirect, Sales 404/no route content, saved draft, default selection, and eight locale/theme/viewport captures; axe reported zero violations. The no-mock boundary test confirms the only app/components runtime import of `mock-staff-adapter` is `components/forms/FormsStaffDemo.tsx`; the production page binds `requireActor`, `author_forms`, active workspace scope, and the persisted RPC adapter. Existing DB tests cover immutable publication, snapshot preservation, declarative rule round-trip, script/cycle/bound rejection. No global template table exists on this branch, so PO-only global governance and global eligibility-before-copy are not applicable.
 - [x] T007 [FR-005/020] RED test assignment snapshots are independent of later template edits/publication/retirement and bind same-workspace client/version identities. GREEN with immutable workspace-owned snapshot and composite FKs. Mutation evidence: alter source version, cross-link workspace, or delete/rewrite snapshot; invariants must reject or prove unchanged assignment bytes. **Owner files**: `lib/forms/assignments.ts`, `supabase/migrations/<timestamp>_f15_assignment_snapshot.sql`, `tests/integration/forms-assignment-snapshot.test.ts`. **DB: Stack D only, after verifying isolation and F12/F14 integration.** — evidence: `20261108230005_f15_workspace_composite_form_key.sql`, `20261104003000_f15_s14_forms.sql`, `tests/integration/forms-r3-assignment-invariants.test.ts` (“keeps the copied snapshot immutable and enforces same-workspace version binding”; “allows only one assignment per client/form and kills a unique-index mutation”), `tests/integration/forms-builder-persistence.test.ts` (“keeps assignment snapshot bytes unchanged after draft, publish, retire, and copy RPCs”), S25 audit
 - [x] T008 [FR-002/011/020/024] RED test assignment in both approval/selection orderings, duplicate/backfill/retry/replay, failed F12 facts, audit rollback and distinct-key races. GREEN with one both-facts operation, independent unique `(workspace_id, subscription_id)`, bounded reconciliation and atomic audit. Preserve F12 client→subscription→obligation order; recheck authorization after waits. Mutation evidence: remove uniqueness, skip committed-fact check, use stale authorization, reorder locks, or fail audit; tests must expose duplicate/unauthorized/partial assignment. **Owner files**: `lib/forms/assignment-consumer.ts`, `supabase/migrations/<timestamp>_f15_assignment_consumer.sql`, `tests/integration/forms-assignment-idempotency.test.ts`, `tests/integration/forms-assignment-races.test.ts`. **DB: Stack D only, after verifying isolation and F12/F14 integration.**
- — evidence: `20261108230007_f15_approval_selection_assignment_consumer.sql`, `20261108230020_f15_recheck_assignment_authorization_after_wait.sql`, `tests/integration/forms-r3-assignment-consumer.test.ts`, `tests/integration/forms-r3-assignment-races.test.ts` (6 passing; distinct approval/selection race, failed F12 facts, audit rollback, lock-wait revocation, lock-order mutant); S25 CHUNK A
+      — evidence: `20261108230007_f15_approval_selection_assignment_consumer.sql`, `20261108230020_f15_recheck_assignment_authorization_after_wait.sql`, `tests/integration/forms-r3-assignment-consumer.test.ts`, `tests/integration/forms-r3-assignment-races.test.ts` (6 passing; distinct approval/selection race, failed F12 facts, audit rollback, lock-wait revocation, lock-order mutant); S25 CHUNK A
 - [x] T009 [FR-001/003/004/006] Provide Your First Step as the ordinary editable default onboarding form in Forms. Previously supplied intake questions may be included as editable starter content; do not require a fixed 26-question inventory or catalog. Verify approved AR/EN title/content, optional starter content, edit/remove/replace/select behavior, version and assignment-snapshot immutability, and normal validation. Configure audience/trigger/timing per form under Q3=D; do not constrain this task to one-time per-client assignment. Any initial provisioning method is an implementation detail and must not create an immutable catalog. Arabic title «خطوتك الأولى» is PO-approved verbatim by the Session 17 default-form Arabic title decision.
-  S18 r6 evidence: lazy provisioning occurs only on a never-provisioned workspace; a missing, retired, or cross-tenant designation returns the explicit generic configuration error and is never auto-replaced; retiring the selected form is refused until another eligible default is selected. The persisted save/publish/retire/copy adapter methods are covered by `tests/unit/forms-persisted-staff-adapter.test.ts`; RPC write, audit, idempotency, denial, and validation coverage is in `tests/integration/forms-builder-persistence.test.ts`. Direct UPDATE/DELETE rejection for published versions and assignment snapshots remains covered by `tests/integration/forms-s14-persistence.test.ts > rejects edits to published versions and cross-workspace assignment versions`; unchanged snapshot bytes after later draft/publish/retire/copy are covered by `tests/integration/forms-builder-persistence.test.ts > keeps assignment snapshot bytes unchanged after draft, publish, retire, and copy RPCs`. S20 T049 capability positives are green.
-  S26-G3 T009 route verification: the production route loads the editable ordinary default through the persisted adapter; the approved Arabic title is `خطوتك الأولى`. Stack D integration coverage verifies editing, removing/replacing/selecting the default, normal validation, immutable published versions, and unchanged assignment snapshots. Historical copy approval notes below are superseded by S28-PO-2, which approved all new DRAFT strings in F15, F17, and F18 as written. T010 audience/trigger/recurrence/stop remains separate.
-  S27-H1 copy verification: the 227 F15 keys in the approved S27-PO-2 CSV match the Arabic and English catalogs byte-for-byte by parsed string value; no extra marker/prefix/comment is present on approved content. `tests/unit/forms-approved-copy-s27.test.ts` checks all 227 translations and detects a re-added marker (mutant: `forms.staffTitle` English prefix `DRAFT:` failed the exact-string assertion). S28-PO-2 approved all new DRAFT strings in F15, F17, and F18 as currently written. Accordingly, `forms.staffQuestionOptional` (AR `اختياري`, EN `Optional`) is un-DRAFTed and pinned as an exact extra approved value in the test (228 total checked); the one-character expectation mutant failed at the exact English assertion. Approved text that itself contains draft-state wording remains exactly as approved.
-  S28-H4 completion: [S28-h4-verification.md](reports/S28-h4-verification.md) records the final Stack D integration, all Forms E2E acceptance cases, matched full Playwright comparison, and final-head gates. The editable default starter matrix and staff workflow passed on the final branch head; snapshot immutability and normal validation remain covered by the named persisted-form integration evidence above. T009 is complete. T024 remains open for final acceptance reconciliation.
+      S18 r6 evidence: lazy provisioning occurs only on a never-provisioned workspace; a missing, retired, or cross-tenant designation returns the explicit generic configuration error and is never auto-replaced; retiring the selected form is refused until another eligible default is selected. The persisted save/publish/retire/copy adapter methods are covered by `tests/unit/forms-persisted-staff-adapter.test.ts`; RPC write, audit, idempotency, denial, and validation coverage is in `tests/integration/forms-builder-persistence.test.ts`. Direct UPDATE/DELETE rejection for published versions and assignment snapshots remains covered by `tests/integration/forms-s14-persistence.test.ts > rejects edits to published versions and cross-workspace assignment versions`; unchanged snapshot bytes after later draft/publish/retire/copy are covered by `tests/integration/forms-builder-persistence.test.ts > keeps assignment snapshot bytes unchanged after draft, publish, retire, and copy RPCs`. S20 T049 capability positives are green.
+      S26-G3 T009 route verification: the production route loads the editable ordinary default through the persisted adapter; the approved Arabic title is `خطوتك الأولى`. Stack D integration coverage verifies editing, removing/replacing/selecting the default, normal validation, immutable published versions, and unchanged assignment snapshots. Historical copy approval notes below are superseded by S28-PO-2, which approved all new DRAFT strings in F15, F17, and F18 as written. T010 audience/trigger/recurrence/stop remains separate.
+      S27-H1 copy verification: the 227 F15 keys in the approved S27-PO-2 CSV match the Arabic and English catalogs byte-for-byte by parsed string value; no extra marker/prefix/comment is present on approved content. `tests/unit/forms-approved-copy-s27.test.ts` checks all 227 translations and detects a re-added marker (mutant: `forms.staffTitle` English prefix `DRAFT:` failed the exact-string assertion). S28-PO-2 approved all new DRAFT strings in F15, F17, and F18 as currently written. Accordingly, `forms.staffQuestionOptional` (AR `اختياري`, EN `Optional`) is un-DRAFTed and pinned as an exact extra approved value in the test (228 total checked); the one-character expectation mutant failed at the exact English assertion. Approved text that itself contains draft-state wording remains exactly as approved.
+      S28-H4 completion: [S28-h4-verification.md](reports/S28-h4-verification.md) records the final Stack D integration, all Forms E2E acceptance cases, matched full Playwright comparison, and final-head gates. The editable default starter matrix and staff workflow passed on the final branch head; snapshot immutability and normal validation remain covered by the named persisted-form integration evidence above. T009 is complete. T024 remains open for final acceptance reconciliation.
 - [x] T010 [FR-003/031] RED test per-form audience, trigger, timing, recurrence and stop conditions under approved Q3=D. Coordinate with T023 so policy/schema and recurrence behavior are implemented once with complete audience/trigger/termination coverage; do not limit execution to one-time per-client assignment or prohibit cohort recurrence. Mutation evidence: replay one occurrence, alter audience/trigger, ignore freeze/inactive stop, or catch up after freeze; each must fail. — evidence: `tests/integration/forms-cohort-assignment.test.ts`, `tests/integration/forms-renewal-assignment.test.ts`, `tests/integration/forms-recurring-assignment.test.ts`, `tests/integration/forms-assignment-mutations.test.ts`, `tests/integration/forms-policy-fixtures.test.ts`; S25 B2-B6.
 
 ## Phase 3: Drafts, conditional progression, submission and corrections
@@ -161,47 +161,47 @@ Measured synthetic realistic payloads use that answer-value JSON UTF-8 rule: EN 
 
 ## Coverage index
 
-| FRs    | Tasks                             |
-| ------ | --------------------------------- |
-| FR-001 | T009, T024, T044 |
-| FR-002 | T008                              |
-| FR-003 | T010, T023                        |
-| FR-004 | T006, T009                        |
-| FR-005 | T007                              |
-| FR-006 | T009, T013                        |
-| FR-007 | T006, T011                        |
-| FR-008 | T011, T013                        |
-| FR-009 | T012, T020                        |
-| FR-010 | T012                              |
-| FR-011 | T008, T012, T013                  |
-| FR-012 | T018, T019, T025                  |
-| FR-013 | T013, T014, T020                  |
-| FR-014 | T013                              |
-| FR-015 | T015                              |
-| FR-016 | T013, T015                        |
-| FR-017 | T016, T025                        |
-| FR-018 | T016                              |
-| FR-019 | T016, T017, T025                  |
-| FR-020 | T002, T003, T007, T008, T024      |
-| FR-021 | T003, T014                        |
-| FR-022 | T002, T003                        |
-| FR-023 | T005, T012, T019, T020, T032, T043, T048 |
-| FR-024 | T002, T004, T008, T012–T018, T024 |
-| FR-025 | T005, T016                        |
-| FR-026 | T030-T033, T036, T039, T042-T043, T055-T060 |
-| FR-027 | T021                              |
-| FR-028 | T022                              |
-| FR-029 | T020–T022, T024                   |
-| FR-030 | T006, T021                        |
-| FR-031 | T010, T023                        |
-| FR-032 | T006, T014, T018                  |
-| FR-033 | T018, T019, T025                  |
-| FR-034 | T027                              |
-| FR-035 | T016, T028                        |
+| FRs    | Tasks                                                  |
+| ------ | ------------------------------------------------------ |
+| FR-001 | T009, T024, T044                                       |
+| FR-002 | T008                                                   |
+| FR-003 | T010, T023                                             |
+| FR-004 | T006, T009                                             |
+| FR-005 | T007                                                   |
+| FR-006 | T009, T013                                             |
+| FR-007 | T006, T011                                             |
+| FR-008 | T011, T013                                             |
+| FR-009 | T012, T020                                             |
+| FR-010 | T012                                                   |
+| FR-011 | T008, T012, T013                                       |
+| FR-012 | T018, T019, T025                                       |
+| FR-013 | T013, T014, T020                                       |
+| FR-014 | T013                                                   |
+| FR-015 | T015                                                   |
+| FR-016 | T013, T015                                             |
+| FR-017 | T016, T025                                             |
+| FR-018 | T016                                                   |
+| FR-019 | T016, T017, T025                                       |
+| FR-020 | T002, T003, T007, T008, T024                           |
+| FR-021 | T003, T014                                             |
+| FR-022 | T002, T003                                             |
+| FR-023 | T005, T012, T019, T020, T032, T043, T048               |
+| FR-024 | T002, T004, T008, T012–T018, T024                      |
+| FR-025 | T005, T016                                             |
+| FR-026 | T030-T033, T036, T039, T042-T043, T055-T060            |
+| FR-027 | T021                                                   |
+| FR-028 | T022                                                   |
+| FR-029 | T020–T022, T024                                        |
+| FR-030 | T006, T021                                             |
+| FR-031 | T010, T023                                             |
+| FR-032 | T006, T014, T018                                       |
+| FR-033 | T018, T019, T025                                       |
+| FR-034 | T027                                                   |
+| FR-035 | T016, T028                                             |
 | FR-036 | T006, T009, T030-T036, T040-T041, T047-T048, T055-T060 |
-| FR-037 | T030-T036, T040-T041, T047, T055-T060 |
-| FR-038 | T037-T039, T045, T056 |
-| FR-039 | T033, T037-T039, T042-T046 |
+| FR-037 | T030-T036, T040-T041, T047, T055-T060                  |
+| FR-038 | T037-T039, T045, T056                                  |
+| FR-039 | T033, T037-T039, T042-T046                             |
 
 ## Implementation strategy
 
@@ -222,14 +222,14 @@ All tasks below have disjoint lane ownership. Every task writes focused tests fi
 - [x] T031 [FR-026/036/037/038/039] **Decision fixture and catalog consistency.** Files: `specs/015-forms-intake/fixtures/s14-po-decisions.json`; `tests/unit/forms-s14-decision-fixture.test.ts`; `tests/fixtures/forms/s14-po-decision-cases.json`. Test-first: assert RED for P1/P2 draft labels, P3 consent point, P4 deviation, 26 parent IDs, N12 final ordering and sex-to-series mapping. Acceptance: fixtures parse and agree with the spec; male-cinematic is unused; all draft strings are visibly pending PO approval. DB-free. Dependencies: T030.
 - [x] T032 [P] [FR-023/025/033/036] **Personal-data and retention contract.** Files: `specs/015-forms-intake/contracts/retention-and-alerts.md`; `specs/015-forms-intake/data-model.md`; `tests/fixtures/forms/s14-privacy-cases.json`. Test-first: add failing privacy/retention contract cases before editing the data model. Acceptance: sex is personal data, retained/erased under approved personal/health-data lifecycle, used only for N12 series selection, excluded from logs/audit payloads, and covered by access, retention, and purge rules. DB-free. Dependencies: T031.
 - [x] T033 [P] [FR-026/036/038/039] **Bilingual draft-copy review package.** Files: `specs/015-forms-intake/reports/S14-terms-draft.md`; `specs/015-forms-intake/checklists/requirements.md`; `tests/unit/s14-draft-copy-review.test.ts`. Test-first: add a failing completeness check for AR/EN status labels and policy-source references. Acceptance: sex labels, health notice and T&C are explicitly DRAFT pending PO; health notice appears before health questions without a checkbox or consent record. DB-free. Dependencies: T031.
-  S17 supersession: this completed task records the former standalone-notice decision; no standalone health notice is required. See the contextual-guidance rule in spec.md and the S17 PO decision.
+      S17 supersession: this completed task records the former standalone-notice decision; no standalone health notice is required. See the contextual-guidance rule in spec.md and the S17 PO decision.
 
 Lane completion evidence (2026-10-30): T030 RED missing controlled byte fixture; GREEN 3/3. T031 RED missing decision cases; GREEN 5/5. T032 RED missing privacy cases; GREEN 3/3. T033 RED approval inventory incomplete; GREEN 3/3. Mutants killed and reverted: canonical byte change, selection of `male-cinematic`, removal of the sex-value audit/log exclusion, and removal of the EN-translation approval item. Final gates: lint PASS; typecheck PASS; unit 79 files/1,542 passed, 0 failed, 0 skipped.
 
 ### Lane: forms engine and Builder (DB-free)
 
 - [x] T034 [P] [FR-004/006/007/036/037] **Typed schema and conditional validation.** Files: `lib/forms/validation.ts`; `lib/forms/types.ts`; `tests/unit/forms-s14-validation.test.ts`. Test-first: add failing type, requiredness, privacy classification and branch validation tests. Acceptance: sex is a required single-choice personal-data answer; health notice is display-only; N7 permits 2-5 and has no exact-count child; limits remain unchanged. DB-free. Dependencies: T031.
-  S17 supersession: a display-only standalone notice is no longer a required surface; use minimal contextual guidance only where genuinely useful.
+      S17 supersession: a display-only standalone notice is no longer a required surface; use minimal contextual guidance only where genuinely useful.
       Execution evidence: RED 4/4 failed on unsupported privacy, display-only, slider and validation behavior; GREEN focused suite 6/6. Existing bounds retained. Mutation evidence: disabling N12 required/privacy enforcement caused the N12 schema test to fail.
 - [x] T035 [FR-006/036/037] **Derived options and N12 series mapping.** Files: `lib/forms/progression.ts`; `tests/unit/forms-s14-progression.test.ts`; `tests/unit/forms-n12-series.test.ts`. Test-first: add RED cases for all N7 parents 2-5 and each sex-to-series mapping. Acceptance: derive after-meal options 1..N plus the fixed before-first-meal and no-fixed-time options; clear stale timing selections; male maps to standard male, female to female, and male-cinematic is never selected. DB-free. Dependencies: T034.
       Execution evidence: RED 12/12 failed before helpers existed; GREEN focused combined suite 52/52 passed. Mutations killed: omit the last derived meal option (5 tests failed), and map male to the female series (1 test failed); both mutations were reverted.
@@ -245,16 +245,16 @@ Lane completion evidence (2026-10-30): T030 RED missing controlled byte fixture;
 ### Lane: media pipeline (DB-free)
 
 - [x] T040 [P] [FR-026/036/037] **Reproducible derivative generator.** Files: `scripts/media/optimize-body-fat-assets.mjs`; `tests/unit/optimize-body-fat-assets.test.ts`; `specs/015-forms-intake/assets/body-fat/PROVENANCE.md`. Test-first: write failing synthetic-image tests for determinism, output format, dimensions and size-budget reporting before generator work. Acceptance: read YBS originals read-only; record/verify every source SHA-256; produce only WebP/AVIF under `public/images/body-fat/`, max 2x display width, target <=150 KB each; never overwrite/delete source or commit originals. DB-free. Dependencies: T031.
-  Evidence: RED 3/3 focused tests failed before generator creation (missing module); GREEN 4/4 passed after implementation. Provenance mutation checks killed 2/2 (bypass all source hash/byte checks; allow output inside source tree). The generator verified 40/40 source records, then emitted 50 deterministic WebP/AVIF derivatives for 25 standard-series images; max 20,380 bytes, max width 768 px for a 384 px display cap.
+      Evidence: RED 3/3 focused tests failed before generator creation (missing module); GREEN 4/4 passed after implementation. Provenance mutation checks killed 2/2 (bypass all source hash/byte checks; allow output inside source tree). The generator verified 40/40 source records, then emitted 50 deterministic WebP/AVIF derivatives for 25 standard-series images; max 20,380 bytes, max width 768 px for a 384 px display cap.
 - [x] T041 [FR-026/036/037] **Derivative catalog verification.** Files: `tests/fixtures/forms/body-fat-derivative-manifest.json`; `tests/unit/forms-body-fat-assets.test.ts`; `specs/015-forms-intake/spec.md`. Test-first: add failing manifest checks before wiring the catalog. Acceptance: all expected percentages resolve to generated derivatives; male/female series mapping follows the sex answer; male-cinematic and original binaries are absent from tracked paths. DB-free. Dependencies: T040.
-  Evidence: RED 3/3 focused tests failed before the manifest existed; GREEN 3/3 passed after catalog wiring. Mutations killed 3/3 (wrong sex-series mapping, corrupted derivative SHA-256, and an injected original-format image under the public asset path). Catalog contains 12 male and 13 female percentages, each with WebP/AVIF paths and source/derivative hashes.
+      Evidence: RED 3/3 focused tests failed before the manifest existed; GREEN 3/3 passed after catalog wiring. Mutations killed 3/3 (wrong sex-series mapping, corrupted derivative SHA-256, and an injected original-format image under the public asset path). Catalog contains 12 male and 13 female percentages, each with WebP/AVIF paths and source/derivative hashes.
 
 ### Lane: Terms, health notice and Welcome UI (DB-free UI)
 
 - [x] T042 [P] [FR-026/039] **Post-Nutrition Terms Card.** Files: `components/forms/TermsCard.tsx`; `tests/unit/terms-card.test.tsx`; `tests/e2e/terms-card.spec.ts`. Test-first: assert unchecked required T&C, separate optional marketing, policy version display and submit gating. Acceptance: use premium existing card/checkbox components; acceptance occurs only after Nutrition and stores no consent until affirmative action; copy is visibly draft-gated. DB-free UI with mocked persistence. Dependencies: T033.
 - [x] T043 [P] [FR-023/025/026/039] **Contextual health-data guidance.** Files: `components/forms/QuestionFlow.tsx`; `tests/unit/forms-client-ui.test.ts`; `tests/e2e/s14-consent-showcase.spec.ts`. Test-first: assert the PO-approved label is shown only beside an actual health question; no acknowledgment action or receipt. Acceptance: remove the standalone notice surface; use the exact bilingual PO label as minimal context only on health-related questions. Terms Card consent is unchanged. DB-free UI. Dependencies: T033.
-  S17 supersession: the completed standalone component/test evidence remains historical; the product does not require a standalone health-notice surface. Contextual guidance is permitted only where useful.
-  S18 evidence: RED 1 failed / 6 passed before the QuestionFlow helper existed; GREEN 7/7. The standalone notice component and unit suite were removed; the showcase now renders the QuestionFlow health state in the locale/theme/viewport matrix. No consent or receipt was added.
+      S17 supersession: the completed standalone component/test evidence remains historical; the product does not require a standalone health-notice surface. Contextual guidance is permitted only where useful.
+      S18 evidence: RED 1 failed / 6 passed before the QuestionFlow helper existed; GREEN 7/7. The standalone notice component and unit suite were removed; the showcase now renders the QuestionFlow health state in the locale/theme/viewport matrix. No consent or receipt was added.
 - [x] T044 [FR-039] **Welcome state and acceptance recovery.** Files: `app/(client)/welcome/page.tsx`; `tests/e2e/client-welcome.spec.ts`; `tests/e2e/s14-onboarding-journey.spec.ts`. Test-first: add failing journey/reload tests for unaccepted Terms and completed intake. Acceptance: Welcome follows accepted Terms; declined/unsubmitted Terms keeps intake incomplete and can resume. UI tests use fixtures; integrated journey requires Stack D and F12/F14 integration. Dependencies: T042.
 
 ### Lane: Stack D persistence (Stack D only)
@@ -266,14 +266,14 @@ Lane completion evidence (2026-10-30): T030 RED missing controlled byte fixture;
 
 ### S14 lane summary
 
-| Lane | Tasks | DB classification | Dependencies |
-| --- | --- | --- | --- |
-| Canonical copy and PO decisions | T030-T033 | DB-free | None beyond listed task dependencies |
-| Forms engine and Builder | T034-T036 | DB-free | Decision fixture |
-| Signup and shared copy | T037-T039 | DB-free UI | Copy decision package |
-| Media pipeline | T040-T041 | DB-free | Read-only YBS source |
-| Terms, health notice and Welcome UI | T042-T044 | DB-free UI; integrated journey needs Stack D | Draft-copy package |
-| Stack D persistence | T045-T048 | Stack D only | Verified isolation; latest F11/F12/F14 contracts; each task dependencies above |
+| Lane                                | Tasks     | DB classification                            | Dependencies                                                                   |
+| ----------------------------------- | --------- | -------------------------------------------- | ------------------------------------------------------------------------------ |
+| Canonical copy and PO decisions     | T030-T033 | DB-free                                      | None beyond listed task dependencies                                           |
+| Forms engine and Builder            | T034-T036 | DB-free                                      | Decision fixture                                                               |
+| Signup and shared copy              | T037-T039 | DB-free UI                                   | Copy decision package                                                          |
+| Media pipeline                      | T040-T041 | DB-free                                      | Read-only YBS source                                                           |
+| Terms, health notice and Welcome UI | T042-T044 | DB-free UI; integrated journey needs Stack D | Draft-copy package                                                             |
+| Stack D persistence                 | T045-T048 | Stack D only                                 | Verified isolation; latest F11/F12/F14 contracts; each task dependencies above |
 
 T030-T048 (19 tasks) are independently reviewable, tests-first units with one to three owner files each. `[P]` marks tasks whose owner files and prerequisites allow parallel execution. Exact F15 migration timestamps must follow the latest actually merged F12/F14 migrations; do not allocate or execute migrations before verifying Stack D. No task permits Stack A/B/C use.
 
@@ -323,7 +323,6 @@ T018 S27 RED: commit 9bc154d; Stack D test failed at `tests/integration/forms-pu
 
 S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4bc724f8f7e702cbe2507f984ece743e60d6`; all eight were detected and each mutation rolled back with its integration fixture transaction. Exact commands, failing assertions/database guards, and observed messages: [S27 T018 mutation evidence](reports/S27-T018-mutation-evidence.md). The temporary mutation hooks were removed and `forms-purge.test.ts` has no diff.
 
-
 ## S35 existing-PR remediation
 
 - [x] T101 [FR-024/025] Pin `test:integration` to Vitest's runner config loader; upgrade Vitest to 5.1.0 to fix Vite 8.3.5 cached-source Buffer handling; add command-contract coverage and verify the hosted integration startup path.
@@ -364,7 +363,6 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [x] T140 [FR-007/008/013/017/018/021/024/035] **S40 round-13 CodeRabbit fixes (S40-R17).** RED-first: align the client-late TS helper, alert inbox stage allow-list, and function-drift source mapping with one forward SQL evaluator migration to immediate PO+WO notices, no client-late Trainer/+24h/+48h stages, preserving D-03, query the actual private submissions table on clean replay, and serialize owner-membership revocation at enqueue; add correction RPC per-answer 4,096 UTF-8 byte and snapshot charLimit checks before insert with direct-RPC tests; validate N08 budget/answers before save and return {"status":"invalid"} with a direct-RPC regression. Add local ffmpeg libaom-av1/libwebp prerequisites to quickstart with no test skip. New migration IDs must be unique across every origin ref and above all #57 versions; never edit pushed migrations. Prove SECURITY DEFINER mutation kill, restore, and diff exit 0. Verify only on isolated Stack D with reset/replay and touched integration files.
 
 - [x] T141 [FR-004/006/008/013/024/025/026/036/037] **S41 round-16 CodeRabbit fixes and scheduler E2E.** Apply valid in-scope findings from review 5830483554 using one forward migration. Record S41-PO-3's exact N08.low.foods English approval; preserve pending status for N08.medium.foods and N08.high.foods. Repair review evidence/portability docs, correction and onboarding RPC guards, assignment timestamp behavior, drift-source mapping, and Stack D scheduler fixture cleanup. Prove RED/GREEN on Stack D, SECURITY DEFINER mutation kill and exact restoration, typecheck, lint, format, full unit suite, touched integrations, and the opt-in scheduler E2E. No workflow edits or pushed migration edits.
-
 
 - [ ] T142 [FR-004/006/008/013/017/018/024/025] **S41 round-16 follow-up findings.** Fix the valid findings from review 5832454153: int32 revision bounds, labeled snapshot erasure progression, localized slider validation, approved D-08 documentation, deferred client-late Trainer scenario, portable historical evidence, mutation-probe isolation, schedule assertion scoping, and test fixture isolation. Add only forward migrations for approved technical defects. Product-behavior items were outside T142 and are now specified and implemented separately under T143 after S41-PO-12. Prove RED/GREEN on current Stack D, security mutation restoration where relevant, and rerun Analyze after spec/plan/tasks changes.
 

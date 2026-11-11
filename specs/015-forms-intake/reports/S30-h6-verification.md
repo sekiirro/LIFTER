@@ -11,25 +11,25 @@
 
 GraphQL returned 17 unresolved threads anchored to `5084916469414ca743afe980e31c69cf593587fe`; the two reviews were CHANGES_REQUESTED at 04:07:53Z and 04:09:00Z. Every thread received a reply and was resolved after triage. Payload is retained in the run directory as `review-threads.json`. Resolution records this cycle's disposition; it does not mean blocked SQL changes or PO decisions are complete.
 
-| Thread | Path:line | Class | Disposition | Reply / resolution |
-|---|---|---|---|---|
-| PRRT_kwDOVYgYQ86y-b4x | `app/register/[token]/SignupForm.tsx:234` | ACTIONABLE-in-scope | Associate the local name error and clear/refresh it on edit. | Fixed in `ba357f4`; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b42 | `components/forms/FormPreview.tsx:61` | ACTIONABLE-in-scope | Match `contains` preview evaluation to runtime array membership. | Fixed in `ba357f4`; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b4_ | `components/forms/QuestionFlow.tsx:231` | ACTIONABLE-in-scope | Write corrections only on explicit submit. | Fixed in `ba357f4`; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b5E | `components/forms/QuestionFlow.tsx:453` | ACTIONABLE-in-scope | Sync revision state after successful submit/correction. | Fixed in `ba357f4`; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b5I | `lib/forms/submissions.ts:35` | ACTIONABLE-in-scope | Strip localized title/description before shared validation. | Fixed in `ba357f4`; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b5N | `lib/forms/submissions.ts:56` | ACTIONABLE; DB portion blocked | FR-006 three-section contract would need coordinated TS and SQL change. Latest migration is later than today's valid timestamp; no partial TS change. | Blocked pending architect timestamp allocation; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b5Q | `lib/forms/telegram-delivery.ts:18` | PO-DECISION-NEEDED | Missing `/forms/alerts` staff destination requires product/UX scope. | Escalated as S30-PD-01; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b5X | `specs/015-forms-intake/spec.md:342` | PO-DECISION-NEEDED | N07 English prompt needs approved copy. | Escalated as S30-PD-02; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b5h | `supabase/migrations/20261108230012_f15_immutable_answer_corrections.sql:75` | ACTIONABLE; migration blocked | Correction validation needs forward SQL. | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b5o | `supabase/migrations/20261108230014_f15_immutable_answer_revisions.sql:8` | ACTIONABLE; migration blocked | Security-definer trigger authorization needs forward SQL. | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b5y | `supabase/migrations/20261108230030_f15_alert_evaluation_scope.sql:31` | ACTIONABLE; migration blocked | Alert starvation needs forward SQL. | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b58 | `supabase/migrations/20261108230043_f15_purge_owner_consumer.sql:44` | ACTIONABLE; migration blocked | Draft-intent hash purge needs forward SQL. | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b6B | `supabase/migrations/20261108230043_f15_purge_owner_consumer.sql:72` | ACTIONABLE; migration blocked | Purge runner starvation/status accounting needs forward SQL. | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b6D | `tests/e2e/forms-builder-s14.spec.ts:308` | NOT-APPLICABLE | Fixture bytes are valid UTF-8; apparent mojibake was terminal rendering. | No blob change; evidence replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b6H | `tests/integration/forms-telegram-links.test.ts:43` | ACTIONABLE-in-scope | Require membership and link-row preconditions for revocation coverage. | Fixed in `ba357f4`; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-b6N | `tests/unit/optimize-body-fat-assets.test.ts:47` | ACTIONABLE-in-scope | Provide required FFmpeg codecs in CI without skipping tests. | Fixed in `ba357f4`; replied; resolved. |
-| PRRT_kwDOVYgYQ86y-c1u | `lib/forms/client-answer-state.ts:56` | ACTIONABLE-in-scope | Preserve answers on validation errors and clear empty numeric answers. | Fixed in `ba357f4`; replied; resolved. |
+| Thread                | Path:line                                                                    | Class                          | Disposition                                                                                                                                           | Reply / resolution                                                                |
+| --------------------- | ---------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| PRRT_kwDOVYgYQ86y-b4x | `app/register/[token]/SignupForm.tsx:234`                                    | ACTIONABLE-in-scope            | Associate the local name error and clear/refresh it on edit.                                                                                          | Fixed in `ba357f4`; replied; resolved.                                            |
+| PRRT_kwDOVYgYQ86y-b42 | `components/forms/FormPreview.tsx:61`                                        | ACTIONABLE-in-scope            | Match `contains` preview evaluation to runtime array membership.                                                                                      | Fixed in `ba357f4`; replied; resolved.                                            |
+| PRRT_kwDOVYgYQ86y-b4_ | `components/forms/QuestionFlow.tsx:231`                                      | ACTIONABLE-in-scope            | Write corrections only on explicit submit.                                                                                                            | Fixed in `ba357f4`; replied; resolved.                                            |
+| PRRT_kwDOVYgYQ86y-b5E | `components/forms/QuestionFlow.tsx:453`                                      | ACTIONABLE-in-scope            | Sync revision state after successful submit/correction.                                                                                               | Fixed in `ba357f4`; replied; resolved.                                            |
+| PRRT_kwDOVYgYQ86y-b5I | `lib/forms/submissions.ts:35`                                                | ACTIONABLE-in-scope            | Strip localized title/description before shared validation.                                                                                           | Fixed in `ba357f4`; replied; resolved.                                            |
+| PRRT_kwDOVYgYQ86y-b5N | `lib/forms/submissions.ts:56`                                                | ACTIONABLE; DB portion blocked | FR-006 three-section contract would need coordinated TS and SQL change. Latest migration is later than today's valid timestamp; no partial TS change. | Blocked pending architect timestamp allocation; replied; resolved.                |
+| PRRT_kwDOVYgYQ86y-b5Q | `lib/forms/telegram-delivery.ts:18`                                          | PO-DECISION-NEEDED             | Missing `/forms/alerts` staff destination requires product/UX scope.                                                                                  | Escalated as S30-PD-01; replied; resolved.                                        |
+| PRRT_kwDOVYgYQ86y-b5X | `specs/015-forms-intake/spec.md:342`                                         | PO-DECISION-NEEDED             | N07 English prompt needs approved copy.                                                                                                               | Escalated as S30-PD-02; replied; resolved.                                        |
+| PRRT_kwDOVYgYQ86y-b5h | `supabase/migrations/20261108230012_f15_immutable_answer_corrections.sql:75` | ACTIONABLE; migration blocked  | Correction validation needs forward SQL.                                                                                                              | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
+| PRRT_kwDOVYgYQ86y-b5o | `supabase/migrations/20261108230014_f15_immutable_answer_revisions.sql:8`    | ACTIONABLE; migration blocked  | Security-definer trigger authorization needs forward SQL.                                                                                             | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
+| PRRT_kwDOVYgYQ86y-b5y | `supabase/migrations/20261108230030_f15_alert_evaluation_scope.sql:31`       | ACTIONABLE; migration blocked  | Alert starvation needs forward SQL.                                                                                                                   | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
+| PRRT_kwDOVYgYQ86y-b58 | `supabase/migrations/20261108230043_f15_purge_owner_consumer.sql:44`         | ACTIONABLE; migration blocked  | Draft-intent hash purge needs forward SQL.                                                                                                            | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
+| PRRT_kwDOVYgYQ86y-b6B | `supabase/migrations/20261108230043_f15_purge_owner_consumer.sql:72`         | ACTIONABLE; migration blocked  | Purge runner starvation/status accounting needs forward SQL.                                                                                          | No pushed migration edited; valid later timestamp unavailable; replied; resolved. |
+| PRRT_kwDOVYgYQ86y-b6D | `tests/e2e/forms-builder-s14.spec.ts:308`                                    | NOT-APPLICABLE                 | Fixture bytes are valid UTF-8; apparent mojibake was terminal rendering.                                                                              | No blob change; evidence replied; resolved.                                       |
+| PRRT_kwDOVYgYQ86y-b6H | `tests/integration/forms-telegram-links.test.ts:43`                          | ACTIONABLE-in-scope            | Require membership and link-row preconditions for revocation coverage.                                                                                | Fixed in `ba357f4`; replied; resolved.                                            |
+| PRRT_kwDOVYgYQ86y-b6N | `tests/unit/optimize-body-fat-assets.test.ts:47`                             | ACTIONABLE-in-scope            | Provide required FFmpeg codecs in CI without skipping tests.                                                                                          | Fixed in `ba357f4`; replied; resolved.                                            |
+| PRRT_kwDOVYgYQ86y-c1u | `lib/forms/client-answer-state.ts:56`                                        | ACTIONABLE-in-scope            | Preserve answers on validation errors and clear empty numeric answers.                                                                                | Fixed in `ba357f4`; replied; resolved.                                            |
 
 **Thread disposition:** 17/17 replied and resolved; 0 unresolved at last query. Eight findings were fixed in `ba357f4`; six DB findings are blocked; two need PO decisions; one is not applicable.
 
@@ -45,19 +45,19 @@ GraphQL returned 17 unresolved threads anchored to `5084916469414ca743afe980e31c
 
 Non-stack gates and focused Playwright ran on `c01e9babb8376cdad89ddbedeb4fec2bb3a19208`. Full Stack D integration passed on `cad09c759dd5ae981ada90c53f002bb125658531`; the only later source edits were the isolated browser-test fixture and formatting of the auth test, neither changes integration-suite code. The report commit adds documentation only.
 
-| Gate | Result |
-|---|---|
-| Unit | PASS - 187 files, 2,306 tests. |
-| Lint | PASS - `npm run lint`. |
-| Typecheck | PASS - `npm run typecheck`. |
-| Format | PASS - `npm run format:check`. |
-| Build | PASS - `npm run build`. |
-| Build edge | PASS - `npm run build:edge`. |
-| Secrets | PASS - `npm run check:secrets`. |
-| Size | PASS - web 8,713.52 KiB / 13.30%; cron 11.76 KiB / 0.02%. |
-| Migration timestamps | PASS - 156 validated; 11 documented merged exceptions. |
-| `git diff --check` | PASS. |
-| Full Stack D integration | PASS - 120 files passed, 2 skipped; 1,595 passed, 2 skipped, 0 failed (968.90s). |
+| Gate                       | Result                                                                                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit                       | PASS - 187 files, 2,306 tests.                                                                                                                |
+| Lint                       | PASS - `npm run lint`.                                                                                                                        |
+| Typecheck                  | PASS - `npm run typecheck`.                                                                                                                   |
+| Format                     | PASS - `npm run format:check`.                                                                                                                |
+| Build                      | PASS - `npm run build`.                                                                                                                       |
+| Build edge                 | PASS - `npm run build:edge`.                                                                                                                  |
+| Secrets                    | PASS - `npm run check:secrets`.                                                                                                               |
+| Size                       | PASS - web 8,713.52 KiB / 13.30%; cron 11.76 KiB / 0.02%.                                                                                     |
+| Migration timestamps       | PASS - 156 validated; 11 documented merged exceptions.                                                                                        |
+| `git diff --check`         | PASS.                                                                                                                                         |
+| Full Stack D integration   | PASS - 120 files passed, 2 skipped; 1,595 passed, 2 skipped, 0 failed (968.90s).                                                              |
 | Focused Playwright on 3315 | 128 selected tests: 122 passed, 1 skipped, 5 failed. The five are exactly the prior h5/main failures listed below; zero branch-only failures. |
 
 ### Five known shared Playwright failures (unchanged from h5/main)

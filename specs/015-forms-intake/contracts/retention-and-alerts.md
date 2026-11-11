@@ -26,7 +26,6 @@
 - Recheck authorization and do not send to revoked recipients. Real-data activation remains blocked on complete authoritative P4 coverage.
 - No SMS, strikes, deductions, firing or compensation changes.
 
-
 ## S14 sex data and health notice
 
 The Basic sex answer is personal data used only to select the standard N12 reference series (`male` or `female`); `male-cinematic` is unused. Protect it under the same authorization, no-store, audit-redaction, retention, and erasure controls as the related sensitive intake profile. Never place the sex value in logs or audit payloads. Apply approved retention/purge rules, including all-copy deletion within the approved 30-day window where applicable. Do not display a standalone health-data notice. Where a form question makes brief health-data context genuinely useful, show only minimal contextual guidance, optionally labeled «عن بياناتك الصحية» / “About your health data”; add no acknowledgment or consent receipt.

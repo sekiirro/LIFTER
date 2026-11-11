@@ -6,63 +6,63 @@
 
 `APPLIES (downstream)` means the skill is relevant when T032/T033/T035/T039 implement or review rendered UI. Those skills were not used to finalize a visual design in this unit because DESIGN.md §11 leaves required decisions open and its STOP rule applies. No design skill added tokens, components, colors, motion, dependencies, or a UI decision. `NOT APPLICABLE (this unit)` means the requested work has no relevant rendered surface or technology.
 
-| Skill | Status and reason |
-| --- | --- |
-| apple-design | APPLIES (downstream): optional visual/motion guidance only; no visual decision finalized. |
-| ui-ux-pro-max | APPLIES (downstream, lookup/search only): no lookup run because a lookup cannot resolve the explicit PO design gap. Never persist generated systems. |
-| impeccable | APPLIES (downstream): interface critique is relevant after the PO resolves layout/consent gaps. |
-| frontend-design | APPLIES (downstream): relevant to Terms/Welcome/Builder rendered UI; deferred at the §11 STOP. |
-| baseline-ui | APPLIES (downstream): rendered-screen review only; no UI changed. |
-| design-dna | NOT APPLICABLE (this unit): no tokens/style/effect system is being defined. |
-| genjutsu | NOT APPLICABLE (this unit): no creative-coded or motion system is requested. |
-| animate | APPLIES (downstream): N11 requests score feedback; exact motion is not finalized and reduced motion is required. |
-| animate-expo | NOT APPLICABLE (this unit): LIFTER is a Next.js web app, not Expo. |
-| review-animations | APPLIES (downstream): N11 motion review belongs to the rendered implementation gate. |
-| improve-animations | NOT APPLICABLE (this unit): no existing animation code is under review. |
-| find-animation-opportunities | NOT APPLICABLE (this unit): no rendered screens are being changed. |
-| animation-vocabulary | NOT APPLICABLE (this unit): no animation vocabulary decision is needed now. |
-| animation-performance | APPLIES (downstream): only if N11 motion is implemented; no performance claim is made here. |
-| prototype | NOT APPLICABLE (this unit): no visual alternatives are authorized while the design gap is open. |
-| mobile-native | APPLIES (downstream): mobile browser behavior will be reviewed for the future web flow. |
-| pick-ui-library | NOT APPLICABLE (this unit): no library selection is requested or authorized. |
-| ask-sonner | NOT APPLICABLE (this unit): no toast implementation is in scope. |
-| write-swift | NOT APPLICABLE (this unit): no Swift/native code. |
-| break-ui | APPLIES (downstream): worst-case rendered UI review belongs to T039/T024. |
-| better-ui | APPLIES (downstream): visual polish guidance; DESIGN.md remains authoritative. |
-| better-typography | APPLIES (downstream): future Arabic/English rendered copy review; current font authority is DESIGN.md. |
-| better-colors | APPLIES (downstream): future contrast/theming review; token values remain system-owned. |
-| better-accessibility | APPLIES (downstream): keyboard, screen reader and input review in the rendered UI gate. |
-| better-layout | APPLIES (downstream): layout review is blocked on the card-pattern gap. |
-| better-interface | APPLIES (downstream): integrated screen/flow review after implementation. |
-| better-writing | APPLIES (downstream): use for UX chrome review; binding Arabic source remains verbatim. |
-| interface-review | APPLIES (downstream): review the final rendered change and matrix. |
-| emil-design-eng | APPLIES (downstream): craft/motion advice only; no motion values added. |
-| visual-style-presets | NOT APPLICABLE (this unit): no new visual direction/preset is allowed. |
-| glass-dark-ui | NOT APPLICABLE (this unit): no glass treatment is approved or requested. |
-| progressive-blur | NOT APPLICABLE (this unit): no blur effect is approved or requested. |
-| motion-design | APPLIES (downstream): motion guidance for N11 only, subordinate to DESIGN.md and reduced-motion preference. |
-| css-animation | NOT APPLICABLE (this unit): no self-contained animation demo is requested. |
-| remotion-motion-graphics | NOT APPLICABLE (this unit): no video/motion-graphics work. |
-| gsap-core | NOT APPLICABLE (this unit): no GSAP motion implementation requested. |
-| threejs-fundamentals | NOT APPLICABLE (this unit): no 3D scene. |
-| threejs-animation | NOT APPLICABLE (this unit): no 3D animation. |
-| threejs-geometry | NOT APPLICABLE (this unit): no generated geometry. |
-| threejs-interaction | NOT APPLICABLE (this unit): no 3D interaction. |
-| threejs-lighting | NOT APPLICABLE (this unit): no 3D lighting. |
-| threejs-loaders | NOT APPLICABLE (this unit): static reference images only; no 3D asset loading. |
-| threejs-materials | NOT APPLICABLE (this unit): no 3D materials. |
-| threejs-postprocessing | NOT APPLICABLE (this unit): no 3D post-processing. |
-| threejs-shaders | NOT APPLICABLE (this unit): no shaders. |
-| threejs-textures | NOT APPLICABLE (this unit): no WebGL textures. |
-| gsap-frameworks | NOT APPLICABLE (this unit): no Vue/Svelte/GSAP implementation. |
-| gsap-performance | NOT APPLICABLE (this unit): no GSAP implementation/performance work. |
-| gsap-plugins | NOT APPLICABLE (this unit): no GSAP plugin selection. |
-| gsap-react | NOT APPLICABLE (this unit): no GSAP React implementation. |
-| gsap-scrolltrigger | NOT APPLICABLE (this unit): no scroll-linked motion. |
-| gsap-timeline | NOT APPLICABLE (this unit): no GSAP timeline. |
-| gsap-utils | NOT APPLICABLE (this unit): no GSAP utility usage. |
-| lottie | NOT APPLICABLE (this unit): no HyperFrames/Lottie embed. |
-| remotion-to-hyperframes | NOT APPLICABLE (this unit): no Remotion-to-HyperFrames migration. |
+| Skill                        | Status and reason                                                                                                                                    |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| apple-design                 | APPLIES (downstream): optional visual/motion guidance only; no visual decision finalized.                                                            |
+| ui-ux-pro-max                | APPLIES (downstream, lookup/search only): no lookup run because a lookup cannot resolve the explicit PO design gap. Never persist generated systems. |
+| impeccable                   | APPLIES (downstream): interface critique is relevant after the PO resolves layout/consent gaps.                                                      |
+| frontend-design              | APPLIES (downstream): relevant to Terms/Welcome/Builder rendered UI; deferred at the §11 STOP.                                                       |
+| baseline-ui                  | APPLIES (downstream): rendered-screen review only; no UI changed.                                                                                    |
+| design-dna                   | NOT APPLICABLE (this unit): no tokens/style/effect system is being defined.                                                                          |
+| genjutsu                     | NOT APPLICABLE (this unit): no creative-coded or motion system is requested.                                                                         |
+| animate                      | APPLIES (downstream): N11 requests score feedback; exact motion is not finalized and reduced motion is required.                                     |
+| animate-expo                 | NOT APPLICABLE (this unit): LIFTER is a Next.js web app, not Expo.                                                                                   |
+| review-animations            | APPLIES (downstream): N11 motion review belongs to the rendered implementation gate.                                                                 |
+| improve-animations           | NOT APPLICABLE (this unit): no existing animation code is under review.                                                                              |
+| find-animation-opportunities | NOT APPLICABLE (this unit): no rendered screens are being changed.                                                                                   |
+| animation-vocabulary         | NOT APPLICABLE (this unit): no animation vocabulary decision is needed now.                                                                          |
+| animation-performance        | APPLIES (downstream): only if N11 motion is implemented; no performance claim is made here.                                                          |
+| prototype                    | NOT APPLICABLE (this unit): no visual alternatives are authorized while the design gap is open.                                                      |
+| mobile-native                | APPLIES (downstream): mobile browser behavior will be reviewed for the future web flow.                                                              |
+| pick-ui-library              | NOT APPLICABLE (this unit): no library selection is requested or authorized.                                                                         |
+| ask-sonner                   | NOT APPLICABLE (this unit): no toast implementation is in scope.                                                                                     |
+| write-swift                  | NOT APPLICABLE (this unit): no Swift/native code.                                                                                                    |
+| break-ui                     | APPLIES (downstream): worst-case rendered UI review belongs to T039/T024.                                                                            |
+| better-ui                    | APPLIES (downstream): visual polish guidance; DESIGN.md remains authoritative.                                                                       |
+| better-typography            | APPLIES (downstream): future Arabic/English rendered copy review; current font authority is DESIGN.md.                                               |
+| better-colors                | APPLIES (downstream): future contrast/theming review; token values remain system-owned.                                                              |
+| better-accessibility         | APPLIES (downstream): keyboard, screen reader and input review in the rendered UI gate.                                                              |
+| better-layout                | APPLIES (downstream): layout review is blocked on the card-pattern gap.                                                                              |
+| better-interface             | APPLIES (downstream): integrated screen/flow review after implementation.                                                                            |
+| better-writing               | APPLIES (downstream): use for UX chrome review; binding Arabic source remains verbatim.                                                              |
+| interface-review             | APPLIES (downstream): review the final rendered change and matrix.                                                                                   |
+| emil-design-eng              | APPLIES (downstream): craft/motion advice only; no motion values added.                                                                              |
+| visual-style-presets         | NOT APPLICABLE (this unit): no new visual direction/preset is allowed.                                                                               |
+| glass-dark-ui                | NOT APPLICABLE (this unit): no glass treatment is approved or requested.                                                                             |
+| progressive-blur             | NOT APPLICABLE (this unit): no blur effect is approved or requested.                                                                                 |
+| motion-design                | APPLIES (downstream): motion guidance for N11 only, subordinate to DESIGN.md and reduced-motion preference.                                          |
+| css-animation                | NOT APPLICABLE (this unit): no self-contained animation demo is requested.                                                                           |
+| remotion-motion-graphics     | NOT APPLICABLE (this unit): no video/motion-graphics work.                                                                                           |
+| gsap-core                    | NOT APPLICABLE (this unit): no GSAP motion implementation requested.                                                                                 |
+| threejs-fundamentals         | NOT APPLICABLE (this unit): no 3D scene.                                                                                                             |
+| threejs-animation            | NOT APPLICABLE (this unit): no 3D animation.                                                                                                         |
+| threejs-geometry             | NOT APPLICABLE (this unit): no generated geometry.                                                                                                   |
+| threejs-interaction          | NOT APPLICABLE (this unit): no 3D interaction.                                                                                                       |
+| threejs-lighting             | NOT APPLICABLE (this unit): no 3D lighting.                                                                                                          |
+| threejs-loaders              | NOT APPLICABLE (this unit): static reference images only; no 3D asset loading.                                                                       |
+| threejs-materials            | NOT APPLICABLE (this unit): no 3D materials.                                                                                                         |
+| threejs-postprocessing       | NOT APPLICABLE (this unit): no 3D post-processing.                                                                                                   |
+| threejs-shaders              | NOT APPLICABLE (this unit): no shaders.                                                                                                              |
+| threejs-textures             | NOT APPLICABLE (this unit): no WebGL textures.                                                                                                       |
+| gsap-frameworks              | NOT APPLICABLE (this unit): no Vue/Svelte/GSAP implementation.                                                                                       |
+| gsap-performance             | NOT APPLICABLE (this unit): no GSAP implementation/performance work.                                                                                 |
+| gsap-plugins                 | NOT APPLICABLE (this unit): no GSAP plugin selection.                                                                                                |
+| gsap-react                   | NOT APPLICABLE (this unit): no GSAP React implementation.                                                                                            |
+| gsap-scrolltrigger           | NOT APPLICABLE (this unit): no scroll-linked motion.                                                                                                 |
+| gsap-timeline                | NOT APPLICABLE (this unit): no GSAP timeline.                                                                                                        |
+| gsap-utils                   | NOT APPLICABLE (this unit): no GSAP utility usage.                                                                                                   |
+| lottie                       | NOT APPLICABLE (this unit): no HyperFrames/Lottie embed.                                                                                             |
+| remotion-to-hyperframes      | NOT APPLICABLE (this unit): no Remotion-to-HyperFrames migration.                                                                                    |
 
 Several applicable design skills have “CONFLICT — PO decision” or locally modified status in the catalog. For any downstream UI conflict, DESIGN.md and the implemented design system win; the PO gap below must be resolved before finalizing the affected UI. No quarantined skill was fetched or used.
 
@@ -70,17 +70,17 @@ Several applicable design skills have “CONFLICT — PO decision” or locally 
 
 All checks below are marked **PASS (scope boundary)** because this amendment changes specs/assets and does not add or change rendered UI. Each is a mandatory downstream implementation check in T039/T024; no visual/accessibility pass is claimed.
 
-| Gate | Status and evidence |
-| --- | --- |
-| Tokens only; workspace brand cannot alter success/warning/error | PASS (scope boundary): no rendered UI or token changes. T039/T024 must prove this. |
-| Geist EN / IBM Plex Sans Arabic; hierarchy and Bidi for mixed direction | PASS (scope boundary): no typography/code changed; carry forward DESIGN.md and Bidi requirements. |
-| Spacing, layout and existing components | PASS (scope boundary): no layout specified beyond semantics; layout gap is escalated below. |
-| Contrast light/dark and workspace brand colors | PASS (scope boundary): no colors selected; rendered contrast matrix remains required. |
-| Keyboard, focus, screen reader, touch, reduced motion, axe | PASS (scope boundary): semantics required by spec; actual checks remain T039/T024. |
-| Loading, empty, error, success, disabled, pending, interaction states | PASS (scope boundary): no UI state implementation in this unit. |
-| Bilingual AR/EN copy and generic security copy | PASS: Arabic fixture bytes equal the canonical extract; English is separately labelled PO review; shared chrome remains for T035. |
-| Rendered screenshot matrix | PASS (scope boundary): intentionally not rendered in a docs-only unit; T039/T024 require AR/EN × light/dark × 390/1440px and tablet if layout changes. |
-| Tests, axe and `npm run size` | PASS (scope boundary): no UI implementation/tests run; T030/T039/T024 own future test/evidence gates. |
+| Gate                                                                    | Status and evidence                                                                                                                                    |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tokens only; workspace brand cannot alter success/warning/error         | PASS (scope boundary): no rendered UI or token changes. T039/T024 must prove this.                                                                     |
+| Geist EN / IBM Plex Sans Arabic; hierarchy and Bidi for mixed direction | PASS (scope boundary): no typography/code changed; carry forward DESIGN.md and Bidi requirements.                                                      |
+| Spacing, layout and existing components                                 | PASS (scope boundary): no layout specified beyond semantics; layout gap is escalated below.                                                            |
+| Contrast light/dark and workspace brand colors                          | PASS (scope boundary): no colors selected; rendered contrast matrix remains required.                                                                  |
+| Keyboard, focus, screen reader, touch, reduced motion, axe              | PASS (scope boundary): semantics required by spec; actual checks remain T039/T024.                                                                     |
+| Loading, empty, error, success, disabled, pending, interaction states   | PASS (scope boundary): no UI state implementation in this unit.                                                                                        |
+| Bilingual AR/EN copy and generic security copy                          | PASS: Arabic fixture bytes equal the canonical extract; English is separately labelled PO review; shared chrome remains for T035.                      |
+| Rendered screenshot matrix                                              | PASS (scope boundary): intentionally not rendered in a docs-only unit; T039/T024 require AR/EN × light/dark × 390/1440px and tablet if layout changes. |
+| Tests, axe and `npm run size`                                           | PASS (scope boundary): no UI implementation/tests run; T030/T039/T024 own future test/evidence gates.                                                  |
 
 ## DESIGN.md §11 defaults recorded by the architect
 

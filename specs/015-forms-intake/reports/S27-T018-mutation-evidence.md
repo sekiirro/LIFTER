@@ -6,6 +6,7 @@ Captured on Stack D at the clean pre-merge head `f42d4bc724f8f7e702cbe2507f984ec
 
 Each run used the Stack D safe wrapper and `tests/integration/forms-purge.test.ts`. The test fixture's `probe()` wraps each case in a transaction and throws its rollback sentinel after the assertion body. SQL `CREATE OR REPLACE FUNCTION` changes were made inside that transaction, so the function replacement and synthetic fixture data rolled back together. No pushed migration or persisted database definition was changed. Each mutant command exited 1 because the expected invariant detected the mutant.
 
+<!-- prettier-ignore-start -->
 | Mutant | Executed test filter | Failing assertion or database guard | Observed failure |
 | --- | --- | --- | --- |
 | Start retention 60 days before deactivation | `-t 'starts retention'`, `F15_T018_MUTANT=start_clock` | `tests/integration/forms-purge.test.ts:146` | Retention window differed: `ended_at` was 2026-09-03 while authoritative deactivation was 2026-11-02; `purge_after` was correspondingly early. |
@@ -16,6 +17,7 @@ Each run used the Stack D safe wrapper and `tests/integration/forms-purge.test.t
 | Accept direct `deactivation_reason` update | `-t closes`, `F15_T018_MUTANT=forge_reason` | `tests/integration/forms-purge.test.ts:340` | `promise resolved "undefined" instead of rejecting`. |
 | Omit the immediate auth lockout row | `-t closes`, `F15_T018_MUTANT=no_lockout` | `tests/integration/forms-purge.test.ts:235` | Required joined deactivation/lockout fact was `undefined`. |
 | Write a financial ledger row during closure | `-t closes`, `F15_T018_MUTANT=closure_ledger` | `tests/integration/forms-purge.test.ts:280` | Payment count changed from 1 to 2 around closure. |
+<!-- prettier-ignore-end -->
 
 Command template (the filter and mutant name shown in each row were supplied per run):
 

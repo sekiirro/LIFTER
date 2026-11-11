@@ -6,28 +6,28 @@ The permitted actor set and operation-by-field-by-scope details below are approv
 
 ## Field classes
 
-| Field class | Contents | Sensitivity treatment |
-| --- | --- | --- |
-| Ordinary answer | Non-health intake answer, including preferences and free-form response | Client-specific Forms data; audited and protected like all answer data |
-| Sensitive health answer | Health, fitness, nutrition, measurement, medication, injury, or other sensitive personal answer | Sensitive health data; fail-closed audited read and no-store protections apply |
-| Correction note | Explanation accompanying a correction | Treat as sensitive client-specific Forms content; append-only, included in retention purge, never copied into logs/audit payloads |
-| Answer-version history | Prior and current values, correction actor/time, and correction note association | Contains answer content; same read authorization as the underlying field, every version access audited |
-| Attachment | File/object or attachment metadata | Allow wherever attachments exist, subject to the same scope rules. This approval does not define an MVP attachment feature or storage. |
+| Field class             | Contents                                                                                        | Sensitivity treatment                                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Ordinary answer         | Non-health intake answer, including preferences and free-form response                          | Client-specific Forms data; audited and protected like all answer data                                                                 |
+| Sensitive health answer | Health, fitness, nutrition, measurement, medication, injury, or other sensitive personal answer | Sensitive health data; fail-closed audited read and no-store protections apply                                                         |
+| Correction note         | Explanation accompanying a correction                                                           | Treat as sensitive client-specific Forms content; append-only, included in retention purge, never copied into logs/audit payloads      |
+| Answer-version history  | Prior and current values, correction actor/time, and correction note association                | Contains answer content; same read authorization as the underlying field, every version access audited                                 |
+| Attachment              | File/object or attachment metadata                                                              | Allow wherever attachments exist, subject to the same scope rules. This approval does not define an MVP attachment feature or storage. |
 
 ## Approved operations × roles × field classes
 
 Legend: **Allow** = permitted subject to the scope and audit conditions below. **Deny** = no data, existence, or mutation signal.
 
-| Operation | Client | Trainer | WO | PO | Sales |
-| --- | --- | --- | --- | --- | --- |
-| View current ordinary answer | Allow, own assigned form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
-| View current sensitive health answer | Allow, own assigned form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
-| Correct ordinary answer | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
-| Correct sensitive health answer | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
-| Add correction note | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
-| View ordinary answer-version history | Allow, own form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
-| View sensitive answer-version history | Allow, own form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
-| View/correct attachment or its metadata, wherever attachments exist | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
+| Operation                                                           | Client                         | Trainer                     | WO                          | PO                                            | Sales |
+| ------------------------------------------------------------------- | ------------------------------ | --------------------------- | --------------------------- | --------------------------------------------- | ----- |
+| View current ordinary answer                                        | Allow, own assigned form only  | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny  |
+| View current sensitive health answer                                | Allow, own assigned form only  | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny  |
+| Correct ordinary answer                                             | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny  |
+| Correct sensitive health answer                                     | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny  |
+| Add correction note                                                 | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny  |
+| View ordinary answer-version history                                | Allow, own form only           | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny  |
+| View sensitive answer-version history                               | Allow, own form only           | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny  |
+| View/correct attachment or its metadata, wherever attachments exist | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny  |
 
 ## Scope and enforcement conditions
 

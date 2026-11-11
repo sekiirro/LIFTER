@@ -94,15 +94,11 @@ This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `s
 
 **S34 PO source-mapping refresh:** 2026-11-05 04:24 Africa/Cairo; S34-01=B is cited as S34-PO-4, which also records the no-destination-guard sequencing decision. Entry criteria remain PASS; Critical: 0; High: 0; no open ambiguity in approved S34 scope.
 
-
 **S34 T089 documentation portability refresh — 2026-11-05 06:39 Africa/Cairo:** Replaced developer-local S34 PO paths in the S34 plan/Analyze and current PO clarification citations with stable decision IDs and repository fixture references. `tests/unit/forms-s14-decision-fixture.test.ts` passes 6/6; it rejects a synthetic absolute path and checks the plan/Analyze PO citations. Corrected T086 analysis to reflect S34-PO-5=B and reuse the existing `forms.required` key. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for authorized scope.**
 
 **S34 T089 acceptance evidence refresh — 2026-11-05 06:40 Africa/Cairo:** T089 is checked only after the focused regression passed on `0adb43a`; the traceability row maps FR-026/036/037 to that test and commit. The updated task completion record adds no requirement or ambiguity. **CRITICAL: 0. HIGH: 0.**
 
-
-
 **S35 existing-PR entry revalidation — 2026-11-06:** Added T101-T114 for verified CI/CodeRabbit remediation within existing FR-004/006/008/013/017/018/024/025/026/036/037/038/039 scope. `spec.md` already contains the required numbered FRs, measurable SCs and Given/When/Then acceptance coverage. Existing PO clarifications explicitly govern approved copy, answer snapshots, name validation and client-late timing. **No open ambiguities remain for T101-T103, T105-T114. T104 remains explicitly blocked because the current F15 schema has no authoritative client-to-Trainer assignment relation.** No requirement or user-facing default was inferred. The existing design system covers the narrow T112 pending-submit interaction; no visual token, layout, copy, animation or dependency change is planned. **CRITICAL: 0. HIGH: 0.** Entry PASS for independent tasks; T104 excluded pending PO direction.
-
 
 **S35 T109/T111 documentation refresh - 2026-11-06:** The Stack D quickstart now derives repository, stack and provisioner paths from the current checkout. The earlier S33 Analyze status is explicitly historical; the S30 quotation and S31 migration source label are repaired without changing their recorded findings. These are documentation-only corrections inside the existing F15 verification scope. **CRITICAL: 0. HIGH: 0. No new ambiguity.**
 
@@ -110,6 +106,7 @@ This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `s
 
 **S35 A remediation acceptance refresh — 2026-11-06:** Recorded T102, T103, T105, T106, T108, T109, T110 and T111 completion only after their cited targeted/Stack D checks or documentation checks passed. No requirement or PO decision changed. T104 remains blocked under PD-S35-01; the separate PD-S34-R3-01 N11 English-copy question remains open. Existing FR/SC/GWT coverage remains applicable. **CRITICAL: 0. HIGH: 0. No new ambiguity for completed tasks.**
 **S35 T101 Vite/Vitest startup refresh — 2026-11-06:** Hosted CI showed that runner-loader selection alone did not fix the source-map crash. Vitest 5.1.0 includes the cached-source UTF-8 fix for Vite 8.3.5; the exact `npm run test:integration -- tests/integration/password-policy-parity.test.ts` command passed 58/58 on Stack D and StartedAt was unchanged. This is an existing CI remediation, with no workflow or product behavior change. **CRITICAL: 0. HIGH: 0.**
+
 ## S35 F15 round-5 existing-PR entry revalidation — 2026-11-06
 
 `spec.md` contains numbered FRs, measurable SCs, and Given/When/Then coverage for FR-004/006/008/013/024/025/026/036/037/038/039. Clarifications state no open ambiguities for the scoped review remediations. `plan.md` covers those existing signup, validation, lifecycle, test, and documentation scopes. `tasks.md` assigns T115-T129 and tags each with existing FR IDs; duplicate T102 was corrected by assigning the open restack task T129. No requirement or user-facing default is added. PD-S35-01/T104 and PD-S34-R3-01/N11 copy remain excluded and blocked. **CRITICAL: 0. HIGH: 0.** Entry PASS for independent existing-PR fixes.
@@ -118,16 +115,13 @@ This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `s
 
 The existing drift guard maps the localized starter-label migration on B first and falls back on A to `20261108230018_f15_default_provisioning_configuration.sql`, the latest migration on A that defines `app_private.ensure_default_onboarding_form`. The ordered mapping is test-harness-only within FR-024/025; no product behavior, policy, SQL migration, or security assertion changes. **CRITICAL: 0. HIGH: 0. No open ambiguities for this task.**
 
-
 ## S36 N11 and ALERTS clarification analysis - 2026-11-06
 
 N11 EN copy is approved byte-exact by S35-PO-3; the existing Arabic band values remain approved and unchanged. T137 has numbered FR-040, measurable SC-027, Given/When/Then coverage, plan/task linkage, exact PO source and boundaries. ALERTS FR-017/018/035 and the related scenario/success criterion replace the obsolete +24h/+48h client-late stages with the approved immediate and day-five/day-seven schedule. Open ambiguities are explicitly recorded as MCQ S36-01/T104 (authoritative Trainer relation) and MCQ S36-02 (late-intake event); no implementation or product assumption is authorized until PO answers. Analysis scope is specification/copy-only for alerts. **CRITICAL: 0. HIGH: 0. No other ambiguities are assumed closed; the two MCQs remain open.**
 
-
 ## S36 final Spec Kit analysis refresh - 2026-11-06
 
 Revalidated after the final spec/plan/task edits: F15 has numbered FR-017/018/035/040, measurable SC-022/027, Given/When/Then scenarios for immediate and staged alerts and every N11 score/band boundary, a clarification session citing the byte-exact S35-PO-3 N11 and ALERTS paragraphs, T136/T137/T138 task links, and an up-to-date plan. The T104 Trainer source and late-intake event remain explicit PO-decision MCQs, so no-open-ambiguities applies only to T136/T137 and the specification-only requirements recorded by S35-PO-3 / S36-R7. No alert code/migration was changed. **CRITICAL: 0. HIGH: 0. No other open ambiguities for this authorized scope.**
-
 
 ## S36 spec analysis rerun after final amendments - 2026-11-06
 
@@ -139,11 +133,9 @@ Revalidated `spec.md`, `plan.md`, and `tasks.md` after encoding the S38-PO-5 dec
 
 Entry check: PASS for the T104/T138 scope. `spec.md` has numbered FRs, measurable success criteria, and Given/When/Then scenarios; Clarifications cite S38-PO-5 and explicitly close both decisions; `plan.md` covers the approved source and deadline; `tasks.md` assigns T104/T138 to FR-017/018/035; this dated Analyze follows all three updated artifacts. No implementation evidence is claimed here.
 
-
 ## S39 F15 round-8 Spec Kit analysis ? 2026-11-09
 
 Revalidated spec.md, plan.md, and tasks.md after recording S39-PO-8 / PDN-S39-F15-01. The spec retains numbered FR-017/018/035, measurable success criteria and Given/When/Then coverage for client-late timing and owner notices. S38-PO-5 remains quoted byte-exact; S36-01=A is retained only as the future F11/F12 source rule, and S36-02=A defines the configured submission deadline passing without an accepted submission. The PO-approved deferral means F15 has no client-to-Trainer assignment/routing or client-late Trainer alert; T104 is deferred to the separate F11/F12 specification work. T138 records the approved trigger, immediate owner notices and unchanged D-03 Trainer-late workflow without implementing alert code or migrations. Tests that assert client-late Trainer alerting are to be removed or explicitly skipped with the PO decision cited; tests for D-03 Trainer-late behavior remain in scope and unchanged. **No open ambiguities remain for this authorized round-8 scope. CRITICAL: 0. HIGH: 0.** Entry PASS for T138's specification-only scope and the approved removal/skip-with-reason of client-late Trainer alert assertions; T104 implementation remains deferred. This Analyze follows the latest spec.md, plan.md, and tasks.md edits.
-
 
 ## S39 F15 round-8 final scope analysis ? 2026-11-09
 
@@ -152,8 +144,6 @@ Re-read spec.md, plan.md, and tasks.md after aligning the client-late success cr
 ## S40 F15 round-10 entry analysis — 2026-11-09
 
 Re-read `spec.md`, `plan.md`, and `tasks.md` for existing PR #57 CI/migration-order remediation. The numbered FRs and measurable SCs for builder validation, assignment/forms persistence, signup validation, privacy, and deployment verification remain present with Given/When/Then acceptance coverage. S40-PO-1 is quoted byte-exact in the run report and explicitly selects the safe rename; the parenthesized implementation mapping is architect wording. PO records cited by the feature govern the intended F15 behavior. No user-visible behavior, permission, retention, or default is introduced by filename renaming. T139 maps the reconciliation and verification to existing F15 FRs and the plan covers forward-only migration, Stack D, mutation evidence, and escalation of a genuine conflict. No open ambiguities remain for the authorized migration-order correction; if direct body comparison reveals a genuine F15/main policy conflict, that item is excluded pending a numbered PO MCQ. No UI, frontend-design gate, workflow change, or migration-rule waiver is in scope. **CRITICAL: 0. HIGH: 0.** Entry PASS for T139 implementation; its checkbox remains open until current-head tests and traceability evidence pass.
-
-
 
 ## S40 F15 round-11 entry and migration analysis - 2026-11-09 (refreshed)
 
@@ -199,7 +189,6 @@ The PO decision register records PO-MCQ-1 as “A: Approve as drafted.” The ch
 
 The remaining machine-local references in T020 and T139 were replaced with the design-gate brief label and the tracked S40 round-11 verification artifact. This is a documentation-link repair only; no requirement or behavior changed. **No open ambiguities remain for T141. CRITICAL: 0. HIGH: 0.**
 
-
 ## S41 round 16 follow-up Analyze refresh — 2026-11-09
 
 Re-read spec.md, plan.md, and tasks.md for T142 and the current CodeRabbit follow-up. Numbered FRs/SCs and existing Given/When/Then scenarios cover the touched validation, assignment revision, erasure progression, correction, alert lifecycle, scheduler, and owner-notice contracts. Clarifications cite the binding PO records; S41-PO-3 approves only N08.low.foods exact EN bytes, with medium/high and other pending rows still pending. Plan and T142 map each technical correction to existing FRs and require forward-only SQL, Stack D tests, and security mutation restore evidence. The client-late catch-up/legacy de-dup, stale selected Terms replacement, and punctuation-only username findings remain explicit PO-MCQ-2/3/4 and are excluded from implementation; no ambiguities remain for the approved independent scope. Self-review checked undefined states (null/overflow, malformed localized labels, completed schedules), authorization/role paths, pending copy, prior PO conflicts, retention effects, and FR/task/test traceability. No further product question was identified. **CRITICAL: 0. HIGH: 0.** This Analyze follows the T142 spec/plan/tasks edits and precedes further implementation.
@@ -215,7 +204,6 @@ After the plan/task cross-reference correction, confirmed T143 is tagged FR-017/
 ### S41-PO-12 final spec wording check - 2026-11-10
 
 Refined the no-current-version acceptance case to cite the existing internal `stale_selection` outcome and fail-closed untouched state; it introduces no new user-facing message. Revalidated all touched cross references and exact PO choice labels after this final spec edit. CRITICAL 0; HIGH 0; no open T143 ambiguity.
-
 
 ### S41-PO-12 cross-reference sweep - 2026-11-10
 

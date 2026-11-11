@@ -2,14 +2,14 @@
 
 ## Principals and scope
 
-| Principal | Allowed scope | Denied scope |
-| --- | --- | --- |
-| Client | Own assigned form, draft, submission, correction and history, derived from signed Auth association and approved client state | Any other client/workspace target, even within same workspace; pending/rejected protected Forms content |
-| Trainer | Current authorized workspace; approved template/assignment/correction operations | Other workspaces, stale membership, Sales-only capabilities |
-| WO | Current authorized workspace; approved template/assignment/correction operations | Other workspaces, stale membership |
-| PO | Explicitly selected existing workspace for workspace-scoped data | Nonexistent workspace UUID; implicit cross-tenant access without target scope |
-| Sales | No Forms answers, selector, builder, correction or history permission | All Forms access |
-| Internal worker | Narrow operation-specific rows and capabilities | General answer access or unrestricted workspace authority |
+| Principal       | Allowed scope                                                                                                                | Denied scope                                                                                            |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Client          | Own assigned form, draft, submission, correction and history, derived from signed Auth association and approved client state | Any other client/workspace target, even within same workspace; pending/rejected protected Forms content |
+| Trainer         | Current authorized workspace; approved template/assignment/correction operations                                             | Other workspaces, stale membership, Sales-only capabilities                                             |
+| WO              | Current authorized workspace; approved template/assignment/correction operations                                             | Other workspaces, stale membership                                                                      |
+| PO              | Explicitly selected existing workspace for workspace-scoped data                                                             | Nonexistent workspace UUID; implicit cross-tenant access without target scope                           |
+| Sales           | No Forms answers, selector, builder, correction or history permission                                                        | All Forms access                                                                                        |
+| Internal worker | Narrow operation-specific rows and capabilities                                                                              | General answer access or unrestricted workspace authority                                               |
 
 App checks and database RLS independently enforce the decision. Use actual helpers `app_private.role_has_capability` and `app_private.has_workspace_access`, plus explicit existing-workspace joins for PO. Capability parity must test known and unknown values in both TS→SQL and SQL→TS directions after F12 and F14 changes merge.
 

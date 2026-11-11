@@ -4,27 +4,27 @@ Approved hosting direction (PO, 2026-10-27): Next.js + Cloudflare + serverless b
 
 ## Stack (RECOMMENDED)
 
-| Layer | Choice | Why / trade-off |
-|---|---|---|
-| Web + API | Next.js (App Router) on **Cloudflare Workers** via the OpenNext Cloudflare adapter; route handlers / server actions | One codebase, edge SSR, AR/EN via `next-intl`. Risk: bundle-size and CPU limits on the free plan (see Free-tier validation). |
-| Separate Workers | `telegram-webhook`, `cron` (Cron Triggers) | Small, isolated, and they keep the Next bundle smaller |
-| DB | **Supabase Postgres (Free)** with RLS | Postgres for money/versioning, JSONB for plan/form documents |
-| Auth | **Supabase Auth** (email/password, reset links), JWT verified by Postgres | RLS keys off a *signed* JWT (`auth.uid()`), so the tenant context can't be forged from SQL. Fits globally unique client email (D-08). |
-| UI / Design System | P0 Design System: tokens (neutral dark/light, emerald `#059669` default brand, workspace brand colors with contrast guard; D-18), AR-first RTL + EN LTR components, loading/empty/error states, accessible inputs (BRD-02, PRD-13.4/13.7) | Every feature builds on it; prevents per-screen drift |
-| Data access | `supabase-js` with the user's JWT → PostgREST/RPC under RLS. Reads use invoker rights where appropriate; privileged mutations use the established F12-F15 `SECURITY DEFINER` RPC pattern with explicit authorization and restricted grants. | No pooled-connection `SET LOCAL` problem. The service-role key is used only by `cron`, through scoped RPCs that take an explicit `workspace_id`, and every call is audited. |
-| Jobs | `jobs` table (outbox) + Cloudflare Cron Trigger (every minute) draining with `FOR UPDATE SKIP LOCKED` and unique `idempotency_key`. Alt: Supabase `pg_cron` | Serverless-compatible, $0, and retries never duplicate |
-| Files | Supabase Storage (private buckets, RLS, signed URLs). Overflow: Cloudflare R2 | Logos and profile images only. No progress photos (PRD-09). |
-| PDF / Excel | **Browser-side**: print-to-PDF with RTL print CSS, and ExcelJS in the browser from authorized API data | Chromium shapes Arabic correctly at $0. There's no headless browser available on the free plan. Server-side Browser Rendering is a later option. |
-| Email | Free-tier SMTP for Supabase Auth password-reset mail only (provider chosen in P0) | Supabase's default SMTP isn't meant for production traffic |
-| Envs | Supabase Free allows 2 projects: **staging + prod**. Local: Supabase CLI (Docker) | — |
+| Layer              | Choice                                                                                                                                                                                                                                      | Why / trade-off                                                                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web + API          | Next.js (App Router) on **Cloudflare Workers** via the OpenNext Cloudflare adapter; route handlers / server actions                                                                                                                         | One codebase, edge SSR, AR/EN via `next-intl`. Risk: bundle-size and CPU limits on the free plan (see Free-tier validation).                                                |
+| Separate Workers   | `telegram-webhook`, `cron` (Cron Triggers)                                                                                                                                                                                                  | Small, isolated, and they keep the Next bundle smaller                                                                                                                      |
+| DB                 | **Supabase Postgres (Free)** with RLS                                                                                                                                                                                                       | Postgres for money/versioning, JSONB for plan/form documents                                                                                                                |
+| Auth               | **Supabase Auth** (email/password, reset links), JWT verified by Postgres                                                                                                                                                                   | RLS keys off a _signed_ JWT (`auth.uid()`), so the tenant context can't be forged from SQL. Fits globally unique client email (D-08).                                       |
+| UI / Design System | P0 Design System: tokens (neutral dark/light, emerald `#059669` default brand, workspace brand colors with contrast guard; D-18), AR-first RTL + EN LTR components, loading/empty/error states, accessible inputs (BRD-02, PRD-13.4/13.7)   | Every feature builds on it; prevents per-screen drift                                                                                                                       |
+| Data access        | `supabase-js` with the user's JWT → PostgREST/RPC under RLS. Reads use invoker rights where appropriate; privileged mutations use the established F12-F15 `SECURITY DEFINER` RPC pattern with explicit authorization and restricted grants. | No pooled-connection `SET LOCAL` problem. The service-role key is used only by `cron`, through scoped RPCs that take an explicit `workspace_id`, and every call is audited. |
+| Jobs               | `jobs` table (outbox) + Cloudflare Cron Trigger (every minute) draining with `FOR UPDATE SKIP LOCKED` and unique `idempotency_key`. Alt: Supabase `pg_cron`                                                                                 | Serverless-compatible, $0, and retries never duplicate                                                                                                                      |
+| Files              | Supabase Storage (private buckets, RLS, signed URLs). Overflow: Cloudflare R2                                                                                                                                                               | Logos and profile images only. No progress photos (PRD-09).                                                                                                                 |
+| PDF / Excel        | **Browser-side**: print-to-PDF with RTL print CSS, and ExcelJS in the browser from authorized API data                                                                                                                                      | Chromium shapes Arabic correctly at $0. There's no headless browser available on the free plan. Server-side Browser Rendering is a later option.                            |
+| Email              | Free-tier SMTP for Supabase Auth password-reset mail only (provider chosen in P0)                                                                                                                                                           | Supabase's default SMTP isn't meant for production traffic                                                                                                                  |
+| Envs               | Supabase Free allows 2 projects: **staging + prod**. Local: Supabase CLI (Docker)                                                                                                                                                           | —                                                                                                                                                                           |
 
 ## Free-tier validation (P0 gate; figures are secondhand, verify on official pages)
 
-| Limit (reported) | Impact | Mitigation / exit |
-|---|---|---|
-| Supabase: 500 MB DB, ~5 GB egress, 2 projects, **project pauses after ~7 days inactivity, no backups**, egress overage may return 402 | Losing the ledger is unacceptable (Inv.4). A pause means an outage. | Encrypted local backups (below). Cron traffic keeps the project active. Monitor DB size and egress. **Exit trigger:** Supabase Pro (~$25/mo) when usage exceeds 70% of a limit (PO decision). |
-| Cloudflare Workers Free: ~100k req/day; **10 ms CPU per HTTP request; 64 MiB uncompressed Worker size, no compressed limit** (official limits page, verified 2026-10-27) | Bundle size is low-risk. The 10 ms CPU limit for SSR or heavy JSON is the real constraint. | P0 spike: deploy a skeleton and measure. Exit: Workers Paid (~$5/mo) or split static pages from the API Worker. |
-| Supabase Auth: 50k MAU | Ample | — |
+| Limit (reported)                                                                                                                                                         | Impact                                                                                     | Mitigation / exit                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supabase: 500 MB DB, ~5 GB egress, 2 projects, **project pauses after ~7 days inactivity, no backups**, egress overage may return 402                                    | Losing the ledger is unacceptable (Inv.4). A pause means an outage.                        | Encrypted local backups (below). Cron traffic keeps the project active. Monitor DB size and egress. **Exit trigger:** Supabase Pro (~$25/mo) when usage exceeds 70% of a limit (PO decision). |
+| Cloudflare Workers Free: ~100k req/day; **10 ms CPU per HTTP request; 64 MiB uncompressed Worker size, no compressed limit** (official limits page, verified 2026-10-27) | Bundle size is low-risk. The 10 ms CPU limit for SSR or heavy JSON is the real constraint. | P0 spike: deploy a skeleton and measure. Exit: Workers Paid (~$5/mo) or split static pages from the API Worker.                                                                               |
+| Supabase Auth: 50k MAU                                                                                                                                                   | Ample                                                                                      | —                                                                                                                                                                                             |
 
 ## Multi-tenancy & authorization
 
@@ -34,17 +34,17 @@ Approved hosting direction (PO, 2026-10-27): Next.js + Cloudflare + serverless b
 - Staff identity is global, and the role lives on the staff user (consistent role, BRD-02). Each client has **one** workspace-scoped `client_account`, and client email and phone are **globally unique** (D-08): a unique index on normalized email and on E.164 phone, across all workspaces. Staff and client accounts use separate emails, and dual-role accounts are not supported (D-16).
 - **Permission matrix (APPROVED D-09/D-10), always within authorized workspaces; deny by default:**
 
-| Capability | PO | WO | Sales | Trainer |
-|---|---|---|---|---|
-| Set/change package prices & available durations | ✔ | – | – | – |
-| Generate registration link (approved settings only) | ✔ | ✔ | ✔ | ✔ |
-| Configure installment schedule on link | ✔ | ✔ | ✔ | – |
-| Approve registration | ✔ | ✔ | ✔ | – |
-| Record renewal / installment payment | ✔ | ✔ | ✔ | – |
-| Apply / stop / remove freeze | ✔ | ✔ | ✔ | – |
-| Record refund | ✔ | – | – | – |
-| Delete / remove client account | ✔ | – | – | – |
-| Coaching work (plans, forms, notes) | ✔ | ✔ | – (unconfirmed) | ✔ |
+| Capability                                          | PO  | WO  | Sales           | Trainer |
+| --------------------------------------------------- | --- | --- | --------------- | ------- |
+| Set/change package prices & available durations     | ✔   | –   | –               | –       |
+| Generate registration link (approved settings only) | ✔   | ✔   | ✔               | ✔       |
+| Configure installment schedule on link              | ✔   | ✔   | ✔               | –       |
+| Approve registration                                | ✔   | ✔   | ✔               | –       |
+| Record renewal / installment payment                | ✔   | ✔   | ✔               | –       |
+| Apply / stop / remove freeze                        | ✔   | ✔   | ✔               | –       |
+| Record refund                                       | ✔   | –   | –               | –       |
+| Delete / remove client account                      | ✔   | –   | –               | –       |
+| Coaching work (plans, forms, notes)                 | ✔   | ✔   | – (unconfirmed) | ✔       |
 
 Sales capabilities not listed stay deny-all.
 
@@ -53,11 +53,12 @@ Sales capabilities not listed stay deny-all.
 Hashed token bound to `(workspace, package_version)`: 24 h validity, `opened_at` grace of 30 min. Consumption happens in an RPC: `UPDATE … WHERE consumed_at IS NULL AND (expires_at > now() OR opened_at + 30 min > now()) RETURNING`, in the same transaction that creates the account. A failed validation rolls back. No IP blocking.
 
 **Duplicate identity (D-08 rev.; PO s15 Q2 B):**
+
 - Email and phone collisions currently show the same approved email-specific duplicate message under D-08. The proposed field-neutral wording remains a draft pending PO approval (see `specs/015-forms-intake/reports/S16-q2-duplicate-copy-draft.md`).
 - Username collisions within the workspace, reserved names and workspace identifiers produce a `username_unavailable` field result mapped to `invalid_input` for the username field (S40-PO-4). Usernames remain workspace-scoped.
 - No verification code, no workspace disclosure, no transfer or merge.
 - The token is not consumed. Per-token attempt limit. Audited without cross-workspace detail.
-- *(Superseded: the verification-code disclosure flow / R8.)*
+- _(Superseded: the verification-code disclosure flow / R8.)_
 
 Removal (PO only) pseudonymizes the old email/phone so they become free while the ledger and audit are kept.
 

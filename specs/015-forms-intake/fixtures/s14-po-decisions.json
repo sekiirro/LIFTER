@@ -52,16 +52,8 @@
     "status": "PO-approved deviation from canonical copy",
     "canonical_file_unchanged": true,
     "max_meals": 5,
-    "ar_options": [
-      "وجبتين",
-      "3 وجبات",
-      "4 وجبات",
-      "5 وجبات"
-    ],
-    "removed": [
-      "ستة وجبات أو أكتر",
-      "exact-number entry"
-    ],
+    "ar_options": ["وجبتين", "3 وجبات", "4 وجبات", "5 وجبات"],
+    "removed": ["ستة وجبات أو أكتر", "exact-number entry"],
     "derived_timing": "after meal 1..N plus قبل أول وجبة and معنديش ميعاد ثابت"
   },
   "architect_defaults": {

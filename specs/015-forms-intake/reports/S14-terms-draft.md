@@ -4,14 +4,14 @@
 
 ## Source policy map
 
-| Policy topic | Approved LIFTER source |
-| --- | --- |
-| Account identity and access | [Constitution I and III](../../../.specify/memory/constitution.md); [F11 spec](../../011-client-accounts/spec.md), especially pending-approval and account-uniqueness requirements; [F15 signup extension](../contracts/signup-extension.md). |
-| Health and personal information | [Constitution VII](../../../.specify/memory/constitution.md); [F15 spec FR-023/025](../spec.md); [F15 authorization and audit contract](../contracts/authorization-and-audit.md). |
-| Retention and deletion | [F15 retention and alert contract](../contracts/retention-and-alerts.md); [F15 spec FR-012/033, RET-1..3](../spec.md); [production readiness DP-01/02](../../../docs/13-production-readiness.md). |
-| Refunds | [Decision register D-15](../../../docs/04-changes-and-questions.md#d-15-refunds) and the approved F13/F15 decisions in the [F15 PO decision traceability](../spec.md#po-decisions-and-traceability). |
-| Freeze and subscription timing | [F15 PO decision traceability](../spec.md#po-decisions-and-traceability) and [F15 spec recurrence rules](../spec.md#po-decisions-and-traceability). |
-| Consent/version recording | [D-S14-2 in F15 spec](../spec.md#d-s14-15-mandatory-intake-identity-and-flow-2026-10-30); [F15 signup extension](../contracts/signup-extension.md). |
+| Policy topic                    | Approved LIFTER source                                                                                                                                                                                                                        |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Account identity and access     | [Constitution I and III](../../../.specify/memory/constitution.md); [F11 spec](../../011-client-accounts/spec.md), especially pending-approval and account-uniqueness requirements; [F15 signup extension](../contracts/signup-extension.md). |
+| Health and personal information | [Constitution VII](../../../.specify/memory/constitution.md); [F15 spec FR-023/025](../spec.md); [F15 authorization and audit contract](../contracts/authorization-and-audit.md).                                                             |
+| Retention and deletion          | [F15 retention and alert contract](../contracts/retention-and-alerts.md); [F15 spec FR-012/033, RET-1..3](../spec.md); [production readiness DP-01/02](../../../docs/13-production-readiness.md).                                             |
+| Refunds                         | [Decision register D-15](../../../docs/04-changes-and-questions.md#d-15-refunds) and the approved F13/F15 decisions in the [F15 PO decision traceability](../spec.md#po-decisions-and-traceability).                                          |
+| Freeze and subscription timing  | [F15 PO decision traceability](../spec.md#po-decisions-and-traceability) and [F15 spec recurrence rules](../spec.md#po-decisions-and-traceability).                                                                                           |
+| Consent/version recording       | [D-S14-2 in F15 spec](../spec.md#d-s14-15-mandatory-intake-identity-and-flow-2026-10-30); [F15 signup extension](../contracts/signup-extension.md).                                                                                           |
 
 ## Approved Egyptian Arabic
 
@@ -61,7 +61,6 @@ Account details are required to manage identity and access. Email addresses and 
 
 - Historical S14 decision: a separate health-data notice appeared immediately before health questions without a checkbox or consent receipt. S17 supersedes the standalone UI; that draft is provenance only, not a pending ship approval. Minimal contextual guidance may use the PO-approved phrase only where genuinely useful.
 - Architect default: use existing premium card/checkbox components for the Terms Card; do not borrow YBS styling.
-
 
 ## Superseded: separate health-data notice draft copy
 

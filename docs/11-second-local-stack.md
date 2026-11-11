@@ -2,18 +2,18 @@
 
 Stack D is the F15 local database target. Its project ID is `lifter-stack-d`; its complete configured service port block is `45420–45429`:
 
-| Service | Port |
-| --- | ---: |
-| Database shadow | 45420 |
-| API / Kong | 45421 |
-| Database | 45422 |
-| Studio | 45423 |
-| Mailpit UI | 45424 |
-| Mailpit SMTP | 45425 |
-| Mailpit POP3 | 45426 |
-| Analytics | 45427 |
+| Service                |  Port |
+| ---------------------- | ----: |
+| Database shadow        | 45420 |
+| API / Kong             | 45421 |
+| Database               | 45422 |
+| Studio                 | 45423 |
+| Mailpit UI             | 45424 |
+| Mailpit SMTP           | 45425 |
+| Mailpit POP3           | 45426 |
+| Analytics              | 45427 |
 | Edge runtime inspector | 45428 |
-| Pooler | 45429 |
+| Pooler                 | 45429 |
 
 The API, database, shadow database, Studio, Mailpit, analytics, edge inspector, and pooler ports are configured separately from Stacks A, B, and C. Storage is enabled and its API is exposed through the D API/Kong port `45421`; Supabase config does not allocate a separate host port for Storage. Mailpit and Auth are project-scoped to `lifter-stack-d`. `supabase-stack-d/supabase/migrations` is a Windows junction to the branch's root `supabase/migrations` directory; it resolves to the shared migration source and does not duplicate migration files.
 
