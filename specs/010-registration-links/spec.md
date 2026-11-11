@@ -104,7 +104,7 @@ Strict equality at expiry/grace is invalid; opening early must not shorten expir
 - **ND-F10-3 — Issuance rate-limit count/window. Decided (S31-PO-3):** 50 per authorized issuing account per rolling 24 hours, including Trainer/WO/PO, with no exception or workspace reset. Recorded but not implemented.
 - **ND-F10-4**: Public content beyond workspace name before branding. Plan chooses validity messages only for this increment; no action/form stub. This does not settle future content/branding policy.
 - **ND-F10-5**: Sales/Trainer price visibility on staff screen. Interim binding default: yes; price is separate from commission. PO confirmation remains required.
-- Carry **ND-F9-1** allowed currencies (format only), **ND-F9-2** custom-duration bounds (existing technical limits), **ND-F9-3** actual catalog/terms (NEEDS SOURCE CONFIRMATION, no seeds), **ND-F9-4** Sales/Trainer commission visibility (denied), **ND-F9-5** final navigation (existing landing pattern only).
+- **ND-F9-1** allowed currencies is decided by S31-PO-4 SK-009-01 and S31-PO-5 (see `specs/009-packages/spec.md` Clarifications 2026-11-04 for verbatim PO text; market-conditional: Egypt = EGP only; International = EGP/USD/SAR; no assumed conversion; enforced by F9 FR-017). Carry **ND-F9-2** custom-duration bounds (existing technical limits), **ND-F9-3** actual catalog/terms (NEEDS SOURCE CONFIRMATION, no seeds), **ND-F9-4** Sales/Trainer commission visibility (denied per S31-PO-4 SK-009-04), **ND-F9-5** final navigation (existing landing pattern only).
 
 Existing [production gates](../../docs/13-production-readiness.md), including B4 and recovery decisions, remain open. ND-F4 expiry/limits do not replace F10's fixed 24 hours or its own rate decision. Local work/PRs remain permitted; no deployment/cloud migration is authorized.
 
@@ -122,7 +122,7 @@ Existing [production gates](../../docs/13-production-readiness.md), including B4
 - **S31-PO-4 (SK-010-02):** “No business maximum” — enforce stated constraints and storage limits only.
 - **S31-PO-3 (SK-010-03):** “50/account/rolling 24h incl. Trainer/WO/PO” — no exceptions or per-workspace resets. FR-006 records the approved value; T035 tracks future implementation, concurrency tests, and verification. No implementation change is made here.
 - **S31-PO-4 (SK-009-04):** Sales/Trainer commission visibility remains denied. This is recorded here as a carried F9 decision; `specs/009` remains owned by the separate F9 lane and is not edited.
-- **Result:** ND-F10-1..3 are decided and recorded; ND-F10-4/5 and carried ND-F9-1..3/5 remain open. No open ambiguities remain about the approved decisions. No tests or implementation changes were made.
+- **Result:** ND-F10-1..3 are decided and recorded; ND-F10-4/5 and carried ND-F9-2/3/5 remain open; carried ND-F9-1 is decided by S31-PO-4 SK-009-01 and S31-PO-5 and ND-F9-4 remains denied per S31-PO-4 SK-009-04. No open ambiguities remain about the approved decisions. No tests or implementation changes were made.
 
 ## Assumptions and Constitution Check
 

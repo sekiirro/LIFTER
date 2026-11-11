@@ -65,7 +65,7 @@ The current documentation-only run: fetch â†’ branch from origin/009-packages â†
 
 ## NEEDS DECISION
 
-ND-F10-1 no revocation (S31-PO-3); ND-F10-2 no business maximum (S31-PO-4); ND-F10-3 50 per authorized issuing account per rolling 24 hours, Trainer/WO/PO included (S31-PO-3), recorded but not implemented; ND-F10-4 public content beyond name and ND-F10-5 price visibility remain open. Carry ND-F9-1 currencies, ND-F9-2 duration bounds, ND-F9-3 actual catalog, ND-F9-4 commission visibility remains denied (S31-PO-4), and ND-F9-5 final navigation. Existing [production readiness gates](../../docs/13-production-readiness.md) remain.
+ND-F10-1 no revocation (S31-PO-3); ND-F10-2 no business maximum (S31-PO-4); ND-F10-3 50 per authorized issuing account per rolling 24 hours, Trainer/WO/PO included (S31-PO-3), recorded but not implemented; ND-F10-4 public content beyond name and ND-F10-5 price visibility remain open. ND-F9-1 currencies is decided by S31-PO-4 SK-009-01 and S31-PO-5 (Egypt = EGP only; International = EGP/USD/SAR; no assumed conversion); carry ND-F9-2 duration bounds, ND-F9-3 actual catalog, ND-F9-4 commission visibility remains denied (S31-PO-4), and ND-F9-5 final navigation. Existing [production readiness gates](../../docs/13-production-readiness.md) remain.
 
 ## Project Structure
 

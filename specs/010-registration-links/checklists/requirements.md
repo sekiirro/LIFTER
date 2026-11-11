@@ -24,7 +24,7 @@
 - [x] Exact issued/opened audit fields/count/timing and rollback/legacy preservation specified.
 - [x] Concurrent issuance/open, hash uniqueness, marker immutability, schedule and timestamp boundaries included.
 - [x] Five F10 decisions remain OPEN with explicit interim behavior; rate placeholders single-function/local-only and production-blocking.
-- [x] ND-F9-1..5 carried; actual catalog remains NEEDS SOURCE CONFIRMATION, no seeds/policy invention.
+- [x] ND-F9-1 decided by S31-PO-4 SK-009-01 and S31-PO-5 (carried as settled; see specs/009-packages/spec.md); ND-F9-2/3/5 carried open, ND-F9-4 carried denied; actual catalog remains NEEDS SOURCE CONFIRMATION, no seeds/policy invention.
 - [x] Six measurable success criteria map to implementation verification.
 
 ## Feature Readiness

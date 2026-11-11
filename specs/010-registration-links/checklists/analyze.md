@@ -85,3 +85,11 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
 - Verdict: PASS for this documentation-only correction.
+
+## S47 Greptile P2 ND-F9-1 settled-status correction re-analysis
+
+- Date: 2026-11-11T05:39:34Z, after the ND-F9-1 settled-status edits to spec.md, plan.md, tasks.md, research.md and checklists/requirements.md in this lane; no later spec/plan/tasks edits follow this analysis.
+- Scope: static Spec Kit recheck of the F10 touched scope after marking carried ND-F9-1 as decided by S31-PO-4 SK-009-01 and S31-PO-5 (market-conditional: Egypt = EGP only; International = EGP/USD/SAR; no assumed conversion; enforced by F9 FR-017; verbatim PO text in specs/009-packages/spec.md Clarifications 2026-11-04) and carried ND-F9-4 as denied per S31-PO-4 SK-009-04; residual open set is now ND-F10-4/5 and carried ND-F9-2/3/5. Dated pre-S31 historical logs (tasks.md T001 2026-10-27, Claude acceptance/audit 2026-10-28; research.md R10 historical row) are preserved as accurate snapshots and are not current-status claims.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks are present.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed.
+- Verdict: PASS for this documentation-only settled-status correction.
