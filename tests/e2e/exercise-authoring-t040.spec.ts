@@ -147,6 +147,11 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           editor.getByLabel(m['catalog.editorEquipment']),
         ).toBeVisible();
+        await expect(
+          editor.getByLabel(m['catalog.editorDescription']),
+        ).toBeVisible();
+        await expect(editor.getByLabel(m['catalog.editorNotes'])).toBeVisible();
+        await expect(editor.getByLabel(m['catalog.editorVideo'])).toBeVisible();
         await expect(editor.getByLabel(m['catalog.editorRest'])).toBeVisible();
         await assertAxe(page);
         await page.screenshot({
@@ -160,11 +165,37 @@ for (const locale of ['ar', 'en'] as const) {
         await page.goto(`/exercise-library/${exerciseId}/edit`);
         const editEditor = page.getByTestId('exercise-editor');
         await expect(editEditor).toBeVisible();
+        await expect(
+          editEditor.getByLabel(m['catalog.editorDescription']),
+        ).toBeVisible();
+        await expect(
+          editEditor.getByLabel(m['catalog.editorVideo']),
+        ).toBeVisible();
         await assertAxe(page);
         await page.screenshot({
           path: join(
             screenshotDir,
             `${locale}-${theme}-${viewport.name}-edit.png`,
+          ),
+          fullPage: true,
+        });
+
+        await page.goto(
+          `/exercise-library/${exerciseId}?workspace=${fixture.wsA.id}`,
+        );
+        const override = page.getByTestId('exercise-override-editor');
+        await expect(override).toBeVisible();
+        await expect(
+          override.getByLabel(m['catalog.editorDescription']),
+        ).toBeVisible();
+        await expect(
+          override.getByText(m['catalog.overrideInherited']).first(),
+        ).toBeVisible();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-override.png`,
           ),
           fullPage: true,
         });
@@ -218,6 +249,73 @@ test('creates an English-only Global exercise end to end', async ({ page }) => {
   await assertAxe(page);
   await page.screenshot({
     path: join(screenshotDir, 'en-light-1440-english-only-created.png'),
+    fullPage: true,
+  });
+});
+
+test('customizes a Global exercise locally and resets one field to Global', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await authenticate(page, 'en', 'light');
+  const m = getMessages('en');
+  const localDescription = `Local description ${randomUUID()}`;
+
+  await page.goto(
+    `/exercise-library/${exerciseId}?workspace=${fixture.wsA.id}`,
+  );
+  const override = page.getByTestId('exercise-override-editor');
+  await expect(override).toBeVisible();
+  const description = override.getByLabel(m['catalog.editorDescription']);
+  const descriptionReset = override.getByRole('button', {
+    name: `${m['catalog.overrideReset']} — ${m['catalog.editorDescription']}`,
+  });
+  await expect(descriptionReset).toHaveCount(0);
+
+  await description.fill(localDescription);
+  await override
+    .getByRole('button', { name: m['catalog.editorSaveWorkspace'] })
+    .click();
+  await expect(descriptionReset).toBeVisible();
+  await expect(
+    override.getByText(m['catalog.overrideCustomized']).first(),
+  ).toBeVisible();
+  await assertAxe(page);
+  await page.screenshot({
+    path: join(screenshotDir, 'en-light-1440-override-customized.png'),
+    fullPage: true,
+  });
+
+  const { sql } = await import('../integration/harness');
+  const saved = await sql()`
+    select v.payload ->> 'description' as description
+    from public.exercise_override_versions v
+    where v.workspace_id = ${fixture.wsA.id}
+      and v.exercise_id = ${exerciseId}
+      and v.version = (
+        select current_version from public.exercise_overrides
+        where workspace_id = ${fixture.wsA.id} and exercise_id = ${exerciseId}
+      )
+  `;
+  expect(saved[0]?.description).toBe(localDescription);
+
+  await descriptionReset.click();
+  await expect(descriptionReset).toHaveCount(0);
+  const reset = await sql()`
+    select v.payload -> 'description' as description
+    from public.exercise_override_versions v
+    where v.workspace_id = ${fixture.wsA.id}
+      and v.exercise_id = ${exerciseId}
+      and v.version = (
+        select current_version from public.exercise_overrides
+        where workspace_id = ${fixture.wsA.id} and exercise_id = ${exerciseId}
+      )
+  `;
+  expect(reset[0]?.description ?? null).toBeNull();
+  await assertAxe(page);
+  await page.screenshot({
+    path: join(screenshotDir, 'en-light-1440-override-reset.png'),
     fullPage: true,
   });
 });

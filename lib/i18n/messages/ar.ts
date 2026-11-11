@@ -549,6 +549,17 @@ export const ar = {
     'يجب ألا يتجاوز الحد الأدنى للتكرارات الحد الأقصى.',
   'catalog.editorErrorChoice': 'اختر قيمة من القائمة.',
   'catalog.editorErrorTooManyAlternatives': 'اختر ثلاثة بدائل كحد أقصى.',
+  // S48 PO copy (S48-PO-1/2/3/5/6): approved and locked by catalog-approved-copy.test.ts.
+  'catalog.editorDescription': 'الوصف',
+  'catalog.editorNotes': 'ملاحظات',
+  'catalog.editorVideo': 'رابط الفيديو',
+  'catalog.editorErrorDescriptionTooLong':
+    'الوصف طويل زيادة. خليه 2000 حرف أو أقل',
+  'catalog.editorErrorSelfAlternative': 'مينفعش تختار نفس التمرين كبديل لنفسه.',
+  'catalog.editorErrorDuplicateAlternative': 'البديل ده متضاف قبل كده.',
+  'catalog.overrideInherited': 'جاي من المكتبة العامة',
+  'catalog.overrideCustomized': 'متعدل',
+  'catalog.overrideReset': 'رجّعه زي المكتبة العامة',
   // S26 copy batch: approved showcase labels are locked by catalog-approved-copy.test.ts.
   'catalog.showcaseView': 'العرض',
   'catalog.showcaseViewList': 'القائمة',

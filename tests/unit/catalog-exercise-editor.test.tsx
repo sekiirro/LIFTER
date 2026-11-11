@@ -341,7 +341,7 @@ describe('exercise editor approved bounds', () => {
     expect(
       validateExerciseEditorDraft(draft({ description: `${atLimit}a` }))
         .description,
-    ).toBe('text_too_long');
+    ).toBe('description_too_long');
     expect(
       validateExerciseEditorDraft(
         draft({ videoUrl: 'https://example.com/video' }),

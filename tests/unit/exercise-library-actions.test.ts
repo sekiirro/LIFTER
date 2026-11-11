@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   writeWorkspaceExercise: vi.fn(),
   transitionExercise: vi.fn(),
   removeWorkspaceExercise: vi.fn(),
+  writeExerciseOverride: vi.fn(),
 }));
 
 vi.mock('../../lib/auth/actor', () => ({ requireActor: mocks.actor }));
@@ -20,6 +21,7 @@ vi.mock('../../lib/catalog/server', () => ({
   writeWorkspaceExercise: mocks.writeWorkspaceExercise,
   transitionExercise: mocks.transitionExercise,
   removeWorkspaceExercise: mocks.removeWorkspaceExercise,
+  writeExerciseOverride: mocks.writeExerciseOverride,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
@@ -56,6 +58,7 @@ describe('production exercise authoring actions', () => {
     mocks.writeWorkspaceExercise.mockResolvedValue({ status: 'ok', data: {} });
     mocks.transitionExercise.mockResolvedValue({ status: 'ok', data: {} });
     mocks.removeWorkspaceExercise.mockResolvedValue({ status: 'ok', data: {} });
+    mocks.writeExerciseOverride.mockResolvedValue({ status: 'ok', data: {} });
   });
 
   it('submits exactly the eight approved fields and no instructions or legacy defaults', async () => {

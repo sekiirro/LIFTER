@@ -2,7 +2,10 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Bidi } from '../../../../../components/ui/Bidi';
 import { requireActor } from '../../../../../lib/auth/actor';
-import { exerciseDetail } from '../../../../../lib/catalog/server';
+import {
+  alternativeOptions,
+  exerciseDetail,
+} from '../../../../../lib/catalog/server';
 import { normalizeExerciseInput } from '../../../../../lib/catalog/schemas';
 import {
   LOCALE_COOKIE,
@@ -44,6 +47,10 @@ export default async function EditExercisePage({
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
   const payload = row.payload as Record<string, unknown>;
+  const options = await alternativeOptions({ workspaceId: null });
+  const alternatives = (options.status === 'ok' ? options.data : []).filter(
+    (option) => option.id !== row.exercise_id,
+  );
   return (
     <main className={styles.main} dir={dirFor(locale)} lang={locale}>
       <header className={styles.header}>
@@ -67,6 +74,7 @@ export default async function EditExercisePage({
         id={row.exercise_id}
         expectedVersion={row.version}
         exercise={exercise}
+        alternatives={alternatives}
         equipmentCodes={
           Array.isArray(payload.equipment_codes)
             ? payload.equipment_codes.filter(

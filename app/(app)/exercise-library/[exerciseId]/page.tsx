@@ -4,12 +4,18 @@ import { Alert } from '../../../../components/ui/Alert';
 import { Button } from '../../../../components/ui/Button';
 import { ExerciseDetailView } from '../../../../components/catalog/ExerciseDetailView';
 import { requireActor } from '../../../../lib/auth/actor';
+import { authorize } from '../../../../lib/auth/authorize';
 import {
+  alternativeOptions,
   authoringWorkspaces,
   exerciseDetail,
+  exerciseOverrideVersion,
+  type CatalogExerciseOption,
 } from '../../../../lib/catalog/server';
 import { normalizeExerciseInput } from '../../../../lib/catalog/schemas';
 import { exerciseInput } from '../../../../lib/catalog/exercise-input';
+import { overrideSources } from '../../../../lib/catalog/exercise-override';
+import { ExerciseOverrideEditor } from '../../../../components/catalog/ExerciseOverrideEditor';
 import {
   LOCALE_COOKIE,
   dirFor,
@@ -108,6 +114,29 @@ export default async function ExerciseDetailPage({
   } catch {
     notFound();
   }
+  const canCustomize =
+    scope === 'global' &&
+    !!workspaceId &&
+    row.lifecycle_state === 'active' &&
+    row.requested_id === row.survivor_id &&
+    authorize(actor, 'coaching_work', workspaceId);
+  let overrideOptions: CatalogExerciseOption[] = [];
+  let overrideVersion = 0;
+  if (canCustomize) {
+    const [options, version] = await Promise.all([
+      alternativeOptions({ workspaceId }),
+      exerciseOverrideVersion({ workspaceId: workspaceId!, exerciseId }),
+    ]);
+    if (options.status === 'ok')
+      overrideOptions = options.data.filter(
+        (option) => option.id !== exerciseId,
+      );
+    if (version.status === 'ok') overrideVersion = version.data.version;
+  }
+  const payload = row.payload as Record<string, unknown>;
+  const sources = overrideSources(
+    payload.effective_fields as Record<string, unknown> | undefined,
+  );
   return (
     <main className={styles.main} dir={dirFor(locale)} lang={locale}>
       <header className={styles.header}>
@@ -158,7 +187,20 @@ export default async function ExerciseDetailPage({
         }
         scope={scope}
         workspaceId={workspaceId}
+        alternatives={overrideOptions}
       />
+      {canCustomize ? (
+        <ExerciseOverrideEditor
+          key={`${workspaceId}:${overrideVersion}`}
+          locale={locale}
+          workspaceId={workspaceId!}
+          exerciseId={String(row.exercise_id)}
+          expectedVersion={overrideVersion}
+          exercise={exercise}
+          sources={sources}
+          alternatives={overrideOptions}
+        />
+      ) : null}
     </main>
   );
 }

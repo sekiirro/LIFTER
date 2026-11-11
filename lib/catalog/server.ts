@@ -41,6 +41,11 @@ export type FoodDuplicateQuery = {
   kcal: number;
 };
 export type CatalogWorkspaceOption = { id: string; name: string };
+export type CatalogExerciseOption = {
+  id: string;
+  kind: 'global' | 'private';
+  names: Partial<Record<'ar' | 'en', string>>;
+};
 export type CatalogExerciseDetailRow = {
   exercise_id: string;
   version: number;
@@ -380,6 +385,138 @@ export function createCatalogServer(deps: CatalogDependencies) {
           p_request: { video_url: null, notes: null },
         }),
       ),
+    writeExerciseOverride: (i: CatalogMutation) =>
+      mutate(
+        i,
+        operationNames.writeVariation,
+        (a) =>
+          typeof i.workspaceId === 'string' &&
+          i.workspaceId.trim().length > 0 &&
+          (isPO(a) || scoped(a, i.workspaceId)),
+        (x) => ({
+          p_workspace_id: x.workspaceId,
+          p_exercise_id: x.id,
+          p_expected_version: x.expectedVersion ?? 0,
+          p_operation_key: x.operationKey,
+          p_request: x.request ?? {},
+        }),
+      ),
+    exerciseOverrideVersion(input: {
+      workspaceId: string;
+      exerciseId: string;
+    }) {
+      return (async (): Promise<CatalogResult<{ version: number }>> => {
+        const ready = await prepare(
+          (a) => isPO(a) || scoped(a, input.workspaceId),
+        );
+        if (ready.result)
+          return { status: ready.result.status } as CatalogResult<{
+            version: number;
+          }>;
+        try {
+          const response = await ready
+            .client!.from('exercise_overrides')
+            .select('current_version')
+            .eq('workspace_id', input.workspaceId)
+            .eq('exercise_id', input.exerciseId)
+            .maybeSingle();
+          if (response.error) return { status: mapError(response.error) };
+          const version = response.data?.current_version;
+          return {
+            status: 'ok',
+            data: {
+              version: typeof version === 'number' ? version : 0,
+            },
+          };
+        } catch {
+          return { status: 'unavailable' };
+        }
+      })();
+    },
+    alternativeOptions(input: { workspaceId?: string | null }) {
+      return (async (): Promise<CatalogResult<CatalogExerciseOption[]>> => {
+        const workspaceId = input.workspaceId ?? null;
+        const ready = await prepare(
+          (a) =>
+            coachingSomewhere(a) &&
+            (!workspaceId || isPO(a) || scoped(a, workspaceId)),
+        );
+        if (ready.result)
+          return { status: ready.result.status } as CatalogResult<
+            CatalogExerciseOption[]
+          >;
+        const toOptions = (
+          rows: unknown,
+          kind: 'global' | 'private',
+        ): CatalogExerciseOption[] => {
+          if (!Array.isArray(rows)) return [];
+          return rows.flatMap((entry) => {
+            if (!entry || typeof entry !== 'object') return [];
+            const row = entry as Record<string, unknown>;
+            const payload =
+              row.result_payload && typeof row.result_payload === 'object'
+                ? (row.result_payload as Record<string, unknown>)
+                : null;
+            if (!payload || typeof row.result_id !== 'string') return [];
+            const effective =
+              payload.effective_fields &&
+              typeof payload.effective_fields === 'object'
+                ? (payload.effective_fields as Record<string, unknown>)
+                : null;
+            const nameEntry =
+              effective?.name && typeof effective.name === 'object'
+                ? (effective.name as Record<string, unknown>)
+                : null;
+            const nameValue =
+              nameEntry?.value && typeof nameEntry.value === 'object'
+                ? (nameEntry.value as Record<string, unknown>)
+                : null;
+            const en =
+              typeof nameValue?.name_en === 'string'
+                ? nameValue.name_en
+                : typeof payload.name_en === 'string'
+                  ? payload.name_en
+                  : undefined;
+            const ar =
+              typeof nameValue?.name_ar === 'string'
+                ? nameValue.name_ar
+                : typeof payload.name_ar === 'string'
+                  ? payload.name_ar
+                  : undefined;
+            if (!en && !ar) return [];
+            return [
+              {
+                id: row.result_id,
+                kind,
+                names: { ...(en ? { en } : {}), ...(ar ? { ar } : {}) },
+              },
+            ];
+          });
+        };
+        const globals = await rpc<unknown>(ready.client!, 'catalog_search', {
+          kind: 'exercise',
+          query: '',
+          filters: { page_size: 50 },
+          cursor: null,
+          workspace_id: workspaceId,
+        });
+        if (globals.status !== 'ok') return { status: globals.status };
+        const options = toOptions(globals.data, 'global');
+        if (!workspaceId) return { status: 'ok', data: options };
+        const privates = await rpc<unknown>(ready.client!, 'catalog_search', {
+          kind: 'workspace_exercise',
+          query: '',
+          filters: { page_size: 50 },
+          cursor: null,
+          workspace_id: workspaceId,
+        });
+        if (privates.status !== 'ok') return { status: privates.status };
+        return {
+          status: 'ok',
+          data: [...options, ...toOptions(privates.data, 'private')],
+        };
+      })();
+    },
     createFood: (i: CatalogFoodMutation) =>
       mutate(
         i,
@@ -465,6 +602,9 @@ export const {
   mergeExercise,
   writeWorkspaceExercise,
   writeVariation,
+  writeExerciseOverride,
+  exerciseOverrideVersion,
+  alternativeOptions,
   transitionVariation,
   createFood,
   versionFood,

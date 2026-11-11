@@ -6,6 +6,7 @@ import { ExerciseEditor } from '../../../components/catalog/ExerciseEditor';
 import type {
   ExerciseScope,
   CatalogStaffRole,
+  ExerciseAlternativeOption,
   ExerciseEditorDraft,
 } from '../../../lib/catalog/exercise-editor';
 import type { Locale } from '../../../lib/design/preferences';
@@ -21,6 +22,7 @@ export function ExerciseAuthoringForm({
   expectedVersion,
   exercise,
   equipmentCodes,
+  alternatives = [],
 }: {
   locale: Locale;
   role: CatalogStaffRole;
@@ -30,6 +32,7 @@ export function ExerciseAuthoringForm({
   expectedVersion?: number;
   exercise?: NormalizedExercise;
   equipmentCodes?: string[];
+  alternatives?: readonly ExerciseAlternativeOption[];
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<'ready' | 'saving' | 'error'>('ready');
@@ -83,6 +86,7 @@ export function ExerciseAuthoringForm({
         status={status}
         exercise={exercise}
         exerciseId={id}
+        alternatives={alternatives}
         onSubmit={submit}
       />
     </>

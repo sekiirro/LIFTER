@@ -9,6 +9,10 @@ import { formatNumber } from '../../lib/i18n/format';
 import { getMessages } from '../../lib/i18n';
 import styles from './ExerciseDetailView.module.css';
 import { ExerciseDetailRemove } from './ExerciseDetailRemove';
+import {
+  alternativeName,
+  type ExerciseAlternativeOption,
+} from '../../lib/catalog/exercise-editor';
 
 export function ExerciseDetailView({
   locale,
@@ -18,6 +22,7 @@ export function ExerciseDetailView({
   canRemove,
   scope,
   workspaceId,
+  alternatives = [],
 }: {
   locale: Locale;
   row: CatalogExerciseDetailRow;
@@ -26,6 +31,7 @@ export function ExerciseDetailView({
   canRemove: boolean;
   scope: 'global' | 'workspace';
   workspaceId: string | null;
+  alternatives?: readonly ExerciseAlternativeOption[];
 }) {
   const m = getMessages(locale);
   const defaults = exercise.defaults;
@@ -167,11 +173,24 @@ export function ExerciseDetailView({
             <dt>{m['catalog.editorAlternatives']}</dt>
             <dd>
               {defaults?.alternativeExerciseIds?.length
-                ? defaults.alternativeExerciseIds.map((alternativeId) => (
-                    <span className={styles.inlineValue} key={alternativeId}>
-                      <Bidi dir="ltr">{alternativeId}</Bidi>
-                    </span>
-                  ))
+                ? defaults.alternativeExerciseIds.map((alternativeId) => {
+                    const option = alternatives.find((item) =>
+                      alternativeId.startsWith('w:')
+                        ? item.kind === 'private' &&
+                          item.id === alternativeId.slice(2)
+                        : item.kind !== 'private' &&
+                          item.id === alternativeId.replace(/^g:/, ''),
+                    );
+                    return (
+                      <span className={styles.inlineValue} key={alternativeId}>
+                        <Bidi dir="auto">
+                          {option
+                            ? alternativeName(option, locale)
+                            : alternativeId.replace(/^[gw]:/, '')}
+                        </Bidi>
+                      </span>
+                    );
+                  })
                 : m['catalog.editorNone']}
             </dd>
           </div>

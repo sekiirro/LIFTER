@@ -44,7 +44,7 @@ describe('exercise row input mapping', () => {
         reps: { kind: 'range', min: 8, max: 12 },
         restSeconds: 90,
         rir: 2,
-        alternativeExerciseIds: ['mock-alternative'],
+        alternativeExerciseIds: ['g:mock-alternative'],
       },
     });
   });

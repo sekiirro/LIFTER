@@ -14,6 +14,7 @@ import {
 } from '../../lib/catalog/schemas';
 import {
   alternativeName,
+  alternativeOptionValue,
   buildExerciseInput,
   canEditExercise,
   draftFromExercise,
@@ -58,9 +59,10 @@ const ERROR_MESSAGE_KEYS: Record<ExerciseEditorErrorCode, keyof Messages> = {
   invalid_choice: 'catalog.editorErrorChoice',
   too_many_alternatives: 'catalog.editorErrorTooManyAlternatives',
   text_too_long: 'catalog.editorErrorTextTooLong',
+  description_too_long: 'catalog.editorErrorDescriptionTooLong',
   invalid_video_url: 'catalog.videoVariationInvalidUrl',
-  duplicate_alternative: 'catalog.editorErrorChoice',
-  self_alternative: 'catalog.editorErrorChoice',
+  duplicate_alternative: 'catalog.editorErrorDuplicateAlternative',
+  self_alternative: 'catalog.editorErrorSelfAlternative',
 };
 
 function errorText(
@@ -327,6 +329,41 @@ export function ExerciseEditor({
                 onChange: (event) => setName('en', event.currentTarget.value),
               }}
             />
+            <Field
+              label={m['catalog.editorDescription']}
+              error={errorText(errors.description, m)}
+              inputProps={{
+                id: `${base}-description`,
+                value: draft.description,
+                disabled: !canEdit,
+                onChange: (event) =>
+                  setValue('description', event.currentTarget.value),
+              }}
+            />
+            <Field
+              label={m['catalog.editorNotes']}
+              error={errorText(errors.notes, m)}
+              inputProps={{
+                id: `${base}-notes`,
+                value: draft.notes,
+                disabled: !canEdit,
+                onChange: (event) =>
+                  setValue('notes', event.currentTarget.value),
+              }}
+            />
+            <Field
+              label={m['catalog.editorVideo']}
+              error={errorText(errors.videoUrl, m)}
+              inputProps={{
+                id: `${base}-video`,
+                type: 'url',
+                inputMode: 'url',
+                value: draft.videoUrl,
+                disabled: !canEdit,
+                onChange: (event) =>
+                  setValue('videoUrl', event.currentTarget.value),
+              }}
+            />
             <div className={styles.field}>
               <label htmlFor={`${base}-primary-muscle`}>
                 {m['catalog.editorPrimaryMuscle']}
@@ -515,12 +552,11 @@ export function ExerciseEditor({
             {alternativeOptions.length ? (
               <ul className={styles.alternativeList}>
                 {alternativeOptions.map((option) => {
-                  const checked = draft.alternativeExerciseIds.includes(
-                    option.id,
-                  );
-                  const id = `${base}-alternative-${option.id}`;
+                  const value = alternativeOptionValue(option);
+                  const checked = draft.alternativeExerciseIds.includes(value);
+                  const id = `${base}-alternative-${value}`;
                   return (
-                    <li key={option.id}>
+                    <li key={value}>
                       <input
                         id={id}
                         type="checkbox"
@@ -528,10 +564,7 @@ export function ExerciseEditor({
                         disabled={!canEdit || (!checked && alternativesAtMax)}
                         aria-describedby={`${base}-alternatives-hint`}
                         onChange={(event) =>
-                          toggleAlternative(
-                            option.id,
-                            event.currentTarget.checked,
-                          )
+                          toggleAlternative(value, event.currentTarget.checked)
                         }
                       />
                       <label htmlFor={id}>

@@ -8,14 +8,20 @@ import {
   removeWorkspaceExercise,
   transitionExercise,
   versionExercise,
+  writeExerciseOverride,
   writeWorkspaceExercise,
   type CatalogMutation,
   type CatalogResult,
 } from '../../../lib/catalog/server';
 import {
+  alternativeRef,
   buildExerciseInput,
   type ExerciseEditorDraft,
 } from '../../../lib/catalog/exercise-editor';
+import {
+  OVERRIDE_FIELDS,
+  type OverrideField,
+} from '../../../lib/catalog/exercise-override';
 import { EQUIPMENT_CODES } from '../../../lib/catalog/schemas';
 import { isUuidV4 } from '../../../lib/catalog/uuid';
 
@@ -142,6 +148,27 @@ export async function removeExerciseAction(
  * The database validator is authoritative; this conversion only shapes the
  * request and never sends the retired `instructions_*` or `defaults` keys.
  */
+function alternativesFor(
+  values: readonly string[],
+  scope: 'global' | 'workspace',
+): unknown[] {
+  const alternatives: unknown[] = [];
+  for (const value of values) {
+    const ref = alternativeRef(value);
+    if (!ref) continue;
+    if (scope === 'global') {
+      if (ref.kind === 'global') alternatives.push(ref.id);
+    } else {
+      alternatives.push(
+        ref.kind === 'private'
+          ? { workspace_exercise_id: ref.id }
+          : { global_exercise_id: ref.id },
+      );
+    }
+  }
+  return alternatives;
+}
+
 function requestFor(
   draft: ExerciseEditorDraft,
   scope: 'global' | 'workspace',
@@ -179,11 +206,10 @@ function requestFor(
     ...(defaults?.rir === undefined || defaults.rir === null
       ? {}
       : { default_rir: defaults.rir }),
-    // Global Alternatives are canonical identities (FR-025). Workspace
-    // Alternatives require one-of-two target objects and stay unwired until
-    // the private-selection surface is delivered.
-    ...(scope === 'global' && defaults?.alternativeExerciseIds?.length
-      ? { alternatives: defaults.alternativeExerciseIds }
+    ...(defaults?.alternativeExerciseIds?.length
+      ? {
+          alternatives: alternativesFor(defaults.alternativeExerciseIds, scope),
+        }
       : {}),
   };
 }
@@ -257,4 +283,134 @@ export async function saveExerciseAction(
     if (input.id) revalidatePath(`/exercise-library/${input.id}`);
   }
   return result;
+}
+
+const RESET_REQUESTS: Record<OverrideField, Record<string, null>> = {
+  name: { name_en: null },
+  description: { description: null },
+  notes: { notes: null },
+  video: { video_url: null },
+  alternatives: { alternatives: null },
+  default_rest_time: { default_rest_time: null },
+  default_rir: { default_rir: null },
+  default_reps: { default_reps: null },
+};
+
+export type SaveExerciseOverrideInput = {
+  workspaceId: string;
+  exerciseId: string;
+  expectedVersion: number;
+  operationKey: string;
+  request: Record<string, unknown>;
+};
+
+export type ResetExerciseOverrideInput = {
+  workspaceId: string;
+  exerciseId: string;
+  expectedVersion: number;
+  operationKey: string;
+  field: OverrideField;
+};
+
+function validOverrideMutation(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isUuidV4(value.workspaceId) &&
+    isUuidV4(value.exerciseId) &&
+    Number.isInteger(value.expectedVersion) &&
+    Number(value.expectedVersion) >= 0 &&
+    isUuidV4(value.operationKey)
+  );
+}
+
+function validOverrideRequest(
+  value: unknown,
+): value is Record<string, unknown> {
+  if (!isRecord(value) || !Object.keys(value).length) return false;
+  if (
+    Object.keys(value).some(
+      (key) =>
+        ![
+          'name_en',
+          'name_ar',
+          'description',
+          'notes',
+          'video_url',
+          'alternatives',
+          'default_rest_time',
+          'default_rir',
+          'default_reps',
+        ].includes(key),
+    )
+  )
+    return false;
+  return Object.values(value).every(
+    (item) =>
+      item === null ||
+      typeof item === 'string' ||
+      (typeof item === 'number' && Number.isFinite(item)) ||
+      (Array.isArray(item) &&
+        item.every(
+          (target) =>
+            isRecord(target) &&
+            (typeof target.global_exercise_id === 'string' ||
+              typeof target.workspace_exercise_id === 'string'),
+        )),
+  );
+}
+
+async function overrideAuthorized(
+  workspaceId: string,
+): Promise<{ ok: true } | { ok: false; result: CatalogResult }> {
+  const actor = await requireActor();
+  const isPlatformOwner = actor.role === 'platform_owner';
+  const workspaceRole =
+    actor.role === 'workspace_owner' || actor.role === 'trainer';
+  if (
+    (!isPlatformOwner && !workspaceRole) ||
+    !authorize(actor, 'coaching_work', workspaceId)
+  )
+    return { ok: false, result: { status: 'not_permitted' } };
+  return { ok: true };
+}
+
+async function writeOverride(
+  input: {
+    workspaceId: string;
+    exerciseId: string;
+    expectedVersion: number;
+    operationKey: string;
+  },
+  request: Record<string, unknown>,
+): Promise<CatalogResult> {
+  const authorized = await overrideAuthorized(input.workspaceId);
+  if (!authorized.ok) return authorized.result;
+  const result = await writeExerciseOverride({
+    workspaceId: input.workspaceId,
+    id: input.exerciseId,
+    expectedVersion: input.expectedVersion,
+    operationKey: input.operationKey,
+    request,
+  });
+  if (result.status === 'ok') {
+    revalidatePath('/exercise-library');
+    revalidatePath(`/exercise-library/${input.exerciseId}`);
+  }
+  return result;
+}
+
+export async function saveExerciseOverrideAction(
+  input: SaveExerciseOverrideInput,
+): Promise<CatalogResult> {
+  if (!validOverrideMutation(input) || !validOverrideRequest(input.request))
+    return { status: 'invalid' };
+  return writeOverride(input, input.request);
+}
+
+export async function resetExerciseOverrideFieldAction(
+  input: ResetExerciseOverrideInput,
+): Promise<CatalogResult> {
+  if (!validOverrideMutation(input) || !OVERRIDE_FIELDS.includes(input.field))
+    return { status: 'invalid' };
+  return writeOverride(input, RESET_REQUESTS[input.field]);
 }

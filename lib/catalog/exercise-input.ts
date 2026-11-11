@@ -56,13 +56,11 @@ function alternativeIds(value: unknown): string[] {
   return value.flatMap((item) => {
     const target = record(item);
     if (!target) return [];
-    const id =
-      typeof target.global_exercise_id === 'string'
-        ? target.global_exercise_id
-        : typeof target.workspace_exercise_id === 'string'
-          ? target.workspace_exercise_id
-          : undefined;
-    return id ? [id] : [];
+    if (typeof target.workspace_exercise_id === 'string')
+      return [`w:${target.workspace_exercise_id}`];
+    if (typeof target.global_exercise_id === 'string')
+      return [`g:${target.global_exercise_id}`];
+    return [];
   });
 }
 

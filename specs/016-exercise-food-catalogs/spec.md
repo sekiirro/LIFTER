@@ -412,3 +412,8 @@ S37-PO-1 Q2: Q2 "F16: S36-PO-5 says 'Published plans retain frozen values' insid
 
 S37-PO-10: S37-PO-10 (2026-11-08, PO message verbatim, answering F16-MCQ-Q, -P, -F-R, -G-R, -D-R; F16-MCQ-O was answered by S37-PO-1 Q2 = A, video stays live):
 PO final: English name required, Arabic optional (Global/Workspace). One optional Description, any language. Max 3 unique Alternatives. Remove dummy docs.google.com links; no legacy support. Account deletion frees email/phone for fresh registration in another workspace, no data transfer. Record in F11/F12. Decisions closed; proceed through gates, no merge without approval.
+
+
+### Session 2026-11-11 — S48-PO-1/2/3/5/6/7 (T040 copy and workspace override UI)
+
+PO sources by pointer: `C:/Users/NEW LAP/.lifter/runs/s48-po/*.verbatim.txt`; consolidated byte-exact in `C:/Users/NEW LAP/.lifter/runs/s48-ds-f16-t040b/approved-copy.md`. S48-PO-1/2/3/5/6 approve the T040 copy rows (Description, Notes, Video URL, the 2,000-character Description error, self/duplicate Alternative errors, and the per-field `Inherited from Global` / `Customized` / `Reset to Global` strings) and S48-PO-5 selects the per-field badge plus per-field reset UI for workspace overrides (FR-026). New Arabic copy is Egyptian colloquial; existing copy is not retrofitted (S48-PO-4/8). S48-PO-7 selects one A–Z-by-English-name workspace list with one pagination; that backend read is not part of this UI lane and the current list behaviour is unchanged. No open ambiguities remain for this scope.

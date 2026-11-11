@@ -9,6 +9,8 @@ const m = vi.hoisted(() => ({
   actor: vi.fn(),
   detail: vi.fn(),
   workspaces: vi.fn(),
+  alternatives: vi.fn(),
+  overrideVersion: vi.fn(),
   cookies: vi.fn(),
   notFound: vi.fn(),
 }));
@@ -17,6 +19,19 @@ vi.mock('../../lib/auth/actor', () => ({ requireActor: m.actor }));
 vi.mock('../../lib/catalog/server', () => ({
   exerciseDetail: m.detail,
   authoringWorkspaces: m.workspaces,
+  alternativeOptions: m.alternatives,
+  exerciseOverrideVersion: m.overrideVersion,
+}));
+vi.mock('../../components/catalog/ExerciseOverrideEditor', () => ({
+  ExerciseOverrideEditor: (props: {
+    workspaceId: string;
+    expectedVersion: number;
+  }) =>
+    createElement('div', {
+      'data-testid': 'override-editor',
+      'data-workspace': props.workspaceId,
+      'data-version': props.expectedVersion,
+    }),
 }));
 vi.mock('../../app/(app)/exercise-library/ExerciseAuthoringForm', () => ({
   ExerciseAuthoringForm: (props: { equipmentCodes?: string[] }) =>
@@ -84,6 +99,8 @@ beforeEach(() => {
     data: [{ id: workspaceId, name: 'North Studio' }],
   });
   m.detail.mockResolvedValue({ status: 'ok', data: [row] });
+  m.alternatives.mockResolvedValue({ status: 'ok', data: [] });
+  m.overrideVersion.mockResolvedValue({ status: 'ok', data: { version: 0 } });
   m.notFound.mockImplementation(() => {
     throw new Error('404');
   });
