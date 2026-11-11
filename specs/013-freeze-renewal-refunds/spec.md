@@ -36,7 +36,7 @@ Sources and precedence:
 
 **Removal means PO-only pseudonymization**, freeing old email/phone while keeping ledger/audit (architecture line 61, D-10, Constitution VII). A separate closure feature after B4 owns delivery, outside F13. Freeze Remove only reverses that freeze's entitlement effect; F12 delivers neither closure nor identity release.
 
-**Binding source resolutions**: Session 12–13 PO decisions supersede D-15 and D-09 for F13 scope. Freeze Apply day counts as frozen; Stop day does not. PO/WO/Trainer/Sales may apply, stop and remove freezes and confirm renewal installments; use existing `manage_freeze` and `record_payment` capabilities. Renewal uses current approved price snapshot, is denied before initial activation, late service starts on recording date, has at most one unstarted renewal across its lineage at a time (FR-012, binding S22-PO-5), and keeps installment due dates anchored to recording date despite service shifts or freezes. Any positive refund immediately deactivates the client and preserves financial/audit history. The Custom Access Token hook blocks new sign-in and refresh issuance from committed deactivation; the Auth Admin worker applies a long-lived ban as defense in depth. Existing JWTs may remain valid until natural expiry. The refund transaction atomically records deactivation and a durable idempotent Auth-lockout outbox row. Refund amount is editable up to actual unrefunded collections; partials are goodwill exits and cumulative refund cannot exceed that balance. Payments/refunds are externally executed; LIFTER records them only. No expiry grace: plans/exports stop at expiry and login/settings remain except that PO-1 refund deactivation denies app/RPC data and new token issuance immediately. PO-only refund uses existing `record_refund` plus explicit `platform_owner` and refund-kind checks, separately from F12 correction. Receipts/results contain no commission for any role; PO/WO use the separate commission reader.
+**Binding source resolutions**: Session 12–13 PO decisions supersede D-15 and D-09 for F13 scope. Freeze Apply day counts as frozen; Stop day does not. PO/WO/Trainer/Sales may apply, stop and remove freezes and confirm renewal installments; use existing `manage_freeze` and `record_payment` capabilities. Renewal uses the approved price snapshot and recording-date installment anchor. The earlier successor-lineage, future-term and renewal-point requirements are superseded by the S43-PO-5 decision encoding in FR-037..042; pre-activation renewal refusal is resolved by S45-PO-2 / S45-R3 in FR-005/012/039; implementation and ledger details remain subject to the revised tasks. Any positive refund immediately deactivates the client and preserves financial/audit history. The Custom Access Token hook blocks new sign-in and refresh issuance from committed deactivation; the Auth Admin worker applies a long-lived ban as defense in depth. Existing JWTs may remain valid until natural expiry. The refund transaction atomically records deactivation and a durable idempotent Auth-lockout outbox row. Refund amount is editable up to actual unrefunded collections; partials are goodwill exits and cumulative refund cannot exceed that balance. Payments/refunds are externally executed; LIFTER records them only. No expiry grace: plans/exports stop at expiry and login/settings remain except that PO-1 refund deactivation denies app/RPC data and new token issuance immediately. PO-only refund uses existing `record_refund` plus explicit `platform_owner` and refund-kind checks, separately from F12 correction. Receipts/results contain no commission for any role; PO/WO use the separate commission reader.
 
 ## PO-1 policy update (verbatim)
 
@@ -48,7 +48,7 @@ These are future acceptance requirements, not executed tests. Policy-dependent s
 
 ### User Story 1 — Record full or partial goodwill refund safely (Priority: P1)
 
-As PO, I record an externally completed full or partial refund against an explicitly selected purchase, reverse collected revenue and its earned commission, deactivate the client and preserve financial/audit history.
+As PO, I record an externally completed full or partial refund against an explicitly selected refundable package group, reverse collected revenue and its earned commission, deactivate the client and preserve financial/audit history.
 
 **Why this priority**: a refund is a terminal client exit even when it is partial; the ledger must cap cash and commission reversals without changing historical collections.
 
@@ -56,7 +56,7 @@ As PO, I record an externally completed full or partial refund against an explic
 
 **Acceptance Scenarios**:
 
-1. **Given** one selected purchase with collections of 10,001 and 20,000 minor units, **When** PO refunds 7,000 then 23,001, **Then** both operations allocate against that purchase in deterministic FIFO order (collected_on, installment sequence, event UUID), cumulative principal reversals equal but never exceed 30,001, commissions follow stored per-collection proportional allocation, the second refund cannot reopen the client, and other purchases require manual resolution (FR-014..019, FR-035).
+1. **Given** one selected refundable package group whose original purchase and upgrade charges have collections totaling 30,001 minor units, **When** PO refunds 7,000 then 23,001, **Then** both operations allocate across that group’s source purchases in deterministic FIFO order (collected_on, installment sequence, event UUID), cumulative principal reversals equal but never exceed 30,001, commissions follow stored per-collection proportional allocation, the second refund cannot reopen the client, and other purchases require manual resolution (FR-014..019, FR-035).
 2. **Given** a lost success response or two PO sessions refunding against the same expected balance, **When** requests are retried/compete, **Then** one matching operation commits; exact authorized replay returns its identical receipt, and a distinct stale request is re-evaluated against the locked balance (FR-023..026).
 3. **Given** a collection previously corrected and recollected, **When** a refund is evaluated, **Then** corrected collections are excluded, active recollections remain eligible, unpaid obligations are canceled without becoming payable, and originals remain unchanged (FR-017/020/021).
 4. **Given** an audit, deactivation or outbox-write failure, **When** refund is attempted, **Then** the entire transaction rolls back, including ledger rows, client deactivation, outbox row and success receipt; an Auth Admin failure after commit leaves the refund committed and retries the same outbox operation while the hook continues to block new token issuance (FR-026, FR-035).
@@ -86,9 +86,9 @@ As PO, WO or Sales, I confirm an externally paid renewal and retain the client's
 
 **Acceptance Scenarios**:
 
-1. **Given** an early renewal with confirmed external payment and approved terms, **When** it commits, **Then** a distinct linked renewal subscription starts at the predecessor's effective end, preserves remaining days and reuses F12 obligations/collections (FR-011..013).
+1. **Given** an active continuous subscription with an early renewal and confirmed external payment, **When** the renewal commits, **Then** the same subscription expiry extends by the full purchased duration, immutable renewal payment facts are recorded, and no successor subscription or activation row is created (FR-037/039).
 2. **Given** package price/rate/duration changes after renewal purchase, **When** either term is read, **Then** each retains its own purchase snapshot; later settings change neither history (FR-003/012).
-3. **Given** two sessions renewing the same expected chain tail, **When** they submit different keys, **Then** at most one appends there; the loser receives `stale_state` and refreshes; no second future purchase is added in MVP (FR-025).
+3. **Given** two sessions renewing or upgrading the same expected continuous-subscription revision, **When** they submit distinct keys, **Then** only the request with the current expected revision commits; the stale request is rejected with no partial writes (FR-025, FR-037).
 4. **Given** an activated subscription with a renewal installment schedule, **When** its schedule is recorded, **Then** due dates derive from the renewal recording date and remain unchanged by freeze or automatic service-start shifts (FR-011, FR-022, PO-2).
 
 ### User Story 4 — Determine expiry without disabling the account (Priority: P1)
@@ -125,9 +125,9 @@ As an authorized staff member, I see only my permitted workspace operations and 
 
 - Cairo midnight and DST transitions in both directions; a calendar day is not always 24 elapsed hours. Browser/server timezone, Friday, month end and leap day cannot change entitlement-day arithmetic.
 - Freeze at activation, expiry or a renewal boundary; overlapping/repeated freezes (overlaps are rejected; sequential freezes are allowed); Stop on Apply day credits only Apply day; Remove after Stop, auto-completion or expiry; removal moving an end into the past. REMOVE clamp preserves current/delivered access.
-- Awaiting activation with a collected upfront installment: no expiry or later due date; freeze requires activation and renewal is denied before initial activation (FR-005/FR-012). Refund can never manufacture delivery or productivity credit.
+- Awaiting activation with a collected upfront installment: expiry and later due dates remain undefined. Upgrade is permitted before activation under FR-038; its duration begins at activation under S43-PO-6. Renewal/initial activation is no longer governed by the superseded successor-row rule.
 - Corrected earlier installment with later installments still collected; correction then recollection; all collections corrected so net collected is zero; cross-month correction/refund; a refund racing correction, collection or P4 activation.
-- Under FR-012 and binding S22-PO-5, MVP rejects recording a renewal whenever an unstarted renewal already exists anywhere in that subscription lineage. Once that renewal starts, another may be recorded; simultaneous unstarted renewals across the lineage are not permitted. Predecessor freeze changes after a successor starts cannot rewrite its actual start or delivered access; conflicting adjustments roll back atomically. Other purchases remain financially independent and require manual resolution after PO-1 deactivation.
+- Legacy renewal-lineage note (superseded by S43-PO-5): predecessor/successor and one-unstarted-renewal restrictions are not current product requirements. Current operations mutate the single continuous subscription under FR-037..039.
 - Duplicate keys with different targets/amount expectations, distinct keys for the same intended purchase, two staff sessions, stale month/time observed before lock wait, uncertain network outcome, authorization revoked during wait.
 - Values beyond floating-point exact range, proportional commission rounding remainder, mixed currency/cross-workspace references, changed package settings, zero refund, multiple purchase selection and partial refund races.
 - An expiry materialization/notice job is delayed or duplicated: no access extension merely because a job did not run and no duplicate lifecycle/notice fact. P4 owns notification time, catch-up, deduplication and obsolete-notice suppression; P6 later consumes approved notification facts.
@@ -143,28 +143,28 @@ Binding requirements below derive from cited decisions, the explicit brief and t
 - **FR-002**: PO/WO/Trainer/Sales MAY Apply/Stop/Remove freezes via `manage_freeze` and confirm renewal installments via `record_payment`. Refund MUST check `record_refund`, explicit `platform_owner` and refund operation kind at both authorization walls; F12 correction separately checks its own kind. Client/anonymous cannot mutate these operations. TypeScript and SQL capability maps must match in both directions. Preserve F12 Sales approval removal and F14 `manage_branding`.
 - **FR-003**: Reuse F12 subscription/obligation/collection/correction truth. Snapshot each new purchase's approved version, price, currency, duration, commission rate and schedule; never mutate prior snapshots or obligations. Money MUST use bounded integer minor units/currency and exact transport/calculation; no floating-point amounts. Reuse F12 Round Half Up collection commission; corrections reverse stored commission exactly, while refund commission uses deterministic cumulative proportional allocation.
 - **FR-004**: Store entitlement/freeze boundaries as Cairo date values and durations as integer days. Boundary instant = the first existing instant of that Africa/Cairo date: nonexistent midnight resolves forward, ambiguous midnight to earliest instant, using the zone library. Calculate dates before conversion, never fixed offsets, elapsed-hour months or browser timezone. Month = 30 days; custom days stay exact. PO decisions fix day inclusion and Stop credit; DST resolution remains separate. Calendar fixtures below give expected instants.
-- **FR-005**: An initial subscription without P4 activation MUST have no service start/end, expiry or later-installment due date and consume zero service/freeze days. Awaiting activation is neither active nor expired. Do not create a public/standalone activation writer. Freeze requires activation; renewal is denied before initial activation. Full refund needs no activation and never generates delivery/productivity.
+- **FR-005**: An initial subscription without P4 activation MUST have no service start/end, expiry or later-installment due date and consume zero service/freeze days. Awaiting activation is neither active nor expired. Do not create a public/standalone activation writer. Freeze and renewal require activation. A renewal attempted while awaiting initial activation is refused with no writes and no queued duration. Full refund needs no activation and never generates delivery/productivity.
 - **FR-006**: Freeze Apply MUST append a selected duration of 1–30 calendar days and Cairo effective dates, count the Apply day as frozen, pause entitlement and extend its effective end by counted frozen days. PO/WO/Trainer/Sales may freeze activated subscriptions including overdue subscriptions. Payment restrictions remain. Freezes on one client/subscription MUST NOT overlap; sequential freezes are allowed. Do not infer package-based limits.
-- **FR-007**: Natural completion/resumption derives from approved interval and Stop/Remove facts without changing purchase duration/price, activation, installments or collections. Completed freeze retains its counted extension; repeat evaluation creates no extra day/audit. A future renewal's immediate activation does not consume service/freeze days before service start; freeze contribution belongs to its service interval, not merely purchase/activation age.
+- **FR-007**: Natural completion/resumption derives from approved interval and Stop/Remove facts without changing immutable purchase terms, installments, or collections. Completed freeze retains its counted extension; repeat evaluation creates no extra day/audit. Earlier future-successor renewal service rules are superseded by the S43-PO-5 continuous-subscription renewal rule; see FR-037..039 and the PO-decision register.
 - **FR-008**: Stop MUST end an applicable freeze early and retain only elapsed counted Cairo days, excluding the Stop day and unused planned days. Same-day Apply/Stop credits the Apply day. Repeated/invalid Stop never extends again or deletes original facts.
 - **FR-009**: Remove MUST append a linked reversal making that freeze's extension zero, retaining Apply/Stop/completion history; PO/WO/Trainer/Sales authority is fixed. Recompute entitlement without rewriting historical access or ending entitlement before the current date or any already delivered access. Because end dates are exclusive Cairo boundaries, clamp a reduced end to no earlier than the first existing instant of the next Cairo date after the Remove recording time, and no earlier than the latest already-delivered access boundary. Reject conflicts that would rewrite actual service-start facts.
 - **FR-010**: Freeze MUST NOT change initial activation, issued installment amounts/offsets or installment due dates. Initial installment due = Cairo activation date + issued offset. Renewal installment due dates anchor to Cairo renewal recording date. Freeze and automatic service-start shifts never move either schedule; overdue remains independent.
-- **FR-011**: Renewal MUST confirm an external payment/installment under F12 `record_payment` and append a distinct linked subscription with current approved immutable price/currency/duration/commission snapshots, obligations, collection, stored commission, audit and receipt atomically. Reuse the existing installment workflow, including upfront payment, configured installments, monthly dues, overdue restriction and confirmation; PO/WO/Trainer/Sales may confirm. No gateway or payment execution. Never reuse initial registration approval as a renewal writer.
-- **FR-012**: Renewal MUST be rejected before initial activation; late renewal service starts on Cairo recording date, early service starts at predecessor effective end, preserving remaining days. Recording activates the renewal immediately; installment dates are still anchored to recording date. Automatically shift the single unstarted renewal when the current entitlement extends; reject conflicts. Never change an actual service start or delivered access. No more than one unstarted renewal at a time across the entire subscription lineage; the limit is not lifetime. Binding S22-PO-5 permits another renewal after the existing unstarted renewal starts.
-- **FR-013**: Distinguish immediate renewal activation/recording instant from Cairo service start/end; no stacked service days are consumed before start and no initial plan-pair activation is forged. A renewal productivity unit requires genuinely new delivered plans, never payment alone. Activation implies no new client/plan access before P4 integration.
-- **FR-014**: Refund MUST be PO-only and target an explicitly selected paid purchase when more than one purchase is paid. Default editable amount to the refundable collected balance; zero may be displayed during editing but confirmation MUST reject zero. Full or partial refund is permitted for active, frozen, expired and paid-unactivated purchases. Partial refund is a goodwill client exit, not discounted continued access. The first successful refund is terminal for client access; PO may record later partial refunds against the same selected purchase while residual collected balance remains, solely to complete the external refund, without reactivating the client. Purchases remain financially independent: no automatic refunds or shifts affect other purchases. PO-1 global client deactivation applies; any other-purchase resolution is manual.
+- **FR-011**: Renewal MUST confirm an external payment/installment under F12 `record_payment` and atomically append immutable renewal lifecycle, payment/revenue, obligation, collection, stored commission, audit and receipt facts while mutating the existing continuous subscription under FR-037. It MUST NOT append a successor subscription or new activation row. Use the current approved immutable price/currency/duration/commission snapshots and the existing installment workflow, including upfront payment, configured installments, monthly dues, overdue restriction and confirmation; PO/WO/Trainer/Sales may confirm. No gateway or payment execution. Never reuse initial registration approval as a renewal writer.
+- **FR-012 (superseded in part by S43-PO-5; pre-activation rule resolved by S45-PO-2 / S45-R3)**: The prior successor-row, predecessor-end, and one-unstarted-renewal constraints do not govern the continuous subscription decision. Renewal before initial activation is refused with no writes and no queued duration. After activation, FR-037 and FR-039 govern: active expiry extends by the full duration, expired renewal starts today, a frozen subscription must be unfrozen first, and renewal modifies the existing subscription. Preserve immutable payment facts and recording-date installment anchors where compatible.
+- **FR-013 (superseded in part by S43-PO-5)**: The prior successor-row activation and renewal-point rule is retired for continuous renewal. Renewal never earns a productivity point. Current client access and plan eligibility continue to follow the owning P4/F19 contracts; this feature does not add a separate client-access grant.
+- **FR-014**: Refund MUST be PO-only and target an explicitly selected paid refundable package group when more than one group is paid. The original package purchase and its upgrade charges belong to one group; each separately paid renewal is its own group. Default editable amount to the refundable collected balance; zero may be displayed during editing but confirmation MUST reject zero. Full or partial refund is permitted for active, frozen, expired and paid-unactivated purchases. Partial refund is a goodwill client exit, not discounted continued access. The first successful refund is terminal for client access; PO may record later partial refunds against the same selected group while its residual collected balance remains, solely to complete the external refund, without reactivating the client. Separate refundable package groups remain financially independent: no automatic refunds or shifts affect another group. PO-1 global client deactivation applies; any other-purchase resolution is manual.
 - **FR-015**: Append immutable refund allocation events to the F12 ledger under an aggregate refund operation identity. A collection may have multiple partial refund allocations; do not use F12's unique `reverses_event_id` for refund allocations. Preserve that F12 relation/uniqueness for exact correction reversals. Each refund allocation identifies its source collection and exact negative principal/commission deltas; preserve original rows and currency.
-- **FR-016**: Cancel unpaid obligations through separate one-per-obligation unique cancellation facts, not mutable issued rows or fabricated collection events. Refunded/canceled differs from unpaid and can never be collected/corrected/reopened. A deferred constraint MUST reject every successor after terminal refund/cancellation, independently of RPCs/keys and in direct integrity probes. Refund ends target/frozen entitlement; other purchases remain financially independent and require manual resolution.
-- **FR-017**: Refund principal MUST not exceed selected purchase's actual unrefunded collection balance, calculated from active collection tails after corrections/recollections. Sum committed refund allocations and the proposed allocations under the same purchase/subscription lock as F12 collections and corrections. Commission is reversed proportionally using each collection's stored commission and cumulative rounding remainder; total reversal for each source cannot exceed that stored amount.
-- **FR-018**: Record explicit PO confirmation of an externally completed refund; no gateway/payment execution, settlement, method or free-text reference. Refund date is the Cairo recording date and determines the refund month. A refund allocation may span collection events within the explicitly selected purchase but not cross purchases.
-- **FR-019**: For the first successful refund, allocations, commission reversal, unpaid-obligation cancellation, client deactivation, Active Clients removal, a durable idempotent Auth-lockout outbox row, receipt, audit and RET-1 start fact MUST commit together or all roll back. Later partial refunds against that same purchase atomically add capped allocations/commission reversals/audit/receipts and do not reactivate the client or duplicate its lockout row. A synchronous Custom Access Token Postgres hook MUST reject token issuance for a deactivated client, including password sign-in and refresh, based on the committed deactivation fact; the hook prevents the pre-worker issuance window. A server-side worker still applies the supported Auth Admin ban with bounded exponential retry and records completion. After the third failed attempt, or after five minutes if fewer than three attempts have failed, it records one durable, deduplicated, audited alert with a snapshot of current PO/WO recipients; delivery and rendering are deferred to the Notifications feature. App/RPC client-data helpers deny a deactivated client even when an existing JWT remains valid. Financial/audit records are preserved. A refund of a future renewal still deactivates the client. No refunded entitlement remains usable.
+- **FR-016**: Cancel unpaid obligations through separate one-per-obligation unique cancellation facts, not mutable issued rows or fabricated collection events. Refunded/canceled differs from unpaid and can never be collected/corrected/reopened. A deferred constraint MUST reject every successor after terminal refund/cancellation, independently of RPCs/keys and in direct integrity probes. Refund ends target/frozen entitlement; other refundable package groups remain financially independent and require manual resolution.
+- **FR-017**: Refund principal MUST not exceed selected group's actual unrefunded collection balance across its component purchases, calculated from active collection tails after corrections/recollections. Sum committed refund allocations and the proposed allocations under the same group/subscription lock as F12 collections and corrections. Commission is reversed proportionally using each collection's stored commission and cumulative rounding remainder; total reversal for each source cannot exceed that stored amount.
+- **FR-018**: Record explicit PO confirmation of an externally completed refund; no gateway/payment execution, settlement, method or free-text reference. Refund date is the Cairo recording date and determines the refund month. A refund allocation may span collection events from purchases within the explicitly selected group, including the original package and its upgrade charges, but MUST NOT cross refundable groups. A separately paid renewal requires its own explicit group selection.
+- **FR-019**: For the first successful refund, allocations, commission reversal, unpaid-obligation cancellation, client deactivation, Active Clients removal, a durable idempotent Auth-lockout outbox row, receipt, audit and RET-1 start fact MUST commit together or all roll back. Later partial refunds against that same group atomically add capped allocations/commission reversals/audit/receipts and do not reactivate the client or duplicate its lockout row. A synchronous Custom Access Token Postgres hook MUST reject token issuance for a deactivated client, including password sign-in and refresh, based on the committed deactivation fact; the hook prevents the pre-worker issuance window. A server-side worker still applies the supported Auth Admin ban with bounded exponential retry and records completion. After the third failed attempt, or after five minutes if fewer than three attempts have failed, it records one durable, deduplicated, audited alert with a snapshot of current PO/WO recipients; delivery and rendering are deferred to the Notifications feature. App/RPC client-data helpers deny a deactivated client even when an existing JWT remains valid. Financial/audit records are preserved. A refund of a future renewal still deactivates the client. No refunded entitlement remains usable.
   The hook must pass claims through unchanged for staff and active clients. Supabase permits one `custom_access_token` hook per project; future claim customization must compose into this function. If the hook errors, token issuance fails closed. Hosted Supabase production requires enabling this hook in the dashboard, a production change requiring PO approval; first enable and verify it on a non-production hosted project.
 - **FR-020**: An F12 correction fixes a mistaken collection record: one exact linked reversal, obligation unpaid again, subscription/approval unchanged, recollection possible while nonterminal. Its `effective_on` is the fresh Cairo correction-recording date/month (final F12-4, F12 spec FR-025); originals remain in their original collection month. F13 MUST preserve this behavior and not invoke correction alone as a refund.
-- **FR-021**: Refund is a terminal access event for the client; book each principal/commission allocation in its refund month. Cancel remaining unpaid obligations for the selected purchase, without restoring them to payable. Collection, correction and recollection against the deactivated/refunded purchase are denied, while a new PO refund operation may consume residual collected balance under FR-014/017. Authorized exact historic replay returns its original receipt without new writes or dates.
+- **FR-021**: Refund is a terminal access event for the client; book each principal/commission allocation in its refund month. Cancel remaining unpaid obligations for purchases in the selected group, without restoring them to payable. Collection, correction and recollection against the deactivated/refunded group are denied, while a new PO refund operation may consume residual collected balance within the selected group under FR-014/017. Authorized exact historic replay returns its original receipt without new writes or dates.
 - **FR-022**: Preserve F12 initial installment n>=2 gating and activation-date-plus-issued-offset rule. Renewal installments reuse the existing workflow but their due-date anchor is renewal recording date. Freeze and automatic service-start shifts do not alter either due-date schedule.
 - **FR-023**: Every Apply/Stop/Remove, renewal, refund, cancellation and expiry materialization MUST deduplicate with immutable operation evidence. Staff keys bind actor, operation kind, workspace, target, expected lifecycle/chain/ledger revisions and canonical inputs/confirmation. Authorize before lookup/disclosure; exact replay returns identical safe result and zero new effect/audit; changed binding returns key_conflict. Receipts/results contain NO commission for ANY role; PO/WO use subscription_commission separately. Uncertain outcomes keep identical request/key.
 - **FR-024**: Every same-client writer MUST follow F12 locking: client row first, subscriptions in stable ascending ID order, obligations by sequence within subscription-ID order, then ledger tails. Never sort locks by derived service start. After waits, recheck/lock current actor/membership in F12 authorization order and hold through commit; sample fresh Cairo time. Internal P4 activation/expiry writers share this contract; refund serializes its cap with F12 collection/correction.
-- **FR-025**: Enforce independently of keys: one freeze contribution, one successor per expected renewal tail, at most one future renewal, one correction reversal/original, one client deactivation, and any number of partial-refund operations only while the purchase cumulative cap permits. Distinct keys/two sessions cannot bypass constraints. Expected lifecycle/chain/tail revisions cover freeze/renewal/refund/activation races. Race fixtures below name permitted orders and exact results; historical reflow conflicts reject atomically.
+- **FR-025**: Enforce independently of keys: one freeze contribution per applicable interval, one continuous subscription per client, one correction reversal/original, one client deactivation, and any number of partial-refund operations only while the purchase cumulative cap permits. Distinct keys/two sessions cannot bypass constraints. Expected lifecycle and operation revisions cover freeze/renewal/refund/upgrade races; rejected stale requests make no partial writes.
 - **FR-026**: Validation/snapshot mismatch, overflow, stale state, revoked permission, audit or deferred integrity failure MUST leave zero partial financial/entitlement/cancellation/receipt effects; acknowledge only commit. Authorized stale expected state returns stale_state; unauthorized/nonexistent target not_permitted; changed key binding key_conflict; rolled-back unexpected failure unavailable. Use only bounded result/error codes.
 - **FR-027**: Derive expiry from service-start date + immutable duration + effective freeze contributions and valid successor coverage. At exclusive end service stops with NO grace; account-level coverage considers eligible intervals. PO decisions fix day inclusion. Never rewrite started successor facts; reject conflicting adjustment. Correct current entitlement cannot depend on an expiry materializer having run; repeat materialization creates no duplicate fact.
 - **FR-028**: F13 supplies an internal tenant-scoped entitlement projection plus independent overdue input/reason, distinguishing awaiting activation, future, active, frozen, expired and refunded/canceled. P4 owns actual plan/export enforcement/resume and expiry/overdue notices (roadmap P4; handoff line 21); clearing one restriction never clears others. No expiry grace or login/settings disablement. Frozen access behavior is decided: plans/exports are restricted while login/settings remain. F12 Out of Scope drift is an F12 doc fix.
@@ -173,7 +173,7 @@ Binding requirements below derive from cited decisions, the explicit brief and t
 - **FR-031**: Flag all staff freeze/renewal/refund confirmations, expiry indicators and P4 client views for the [Frontend Design Gate](../../docs/09-frontend-design-gate.md). Use DESIGN.md and existing tokens/components/i18n: Arabic RTL/English LTR, light/dark, mobile/desktop, all required states, keyboard and WCAG 2.2 AA; future rendered matrix evidence is mandatory. Design gaps await PO choices, not invented screens/navigation. No UI is built by this draft.
 - **FR-032**: Renewal/payment communication stays external. P4 shows expiry date/alerts at 3d/1d/expiry exactly once, no renewal/payment/closure request/redirect CTA; clock time, catch-up and stale-notice suppression belong to P4 consumer work, not F13 PO questions. P5 owns check-in freeze/resume; F13 supplies effective intervals and retains AT-FRZ-01 as integration coverage, no check-in engine. Audit is not client timeline.
 - **FR-033**: Preserve genuine delivered productivity after refund (BRD-05; AT-KPI-03), no payroll reversal, fabricated unit or automatic discipline. Every new application function MUST be SECURITY DEFINER, use `search_path = ''` and qualified names, and be owned by `postgres`; revoke EXECUTE from PUBLIC/anon/authenticated/service_role, then grant narrowly. The `custom_access_token_hook` is exempt from SECURITY DEFINER and MUST retain its empty search path, revoked broad EXECUTE grants, and narrow `supabase_auth_admin` grant. Internal P4 activation/projection and expiry materializer never grant authenticated EXECUTE. Forward-amend `f12_guard_client_transition()` to authorize only the new refund deactivation transition through its matching immutable fact; do not bypass/disable it.
-<a id="fr-035"></a>
+  <a id="fr-035"></a>
 - **FR-035**: A successful refund MUST atomically deactivate the client, remove the client from Active Clients, and enqueue one durable idempotent Auth lockout; it starts the RET-1 30-day clock and preserves ledger/audit records. The Custom Access Token hook denies new token issuance from the committed deactivation fact on sign-in and refresh, including while the worker is unavailable. The server-side worker retains supported Auth Admin ban calls as defense in depth, retrying failures with backoff and raising a safe PO/WO operational alert after persistent failure. Existing JWTs may remain valid to natural expiry; app/RPC data paths deny deactivated clients. If deactivation, outbox write or audit fails, no refund or other transaction effect commits; an Auth Admin failure after commit leaves the refund committed and the outbox retryable.
   Hook deployment readiness: hosted Supabase requires dashboard enablement and verification on a non-production hosted project before any production enablement; production enablement requires PO approval.
 - **FR-036**: Renewal installment confirmation and freeze Apply/Stop/Remove permit PO/WO/Trainer/Sales in TypeScript and SQL with two-way parity checks. Refund remains PO-only. Capability review must preserve unrelated F12/F14 grants.
@@ -184,8 +184,8 @@ Binding requirements below derive from cited decisions, the explicit brief and t
 Logical concepts only; these are not new SQL definitions or permission grants.
 
 - **Subscription purchase**: The existing F12 immutable terms, client/workspace identity and obligations. A renewal is another purchase linked to a predecessor, not an edit to the initial snapshot.
-- **Activation fact and entitlement interval**: Existing F12 initial activation seam plus distinct immediate renewal activation; effective coverage derived from approved calendar policy, duration, freezes, terminal events and chain position. Unknown initial activation means unknown boundaries.
-- **S22-PO-5 renewal activation/freeze seam (resolved)**: `record_renewal` writes the renewal activation fact atomically at its recording instant; there is no standalone activation writer and this fact grants no client/plan access before P4 and creates no initial plan-pair activation or productivity unit. Renewal installments remain anchored to the Cairo recording date. Renewal-of-renewal is allowed after the predecessor renewal has its activation fact, while FR-012 and binding S22-PO-5 permit at most one unstarted renewal across the entire lineage at a time. Freeze rejects a renewal whose current Cairo service start is in the future; the current in-service subscription can be frozen and shifts its one unstarted successor without moving installment due dates. Once a renewal's service starts, it is freezable like any subscription. This resolves the seam under binding S22-PO-5.
+- **Activation fact and entitlement interval**: One initial activation fact for the continuous subscription; renewal and upgrade use distinct lifecycle/ledger events and write no new activation row under architect mapping (S43-R8). Effective coverage derives from approved calendar policy, selected duration, freezes and terminal events. Unknown initial activation means unknown boundaries.
+- **Historical S22-PO-5 implementation seam (superseded where incompatible by S43-PO-5):** The prior `record_renewal` successor-row activation, renewal-of-renewal lineage, and one-unstarted-successor behavior describe the existing implementation baseline only. The current product requirement is one continuous subscription per client; active/expired renewal, freeze, and point behavior is specified by FR-037..041 and architect mapping (S43-R6). Do not treat the former successor lineage as current product scope.
 - **Freeze history**: Apply fact with configured duration/effective dates, linked Stop and Remove facts, computed retained contribution and lifecycle revision. Originals remain immutable.
 - **Renewal chain**: Ordered same-client/workspace purchases with predecessor/tail identity and serialized revision, separating purchase date from service coverage and activation.
 - **Installment obligation and cancellation fact**: Existing immutable F12 scheduled amount/sequence/offset; a linked cancellation ends collectability without replacing that snapshot or creating payment.
@@ -253,7 +253,7 @@ Requests bind expected lifecycle/chain/tail revisions. All callers are permitted
 
 - F9–F11 supply approved package versions, issued agreements and isolated client identities. F12 U4 is merged and verified against `origin/main` at PR #18 / `e3a2534`; F13 reuses its integrated payment operations and does not add a parallel collection/correction writer.
 - D-04/05/10/11/12/13/17 and final F12 decisions are binding, subject to later F13 PO overrides recorded above. ND-01 and ND-08 are closed by Final PO Approval; recommendations elsewhere have no runtime effect.
-- P4 remains future work for the initial activation writer, plan access/export enforcement and portal notifications; F13 does not claim those deliveries. The renewal activation/freeze seam is resolved by binding S22-PO-5: `record_renewal` records renewal activation atomically, but grants no P4 access and adds no standalone activation action. Renewal service start and freeze eligibility follow their Cairo dates.
+- P4 remains future work for the initial activation writer, plan access/export enforcement and portal notifications; F13 does not claim those deliveries. The prior renewal-activation/freeze seam is historical implementation evidence. S43-R8 supersedes its activation-row representation: renewal changes the continuous subscription and records no new activation row. Renewal service start and freeze eligibility follow their Cairo dates.
 - This authorized decision-record unit updates the F13 spec, checklist and ledger architecture. Do not write `.specify/feature.json` or shared registers. Spec Debate is complete; architecture review remains pending.
 
 ## PO Decisions (2026-10-29)
@@ -307,7 +307,7 @@ Requests bind expected lifecycle/chain/tail revisions. All callers are permitted
 **Architect notes (not PO decisions)**
 
 - PO-1 was updated on 2026-10-30; the verbatim update appears above. Refund atomically records deactivation and Auth-lockout outbox. The token hook denies new sign-in/refresh issuance from committed deactivation; the worker applies a supported Auth ban as defense in depth. Existing JWTs may expire naturally. Financial/audit records are never deleted; RET-1 starts on refund.
-- PO-2 resolves session-12 PO-CONFIRM 3d (both questions): renewal installment due dates anchor to the renewal recording date; neither the F13-6 automatic start shift of an unstarted renewal nor any Freeze extension moves those due dates.
+- PO-2 resolves session-12 PO-CONFIRM 3d (both questions): renewal installment due dates anchor to the renewal recording date. Retain this payment fact only where compatible with S43-PO-5 continuous-subscription operations.
 
 ### Superseded by PO 2026-10-29
 
@@ -317,9 +317,9 @@ These are architect-flagged implementation consequences, not additional PO decis
 - Capability matrix: F13-1/F13-4 give Trainer freeze/stop/remove (supersedes D-09 PO/WO/Sales); F13-11 gives Trainer renewal-installment confirmation (record_payment). Update TypeScript lib/auth/capabilities.ts and SQL app_private.role_has_capability parity after F12 (Sales approval removal) and F14 (manage_branding). F13's “no new capability” judgment is superseded.
 - Refund ledger redesign: Multiple partial refunds with proportional commission reversal supersede one terminal refund_reversal per collection using F12 reverses_event_id uniqueness. The Luna High architecture pass in ledger-architecture.md defines: DB-under-lock cumulative cap (sum of refunds ≤ unrefunded collections); deterministic proportional commission rounding with cumulative remainder (total reversed commission never exceeds stored commission); F12 correction-chain interaction; idempotency; and race fixtures. Zero-amount confirmation is rejected.
 - Refund deactivation: Any successful refund deactivates the client and removes them from Active Clients even with entitlement remaining. Add a lifecycle/deactivation fact and forward amendment of F12 f12_guard_client_transition; this starts RET-1's 30-day clock. **PO-1 updated 2026-10-30**: deactivation is recorded with an Auth-lockout outbox; the access-token hook blocks new issuance at commit and the worker applies a supported ban as defense in depth.
-- Renewal installments reuse the existing installment workflow. **RESOLVED 2026-10-29 by PO-2** (recording-date anchor; due dates are unaffected by automatic shift of an unstarted renewal or any Freeze extension).
+- Renewal installments reuse the existing installment workflow. **RESOLVED 2026-10-29 by PO-2** (recording-date anchor); preserve only where compatible with S43-PO-5 continuous renewal.
 - F13-3=B (STOP day is not frozen) and F13-4 REMOVE reverses the extension “as though it never happened” without rewriting delivered access. If access was delivered during the freeze window, REMOVE can pull the end date below today; the spec revision must clamp so entitlement never ends before now or delivered access.
-- F13-7/8: Refund date is the recording date (manual recording at refund time); explicitly select a purchase when multiple paid purchases exist. Refunding a future renewal also deactivates the client.
+- F13-7/8: Refund date is the recording date (manual recording at refund time); explicitly select a refundable package group when multiple groups are paid; original-package and upgrade-charge purchases share one group, separate renewals remain separate. Refunding a future renewal also deactivates the client.
 - Retention RET-1..3: 30 days across ALL recoverable copies, including backups. Hosted Supabase backup/PITR retention may exceed 30 days and backups may not be selectively purgeable. Technical and legal feasibility review is required BEFORE production (blocks production real data, not local/CI synthetic work). Reconcile with financial-ledger/audit retention (retain minimal legally required evidence; ledger is never physically deleted) and B4/ND-F5-1/DP-01/02.
 
 ## Open questions for PO
@@ -331,18 +331,18 @@ Only unresolved policy remains here. Former questions decided by the Session 12/
 
 ### Decision traceability
 
-| Decision                                           | Specification coverage                                                                                                                                                                                                                                                |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F13-1, F13-4                                       | FR-002, FR-006, FR-008, FR-009, FR-036; selected duration, no package-based limit, roles, audit, Apply/Stop/Remove.                                                                                                                                                   |
-| F13-2, F13-3, Session 13 freeze-start confirmation | FR-006, FR-008, FR-010; overdue eligible, Apply day included, Stop day excluded, payment restrictions retained.                                                                                                                                                       |
-| F13-5, F13-6                                       | FR-003, FR-011, FR-012, FR-013; current snapshot, no preactivation, late start at recording, and the single unstarted renewal across the lineage auto-shifted under FR-012/S22-PO-5.                                                                                                                                      |
-| F13-7, F13-8, F13-9                                | FR-014, FR-017, FR-018; external recording, purchase selection, active/frozen/expired/paid-unactivated eligibility.                                                                                                                                                   |
-| F13-10                                             | FR-028; freeze restricts plans/exports but preserves login/settings; overdue restrictions remain.                                                                                                                                                                     |
-| F13-11, PO-2                                       | FR-002, FR-010, FR-011, FR-022, FR-036; existing installment workflow and role grants; recording-date due anchor is unaffected by freeze/reflow.                                                                                                                      |
-| Refund decisions superseding D-15                  | FR-014..021, FR-023..026, FR-035; full/partial editable amount, zero denied, cumulative principal cap, proportional commission, external-only money, client exit.                                                                                                     |
-| PO-1                                               | FR-019, FR-035; atomic deactivation/outbox, Active Clients removal, supported Auth ban for sign-in/refresh, existing JWT natural expiry, RET-1 start, preserved financial/audit records.                                                                              |
-| Final PO APPROVAL (session 13)                     | FR-006, FR-008, FR-014, FR-016..019, FR-035; 1–30 day non-overlapping/sequential freezes, independent purchases/manual resolution, later capped partial refunds without reactivation, FIFO allocation ordered by collected_on, installment sequence, then event UUID. |
-| RET-1..3                                           | FR-019, FR-029; 30-day relationship-end clock and all-copy limit remain production blockers subject to legal/technical review.                                                                                                                                        |
+| Decision                                           | Specification coverage                                                                                                                                                                                                                                                                |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F13-1, F13-4                                       | FR-002, FR-006, FR-008, FR-009, FR-036; selected duration, no package-based limit, roles, audit, Apply/Stop/Remove.                                                                                                                                                                   |
+| F13-2, F13-3, Session 13 freeze-start confirmation | FR-006, FR-008, FR-010; overdue eligible, Apply day included, Stop day excluded, payment restrictions retained.                                                                                                                                                                       |
+| F13-5, F13-6                                       | FR-003, FR-011..013 historical purchase rules are superseded where they require successor subscriptions, future service rows, one-unstarted-renewal lineage, or renewal points. Preserve price snapshots and installment recording-date facts only where compatible with FR-037..039. |
+| F13-7, F13-8, F13-9                                | FR-014, FR-017, FR-018; external recording, refundable package-group selection, active/frozen/expired/paid-unactivated eligibility.                                                                                                                                                   |
+| F13-10                                             | FR-028; freeze restricts plans/exports but preserves login/settings; overdue restrictions remain.                                                                                                                                                                                     |
+| F13-11, PO-2                                       | FR-002, FR-010, FR-011, FR-022, FR-036; existing installment workflow and role grants; recording-date due anchor is unaffected by freeze/reflow.                                                                                                                                      |
+| Refund decisions superseding D-15                  | FR-014..021, FR-023..026, FR-035; full/partial editable amount, zero denied, cumulative principal cap, proportional commission, external-only money, client exit.                                                                                                                     |
+| PO-1                                               | FR-019, FR-035; atomic deactivation/outbox, Active Clients removal, supported Auth ban for sign-in/refresh, existing JWT natural expiry, RET-1 start, preserved financial/audit records.                                                                                              |
+| Final PO APPROVAL (session 13)                     | FR-006, FR-008, FR-014, FR-016..019, FR-035; 1–30 day non-overlapping/sequential freezes, independent refundable package groups/manual resolution, later capped partial refunds without reactivation, FIFO allocation ordered by collected_on, installment sequence, then event UUID. |
+| RET-1..3                                           | FR-019, FR-029; 30-day relationship-end clock and all-copy limit remain production blockers subject to legal/technical review.                                                                                                                                                        |
 
 ## Superseded
 
@@ -356,12 +356,12 @@ Only unresolved policy remains here. Former questions decided by the Session 12/
 ## MVP delivery slices
 
 1. **Full/partial refund**: F12 ledger extension, cumulative cap, deterministic commission allocation, terminal client deactivation/Auth-lockout outbox, safe readers, receipts/audit and race proof. Needs no activation; other-purchase handling remains manual.
-2. **Internal Cairo entitlement projection**: date arithmetic/resolver and P4's initial activation/access contract with synthetic activation fixtures; no public initial-activation writer or real consumer claim. Renewal activation is recorded only inside `record_renewal` under S22-PO-5.
+2. **Internal Cairo entitlement projection**: date arithmetic/resolver and P4's initial activation/access contract with synthetic activation fixtures; no public initial-activation writer or real consumer claim. Renewal does not write a new activation row under architect mapping (S43-R8).
 3. **Freeze Apply/Stop/Remove**: enforce decided roles/day counting/payment restrictions/access effects; decided 1–30-day duration and non-overlap/sequential policy; no P5 check-in engine.
-4. **Renewal stacking and installments**: current offer snapshot, immediate purchase activation, at most one unstarted renewal across a lineage at a time (FR-012, S22-PO-5), existing F12 installment workflow with PO-2 anchor, unstarted-only reflow.
-5. **Later integration/scope**: P4 initial activation writer, plan/export enforcement/resume and notices; F13 renewal activation/freeze behavior follows S22-PO-5 meanwhile. A second simultaneous unstarted renewal anywhere in a lineage is rejected under FR-012 and S22-PO-5; unresolved cross-purchase refund handling remains out of scope. Closure is a separate feature after B4.
+4. **Renewal and installments**: active and expired renewal update the continuous subscription as required by FR-039; preserve the existing installment recording-date anchor only where compatible. Successor-lineage and unstarted-only reflow are superseded.
+5. **Later integration/scope**: P4 initial activation writer, plan/export enforcement/resume and notices remain owned by P4/F19. F13 continuity requirements are FR-037..042; successor-row activation and lineage rules from S22-PO-5 are historical implementation behavior where incompatible with S43-PO-5. Closure is a separate feature after B4.
 
-Initial-service access and client-facing plan/portal enforcement wait for P4's initial activation writer and relevant approved policies/gates. The S22-PO-5 renewal activation/freeze seam is implemented in F13; its activation fact alone is not client access or real activation/portal/enforcement evidence.
+Initial-service access and client-facing plan/portal enforcement wait for P4 and relevant gates. Existing F13 renewal activation/freeze seams describe implementation history; current product behavior follows FR-037..042 and architect mapping (S43-R6/R7/R8).
 
 ## Dependencies and integration ordering
 
@@ -373,7 +373,7 @@ F12's model objects exist in its pinned branch migration; public operation/reade
 | `public.subscriptions`                                                                                                                  | Immutable purchase snapshots and initial-only uniqueness; extend supported kind for linked renewals and add append-only lifecycle facts, without widening initial uniqueness or editing terms.                                                                                                                                   |
 | `public.subscription_installments`                                                                                                      | Exact-total immutable amount/currency/sequence/issued offsets; separate one-per-obligation unique cancellation facts distinguish canceled from unpaid.                                                                                                                                                                           |
 | `public.payment_events`                                                                                                                 | One unified ledger: add refund allocation events linked to refund aggregate and source collections; permit multiple capped refund allocations per collection without consuming F12 correction's unique `reverses_event_id`; extend value/correspondence/actor guards and readers; never interpret refund/cancellation as unpaid. |
-| `public.subscription_activations`                                                                                                       | Preserve the immutable P4 initial activation writer. `record_renewal` alone writes each renewal activation fact atomically at recording, without a standalone writer, P4 access, initial plan-pair activation, or productivity unit (binding S22-PO-5).                                                                                 |
+| `public.subscription_activations`                                                                                                       | Preserve the immutable P4 initial activation writer. Historical behavior: `record_renewal` wrote a renewal activation fact under S22-PO-5. Superseded for new writes by architect mapping (S43-R8): retain only the initial activation row; renewal writes lifecycle/ledger events without a new activation row.                 |
 | `app_private.registration_operations`                                                                                                   | Consume actor/key/canonical intent/receipt pattern; forward-amend kind/shape checks and financial correspondence for aggregate refunds/lifecycle operations. Preserve actor/key uniqueness across targets/operations and commission-free receipts; no independent store permitting replay collisions.                            |
 | `app_private.registration_decisions`, `app_private.registration_approval_events`                                                        | Preserve approval truth and P2 REQ-P2-01 durable handoff; renewal/refund is not a second initial approval/form-assignment event.                                                                                                                                                                                                 |
 | `installment_collect`, `collection_correct`                                                                                             | Extend terminal-state checks and shared serialization for refund/cancellation races; preserve sequential activation gating and correction-month behavior.                                                                                                                                                                        |
@@ -388,7 +388,7 @@ F12's model objects exist in its pinned branch migration; public operation/reade
 Read-only inspection of [model migration at 50cc77e](https://github.com/sekiirro/LIFTER/blob/50cc77e8a0090f3baa716c3e4656b216db0983dd/supabase/migrations/20261101120000_registration_approval_model.sql) confirms the following, without applying SQL:
 
 - Line 102's kind CHECK permits only `collection` and `correction_reversal`. Root/revision/predecessor constraints, `f12_payment_successor` and `f12_payment_reversal` constrain correction-chain branching and exact reversal of an original. Refund allocations must not consume the unique correction `reverses_event_id`; add an independent source-allocation relation and cumulative validator.
-- `app_private.f12_validate_payment()` / `f12_check_payment()` enforce deferred chain alternation, exact correction amount/commission/currency/effective date and operation correspondence; `f12_guard_payment()` currently routes only correction reversals to PO-only `record_refund`. Merely adding a new kind would take the collection permission branch. The coordinated forward migration MUST explicitly recognize refund kind/actor/operation and terminal transitions, validate cumulative source/purchase caps, and reject every collection/correction successor after terminal refund independently of RPC/key.
+- `app_private.f12_validate_payment()` / `f12_check_payment()` enforce deferred chain alternation, exact correction amount/commission/currency/effective date and operation correspondence; `f12_guard_payment()` currently routes only correction reversals to PO-only `record_refund`. Merely adding a new kind would take the collection permission branch. The coordinated forward migration MUST explicitly recognize refund kind/actor/operation and terminal transitions, validate cumulative source/purchase-group caps, and reject every collection/correction successor after terminal refund independently of RPC/key.
 - `app_private.registration_operations` currently allows approve/reject/reconsider/collect/correct, requires per-obligation event correspondence and ties `original_event_id` to correction. Its checks and receipt/result correspondence MUST be extended coherently for multi-obligation refunds and lifecycle facts, without breaking cross-target actor/key uniqueness or existing F12 receipts.
 - `f12_guard_subscription()`, `f12_guard_installment()` and `f12_validate_subscription()` assume an initial issued-link purchase; subscription kind is initial-only and issued-link relations are mandatory. Renewal installment purchases need a coordinated forward extension of those guards/constraints, immutable current-offer binding, and reuse of F12 obligation/collection behavior with the PO-2 due-date anchor; do not forge registration links or copy the purchase model.
 - `app_private.f12_guard_client_transition()` rejects any UPDATE except a matching in-transaction approval-state transition. F13 PO-1 requires an in-transaction deactivation path, so amend the guard and audit correspondence forward to accept only a matching refund-linked deactivation fact while retaining immutable identity/approval guarantees.
@@ -412,7 +412,7 @@ Inherited [readiness register](../../docs/13-production-readiness.md) remains au
 - **Platform/release**: PI-02 specific deployment approval, PI-03..05 volumes/measurement/test-account approvals; CS-01 credentialed pull evidence as applicable, CS-02 exact-head CI/security, CS-03 provenance/secrets; BR-01..03 encrypted backups/first restore/drill. PI-01 and PI-06 being Done does not close these gates.
 - **F14**: SB-01..04 hosted Storage/proxy/validator, capacity/upload limits, banner decision and Storage proof; BR-04 Storage restore/audit integrity remain applicable to the eventual integrated release. F13 does not independently close or reimplement them.
 
-F13 production blockers are registered centrally as F13-PB-01 (operational refund reconciliation and restore proof), F13-PB-02 (P4 consumer and Design Gate evidence before client exposure), and F13-PB-03 (PO approval to enable the Custom Access Token hook on hosted production after non-production hosted verification; before enabling production refunds, record evidence that the production Auth hook is active and sign-in and token refresh are denied for a synthetic deactivated client). DP-06 separately tracks the RET-1/RET-3 Auth-state retention and purge dependency. All remain **Open** in **Pre-Production** except F13-PB-03, which gates **Go-Live**. Binding S22-PO-5 governs and implements F13's service-date-gated renewal/freeze operations. P4 still owns initial activation and client/plan access enforcement; F13-PB-02 gates user-facing exposure until the real consumers and Design Gate are evidenced. Full refund does not require activation. No compliant go-live is implied by merging this draft.
+F13 production blockers are registered centrally as F13-PB-01 (operational refund reconciliation and restore proof), F13-PB-02 (P4 consumer and Design Gate evidence before client exposure), and F13-PB-03 (PO approval to enable the Custom Access Token hook on hosted production after non-production hosted verification; before enabling production refunds, record evidence that the production Auth hook is active and sign-in and token refresh are denied for a synthetic deactivated client). DP-06 separately tracks the RET-1/RET-3 Auth-state retention and purge dependency. All remain **Open** in **Pre-Production** except F13-PB-03, which gates **Go-Live**. The S22-PO-5 renewal activation-row representation is superseded for new writes by architect mapping (S43-R8); S43-PO-5/6 govern current continuity operations. P4 still owns initial activation and client/plan access enforcement; F13-PB-02 gates user-facing exposure until the real consumers and Design Gate are evidenced. Full refund does not require activation. No compliant go-live is implied by merging this draft.
 
 ### RET-1/RET-3 retention requirements
 
@@ -429,7 +429,7 @@ Spec Debate is complete; unresolved policy blocks only its affected slice. Unaff
 - Payment-provider refunds, gateways, online checkout or payment execution: BRD-03 requires external payment and no integrated gateway. F13 records confirmation only.
 - Partial installment collections, ad hoc discounts/fees, repricing old purchases, updating/deleting ledger/audit/snapshots, cross-workspace merge/transfer and YBS behavior/systems.
 - PO-only closure/pseudonymization/identity release: separate feature after B4, preserving ledger/audit. No self-service renewal/payment/account-delete request, CTA, support button or helpdesk.
-- Multiple future renewals are outside MVP; renewal installments reuse the existing workflow with recording-date due anchors.
+- Successor/future renewal subscription rows are outside the current product model; renewal installments reuse F12 only where the recording-date anchor remains compatible with the continuous subscription.
 - Code, migrations, DB/Docker operations, plan.md/tasks.md, shared-file edits, PR creation and deployment in this session.
 
 ## Constitution Check
@@ -440,7 +440,7 @@ Spec Debate is complete; unresolved policy blocks only its affected slice. Unaff
 | II — Immutable finance | FR-003/014..022/025/026: one F12 ledger, exact integer money, append-only linked corrections/refund allocations/cancellations, cumulative caps and stored-commission allocation; policy gaps do not authorize exceptions. |
 | III — PO governance    | D-10/15 plus F13 overrides: Trainer freeze/renewal rights; PO-only full/partial refunds/deletion; preserve F12 Sales approval removal and role-safe projections.                                                          |
 | IV — Approved scope    | Architecture/traceability/later decisions reconciled; ND-01/ND-08 closed, no YBS defaults, fixed P4/P5/closure ownership and MVP boundaries.                                                                              |
-| V — Versioning         | New renewal purchase snapshot, immutable prior terms, initial activation only at P4 delivery; renewal productivity only for genuinely new delivered plans.                                                                |
+| V - Versioning         | Preserve immutable paid price/duration snapshots while renewal and upgrade revise the continuous subscription; renewals award no productivity point under S43-PO-5.                                                       |
 | VI — People decisions  | Genuine completed delivery credit preserved, no automatic discipline/payroll/settlement effects.                                                                                                                          |
 | VII — Privacy          | PII-free append-only audit, safe receipt/read projections, B4/retention and hosted readiness remain blockers.                                                                                                             |
 | VIII — UI              | Every proposed rendered surface explicitly gated by DESIGN.md/docs/09; no generated UI decisions or screenshots claimed.                                                                                                  |
@@ -448,3 +448,313 @@ Spec Debate is complete; unresolved policy blocks only its affected slice. Unaff
 | Workflow/platform      | Spec/architecture review and slice-specific approval remain separate. Stack C was used for the supported Auth API probe and integration verification; full F13 migration work follows merged F12/F14.                     |
 
 No constitutional exception is requested. Session 12/13 PO decisions are incorporated. ND-01 and ND-08 are closed; the Custom Access Token hook closes the new-issuance window on Stack C, and F12 U4 was merged and verified by T001. This remains a draft pending architecture review and slice-specific implementation approval; the production hook still requires the stated PO approval. Acceptance evidence is recorded in tasks.md and quickstart.md.
+
+## S43-PO-5 decision encoding (2026-11-10)
+
+PO source wording: all 11 S43-PO-5 lines are copied byte-exact, and S43-PO-6 lines are copied byte-exact in the Clarifications / PO-decision register below. Architect decisions remain separate and are labelled **architect mapping (S43-R6)**. S43-PO-5 is FINAL and supersedes S43-PO-3/4 where they overlap.
+
+**architect mapping (S43-R6/R7/R8):** One continuous subscription per client; qualifying upgrades use fixed rank/duration; equal-price upgrade is free and lower-price selection is refused; active/expired renewal arithmetic, freeze gates, pre-activation upgrade, refund basis, renewal-then-upgrade credit/payment/duration, revenue, activation-row representation, points, plans, and manual dates follow FR-037..042 and SC-015..034. S43-PO-6 resolves S43-F13-MCQ-7..11; S43-PO-8 resolves the five Sol-debate product questions, recorded with byte-exact PO words and separate architect mappings below.
+
+### Functional requirements
+
+- **FR-037 - Continuous subscription:** Each client has exactly one continuous subscription. Upgrade and renewal mutate its existing subscription state and append immutable operation, payment/revenue, and audit facts; they never create overlapping subscriptions. Serialize concurrent requests by expected revision. Subscription state, operation receipt, payment/revenue, and audit facts commit atomically; a failed operation writes none of them. If a caller loses the response after commit, exact authorized replay returns the same receipt without extra effects; stale distinct requests fail without partial writes. Initial activation occurs once. Renewal and upgrade write their own lifecycle/ledger events and never write a new activation row. (S43-PO-5 item 1; architect mapping (S43-R8))
+- **FR-038 - Upgrade eligibility, credit, term, and revenue:** Permit upgrade to a package with a higher immutable tier-offer rank at any duration, or the same rank with a longer duration. Upgrade only within the same currency; refuse a mixed-currency selection before writes and perform no conversion. Credit the full payment attributable to the package being replaced, never a prorated balance. If a renewal precedes an upgrade, including when an earlier upgrade has occurred, credit only the original package payment; exclude prior upgrade charges and separately paid renewal payments from the credit, and preserve the separately paid renewal duration and payment. Equal package price is a free upgrade; a lower package price is refused. Same-rank longer and higher-rank equal/longer upgrades start from the original subscription start, except after an expired renewal, when the renewal start date is the anchor; higher-rank shorter-duration upgrades start on the upgrade date. For any upgrade completed before activation, the upgraded term begins on activation, overriding those calendar anchors until activation occurs. Record only additional payments as new revenue. Reject upgrade while frozen until unfrozen and reject upgrade after expiry. (S43-PO-5 items 2, 9-10; S43-PO-6; S43-PO-8; architect mapping (S43-R10))
+- **FR-039 - Renewal:** A renewal attempted before the subscription’s initial activation MUST be refused before any write and MUST NOT queue or retain the purchased duration. Once activated, for a non-frozen subscription, extend current expiry by the full purchased duration and record the full renewal price as revenue. An expired activated subscription renews from today, with expiry today plus the purchased duration. Renewal changes the existing subscription and writes a renewal lifecycle/ledger event; it writes no new activation row. Freezing extends expiry by counted frozen days. If a renewal is followed by upgrade, apply FR-038’s original-package-only credit rule and preserve the separately paid renewal duration and payment. (S43-PO-5 items 1, 3-4, 8; architect mapping (S43-R8))
+- **FR-040 - Manual edits and plans:** Only Platform Owner may manually adjust subscription dates, including after expiry; each adjustment is audited and creates no revenue. Eligible new and existing clients may receive unlimited plan revisions/publications under normal permissions. Upgrade and renewal require no plan; plan publication creates no additional trainer point.
+- **FR-041 - Productivity:** Award one production point per new client once. A returning client never counts as new. Upgrades, renewals, and plan publications award no additional points.
+- **FR-042 - Refund basis after upgrade:** A full refund covers the full selected package payment, including upgrade charges; separate renewal payments are not automatically refunded. Partial refunds remain subject to existing collected-balance and allocation limits. (S43-PO-5 item 6; S43-PO-6)
+
+### Given / When / Then acceptance scenarios
+
+1. **Given** Basic 1 month was paid at EGP 750, **When** it is upgraded to Basic 3 months at EGP 1,400, **Then** the same subscription remains, the term is 3 months from original start, EGP 650 is charged and recorded as revenue, and the original EGP 750 is not recorded again. (FR-037/038; SC-015/017)
+2. **Given** a higher-rank package has equal or longer duration than the current package, **When** the upgrade commits, **Then** its term begins at the original subscription start; **Given** a higher-rank package has a shorter duration, **When** the upgrade commits, **Then** its term begins on the upgrade date. (FR-038; SC-027)
+3. **Given** a subscription has not activated and an eligible upgrade is purchased, **When** activation later succeeds, **Then** the upgraded duration begins on the activation date and no duration is consumed before activation. (FR-038; SC-028)
+4. **Given** an eligible higher-rank package costs EGP 1,400 and the package being replaced was paid in full at EGP 750, **When** the upgrade commits, **Then** EGP 650 is the only new payment and new revenue; no remaining-day proration changes the credit. An equal-price upgrade records zero new payment/revenue, and a lower-price choice is refused with no writes. (FR-038; SC-017/020/030)
+5. **Given** a selected upgraded package payment consists of the original EGP 750 and an EGP 650 upgrade charge, with a separately paid renewal, **When** the client requests a full-package refund, **Then** the refund basis covers EGP 1,400 including the upgrade charge and does not automatically refund the separate renewal payment. (FR-042; SC-031)
+6. **Given** an original package payment of EGP 750 and a separately paid three-month renewal precede an upgrade to a package priced at EGP 1,400, **When** the upgrade is priced, **Then** credit is EGP 750 only, the EGP 650 additional payment is new revenue, and the renewal's paid duration and payment remain preserved. (FR-038/039; SC-024/030)
+7. **Given** a subscription is renewed or upgraded after its one initial activation, **When** the lifecycle operation commits, **Then** it records its operation/ledger event without a second activation row. (FR-037/039; SC-032)
+8. **Given** an active subscription has 10 days remaining, **When** a 3-month renewal is recorded, **Then** expiry extends by 3 months plus 10 remaining days and the full renewal price is recorded once. (FR-037/039; SC-016)
+9. **Given** an expired subscription is renewed for 3 months, **When** the renewal commits today, **Then** service starts today and expiry is today plus 3 months; an expired upgrade request is refused. (FR-039; SC-021)
+10. **Given** a subscription is frozen, **When** upgrade or renewal is attempted, **Then** each is refused without writes until unfrozen. **Given** a freeze contributes 10 counted days, **When** expiry is projected, **Then** expiry extends by 10 days. (FR-038/039; SC-022)
+11. **Given** a Platform Owner adjusts dates after expiry, **When** the adjustment commits, **Then** it is audited and records zero revenue; a non-PO attempt is refused. (FR-040; SC-018)
+12. **Given** a client has received a new-client point and later returns after expiry, **When** they renew, upgrade, or receive another plan publication, **Then** they receive no new-client point; a genuinely new client receives exactly one point once, and eligible plans may be published without a product-imposed count limit. (FR-040/041; SC-019/026)
+13. **Given** a subscription is awaiting initial activation, **When** renewal is attempted, **Then** renewal is refused before any subscription, lifecycle, payment, revenue, obligation, collection, audit, or receipt write and no duration is queued; **Given** initial activation later succeeds, **When** renewal is attempted, **Then** the active or expired rules in FR-039 apply. (FR-005/012/039; SC-033)
+14. **Given** an original package was paid at EGP 750, an earlier upgrade added an EGP 650 charge, and a separate renewal was paid before another qualifying upgrade, **When** that post-renewal upgrade is priced, **Then** credit is EGP 750 only, excludes the earlier upgrade charge and renewal payment, and preserves the separate renewal duration and payment. (FR-038/039; SC-034)
+
+### Supersession register
+
+| Prior rule/location                                                                                               | Status and replacement                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Previous US3 and FR-011..013: successor renewal row, separate purchase lineage, future term, renewal productivity | Superseded by S43-PO-5 items 1, 3, 7, 8; architect mapping (S43-R6). Renewal mutates existing subscription; renewal grants no point; separately paid renewal duration remains after upgrade. |
+| FR-012 and FR-025 one-unstarted-renewal-per-lineage constraints                                                   | Superseded by S43-PO-5 item 1; architect mapping (S43-R6). One continuous subscription replaces successor-lineage uniqueness.                                                                |
+| S43-PO-4 upgrade and renewal formulas where they conflict                                                         | Superseded by S43-PO-5 items 2, 3, 8, 9, 10; architect mapping (S43-R6).                                                                                                                     |
+| Refund limited to incremental upgrade difference                                                                  | Superseded by S43-PO-5 item 6; architect mapping (S43-R6). Full-package composition after renewal-then-upgrade is excluded unless separately selected for refund.                            |
+| Returning-client point after lapse or plan-publication point                                                      | Superseded by S43-PO-5 item 7; architect mapping (S43-R6).                                                                                                                                   |
+
+## Clarifications / PO-decision register
+
+### S45-PO-2 — S45-F13-MCQ-1 (resolved)
+
+PO source: C:/Users/NEW LAP/.lifter/runs/s45-po/s45-po-2.verbatim.txt
+
+"A: Deny until activated (Recommended)"
+
+**architect mapping (S45-R3):** Renewal before initial activation is refused (no writes, no queued duration). After activation, FR-039 active/expired renewal rules apply. Encode in F13 FR-012/FR-039 + GWT/SC/tasks/tests; close the MCQ in the register with the PO words byte-exact.
+
+Status: RESOLVED. FR-005/012/039, scenario 13, SC-033, and T041 encode this decision.
+
+### S43-PO-5 item 1
+
+S43-PO-5 (2026-11-10): 1. One continuous subscription per client.
+
+**architect mapping (S43-R6):** One continuous subscription per client; upgrade and renewal mutate it.
+
+### S43-PO-5 item 2
+
+S43-PO-5 (2026-11-10): 2. Upgrade: higher tier (even shorter duration) or same tier with longer duration. Credit FULL previously paid amount, never prorate. Equal price = free; lower price = not an upgrade. Example: EGP 750 → 1,400; charge 650.
+
+**architect mapping (S43-R6):** Higher tier qualifies at any duration, or same tier with longer duration; full paid credit, equality is free, lower price is refused; the worked example is a 650 charge.
+
+### S43-PO-5 item 3
+
+S43-PO-5 (2026-11-10): 3. Renewal: extend current expiry by full purchased duration; expired renewals start today. Record full renewal revenue.
+
+**architect mapping (S43-R6):** Active renewal extends current expiry by full duration; expired renewal starts today; full renewal price is revenue.
+
+### S43-PO-5 item 4
+
+S43-PO-5 (2026-11-10): 4. Frozen subscriptions must be unfrozen before upgrade/renewal. Freezing extends expiry by frozen days.
+
+**architect mapping (S43-R6):** Frozen subscriptions must be unfrozen before upgrade or renewal; counted freeze days extend expiry.
+
+### S43-PO-5 item 5
+
+S43-PO-5 (2026-11-10): 5. Pre-activation upgrades allowed.
+
+**architect mapping (S43-R6):** Pre-activation upgrade is allowed.
+
+### S43-PO-5 item 6
+
+S43-PO-5 (2026-11-10): 6. Refund covers the full package, not just upgrade difference.
+
+**architect mapping (S43-R6):** Refund basis is the full package, not only the upgrade difference.
+
+### S43-PO-5 item 7
+
+S43-PO-5 (2026-11-10): 7. Returning clients never count as new clients. Trainer points awarded once per new client, never per plan, upgrade, or renewal. Unlimited plan publishing.
+
+**architect mapping (S43-R6):** Returning clients never count as new; award one point per new client once; no plan, upgrade, or renewal points; unlimited plan publishing.
+
+### S43-PO-5 item 8
+
+S43-PO-5 (2026-11-10): 8. Renewal then Upgrade: upgrade the original package while preserving separately paid renewal duration.
+
+**architect mapping (S43-R6):** Upgrade replaces the original package and preserves separately paid renewal duration.
+
+### S43-PO-5 item 9
+
+S43-PO-5 (2026-11-10): 9. Higher-tier, shorter-duration upgrade starts on upgrade date, using full previously paid credit.
+
+**architect mapping (S43-R6):** Higher-tier shorter-duration upgrade starts on upgrade date and uses full previously paid credit.
+
+### S43-PO-5 item 10
+
+S43-PO-5 (2026-11-10): 10. Expired subscriptions cannot upgrade; renew into the desired package instead.
+
+**architect mapping (S43-R6):** Expired subscription upgrade is refused; renewal into the desired package is allowed.
+
+### S43-PO-5 item 11
+
+S43-PO-5 (2026-11-10): 11. Manual subscription edits: Platform Owner only, no revenue.
+
+**architect mapping (S43-R6):** Only Platform Owner may edit subscription dates; manual edits create no revenue.
+
+### S43-PO-6 resolved residuals (answers to S43-F13-MCQ-7..11)
+
+#### Residual 1
+
+S43-PO-6 (2026-11-10): Fixed tier hierarchy: Silver < Gold < Platinum. Workspaces can rename tiers, but their underlying rank never changes.
+
+**architect mapping (S43-R7):** Every package has the fixed platform tier rank Silver < Gold < Platinum. Workspaces may edit display names by locale; the underlying rank cannot change.
+
+**Given / When / Then:** Given packages have the fixed platform ranks Silver, Gold, and Platinum, when higher-tier eligibility is evaluated, then rank order controls independently of editable localized display names.
+
+#### Residual 2
+
+S43-PO-6 (2026-11-10): * Higher-tier upgrades with equal/longer duration count from the original subscription start. Shorter-duration upgrades start on the upgrade date.
+
+**architect mapping (S43-R7):** Higher-tier upgrades with equal or longer duration start from the original subscription start; shorter duration starts on the upgrade date.
+
+**Given / When / Then:** Given a higher-rank package has an equal or longer duration, when upgraded, then the replacement term uses the original subscription start; for shorter duration it uses the upgrade date.
+
+#### Residual 3
+
+S43-PO-6 (2026-11-10): * Pre-activation upgrades are allowed; duration starts upon activation.
+
+**architect mapping (S43-R7):** An upgrade before activation is allowed and its duration starts when the subscription activates.
+
+**Given / When / Then:** Given an upgrade completes before activation, when activation occurs, then the upgraded duration starts on that activation date.
+
+#### Residual 4
+
+S43-PO-6 (2026-11-10): * Refunds cover the full selected package payment, including upgrade charges, but don’t automatically refund separate renewals.
+
+**architect mapping (S43-R7):** The full refund covers the selected package payment, including upgrade charges; separately paid renewals are excluded unless separately selected for refund.
+
+**Given / When / Then:** Given a selected package payment includes an upgrade charge and a separate renewal payment exists, when a full-package refund is recorded, then it covers the selected package payment including its upgrade charge and does not automatically refund the renewal.
+
+#### Residual 5
+
+S43-PO-6 (2026-11-10): * After renewal then upgrade, credit only the original package’s full payment. Preserve separately purchased renewal duration and payments.
+
+**architect mapping (S43-R7):** After renewal then upgrade, credit only the original package payment; preserve the separately paid renewal duration and payments.
+
+**Given / When / Then:** Given an original package payment and a separately paid renewal precede an upgrade, when the upgrade is priced, then only the original package payment is credited and renewal duration/payment remain.
+
+#### Residual 6
+
+S43-PO-6 (2026-11-10): * Never prorate upgrade credit. Record only additional payments as new revenue.
+
+**architect mapping (S43-R7):** Upgrade credit is never prorated and new revenue is limited to additional payments.
+
+### S43-R9 product questions — resolved by S43-PO-8
+
+S43-PO-6 resolves the prior S43-F13-MCQ-7..11. S43-PO-8 resolves all five Sol-debate product questions below; no open product ambiguity remains in these affected scopes and their affected tasks are unblocked. Independent technical/security gates remain separately listed.
+
+- **S43-F9-MCQ-2 — tier structure / rank placement (replaces prior MCQ-2):** see specs/009-packages/spec.md:327-329, 340-341 and T077. What offer structure carries the fixed tiers? Options: (A) multiple ranked offers per category (Sol recommendation); (B) one fixed tier per category; (C) replace the four-category model. Implications: A allows several ranked offers in each existing market/type category; B retains one package/tier per category; C changes the four-category identity and package initialization. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 3; F9 offer/rank placement and F13 T042 rank-dependent upgrade work are unblocked.
+- **S43-F9-MCQ-3 — tier-label authority:** see specs/009-packages/spec.md:328, 400 and T078. Who may edit tier labels? Options: (A) PO only; (B) WO only; (C) PO globally and WO within that WO's workspace (Sol recommendation). Implications: A centralizes edits; B permits only local workspace edits; C supports global and scoped local edits with corresponding audit/authorization rules. Recommendation before PO answer: C. Status: RESOLVED by S43-PO-8 source line 4; F9 label mutation permissions, audit actor policy, and role tests are unblocked.
+- **S43-F18-MCQ-1 — historical nutrition exports:** see specs/018-nutrition-planner/contracts/nutrition-api.md:93 and specs/018-nutrition-planner/research/po-decision-matrix.md:49 (Sol-9 finding). When exporting a historical nutrition revision after its selection has been removed or invalidated, what should appear? Options: (A) that revision's last valid client selection (Sol recommendation); (B) coach original only; (C) require an explicit authorized export choice. Implications: A preserves delivered historical state and needs revision-scoped selection retention; B drops that state from the export; C adds a choice flow and authorization check. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 5; F18 historical nutrition export behavior and its acceptance/task coverage are specified in the paired F18 PR.
+- **S43-F13-MCQ-12 — post-lapse upgrade anchor (historical question; resolved by S43-PO-8):** see specs/013-freeze-renewal-refunds/spec.md:461, 470, 652 and T042. After an expired renewal starts today, does a later equal/longer upgrade use (A) that restarted paid-period start (Sol recommendation) or (B) the lifetime first activation date? Implications: A anchors to the current restarted paid period; B counts time before it restarted. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 6; T042 is unblocked for the post-lapse upgrade anchor.
+- **S43-F13-MCQ-13 — cross-currency upgrade (historical question; resolved by S43-PO-8):** see specs/009-packages/spec.md:312, 321, 328 and specs/013-freeze-renewal-refunds/spec.md:461, T042. May an upgrade credit one currency against a package priced in another? Options: (A) same-currency only (Sol recommendation); (B) permit cross-currency upgrades under a PO-approved conversion policy. Implications: A rejects a mixed-currency pair without writes; B requires an authoritative conversion source/date, rate, rounding, audit and revenue treatment. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 7; T042 is unblocked for same-currency eligibility and refusal before writes.
+
+### Related-spec reconciliation
+
+- **F9 tier inventory (read-only):** specs/009-packages defines immutable market/type and versioned price/duration, but no tier-rank field (`specs/009-packages/data-model.md:29,38-46,65-73`; `specs/009-packages/spec.md:308-312`). S43-PO-6 defines the fixed rank concept/order; S43-PO-8 resolves offer structure and rank placement on each tier offer within its category.
+- **F12 initial subscription scope:** specs/012-registration-approval creates the initial subscription; F13 owns renewal and continuity reconciliation. No new F12 requirement is inferred.
+- F13 old successor/one-unstarted-renewal and renewal-point clauses are marked superseded above; prior freeze-duration rules remain in force, with S43-PO-5 freeze extension and frozen-operation rules layered on top.
+
+### Continuity success criteria
+
+- **SC-015:** 100% of successful upgrades/renewals mutate one continuous subscription; exact authorized replay adds no writes, and stale concurrent intent fails without partial writes.
+- **SC-016:** Active renewal with 10 days remaining plus 3-month term yields 3 months plus 10 days; full renewal revenue is recorded once.
+- **SC-017:** EGP 750 to EGP 1,400 same-tier longer upgrade charges/records EGP 650 and sets 3 months from original start.
+- **SC-018:** Only Platform Owner date edits succeed, including expired terms; each is audited and creates zero revenue.
+- **SC-019:** One point maximum per new client; returning clients and upgrade/renewal/publication add zero; plan publishing has no product-imposed limit.
+- **SC-020:** Equal-price upgrade commits at zero charge/revenue; lower-price upgrade is refused with zero writes.
+- **SC-021:** Expired renewal starts today; expired upgrade is refused.
+- **SC-022:** Frozen upgrade/renewal are refused until unfrozen; expiry increases by counted freeze days.
+- **SC-023:** Pre-activation upgrade is accepted; expired upgrade refusal requires renewal into the desired package.
+- **SC-024:** Renewal-then-upgrade preserves separately paid renewal duration; credit is only the original package payment; renewal duration and payment remain preserved.
+- **SC-025:** A full refund covers the full selected package payment including upgrade charges; separate renewal payments are not automatically refunded.
+- **SC-026:** Returning client receives no second point after lapse; first new-client point is unique.
+
+## Historical S43-PO-3 quote preserved
+
+PO decisions:
+
+Upgrade uses FULL previously paid credit, not prorated. Example: 1 month EGP 750 → 3 months EGP 1,400; charge only EGP 650. Total subscription becomes 3 months from original start; record only EGP 650 as new revenue.
+
+Muse Spark 1.3 Contributor via OpenCode Go is approved for use, including the required training-data setting.
+
+Show me both complete AI prompts (Workout + Nutrition), in EN/AR, for approval. Do not finalize them yet.
+
+Update relevant specs and preserve governance gates.
+
+**Superseded in part by S43-PO-5 item 2; architect mapping (S43-R6):** the full-prior-paid credit and upgrade price/term rules are governed by the final S43-PO-5 decisions. Non-overlapping S43-PO-3 statements are not modified by this note.
+
+### Supersession coverage for earlier F13 prose
+
+The supersession applies wherever older rules are repeated in this feature earlier sections; those statements are historical rationale, not current requirements. Affected text includes User Story 3 and scenarios; FR-011..013; FR-012/S22-PO-5 renewal-chain and one-unstarted-successor constraints; resolved scope decisions; Key Entities; SC-004; implementation boundaries; and concurrency fixtures referring to future renewals, renewal-of-renewal, successor coverage/start, lineage tails, or activation as a new subscription. They are superseded by S43-PO-5 items 1 through 11 and architect mapping (S43-R6). Preserve immutable payment events and recording-date installment facts only where compatible with one continuous subscription. Historical task evidence remains factual history, not current behavior.
+
+FR-037 requires exactly one subscription per client across the product; an upgrade package must belong to that subscription workspace. This supersedes the older per-workspace interpretation under S43-PO-5 item 1 and architect mapping (S43-R6).
+
+- **SC-027:** Same-rank longer and higher-rank equal/longer upgrades use the original start; after an expired renewal the renewal start is the anchor; higher-rank shorter duration uses the upgrade date.
+- **SC-028:** Upgrade duration begins at activation for pre-activation upgrades; zero duration is consumed before activation.
+- **SC-029:** Upgrade renewal-then-upgrade credit equals only the original package payment; renewal payments and duration remain unchanged.
+- **SC-030:** New revenue equals additional same-currency upgrade payments only; no prorated credit or currency conversion is used, and a mixed-currency upgrade is refused before writes.
+- **SC-031:** Full refund covers the selected package payment including upgrade charges; separate renewal payments are not automatically refunded.
+- **SC-032:** Renewal and upgrade after initial activation create lifecycle/ledger events but zero additional activation rows.
+- **SC-033:** In every awaiting-activation renewal attempt, refusal occurs with zero subscription/lifecycle/payment/revenue/obligation/collection/audit/receipt writes and zero queued duration; after activation the FR-039 active/expired rules apply.
+- **SC-034:** For upgrade, renewal, then upgrade, the later upgrade credit is only the original package payment; earlier upgrade charges and separate renewal payments are excluded, while renewal duration/payment remain unchanged.
+
+This feature’s clarified continuity and renewal-credit questions are decided; no open product ambiguity remains in these scopes. Implementation and independent technical/security gates remain separate.
+
+## S43 PO 5-7 exact source blocks - S43-R9 reference
+
+These PO source blocks were copied programmatically. Older quotations above are retained; the controlling PO text appears here without edits. Architect mappings remain labelled separately.
+
+### s43-po-5 - PO words copied byte-exact
+
+```text
+Final PO decisions — update F13/F17/F18/F19:
+
+1. One continuous subscription per client.
+2. Upgrade: higher tier (even shorter duration) or same tier with longer duration. Credit FULL previously paid amount, never prorate. Equal price = free; lower price = not an upgrade. Example: EGP 750 → 1,400; charge 650.
+3. Renewal: extend current expiry by full purchased duration; expired renewals start today. Record full renewal revenue.
+4. Frozen subscriptions must be unfrozen before upgrade/renewal. Freezing extends expiry by frozen days.
+5. Pre-activation upgrades allowed.
+6. Refund covers the full package, not just upgrade difference.
+7. Returning clients never count as new clients. Trainer points awarded once per new client, never per plan, upgrade, or renewal. Unlimited plan publishing.
+8. Renewal then Upgrade: upgrade the original package while preserving separately paid renewal duration.
+9. Higher-tier, shorter-duration upgrade starts on upgrade date, using full previously paid credit.
+10. Expired subscriptions cannot upgrade; renew into the desired package instead.
+11. Manual subscription edits: Platform Owner only, no revenue.
+
+Approve all four EN/AR AI prompt drafts, removing “certified coach” and using “كابتن” consistently in Arabic. Coach-original notes appear per item and in copied prompts, never totals.
+
+F17: Week 1 = program days 1–7, including rest days; no calendar start required.
+
+Reconcile conflicts without inventing rules; flag any remaining ambiguity. Complete the approved Sol Medium debate, then finalize, commit and push under existing governance gates.
+```
+
+### s43-po-6 - PO words copied byte-exact
+
+```text
+Fixed tier hierarchy: Silver < Gold < Platinum. Workspaces can rename tiers, but their underlying rank never changes.
+* Higher-tier upgrades with equal/longer duration count from the original subscription start. Shorter-duration upgrades start on the upgrade date.
+* Pre-activation upgrades are allowed; duration starts upon activation.
+* Refunds cover the full selected package payment, including upgrade charges, but don’t automatically refund separate renewals.
+* After renewal then upgrade, credit only the original package’s full payment. Preserve separately purchased renewal duration and payments.
+* Never prorate upgrade credit. Record only additional payments as new revenue.
+```
+
+### s43-po-7 - PO words copied byte-exact
+
+```text
+Arabic tier names are سيلفر، جولد، بلاتينيوم.
+```
+
+## S43-PO-8 decision register — PO words and architect mapping are separate
+
+### S43-F13-MCQ-12 — resolved
+
+- Where: FR-038, SC-027, lifecycle contract, T042.
+- Question: After an expired renewal restarts service, what anchors a later equal/longer upgrade?
+- Options: A) that renewal's start date; B) lifetime first activation date.
+- Implications: A anchors the term to the restarted paid period; B counts elapsed time before that period.
+- Recommendation before PO answer: A.
+- Status: RESOLVED by S43-PO-8 source line 6; T042 is unblocked for this case.
+- PO words (byte-exact):
+
+> 4. After expired renewal, upgrade calculations use the renewal start date.
+
+- architect mapping (S43-R10): After an expired renewal starts today, its start date becomes the anchor for a later equal/longer upgrade.
+
+### S43-F13-MCQ-13 — resolved
+
+- Where: FR-038, SC-030, lifecycle contract, T042.
+- Question: May an upgrade combine package payments in different currencies?
+- Options: A) same currency only; B) use a conversion policy.
+- Implications: A refuses a mixed-currency upgrade before writes and performs no conversion; B requires a separately approved conversion source, date, rate, rounding, audit, and revenue policy.
+- Recommendation before PO answer: A.
+- Status: RESOLVED by S43-PO-8 source line 7; T042 is unblocked for this case.
+- PO words (byte-exact):
+
+> 5. Upgrades require the same currency; no cross-currency conversion.
+
+- architect mapping (S43-R10): Upgrade is permitted only when existing and selected package currencies are identical; no conversion is performed.
+
+### S43-PO-8 acceptance scenarios
+
+- **Given** a client has an expired subscription that is renewed today, **When** the client later makes a qualifying same-rank longer or higher-rank equal/longer upgrade, **Then** the renewal start date anchors the upgraded term. (FR-038; SC-027; architect mapping (S43-R10))
+- **Given** the current and selected upgrade packages use different currencies, **When** the upgrade is requested, **Then** the system refuses before any write and performs no currency conversion. **Given** both packages use the same currency, **When** the other upgrade rules permit it, **Then** normal same-currency credit and revenue rules apply. (FR-038; SC-030; architect mapping (S43-R10))

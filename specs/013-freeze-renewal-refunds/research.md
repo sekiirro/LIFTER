@@ -33,7 +33,7 @@ below was re-read from `origin/main`, not inferred from the pre-merge branch. **
   `collected_on`, and `recorded_at`. The immutable row in
   `app_private.registration_operations` stores actor + UUID `request_key`, operation, canonical
   version/hash, target/revision bindings and the complete `result_receipt`; `(actor_user_id,
-  request_key)` is unique. U3 reject receipts use nullable purchase/event fields. Do not expose
+request_key)` is unique. U3 reject receipts use nullable purchase/event fields. Do not expose
   commission in a refund receipt.
 - U4 canonical request keys are exact and operation-specific. Collection requires workspace/client,
   request key, subscription/obligation, expected installment sequence/revision/previous event,
@@ -129,3 +129,19 @@ below was re-read from `origin/main`, not inferred from the pre-merge branch. **
 - **F14 integration completed in S21**: the full 34-migration F14 chain through `20261102152000` replayed before F13; F12/F13/F14 shared-function and capability expectations passed T017.
 - **Verified isolated stack — Stack C assigned**: F13 uses lifter-stack-c only (API 35421, DB 35422). Never use Stack A or B.
 - **Retention — PRE-PRODUCTION BLOCKER**: technical feasibility across all recoverable copies including backups and applicable legal exceptions must be resolved before real client data/production.
+
+## S43-PO-5 decision encoding and inventory (2026-11-10)
+
+PO source wording: S43-PO-5 items 1 through 11 are preserved byte-exact in spec.md under Clarifications / PO-decision register. Architect mapping is separately labelled **architect mapping (S43-R6)** there and summarized here.
+
+**architect mapping (S43-R6/R7/R8/R9):** F13 encodes one continuous subscription and the approved upgrade/renewal boundaries, freeze arithmetic, refund basis, point uniqueness, and plan publishing in FR-037..042. Examples are in Given/When/Then and SC-015..032. S43-PO-6 resolves S43-F13-MCQ-7..11; S43-R8 specifies lifecycle events without new activation rows. S43-PO-8 resolves rank placement, post-lapse anchor, currency, and historical nutrition export questions; those affected implementation scopes are unblocked. S45-PO-2 resolves S45-F13-MCQ-1: renewal before initial activation is refused with no writes or queued duration; after activation FR-039 applies. The S43-PO-6 original-package-only credit rule also governs an upgrade after renewal even when an earlier upgrade occurred; prior upgrade charges and separate renewal payments are excluded from credit.
+
+Pre-amendment read-only F9 inventory: specs/009-packages defined immutable market/type on the package category and price/duration in offer/version snapshots (data-model.md:29,38-46,65-73; spec.md:308-312), with no tier field. S43-PO-6 supplies the fixed rank concept/order; the offer structure and rank placement remain S43-F9-MCQ-2. Price and duration are not inferred as rank.
+
+Read-only code/test inventory and paths are listed in plan.md; implementation tasks were updated, but this lane changed no implementation or tests. New branches require coverage for equal/lower price, expired renewal/upgrade, frozen operations, pre-activation upgrade, renewal-then-upgrade preservation, full-package refund, returning-client points, and unlimited publication. Add explicit upgrade and points persistence/acceptance paths.
+
+F12 initial subscription creation remains distinct from F13 continuity operations. Legacy successor/lineage assumptions and renewal points are superseded per spec.md.
+
+### S43-PO-6 and S43-R7/R8 reconciliation
+
+PO lines and architect mappings are recorded separately in spec.md. Fixed tier rank and pre-activation/upgrade/refund/renewal-credit rules are encoded in F13 and F9. architect mapping (S43-R8) sets the lifecycle representation: renewal and upgrade do not write new activation rows. No migration or implementation is authored in this lane.
