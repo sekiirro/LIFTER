@@ -65,18 +65,20 @@ export function planAssignment(
   templates: AssignmentTemplate[],
   workspaces: AssignmentWorkspace[],
 ): AssignmentResult {
+  const selection = request.selection;
+  const target = request.target;
   const selectable = templates.filter((t) => !t.retired);
   const selected =
-    request.selection.mode === 'all'
+    selection.mode === 'all'
       ? selectable
-      : request.selection.mode === 'specific'
-        ? selectable.filter((t) => request.selection.ids.includes(t.id))
-        : selectable.filter((t) => !request.selection.ids.includes(t.id));
+      : selection.mode === 'specific'
+        ? selectable.filter((t) => selection.ids.includes(t.id))
+        : selectable.filter((t) => !selection.ids.includes(t.id));
 
   const targets =
-    request.target.mode === 'all_workspaces'
+    target.mode === 'all_workspaces'
       ? workspaces
-      : workspaces.filter((w) => request.target.ids.includes(w.id));
+      : workspaces.filter((w) => target.ids.includes(w.id));
 
   const outcomes: AssignmentOutcome[] = [];
   const created: AssignmentResult['created'] = [];

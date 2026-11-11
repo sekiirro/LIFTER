@@ -60,7 +60,7 @@ function makeIds(prefix: string): () => string {
 describe('F17 id continuity and duplicate remap (FR-002, SC-012)', () => {
   it('preserves unchanged ids when duplicating a single item', () => {
     const day = makeDay();
-    const copy = duplicateItem(day.items[0], makeIds('x'));
+    const copy = duplicateItem(day.items[0]!, makeIds('x'));
     expect(copy.id).not.toBe('item-A');
     // Sibling untouched: original day keeps every id.
     expect(collectIds(day)).toEqual([
@@ -75,7 +75,7 @@ describe('F17 id continuity and duplicate remap (FR-002, SC-012)', () => {
 
   it('duplicate exercise remaps the item and every set field-for-field', () => {
     const day = makeDay();
-    const original = day.items[0];
+    const original = day.items[0]!;
     const copy = duplicateItem(original, makeIds('x'));
     expect(copy.id).not.toBe(original.id);
     expect(copy.sets).toHaveLength(original.sets.length);
@@ -84,7 +84,7 @@ describe('F17 id continuity and duplicate remap (FR-002, SC-012)', () => {
       expect(originalSetIds.has(set.id)).toBe(false);
     }
     // Field-for-field equality apart from ids.
-    expect({ ...copy, id: 'item-A', sets: copy.sets.map((s, i) => ({ ...s, id: original.sets[i].id })) }).toEqual(original);
+    expect({ ...copy, id: 'item-A', sets: copy.sets.map((s, i) => ({ ...s, id: original.sets[i]!.id })) }).toEqual(original);
     // No collisions with the source document.
     const before = new Set(collectIds(day));
     for (const id of collectIds({ ...day, items: [copy] } as WorkoutDay)) {
@@ -112,11 +112,11 @@ describe('F17 id continuity and duplicate remap (FR-002, SC-012)', () => {
     // Uniqueness inside the copy: no collisions.
     expect(new Set(after).size).toBe(after.length);
     // Field-for-field equality apart from ids.
-    expect(copy.items[0].name).toBe('Bench Press');
-    expect(copy.items[0].sets[1]).toMatchObject({
+    expect(copy.items[0]!.name).toBe('Bench Press');
+    expect(copy.items[0]!.sets[1]).toMatchObject({
       type: 'working',
       load: { mode: 'added_weight', value: '60', unit: 'kg' },
     });
-    expect(copy.items[0].reps).toEqual({ min: 8, max: 12 });
+    expect(copy.items[0]!.reps).toEqual({ min: 8, max: 12 });
   });
 });

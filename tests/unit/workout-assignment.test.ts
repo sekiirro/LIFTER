@@ -38,14 +38,14 @@ describe('F17 assignment state machine (FR-010, FR-011, SC-003, SC-004)', () => 
     );
     expect(result.error).toBeUndefined();
     const byId = Object.fromEntries(result.outcomes.map((o) => [o.workspaceId, o]));
-    expect(byId.Kendo.outcome).toBe('skipped_already_assigned');
-    expect(byId.Kendo.createdTemplateIds).toEqual([]);
-    expect(byId.Alpha.outcome).toBe('skipped_already_assigned');
-    expect(byId.Beta.outcome).toBe('assigned');
-    expect(byId.Beta.createdTemplateIds).toHaveLength(10);
+    expect(byId.Kendo!.outcome).toBe('skipped_already_assigned');
+    expect(byId.Kendo!.createdTemplateIds).toEqual([]);
+    expect(byId.Alpha!.outcome).toBe('skipped_already_assigned');
+    expect(byId.Beta!.outcome).toBe('assigned');
+    expect(byId.Beta!.createdTemplateIds).toHaveLength(10);
     // Gamma holds only self-created templates: still eligible (literal A2).
-    expect(byId.Gamma.outcome).toBe('assigned');
-    expect(byId.Gamma.createdTemplateIds).toHaveLength(10);
+    expect(byId.Gamma!.outcome).toBe('assigned');
+    expect(byId.Gamma!.createdTemplateIds).toHaveLength(10);
     expect(result.created).toHaveLength(20);
   });
 
@@ -61,10 +61,10 @@ describe('F17 assignment state machine (FR-010, FR-011, SC-003, SC-004)', () => 
     );
     expect(result.error).toBeUndefined();
     expect(result.outcomes).toHaveLength(1);
-    expect(result.outcomes[0].outcome).toBe('assigned');
+    expect(result.outcomes[0]!.outcome).toBe('assigned');
     // t2 already held (any source version): skipped and reported, never duplicated.
-    expect(result.outcomes[0].createdTemplateIds).toEqual(['t4']);
-    expect(result.outcomes[0].skippedTemplateIds).toEqual(['t2']);
+    expect(result.outcomes[0]!.createdTemplateIds).toEqual(['t4']);
+    expect(result.outcomes[0]!.skippedTemplateIds).toEqual(['t2']);
   });
 
   it('commits mixed no_copies/assigned batches; rejects total zero before writes', () => {
@@ -79,9 +79,9 @@ describe('F17 assignment state machine (FR-010, FR-011, SC-003, SC-004)', () => 
     );
     expect(mixed.error).toBeUndefined();
     const byId = Object.fromEntries(mixed.outcomes.map((o) => [o.workspaceId, o]));
-    expect(byId.Alpha.outcome).toBe('no_copies');
-    expect(byId.Alpha.createdTemplateIds).toEqual([]);
-    expect(byId.Beta.outcome).toBe('assigned');
+    expect(byId.Alpha!.outcome).toBe('no_copies');
+    expect(byId.Alpha!.createdTemplateIds).toEqual([]);
+    expect(byId.Beta!.outcome).toBe('assigned');
     expect(mixed.created).toHaveLength(10);
 
     const zero = planAssignment(

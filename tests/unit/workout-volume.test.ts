@@ -44,12 +44,12 @@ describe('F17 volume pure function (FR-016, SC-007)', () => {
     ];
     const result = computeVolume(days, MUSCLES);
     expect(result.perSession).toHaveLength(1);
-    expect(result.perSession[0]).toEqual({
+    expect(result.perSession[0]!).toEqual({
       dayIndex: 1,
       totals: { Chest: 3, Triceps: 1.5, 'Front Delts': 1.5 },
     });
     expect(result.perWeek).toHaveLength(1);
-    expect(result.perWeek[0]).toEqual({
+    expect(result.perWeek[0]!).toEqual({
       week: 1,
       days: [1],
       totals: { Chest: 3, Triceps: 1.5, 'Front Delts': 1.5 },
@@ -64,16 +64,16 @@ describe('F17 volume pure function (FR-016, SC-007)', () => {
     ];
     const result = computeVolume(days, MUSCLES);
     expect(result.perWeek).toHaveLength(2);
-    expect(result.perWeek[0].week).toBe(1);
-    expect(result.perWeek[0].days).toEqual([1, 2]);
-    expect(result.perWeek[0].totals).toEqual({
+    expect(result.perWeek[0]!.week).toBe(1);
+    expect(result.perWeek[0]!.days).toEqual([1, 2]);
+    expect(result.perWeek[0]!.totals).toEqual({
       Chest: 1,
       Triceps: 0.5,
       'Front Delts': 0.5,
     });
-    expect(result.perWeek[1].week).toBe(2);
-    expect(result.perWeek[1].days).toEqual([8]);
-    expect(result.perWeek[1].totals).toEqual({ Quads: 1, Glutes: 0.5 });
+    expect(result.perWeek[1]!.week).toBe(2);
+    expect(result.perWeek[1]!.days).toEqual([8]);
+    expect(result.perWeek[1]!.totals).toEqual({ Quads: 1, Glutes: 0.5 });
     // Rest day contributes zero and appears in its session row as empty.
     expect(
       result.perSession.find((s) => s.dayIndex === 2)?.totals,
@@ -86,9 +86,9 @@ describe('F17 volume pure function (FR-016, SC-007)', () => {
     ];
     const result = computeVolume(days, MUSCLES);
     expect(result.perWeek).toHaveLength(1);
-    expect(result.perWeek[0].week).toBe(2);
-    expect(result.perWeek[0].days).toEqual([9]);
-    expect(result.perWeek[0].totals).toEqual({
+    expect(result.perWeek[0]!.week).toBe(2);
+    expect(result.perWeek[0]!.days).toEqual([9]);
+    expect(result.perWeek[0]!.totals).toEqual({
       Chest: 1,
       Triceps: 0.5,
       'Front Delts': 0.5,
@@ -116,7 +116,7 @@ describe('F17 volume pure function (FR-016, SC-007)', () => {
       },
     ];
     const result = computeVolume(days, MUSCLES);
-    expect(result.perSession[0].totals).toEqual({
+    expect(result.perSession[0]!.totals).toEqual({
       Chest: 1,
       Triceps: 0.5,
       'Front Delts': 0.5,
