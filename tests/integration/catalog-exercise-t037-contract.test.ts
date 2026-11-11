@@ -953,14 +953,14 @@ describe('T037 remaining workspace and identity contracts', () => {
           tx`select public.catalog_write_exercise_override(${workspaceId}, ${globalId}, 0, ${randomUUID()}, ${tx.json({ name_en: 'Workspace name' })})`,
       );
       const [workspace] = await asActor(trainerId, (tx) => tx`select result_id, result_payload
-        from public.catalog_search('exercise', null, '{}'::jsonb, null, ${workspaceId})
+        from public.catalog_search('exercise', 'New shared default', '{}'::jsonb, null, ${workspaceId})
         where result_id = ${globalId}`);
       expect(workspace?.result_id).toBe(globalId);
       expect(workspace?.result_payload.effective_fields.name).toEqual({
         value: { name_en: 'Workspace name', name_ar: null }, source: 'override',
       });
       const [canonical] = await asActor(poId, (tx) => tx`select result_payload
-        from public.catalog_search('exercise', null, '{}'::jsonb, null, null)
+        from public.catalog_search('exercise', 'New shared default', '{}'::jsonb, null, null)
         where result_id = ${globalId}`);
       expect(canonical?.result_payload.name_en).toBe('New shared default');
     },
