@@ -171,6 +171,7 @@ type PublishReceipt = {
 
 type PublishState = {
   currentRevision: number;
+  draftDocument: unknown;
   contents: Array<{
     revisionId: number;
     document: unknown;
@@ -185,16 +186,21 @@ type PublishState = {
 type CallerActor = {
   role: 'platform_owner' | 'workspace_owner' | 'trainer' | 'sales' | 'client';
   workspaceId: string;
+  membershipActive: boolean;
 };
 
 type PublishRequest = {
   operationKey: string;
-  canonicalRequest: string;
   expectedRevision: number;
-  /** Caller-supplied document plus any forged snapshots/totals. */
-  payload: { document: unknown; snapshots?: unknown; computedTotals?: unknown };
+  /** Model context; these values are not publish RPC arguments. */
   actor: CallerActor;
   subscriptionActive: boolean;
+};
+
+type CallerSuppliedPublishData = {
+  document?: unknown;
+  snapshots?: unknown;
+  computedTotals?: unknown;
 };
 
 type PublishStatus =
@@ -212,8 +218,16 @@ function authorized(actor: CallerActor): boolean {
   return (
     actor.role === 'platform_owner' ||
     ((actor.role === 'workspace_owner' || actor.role === 'trainer') &&
+      actor.membershipActive &&
       actor.workspaceId === PLAN_WORKSPACE)
   );
+}
+
+function canonicalPublishHash(request: PublishRequest): string {
+  return JSON.stringify({
+    operation_key: request.operationKey,
+    expected_revision: request.expectedRevision,
+  });
 }
 
 function collectReferencedFoodVersions(
@@ -238,7 +252,9 @@ function collectReferencedFoodVersions(
 function publishNutritionRevision(
   state: PublishState,
   request: PublishRequest,
+  _callerSuppliedData?: CallerSuppliedPublishData,
 ): PublishStatus {
+  void _callerSuppliedData;
   // 1. application wall: authorize before any read or replay disclosure
   if (!authorized(request.actor)) {
     return { status: 'not_permitted' };
@@ -246,7 +262,7 @@ function publishNutritionRevision(
   // 2. idempotency lookup after authorization, before eligibility
   const existing = state.receipts.get(request.operationKey);
   if (existing) {
-    if (existing.hash !== request.canonicalRequest) {
+    if (existing.hash !== canonicalPublishHash(request)) {
       return { status: 'key_conflict' };
     }
     // authorization rechecked above; the original receipt is returned even
@@ -265,7 +281,7 @@ function publishNutritionRevision(
   // 5. frozen schema validator: any validator failure aborts with no revision
   let document: ReturnType<typeof parseDocument>;
   try {
-    document = parseDocument(request.payload.document);
+    document = parseDocument(state.draftDocument);
   } catch (error) {
     if (error instanceof NutritionDocumentError) {
       return { status: 'aborted' };
@@ -300,7 +316,7 @@ function publishNutritionRevision(
   state.auditEvents.push({ action: 'plan.nutrition_publish', revisionId });
   const receipt: PublishReceipt = { revisionId, deliveryId };
   state.receipts.set(request.operationKey, {
-    hash: request.canonicalRequest,
+    hash: canonicalPublishHash(request),
     receipt,
   });
   return { status: 'ok', receipt };
@@ -308,6 +324,7 @@ function publishNutritionRevision(
 function freshState(): PublishState {
   return {
     currentRevision: 1,
+    draftDocument: structuredClone(DOC_F1),
     contents: [],
     deliveries: [],
     auditEvents: [],
@@ -318,10 +335,12 @@ function freshState(): PublishState {
 function baseRequest(overrides: Partial<PublishRequest> = {}): PublishRequest {
   return {
     operationKey: '0f3a1b2c-1111-4222-8333-444455556666',
-    canonicalRequest: 'hash-1',
     expectedRevision: 1,
-    payload: { document: structuredClone(DOC_F1) },
-    actor: { role: 'trainer', workspaceId: PLAN_WORKSPACE },
+    actor: {
+      role: 'trainer',
+      workspaceId: PLAN_WORKSPACE,
+      membershipActive: true,
+    },
     subscriptionActive: true,
     ...overrides,
   };
@@ -330,16 +349,15 @@ function baseRequest(overrides: Partial<PublishRequest> = {}): PublishRequest {
 describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
   it('ignores caller-supplied snapshots and totals and stores only database values', () => {
     const state = freshState();
-    const result = publishNutritionRevision(
-      state,
-      baseRequest({
-        payload: {
-          document: structuredClone(DOC_F1),
-          snapshots: { forged: 'caller-snapshot' },
-          computedTotals: { kcal: '999999' },
-        },
-      }),
-    );
+    const forgedDocument = {
+      ...structuredClone(DOC_F1),
+      notes: 'forged caller plan',
+    };
+    const result = publishNutritionRevision(state, baseRequest(), {
+      document: forgedDocument,
+      snapshots: { forged: 'caller-snapshot' },
+      computedTotals: { kcal: '999999' },
+    });
     expect(result.status).toBe('ok');
     const content = state.contents[0]!;
     expect(JSON.stringify(content)).not.toContain('forged');
@@ -367,10 +385,8 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
         alternatives: [],
       },
     ];
-    const result = publishNutritionRevision(
-      state,
-      baseRequest({ payload: { document: servingDoc } }),
-    );
+    state.draftDocument = servingDoc;
+    const result = publishNutritionRevision(state, baseRequest());
     expect(result.status).toBe('ok');
     const content = state.contents[0]!;
     const servingEntry = content.snapshotMap['food:f1@3#serving:g'];
@@ -403,10 +419,8 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
         alternatives: [],
       },
     ];
-    const result = publishNutritionRevision(
-      state,
-      baseRequest({ payload: { document: encodedDoc } }),
-    );
+    state.draftDocument = encodedDoc;
+    const result = publishNutritionRevision(state, baseRequest());
     expect(result.status).toBe('ok');
     const content = state.contents[0]!;
     // the canonical encoded key holds the entry; the raw key does not exist
@@ -426,10 +440,8 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
   it('stores a detached document: later caller edits never change the committed record', () => {
     const state = freshState();
     const submitted = structuredClone(DOC_F1) as Record<string, unknown>;
-    const result = publishNutritionRevision(
-      state,
-      baseRequest({ payload: { document: submitted } }),
-    );
+    state.draftDocument = submitted;
+    const result = publishNutritionRevision(state, baseRequest());
     expect(result.status).toBe('ok');
     const committedBefore = JSON.stringify(state.contents[0]!.document);
     // the caller edits the submitted draft after publication
@@ -469,7 +481,6 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
       state,
       baseRequest({
         operationKey: '0f3a1b2c-2222-4222-8333-444455556666',
-        canonicalRequest: 'hash-2',
         expectedRevision: 2,
       }),
     );
@@ -497,10 +508,8 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
         alternatives: [],
       },
     ];
-    const result = publishNutritionRevision(
-      state,
-      baseRequest({ payload: { document: forgedDoc } }),
-    );
+    state.draftDocument = forgedDoc;
+    const result = publishNutritionRevision(state, baseRequest());
     expect(result.status).toBe('missing_food_version');
     expect(state.contents).toHaveLength(0);
     expect(state.currentRevision).toBe(1);
@@ -508,12 +517,12 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     expect(state.auditEvents).toHaveLength(0);
   });
 
-  it('rejects the same key with a different canonical request as key_conflict', () => {
+  it('rejects the same key when expected_revision differs as key_conflict', () => {
     const state = freshState();
     expect(publishNutritionRevision(state, baseRequest()).status).toBe('ok');
     const conflict = publishNutritionRevision(
       state,
-      baseRequest({ canonicalRequest: 'hash-different' }),
+      baseRequest({ expectedRevision: 99 }),
     );
     expect(conflict.status).toBe('key_conflict');
     expect(state.contents).toHaveLength(1);
@@ -557,13 +566,37 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     expect(
       publishNutritionRevision(
         state,
-        baseRequest({ actor: { role: 'sales', workspaceId: PLAN_WORKSPACE } }),
+        baseRequest({
+          actor: {
+            role: 'sales',
+            workspaceId: PLAN_WORKSPACE,
+            membershipActive: true,
+          },
+        }),
       ).status,
     ).toBe('not_permitted');
     expect(
       publishNutritionRevision(
         state,
-        baseRequest({ actor: { role: 'trainer', workspaceId: 'ws-other' } }),
+        baseRequest({
+          actor: {
+            role: 'trainer',
+            workspaceId: 'ws-other',
+            membershipActive: true,
+          },
+        }),
+      ).status,
+    ).toBe('not_permitted');
+    expect(
+      publishNutritionRevision(
+        state,
+        baseRequest({
+          actor: {
+            role: 'trainer',
+            workspaceId: PLAN_WORKSPACE,
+            membershipActive: false,
+          },
+        }),
       ).status,
     ).toBe('not_permitted');
     expect(state.contents).toHaveLength(0);
@@ -574,11 +607,9 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     const state = freshState();
     const badDoc = structuredClone(DOC_F1) as Record<string, unknown>;
     badDoc.implicitDayTypeId = undefined;
-    const result = publishNutritionRevision(
-      state,
-      baseRequest({ payload: { document: badDoc } }),
-    );
-    expect(result.status).not.toBe('ok');
+    state.draftDocument = badDoc;
+    const result = publishNutritionRevision(state, baseRequest());
+    expect(result.status).toBe('aborted');
     expect(state.contents).toHaveLength(0);
   });
 
@@ -589,7 +620,6 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
       state,
       baseRequest({
         operationKey: '0f3a1b2c-3333-4222-8333-444455556666',
-        canonicalRequest: 'hash-3',
         expectedRevision: 2,
       }),
     );

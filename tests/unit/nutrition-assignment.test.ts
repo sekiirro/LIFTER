@@ -43,6 +43,20 @@ function workspace(
   };
 }
 
+function expectAssignmentError(
+  operation: () => unknown,
+  code: 'invalid_selection' | 'zero_copies',
+): void {
+  let caught: unknown;
+  try {
+    operation();
+  } catch (error) {
+    caught = error;
+  }
+  expect(caught).toBeInstanceOf(NutritionAssignmentError);
+  expect((caught as NutritionAssignmentError).code).toBe(code);
+}
+
 const T1 = '11111111-1111-1111-1111-111111111111';
 const T2 = '22222222-2222-2222-2222-222222222222';
 const W1 = 'aaaaaaaa-1111-1111-1111-111111111111';
@@ -97,15 +111,17 @@ describe('nutrition assignment state machine (F18-FR-008, T006)', () => {
     // created later is simply absent from the operation
     expect(plan.items.map((i) => i.workspaceId)).toEqual([W1]);
     // a specific Workspaces operation with an unknown workspace id is invalid
-    expect(() =>
-      resolveNutritionTemplateAssignment({
-        templateMode: 'all',
-        workspaceMode: 'specific',
-        workspaceIds: ['bbbbbbbb-3333-3333-3333-333333333333'],
-        globalTemplates: [template(T1)],
-        workspaces: [workspace(W1)],
-      }),
-    ).toThrowError(NutritionAssignmentError);
+    expectAssignmentError(
+      () =>
+        resolveNutritionTemplateAssignment({
+          templateMode: 'all',
+          workspaceMode: 'specific',
+          workspaceIds: ['bbbbbbbb-3333-3333-3333-333333333333'],
+          globalTemplates: [template(T1)],
+          workspaces: [workspace(W1)],
+        }),
+      'invalid_selection',
+    );
   });
 
   it('skips and reports a workspace already holding a copy of the targeted identity', () => {
@@ -152,31 +168,35 @@ describe('nutrition assignment state machine (F18-FR-008, T006)', () => {
     expect(plan.skippedCount).toBe(1);
     // a batch whose every pair is already held creates zero copies and is
     // rejected before writes — no report-only batch
-    expect(() =>
-      resolveNutritionTemplateAssignment({
-        templateMode: 'specific',
-        templateIds: [T1],
-        workspaceMode: 'specific',
-        workspaceIds: [W1],
-        globalTemplates: [template(T1)],
-        workspaces: [
-          workspace(W1, { nutritionInitialized: true, holdings: [T1] }),
-        ],
-      }),
-    ).toThrowError(NutritionAssignmentError);
+    expectAssignmentError(
+      () =>
+        resolveNutritionTemplateAssignment({
+          templateMode: 'specific',
+          templateIds: [T1],
+          workspaceMode: 'specific',
+          workspaceIds: [W1],
+          globalTemplates: [template(T1)],
+          workspaces: [
+            workspace(W1, { nutritionInitialized: true, holdings: [T1] }),
+          ],
+        }),
+      'zero_copies',
+    );
   });
 
   it('rejects retired templates from specific and excludes them from All', () => {
-    expect(() =>
-      resolveNutritionTemplateAssignment({
-        templateMode: 'specific',
-        templateIds: [T1],
-        workspaceMode: 'specific',
-        workspaceIds: [W1],
-        globalTemplates: [template(T1, 'retired')],
-        workspaces: [workspace(W1)],
-      }),
-    ).toThrowError(NutritionAssignmentError);
+    expectAssignmentError(
+      () =>
+        resolveNutritionTemplateAssignment({
+          templateMode: 'specific',
+          templateIds: [T1],
+          workspaceMode: 'specific',
+          workspaceIds: [W1],
+          globalTemplates: [template(T1, 'retired')],
+          workspaces: [workspace(W1)],
+        }),
+      'invalid_selection',
+    );
     // All only offers active templates
     const plan = resolveNutritionTemplateAssignment({
       templateMode: 'all',
@@ -224,36 +244,42 @@ describe('nutrition assignment state machine (F18-FR-008, T006)', () => {
   });
 
   it('rejects an empty template resolution and duplicate ids with invalid_selection', () => {
-    expect(() =>
-      resolveNutritionTemplateAssignment({
-        templateMode: 'specific',
-        templateIds: [],
-        workspaceMode: 'specific',
-        workspaceIds: [W1],
-        globalTemplates: [template(T1)],
-        workspaces: [workspace(W1)],
-      }),
-    ).toThrowError(NutritionAssignmentError);
-    expect(() =>
-      resolveNutritionTemplateAssignment({
-        templateMode: 'specific',
-        templateIds: [T1, T1],
-        workspaceMode: 'specific',
-        workspaceIds: [W1],
-        globalTemplates: [template(T1)],
-        workspaces: [workspace(W1)],
-      }),
-    ).toThrowError(NutritionAssignmentError);
+    expectAssignmentError(
+      () =>
+        resolveNutritionTemplateAssignment({
+          templateMode: 'specific',
+          templateIds: [],
+          workspaceMode: 'specific',
+          workspaceIds: [W1],
+          globalTemplates: [template(T1)],
+          workspaces: [workspace(W1)],
+        }),
+      'invalid_selection',
+    );
+    expectAssignmentError(
+      () =>
+        resolveNutritionTemplateAssignment({
+          templateMode: 'specific',
+          templateIds: [T1, T1],
+          workspaceMode: 'specific',
+          workspaceIds: [W1],
+          globalTemplates: [template(T1)],
+          workspaces: [workspace(W1)],
+        }),
+      'invalid_selection',
+    );
     // all_except: excluded ids must exist and be active
-    expect(() =>
-      resolveNutritionTemplateAssignment({
-        templateMode: 'all_except',
-        excludeIds: [T1],
-        workspaceMode: 'all',
-        globalTemplates: [template(T1, 'retired'), template(T2)],
-        workspaces: [workspace(W1)],
-      }),
-    ).toThrowError(NutritionAssignmentError);
+    expectAssignmentError(
+      () =>
+        resolveNutritionTemplateAssignment({
+          templateMode: 'all_except',
+          excludeIds: [T1],
+          workspaceMode: 'all',
+          globalTemplates: [template(T1, 'retired'), template(T2)],
+          workspaces: [workspace(W1)],
+        }),
+      'invalid_selection',
+    );
   });
 
   it('copies from the template current immutable version in sorted deterministic order', () => {

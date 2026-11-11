@@ -497,7 +497,13 @@ function documentMeals(document: typeof DOC): Array<{
   meals: NutritionMeal[];
 }> {
   if (document.structure === 'single_day') {
-    return [{ dayIndex: null, dayTypeId: null, meals: document.meals ?? [] }];
+    return [
+      {
+        dayIndex: null,
+        dayTypeId: document.implicitDayTypeId ?? null,
+        meals: document.meals ?? [],
+      },
+    ];
   }
   return (document.days ?? [])
     .slice()
@@ -513,7 +519,7 @@ function documentMeals(document: typeof DOC): Array<{
 function dayTypeName(document: typeof DOC, dayTypeId: string | null): string {
   if (dayTypeId === null) return '';
   const dayType = document.dayTypes.find((dt) => dt.id === dayTypeId);
-  return dayType ? dayType.name.en : '';
+  return dayType?.name.en ?? '';
 }
 
 /**
@@ -534,6 +540,15 @@ function renderExcel(projection: ExportProjection): ExportCell[] {
     });
   }
   for (const group of documentMeals(document)) {
+    const groupDayType = dayTypeName(document, group.dayTypeId);
+    if (group.dayIndex === null && groupDayType) {
+      cells.push({
+        field: 'day:implicit:type',
+        value: asTextCell(groupDayType),
+        isCoachText: true,
+        section: 'items',
+      });
+    }
     for (const meal of group.meals) {
       cells.push({
         field: `meal:${meal.id}:name`,
@@ -690,6 +705,10 @@ function planContentText(
     lines.push(`document-notes: ${document.notes}`);
   }
   for (const group of documentMeals(document)) {
+    const groupDayType = dayTypeName(document, group.dayTypeId);
+    if (group.dayIndex === null && groupDayType) {
+      lines.push(`day-type ${groupDayType}`);
+    }
     if (group.dayIndex !== null) {
       lines.push(
         `day ${group.dayIndex} ${dayTypeName(document, group.dayTypeId)}`.trimEnd(),
@@ -728,6 +747,10 @@ function planContentText(
           );
         }
       }
+      const mealValues =
+        projection.selectedValues?.meals[meal.id] ??
+        projection.computedValues.meals[meal.id]!;
+      lines.push(`meal ${meal.id} totals ${macroTotals(mealValues)}`);
     }
     if (group.dayIndex !== null) {
       const dayValues =
@@ -784,6 +807,9 @@ describe('export and prompt fidelity contract (T005)', () => {
   it('projects every meal, food, quantity, unit, macro value and alternative', () => {
     const cells = renderExcel(NO_SELECTION);
     const text = cells.map((c) => c.value).join('\n');
+    expect(cells.find((c) => c.field === 'day:implicit:type')?.value).toBe(
+      'Rest',
+    );
     expect(text).toContain('Chicken 37 g');
     // descriptors carry the canonical PORTION values, not per-100 values
     expect(text).toContain('kcal 93 | protein 4.6 | carbs 19 | fat 4.6');
@@ -880,6 +906,7 @@ describe('export and prompt fidelity contract (T005)', () => {
       body.slice(tokenIndex + '{{PLAN_CONTENT}}'.length);
     expect(prompt).toBe(expected);
     expect(prompt).toContain('Plan:\n');
+    expect(prompt).toContain('day-type Rest');
     // the invention instruction is present and unaltered
     const rules = promptBodyInventionRules('en');
     expect(
@@ -898,6 +925,7 @@ describe('export and prompt fidelity contract (T005)', () => {
       'item i-1 Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6',
     );
     expect(prompt).toContain('alternative a-1 Chicken 150 g | kcal 600');
+    expect(prompt).toContain('meal m-1 totals 293 | 23 | 19 | 9.6');
     expect(prompt).toContain('meal-notes: =cmd meal note');
     expect(prompt).toContain('recipe: https://www.youtube.com/watch?v=abc');
     expect(prompt).toContain('totals 293 | 23 | 19 | 9.6');
@@ -921,6 +949,7 @@ describe('export and prompt fidelity contract (T005)', () => {
     expect(en).toContain('item i-1 selected a-1 Chicken 150 g');
     expect(en).toContain(`${SIDE_NOTE_LABEL.en}: Chicken 37 g`);
     expect(en).toContain('totals 800 | 63 | 15 | 13');
+    expect(en).toContain('meal m-1 totals 800 | 63 | 15 | 13');
     // the side note never appears in a totals row (§6; S43-PO-2)
     const totalsLine = en.split('\n').find((l) => l.startsWith('totals '))!;
     expect(totalsLine).not.toContain(SIDE_NOTE_LABEL.en);
@@ -963,6 +992,8 @@ describe('export and prompt fidelity contract (T005)', () => {
     expect(prompt).toContain('food-notes: Food notes: keep $& and $$ literal');
     // day organization and per-day totals are in the prompt
     expect(prompt).toContain('day 0');
+    expect(prompt).toContain('meal m-0 totals 93 | 4.6 | 19 | 4.6');
+    expect(prompt).toContain('meal m-6 totals 156 | 7.7 | 31 | 7.7');
     expect(prompt).toContain('day 6 totals 156 | 7.7 | 31 | 7.7');
     expect(prompt).toContain('totals 249 | 12 | 50 | 12');
     // byte-equality against the approved body by concatenation

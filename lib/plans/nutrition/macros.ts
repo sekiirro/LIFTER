@@ -143,7 +143,7 @@ export type BasisSnapshotEntry = {
   kind: 'basis';
   foodId: string;
   version: number;
-  names: { ar?: string; en?: string };
+  names: { ar: string; en?: string } | { ar?: string; en: string };
   basis: 'g' | 'ml';
   productIdentity: string;
   preparationIdentity: string;
@@ -163,7 +163,7 @@ export type ServingSnapshotEntry = {
   snapshot: {
     foodId: string;
     version: number;
-    names: { ar?: string; en?: string };
+    names: { ar: string; en?: string } | { ar?: string; en: string };
     basis: 'g' | 'ml';
     productIdentity: string;
     preparationIdentity: string;

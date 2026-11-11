@@ -370,6 +370,7 @@ describe('nutrition document v1 validator (F18-FR-002, T001)', () => {
       }),
       CONTEXT,
       'unit',
+      'meals[0].items[0].quantity.unit.unitKey',
     );
   });
 
@@ -391,6 +392,7 @@ describe('nutrition document v1 validator (F18-FR-002, T001)', () => {
       }),
       CONTEXT,
       'unit',
+      'meals[0].items[0].quantity.unit.value',
     );
   });
 
