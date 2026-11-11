@@ -240,21 +240,22 @@ DB, migration, RLS, UI or export-runtime work was done.
 Scope: revise T007 formula guard so coach-authored cell content is never modified; formula-leading values (`=`, `+`, `-`, `@`, including after leading whitespace/control characters) are stored as text via a cell descriptor flag (`quotePrefix`) instead of a leading apostrophe (FR-017, FR-018, SC-008). No spec/plan requirement text changed; only the pure-TS guard contract and its tests.
 
 ### Entry and cross-artifact checks
+
 - PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; FR-017/FR-018 and SC-008 unchanged.
 - PASS — `plan.md` and `tasks.md` T007 carry the touched scope with unchanged FR tags; T007 remains ticked with updated evidence.
 - PASS — `traceability.md` FR-017/FR-018 rows updated with new test evidence.
 - PASS — this Analyze entry is dated after the guard contract and test edits.
 
 ### Hostile cross-artifact findings
-| Severity | Finding | Disposition |
-| -------- | ------- | ----------- |
-| CRITICAL | 0 open  | Pure-TS contract change only; no schema, migration, privilege or runtime behavior. |
+
+| Severity | Finding | Disposition                                                                                       |
+| -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | Pure-TS contract change only; no schema, migration, privilege or runtime behavior.                |
 | HIGH     | 0 open  | Value byte-identical for all cases; formula-leading values flagged; non-leading values unflagged. |
-| MEDIUM   | 0 open  | No new product ambiguity or MCQ. |
-| LOW      | 0 open  | FR/task/SC cross-references remain aligned. |
+| MEDIUM   | 0 open  | No new product ambiguity or MCQ.                                                                  |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned.                                                       |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
-
 
 ## S47 independent-review remediation Analyze — 2026-11-11
 
@@ -276,12 +277,12 @@ obligation carried by the future writer (T037–T039) honoring `quotePrefix`.
 
 ### Hostile cross-artifact findings
 
-| Severity | Finding | Disposition |
-| -------- | ------- | ----------- |
-| CRITICAL | 0 open  | Pure-TS and test-only changes; no schema, migration, privilege or runtime behavior. |
+| Severity | Finding | Disposition                                                                                                                 |
+| -------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | Pure-TS and test-only changes; no schema, migration, privilege or runtime behavior.                                         |
 | HIGH     | 0 open  | Guard, assignment reporting/state, export field coverage, id-remap and volume gaps closed with RED/GREEN/mutation evidence. |
-| MEDIUM   | 0 open  | All seven review findings addressed (six fixed, none rebutted; T007 wording retained and documented). |
-| LOW      | 0 open  | FR/task/SC cross-references remain aligned. |
+| MEDIUM   | 0 open  | All seven review findings addressed (six fixed, none rebutted; T007 wording retained and documented).                       |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned.                                                                                 |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
@@ -317,11 +318,11 @@ cells are stored as text.
 
 ### Hostile cross-artifact findings
 
-| Severity | Finding | Disposition |
-| -------- | ------- | ----------- |
-| CRITICAL | 0 open  | Pure-TS and test-only changes; no schema, migration, privilege or runtime behavior. |
-| HIGH     | 0 open  | Guard frames, state derivation, generator output and traceability match FR-002/010/011/016/019 and SC-004/007/009/012. |
-| MEDIUM   | 0 open  | NEW-1..NEW-7 fixed with RED/GREEN/mutation evidence; NEW-8 authority corrected to S48-R6; T007 wording unchanged by this lane. |
+| Severity | Finding | Disposition                                                                                                                                                                         |
+| -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | Pure-TS and test-only changes; no schema, migration, privilege or runtime behavior.                                                                                                 |
+| HIGH     | 0 open  | Guard frames, state derivation, generator output and traceability match FR-002/010/011/016/019 and SC-004/007/009/012.                                                              |
+| MEDIUM   | 0 open  | NEW-1..NEW-7 fixed with RED/GREEN/mutation evidence; NEW-8 authority corrected to S48-R6; T007 wording unchanged by this lane.                                                      |
 | LOW      | 0 open  | FR/task/SC cross-references remain aligned. Residual: bare "no"/"not" cues and the descriptive "There is no need to change the load" case stay negated by design (see lane report). |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
