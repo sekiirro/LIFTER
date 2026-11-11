@@ -85,3 +85,8 @@ CRITICAL 0; HIGH 0; open MCQ 0. The plan-identity cache-key criterion is carried
 
 - Scope: merged main commit b1476db5f95d447ed2b0525e19ed4a9c890b90cc; no PR content change.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze — S47 cache-key plan-version correction (2026-11-11T05:33:55Z)
+
+- Scope: architect review finding on S46-R1 carry-forward: cache key must include plan version per F16 FR-034 (authenticated user + plan identity + plan version + workspace); mutations drop plan identity and drop plan version -> test fails; Video never stored in a cached projection. Edited `spec.md` (FR-003, SC-007), `tasks.md` (T020 cache-key constraint), `traceability.md` (FR-003 row and carry-forward note). No other content change.
+- CRITICAL: 0 open; HIGH: 0 open.
