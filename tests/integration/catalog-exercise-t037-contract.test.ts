@@ -1234,7 +1234,31 @@ describe('T037 remaining workspace and identity contracts', () => {
       ),
       'utf8',
     );
-    await db.unsafe(migration);
+    const [globalIdentities] = await db`
+      select coalesce(jsonb_agg(id order by id), '[]'::jsonb) as value
+      from public.exercises`;
+    const [workspaceIdentities] = await db`
+      select coalesce(
+        jsonb_agg(jsonb_build_array(workspace_id, id) order by workspace_id, id),
+        '[]'::jsonb
+      ) as value
+      from public.workspace_exercises`;
+    const verifiedIdentities = JSON.stringify({
+      exercises: globalIdentities!.value,
+      workspace_exercises: workspaceIdentities!.value,
+    });
+    const gatedMigration = migration
+      .replace(
+        '\nbegin;\n',
+        `\nset app.cutover_verified_identities = '${verifiedIdentities}';\nbegin;\n`,
+      )
+      .replace(
+        /\ncommit;\s*$/,
+        '\ncommit;\nreset app.cutover_verified_identities;\n',
+      );
+    expect(gatedMigration).not.toBe(migration);
+    expect(gatedMigration).toContain('reset app.cutover_verified_identities;');
+    await db.unsafe(gatedMigration);
     const counts = await db`
       select
         (select count(*) from public.exercise_variations)::integer as legacy_rows,
