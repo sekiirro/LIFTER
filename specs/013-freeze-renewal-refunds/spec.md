@@ -758,3 +758,23 @@ Arabic tier names are سيلفر، جولد، بلاتينيوم.
 
 - **Given** a client has an expired subscription that is renewed today, **When** the client later makes a qualifying same-rank longer or higher-rank equal/longer upgrade, **Then** the renewal start date anchors the upgraded term. (FR-038; SC-027; architect mapping (S43-R10))
 - **Given** the current and selected upgrade packages use different currencies, **When** the upgrade is requested, **Then** the system refuses before any write and performs no currency conversion. **Given** both packages use the same currency, **When** the other upgrade rules permit it, **Then** normal same-currency credit and revenue rules apply. (FR-038; SC-030; architect mapping (S43-R10))
+
+### S48-PO-14 / S48-R22 - T043 manual date behavior (resolved)
+
+- PO decision source: `C:/Users/NEW LAP/.lifter/runs/s48-po/s48-po-14.verbatim.txt`.
+- PO words (byte-exact):
+
+> "No limits, dates take effect (Recommended)" = PO may set any valid dates; the new dates become the subscription's real dates (client access/expiry follow them); every edit audited. Frozen/deactivated subscriptions refused.
+
+- Architect mapping (S48-R22): the adjusted dates are effective dates for entitlement/expiry projection and P4 consumers through the existing projector; frozen or deactivated subscriptions return `stale_state` with zero writes; audit and zero-revenue behavior remain unchanged.
+
+### S48-PO-15 / S48-R22 - T044 point award event (resolved)
+
+- PO decision source: `C:/Users/NEW LAP/.lifter/runs/s48-po/s48-po-15.verbatim.txt`.
+- PO words (byte-exact):
+
+> "Award 1 productivity point automatically to the assigned trainer upon the client's first normal plans delivery/activation. Manual Override Activation by PO awards ZERO points"
+
+- Architect mapping (S48-R22): award in the existing first normal activation/plan-delivery write path, in the same transaction, to the client's assigned trainer; manual PO override, returning-client, upgrade, renewal, and publication paths award zero. If plans delivery and activation are distinct events in code, stop for a PO decision; do not guess.
+
+No open product ambiguities remain for the T043 policy or T044 award event/role. T044 implementation still depends on locating the existing award path and assigned-trainer representation; any missing product rule remains escalated.

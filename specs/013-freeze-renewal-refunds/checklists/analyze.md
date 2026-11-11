@@ -73,3 +73,17 @@
 - Specified (implement): pure `requireUnfrozenForOperation` gate (upgrade/renewal refused while frozen; mirrors existing `requireFreezeRole` style) + `isFrozenOn` window predicate derived from the specified Apply-counts/Stop-excluded day semantics + exact 10-counted-days → +10-expiry unit fixture + integration fixtures in freeze-lifecycle.test.ts (frozen renewal refusal with zero writes via existing `record_renewal`, DB-level 10-day extension via `f13_project_entitlement`, concurrent-apply race serialization, apply/stop/remove audit counts with replay silence).
 - NOT in scope: DB-level frozen upgrade refusal has no upgrade writer until T042 (forbidden to this lane); covered by the pure gate plus a T042 handoff note. No migration is required (freeze guards exist); no catalog changes.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open.
+## 2026-11-11 Analyze — S48-PO-14/15 clarification and T043/T044 untick (19:37 UTC)
+
+- Entry check for T043: PASS. `spec.md` contains numbered FR-040, measurable SC-018, and GWT scenario 11; the new Clarifications entries preserve S48-PO-14 words and separately label S48-R22 mapping; no open product ambiguity remains for T043. `plan.md` slice (5) covers PO date edits; `tasks.md` T043 is tagged FR-040/SC-018 and is now unchecked pending current-head verification.
+- Entry check for T044: PASS for requirements and plan mapping. FR-041, SC-019/026 and GWT scenario 12 exist; PO event/role is resolved by S48-PO-15 and S48-R22; task remains unchecked. Production writer and assigned-trainer source must be established from repository evidence before implementation; no path or identity is assumed.
+- S48-R22 T043 acceptance to verify: manual dates affect effective entitlement/expiry through the projector and P4 consumers; frozen/deactivated attempts refuse with `stale_state` and zero writes; audit and zero-revenue behavior remain intact.
+- Scope is decision-record/status bookkeeping only; no behavior, schema, or test expectations were added. Previous T043/T044 implementation evidence remains historical and their tasks are unticked until current-head revalidation.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze - final T043/T044 authority record (19:38 UTC)
+
+- Revalidated the Spec Kit entry gate after the last spec/tasks edit. PASS: numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications, plan coverage, and tagged tasks are present. S48-PO-14/15 wording is copied from the verbatim decision files; S48-R22 is separately labeled as architect mapping.
+- T043 has no open product ambiguity. T044's product event/role is decided; its repository implementation path remains an evidence-gathering prerequisite and is not inferred.
+- T043/T044 are unchecked pending current-head tests; the historical test records are retained and are not claimed as current verification.
+- CRITICAL: 0 open; HIGH: 0 open.
