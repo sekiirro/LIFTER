@@ -229,6 +229,9 @@ describe('nutrition macros goldens (F18-FR-003, T002)', () => {
     expect(displayMacroGrams('0.4')).toBe('0.4');
     expect(displayMacroGrams('9.96')).toBe('10');
     expect(displayMacroGrams('9.94')).toBe('9.9');
+    // S48-PO-11 (S48-R14): anything that rounds to 10 shows as an integer
+    expect(displayMacroGrams('10.00')).toBe('10');
+    expect(displayMacroGrams('10.04')).toBe('10');
     expect(displayMacroGrams('10')).toBe('10');
     expect(displayMacroGrams('10.49')).toBe('10');
     expect(displayMacroGrams('10.5')).toBe('11');
