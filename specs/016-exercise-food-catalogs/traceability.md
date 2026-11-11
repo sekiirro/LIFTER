@@ -81,7 +81,7 @@ Planned tests are named for the tests to be written. Nothing in this table is ve
 | FR-026 | T049 | effective-resolution contract with per-field source, including the `workspace_private` branch (S40-R12) | none |
 | FR-027 | T056 | `ExerciseSnapshotV2` fixtures; copied default, trainer edit, changed library default before publication, then publish/read; planner-entry non-video values retained and current authorized Video returned on subsequent view | none |
 | FR-028 | T050 | plan-view resolution without an active identity; merged source uses its own media | none |
-| FR-029, FR-034 | T050, T051 | internal resolver: EXECUTE grants, composite match, whole-call generic denial, cache key | none |
+| FR-029, FR-034 | T050, T051 | internal resolver, composite workspace match, generic missing/foreign denial, non-cached current Video reads, staff RPC authorization, login-role direct-call denial | T051 commit; `tests/integration/catalog-exercise-t051.test.ts::denies missing and foreign workspace-private references with the same generic error`; `::returns the current Video on every staff view, including override removal and changed Global fallback`; `::denies the next staff view after workspace membership is revoked`; `::denies direct resolver calls from anon, authenticated and service_role`; applicable composite and disclosure mutants killed. Plan cache-key behavior deferred until the F19/P4 cache/path exists. Full details: `C:/Users/NEW LAP/.lifter/runs/s46-luna-f16-t051/report.md`. |
 | FR-031 | T054, T055 | legacy write revoked from client roles; parity fixture move | none |
 | FR-013 | T057 | audit allowlist with changed-field codes for exactly the eight fields — `name`, `description`, `notes`, `video`, `alternatives`, `default_rest_time`, `default_rir`, `default_reps`; no `instructions` code | none |
 | FR-022 | T060 | F12 guard rejects `workspace_id` changes | none |
@@ -96,8 +96,8 @@ Planned tests are named for the tests to be written. Nothing in this table is ve
 | FR-026 | T037, T047 | null = inherit for the seven optional fields; reset writes null; Alternatives empty list distinct from inherit | none |
 | FR-025 | T048 | published-plan reads return frozen alternatives after a target is removed or merged; library reads skip it | none |
 | FR-032 | T052 | ordering check on newly authored migrations only; published files exempt; remote conflict check (b); pre-deployment ordering gate (c) against applied versions (S40-R13) | none |
-| FR-034 | T051 | warmed-cache sequence (Video change, override removal, Global change, revoked membership) | none |
-| FR-029 | T051 | direct-call denial for `anon`, `authenticated`, `service_role`; positive staff effective-resolution test | none |
+| FR-034 | T051 | warm staff effective read, then Video override change, override removal to Global fallback, Global fallback version change and revoked membership; Video freshness is verified on each next staff read. No F16/F19 client plan cache exists, so no client cache or plan-identity key is exercised. | T051 commit; `tests/integration/catalog-exercise-t051.test.ts::returns the current Video on every staff view, including override removal and changed Global fallback`; `::denies the next staff view after workspace membership is revoked`; Stack A reset GREEN recorded in run report. |
+| FR-029 | T051 | direct-call denial for `anon`, `authenticated` and `service_role`; positive authorized staff effective resolution through the staff `catalog_search` RPC; missing/foreign workspace-private references have the same generic code/message | T051 commit; `tests/integration/catalog-exercise-t051.test.ts::denies direct resolver calls from anon, authenticated and service_role`; `::returns the current Video on every staff view, including override removal and changed Global fallback`; `::denies missing and foreign workspace-private references with the same generic error`. |
 
 ## S35 PR #43 explicit workspace denial remediation
 

@@ -748,3 +748,19 @@ T900 has been marked complete only after its focused integration test passed on 
 - Findings: 0 open CRITICAL, 0 open HIGH. No PO decision or ambiguity found.
 - T052 before commit: PASS. Fresh fetch scanned all 107 origin refs / 7,948 migration appearances; max existing version `20261111001145`; new `20261111003800` is strictly greater with valid clock fields. Separate `npm run check:migration-versions:remote` passed across 106 remote refs.
 - Gate: PASS for T050 coverage restoration; repeat both T052 checks before commit and push.
+
+## S46 T051 implementation analysis — 2026-11-11 00:55:20 UTC (Z)
+
+- Scope: T051, FR-029/FR-034, including S38 round 7 requirements. No spec, plan, or product decision text changed.
+- Entry check: PASS. `spec.md` has numbered FRs, measurable SCs and Given/When/Then scenarios for authorized live-Video views and direct-call denial. Clarifications and the decision register close F16 product questions and explicitly state no open F16 ambiguities. `plan.md` covers the scoped resolver, whole-call denial, cache constraints and F19/P4 boundary. `tasks.md` row T051 is tagged FR-029/FR-034 and contains S38 round 7 additions. This dated analysis is after the latest spec/task changes. No open CRITICAL or HIGH findings.
+- Scope boundary: F16 currently has no persisted client-plan relation or client view cache; F19/P4 owns that boundary. T051 tests internal resolution with synthetic workspace IDs and effective staff reads through their existing RPCs. No new client boundary/cache is specified. If no cache layer exists, the tests may verify fresh Video resolution and absence of resolver-side Video caching; plan-identity key coverage is inapplicable until a cache is introduced.
+- No product ambiguity found; no PO decision required.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+
+## S46 T051 implementation acceptance — 2026-11-11 01:05:42 UTC (Z)
+
+- Re-analysis after implementation evidence/task-status updates. Scope stayed FR-029/FR-034; no spec/plan/product behavior was added. `tasks.md` T051 is VERIFIED against executed Stack A suites; traceability names the T051 integration assertions and the run evidence.
+- RED-first/GREEN evidence: T051 contract suite passed 6/6; the completed post-reset focused integration replay passed 90 with 22 existing expected failures, and focused unit suites passed 33/33. Lint and typecheck passed.
+- Applicable mutations are killed: removing the workspace composite equality allows the foreign reference assertion to fail; differentiating a foreign ID's error from missing makes generic-denial assertion fail. Both transaction mutations rolled back. Plan-identity cache-key mutation is not applicable because no client-plan cache/key exists in this feature/worktree; this limit and the exact staff-read freshness coverage are recorded in the run report.
+- Findings: 0 open CRITICAL, 0 open HIGH. No product ambiguity or PO decision needed.
+- T052 before commit: PASS. Fetch/scan of all origin refs found no new migration; separate remote version-conflict check passed. Repeat both checks before push.
