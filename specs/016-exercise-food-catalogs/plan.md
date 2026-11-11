@@ -174,3 +174,7 @@ Preserve the approved F16 behavior and migration contents while safely renaming 
 ## S37-PO-6 Option D clarification (PR #43)
 
 Stack C is excluded and untouched for this PR: no command, query, or harness call may target it. Its history is repaired later only under a PO-approved procedure if ever needed. This follows the exact PO decision recorded at `C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt` (S37-PO-6).
+
+#### S47-PO-8/9 validation additions (T074/T075)
+
+Canonical Global Description tests accept a 2000-character value and reject 2001 with the existing validation error (FR-003, S47-PO-8). The shared exercise payload contract rejects a self-targeting Alternative in Global and workspace writes with the existing validation error, and Global alternatives may target only Global identities (FR-025, S47-PO-9). T074 implements canonical Global validation; T075 owns workspace-private self-target validation. Do not add or change validation error copy.

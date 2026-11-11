@@ -57,7 +57,7 @@ async function createPrivate(payload: { [key: string]: Json }) {
 }
 
 describe('T037 Global and workspace-private write contracts', () => {
-  it.fails(
+  it(
     'accepts an English-only Global exercise with required taxonomy (T074)',
     async () => {
       const result = await createGlobal(core);
@@ -80,7 +80,7 @@ describe('T037 Global and workspace-private write contracts', () => {
     ).rejects.toBeDefined();
   });
 
-  it.fails(
+  it(
     'accepts an English-only workspace-private exercise with required taxonomy (T075)',
     async () => {
       const result = await createPrivate(core);
@@ -206,8 +206,8 @@ describe.each([
     'T074',
   ],
 ] as const)('%s field contract', (field, key, valid, invalid, task) => {
-  const contractIt = field === 'Name' || field === 'Description' || task === 'T043' ? it : it.fails;
-  const privateContractIt = field === 'Name' || field === 'Description' || task === 'T043' ? it : it.fails;
+  const contractIt = field === 'Name' || field === 'Description' || task === 'T043' || task === 'T074' ? it : it.fails;
+  const privateContractIt = field === 'Name' || field === 'Description' || task === 'T043' || task === 'T074' ? it : it.fails;
   contractIt(`${field}: stores an allowed Global value (${task})`, async () => {
     const result = await createGlobal({
       ...core,
@@ -364,7 +364,287 @@ describe('T037 contract distinctions', () => {
     await expect(createPrivate(arabicOnly)).rejects.toBeDefined();
   });
 
-  it.fails(
+  it('accepts a Global Description at the 2000-character cap (T074)', async () => {
+    const result = await createGlobal({
+      ...core,
+      name_ar: 'تمرين',
+      description: 'x'.repeat(2000),
+    });
+    expect(result[0]?.catalog_create_exercise).toBeDefined();
+  });
+
+  it('rejects a Global Description above 2000 characters (T074)', async () => {
+    await expect(
+      createGlobal({
+        ...core,
+        name_ar: 'تمرين',
+        description: 'x'.repeat(2001),
+      }),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_exercise_invalid',
+    });
+  });
+
+  it('rejects a Global exercise as its own Alternative (T074)', async () => {
+    const created = await createGlobal({ ...core, name_ar: 'تمرين' });
+    const exerciseId = (
+      created[0]?.catalog_create_exercise as { exercise_id: string }
+    ).exercise_id;
+    await expect(
+      asActor(poId, (tx) =>
+        tx`select public.catalog_version_exercise(${exerciseId}, 1, ${randomUUID()}, ${tx.json({
+          ...core,
+          name_ar: 'تمرين',
+          alternatives: [exerciseId],
+        })})`,
+      ),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_exercise_alternatives_invalid',
+    });
+  });
+
+  it('rejects a workspace-private target in Global Alternatives (T074)', async () => {
+    const privateResult = await createPrivate({ ...core, name_ar: 'تمرين خاص' });
+    const privateId = (
+      privateResult[0]?.catalog_write_workspace_exercise as {
+        exercise_id: string;
+      }
+    ).exercise_id;
+    await expect(
+      createGlobal({ ...core, name_ar: 'تمرين', alternatives: [privateId] }),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_exercise_alternatives_invalid',
+    });
+  });
+
+  it('stores canonical Notes and Defaults and audits the eight-field contract (T074)', async () => {
+    const result = await createGlobal({
+      ...core,
+      name_ar: 'تمرين',
+      notes: 'Canonical coaching note',
+      default_rest_time: 90,
+      default_rir: 2,
+      default_reps: { min: 8, max: 12 },
+    });
+    const exerciseId = (
+      result[0]?.catalog_create_exercise as { exercise_id: string }
+    ).exercise_id;
+    const [version] = await db`
+      select notes, default_rest_time, default_rir, default_reps
+      from public.exercise_versions where exercise_id = ${exerciseId} and version = 1
+    `;
+    expect(version).toEqual({
+      notes: 'Canonical coaching note',
+      default_rest_time: 90,
+      default_rir: 2,
+      default_reps: { min: 8, max: 12 },
+    });
+    const [audit] = await db`
+      select details -> 'changed_fields' as changed_fields
+      from public.audit_events
+      where target_table = 'exercises' and target_id = ${exerciseId}
+        and action = 'catalog.exercise_created'
+    `;
+    expect(audit?.changed_fields).toEqual([
+      'name',
+      'description',
+      'notes',
+      'video',
+      'alternatives',
+      'default_rest_time',
+      'default_rir',
+      'default_reps',
+    ]);
+  });
+
+  it('stores valid Global Alternatives as normalized child rows (T074)', async () => {
+    const targets = await Promise.all(
+      [1, 2, 3].map(async (n) => {
+        const result = await createGlobal({
+          ...core,
+          name_ar: 'تمرين',
+          name_en: `T074 canonical Alternative ${n}`,
+        });
+        return (result[0]?.catalog_create_exercise as { exercise_id: string })
+          .exercise_id;
+      }),
+    );
+    const result = await createGlobal({
+      ...core,
+      name_ar: 'تمرين',
+      alternatives: targets,
+    });
+    const exerciseId = (
+      result[0]?.catalog_create_exercise as { exercise_id: string }
+    ).exercise_id;
+    const alternatives = await db`
+      select position, global_exercise_id from public.exercise_version_alternatives
+      where exercise_id = ${exerciseId} and version = 1 order by position
+    `;
+    expect(alternatives).toEqual(
+      targets.map((global_exercise_id, index) => ({
+        position: index + 1,
+        global_exercise_id,
+      })),
+    );
+  });
+
+  it('T074 validator and self-target mutants break their contract assertions', async () => {
+    const globalTargets = await Promise.all(
+      [1, 2, 3, 4].map(async (n) => {
+        const result = await createGlobal({
+          ...core,
+          name_ar: 'تمرين',
+          name_en: `T074 mutation target ${n}`,
+        });
+        return (result[0]?.catalog_create_exercise as { exercise_id: string })
+          .exercise_id;
+      }),
+    );
+    const privateResult = await createPrivate({
+      ...core,
+      name_ar: 'تمرين خاص',
+      name_en: 'T074 mutation private target',
+    });
+    const privateId = (
+      privateResult[0]?.catalog_write_workspace_exercise as {
+        exercise_id: string;
+      }
+    ).exercise_id;
+    const parentResult = await createGlobal({ ...core, name_ar: 'تمرين' });
+    const parentId = (
+      parentResult[0]?.catalog_create_exercise as { exercise_id: string }
+    ).exercise_id;
+    const validatorSignature = 'app_private.validate_exercise_payload(jsonb)';
+    const cases = [
+      {
+        label: 'Description maximum',
+        needle: "char_length(p_request ->> 'description') > 2000",
+        replacement: 'false',
+        payload: { ...core, name_ar: 'تمرين', description: 'x'.repeat(2001) },
+        message: 'catalog_exercise_invalid',
+      },
+      {
+        label: 'Alternatives maximum',
+        needle: "jsonb_array_length(p_request -> 'alternatives') > 3",
+        replacement: 'false',
+        payload: { ...core, name_ar: 'تمرين', alternatives: globalTargets },
+        message: 'catalog_exercise_alternatives_invalid',
+      },
+      {
+        label: 'Alternatives uniqueness',
+        needle: "count(*) <> count(distinct value #>> '{}')",
+        replacement: 'false',
+        payload: {
+          ...core,
+          name_ar: 'تمرين',
+          alternatives: [globalTargets[0]!, globalTargets[0]!],
+        },
+        message: 'catalog_exercise_alternatives_invalid',
+      },
+      {
+        label: 'Global target scope',
+        needle: 'where e.id is null or e.lifecycle_state <> \'active\'',
+        replacement: "where e.lifecycle_state <> 'active'",
+        payload: { ...core, name_ar: 'تمرين', alternatives: [privateId] },
+        message: 'catalog_exercise_alternatives_invalid',
+      },
+      {
+        label: 'Rest Time step',
+        needle: "(p_request ->> 'default_rest_time')::integer % 15 <> 0",
+        replacement: 'false',
+        payload: { ...core, name_ar: 'تمرين', default_rest_time: 7 },
+        message: 'catalog_exercise_invalid',
+      },
+      {
+        label: 'RIR range',
+        needle: "(p_request ->> 'default_rir') !~ '^(0|[1-5])$'",
+        replacement: 'false',
+        payload: { ...core, name_ar: 'تمرين', default_rir: 6 },
+        message: 'catalog_exercise_invalid',
+      },
+      {
+        label: 'Reps range',
+        needle: "or (p_request -> 'default_reps' ->> 'max') !~ '^([1-9]|[1-9][0-9]|100)$'",
+        replacement: 'or false',
+        payload: {
+          ...core,
+          name_ar: 'تمرين',
+          default_reps: { min: 8, max: 101 },
+        },
+        message: 'catalog_exercise_invalid',
+      },
+    ];
+
+    for (const testCase of cases) {
+      const marker = `rollback_t074_${testCase.label.replaceAll(' ', '_')}`;
+      try {
+        await db.begin(async (tx) => {
+          const [current] = await tx`
+            select pg_get_functiondef(${validatorSignature}::regprocedure) as definition
+          `;
+          const definition = current?.definition as string;
+          if (!definition.includes(testCase.needle))
+            throw new Error(`T074 mutation target missing: ${testCase.label}`);
+          await tx.unsafe(
+            definition.replace(testCase.needle, testCase.replacement),
+          );
+          let assertionFailure: unknown;
+          try {
+            await expect(
+              tx`select app_private.validate_exercise_payload(${tx.json(testCase.payload)})`,
+            ).rejects.toMatchObject({ code: '22023', message: testCase.message });
+          } catch (error) {
+            assertionFailure = error;
+          }
+          expect(assertionFailure, `${testCase.label} mutation must break rejection`).toBeDefined();
+          throw new Error(marker);
+        });
+      } catch (error) {
+        expect((error as Error).message).toBe(marker);
+      }
+    }
+
+    const selfMarker = 'rollback_t074_self_alternative';
+    try {
+      await db.begin(async (tx) => {
+        const [current] = await tx`
+          select pg_get_functiondef('public.catalog_version_exercise(uuid,integer,uuid,jsonb)'::regprocedure) as definition
+        `;
+        const definition = current?.definition as string;
+        const needle = 'where a.target_id = p_exercise_id::text';
+        if (!definition.includes(needle))
+          throw new Error('T074 self-target mutation target missing');
+        await tx.unsafe(definition.replace(needle, 'where false'));
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: poId, role: 'authenticated' })}, true)`;
+        let assertionFailure: unknown;
+        try {
+          await expect(
+            tx`select public.catalog_version_exercise(${parentId}, 1, ${randomUUID()}, ${tx.json({
+              ...core,
+              name_ar: 'تمرين',
+              alternatives: [parentId],
+            })})`,
+          ).rejects.toMatchObject({
+            code: '22023',
+            message: 'catalog_exercise_alternatives_invalid',
+          });
+        } catch (error) {
+          assertionFailure = error;
+        }
+        expect(assertionFailure, 'self-Alternative mutation must break rejection').toBeDefined();
+        throw new Error(selfMarker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(selfMarker);
+    }
+  });
+
+  it(
     'keeps an empty Alternatives list distinct from null/inherit (T047/T048)',
     async () => {
       const empty = await createPrivate({
@@ -397,7 +677,7 @@ describe('T037 contract distinctions', () => {
     ).resolves.toHaveLength(1);
   });
 
-  it.fails.each([
+  it.each([
     [
       'Default Rest Time accepts 0, 90, and 600 seconds',
       'default_rest_time',
@@ -435,7 +715,7 @@ describe('T037 contract distinctions', () => {
     }
   });
 
-  it.fails.each([
+  it.each([
     [
       'Default Rest Time accepts 0, 90, and 600 seconds',
       'default_rest_time',
@@ -548,7 +828,10 @@ describe('T037 remaining workspace and identity contracts', () => {
     ).exercise_id;
     await expect(
       createGlobal({ ...core, name_ar: 'Test', alternatives: globalTargets }),
-    ).rejects.toBeDefined();
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_exercise_alternatives_invalid',
+    });
     await expect(
       createPrivate({
         ...core,
@@ -562,7 +845,10 @@ describe('T037 remaining workspace and identity contracts', () => {
         name_ar: 'Test',
         alternatives: [globalTargets[0]!, globalTargets[0]!],
       }),
-    ).rejects.toBeDefined();
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_exercise_alternatives_invalid',
+    });
     await expect(
       createPrivate({
         ...core,
@@ -572,8 +858,8 @@ describe('T037 remaining workspace and identity contracts', () => {
     ).rejects.toBeDefined();
   });
 
-  it.fails(
-    'allows exactly three unique Global alternatives on each write path (T048)',
+  it(
+    'allows exactly three unique Global alternatives (T074)',
     async () => {
       const targets = await Promise.all(
         [1, 2, 3].map(async (n) => {
@@ -592,12 +878,6 @@ describe('T037 remaining workspace and identity contracts', () => {
         alternatives: targets,
       });
       expect(global[0]?.catalog_create_exercise).toBeDefined();
-      const local = await createPrivate({
-        ...core,
-        name_ar: 'Test',
-        alternatives: targets,
-      });
-      expect(local[0]?.catalog_write_workspace_exercise).toBeDefined();
     },
   );
 

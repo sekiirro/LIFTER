@@ -809,3 +809,32 @@ T900 has been marked complete only after its focused integration test passed on 
 - Final T052 checks after `git fetch --no-tags origin`: local migration timestamps PASS (129 timestamps; 11 documented merged exceptions); cross-ref filename/version check PASS across 110 remote refs, no version mapped to different filenames. The remote `016-impl-s45` ref is exactly at starting HEAD `aa50427b9f00b1bd19c1b01f7a6176c26f1de576`.
 - Verification results remain as recorded above: lint/typecheck PASS, full unit suite 2,308 PASS; focused T054 Stack A suite 63 PASS / 21 expected failures. The isolated backup-streams PID assertion failure was reproduced at `b224752a`.
 - Findings: 0 open CRITICAL/HIGH; one documented MEDIUM CLI history-row gap/replay risk per S47-PO-5. No PO decision needed. Gate PASS for one commit and one push.
+
+## S47 T074 plan and traceability revalidation — 2026-11-11T06:02:25Z
+
+- Scope: revalidate the `e6b6bc91a0a1b5771c705a28d736750c9b318e12` plan/traceability change, which was committed 17 seconds after the preceding Analyze entry. T074 implementation scope remains the FR-tagged task in `tasks.md`; the plan continues to require RED-first validation, T090-backed canonical fields, Global-only Alternatives and the approved bounds. The traceability change records T054 evidence and does not change T074 behavior or implementation order.
+- Review: the new plan risk row and traceability evidence align with S47-PO-5 and the recorded disposable Stack A replay. No conflict with T074 or its dependency order was found. Existing numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications/decision register, and explicit closed-ambiguity statement were checked.
+- Findings: 0 open CRITICAL, 0 open HIGH. This section revalidates only the e6b6bc91 plan/traceability change; required S47-PO-8 and S47-PO-9 contract encoding and a post-edit Analyze remain before implementation.
+- Entry-gate revalidation: PASS for the existing T074 task structure pending the explicitly required PO decision encoding and subsequent Analyze. No implementation authorized by this revalidation alone.
+
+## S47 T074 PO-decision Analyze — 2026-11-11T06:07:09Z
+
+- Scope and authority: T074 Global validation, FR-003/FR-025, following S47-PO-8 (`C:/Users/NEW LAP/.lifter/runs/s47-po/s47-po-8.verbatim.txt`, “Cap at 2000 (Rec.)”) and S47-PO-9 (`.../s47-po-9.verbatim.txt`, “Reject self (Rec.)”). FR-003 sets canonical Global Description maximum at 2000 characters, the same cap as workspace overrides, using the existing validation error. FR-025 rejects self-targeting Alternatives in both scopes, with existing validation error, and limits Global targets to Global identities. The Clarifications cite both PO sources and state no open ambiguities for these decisions.
+- Entry check: PASS. `spec.md` has numbered FRs, measurable SC-017/018, and Given/When/Then acceptance scenarios for Global Description bounds and Global/workspace self-alternative rejection. Clarifications record exact PO words by source pointer and close ambiguity. `plan.md` covers the new validation scope. `tasks.md` tags T074 FR-003/FR-025, with workspace self-target validation explicitly assigned to T075. `traceability.md` records planned requirement-to-task-to-test evidence without marking it verified.
+- Review: Global Description limit and existing error behavior are explicit and measurable. Alternatives target uniqueness/count, self-target, private-target exclusion for Global, and workspace scope separation are explicit. T074 does not take T075's workspace-private work. No conflicting product choice or unstated validator behavior was found.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision remains open for this scoped contract. The entry gate passes for T074 implementation.
+
+## S47 T074 final acceptance analysis — 2026-11-11T06:31:28Z
+
+- Re-analysis after final task-status and traceability evidence updates. No spec, plan, or product behavior changed since the 06:07:09Z PO-decision Analyze. T074 remains tagged FR-001/003/018/023/025; T075 workspace-private self-target work remains outside this lane.
+- Entry check: PASS. Numbered FRs, measurable SC-017/018, GWT coverage, Clarifications with S47-PO-8/9 words and pointers, plan coverage, and FR-tagged tasks are present. Traceability now names executed T074 tests and report evidence. No open ambiguities remain for this scope.
+- Acceptance: focused T074 Stack A suite 32/32 passed, including the Description, Alternatives count/uniqueness/self/private-target, Rest step, RIR, and Reps mutation probes. Full touched T037 contract suite passed 90 tests with one existing expected failure; T090 storage passed 5/5; privilege checks passed 3/3. Lint/typecheck passed. Unit suite passed 2,307/2,308; one known `backup-streams.test.ts` sleeping-process PID assertion failed locally.
+- T052: PASS. After fetch, all-ref ordering scan covered 110 origin refs and 8,301 migration appearances; max `20261111061000`, new migration `20261111061500`. Local timestamp validation passed (130 versions; 11 documented exceptions). `npm run check:migration-versions:remote` passed across 110 refs.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed. Gate: PASS for T074 commit and push preparation; repeat T052 before push. No PR is opened; S40-R11 joint delivery remains recorded.
+
+## S47 T074 pre-commit gate revalidation — 2026-11-11T06:36:24Z
+
+- Final code replay followed a robustness-only SQL refactor that separates JSON shape checks from array/numeric casts; no requirement or plan text changed. T074 acceptance remains unchanged.
+- Final verification: focused T074 suite 32/32 passed, full T037 contract suite 90 passed / 1 expected failure, T090 storage 5/5, privileges 3/3, lint/typecheck PASS. Unit remains 2,307/2,308 with the known backup-streams PID assertion failure.
+- Final T052(a): PASS after fetch, 110 origin refs / 8,301 migration appearances, highest `20261111061000`, new `20261111061500`. Local timestamp check PASS (130 versions; 11 approved exceptions). T052(b) remote filename-conflict check PASS across 110 refs.
+- Findings: 0 open CRITICAL/HIGH. No product ambiguity. Gate PASS for commit preparation; repeat T052 before push. T075 workspace self-target validation is still explicitly outside this lane.
