@@ -1,6 +1,6 @@
 # F18 Copy AI Prompt contract (S43-PO-5)
 
-Source: runs/s43-po/copy-ai-prompt-approved.md. Select by UI language and substitute plan content for the single {{PLAN_CONTENT}} token; preserve every other UTF-8 byte. The client selection is primary; show coach-original per affected item and never in totals rows.
+Source: `runs/s43-po/copy-ai-prompt-approved.md`, held in the S43 PO run archive outside this checkout (5,272 bytes, SHA-256 `cc388b80c3cb6dbac76af47562f47710d0f08d726a5d1e976d9f1ab77b421e03`). To verify, extract the fenced bodies of P3 (English) and P4 (Arabic) plus the P5 labels from that file and compare them byte-for-byte with this contract; they must be identical. If the archive is unavailable, obtain the file from the PO before editing this contract and never retype the bodies. Select by UI language and substitute plan content for the single {{PLAN_CONTENT}} token; preserve every other UTF-8 byte. The client selection is primary; show coach-original per affected item and never in totals rows.
 
 ## P3 — Nutrition plan · English
 

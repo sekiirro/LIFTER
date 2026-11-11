@@ -44,19 +44,20 @@ Implemented as a frozen, versioned schema module with one fixture set shared by 
 
 ### 3. Canonical algorithm and total derivation
 
-One TypeScript implementation (BigInt coefficient/scale on decimal strings) and one SQL implementation (`numeric`, no intermediate rounding) run the same golden fixture set, including finite-decimal precision boundaries, alternatives, selected-alternative totals, and all meals included in day totals. Sum every meal's item values into each day's total; document totals sum the day totals. Inputs use the live F16 scales; stored results preserve the exact computed decimal at a scale sufficient for the declared input scales; storage does not round. Display applies half-up once from the exact value and never changes stored values. Aggregates come from full-precision exact values. Display is a pure string function (calories integer; macro < 10 g one decimal, ≥ 10 g integer). Display and canonicalization use half-up rounding (S43-PO-1; architect mapping (S43-R1)). Since the supported finite-decimal inputs are multiplied and divided only by 100, repeating-fraction outputs are not realizable fixtures.
+One TypeScript implementation (BigInt coefficient/scale on decimal strings) and one SQL implementation (`numeric`, no intermediate rounding) run the same golden fixture set, including finite-decimal precision boundaries, alternatives, selected-alternative totals, and each day's total counting exactly the meals contained in that day. Sum the item values of each day's own meals into that day's total (a meal never contributes to another day); document totals sum the day totals. Inputs use the live F16 scales; stored results preserve the exact computed decimal at a scale sufficient for the declared input scales; storage does not round. Display applies half-up once from the exact value and never changes stored values. Aggregates come from full-precision exact values. Display is a pure string function (calories integer; macro < 10 g one decimal, ≥ 10 g integer). Display and canonicalization use half-up rounding (S43-PO-1; architect mapping (S43-R1)). Since the supported finite-decimal inputs are multiplied and divided only by 100, repeating-fraction outputs are not realizable fixtures.
 
 ### 4. Publish path
 
 `publish_nutrition_revision(expected_revision, operation_key)` (SECURITY DEFINER, invoked from the F19 Ready & Publish flow):
 
-1. authorize (two walls) → resolve the current subscription per F19 (no current subscription ⇒ refused before any nutrition work);
-2. take the F19 lock order → lock draft → idempotency lookup → re-read expected revision → recheck authorization and lifecycle;
-3. parse the document with the frozen validator;
-4. load every referenced exact food version (items + alternatives), build the per-(version, unit kind, unit identity) snapshot map, recompute all values in SQL;
-5. insert the F19 revision + the F18 content row atomically;
-6. carry forward valid selections by stable item/alternative id;
-7. write one publish audit event; the F19 delivery/activation/productivity writes happen in the same transaction, not here.
+1. authorize (two walls);
+2. on a retry, resolve the committed operation receipt with a nonlocking tenant-scoped probe to learn its originally bound subscription, take the F19 lock order (client → that subscription → plan root), re-read the operation ledger, and return the matching receipt before any subscription-eligibility check — an exact authorized replay is returned even if entitlement has since expired;
+3. for a new operation key only, resolve the current subscription per F19 (no current subscription ⇒ refused before any nutrition work), then take the F19 lock order → lock draft → idempotency lookup → re-read expected revision → recheck authorization and lifecycle;
+4. parse the document with the frozen validator;
+5. load every referenced exact food version (items + alternatives), build the per-(version, unit kind, unit identity) snapshot map, recompute all values in SQL;
+6. insert the F19 revision + the F18 content row atomically;
+7. carry forward valid selections by stable item/alternative id;
+8. write one publish audit event; the F19 delivery/activation/productivity writes happen in the same transaction, not here.
 
 Caller-supplied snapshots/totals are ignored. Replaying the same operation key with the same canonical request returns its original receipt; each new authorized Ready & Publish operation appends a new revision and delivery, even when content is unchanged. A missing referenced food version fails the publish with no revision.
 

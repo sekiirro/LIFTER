@@ -5,7 +5,7 @@
 
 ## 1. Document envelope
 
-The document is the value stored in `nutrition_plan_version_contents.document` (immutable) and in the private draft's nutrition content (mutable). All ids are strings unique within the document. All numeric inputs/outputs are decimal strings (`"4.5658"`, never a JavaScript number).
+The document is the value stored in `nutrition_plan_version_contents.document` (immutable) and in the private draft's nutrition content (mutable). All ids are strings unique within the document. Quantities, targets, computed values and snapshot nutrition/basis values are decimal strings (`"4.5658"`, never a JavaScript number); structural integers (`schemaVersion`, `dayIndex`, item/alternative `foodVersion`, `algorithmVersion`, snapshot `version`) are JSON numbers, as the examples show.
 
 ```json
 {
@@ -81,7 +81,7 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
 2. Every document, day-type, meal, item and alternative id is unique within its scope; every referenced id resolves; every meal is associated with exactly one document day (the implicit day for `single_day`, its own `days[]` entry for `seven_day`) and is visible and counted only on that day. Day type does not filter meals or totals.
 3. Every item/alternative references one exact `(foodId, foodVersion)`; no alias or "latest" reference is stored.
 4. `quantity.value` is a positive decimal string with ≤ 3 decimal places; no exponent, no locale separators, no Arabic-Indic digits in the stored value (input normalization happens in the UI before storage).
-5. `unit.kind` disambiguates a basis unit (`{kind: "basis", value: "g"|"ml"}`) from a declared catalog serving (`{kind: "serving", unitKey}`). A catalog key may itself be `g` or `ml`, including when it matches the food basis; tagged references keep the two meanings distinct. A basis must match the food version basis and a serving key must resolve to that exact version's declared serving row; cross-basis or undeclared units are rejected (`F18-FR-004`).
+5. `unit.kind` disambiguates a basis unit (`{kind: "basis", value: "g"|"ml"}`) from a declared catalog serving (`{kind: "serving", unitKey}`). A catalog key may itself be `g` or `ml`, including when it matches the food basis; tagged references keep the two meanings distinct. A basis must match the food version basis and a serving key must resolve to that exact version's declared serving identity `(food_id, food_version, unit_key)`; cross-basis or undeclared units are rejected (`F18-FR-004`).
 6. Targets, when present, are non-negative decimal strings with ≤ 3 decimals; `targets: null` is valid (D18-2=A) and totals are still computed.
 7. `recipeUrl`, when present, is an absolute HTTPS URL on YouTube or Google Drive (D18-6). No other host, no credentials in the URL. The exact host allowlist lives in the implementation validator and is contract-tested for both allowed and rejected hosts.
 8. No unknown keys are accepted (strict parse); unknown keys fail the save/publish.
@@ -114,7 +114,7 @@ Rules:
 ```json
 {
   "food:<food_id>@<version>#basis:<basis_unit>": { "kind": "basis", "foodId": "...", "version": 3, "names": { "ar": "...", "en": "..." }, "basis": "g" | "ml", "productIdentity": "...", "preparationIdentity": "...", "weighingState": "raw|cooked|not_applicable", "per100": { "kcal": "...", "protein": "...", "carbs": "...", "fat": "...", "fiber": "...|null" } },
-  "food:<food_id>@<version>#serving:<serving_id>": {
+  "food:<food_id>@<version>#serving:<unit_key>": {
     "kind": "serving",
     "unitKey": "<catalog unit_key>",
     "snapshot": {
@@ -123,14 +123,15 @@ Rules:
       "basis": "g" | "ml",
       "productIdentity": "…", "preparationIdentity": "…", "weighingState": "raw|cooked|not_applicable",
       "kcal": "…", "protein": "…", "carbs": "…", "fat": "…", "fiber": "…|null",
-      "serving": { "servingId": "<real F16 serving row id>", "labels": { "ar": "…", "en": "…" }, "basisQuantity": "…" }
+      "serving": { "servingId": "<F16 unit_key for this food version>", "labels": { "ar": "…", "en": "…" }, "basisQuantity": "…" }
     }
   }
 }
 ```
 
 - One entry per distinct `(food version, unit kind, unit identity)` referenced by items and alternatives. The `basis:` and `serving:` key namespaces cannot collide, even when an F16 catalog `unit_key` is `g` or `ml` and matches the food basis.
-- A `basis` entry stores frozen food display data and per-100 values but no catalog serving. A `serving` entry carries its exact catalog `unitKey` and wraps the exact F16 `FoodSnapshotV1` for that serving row, including its real `servingId`, labels and `basisQuantity`; F18 never fabricates a basis token as an F16 serving id. Preserve existing F16 keys `g` and `ml` as catalog-serving references when tagged `kind: "serving"`.
+- Serving identity mapping: F16 has no separate serving row id. `food_serving_units` is keyed by `(food_id, food_version, unit_key)`, so F18's `servingId` is exactly that catalog `unit_key` scoped to the entry's `foodId` and `version`; `(foodId, version, servingId)` round-trips to one existing declared F16 serving, and that is the only serving reference this snapshot may carry. It is never a fabricated token, a positional index or the basis token. The snapshot key `food:<food_id>@<version>#serving:<unit_key>` percent-encodes (RFC 3986) the `unit_key` so `:`, `#` or `%` inside a catalog key cannot change the key structure. A `basis` entry keeps the separate `#basis:<basis_unit>` namespace and never claims a serving.
+- A `basis` entry stores frozen food display data and per-100 values but no catalog serving. A `serving` entry carries its exact catalog `unitKey` and wraps the exact F16 `FoodSnapshotV1` for that serving identity, including its `unit_key`, labels and `basisQuantity`; F18 never fabricates a basis token as an F16 serving id. Preserve existing F16 keys `g` and `ml` as catalog-serving references when tagged `kind: "serving"`.
 - Values are serialized from the exact F16 columns at their fixed scale (kcal 1 dp, macros 2 dp, basis quantity 3 dp), with no floating-point round-trip.
 - Only the database publish path writes this map. A caller-supplied map is ignored (`F18-FR-005`).
 

@@ -1,6 +1,6 @@
 # F18 traceability
 
-**Date**: 2026-11-10 (S44-PO-7 spec-only update). **Base**: `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`. **Branch**: `speckit-018-nutrition-planner-s42`.
+**Date**: 2026-11-11 (CodeRabbit PR #79 spec-consistency fixes). **Base**: `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`. **Branch**: `speckit-018-nutrition-planner-s42`.
 
 **Scope**: specification artefacts only. **No test was executed; no implementation exists on this branch.** Statuses below are specification statuses, not verification claims.
 

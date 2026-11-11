@@ -64,7 +64,7 @@ Any existing copy of a targeted global template identity is skipped regardless o
 
 ## 5. Tests (minimum)
 
-1. All × All: uninitialized workspaces receive exactly one copy each; initialized (complete and partial) are skipped. A workspace created after the batch receives nothing automatically or on an exact-key replay, but is included in a later new-key operation if still uninitialized.
+1. All × All: each uninitialized workspace receives exactly one copy of **each selected** active global template (N selected templates ⇒ N copies), one per template identity; initialized (complete and partial) workspaces are skipped. A workspace created after the batch receives nothing automatically or on an exact-key replay, but is included in a later new-key operation if still uninitialized.
 2. Specific × Specific: fills only missing templates; any retained existing copy, active or retired and regardless of source version, is `skipped_existing`; customization bytes are unchanged and the skipped pair is reported.
 3. All Except: excluded templates are absent; the rest are assigned.
 4. Retired template rejected from `specific`/`excludeIds`; not offered by All.
