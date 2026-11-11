@@ -30,11 +30,13 @@ it('T014 appends a client self-correction without changing the original or loggi
   const intentKey = randomUUID();
   const originalAnswers = {
     ordinary: 'original',
+    mustKeep: 'original required answer',
     health: 'synthetic health value',
     score: 5,
   };
   const correctedAnswers = {
     ordinary: 'corrected',
+    mustKeep: 'corrected required answer',
     health: 'updated synthetic health value',
     score: 6,
   };
@@ -59,6 +61,7 @@ it('T014 appends a client self-correction without changing the original or loggi
       const definition = {
         questions: [
           { id: 'ordinary', type: 'shortText', charLimit: 10 },
+          { id: 'mustKeep', type: 'shortText', required: true, charLimit: 30 },
           { id: 'health', type: 'longText', charLimit: 1000 },
           {
             id: 'score',
@@ -153,6 +156,41 @@ it('T014 appends a client self-correction without changing the original or loggi
         await tx`select pg_catalog.pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as definition, (select p.prosecdef from pg_catalog.pg_proc p where p.oid='public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as prosecdef`;
       expect(restoredSecurity?.definition).toBe(originalSecurity?.definition);
       expect(restoredSecurity?.prosecdef).toBe(true);
+      const clearGuard = "and p_answer_values ? (question->>'id')";
+      expect(originalSecurity?.definition).toContain(clearGuard);
+      const guardMutant = originalSecurity?.definition.replace(
+        clearGuard,
+        `and false\n      ${clearGuard}`,
+      );
+      expect(guardMutant).not.toBe(originalSecurity?.definition);
+      const guardMutationRollback = new Error(
+        'rollback required-answer guard mutation',
+      );
+      let guardMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          await sp.unsafe(guardMutant!);
+          await sp`set local role authenticated`;
+          const [attempt] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},1,${randomUUID()},
+              ${sp.json({ ...correctedAnswers, mustKeep: '' })},'synthetic correction note'
+            ) as result
+          `;
+          try {
+            expect(attempt?.result).toEqual({ status: 'invalid' });
+          } catch {
+            guardMutationKilled = true;
+          }
+          throw guardMutationRollback;
+        }),
+      ).rejects.toBe(guardMutationRollback);
+      expect(guardMutationKilled).toBe(true);
+      const [restoredGuard] = await tx`
+        select pg_catalog.pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as definition
+      `;
+      expect(restoredGuard?.definition).toBe(originalSecurity?.definition);
       const [unknownKey] = await tx`
         select public.correct_form_answer(
           ${context.wsA.id},${assignmentId},1,${randomUUID()},
@@ -190,11 +228,63 @@ it('T014 appends a client self-correction without changing the original or loggi
         ).rejects.toBe(probeRollback);
         expect(result).toEqual({ status: 'invalid' });
       };
+      const [clearedRequired] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},1,${randomUUID()},
+          ${tx.json({ ...correctedAnswers, mustKeep: '' })},'synthetic correction note'
+        ) as result
+      `;
+      expect(clearedRequired?.result).toEqual({ status: 'invalid' });
+      await tx`reset role`;
+      expect(
+        await tx`
+        select
+          (select count(*)::int from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as revisions,
+          (select count(*)::int from app_private.form_corrections where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as corrections,
+          (select count(*)::int from app_private.form_correction_intents where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as intents,
+          (select count(*)::int from public.audit_events where action='form.answer_corrected' and target_id=${assignmentId}) as correction_audits
+      `,
+      ).toEqual([
+        { revisions: 1, corrections: 0, intents: 0, correction_audits: 0 },
+      ]);
+      await tx`set local role authenticated`;
       await expectInvalidCorrection({ ...correctedAnswers, score: '6' });
       await expectInvalidCorrection({ ...correctedAnswers, score: 11 });
+      await expectInvalidCorrection({ ...correctedAnswers, mustKeep: null });
       await expectInvalidCorrection({
         ...correctedAnswers,
         N08: 'not-a-choice',
+      });
+      const unrelatedRollback = new Error(
+        'rollback unrelated-only correction probe',
+      );
+      let unrelatedResult: unknown;
+      let unrelatedStoredAnswers: unknown;
+      await expect(
+        tx.savepoint(async (sp) => {
+          const [attempt] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},1,${randomUUID()},
+              ${sp.json({ ordinary: 'narrow' })},'synthetic correction note'
+            ) as result
+          `;
+          unrelatedResult = attempt?.result;
+          await sp`reset role`;
+          const [revision] = await sp`
+            select answer_values from public.form_answer_revisions
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=2
+          `;
+          unrelatedStoredAnswers = revision?.answer_values;
+          throw unrelatedRollback;
+        }),
+      ).rejects.toBe(unrelatedRollback);
+      expect(unrelatedResult).toMatchObject({
+        status: 'corrected',
+        revision: 2,
+      });
+      expect(unrelatedStoredAnswers).toEqual({
+        ...originalAnswers,
+        ordinary: 'narrow',
       });
       await tx`reset role`;
       await expect(

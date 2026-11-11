@@ -11,7 +11,7 @@ export const guardedFunctions = [
   },
   {
     identity: 'public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)',
-    migration: '20261111024828_f15_direct_rpc_answer_validation.sql',
+    migration: '20261111061000_f15_correction_required_answer_guard.sql',
     name: 'public.correct_form_answer',
   },
   {
