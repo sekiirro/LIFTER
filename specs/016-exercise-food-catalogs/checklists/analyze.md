@@ -702,3 +702,37 @@ T900 has been marked complete only after its focused integration test passed on 
 - Findings: 0 open CRITICAL, 0 open HIGH. No ambiguity and no PO decision required.
 - Verdict: PASS for the two architect-required T056 technical corrections.
 - Evidence: `C:/Users/NEW LAP/.lifter/runs/s46-luna-f16-t056c/report.md`.
+
+## S46 T050 implementation analysis — 2026-11-11 00:24:49 UTC (Z)
+
+- Scope: FR-014/FR-023/FR-028/FR-029 — internal workspace Video resolution, immutable override → canonical precedence, workspace-private current-version Video, staff detail authorization, and the no-direct-login-execute boundary. No requirement, plan, or decision text changed.
+- Entry check: PASS. `spec.md` has numbered FRs, measurable SCs and Given/When/Then authorization/live-Video scenarios; Clarifications and D16-3 explicitly close the relevant decisions and state no open ambiguities. `plan.md` covers the live authorized Video projection; T050 is tagged with its FRs and follows completed T049/T052/T056. The prior analysis reports 0 open CRITICAL/HIGH findings. This section follows T050 task and traceability evidence updates.
+- Implementation: a private resolver reads the current workspace override Video and falls back to the current canonical version; a separate private-exercise resolver reads its own current version. Neither helper is executable by login roles. `catalog_exercise_detail` preserves the staff read gate and returns resolved Video from the new chain; legacy variation rows remain untouched for T054.
+- Verification: Stack A RED failed on legacy precedence and absent internal resolver; final reset/GREEN passed 7 integration files (97 passed / 22 existing expected failures), 4 unit files (54 passed), `npm run lint`, and `npm run typecheck`. The T037 assertion tagged T050 did not exist as an expected failure to flip.
+- Mutations: canonical-before-override, legacy `exercise_variations` source, and removed workspace authorization each caused their targeted assertion to fail; each definition was restored and the disposable Stack A database was reset before final GREEN.
+- T052 before commit: pending final fetch/scan and separate remote filename-conflict check.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision or ambiguity found. Client-plan persistence and wrapper remain F19/P4 scope; this task exposes no login-callable resolver.
+- Verdict: PASS for T050 implementation analysis.
+- Evidence: `C:/Users/NEW LAP/.lifter/runs/s46-luna-f16-t050/report.md`.
+
+## S46 T050 gate addendum — 2026-11-11 00:29:06 UTC (Z)
+
+- Revalidation after the final clean Stack A replay and task/traceability updates: entry check remains PASS; no spec, plan, or product requirement text changed. T050 evidence records the accepted tests and task status.
+- T052 before-commit gates: PASS. The fetched all-origin-ref ordering scan found 107 refs / 7,947 migration appearances, maximum `20261110231300`; migration `20261111001145` is greater and has valid UTC fields. Separate `npm run check:migration-versions:remote` passed across 106 remote refs.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed.
+- Gate: PASS for T050 commit preparation. Both T052 checks must be repeated before push.
+
+## S46 T050 evidence-name revalidation — 2026-11-11 00:29:46 UTC (Z)
+
+- Scope unchanged; traceability now names the explicit override-removal → canonical fallback test. Stack A reran `catalog-exercise-video-t050.test.ts`: 5/5 passed on the updated test head.
+- T052 before-commit gates remain PASS from 00:29:06 UTC; no migration or requirement text changed since that check.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed.
+- Gate: PASS for T050 commit preparation.
+
+## S46 T050 traceability revalidation — 2026-11-11 00:30:36 UTC (Z)
+
+- Scope remains unchanged. `tasks.md` now records T050 verification and points to the lane report for commit identity; `traceability.md` maps FR-014/023/028/029 to the named passing tests and report.
+- The updated T050 test name for override removal passed 5/5 on Stack A. No requirement or plan text changed; no new ambiguity found.
+- T052 before-commit gates remain PASS from 00:29:06 UTC; migration contents and filename are unchanged.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed.
+- Gate: PASS for T050 commit preparation.

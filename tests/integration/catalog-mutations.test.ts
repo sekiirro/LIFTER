@@ -501,74 +501,82 @@ describe('F16 mutation probes', () => {
     }
   });
 
-  it('T016: removing video host, selected-workspace, or live-membership guards breaks assertions', async () => {
+  it('T050: canonical precedence, legacy reads, and workspace authorization mutants break assertions', async () => {
     const exerciseId = randomUUID();
-    const marker = 'rollback_catalog_video_resolution_mutation';
+    const canonicalUrl = 'https://youtu.be/canonicalmut';
+    const overrideUrl = 'https://youtu.be/overridemut';
+    const legacyUrl = 'https://youtu.be/legacymut';
+    const rollback = 'rollback_catalog_video_t050_mutations';
     try {
       await db.begin(async (tx) => {
         await tx`insert into public.exercises(id, created_by, current_version)
           values (${exerciseId}, ${po.userId}, 1)`;
         await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
-          values (${exerciseId}, 1, '{}'::jsonb, ${po.userId})`;
+          values (${exerciseId}, 1, ${tx.json({
+            name_en: 'T050 mutation', name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: canonicalUrl,
+          })}, ${po.userId})`;
         await tx`insert into public.exercise_variations(workspace_id, exercise_id, created_by, current_version)
-          values (${wsA}, ${exerciseId}, ${trainerA.userId}, 1), (${wsB}, ${exerciseId}, ${trainerB.userId}, 1)`;
+          values (${wsA}, ${exerciseId}, ${trainerA.userId}, 1)`;
         await tx`insert into public.exercise_variation_versions(workspace_id, exercise_id, version, payload, created_by)
-          values (${wsA}, ${exerciseId}, 1, '{"video_url":"https://evil.example/video"}'::jsonb, ${trainerA.userId}),
-            (${wsB}, ${exerciseId}, 1, '{"video_url":"https://youtu.be/abcdefghijk"}'::jsonb, ${trainerB.userId})`;
-        await tx`select set_config('role', 'postgres', true)`;
-        await tx`create or replace function app_private.catalog_video_url_allowed(p_url text)
-          returns boolean language sql immutable security definer set search_path = '' as $$ select true $$`;
+          values (${wsA}, ${exerciseId}, 1, ${tx.json({ video_url: legacyUrl })}, ${trainerA.userId})`;
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
-        const unsafeHost =
-          await tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${wsA})`;
-        await expectMutationToBreak(async () => {
-          expect(unsafeHost).toHaveLength(0);
-        }, 'removing the video host allowlist must break the unsafe-host denial');
-        expect(unsafeHost[0]?.video_url).toBe('https://evil.example/video');
+        await tx`select public.catalog_write_exercise_override(
+          ${wsA}, ${exerciseId}, 0, ${randomUUID()}, ${tx.json({ video_url: overrideUrl })}
+        )`;
 
         await tx`select set_config('role', 'postgres', true)`;
-        await tx`create or replace function app_private.has_workspace_access(ws uuid, cap text default null)
-          returns boolean language sql stable security definer set search_path = '' as $$ select true $$`;
-        const [resolver] = await tx`
-          select pg_get_functiondef('public.catalog_resolve_exercise_video(uuid,uuid)'::regprocedure) as definition
-        `;
-        if (!resolver?.definition)
-          throw new Error('video resolver definition missing');
-        const originalResolver = resolver.definition;
-        const equalityMutant = resolver.definition.replace(
-          'and v.workspace_id = p_workspace_id',
-          'and true',
+        const [resolver] = await tx`select pg_catalog.pg_get_functiondef(
+          'app_private.catalog_resolve_exercise_video(uuid,uuid,boolean)'::regprocedure
+        ) as definition`;
+        if (!resolver?.definition) throw new Error('T050 internal resolver missing');
+        const original = resolver.definition as string;
+        const precedenceMutant = original.replace(
+          'coalesce(override_video, canonical_video)',
+          'coalesce(canonical_video, override_video)',
         );
-        if (equalityMutant === resolver.definition)
-          throw new Error(
-            'selected-workspace equality mutation target missing',
-          );
-        await tx.unsafe(equalityMutant);
+        if (precedenceMutant === original) throw new Error('T050 precedence mutation target missing');
+        await tx.unsafe(precedenceMutant);
         await tx`select set_config('role', 'authenticated', true)`;
-        const foreignWorkspace =
-          await tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${wsB})`;
+        const [wrongPrecedence] = await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`;
         await expectMutationToBreak(async () => {
-          expect(foreignWorkspace).toHaveLength(0);
-        }, 'removing the selected-workspace equality check must break isolation');
-        expect(foreignWorkspace.map((row) => row.workspace_id)).toContain(wsA);
-
+          expect(wrongPrecedence?.variation).toMatchObject({ video_url: overrideUrl, source: 'override' });
+        }, 'T050 must reject canonical-before-override precedence', true);
         await tx`select set_config('role', 'postgres', true)`;
-        await tx.unsafe(originalResolver);
-        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
-        await tx`update public.workspace_memberships set revoked_at = statement_timestamp(), revoked_by = ${po.userId}
-          where workspace_id = ${wsA} and user_id = ${trainerA.userId} and revoked_at is null`;
+        await tx.unsafe(original);
+
+        const legacyMutant = original
+          .replace('public.exercise_overrides o', 'public.exercise_variations o')
+          .replace('public.exercise_override_versions v', 'public.exercise_variation_versions v');
+        if (legacyMutant === original) throw new Error('T050 legacy-source mutation target missing');
+        await tx.unsafe(legacyMutant);
         await tx`select set_config('role', 'authenticated', true)`;
-        const revokedAccess =
-          await tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${wsA})`;
+        const [legacyResult] = await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`;
         await expectMutationToBreak(async () => {
-          expect(revokedAccess).toHaveLength(0);
-        }, 'removing the current-membership guard must break revocation denial');
-        expect(revokedAccess).toHaveLength(1);
-        throw new Error(marker);
+          expect(legacyResult?.variation).toMatchObject({ video_url: overrideUrl, source: 'override' });
+        }, 'T050 must reject legacy exercise_variations as a Video source', true);
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx.unsafe(original);
+
+        const accessMutant = original.replace(
+          "or (not p_plan_authorized and (auth.uid() is null\n      or not app_private.catalog_can_read_global()\n      or (not app_private.is_platform_owner()\n        and not app_private.has_workspace_access(p_workspace_id, 'coaching_work'))))",
+          'or false',
+        );
+        if (accessMutant === original) throw new Error('T050 workspace authorization mutation target missing');
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerB.userId, role: 'authenticated' })}, true)`;
+        await expect(tx.savepoint((sp) =>
+          sp`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${wsA}, false)`,
+        )).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+        await tx.unsafe(accessMutant);
+        const [baseline] = await tx`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${wsA}, false)`;
+        await expectMutationToBreak(async () => {
+          expect(baseline).toBeUndefined();
+        }, 'T050 must reject video resolution for an unauthorized workspace', true);
+        await tx.unsafe(original);
+        throw new Error(rollback);
       });
     } catch (error) {
-      if ((error as Error).message !== marker) throw error;
+      if ((error as Error).message !== rollback) throw error;
     }
   });
 

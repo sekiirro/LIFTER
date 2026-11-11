@@ -146,9 +146,9 @@ describe('workspace exercise variation RPC', () => {
       await asActor(
         trainerA.userId,
         (tx) =>
-          tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${wsA})`,
+          tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`,
       ),
-    ).toEqual([]);
+    ).toEqual([{ variation: { workspace_id: wsA, video_url: null, source: 'none' } }]);
     const restored = await asActor(
       trainerA.userId,
       (tx) =>
@@ -162,13 +162,11 @@ describe('workspace exercise variation RPC', () => {
       await asActor(
         trainerA.userId,
         (tx) =>
-          tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${wsA})`,
+          tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`,
       ),
     ).toEqual([
       {
-        exercise_id: exerciseId,
-        workspace_id: wsA,
-        video_url: update.video_url,
+        variation: { workspace_id: wsA, video_url: null, source: 'none' },
       },
     ]);
   });

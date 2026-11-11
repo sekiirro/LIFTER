@@ -77,6 +77,9 @@ describe('authorized exercise detail projection', () => {
         values (${wsA}, ${exerciseId}, ${trainer.userId}, 1)`;
       await tx`insert into public.exercise_variation_versions(workspace_id, exercise_id, version, payload, created_by)
         values (${wsA}, ${exerciseId}, 1, ${tx.json({ video_url: 'https://youtu.be/abcdefghijk', note: 'private note' })}, ${trainer.userId})`;
+      await asActor(tx, trainer.userId, () => tx`select public.catalog_write_exercise_override(
+        ${wsA}, ${exerciseId}, 0, ${randomUUID()}, ${tx.json({ video_url: 'https://youtu.be/override123' })}
+      )`);
       const owner = await asActor(
         tx,
         po.userId,
@@ -96,7 +99,8 @@ describe('authorized exercise detail projection', () => {
         payload: payload('Current exercise payload'),
         variation: {
           workspace_id: wsA,
-          video_url: 'https://youtu.be/abcdefghijk',
+          video_url: 'https://youtu.be/override123',
+          source: 'override',
         },
       });
       const workspaceOwner = await asActor(
@@ -118,7 +122,7 @@ describe('authorized exercise detail projection', () => {
         () =>
           tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsB})`,
       );
-      expect(foreign).toEqual([{ variation: null }]);
+      expect(foreign).toEqual([{ variation: { workspace_id: wsB, video_url: null, source: 'none' } }]);
       const workspaceStaff = await asActor(
         tx,
         trainer.userId,
@@ -129,7 +133,8 @@ describe('authorized exercise detail projection', () => {
         {
           variation: {
             workspace_id: wsA,
-            video_url: 'https://youtu.be/abcdefghijk',
+            video_url: 'https://youtu.be/override123',
+            source: 'override',
           },
         },
       ]);
