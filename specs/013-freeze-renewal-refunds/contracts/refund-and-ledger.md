@@ -1,6 +1,6 @@
 # Contract: Refund and financial ledger
 
-PO confirms a completed external refund for one explicitly selected paid purchase. The positive integer-minor-unit amount defaults to the actual refundable collected residual; zero is never confirmable. No payment gateway, settlement method or free-text reference is accepted.
+PO confirms a completed external refund for one explicitly selected paid refundable package group (the original package and its upgrade charges, or a separately paid renewal). The positive integer-minor-unit amount defaults to the actual refundable collected residual; zero is never confirmable. No payment gateway, settlement method or free-text reference is accepted.
 
 Refund is a distinct immutable aggregate with FIFO source allocations ordered by collection date, installment sequence and event UUID. Corrections remain exact F12 reversals. Principal across corrections/recollections/refunds cannot exceed active collected residual; cumulative commission reversal uses source snapshot and exact cumulative rounding, capped at stored commission. Unpaid obligations receive separate cancellation facts.
 
@@ -16,10 +16,10 @@ in `research.md` under “F12 merged contract and provisional F14 inventory.” 
 `registration_operations` table under a unique actor/request-key pair. The canonical binding is a
 fixed v1 SHA-256 input, and exact authorized replay returns the stored JSON result unchanged.
 F13's mocked refund RPC contract must preserve those semantics while binding the refund actor,
-workspace/client, explicitly selected purchase, positive amount, external-confirmation attestation,
+workspace/client, explicitly selected refundable package group, positive amount, external-confirmation attestation,
 and expected revisions. It must run current authorization before any receipt lookup and recheck it
 after key-lock waits. Same key with changed intent is a generic `key_conflict`; revoked replay is
-`not_permitted` without receipt disclosure. No amount-zero confirmation, unselected purchase, or
+`not_permitted` without receipt disclosure. No amount-zero confirmation, unselected refundable package group, or
 gateway/payment credential is accepted. F14 core is integrated in this branch; `20261103129200_f13_f14_capability_reconciliation.sql` preserves the F12/F14 shared-function and capability contracts after the F14 migrations.
 
 ## Hard gates
