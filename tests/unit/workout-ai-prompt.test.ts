@@ -97,4 +97,30 @@ describe('F17 Copy AI Prompt builder (FR-019, SC-009)', () => {
     expect(containsProhibitedInstruction(AI_PROMPT_EN)).toBe(false);
     expect(containsProhibitedInstruction(AI_PROMPT_AR)).toBe(false);
   });
+
+  it('does not flag ordinary coach-authored plan content (NEW-1)', () => {
+    // Bare coaching fragments without a prohibited object frame are not
+    // instructions. A bare "change the load" matches the qualified
+    // alter/change + programming-value frame, so it is only asserted in
+    // situ below where plan-scope stripping neutralises it.
+    for (const note of [
+      'Coach note: add 5kg next week.',
+      'Note: suggest heavier weight next block.',
+      'Coach note: replace squats with leg press.',
+    ]) {
+      expect(containsProhibitedInstruction(note)).toBe(false);
+    }
+    for (const locale of ['en', 'ar'] as const) {
+      const prompt = buildAiPrompt(
+        locale,
+        'Day 1 - Push\nBench Press - 3 working x 8-12 @ 60kg\nCoach note: add 5kg next week.',
+      );
+      expect(containsProhibitedInstruction(prompt)).toBe(false);
+      const prompt2 = buildAiPrompt(
+        locale,
+        'Day 1 - Push\nCoach note: change the load to 60kg.',
+      );
+      expect(containsProhibitedInstruction(prompt2)).toBe(false);
+    }
+  });
 });

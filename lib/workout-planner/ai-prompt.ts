@@ -24,29 +24,37 @@ export function buildAiPrompt(
 }
 
 // Prohibited instruction classes per contract section 4 (A4-5, SC-009):
-//   1. invent / replace / rename / add exercises
-//   2. alter reps, load, rest, RIR, set counts, order or any programming value
-//   3. generate alternatives
-// The approved prompt bodies only ever use these verbs inside negated
-// prohibitions ("Do not ..."), so a negation cue immediately preceding the
-// verb (within the same sentence) disqualifies the match.
-const PROHIBITED_VERBS = [
-  'invent',
-  'replace',
-  'rename',
-  'add',
-  'alter',
-  'change',
-  'generate',
-  'suggest',
-];
+//   1. invent / replace / rename / add exercises (add also covers sets)
+//   2. alter / change reps, load, rest, RIR, set counts, order or any
+//      programming value
+//   3. generate / suggest alternatives or exercises
+// Only object-qualified frames count: bare coaching verbs without their
+// prohibited object (e.g. "add 5kg", "suggest heavier weight") are plan
+// content, not instructions to the AI. The approved prompt bodies only ever
+// use these frames inside negated prohibitions ("Do not ..."), so a negation
+// cue in the same clause disqualifies the match. A sentence terminator
+// (`.!?` or newline) between the cue and the verb breaks the negation.
+// Plan payload after the `Plan:`/`الخطة:` marker is authorized
+// content (§2) and is never scanned.
+const PLAN_MARKERS = ['\nPlan:\n', '\nالخطة:\n'];
+
+function instructionScope(prompt: string): string {
+  let end = prompt.length;
+  for (const marker of PLAN_MARKERS) {
+    const at = prompt.indexOf(marker);
+    if (at >= 0 && at < end) end = at;
+  }
+  return prompt.slice(0, end);
+}
 
 const NEGATION_CUE =
   /\b(do not|don't|never|must not|should not|cannot|can't|won't|no|not)\b|لا/gi;
 
-function isNegated(prompt: string, index: number): boolean {
+const CLAUSE_BREAK = /[.!?\n\r]/;
+
+function isNegated(text: string, index: number): boolean {
   const start = Math.max(0, index - 120);
-  const prefix = prompt.slice(start, index);
+  const prefix = text.slice(start, index);
   let lastNeg = -1;
   let match: RegExpExecArray | null;
   const re = new RegExp(NEGATION_CUE.source, 'gi');
@@ -56,32 +64,26 @@ function isNegated(prompt: string, index: number): boolean {
   if (lastNeg < 0) return false;
   const between = prefix.slice(lastNeg);
   // A sentence terminator between the cue and the verb breaks the negation.
-  return !/[.!?\n]/.test(between);
+  if (CLAUSE_BREAK.test(between)) return false;
+  return true;
 }
 
+const PROHIBITED_FRAMES: RegExp[] = [
+  /\b(invent|replace|rename|add)\b[\s\S]{0,60}?\bexercises?\b/gi,
+  /\badd\b[\s\S]{0,40}?\bsets?\b/gi,
+  /\badd\b[\s\S]{0,40}?\bset counts?\b/gi,
+  /\b(alter|change)\b[\s\S]{0,80}?\b(reps?|load|rest|rir|set counts?|set count|order|programming values?|numbers?|units?)\b/gi,
+  /\b(generate|suggest)\b[\s\S]{0,60}?\b(alternatives?|exercises?)\b/gi,
+];
+
 export function containsProhibitedInstruction(prompt: string): boolean {
-  for (const verb of PROHIBITED_VERBS) {
-    const re = new RegExp('\\b' + verb + '\\b', 'gi');
+  const scope = instructionScope(prompt);
+  for (const pattern of PROHIBITED_FRAMES) {
+    pattern.lastIndex = 0;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(prompt)) !== null) {
-      if (!isNegated(prompt, m.index)) return true;
+    while ((m = pattern.exec(scope)) !== null) {
+      if (!isNegated(scope, m.index)) return true;
     }
-  }
-  const suggestNew = /\bsuggest\s+new\s+(exercises|alternatives)\b/gi;
-  let sn: RegExpExecArray | null;
-  while ((sn = suggestNew.exec(prompt)) !== null) {
-    if (!isNegated(prompt, sn.index)) return true;
-  }
-  const genAlt = /\bgenerate\b[\s\S]{0,60}?\b(alternatives|exercises)\b/gi;
-  let ga: RegExpExecArray | null;
-  while ((ga = genAlt.exec(prompt)) !== null) {
-    if (!isNegated(prompt, ga.index)) return true;
-  }
-  const alterProg =
-    /\balter\b[\s\S]{0,80}?\b(reps|load|rest|rir|set counts|order|programming values)\b/gi;
-  let ap: RegExpExecArray | null;
-  while ((ap = alterProg.exec(prompt)) !== null) {
-    if (!isNegated(prompt, ap.index)) return true;
   }
   return false;
 }
