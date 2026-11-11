@@ -36,7 +36,7 @@
 - PASS: no product ambiguity or new PO decision found.
 - CRITICAL: 0 open; HIGH: 0 open.
 
-## 2026-11-11 Analyze — Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
+## 2026-11-11 Analyze â€” Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
 
 - Scope: correct the two S43-PO-8 scenario-to-SC citations and the 50-row traceability status summary.
 - PASS: scenario 2 maps upgrade term anchors to SC-027; scenario 3 maps pre-activation duration start to SC-028. SC-029 remains mapped to renewal-then-upgrade credit.
@@ -45,35 +45,35 @@
 - PASS: numbered FRs, measurable SCs, GWT acceptance, clarifications, plan coverage, task mappings, and dated analysis artifacts exist for the touched feature.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.
 
-## 2026-11-11 Analyze — merge of main, no PR content change (01:52 UTC)
+## 2026-11-11 Analyze â€” merge of main, no PR content change (01:52 UTC)
 
 - Scope: merged main commit b1476db5f95d447ed2b0525e19ed4a9c890b90cc; no PR content change.
 - CRITICAL: 0 open; HIGH: 0 open.
 
-## 2026-11-11 Analyze — T043 PO-only manual date adjustment (FR-040; SC-018)
+## 2026-11-11 Analyze â€” T043 PO-only manual date adjustment (FR-040; SC-018)
 
-- Entry check: PASS — FR-040 states the PO-only/after-expiry/audit/zero-revenue rules; SC-018 is measurable; GWT scenario 11 covers PO-after-expiry success and non-PO refusal; task T043 is tagged FR-040/SC-018; plan.md slice (5) covers PO date edits.
+- Entry check: PASS â€” FR-040 states the PO-only/after-expiry/audit/zero-revenue rules; SC-018 is measurable; GWT scenario 11 covers PO-after-expiry success and non-PO refusal; task T043 is tagged FR-040/SC-018; plan.md slice (5) covers PO date edits.
 - Specified (implement): only `platform_owner` attempts commit; attempts by any other role (including null actor) are refused before any write; adjustment commits even when the subscription term is expired; every commit writes exactly one immutable audit row; zero payment/revenue/ledger rows are written by the operation. Input well-formedness (valid UUIDs, valid Cairo dates, end-exclusive after start) is rejected as `invalid_input`; this is input validity, not product policy.
 - NOT specified (no code): which subscription dates are adjustable beyond asserted effective start/end, permitted shift ranges or backdating limits, previous-value derivation, whether entitlement/P4 projections must reflect manual edits, behavior for frozen or deactivated subscriptions, and expected-revision concurrency. These are escalated as PO-DECISION-NEEDED with the adjustment fact recording only the PO-asserted dates.
 - Design: new immutable table `public.subscription_manual_date_adjustments` (no money columns by construction) + `public.record_subscription_date_adjustment(jsonb)` (SECURITY DEFINER, authenticated-only grant, explicit `app_private.is_platform_owner()` pre- and post-lock checks, per-actor request-key exact replay, `key_conflict` on changed intent) + audit trigger writing `subscription.manual_date_adjusted`. No new capability (T017 parity untouched). TS service `lib/subscriptions/manual-date-service.ts` enforces PO-before-RPC with an allow-listed receipt.
 - Catalog impact: two new `app_private`/`public` objects require updating the pinned `rls-catalog` private-function list; both follow the hardened owner/search-path/grant pattern.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions in the specified scope (open questions escalated, not encoded).
 
-## 2026-11-11 Analyze — T044 productivity points (FR-040/041; SC-019/026)
+## 2026-11-11 Analyze â€” T044 productivity points (FR-040/041; SC-019/026)
 
-- Entry check: PASS — FR-041 states one point per new client, no repeat for returning clients, and no points for upgrades/renewals/plan publications; FR-040 states unlimited plan revisions/publications and no trainer point for plan publication; GWT scenario 12 and SC-019/SC-026 are measurable; task T044 is tagged FR-040/FR-041/SC-019/SC-026; plan.md slice (6) covers point uniqueness.
+- Entry check: PASS â€” FR-041 states one point per new client, no repeat for returning clients, and no points for upgrades/renewals/plan publications; FR-040 states unlimited plan revisions/publications and no trainer point for plan publication; GWT scenario 12 and SC-019/SC-026 are measurable; task T044 is tagged FR-040/FR-041/SC-019/SC-026; plan.md slice (6) covers point uniqueness.
 - Specified (implement): exactly one point per new client (`points = 1` CHECK); at most one point row per client (`UNIQUE(client_id)`, immutable, never deleted); repeat awards for the same client are rejected with zero new rows; upgrade, renewal and plan-publication operations write zero point rows (no writer is invoked from those paths); no count limit is imposed on plan revisions/publications. Pure rules module pins `new_client -> 1`, all other events -> 0.
 - NOT specified (no code): which event/role awards the point in production (award entry point and authorizer), whether a returning client under a new client row can be linked by identity, and point display/reporting. The award entry point is escalated as PO-DECISION-NEEDED; no public award RPC is added. Persistence, uniqueness/immutability guards, audit trigger (`trainer.productivity_point_awarded`), and behavioral no-point coverage are the shippable core.
 - Catalog impact: one new audit trigger function requires updating the pinned `rls-catalog` private-function list; hardened pattern followed.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions in the specified scope (award entry escalated, not encoded).
 
-## 2026-11-11 Analyze — T047 frozen-state operations (FR-038/039; SC-022)
+## 2026-11-11 Analyze â€” T047 frozen-state operations (FR-038/039; SC-022)
 
-- Entry check: PASS — FR-038/039 state frozen upgrade/renewal refusal until unfrozen and freeze-day expiry extension; GWT scenario 10 and SC-022 are measurable; task T047 is tagged FR-038/FR-039/SC-022 with paths in freeze-service/freeze-dates and unit/integration freeze-lifecycle tests; plan.md slice (3) covers frozen refusal and freeze-day extension.
-- Specified (implement): pure `requireUnfrozenForOperation` gate (upgrade/renewal refused while frozen; mirrors existing `requireFreezeRole` style) + `isFrozenOn` window predicate derived from the specified Apply-counts/Stop-excluded day semantics + exact 10-counted-days → +10-expiry unit fixture + integration fixtures in freeze-lifecycle.test.ts (frozen renewal refusal with zero writes via existing `record_renewal`, DB-level 10-day extension via `f13_project_entitlement`, concurrent-apply race serialization, apply/stop/remove audit counts with replay silence).
+- Entry check: PASS â€” FR-038/039 state frozen upgrade/renewal refusal until unfrozen and freeze-day expiry extension; GWT scenario 10 and SC-022 are measurable; task T047 is tagged FR-038/FR-039/SC-022 with paths in freeze-service/freeze-dates and unit/integration freeze-lifecycle tests; plan.md slice (3) covers frozen refusal and freeze-day extension.
+- Specified (implement): pure `requireUnfrozenForOperation` gate (upgrade/renewal refused while frozen; mirrors existing `requireFreezeRole` style) + `isFrozenOn` window predicate derived from the specified Apply-counts/Stop-excluded day semantics + exact 10-counted-days â†’ +10-expiry unit fixture + integration fixtures in freeze-lifecycle.test.ts (frozen renewal refusal with zero writes via existing `record_renewal`, DB-level 10-day extension via `f13_project_entitlement`, concurrent-apply race serialization, apply/stop/remove audit counts with replay silence).
 - NOT in scope: DB-level frozen upgrade refusal has no upgrade writer until T042 (forbidden to this lane); covered by the pure gate plus a T042 handoff note. No migration is required (freeze guards exist); no catalog changes.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open.
-## 2026-11-11 Analyze — S48-PO-14/15 clarification and T043/T044 untick (19:37 UTC)
+## 2026-11-11 Analyze â€” S48-PO-14/15 clarification and T043/T044 untick (19:37 UTC)
 
 - Entry check for T043: PASS. `spec.md` contains numbered FR-040, measurable SC-018, and GWT scenario 11; the new Clarifications entries preserve S48-PO-14 words and separately label S48-R22 mapping; no open product ambiguity remains for T043. `plan.md` slice (5) covers PO date edits; `tasks.md` T043 is tagged FR-040/SC-018 and is now unchecked pending current-head verification.
 - Entry check for T044: PASS for requirements and plan mapping. FR-041, SC-019/026 and GWT scenario 12 exist; PO event/role is resolved by S48-PO-15 and S48-R22; task remains unchecked. Production writer and assigned-trainer source must be established from repository evidence before implementation; no path or identity is assumed.
@@ -121,3 +121,20 @@
 - T044 status: S48-PO-19 verbatim answer, mapped by S48-R24, defers award wiring to P4's first-delivery transaction. F13 storage/rules remain recorded; T044 stays unchecked and FR-041 PARTIAL until the P4 writer/assigned-trainer source is available. No F13 award writer or inferred assignment is authorized.
 - T043 is complete and ticked at commit `71754d709decf424c4ca62fb83fa252c3c3c4ead`; older Analyze snapshots describing its pending state are superseded by the later exact-head verification entry.
 - No requirement or behavior was added in this documentation step. CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze - S48-PO-18/21 upgrade clarifications and T042 re-entry (21:35 UTC)
+
+- Spec Kit entry gate: PASS after final S48-PO-18/21/task edit. `spec.md` has FR-038, measurable SCs and Given/When/Then upgrade scenarios; Clarifications record byte-exact S48-PO-18 and S48-PO-21 decisions with separate S48-R24 and S48-R26 mappings. `plan.md` slices (1), (2), and (4) cover continuity, upgrades, and refunds; T042 remains tagged FR-037/FR-038 with applicable SCs. No open product ambiguity remains for T042 at entry.
+- S48-PO-18 resolves the upgrade-payment commission rate: snapshot the selected package version's rate on the additional payment; non-upgrade validation and original payment snapshots remain unchanged.
+- S48-PO-21 resolves F13-T042-D2: upgrade calculation starts from the manually adjusted current effective dates under normal FR-038 rules; a later adjustment supersedes the upgrade projection. No extra date policy is inferred.
+- At this 21:35 UTC checkpoint T044 remained P4-deferred and T041/T042 awaited the S48-R5 renewal-then-upgrade test; the later 22:39 UTC entry below records their verified completion. T044 remains unticked.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze - T041/T042 Stack C implementation and verification (22:39 UTC)
+
+- Entry check: PASS. `spec.md` defines FR-037..039, measurable SC-015..034, and GWT scenarios for pre-activation refusal, upgrade pricing/date branches, and renewal-then-upgrade. PO-18 and PO-21 are byte-exact in Clarifications with separate S48-R24/R26 mappings; no T041/T042 product ambiguity remains. `plan.md` covers continuity, upgrades, and refunds; `tasks.md` T041/T042 are tagged and now ticked after current-head tests. T044 remains unticked and explicitly P4-deferred.
+- T042 evidence: focused Stack C integration 14/14; full F12/F13 Stack C regression 27 files / 644 tests, compared with the 630-test pre-change baseline; no new failure IDs. Unit 181 files / 2425 passed; lint and typecheck passed. Local migration timestamp validation passed (123 migrations, 11 documented exceptions); remote all-ref scan passed across 115 refs.
+- Guard mutations were restored and killed for frozen/expired refusal, selected-version commission snapshot, lower-price/rank/duration/same-currency validation, stale revision, workspace authorization, original-package-only credit excluding paid renewal, SECURITY DEFINER, forced RLS, and authenticated execute grant. Post-mutation focused suite passed 14/14.
+- Migration review: new forward-only `20261111233600_f13_subscription_upgrades.sql` is newer than the origin-ref max `20261111222100`; no legacy/mock successor rows were rewritten. The writer is SECURITY DEFINER with empty search_path and authenticated-only execute; operation/projection helpers use empty search_path; upgrade fact tables have forced RLS and revoked app-role reads; each is covered by catalog, authorization, audit, and focused behavior assertions.
+- Cross-reference review: T041/T042 and SC-027..030, SC-032..034 now cite current test names and commit subject in traceability. SC-015..026 remains PARTIAL while T045 refund composition is open; SC-031 and FR-042 remain T045-owned. No stale T042 pending status remains outside this historical Analyze entry.
+- CRITICAL: 0 open; HIGH: 0 open.

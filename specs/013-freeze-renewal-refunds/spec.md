@@ -493,6 +493,26 @@ PO source wording: all 11 S43-PO-5 lines are copied byte-exact, and S43-PO-6 lin
 
 ## Clarifications / PO-decision register
 
+### S48-PO-18 / S48-R24 — upgrade commission snapshot (resolved)
+
+- PO decision source: `C:/Users/NEW LAP/.lifter/runs/s48-po/s48-po-18.verbatim.txt`.
+- PO words (byte-exact):
+
+> Q: F13 T042 commission rate for upgrade additional payment -> A: "New package's rate (Recommended)" = Use the commission rate of the package version the client upgraded to, snapshotted on that payment.
+
+- Architect mapping (S48-R24): upgrade additional payment uses the immutable commission rate on the selected upgraded-to package version; original payment snapshots and non-upgrade validation remain unchanged.
+- Status: RESOLVED; FR-038 additional-payment revenue follows the selected version snapshot.
+
+### S48-PO-21 / S48-R26 — F13-T042-D2 manual dates followed by upgrade (resolved)
+
+- PO decision source: `C:/Users/NEW LAP/.lifter/runs/s48-po/s48-po-21.verbatim.txt`.
+- PO words (byte-exact):
+
+> Q: F13 manual PO date adjustment followed by a later upgrade - which dates win? -> A: "Upgrade recalculates (Recommended)" = The upgrade computes new dates using the normal upgrade rules, starting from the manually adjusted dates as the current state. The PO can adjust again afterwards.
+
+- Architect mapping (S48-R26): manually adjusted dates are the current effective state input; the upgrade applies normal FR-038 rules from that state and its result supersedes in projection (latest event wins); a later PO adjustment supersedes again. No refusal.
+- Status: RESOLVED; T042 implementation is unblocked for this interaction. No shift range, backdating restriction, or other date policy is inferred.
+
 ### S45-PO-2 — S45-F13-MCQ-1 (resolved)
 
 PO source: C:/Users/NEW LAP/.lifter/runs/s45-po/s45-po-2.verbatim.txt
