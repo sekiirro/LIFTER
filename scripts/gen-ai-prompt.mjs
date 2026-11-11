@@ -1,6 +1,10 @@
 // Generator for lib/workout-planner/ai-prompt.ts.
 // Copies the approved EN/AR prompt bodies byte-exact from the locale
 // contract so the module can never drift from the approved bytes.
+// After regenerating, format the output:
+//   node scripts/gen-ai-prompt.mjs && npx prettier --write lib/workout-planner/ai-prompt.ts
+// The guard below must stay in sync with the checked-in module: regenerate
+// and confirm `git diff -- lib/workout-planner/ai-prompt.ts` is empty.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -42,20 +46,73 @@ export function buildAiPrompt(locale: AiPromptLocale, planContent: string): stri
   return template.split(PLAN_CONTENT_TOKEN).join(planContent);
 }
 
-// Imperative frames that instruct the AI to invent/replace/alter/generate.
-// The approved bodies only ever use these verbs under "Do not ...", so the
-// "suggest new exercises" frame carries a not-negation lookbehind.
-const PROHIBITED = [
-  /\\binvent\\b/i,
-  /\\bfeel free to (replace|invent|alter|generate|change|add)\\b/i,
-  /\\byou may (invent|add|replace|alter|generate|change)\\b/i,
-  /\\bgenerate\\b[\\s\\S]{0,60}?\\b(alternatives|exercises)\\b/i,
-  /\\balter\\b[\\s\\S]{0,60}?\\bprogramming values\\b/i,
-  /(?<!\\bnot )\\bsuggest new exercises\\b/i,
+// Prohibited instruction classes per contract section 4 (A4-5, SC-009):
+//   1. invent / replace / rename / add exercises (add also covers sets)
+//   2. alter / change reps, load, rest, RIR, set counts, order or any
+//      programming value
+//   3. generate / suggest alternatives or exercises
+// Only object-qualified frames count: bare coaching verbs without their
+// prohibited object (e.g. "add 5kg", "suggest heavier weight") are plan
+// content, not instructions to the AI. The approved prompt bodies only ever
+// use these frames inside negated prohibitions ("Do not ..."), so a negation
+// cue in the same clause disqualifies the match. A clause boundary
+// (\`.!?\` newline \`;\`) or a contrastive reset (\`instead\`/\`but\`/\`however\`)
+// between the cue and the verb starts a new instruction and re-enables the
+// match. Plan payload after the \`Plan:\`/\`الخطة:\` marker is authorized
+// content (§2) and is never scanned.
+const PLAN_MARKERS = ['\\nPlan:\\n', '\\nالخطة:\\n'];
+
+function instructionScope(prompt: string): string {
+  let end = prompt.length;
+  for (const marker of PLAN_MARKERS) {
+    const at = prompt.indexOf(marker);
+    if (at >= 0 && at < end) end = at;
+  }
+  return prompt.slice(0, end);
+}
+
+const NEGATION_CUE =
+  /\\b(do not|don't|never|must not|should not|cannot|can't|won't|no|not)\\b|لا/gi;
+
+const CLAUSE_BREAK = /[.!?\\n\\r;]/;
+const CLAUSE_RESET = /\\b(instead|but|however)\\b/i;
+
+function isNegated(text: string, index: number): boolean {
+  const start = Math.max(0, index - 120);
+  const prefix = text.slice(start, index);
+  let lastNeg = -1;
+  let match: RegExpExecArray | null;
+  const re = new RegExp(NEGATION_CUE.source, 'gi');
+  while ((match = re.exec(prefix)) !== null) {
+    lastNeg = match.index + match[0].length;
+  }
+  if (lastNeg < 0) return false;
+  const between = prefix.slice(lastNeg);
+  // A clause terminator or a contrastive reset between the cue and the verb
+  // starts a new instruction: the earlier negation no longer covers it.
+  if (CLAUSE_BREAK.test(between)) return false;
+  if (CLAUSE_RESET.test(between)) return false;
+  return true;
+}
+
+const PROHIBITED_FRAMES: RegExp[] = [
+  /\\b(invent|replace|rename|add)\\b[\\s\\S]{0,60}?\\bexercises?\\b/gi,
+  /\\badd\\b[\\s\\S]{0,40}?\\bsets?\\b/gi,
+  /\\badd\\b[\\s\\S]{0,40}?\\bset counts?\\b/gi,
+  /\\b(alter|change)\\b[\\s\\S]{0,80}?\\b(reps?|load|rest|rir|set counts?|set count|order|programming values?|numbers?|units?)\\b/gi,
+  /\\b(generate|suggest)\\b[\\s\\S]{0,60}?\\b(alternatives?|exercises?)\\b/gi,
 ];
 
 export function containsProhibitedInstruction(prompt: string): boolean {
-  return PROHIBITED.some((pattern) => pattern.test(prompt));
+  const scope = instructionScope(prompt);
+  for (const pattern of PROHIBITED_FRAMES) {
+    pattern.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = pattern.exec(scope)) !== null) {
+      if (!isNegated(scope, m.index)) return true;
+    }
+  }
+  return false;
 }
 `;
 
