@@ -87,3 +87,30 @@
 - T043 has no open product ambiguity. T044's product event/role is decided; its repository implementation path remains an evidence-gathering prerequisite and is not inferred.
 - T043/T044 are unchecked pending current-head tests; the historical test records are retained and are not claimed as current verification.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze - S48-R22 T043 acceptance update (19:53 UTC)
+
+- Spec Kit entry check: PASS after this final requirement edit. `spec.md` has numbered FR-040, measurable SC-018, and GWT scenario 11 covering the PO-approved effective-date projection, frozen/deactivated refusal with zero writes, audit, zero revenue, and role refusal. Clarifications cite S48-PO-14 and S48-R22; plan slice (5) covers the adjustment; T043 is tagged FR-040/SC-018.
+- The mapping is confined to the PO answer and S48-R22; it adds no shift limits or other date policy. Renewal and freeze projection rules remain the existing projector behavior.
+- RED tests were written before implementation and currently fail on the old projector/adjustment writer. No implementation change has been made after this Analyze.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze - T043 verified; T044 award path inventory (20:14 UTC)
+
+- After T043 task tick, revalidated FR-040/SC-018 evidence. PASS: the forward migration feeds latest PO dates to the entitlement projector and returns `stale_state` before date/audit writes for frozen/deactivated clients; the current Stack C suite passes the after-expiry, authorization, audit, zero-revenue, replay, projection, and state-refusal cases.
+- T043 traceability marks SC-018 VERIFIED and FR-040 PARTIAL because T044 remains open. The T043 code, migration, test, and traceability changes are within FR-040/SC-018 and S48-R22.
+- T044 repository inventory found no production activation/plan-delivery writer or assigned-trainer mapping. The existing activation helper is a synthetic rolled-back probe; P4's migration comment assigns the production atomic writer to P4. S48-F13-MCQ-3 records the two implementation-path options, implications, recommendation, and blocked scope. No guess or T044 code was added.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze - final T043 task and traceability evidence (20:15 UTC)
+
+- T043 is ticked only after Stack C focused integration 7/7, full F12/F13 candidate 26/630, full unit 2425/2425, lint/typecheck, migration timestamp/ref scans, and both frozen/deactivated guard mutations passed/killed. Traceability cites the T043 commit subject and test evidence.
+- FR-040 remains PARTIAL because the distinct T044 productivity award path is blocked by S48-F13-MCQ-3; SC-018 is VERIFIED for T043's full clarified scope.
+- Cross-reference check: T043 -> FR-040/SC-018; T044 -> FR-040/FR-041/SC-019/SC-026. No T044 code or task tick is claimed.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze - post-format T043 exact-head gates (20:20 UTC)
+
+- After the final T043/T044 task evidence edit, the exact candidate passed: unit 181 files / 2425 tests; lint; typecheck; Prettier on all touched Markdown/TypeScript; local migration validation (122); remote cross-reference scan (115); all-origin max scan (116 refs; max 20261111222000 < candidate 20261111222100); F12/F13 Stack C 26 files / 630 tests.
+- T043 remains verified for FR-040/SC-018. T044 remains unticked and blocked only at its missing production award integration path, recorded as S48-F13-MCQ-3.
+- CRITICAL: 0 open; HIGH: 0 open.
