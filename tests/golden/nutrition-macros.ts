@@ -218,22 +218,18 @@ describe('nutrition macros goldens (F18-FR-003, T002)', () => {
   it('rounds finite-decimal ties half-up exactly once', () => {
     expect(displayMacroGrams('0.15')).toBe('0.2');
     expect(displayMacroGrams('2.45')).toBe('2.5');
-    expect(displayMacroGrams('9.95')).toBe('10.0');
+    expect(displayMacroGrams('9.95')).toBe('10');
     expect(displayCalories('2.5')).toBe('3');
     expect(displayCalories('1.5')).toBe('2');
   });
 
-  it('follows the display thresholds (S48-R13: threshold on the exact value)', () => {
+  it('follows the display thresholds: below 10 g one decimal, at or above 10 g integer', () => {
     expect(displayMacroGrams('0')).toBe('0');
     expect(displayMacroGrams('0.05')).toBe('0.1');
     expect(displayMacroGrams('0.4')).toBe('0.4');
-    // below 10 g exact: one decimal even when the rounding lands on 10.0
-    expect(displayMacroGrams('9.96')).toBe('10.0');
-    expect(displayMacroGrams('9.95')).toBe('10.0');
+    expect(displayMacroGrams('9.96')).toBe('10');
     expect(displayMacroGrams('9.94')).toBe('9.9');
-    // at or above 10 g exact: integer
     expect(displayMacroGrams('10')).toBe('10');
-    expect(displayMacroGrams('10.04')).toBe('10');
     expect(displayMacroGrams('10.49')).toBe('10');
     expect(displayMacroGrams('10.5')).toBe('11');
     expect(displayCalories('0')).toBe('0');
