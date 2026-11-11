@@ -1,7 +1,11 @@
 import 'server-only';
 import { authorize, type Actor } from '../auth/authorize';
 import { createSessionClient } from '../supabase/server';
-import { loadPackageOffers, type PackageVersion } from '../packages/read';
+import {
+  loadPackageOffers,
+  SAFE_VERSION_COLUMNS,
+  type PackageVersion,
+} from '../packages/read';
 import type { TierRank } from '../packages/tier-label';
 import { exactAmount, isUuid } from './validation';
 import { registrationLinkStatus } from './grace';
@@ -54,18 +58,33 @@ export async function loadRegistrationLinks(
     if (!client) return { status: 'unavailable' };
     const packages = await loadPackageOffers(actor, workspaceId);
     if (packages.status !== 'ok') return { status: 'unavailable' };
+    const currentOffers = packages.offers.filter(
+      (offer) => offer.available && offer.current_version_id !== null,
+    );
     const current = new Set(
-      packages.offers
-        .filter((o) => o.available && o.current_version_id !== null)
-        .map((o) => o.current_version_id),
+      currentOffers.map((offer) => offer.current_version_id!),
     );
     const rankByVersion = new Map(
       packages.offers
         .filter((offer) => offer.current_version_id !== null)
         .map((offer) => [offer.current_version_id!, offer.tier_rank]),
     );
-    const offers = packages.versions
-      .filter((v) => current.has(v.id))
+    const currentVersions = current.size
+      ? await client
+          .from('package_versions_safe')
+          .select(SAFE_VERSION_COLUMNS)
+          .eq('workspace_id', workspaceId)
+          .in('id', [...current])
+      : { data: [], error: null };
+    if (currentVersions.error || !currentVersions.data)
+      return { status: 'unavailable' };
+    const offers = currentVersions.data
+      .filter(
+        (version) =>
+          version.workspace_id === workspaceId &&
+          current.has(version.id) &&
+          exactAmount(version.price_minor),
+      )
       .flatMap((version) => {
         const tier_rank = rankByVersion.get(version.id);
         return tier_rank === undefined ? [] : [{ ...version, tier_rank }];
