@@ -46,7 +46,7 @@
 
 ### Entry check re-validation (S29-PO-3 Q5)
 
-- PASS — spec.md/plan.md unchanged since commit `15df5af6`; no requirement text was changed by Phase 0 implementation. tasks.md changed only by task ticks (`395895e0`) and the S48-R13 status-line correction (this pass); both are non-requirement bookkeeping, re-analyzed below.
+- PASS — spec.md/plan.md unchanged since commit `15df5af6`; no requirement text was changed by Phase 0 implementation. tasks.md changed only by task ticks (`395895e0`) and the status-line corrections (`817cb314`; re-corrected under S48-PO-11/S48-R14); both are non-requirement bookkeeping, re-analyzed below.
 - PASS — tasks.md `Status` line ("Implementation entry requires the F19 contract merged") is satisfied for Phase 0 by PO S47-PO-13, which authorizes exactly the Phase-0 `[INDEPENDENT]` tasks; Phase 1+ remain gated on F19.
 
 ### Findings
@@ -71,6 +71,8 @@
 
 ## Analyze — F18 Phase 0 review fixes (S48-R13)
 
+> **SUPERSEDED (2026-11-12):** S48-R13 is RETRACTED (architect error, disclosed to PO); PO decision **S48-PO-11** ("Show 10") with architect ruling **S48-R14** binds instead — commit `d8e48ea4` was reverted (`dc605d3d`) and the display behavior follows the merged data-model/S27 wording. See the S48-PO-11 section below and the F18 decision register (`research/po-decision-matrix.md`).
+
 **Analyzed:** 2026-11-12T00:00:00Z
 **Scope:** independent review `runs/s48-beam-f18-review/review.md` (range `8a846340..395895e0`); architect ruling S48-R13 (`runs/s48-arch/s48-architect-rulings.md`). No requirement text in spec.md/plan.md/data-model.md/contracts/ was changed.
 
@@ -87,3 +89,25 @@
 - `npx tsc --noEmit` OK; `npx eslint lib/plans tests/golden --max-warnings=0` OK; full `npm test` 174 files / 2372 tests passed (`fix-tsc.log`, `fix-lint.log`, `fix-unit.log`).
 
 **Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. No requirement text changed; no re-clarification needed.
+
+---
+
+## Analyze — F18 display threshold per S48-PO-11 / S48-R14
+
+**Analyzed:** 2026-11-12T01:30:00Z
+**Scope:** PO decision S48-PO-11 (`runs/s48-po/s48-po-11.verbatim.txt`, SHA-256 `5e873a43fcd6111de30a0305378c0cdb06fe16bc3b4a7f0139f8bec95aec8b36`, verified) and architect ruling S48-R14; S48-R13 RETRACTED. This pass changed requirement text (F18-FR-003 clarified) — re-analysis required per the Spec Kit gate.
+
+### Changes
+
+- **Revert (S48-R14 step 1):** `git revert --no-edit d8e48ea4` → commit `dc605d3d` (normal revert commit). Code and goldens restored to 9.96 → `10`; the `'10.0'` → `'10'` branch in `displayMacroGrams` is back.
+- **Goldens (S48-R14 step 1):** commit `9510710a` — 9.94 → `9.9`; 9.95 → `10`; 9.96 → `10`; **10.00 → `10` and 10.04 → `10` (new)**; 0 → `0`. RED for the new goldens: the reverted implementation already satisfies 10.00/10.04 (they lock the restored behavior; a RED was not achievable without a manufactured stub — documented here). Mutation on the `'10.0'` → `'10'` branch (S48-R14 step 1): removing the branch fails 2 goldens (`t002-mutation-r14.log`: "rounds finite-decimal ties half-up exactly once" and "follows the display thresholds"); restored (`t002-green-r14b.log`, 11/11). GREEN after revert and goldens: `t002-green-r14.log` (11/11).
+- **Spec clarification (S48-R14 step 3):** F18-FR-003 gains the exact sentence "Clarified S48-PO-11 (S48-R14): a below-10 g value that rounds to 10.0 displays as the integer 10; zero displays as 0 (S48-PO-11)."
+- **Decision register (S48-R14 step 3):** `research/po-decision-matrix.md` gains the S48-PO-11 section; the quoted PO words verified byte-equal with the verbatim file via Node (274 bytes, `bytecompare.js`).
+- **Text citing R13 (S48-R14 step 2):** the analyze "review fixes (S48-R13)" section is marked SUPERSEDED with a pointer to S48-PO-11/S48-R14; traceability §4a T002 row now cites the revert, S48-PO-11 goldens and this pass's logs.
+
+### Verification
+
+- Golden run post-revert + new goldens: `runs/s48-glm-f18-fix2/t002-green-r14.log` (11/11); mutation `t002-mutation-r14.log` (2 failed | 9 passed); restore `t002-green-r14b.log` (11/11).
+- Gates on the docs head: typecheck, lint, full unit, prettier — recorded in `final-*.log` (174 files / 2372 tests).
+
+**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. F18-FR-003 wording now matches the merged data-model, S43-R9, the S27 evidence and the PO decision S48-PO-11; no open ambiguity remains for the display rule.
