@@ -150,7 +150,7 @@ describe('F17 id remap load variants and reps (FR-002, SC-012)', () => {
       sets: copy.sets.map((s: any, i: number) => ({ ...s, id: item.sets[i].id })),
     }).toEqual(item);
     expect(copy.reps).toEqual({ value: 8 });
-    expect(copy.sets[0].load).toEqual({ mode: 'bodyweight' });
-    expect(copy.sets[1].load).toEqual({ mode: 'assisted', value: '20', unit: 'kg' });
+    expect(copy.sets[0]!.load).toEqual({ mode: 'bodyweight' });
+    expect(copy.sets[1]!.load).toEqual({ mode: 'assisted', value: '20', unit: 'kg' });
   });
 });
