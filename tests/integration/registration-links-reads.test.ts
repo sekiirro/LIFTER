@@ -257,7 +257,7 @@ it('safe views preserve text amounts above 2^53 and old terms after publish/disa
   const fresh = await registrationFixture(),
     amount = '9007199254740993';
   const version = checked(
-    await publish(fresh, fresh.p.id, { price_minor: amount }),
+    await publish(fresh, fresh.p.id, { tier_rank: 1, price_minor: amount }),
   );
   const oldId = checked(
     await issue(fresh, fresh.salesA.client, {
@@ -265,7 +265,9 @@ it('safe views preserve text amounts above 2^53 and old terms after publish/disa
       installments: [{ seq: 1, amount_minor: amount, due_offset_days: 2 }],
     }),
   ) as string;
-  checked(await publish(fresh, fresh.p.id, { price_minor: '1300' }));
+  checked(
+    await publish(fresh, fresh.p.id, { tier_rank: 1, price_minor: '1300' }),
+  );
   checked(
     await fresh.po.client.rpc('set_package_offer_available', {
       workspace_id: fresh.wsA.id,

@@ -220,7 +220,7 @@ No task is complete or ticked by this documentation-only cycle. RED-first descri
 
 These tasks follow separately labelled **architect mapping (S43-R7/R8)** in spec.md. They remain unchecked and no migration is authored.
 
-- [ ] T077 [FR-002, FR-034, FR-036, SC-024, SC-026] Specify and implement all three immutable Silver < Gold < Platinum tier offers within every category, with rank in the offer identity and publication input using a new forward migration; preserve shipped migration history, then implement rank/duration eligibility. Decision resolved by S43-PO-8; implementation/tests remain unstarted.
+- [ ] T077 [FR-002, FR-034, FR-036, SC-024, SC-026] Implement all three immutable Silver < Gold < Platinum tier offers within every category, with rank in the offer identity and publication input using a new forward migration; fail closed on unranked legacy rows with no default/backfill; add a separate reviewed cleanup script that removes only verified test offers without protected or restrictive references; preserve audit/payment records and shipped migration history; add explicit-rank and rank/duration fixtures, including cleanup refusal coverage. Decisions resolved by S43-PO-8 and S48-PO-10; implementation is present, while rank-aware database integration evidence remains pending because Stack C contains referenced test offers that cleanup must retain.
 - [ ] T078 [FR-035, SC-025] Specify PO global per-locale renaming and Workspace Owner overrides within their workspace only; keep rank and terms unchanged. Decision resolved by S43-PO-8; implementation/tests remain unstarted.
 
 ## S43-PO-8 resolved tier tasks

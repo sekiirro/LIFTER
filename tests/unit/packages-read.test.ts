@@ -24,7 +24,16 @@ beforeEach(() => {
   m.responses.clear();
   m.responses.set('packages', [{ id: 'p', code: 'test-pkg-fixture' }]);
   m.responses.set('package_offers', [
-    { id: 'o', workspace_id: ws, package_id: 'p', available: false },
+    {
+      id: 'o',
+      workspace_id: ws,
+      package_id: 'p',
+      duration_days: 61,
+      duration_months: null,
+      tier_rank: 2,
+      available: false,
+      current_version_id: 'v',
+    },
   ]);
   m.responses.set('package_versions_safe', [
     {
@@ -63,7 +72,7 @@ describe('scoped package reads', () => {
       expect(JSON.stringify(result)).not.toContain('commission');
       expect(m.rpc).not.toHaveBeenCalled();
       if (result.status === 'ok')
-        expect(result.versions[0]?.price_minor).toBe('9007199254740993');
+        expect(result).toMatchObject({ offers: [{ tier_rank: 2 }] });
       expect(m.select).toHaveBeenCalledWith(SAFE_VERSION_COLUMNS);
       expect(SAFE_VERSION_COLUMNS).not.toContain('*');
       expect(SAFE_VERSION_COLUMNS).not.toContain('commission');
