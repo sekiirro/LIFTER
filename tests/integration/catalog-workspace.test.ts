@@ -214,29 +214,41 @@ describe('workspace exercise tenant keys', () => {
           {
             result_id: kendoExerciseId,
             result_workspace_id: kendoId,
-            result_payload: { marker: 'KENDO exercise', effective_fields: {
-              name: { value: { name_en: null, name_ar: null }, source: 'none' },
-              description: { value: null, source: 'none' }, notes: { value: null, source: 'none' },
-              video: { value: null, source: 'none' }, alternatives: { value: [], source: 'none' },
-              default_rest_time: { value: null, source: 'none' }, default_rir: { value: null, source: 'none' },
-              default_reps: { value: null, source: 'none' },
-            } },
+            result_payload: {
+              marker: 'KENDO exercise',
+              effective_fields: {
+                name: {
+                  value: { name_en: null, name_ar: null },
+                  source: 'none',
+                },
+                description: { value: null, source: 'none' },
+                notes: { value: null, source: 'none' },
+                video: { value: null, source: 'none' },
+                alternatives: { value: [], source: 'none' },
+                default_rest_time: { value: null, source: 'none' },
+                default_rir: { value: null, source: 'none' },
+                default_reps: { value: null, source: 'none' },
+              },
+            },
           },
         ]);
         await tx`select public.catalog_write_exercise_override(
           ${kendoId}, ${canonicalId}, 0, ${randomUUID()}, ${tx.json({ notes: 'KENDO variation' })}
         )`;
-        const kendoVariations = await tx`select result_id, result_workspace_id, result_version,
+        const kendoVariations =
+          await tx`select result_id, result_workspace_id, result_version,
           result_payload #>> '{effective_fields,notes,value}' as notes,
           result_payload #>> '{effective_fields,notes,source}' as notes_source
           from public.catalog_search('variation', null, '{}'::jsonb, null, ${kendoId})`;
-        expect(kendoVariations, 'KENDO effective variation search').toEqual([{
-          result_id: canonicalId,
-          result_workspace_id: kendoId,
-          result_version: 1,
-          notes: 'KENDO variation',
-          notes_source: 'override',
-        }]);
+        expect(kendoVariations, 'KENDO effective variation search').toEqual([
+          {
+            result_id: canonicalId,
+            result_workspace_id: kendoId,
+            result_version: 1,
+            notes: 'KENDO variation',
+            notes_source: 'override',
+          },
+        ]);
         const countsA = await tx`select
             (select count(*)::int from public.workspace_exercises) as exercises,
             (select count(*)::int from public.exercise_variations) as variations`;
@@ -275,26 +287,38 @@ describe('workspace exercise tenant keys', () => {
           {
             result_id: tojiExerciseId,
             result_workspace_id: tojiId,
-            result_payload: { marker: 'TOJI exercise', effective_fields: {
-              name: { value: { name_en: null, name_ar: null }, source: 'none' },
-              description: { value: null, source: 'none' }, notes: { value: null, source: 'none' },
-              video: { value: null, source: 'none' }, alternatives: { value: [], source: 'none' },
-              default_rest_time: { value: null, source: 'none' }, default_rir: { value: null, source: 'none' },
-              default_reps: { value: null, source: 'none' },
-            } },
+            result_payload: {
+              marker: 'TOJI exercise',
+              effective_fields: {
+                name: {
+                  value: { name_en: null, name_ar: null },
+                  source: 'none',
+                },
+                description: { value: null, source: 'none' },
+                notes: { value: null, source: 'none' },
+                video: { value: null, source: 'none' },
+                alternatives: { value: [], source: 'none' },
+                default_rest_time: { value: null, source: 'none' },
+                default_rir: { value: null, source: 'none' },
+                default_reps: { value: null, source: 'none' },
+              },
+            },
           },
         ]);
-        const tojiVariations = await tx`select result_id, result_workspace_id, result_version,
+        const tojiVariations =
+          await tx`select result_id, result_workspace_id, result_version,
           result_payload #>> '{effective_fields,notes,value}' as notes,
           result_payload #>> '{effective_fields,notes,source}' as notes_source
           from public.catalog_search('variation', null, '{}'::jsonb, null, ${tojiId})`;
-        expect(tojiVariations, 'TOJI effective variation search').toEqual([{
-          result_id: canonicalId,
-          result_workspace_id: tojiId,
-          result_version: 1,
-          notes: 'TOJI variation',
-          notes_source: 'override',
-        }]);
+        expect(tojiVariations, 'TOJI effective variation search').toEqual([
+          {
+            result_id: canonicalId,
+            result_workspace_id: tojiId,
+            result_version: 1,
+            notes: 'TOJI variation',
+            notes_source: 'override',
+          },
+        ]);
         const countsB = await tx`select
             (select count(*)::int from public.workspace_exercises) as exercises,
             (select count(*)::int from public.exercise_variations) as variations`;

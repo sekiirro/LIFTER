@@ -30,21 +30,32 @@ async function asActor<T>(actorId: string, body: (tx: Tx) => Promise<T>) {
 
 async function createGlobal(name: string) {
   return asActor(poId, async (tx) => {
-    const [r] = await tx`select public.catalog_create_exercise(${randomUUID()}, ${tx.json({ name_en: name, name_ar: 'ØªÙ…Ø±ÙŠÙ†', primary_muscle_code: 'chest', equipment_codes: ['barbell'] })}) as result`;
+    const [r] =
+      await tx`select public.catalog_create_exercise(${randomUUID()}, ${tx.json({ name_en: name, name_ar: 'ØªÙ…Ø±ÙŠÙ†', primary_muscle_code: 'chest', equipment_codes: ['barbell'] })}) as result`;
     return r!.result.exercise_id as string;
   });
 }
 
 async function writeOverride(exerciseId: string, values: Record<string, Json>) {
-  return asActor(trainerId, (tx) => tx`select public.catalog_write_exercise_override(
+  return asActor(
+    trainerId,
+    (tx) => tx`select public.catalog_write_exercise_override(
     ${workspaceId}, ${exerciseId}, 0, ${randomUUID()}, ${tx.json(values)}
-  )`);
+  )`,
+  );
 }
 
-async function search(actorId: string, scope: string | null, exerciseId: string) {
-  return asActor(actorId, (tx) => tx`select result_payload from public.catalog_search(
+async function search(
+  actorId: string,
+  scope: string | null,
+  exerciseId: string,
+) {
+  return asActor(
+    actorId,
+    (tx) => tx`select result_payload from public.catalog_search(
     'exercise', null, '{}'::jsonb, null, ${scope}
-  ) where result_id = ${exerciseId}`);
+  ) where result_id = ${exerciseId}`,
+  );
 }
 
 describe('T049 staff effective exercise resolution', () => {
@@ -65,7 +76,10 @@ describe('T049 staff effective exercise resolution', () => {
     const [workspace] = await search(trainerId, workspaceId, exerciseId);
     expect(workspace?.result_payload).toMatchObject({
       effective_fields: {
-        name: { value: { name_en: 'Workspace name', name_ar: null }, source: 'override' },
+        name: {
+          value: { name_en: 'Workspace name', name_ar: null },
+          source: 'override',
+        },
         description: { value: 'Workspace description', source: 'override' },
         notes: { value: 'Workspace coaching notes', source: 'override' },
         video: { value: 'https://youtu.be/abcdefghijk', source: 'override' },
@@ -75,18 +89,37 @@ describe('T049 staff effective exercise resolution', () => {
         default_reps: { value: { min: 8, max: 12 }, source: 'override' },
       },
     });
-    expect(Object.keys(workspace!.result_payload.effective_fields).sort()).toEqual([
-      'alternatives', 'default_reps', 'default_rest_time', 'default_rir',
-      'description', 'name', 'notes', 'video',
+    expect(
+      Object.keys(workspace!.result_payload.effective_fields).sort(),
+    ).toEqual([
+      'alternatives',
+      'default_reps',
+      'default_rest_time',
+      'default_rir',
+      'description',
+      'name',
+      'notes',
+      'video',
     ]);
-    const detail = await asActor(trainerId, (tx) => tx`select payload
-      from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`);
-    expect(detail[0]?.payload.effective_fields).toEqual(workspace?.result_payload.effective_fields);
+    const detail = await asActor(
+      trainerId,
+      (tx) => tx`select payload
+      from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`,
+    );
+    expect(detail[0]?.payload.effective_fields).toEqual(
+      workspace?.result_payload.effective_fields,
+    );
 
-    const canonical = await asActor(poId, (tx) => tx`select payload
-      from public.catalog_exercise_detail(${exerciseId}, null)`);
+    const canonical = await asActor(
+      poId,
+      (tx) => tx`select payload
+      from public.catalog_exercise_detail(${exerciseId}, null)`,
+    );
     expect(canonical[0]?.payload.effective_fields).toMatchObject({
-      name: { value: { name_en: expect.any(String), name_ar: 'ØªÙ…Ø±ÙŠÙ†' }, source: 'canonical' },
+      name: {
+        value: { name_en: expect.any(String), name_ar: 'ØªÙ…Ø±ÙŠÙ†' },
+        source: 'canonical',
+      },
       description: { value: null, source: 'none' },
       notes: { value: null, source: 'none' },
       video: { value: null, source: 'none' },
@@ -106,32 +139,55 @@ describe('T049 staff effective exercise resolution', () => {
 
     const [workspace] = await search(trainerId, workspaceId, exerciseId);
     expect(workspace?.result_payload.effective_fields.name).toMatchObject({
-      value: { name_en: expect.stringMatching(/^T049 inherit /) }, source: 'canonical',
+      value: { name_en: expect.stringMatching(/^T049 inherit /) },
+      source: 'canonical',
     });
-    expect(workspace?.result_payload.effective_fields.alternatives).toEqual({ value: [], source: 'override' });
+    expect(workspace?.result_payload.effective_fields.alternatives).toEqual({
+      value: [],
+      source: 'override',
+    });
   });
 
   it('requires current coaching_work for the explicitly selected workspace', async () => {
     const exerciseId = await createGlobal(`T049 scope ${randomUUID()}`);
-    await expect(search(trainerId, foreignWorkspaceId, exerciseId)).rejects.toMatchObject({ code: '42501' });
-    await expect(search(trainerId, workspaceId, exerciseId)).resolves.toHaveLength(1);
+    await expect(
+      search(trainerId, foreignWorkspaceId, exerciseId),
+    ).rejects.toMatchObject({ code: '42501' });
+    await expect(
+      search(trainerId, workspaceId, exerciseId),
+    ).resolves.toHaveLength(1);
   });
 
   it('resolves workspace-private values only from that identity version', async () => {
     const name = `T049 private ${randomUUID()}`;
-    const created = await asActor(trainerId, (tx) => tx`select public.catalog_write_workspace_exercise(
+    const created = await asActor(
+      trainerId,
+      (tx) => tx`select public.catalog_write_workspace_exercise(
       ${workspaceId}, null, null, ${randomUUID()}, ${tx.json({
-        name_en: name, name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ', primary_muscle_code: 'chest', equipment_codes: ['barbell'],
+        name_en: name,
+        name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ',
+        primary_muscle_code: 'chest',
+        equipment_codes: ['barbell'],
         video_url: 'https://youtu.be/abcdefghijk',
       })}
-    ) as result`);
+    ) as result`,
+    );
     const exerciseId = created[0]!.result.exercise_id as string;
-    const [row] = await asActor(trainerId, (tx) => tx`select result_payload
+    const [row] = await asActor(
+      trainerId,
+      (tx) => tx`select result_payload
       from public.catalog_search('workspace_exercise', null, '{}'::jsonb, null, ${workspaceId})
-      where result_id = ${exerciseId}`);
+      where result_id = ${exerciseId}`,
+    );
     expect(row?.result_payload.effective_fields).toMatchObject({
-      name: { value: { name_en: name, name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ' }, source: 'workspace_private' },
-      video: { value: 'https://youtu.be/abcdefghijk', source: 'workspace_private' },
+      name: {
+        value: { name_en: name, name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ' },
+        source: 'workspace_private',
+      },
+      video: {
+        value: 'https://youtu.be/abcdefghijk',
+        source: 'workspace_private',
+      },
       description: { value: null, source: 'none' },
       notes: { value: null, source: 'none' },
       alternatives: { value: [], source: 'none' },

@@ -102,8 +102,7 @@ export async function loadWorkspaceVideoVariationsAction(
       return [];
     const payload = row.result_payload as Record<string, unknown>;
     const fields = payload.effective_fields as
-      | Record<string, { value?: unknown }>
-      | undefined;
+      Record<string, { value?: unknown }> | undefined;
     return [
       {
         workspaceId,

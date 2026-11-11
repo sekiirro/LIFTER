@@ -57,13 +57,10 @@ async function createPrivate(payload: { [key: string]: Json }) {
 }
 
 describe('T037 Global and workspace-private write contracts', () => {
-  it(
-    'accepts an English-only Global exercise with required taxonomy (T074)',
-    async () => {
-      const result = await createGlobal(core);
-      expect(result[0]?.catalog_create_exercise).toMatchObject({ version: 1 });
-    },
-  );
+  it('accepts an English-only Global exercise with required taxonomy (T074)', async () => {
+    const result = await createGlobal(core);
+    expect(result[0]?.catalog_create_exercise).toMatchObject({ version: 1 });
+  });
 
   it('rejects a Global create without primary muscle (T074)', async () => {
     await expect(
@@ -80,16 +77,13 @@ describe('T037 Global and workspace-private write contracts', () => {
     ).rejects.toBeDefined();
   });
 
-  it(
-    'accepts an English-only workspace-private exercise with required taxonomy (T075)',
-    async () => {
-      const result = await createPrivate(core);
-      expect(result[0]?.catalog_write_workspace_exercise).toMatchObject({
-        version: 1,
-        workspace_id: workspaceId,
-      });
-    },
-  );
+  it('accepts an English-only workspace-private exercise with required taxonomy (T075)', async () => {
+    const result = await createPrivate(core);
+    expect(result[0]?.catalog_write_workspace_exercise).toMatchObject({
+      version: 1,
+      workspace_id: workspaceId,
+    });
+  });
 
   it('rejects a workspace-private create without primary muscle (T075)', async () => {
     await expect(
@@ -151,12 +145,16 @@ describe('T037 Global and workspace-private write contracts', () => {
 
   it('T045 rejects a private video write for a foreign workspace', async () => {
     await expect(
-      asActor(trainerId, (tx) =>
-        tx`select public.catalog_write_workspace_exercise(${foreignWorkspaceId}, null, null, ${randomUUID()}, ${tx.json({
-          ...core,
-          name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ',
-          video_url: 'https://youtu.be/abcdefghijk',
-        })})`,
+      asActor(
+        trainerId,
+        (tx) =>
+          tx`select public.catalog_write_workspace_exercise(${foreignWorkspaceId}, null, null, ${randomUUID()}, ${tx.json(
+            {
+              ...core,
+              name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ',
+              video_url: 'https://youtu.be/abcdefghijk',
+            },
+          )})`,
       ),
     ).rejects.toMatchObject({ code: '42501' });
   });
@@ -206,8 +204,20 @@ describe.each([
     'T074',
   ],
 ] as const)('%s field contract', (field, key, valid, invalid, task) => {
-  const contractIt = field === 'Name' || field === 'Description' || task === 'T043' || task === 'T074' ? it : it.fails;
-  const privateContractIt = field === 'Name' || field === 'Description' || task === 'T043' || task === 'T074' ? it : it.fails;
+  const contractIt =
+    field === 'Name' ||
+    field === 'Description' ||
+    task === 'T043' ||
+    task === 'T074'
+      ? it
+      : it.fails;
+  const privateContractIt =
+    field === 'Name' ||
+    field === 'Description' ||
+    task === 'T043' ||
+    task === 'T074'
+      ? it
+      : it.fails;
   contractIt(`${field}: stores an allowed Global value (${task})`, async () => {
     const result = await createGlobal({
       ...core,
@@ -224,14 +234,11 @@ describe.each([
     expect(version?.payload).toMatchObject({ [key]: valid });
   });
 
-  it(
-    `rejects a malformed or disallowed ${field} value on the Global write path (${field === 'Video' ? 'T061' : task})`,
-    async () => {
-      await expect(
-        createGlobal({ ...core, name_ar: 'تمرين', [key]: invalid }),
-      ).rejects.toBeDefined();
-    },
-  );
+  it(`rejects a malformed or disallowed ${field} value on the Global write path (${field === 'Video' ? 'T061' : task})`, async () => {
+    await expect(
+      createGlobal({ ...core, name_ar: 'تمرين', [key]: invalid }),
+    ).rejects.toBeDefined();
+  });
 
   if (field === 'Video') {
     it('T043 rejects a disallowed Vimeo video URL', async () => {
@@ -292,43 +299,49 @@ describe.each([
     expect(audit[0]?.changed_fields).toContain('video');
   });
 
-  privateContractIt(`${field}: stores an allowed private value (T075)`, async () => {
-    const result = await createPrivate({
-      ...core,
-      name_ar: 'تمرين',
-      [key]: valid,
-    });
-    const exerciseId = (
-      result[0]?.catalog_write_workspace_exercise as { exercise_id: string }
-    ).exercise_id;
-    const [version] = await db`
+  privateContractIt(
+    `${field}: stores an allowed private value (T075)`,
+    async () => {
+      const result = await createPrivate({
+        ...core,
+        name_ar: 'تمرين',
+        [key]: valid,
+      });
+      const exerciseId = (
+        result[0]?.catalog_write_workspace_exercise as { exercise_id: string }
+      ).exercise_id;
+      const [version] = await db`
       select payload from public.workspace_exercise_versions
       where workspace_id = ${workspaceId} and workspace_exercise_id = ${exerciseId} and version = 1
     `;
-    expect(version?.payload).toMatchObject({ [key]: valid });
-  });
-
-  it(
-    `rejects a malformed or disallowed ${field} value on the private write path (${field === 'Video' ? 'T061' : 'T075'})`,
-    async () => {
-      await expect(
-        createPrivate({ ...core, name_ar: 'تمرين', [key]: invalid }),
-      ).rejects.toBeDefined();
+      expect(version?.payload).toMatchObject({ [key]: valid });
     },
   );
+
+  it(`rejects a malformed or disallowed ${field} value on the private write path (${field === 'Video' ? 'T061' : 'T075'})`, async () => {
+    await expect(
+      createPrivate({ ...core, name_ar: 'تمرين', [key]: invalid }),
+    ).rejects.toBeDefined();
+  });
 });
 
 describe('T044 canonical Description storage and freeze', () => {
   it('stores one optional-language Description in each immutable canonical version (T044)', async () => {
     const first = 'شرح باللغة العربية فقط';
     const second = 'Updated English description';
-    const created = await createGlobal({ ...core, name_ar: 'تمرين', description: first });
+    const created = await createGlobal({
+      ...core,
+      name_ar: 'تمرين',
+      description: first,
+    });
     const exerciseId = (
       created[0]?.catalog_create_exercise as { exercise_id: string }
     ).exercise_id;
 
-    await asActor(poId, (tx) =>
-      tx`select public.catalog_version_exercise(${exerciseId}, 1, ${randomUUID()}, ${tx.json({ ...core, name_ar: 'تمرين', description: second })})`,
+    await asActor(
+      poId,
+      (tx) =>
+        tx`select public.catalog_version_exercise(${exerciseId}, 1, ${randomUUID()}, ${tx.json({ ...core, name_ar: 'تمرين', description: second })})`,
     );
 
     const versions = await db`
@@ -340,18 +353,29 @@ describe('T044 canonical Description storage and freeze', () => {
       { version: 1, description: first },
       { version: 2, description: second },
     ]);
-    const detail = await asActor(poId, (tx) =>
-      tx`select * from public.catalog_exercise_detail(${exerciseId})`,
+    const detail = await asActor(
+      poId,
+      (tx) => tx`select * from public.catalog_exercise_detail(${exerciseId})`,
     );
     expect(detail[0]?.payload).toMatchObject({ description: second });
   });
 
   it('rejects a second localized Description field (T044)', async () => {
     await expect(
-      createGlobal({ ...core, name_ar: 'تمرين', description: 'One value', description_en: 'Second value' }),
+      createGlobal({
+        ...core,
+        name_ar: 'تمرين',
+        description: 'One value',
+        description_en: 'Second value',
+      }),
     ).rejects.toBeDefined();
     await expect(
-      createGlobal({ ...core, name_ar: 'تمرين', description: 'One value', description_ar: 'قيمة ثانية' }),
+      createGlobal({
+        ...core,
+        name_ar: 'تمرين',
+        description: 'One value',
+        description_ar: 'قيمة ثانية',
+      }),
     ).rejects.toBeDefined();
   });
 });
@@ -392,12 +416,16 @@ describe('T037 contract distinctions', () => {
       created[0]?.catalog_create_exercise as { exercise_id: string }
     ).exercise_id;
     await expect(
-      asActor(poId, (tx) =>
-        tx`select public.catalog_version_exercise(${exerciseId}, 1, ${randomUUID()}, ${tx.json({
-          ...core,
-          name_ar: 'تمرين',
-          alternatives: [exerciseId],
-        })})`,
+      asActor(
+        poId,
+        (tx) =>
+          tx`select public.catalog_version_exercise(${exerciseId}, 1, ${randomUUID()}, ${tx.json(
+            {
+              ...core,
+              name_ar: 'تمرين',
+              alternatives: [exerciseId],
+            },
+          )})`,
       ),
     ).rejects.toMatchObject({
       code: '22023',
@@ -406,7 +434,10 @@ describe('T037 contract distinctions', () => {
   });
 
   it('rejects a workspace-private target in Global Alternatives (T074)', async () => {
-    const privateResult = await createPrivate({ ...core, name_ar: 'تمرين خاص' });
+    const privateResult = await createPrivate({
+      ...core,
+      name_ar: 'تمرين خاص',
+    });
     const privateId = (
       privateResult[0]?.catalog_write_workspace_exercise as {
         exercise_id: string;
@@ -547,7 +578,7 @@ describe('T037 contract distinctions', () => {
       },
       {
         label: 'Global target scope',
-        needle: 'where e.id is null or e.lifecycle_state <> \'active\'',
+        needle: "where e.id is null or e.lifecycle_state <> 'active'",
         replacement: "where e.lifecycle_state <> 'active'",
         payload: { ...core, name_ar: 'تمرين', alternatives: [privateId] },
         message: 'catalog_exercise_alternatives_invalid',
@@ -568,7 +599,8 @@ describe('T037 contract distinctions', () => {
       },
       {
         label: 'Reps range',
-        needle: "or (p_request -> 'default_reps' ->> 'max') !~ '^([1-9]|[1-9][0-9]|100)$'",
+        needle:
+          "or (p_request -> 'default_reps' ->> 'max') !~ '^([1-9]|[1-9][0-9]|100)$'",
         replacement: 'or false',
         payload: {
           ...core,
@@ -596,11 +628,17 @@ describe('T037 contract distinctions', () => {
           try {
             await expect(
               tx`select app_private.validate_exercise_payload(${tx.json(testCase.payload)})`,
-            ).rejects.toMatchObject({ code: '22023', message: testCase.message });
+            ).rejects.toMatchObject({
+              code: '22023',
+              message: testCase.message,
+            });
           } catch (error) {
             assertionFailure = error;
           }
-          expect(assertionFailure, `${testCase.label} mutation must break rejection`).toBeDefined();
+          expect(
+            assertionFailure,
+            `${testCase.label} mutation must break rejection`,
+          ).toBeDefined();
           throw new Error(marker);
         });
       } catch (error) {
@@ -624,11 +662,13 @@ describe('T037 contract distinctions', () => {
         let assertionFailure: unknown;
         try {
           await expect(
-            tx`select public.catalog_version_exercise(${parentId}, 1, ${randomUUID()}, ${tx.json({
-              ...core,
-              name_ar: 'تمرين',
-              alternatives: [parentId],
-            })})`,
+            tx`select public.catalog_version_exercise(${parentId}, 1, ${randomUUID()}, ${tx.json(
+              {
+                ...core,
+                name_ar: 'تمرين',
+                alternatives: [parentId],
+              },
+            )})`,
           ).rejects.toMatchObject({
             code: '22023',
             message: 'catalog_exercise_alternatives_invalid',
@@ -636,7 +676,10 @@ describe('T037 contract distinctions', () => {
         } catch (error) {
           assertionFailure = error;
         }
-        expect(assertionFailure, 'self-Alternative mutation must break rejection').toBeDefined();
+        expect(
+          assertionFailure,
+          'self-Alternative mutation must break rejection',
+        ).toBeDefined();
         throw new Error(selfMarker);
       });
     } catch (error) {
@@ -644,25 +687,22 @@ describe('T037 contract distinctions', () => {
     }
   });
 
-  it(
-    'keeps an empty Alternatives list distinct from null/inherit (T047/T048)',
-    async () => {
-      const empty = await createPrivate({
-        ...core,
-        name_ar: 'تمرين',
-        alternatives: [],
-      });
-      const exerciseId = (
-        empty[0]?.catalog_write_workspace_exercise as { exercise_id: string }
-      ).exercise_id;
-      const version = await db`
+  it('keeps an empty Alternatives list distinct from null/inherit (T047/T048)', async () => {
+    const empty = await createPrivate({
+      ...core,
+      name_ar: 'تمرين',
+      alternatives: [],
+    });
+    const exerciseId = (
+      empty[0]?.catalog_write_workspace_exercise as { exercise_id: string }
+    ).exercise_id;
+    const version = await db`
       select payload -> 'alternatives' as alternatives
       from public.workspace_exercise_versions
       where workspace_id = ${workspaceId} and workspace_exercise_id = ${exerciseId} and version = 1
     `;
-      expect(version[0]?.alternatives).toEqual([]);
-    },
-  );
+    expect(version[0]?.alternatives).toEqual([]);
+  });
 
   it('keeps workspace-private creation isolated from canonical Global identities (T037)', async () => {
     const result = await createPrivate({ ...core, name_ar: 'تمرين خاص' });
@@ -858,28 +898,25 @@ describe('T037 remaining workspace and identity contracts', () => {
     ).rejects.toBeDefined();
   });
 
-  it(
-    'allows exactly three unique Global alternatives (T074)',
-    async () => {
-      const targets = await Promise.all(
-        [1, 2, 3].map(async (n) => {
-          const result = await createGlobal({
-            ...core,
-            name_ar: 'Test',
-            name_en: `Alternative target ${n}`,
-          });
-          return (result[0]?.catalog_create_exercise as { exercise_id: string })
-            .exercise_id;
-        }),
-      );
-      const global = await createGlobal({
-        ...core,
-        name_ar: 'Test',
-        alternatives: targets,
-      });
-      expect(global[0]?.catalog_create_exercise).toBeDefined();
-    },
-  );
+  it('allows exactly three unique Global alternatives (T074)', async () => {
+    const targets = await Promise.all(
+      [1, 2, 3].map(async (n) => {
+        const result = await createGlobal({
+          ...core,
+          name_ar: 'Test',
+          name_en: `Alternative target ${n}`,
+        });
+        return (result[0]?.catalog_create_exercise as { exercise_id: string })
+          .exercise_id;
+      }),
+    );
+    const global = await createGlobal({
+      ...core,
+      name_ar: 'Test',
+      alternatives: targets,
+    });
+    expect(global[0]?.catalog_create_exercise).toBeDefined();
+  });
 
   it('denies non-PO Global edits to both WO and Trainer (T037)', async () => {
     const created = await createGlobal({
@@ -936,171 +973,209 @@ describe('T037 remaining workspace and identity contracts', () => {
     ).rejects.toMatchObject({ code: '42501' });
   });
 
-  it(
-    'makes a new Global exercise visible without replacing a workspace edit (T049)',
-    async () => {
-      const global = await createGlobal({
-        ...core,
-        name_ar: 'Test',
-        name_en: 'New shared default',
-      });
-      const globalId = (
-        global[0]?.catalog_create_exercise as { exercise_id: string }
-      ).exercise_id;
-      await asActor(
-        trainerId,
-        (tx) =>
-          tx`select public.catalog_write_exercise_override(${workspaceId}, ${globalId}, 0, ${randomUUID()}, ${tx.json({ name_en: 'Workspace name' })})`,
-      );
-      const [workspace] = await asActor(trainerId, (tx) => tx`select result_id, result_payload
+  it('makes a new Global exercise visible without replacing a workspace edit (T049)', async () => {
+    const global = await createGlobal({
+      ...core,
+      name_ar: 'Test',
+      name_en: 'New shared default',
+    });
+    const globalId = (
+      global[0]?.catalog_create_exercise as { exercise_id: string }
+    ).exercise_id;
+    await asActor(
+      trainerId,
+      (tx) =>
+        tx`select public.catalog_write_exercise_override(${workspaceId}, ${globalId}, 0, ${randomUUID()}, ${tx.json({ name_en: 'Workspace name' })})`,
+    );
+    const [workspace] = await asActor(
+      trainerId,
+      (tx) => tx`select result_id, result_payload
         from public.catalog_search('exercise', 'New shared default', '{}'::jsonb, null, ${workspaceId})
-        where result_id = ${globalId}`);
-      expect(workspace?.result_id).toBe(globalId);
-      expect(workspace?.result_payload.effective_fields.name).toEqual({
-        value: { name_en: 'Workspace name', name_ar: null }, source: 'override',
-      });
-      const [canonical] = await asActor(poId, (tx) => tx`select result_payload
+        where result_id = ${globalId}`,
+    );
+    expect(workspace?.result_id).toBe(globalId);
+    expect(workspace?.result_payload.effective_fields.name).toEqual({
+      value: { name_en: 'Workspace name', name_ar: null },
+      source: 'override',
+    });
+    const [canonical] = await asActor(
+      poId,
+      (tx) => tx`select result_payload
         from public.catalog_search('exercise', 'New shared default', '{}'::jsonb, null, null)
-        where result_id = ${globalId}`);
-      expect(canonical?.result_payload.name_en).toBe('New shared default');
-    },
-  );
+        where result_id = ${globalId}`,
+    );
+    expect(canonical?.result_payload.name_en).toBe('New shared default');
+  });
 
-  it(
-    'captures copied Global defaults and trainer edits in planner entries (T056)',
-    async () => {
-      const globalDefaults = {
-        restSeconds: 90,
-        rir: 2,
-        reps: { kind: 'range' as const, min: 8, max: 12 },
-      };
-      const editableDefaults = structuredClone(globalDefaults);
-      editableDefaults.restSeconds = 75;
-      const published = toExerciseSnapshotV2({
-        source: 'global',
-        exerciseId: 'ex-global-defaults',
-        canonicalVersion: 1,
-        overrideVersion: null,
-        plannerEntry: {
-          name: { en: 'Planner entry', ar: 'مدخل الخطة' },
-          alternatives: [],
-          defaults: editableDefaults,
-        },
-        currentLibrary: { defaults: { restSeconds: 120, rir: 4 } },
-      });
-      expect(published.defaults).toEqual({
-        restSeconds: 75,
-        rir: 2,
-        reps: { kind: 'range', min: 8, max: 12 },
-      });
-    },
-  );
+  it('captures copied Global defaults and trainer edits in planner entries (T056)', async () => {
+    const globalDefaults = {
+      restSeconds: 90,
+      rir: 2,
+      reps: { kind: 'range' as const, min: 8, max: 12 },
+    };
+    const editableDefaults = structuredClone(globalDefaults);
+    editableDefaults.restSeconds = 75;
+    const published = toExerciseSnapshotV2({
+      source: 'global',
+      exerciseId: 'ex-global-defaults',
+      canonicalVersion: 1,
+      overrideVersion: null,
+      plannerEntry: {
+        name: { en: 'Planner entry', ar: 'مدخل الخطة' },
+        alternatives: [],
+        defaults: editableDefaults,
+      },
+      currentLibrary: { defaults: { restSeconds: 120, rir: 4 } },
+    });
+    expect(published.defaults).toEqual({
+      restSeconds: 75,
+      rir: 2,
+      reps: { kind: 'range', min: 8, max: 12 },
+    });
+  });
 
-  it(
-    'keeps published exercise alternatives frozen in V2 after later library changes (T050/T056)',
-    async () => {
-      const plannerAlternatives = [{ globalExerciseId: 'ex-removed' }];
-      const published = toExerciseSnapshotV2({
-        source: 'global',
-        exerciseId: 'ex-1',
-        canonicalVersion: 3,
-        overrideVersion: null,
-        plannerEntry: {
-          name: { en: 'Planner entry' },
-          alternatives: plannerAlternatives,
-        },
-      });
-      plannerAlternatives.splice(0, 1, { globalExerciseId: 'ex-survivor' });
-      expect(published.alternatives).toEqual([
-        { globalExerciseId: 'ex-removed' },
-      ]);
-    },
-  );
+  it('keeps published exercise alternatives frozen in V2 after later library changes (T050/T056)', async () => {
+    const plannerAlternatives = [{ globalExerciseId: 'ex-removed' }];
+    const published = toExerciseSnapshotV2({
+      source: 'global',
+      exerciseId: 'ex-1',
+      canonicalVersion: 3,
+      overrideVersion: null,
+      plannerEntry: {
+        name: { en: 'Planner entry' },
+        alternatives: plannerAlternatives,
+      },
+    });
+    plannerAlternatives.splice(0, 1, { globalExerciseId: 'ex-survivor' });
+    expect(published.alternatives).toEqual([
+      { globalExerciseId: 'ex-removed' },
+    ]);
+  });
 
-  it(
-    'T054/T062 cutover deletes legacy and pre-F16 records, preserving audit events',
-    async () => {
-      const files = await readdir(join(process.cwd(), 'supabase/migrations'));
-      const candidates = files.filter((name) =>
-        /^\d+_catalog_exercise_cutover\.sql$/i.test(name),
+  it('T054/T062 cutover deletes legacy and pre-F16 records, preserving audit events', async () => {
+    const files = await readdir(join(process.cwd(), 'supabase/migrations'));
+    const candidates = files.filter((name) =>
+      /^\d+_catalog_exercise_cutover\.sql$/i.test(name),
+    );
+    expect(candidates).toHaveLength(1);
+    const source = await readFile(
+      join(process.cwd(), 'supabase/migrations', candidates[0]!),
+      'utf8',
+    );
+    for (const table of [
+      'exercise_variations',
+      'exercise_variation_versions',
+      'exercise_lifecycle_events',
+      'workspace_exercise_lifecycle_events',
+      'exercise_versions',
+      'workspace_exercise_versions',
+      'exercise_overrides',
+      'exercise_override_versions',
+      'exercise_version_alternatives',
+      'workspace_exercise_version_alternatives',
+      'exercise_override_alternatives',
+      'workspace_exercises',
+      'exercises',
+    ]) {
+      expect(source).toMatch(
+        new RegExp(`delete\\s+from\\s+(?:public\\.)?${table}\\b`, 'i'),
       );
-      expect(candidates).toHaveLength(1);
-      const source = await readFile(
-        join(process.cwd(), 'supabase/migrations', candidates[0]!),
-        'utf8',
-      );
-      for (const table of [
-        'exercise_variations',
-        'exercise_variation_versions',
-        'exercise_lifecycle_events',
-        'workspace_exercise_lifecycle_events',
-        'exercise_versions',
-        'workspace_exercise_versions',
-        'exercise_overrides',
-        'exercise_override_versions',
-        'exercise_version_alternatives',
-        'workspace_exercise_version_alternatives',
-        'exercise_override_alternatives',
-        'workspace_exercises',
-        'exercises',
-      ]) {
-        expect(source).toMatch(
-          new RegExp(`delete\\s+from\\s+(?:public\\.)?${table}\\b`, 'i'),
-        );
-      }
-      expect(source).toMatch(/delete\s+from\s+(?:public\.)?exercise_lifecycle_events[\s\S]*?delete\s+from\s+(?:public\.)?exercises/i);
-      expect(source).toMatch(/delete\s+from\s+(?:public\.)?workspace_exercise_lifecycle_events[\s\S]*?delete\s+from\s+(?:public\.)?workspace_exercises/i);
-      expect(source).not.toMatch(/delete\s+from\s+(?:public\.)?audit_events/i);
-      expect(source).not.toMatch(
-        /instructions_(?:ar|en)[\s\S]{0,200}notes|notes[\s\S]{0,200}instructions_(?:ar|en)/i,
-      );
-    },
-  );
+    }
+    expect(source).toMatch(
+      /delete\s+from\s+(?:public\.)?exercise_lifecycle_events[\s\S]*?delete\s+from\s+(?:public\.)?exercises/i,
+    );
+    expect(source).toMatch(
+      /delete\s+from\s+(?:public\.)?workspace_exercise_lifecycle_events[\s\S]*?delete\s+from\s+(?:public\.)?workspace_exercises/i,
+    );
+    expect(source).not.toMatch(/delete\s+from\s+(?:public\.)?audit_events/i);
+    expect(source).not.toMatch(
+      /instructions_(?:ar|en)[\s\S]{0,200}notes|notes[\s\S]{0,200}instructions_(?:ar|en)/i,
+    );
+  });
 
   it('T054 leaves the lifecycle append-only guard armed after its scoped cutover bypass', async () => {
     const files = await readdir(join(process.cwd(), 'supabase/migrations'));
-    const migration = files.find((name) => /^\d+_catalog_exercise_cutover\.sql$/i.test(name));
+    const migration = files.find((name) =>
+      /^\d+_catalog_exercise_cutover\.sql$/i.test(name),
+    );
     expect(migration).toBeDefined();
-    const source = await readFile(join(process.cwd(), 'supabase/migrations', migration!), 'utf8');
-    expect(source).toMatch(/disable\s+trigger\s+exercise_lifecycle_events_append_only[\s\S]*?enable\s+trigger\s+exercise_lifecycle_events_append_only/i);
-    expect(source).toMatch(/disable\s+trigger\s+workspace_exercise_lifecycle_events_append_only[\s\S]*?enable\s+trigger\s+workspace_exercise_lifecycle_events_append_only/i);
+    const source = await readFile(
+      join(process.cwd(), 'supabase/migrations', migration!),
+      'utf8',
+    );
+    expect(source).toMatch(
+      /disable\s+trigger\s+exercise_lifecycle_events_append_only[\s\S]*?enable\s+trigger\s+exercise_lifecycle_events_append_only/i,
+    );
+    expect(source).toMatch(
+      /disable\s+trigger\s+workspace_exercise_lifecycle_events_append_only[\s\S]*?enable\s+trigger\s+workspace_exercise_lifecycle_events_append_only/i,
+    );
   });
 
   it('T054 deletes legacy rows whether or not Instructions fields exist', async () => {
     const files = await readdir(join(process.cwd(), 'supabase/migrations'));
-    const migration = files.find((name) => /^\d+_catalog_exercise_cutover\.sql$/i.test(name));
+    const migration = files.find((name) =>
+      /^\d+_catalog_exercise_cutover\.sql$/i.test(name),
+    );
     expect(migration).toBeDefined();
-    const source = await readFile(join(process.cwd(), 'supabase/migrations', migration!), 'utf8');
-    const legacyDelete = source.match(/delete\s+from\s+(?:public\.)?exercise_variations[\s\S]*?;/i)?.[0] ?? '';
+    const source = await readFile(
+      join(process.cwd(), 'supabase/migrations', migration!),
+      'utf8',
+    );
+    const legacyDelete =
+      source.match(
+        /delete\s+from\s+(?:public\.)?exercise_variations[\s\S]*?;/i,
+      )?.[0] ?? '';
     expect(legacyDelete).not.toMatch(/instructions_(?:ar|en)/i);
-    expect(source).toMatch(/delete\s+from\s+(?:public\.)?exercise_variation_versions/i);
+    expect(source).toMatch(
+      /delete\s+from\s+(?:public\.)?exercise_variation_versions/i,
+    );
   });
 
   it('T054 removes pre-F16 global and workspace-private video and snapshot references', async () => {
     const files = await readdir(join(process.cwd(), 'supabase/migrations'));
-    const migration = files.find((name) => /^\d+_catalog_exercise_cutover\.sql$/i.test(name));
+    const migration = files.find((name) =>
+      /^\d+_catalog_exercise_cutover\.sql$/i.test(name),
+    );
     expect(migration).toBeDefined();
-    const source = await readFile(join(process.cwd(), 'supabase/migrations', migration!), 'utf8');
+    const source = await readFile(
+      join(process.cwd(), 'supabase/migrations', migration!),
+      'utf8',
+    );
     expect(source).toMatch(/delete\s+from\s+(?:public\.)?exercise_versions/i);
-    expect(source).toMatch(/delete\s+from\s+(?:public\.)?workspace_exercise_versions/i);
+    expect(source).toMatch(
+      /delete\s+from\s+(?:public\.)?workspace_exercise_versions/i,
+    );
     expect(source).toMatch(/snapshot/i);
     expect(source).toMatch(/docs\.google\.com/i);
   });
 
   it('T054 retires legacy variation writes and resolves variation consumers through F16 overrides', async () => {
     const files = await readdir(join(process.cwd(), 'supabase/migrations'));
-    const migration = files.find((name) => /^\d+_catalog_exercise_cutover\.sql$/i.test(name));
+    const migration = files.find((name) =>
+      /^\d+_catalog_exercise_cutover\.sql$/i.test(name),
+    );
     expect(migration).toBeDefined();
-    const source = await readFile(join(process.cwd(), 'supabase/migrations', migration!), 'utf8');
-    expect(source).toMatch(/catalog_write_variation[\s\S]*?(?:not_permitted|retired)/i);
-    expect(source).not.toMatch(/from\s+public\.exercise_variations\s+e\s+join\s+public\.exercise_variation_versions/i);
-    const server = await readFile(join(process.cwd(), 'lib/catalog/server.ts'), 'utf8');
+    const source = await readFile(
+      join(process.cwd(), 'supabase/migrations', migration!),
+      'utf8',
+    );
+    expect(source).toMatch(
+      /catalog_write_variation[\s\S]*?(?:not_permitted|retired)/i,
+    );
+    expect(source).not.toMatch(
+      /from\s+public\.exercise_variations\s+e\s+join\s+public\.exercise_variation_versions/i,
+    );
+    const server = await readFile(
+      join(process.cwd(), 'lib/catalog/server.ts'),
+      'utf8',
+    );
     expect(server).not.toMatch(/writeVariation:\s*'catalog_write_variation'/);
-    expect(server).not.toMatch(/transitionVariation:\s*'catalog_transition_variation'/);
+    expect(server).not.toMatch(
+      /transitionVariation:\s*'catalog_transition_variation'/,
+    );
     expect(server).toMatch(/catalog_write_exercise_override/);
     expect(server).toMatch(/catalog_remove_workspace_exercise/);
-    },
-  );
+  });
 
   it('T054 removes legacy and pre-F16 records, lifecycle chains, and videos while preserving audit events', async () => {
     const legacyExercise = randomUUID();
@@ -1108,7 +1183,8 @@ describe('T037 remaining workspace and identity contracts', () => {
     const mergeMiddle = randomUUID();
     const mergeTarget = randomUUID();
     const privateExercise = randomUUID();
-    const auditBefore = await db`select count(*)::integer as count from public.audit_events`;
+    const auditBefore =
+      await db`select count(*)::integer as count from public.audit_events`;
     await db.begin(async (tx) => {
       await tx`set constraints all deferred`;
       await tx`insert into public.exercises (id, created_by, lifecycle_state, current_version, lifecycle_revision, superseded_by)
@@ -1117,7 +1193,12 @@ describe('T037 remaining workspace and identity contracts', () => {
           (${mergeSource}, ${poId}, 'merged', 1, 3, ${mergeMiddle}),
           (${mergeMiddle}, ${poId}, 'merged', 1, 1, ${mergeTarget}),
           (${mergeTarget}, ${poId}, 'active', 1, 0, null)`;
-      for (const exerciseId of [legacyExercise, mergeSource, mergeMiddle, mergeTarget]) {
+      for (const exerciseId of [
+        legacyExercise,
+        mergeSource,
+        mergeMiddle,
+        mergeTarget,
+      ]) {
         await tx`insert into public.exercise_versions (exercise_id, version, payload, created_by)
           values (${exerciseId}, 1, ${tx.json({ name_en: 'cutover fixture', video_url: 'https://docs.google.com/d/fixture', instructions_en: 'legacy instruction' })}, ${poId})`;
       }
@@ -1147,7 +1228,10 @@ describe('T037 remaining workspace and identity contracts', () => {
     });
 
     const migration = await readFile(
-      join(process.cwd(), 'supabase/migrations/20261111012000_catalog_exercise_cutover.sql'),
+      join(
+        process.cwd(),
+        'supabase/migrations/20261111012000_catalog_exercise_cutover.sql',
+      ),
       'utf8',
     );
     await db.unsafe(migration);
@@ -1188,7 +1272,10 @@ describe('T037 remaining workspace and identity contracts', () => {
     // This test applies the pushed cutover migration directly; replay its
     // forward security fix so later tests see the current invoker boundary.
     const securityFix = await readFile(
-      join(process.cwd(), 'supabase/migrations/20261111015400_catalog_search_invoker_security.sql'),
+      join(
+        process.cwd(),
+        'supabase/migrations/20261111015400_catalog_search_invoker_security.sql',
+      ),
       'utf8',
     );
     await db.unsafe(securityFix);

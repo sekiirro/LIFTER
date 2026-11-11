@@ -431,22 +431,26 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
             request: {},
           }),
       );
-      await check(canCoach[index] ? ['catalog_write_exercise_override'] : [], () =>
-        actions.writeVariation({
-          operationKey: key(),
-          workspaceId: scoped,
-          id: randomUUID(),
-          request: {},
-        }),
+      await check(
+        canCoach[index] ? ['catalog_write_exercise_override'] : [],
+        () =>
+          actions.writeVariation({
+            operationKey: key(),
+            workspaceId: scoped,
+            id: randomUUID(),
+            request: {},
+          }),
       );
-      await check(canCoach[index] ? ['catalog_write_exercise_override'] : [], () =>
-        actions.transitionVariation({
-          operationKey: key(),
-          workspaceId: scoped,
-          id: randomUUID(),
-          expectedVersion: 1,
-          transition: 'remove',
-        }),
+      await check(
+        canCoach[index] ? ['catalog_write_exercise_override'] : [],
+        () =>
+          actions.transitionVariation({
+            operationKey: key(),
+            workspaceId: scoped,
+            id: randomUUID(),
+            expectedVersion: 1,
+            transition: 'remove',
+          }),
       );
       await check(canCoach[index] ? ['catalog_create_food'] : [], () =>
         actions.createFood({

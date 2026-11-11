@@ -44,15 +44,21 @@ async function createGlobal(name: string) {
   });
 }
 
-async function createPrivate(workspaceId: string, actorId: string, name: string) {
+async function createPrivate(
+  workspaceId: string,
+  actorId: string,
+  name: string,
+) {
   return asActor(actorId, async (tx) => {
     const [row] = await tx`
-      select public.catalog_write_workspace_exercise(${workspaceId}, null, null, ${randomUUID()}, ${tx.json({
-        name_en: name,
-        name_ar: 'تمرين خاص',
-        primary_muscle_code: 'chest',
-        equipment_codes: ['barbell'],
-      })}) as result
+      select public.catalog_write_workspace_exercise(${workspaceId}, null, null, ${randomUUID()}, ${tx.json(
+        {
+          name_en: name,
+          name_ar: 'تمرين خاص',
+          primary_muscle_code: 'chest',
+          equipment_codes: ['barbell'],
+        },
+      )}) as result
     `;
     return row?.result as { exercise_id: string; version: number };
   });
@@ -73,8 +79,14 @@ describe('T090 canonical and workspace-private exercise version storage', () => 
       { table_name: 'exercise_versions', column_name: 'default_rest_time' },
       { table_name: 'exercise_versions', column_name: 'default_rir' },
       { table_name: 'exercise_versions', column_name: 'notes' },
-      { table_name: 'workspace_exercise_versions', column_name: 'default_reps' },
-      { table_name: 'workspace_exercise_versions', column_name: 'default_rest_time' },
+      {
+        table_name: 'workspace_exercise_versions',
+        column_name: 'default_reps',
+      },
+      {
+        table_name: 'workspace_exercise_versions',
+        column_name: 'default_rest_time',
+      },
       { table_name: 'workspace_exercise_versions', column_name: 'default_rir' },
       { table_name: 'workspace_exercise_versions', column_name: 'notes' },
     ]);
@@ -118,12 +130,36 @@ describe('T090 canonical and workspace-private exercise version storage', () => 
       /FOREIGN KEY \(workspace_id, alternative_workspace_exercise_id\) REFERENCES workspace_exercises\(workspace_id, id\)/,
     );
 
-    const parent = await createPrivate(workspaceA, trainerA, 'T090 private parent');
-    const localTarget = await createPrivate(workspaceA, trainerA, 'T090 local target');
-    const localTarget2 = await createPrivate(workspaceA, trainerA, 'T090 local target 2');
-    const localTarget3 = await createPrivate(workspaceA, trainerA, 'T090 local target 3');
-    const localTarget4 = await createPrivate(workspaceA, trainerA, 'T090 local target 4');
-    const foreignTarget = await createPrivate(workspaceB, trainerB, 'T090 foreign target');
+    const parent = await createPrivate(
+      workspaceA,
+      trainerA,
+      'T090 private parent',
+    );
+    const localTarget = await createPrivate(
+      workspaceA,
+      trainerA,
+      'T090 local target',
+    );
+    const localTarget2 = await createPrivate(
+      workspaceA,
+      trainerA,
+      'T090 local target 2',
+    );
+    const localTarget3 = await createPrivate(
+      workspaceA,
+      trainerA,
+      'T090 local target 3',
+    );
+    const localTarget4 = await createPrivate(
+      workspaceA,
+      trainerA,
+      'T090 local target 4',
+    );
+    const foreignTarget = await createPrivate(
+      workspaceB,
+      trainerB,
+      'T090 foreign target',
+    );
     const globalTarget = await createGlobal('T090 private global target');
 
     await expect(db`
@@ -179,8 +215,16 @@ describe('T090 canonical and workspace-private exercise version storage', () => 
       values (${parent.exercise_id}, 1, 1, ${target.exercise_id})
     `).rejects.toBeDefined();
 
-    const privateParent = await createPrivate(workspaceA, trainerA, 'T090 private parent with removed target');
-    const privateTarget = await createPrivate(workspaceA, trainerA, 'T090 inactive private target');
+    const privateParent = await createPrivate(
+      workspaceA,
+      trainerA,
+      'T090 private parent with removed target',
+    );
+    const privateTarget = await createPrivate(
+      workspaceA,
+      trainerA,
+      'T090 inactive private target',
+    );
     await db`
       update public.workspace_exercises set lifecycle_state = 'removed'
       where workspace_id = ${workspaceA} and id = ${privateTarget.exercise_id}

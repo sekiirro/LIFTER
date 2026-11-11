@@ -22,7 +22,11 @@ const plannerEntry = {
   description: 'Planner description',
   notes: 'Trainer note',
   alternatives: [{ globalExerciseId: 'ex-2' }],
-  defaults: { restSeconds: 75, rir: 1, reps: { kind: 'fixed' as const, value: 10 } },
+  defaults: {
+    restSeconds: 75,
+    rir: 1,
+    reps: { kind: 'fixed' as const, value: 10 },
+  },
 };
 
 describe('ExerciseSnapshotV2 (T056)', () => {
@@ -90,7 +94,12 @@ describe('ExerciseSnapshotV2 (T056)', () => {
     expect(snapshot).not.toHaveProperty('videoUrl');
     expect(snapshot.canonicalVersion).toBe(3);
     expect(serializeExerciseSnapshotV2(snapshot)).not.toContain('youtube');
-    expect(() => parseExerciseSnapshotV2({ ...snapshot, video: 'https://youtube.com/live' })).toThrow();
+    expect(() =>
+      parseExerciseSnapshotV2({
+        ...snapshot,
+        video: 'https://youtube.com/live',
+      }),
+    ).toThrow();
   });
 
   it('copies planner entry values rather than retaining mutable references', () => {
@@ -128,55 +137,69 @@ describe('ExerciseSnapshotV2 (T056)', () => {
   });
 
   it('rejects private targets on a Global source snapshot', () => {
-    expect(() => parseExerciseSnapshotV2({
-      ...fixture as object,
-      alternatives: [{ workspaceExerciseId: 'wex-2' }],
-    })).toThrow();
+    expect(() =>
+      parseExerciseSnapshotV2({
+        ...(fixture as object),
+        alternatives: [{ workspaceExerciseId: 'wex-2' }],
+      }),
+    ).toThrow();
   });
 
   it('rejects alternative objects with both or neither target key', () => {
-    expect(() => parseExerciseSnapshotV2({
-      schemaVersion: 2,
-      source: 'workspace_private',
-      workspaceExerciseId: 'wex-1',
-      workspaceExerciseVersion: 2,
-      name: { en: 'Private exercise' },
-      defaults: {},
-      alternatives: [{ globalExerciseId: 'ex-2', workspaceExerciseId: 'wex-2' }],
-    })).toThrow();
-    expect(() => parseExerciseSnapshotV2({
-      schemaVersion: 2,
-      source: 'workspace_private',
-      workspaceExerciseId: 'wex-1',
-      workspaceExerciseVersion: 2,
-      name: { en: 'Private exercise' },
-      defaults: {},
-      alternatives: [{}],
-    })).toThrow();
+    expect(() =>
+      parseExerciseSnapshotV2({
+        schemaVersion: 2,
+        source: 'workspace_private',
+        workspaceExerciseId: 'wex-1',
+        workspaceExerciseVersion: 2,
+        name: { en: 'Private exercise' },
+        defaults: {},
+        alternatives: [
+          { globalExerciseId: 'ex-2', workspaceExerciseId: 'wex-2' },
+        ],
+      }),
+    ).toThrow();
+    expect(() =>
+      parseExerciseSnapshotV2({
+        schemaVersion: 2,
+        source: 'workspace_private',
+        workspaceExerciseId: 'wex-1',
+        workspaceExerciseVersion: 2,
+        name: { en: 'Private exercise' },
+        defaults: {},
+        alternatives: [{}],
+      }),
+    ).toThrow();
   });
 
   it('rejects duplicate alternatives and more than three targets', () => {
-    expect(() => parseExerciseSnapshotV2({
-      ...fixture as object,
-      alternatives: [
-        { globalExerciseId: 'ex-2' },
-        { globalExerciseId: 'ex-2' },
-      ],
-    })).toThrow();
-    expect(() => parseExerciseSnapshotV2({
-      ...fixture as object,
-      alternatives: [
-        { globalExerciseId: 'ex-2' },
-        { globalExerciseId: 'ex-3' },
-        { globalExerciseId: 'ex-4' },
-        { globalExerciseId: 'ex-5' },
-      ],
-    })).toThrow();
+    expect(() =>
+      parseExerciseSnapshotV2({
+        ...(fixture as object),
+        alternatives: [
+          { globalExerciseId: 'ex-2' },
+          { globalExerciseId: 'ex-2' },
+        ],
+      }),
+    ).toThrow();
+    expect(() =>
+      parseExerciseSnapshotV2({
+        ...(fixture as object),
+        alternatives: [
+          { globalExerciseId: 'ex-2' },
+          { globalExerciseId: 'ex-3' },
+          { globalExerciseId: 'ex-4' },
+          { globalExerciseId: 'ex-5' },
+        ],
+      }),
+    ).toThrow();
   });
 
   it('parses the V2 fixture and rejects unknown frozen fields', () => {
     expect(parseExerciseSnapshotV2(fixture)).toEqual(fixture);
     expect(parseSnapshot(fixture)).toEqual(fixture);
-    expect(() => parseExerciseSnapshotV2({ ...fixture as object, video: null })).toThrow();
+    expect(() =>
+      parseExerciseSnapshotV2({ ...(fixture as object), video: null }),
+    ).toThrow();
   });
 });

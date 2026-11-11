@@ -38,8 +38,10 @@ async function writePrivate(
   exerciseId: string | null = null,
   expectedVersion: number | null = null,
 ) {
-  return asActor(trainerId, (tx) =>
-    tx`select public.catalog_write_workspace_exercise(
+  return asActor(
+    trainerId,
+    (tx) =>
+      tx`select public.catalog_write_workspace_exercise(
       ${workspaceId}, ${exerciseId}, ${expectedVersion}, ${randomUUID()}, ${tx.json(payload)}
     )`,
   );
@@ -47,11 +49,15 @@ async function writePrivate(
 
 async function createGlobalTarget() {
   return asActor(poId, async (tx) => {
-    const [row] = await tx`select public.catalog_create_exercise(${randomUUID()}, ${tx.json({
-      ...core,
-      name_en: `T075 global target ${randomUUID()}`,
-    })})`;
-    return (row?.catalog_create_exercise as { exercise_id: string }).exercise_id;
+    const [row] =
+      await tx`select public.catalog_create_exercise(${randomUUID()}, ${tx.json(
+        {
+          ...core,
+          name_en: `T075 global target ${randomUUID()}`,
+        },
+      )})`;
+    return (row?.catalog_create_exercise as { exercise_id: string })
+      .exercise_id;
   });
 }
 
@@ -63,7 +69,9 @@ describe('T075 workspace-private validation and version storage', () => {
       name_en: 'T075 private alternative target',
     });
     const privateTarget = (
-      privateTargetResult[0]?.catalog_write_workspace_exercise as { exercise_id: string }
+      privateTargetResult[0]?.catalog_write_workspace_exercise as {
+        exercise_id: string;
+      }
     ).exercise_id;
     const payload = {
       ...core,
@@ -88,7 +96,10 @@ describe('T075 workspace-private validation and version storage', () => {
       where workspace_id = ${workspaceId} and workspace_exercise_id = ${exerciseId} and version = 1
     `;
     expect(version).toMatchObject({
-      payload: expect.objectContaining({ name_en: core.name_en, description: 'x'.repeat(2000) }),
+      payload: expect.objectContaining({
+        name_en: core.name_en,
+        description: 'x'.repeat(2000),
+      }),
       notes: 'Private coaching note',
       default_rest_time: 90,
       default_rir: 2,
@@ -101,14 +112,24 @@ describe('T075 workspace-private validation and version storage', () => {
       order by position
     `;
     expect(alternatives).toEqual([
-      { position: 1, global_exercise_id: globalTarget, alternative_workspace_exercise_id: null },
-      { position: 2, global_exercise_id: null, alternative_workspace_exercise_id: privateTarget },
+      {
+        position: 1,
+        global_exercise_id: globalTarget,
+        alternative_workspace_exercise_id: null,
+      },
+      {
+        position: 2,
+        global_exercise_id: null,
+        alternative_workspace_exercise_id: privateTarget,
+      },
     ]);
   });
 
   it('accepts Description at 2000 characters and rejects 2001 with the existing validation error', async () => {
     await writePrivate({ ...core, description: 'x'.repeat(2000) });
-    await expect(writePrivate({ ...core, description: 'x'.repeat(2001) })).rejects.toMatchObject({
+    await expect(
+      writePrivate({ ...core, description: 'x'.repeat(2001) }),
+    ).rejects.toMatchObject({
       code: '22023',
       message: 'catalog_exercise_invalid',
     });
@@ -120,13 +141,25 @@ describe('T075 workspace-private validation and version storage', () => {
     await db`update public.exercises set lifecycle_state = 'removed' where id = ${inactiveTarget}`;
     const valid = { global_exercise_id: globalTarget };
     for (const alternatives of [
-      [{ global_exercise_id: globalTarget, workspace_exercise_id: randomUUID() }],
+      [
+        {
+          global_exercise_id: globalTarget,
+          workspace_exercise_id: randomUUID(),
+        },
+      ],
       [{}],
       [valid, valid],
-      [valid, { global_exercise_id: await createGlobalTarget() }, { global_exercise_id: await createGlobalTarget() }, { global_exercise_id: await createGlobalTarget() }],
+      [
+        valid,
+        { global_exercise_id: await createGlobalTarget() },
+        { global_exercise_id: await createGlobalTarget() },
+        { global_exercise_id: await createGlobalTarget() },
+      ],
       [{ global_exercise_id: inactiveTarget }],
     ]) {
-      await expect(writePrivate({ ...core, alternatives })).rejects.toMatchObject({
+      await expect(
+        writePrivate({ ...core, alternatives }),
+      ).rejects.toMatchObject({
         code: '22023',
         message: 'catalog_exercise_alternatives_invalid',
       });
@@ -136,11 +169,13 @@ describe('T075 workspace-private validation and version storage', () => {
     const sourceId = (
       source[0]?.catalog_write_workspace_exercise as { exercise_id: string }
     ).exercise_id;
-    await expect(writePrivate(
-      { ...core, alternatives: [{ workspace_exercise_id: sourceId }] },
-      sourceId,
-      1,
-    )).rejects.toMatchObject({
+    await expect(
+      writePrivate(
+        { ...core, alternatives: [{ workspace_exercise_id: sourceId }] },
+        sourceId,
+        1,
+      ),
+    ).rejects.toMatchObject({
       code: '22023',
       message: 'catalog_exercise_alternatives_invalid',
     });
@@ -212,7 +247,9 @@ describe('T075 workspace-private validation and version storage', () => {
   });
 
   it('kills the Notes allowlist, Description, Alternatives limit, self-target, and private composite-key mutants', async () => {
-    const globalTargets = await Promise.all([1, 2, 3, 4].map(() => createGlobalTarget()));
+    const globalTargets = await Promise.all(
+      [1, 2, 3, 4].map(() => createGlobalTarget()),
+    );
     const source = await writePrivate(core);
     const sourceId = (
       source[0]?.catalog_write_workspace_exercise as { exercise_id: string }
@@ -238,19 +275,30 @@ describe('T075 workspace-private validation and version storage', () => {
       },
       {
         label: 'Alternatives maximum',
-        signature: 'app_private.validate_workspace_exercise_payload(uuid,uuid,jsonb)',
-        needle: 'if jsonb_array_length(p_request -> \'alternatives\') > 3 then',
+        signature:
+          'app_private.validate_workspace_exercise_payload(uuid,uuid,jsonb)',
+        needle: "if jsonb_array_length(p_request -> 'alternatives') > 3 then",
         replacement: 'if false then',
-        request: { ...core, alternatives: globalTargets.map((global_exercise_id) => ({ global_exercise_id })) },
+        request: {
+          ...core,
+          alternatives: globalTargets.map((global_exercise_id) => ({
+            global_exercise_id,
+          })),
+        },
         workspaceAware: true,
         shouldRejectUnderMutation: false,
       },
       {
         label: 'Self Alternative',
-        signature: 'app_private.validate_workspace_exercise_payload(uuid,uuid,jsonb)',
-        needle: "where (a.value ->> 'workspace_exercise_id')::uuid = p_exercise_id",
+        signature:
+          'app_private.validate_workspace_exercise_payload(uuid,uuid,jsonb)',
+        needle:
+          "where (a.value ->> 'workspace_exercise_id')::uuid = p_exercise_id",
         replacement: 'where false',
-        request: { ...core, alternatives: [{ workspace_exercise_id: sourceId }] },
+        request: {
+          ...core,
+          alternatives: [{ workspace_exercise_id: sourceId }],
+        },
         workspaceAware: true,
         shouldRejectUnderMutation: false,
       },
@@ -264,7 +312,8 @@ describe('T075 workspace-private validation and version storage', () => {
             select pg_catalog.pg_get_functiondef(${probe.signature}::regprocedure) as definition
           `;
           const definition = current?.definition as string;
-          if (!definition.includes(probe.needle)) throw new Error(`T075 mutation target missing: ${probe.label}`);
+          if (!definition.includes(probe.needle))
+            throw new Error(`T075 mutation target missing: ${probe.label}`);
           await tx.unsafe(definition.replace(probe.needle, probe.replacement));
           let assertionFailure: unknown;
           try {
@@ -276,9 +325,10 @@ describe('T075 workspace-private validation and version storage', () => {
           } catch (error) {
             assertionFailure = error;
           }
-          expect(Boolean(assertionFailure), `${probe.label} mutation must break its assertion`).toBe(
-            probe.shouldRejectUnderMutation,
-          );
+          expect(
+            Boolean(assertionFailure),
+            `${probe.label} mutation must break its assertion`,
+          ).toBe(probe.shouldRejectUnderMutation);
           throw new Error(marker);
         });
       } catch (error) {
@@ -297,7 +347,10 @@ describe('T075 workspace-private validation and version storage', () => {
               and c.conname='workspace_exercise_version_alternatives_private_target_fk'
               and c.contype='f') as private_composite_fk
         `;
-        expect(row?.private_composite_fk, 'dropping the private composite key must break its assertion').toBe(false);
+        expect(
+          row?.private_composite_fk,
+          'dropping the private composite key must break its assertion',
+        ).toBe(false);
         throw new Error(compositeMarker);
       });
     } catch (error) {

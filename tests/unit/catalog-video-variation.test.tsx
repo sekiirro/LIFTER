@@ -60,9 +60,9 @@ describe('workspace video variation UI (T023)', () => {
   });
 
   it('T061 rejects docs.google.com while allowing Drive videos', () => {
-    expect(isAllowedCatalogVideoUrl('https://docs.google.com/document/d/id')).toBe(
-      false,
-    );
+    expect(
+      isAllowedCatalogVideoUrl('https://docs.google.com/document/d/id'),
+    ).toBe(false);
     expect(isAllowedCatalogVideoUrl('https://drive.google.com/file/d/id')).toBe(
       true,
     );

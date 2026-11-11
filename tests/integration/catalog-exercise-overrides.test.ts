@@ -63,7 +63,11 @@ describe('T046 exercise override identity and storage contract', () => {
                 = array['workspace_id', 'exercise_id', 'current_version']::name[]
         )) as current_version_fk
     `;
-    expect(row!.version_key).toEqual(['workspace_id', 'exercise_id', 'version']);
+    expect(row!.version_key).toEqual([
+      'workspace_id',
+      'exercise_id',
+      'version',
+    ]);
     expect(row!.parent_fk).toBe(true);
     expect(row!.current_version_fk).toBe(true);
   });
@@ -94,7 +98,9 @@ describe('T046 exercise override identity and storage contract', () => {
         )) as alternatives_comment
     `;
     expect(row!.payload_comment).toMatch(/null.*inherit/i);
-    expect(row!.alternatives_comment).toMatch(/zero child rows.*explicit empty/i);
+    expect(row!.alternatives_comment).toMatch(
+      /zero child rows.*explicit empty/i,
+    );
   });
 
   it('forces workspace RLS and keeps the coaching-work predicate on both tables', async () => {
@@ -110,7 +116,9 @@ describe('T046 exercise override identity and storage contract', () => {
     for (const row of rows) {
       expect(row.relrowsecurity).toBe(true);
       expect(row.relforcerowsecurity).toBe(true);
-      expect(row.qual).toMatch(/has_workspace_access\s*\(\s*(?:[\w"]+\.)?workspace_id\s*,\s*'coaching_work'/i);
+      expect(row.qual).toMatch(
+        /has_workspace_access\s*\(\s*(?:[\w"]+\.)?workspace_id\s*,\s*'coaching_work'/i,
+      );
     }
   });
 
@@ -123,6 +131,8 @@ describe('T046 exercise override identity and storage contract', () => {
       cross join (values ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE')) as p(privilege_type)
     `;
     expect(rows).toHaveLength(8);
-    expect(rows.every((row) => !row.authenticated_granted && !row.service_granted)).toBe(true);
+    expect(
+      rows.every((row) => !row.authenticated_granted && !row.service_granted),
+    ).toBe(true);
   });
 });

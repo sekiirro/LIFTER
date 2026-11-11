@@ -39,10 +39,17 @@ async function createGlobal(videoUrl: string) {
   });
 }
 
-async function writeOverride(exerciseId: string, videoUrl: string | null, expectedVersion: number) {
-  return asActor(trainerAId, (tx) => tx`select public.catalog_write_exercise_override(
+async function writeOverride(
+  exerciseId: string,
+  videoUrl: string | null,
+  expectedVersion: number,
+) {
+  return asActor(
+    trainerAId,
+    (tx) => tx`select public.catalog_write_exercise_override(
     ${workspaceAId}, ${exerciseId}, ${expectedVersion}, ${randomUUID()}, ${tx.json({ video_url: videoUrl })}
-  )`);
+  )`,
+  );
 }
 
 async function createPrivate(actorId: string, workspaceId: string) {
@@ -65,7 +72,10 @@ describe('T051 internal resolver boundary and current Video reads', () => {
         await db`select * from app_private.catalog_resolve_workspace_exercise_video(${workspaceAId}, ${exerciseId}, true)`;
         throw new Error('resolver unexpectedly returned a row');
       } catch (error) {
-        failures.push({ code: (error as { code: string }).code, message: (error as Error).message });
+        failures.push({
+          code: (error as { code: string }).code,
+          message: (error as Error).message,
+        });
       }
     }
     expect(failures).toEqual([
@@ -83,10 +93,14 @@ describe('T051 internal resolver boundary and current Video reads', () => {
           'app_private.catalog_resolve_workspace_exercise_video(uuid,uuid,boolean)'::regprocedure
         ) as definition`;
         const original = row!.definition as string;
-        const mutant = original.replace('where e.workspace_id = p_workspace_id\n      and e.id = p_workspace_exercise_id;', 'where e.id = p_workspace_exercise_id;');
+        const mutant = original.replace(
+          'where e.workspace_id = p_workspace_id\n      and e.id = p_workspace_exercise_id;',
+          'where e.id = p_workspace_exercise_id;',
+        );
         expect(mutant).not.toBe(original);
         await tx.unsafe(mutant);
-        const [result] = await tx`select * from app_private.catalog_resolve_workspace_exercise_video(${workspaceAId}, ${foreignId}, true)`;
+        const [result] =
+          await tx`select * from app_private.catalog_resolve_workspace_exercise_video(${workspaceAId}, ${foreignId}, true)`;
         await expectMutantToFail(async () => {
           expect(result).toBeUndefined();
         }, 'foreign private exercise must be denied when workspace equality is removed');
@@ -108,7 +122,7 @@ describe('T051 internal resolver boundary and current Video reads', () => {
         ) as definition`;
         const original = row!.definition as string;
         const mutant = original.replace(
-          '  if not found then\n    raise exception using errcode = \'42501\', message = \'not_permitted\';\n  end if;',
+          "  if not found then\n    raise exception using errcode = '42501', message = 'not_permitted';\n  end if;",
           `  if not found and exists (select 1 from public.workspace_exercises e where e.id = p_workspace_exercise_id) then
     raise exception using errcode = '42501', message = 'foreign_reference';
   end if;
@@ -121,7 +135,10 @@ describe('T051 internal resolver boundary and current Video reads', () => {
         const errors: string[] = [];
         for (const exerciseId of [missingId, foreignId]) {
           try {
-            await tx.savepoint((sp) => sp`select * from app_private.catalog_resolve_workspace_exercise_video(${workspaceAId}, ${exerciseId}, true)`);
+            await tx.savepoint(
+              (sp) =>
+                sp`select * from app_private.catalog_resolve_workspace_exercise_video(${workspaceAId}, ${exerciseId}, true)`,
+            );
           } catch (error) {
             errors.push((error as Error).message);
           }
@@ -144,30 +161,49 @@ describe('T051 internal resolver boundary and current Video reads', () => {
     const exerciseId = await createGlobal(firstGlobal);
     await writeOverride(exerciseId, firstOverride, 0);
 
-    const readVideo = async () => asActor(trainerAId, async (tx) => {
-      const [row] = await tx`select result_payload
+    const readVideo = async () =>
+      asActor(trainerAId, async (tx) => {
+        const [row] = await tx`select result_payload
         from public.catalog_search('exercise', null, '{}'::jsonb, null, ${workspaceAId})
         where result_id = ${exerciseId}`;
-      return row?.result_payload.effective_fields.video;
+        return row?.result_payload.effective_fields.video;
+      });
+
+    expect(await readVideo()).toEqual({
+      value: firstOverride,
+      source: 'override',
+    });
+    await writeOverride(exerciseId, changedOverride, 1);
+    expect(await readVideo()).toEqual({
+      value: changedOverride,
+      source: 'override',
+    });
+    await writeOverride(exerciseId, null, 2);
+    expect(await readVideo()).toEqual({
+      value: firstGlobal,
+      source: 'canonical',
     });
 
-    expect(await readVideo()).toEqual({ value: firstOverride, source: 'override' });
-    await writeOverride(exerciseId, changedOverride, 1);
-    expect(await readVideo()).toEqual({ value: changedOverride, source: 'override' });
-    await writeOverride(exerciseId, null, 2);
-    expect(await readVideo()).toEqual({ value: firstGlobal, source: 'canonical' });
-
-    await asActor(poId, (tx) => tx`select public.catalog_version_exercise(
+    await asActor(
+      poId,
+      (tx) => tx`select public.catalog_version_exercise(
       ${exerciseId}, 1, ${randomUUID()}, ${tx.json({ name_en: 'T051 versioned', name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: changedGlobal })}
-    )`);
-    expect(await readVideo()).toEqual({ value: changedGlobal, source: 'canonical' });
+    )`,
+    );
+    expect(await readVideo()).toEqual({
+      value: changedGlobal,
+      source: 'canonical',
+    });
   });
 
   it('denies the next staff view after workspace membership is revoked', async () => {
     const exerciseId = await createGlobal('https://youtu.be/FFFFFFFFFFF');
-    const [warm] = await asActor(trainerAId, (tx) => tx`select result_payload
+    const [warm] = await asActor(
+      trainerAId,
+      (tx) => tx`select result_payload
       from public.catalog_search('exercise', null, '{}'::jsonb, null, ${workspaceAId})
-      where result_id = ${exerciseId}`);
+      where result_id = ${exerciseId}`,
+    );
     expect(warm).toBeDefined();
 
     const marker = 'rollback_t051_revoke_membership';
@@ -177,9 +213,13 @@ describe('T051 internal resolver boundary and current Video reads', () => {
           where workspace_id = ${workspaceAId} and user_id = ${trainerAId} and revoked_at is null`;
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerAId, role: 'authenticated' })}, true)`;
-        await expect(tx.savepoint((sp) => sp`select result_payload
+        await expect(
+          tx.savepoint(
+            (sp) => sp`select result_payload
           from public.catalog_search('exercise', null, '{}'::jsonb, null, ${workspaceAId})
-          where result_id = ${exerciseId}`)).rejects.toMatchObject({ code: '42501' });
+          where result_id = ${exerciseId}`,
+          ),
+        ).rejects.toMatchObject({ code: '42501' });
         throw new Error(marker);
       });
     } catch (error) {
@@ -194,13 +234,17 @@ describe('T051 internal resolver boundary and current Video reads', () => {
       await db.begin(async (tx) => {
         await tx`grant usage on schema app_private to anon, authenticated, service_role`;
         for (const role of ['anon', 'authenticated', 'service_role'] as const) {
-        await tx`select set_config('role', ${role}, true)`;
-        if (role === 'authenticated') {
-          await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerAId, role })}, true)`;
-        }
-        await expect(tx.savepoint((sp) => sp`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${workspaceAId}, true)`))
-          .rejects.toMatchObject({ code: '42501' });
-        await tx`reset role`;
+          await tx`select set_config('role', ${role}, true)`;
+          if (role === 'authenticated') {
+            await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerAId, role })}, true)`;
+          }
+          await expect(
+            tx.savepoint(
+              (sp) =>
+                sp`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${workspaceAId}, true)`,
+            ),
+          ).rejects.toMatchObject({ code: '42501' });
+          await tx`reset role`;
         }
         throw new Error(marker);
       });
@@ -210,7 +254,10 @@ describe('T051 internal resolver boundary and current Video reads', () => {
   });
 });
 
-async function expectMutantToFail(assertion: () => Promise<void>, label: string) {
+async function expectMutantToFail(
+  assertion: () => Promise<void>,
+  label: string,
+) {
   let failure: unknown;
   try {
     await assertion();

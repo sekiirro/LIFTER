@@ -46,10 +46,17 @@ async function createGlobal(videoUrl: string | null) {
   });
 }
 
-async function writeVideoOverride(exerciseId: string, videoUrl: string | null, expectedVersion = 0) {
-  return asActor(trainerId, (tx) => tx`select public.catalog_write_exercise_override(
+async function writeVideoOverride(
+  exerciseId: string,
+  videoUrl: string | null,
+  expectedVersion = 0,
+) {
+  return asActor(
+    trainerId,
+    (tx) => tx`select public.catalog_write_exercise_override(
     ${workspaceId}, ${exerciseId}, ${expectedVersion}, ${randomUUID()}, ${tx.json({ video_url: videoUrl })}
-  )`);
+  )`,
+  );
 }
 
 describe('T050 current authorized exercise Video resolution', () => {
@@ -66,9 +73,16 @@ describe('T050 current authorized exercise Video resolution', () => {
         values (${workspaceId}, ${exerciseId}, 1, ${tx.json({ video_url: legacy })}, ${trainerId})`;
     });
 
-    const [detail] = await asActor(trainerId, (tx) => tx`select variation
-      from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`);
-    expect(detail?.variation).toEqual({ workspace_id: workspaceId, video_url: override, source: 'override' });
+    const [detail] = await asActor(
+      trainerId,
+      (tx) => tx`select variation
+      from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`,
+    );
+    expect(detail?.variation).toEqual({
+      workspace_id: workspaceId,
+      video_url: override,
+      source: 'override',
+    });
   });
 
   it('falls back to canonical Video after the workspace override is removed', async () => {
@@ -84,14 +98,23 @@ describe('T050 current authorized exercise Video resolution', () => {
         values (${workspaceId}, ${exerciseId}, 1, ${tx.json({ video_url: legacy })}, ${trainerId})`;
     });
 
-    const [detail] = await asActor(trainerId, (tx) => tx`select variation
-      from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`);
-    expect(detail?.variation).toEqual({ workspace_id: workspaceId, video_url: canonical, source: 'canonical' });
+    const [detail] = await asActor(
+      trainerId,
+      (tx) => tx`select variation
+      from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`,
+    );
+    expect(detail?.variation).toEqual({
+      workspace_id: workspaceId,
+      video_url: canonical,
+      source: 'canonical',
+    });
   });
 
   it('resolves a workspace-private exercise Video from its own current version', async () => {
     const videoUrl = 'https://youtu.be/private789';
-    const exercise = await asActor(trainerId, (tx) => tx`select public.catalog_write_workspace_exercise(
+    const exercise = await asActor(
+      trainerId,
+      (tx) => tx`select public.catalog_write_workspace_exercise(
       ${workspaceId}, null, null, ${randomUUID()}, ${tx.json({
         name_en: `T050 private ${randomUUID()}`,
         name_ar: 'تمرين خاص',
@@ -99,24 +122,33 @@ describe('T050 current authorized exercise Video resolution', () => {
         equipment_codes: ['barbell'],
         video_url: videoUrl,
       })}
-    ) as result`);
-    const privateId = (exercise[0]!.result as { exercise_id: string }).exercise_id;
-    const rows = await db`select * from app_private.catalog_resolve_workspace_exercise_video(
+    ) as result`,
+    );
+    const privateId = (exercise[0]!.result as { exercise_id: string })
+      .exercise_id;
+    const rows =
+      await db`select * from app_private.catalog_resolve_workspace_exercise_video(
       ${workspaceId}, ${privateId}, true
     )`;
-    expect(rows).toEqual([{
-      workspace_exercise_id: privateId,
-      workspace_id: workspaceId,
-      video_url: videoUrl,
-      source: 'workspace_private',
-    }]);
+    expect(rows).toEqual([
+      {
+        workspace_exercise_id: privateId,
+        workspace_id: workspaceId,
+        video_url: videoUrl,
+        source: 'workspace_private',
+      },
+    ]);
   });
 
   it('denies a staff detail request for a foreign workspace without disclosing its Video', async () => {
     const exerciseId = await createGlobal('https://youtu.be/scope123');
-    await expect(asActor(foreignTrainerId, (tx) => tx`select variation
-      from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`))
-      .rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+    await expect(
+      asActor(
+        foreignTrainerId,
+        (tx) => tx`select variation
+      from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`,
+      ),
+    ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
   });
 
   it('keeps the workspace resolver internal and non-callable by login roles', async () => {
@@ -151,8 +183,9 @@ describe('T050 current authorized exercise Video resolution', () => {
           where workspace_id = ${workspaceId} and user_id = ${trainerId} and revoked_at is null`;
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
-        await expect(tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`)
-          .rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+        await expect(
+          tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`,
+        ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
         throw new Error(rollback);
       });
     } catch (error) {
@@ -163,28 +196,40 @@ describe('T050 current authorized exercise Video resolution', () => {
   it.each([
     ['https://evil.example/video', 'https://youtu.be/canonicalfallback'],
     ['https://docs.google.com/document/d/x', 'https://youtu.be/docsfallback'],
-  ])('filters a stored disallowed override host and falls back to canonical (%s)', async (badUrl, canonical) => {
-    const exerciseId = await createGlobal(canonical);
-    const rollback = 'rollback_t050_bad_override';
-    try {
-      await db.begin(async (tx) => {
-        await tx`insert into public.exercise_overrides(workspace_id, exercise_id, current_version)
+  ])(
+    'filters a stored disallowed override host and falls back to canonical (%s)',
+    async (badUrl, canonical) => {
+      const exerciseId = await createGlobal(canonical);
+      const rollback = 'rollback_t050_bad_override';
+      try {
+        await db.begin(async (tx) => {
+          await tx`insert into public.exercise_overrides(workspace_id, exercise_id, current_version)
           values (${workspaceId}, ${exerciseId}, 1)`;
-        await tx`insert into public.exercise_override_versions(workspace_id, exercise_id, version, payload, created_by)
+          await tx`insert into public.exercise_override_versions(workspace_id, exercise_id, version, payload, created_by)
           values (${workspaceId}, ${exerciseId}, 1, ${tx.json({ video_url: badUrl })}, ${trainerId})`;
-        await tx`select set_config('role', 'authenticated', true)`;
-        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
-        const [detail] = await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`;
-        expect(detail?.variation).toEqual({ workspace_id: workspaceId, video_url: canonical, source: 'canonical' });
-        throw new Error(rollback);
-      });
-    } catch (error) {
-      expect((error as Error).message).toBe(rollback);
-    }
-  });
+          await tx`select set_config('role', 'authenticated', true)`;
+          await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
+          const [detail] =
+            await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`;
+          expect(detail?.variation).toEqual({
+            workspace_id: workspaceId,
+            video_url: canonical,
+            source: 'canonical',
+          });
+          throw new Error(rollback);
+        });
+      } catch (error) {
+        expect((error as Error).message).toBe(rollback);
+      }
+    },
+  );
 
-  it.each(['https://evil.example/video', 'https://docs.google.com/document/d/x'])(
-    'filters a stored disallowed canonical host and returns none (%s)', async (badUrl) => {
+  it.each([
+    'https://evil.example/video',
+    'https://docs.google.com/document/d/x',
+  ])(
+    'filters a stored disallowed canonical host and returns none (%s)',
+    async (badUrl) => {
       const exerciseId = await createGlobal(null);
       const rollback = 'rollback_t050_bad_canonical';
       try {
@@ -194,8 +239,13 @@ describe('T050 current authorized exercise Video resolution', () => {
           await tx`update public.exercises set current_version = 2 where id = ${exerciseId}`;
           await tx`select set_config('role', 'authenticated', true)`;
           await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
-          const [detail] = await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`;
-          expect(detail?.variation).toEqual({ workspace_id: workspaceId, video_url: null, source: 'none' });
+          const [detail] =
+            await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`;
+          expect(detail?.variation).toEqual({
+            workspace_id: workspaceId,
+            video_url: null,
+            source: 'none',
+          });
           throw new Error(rollback);
         });
       } catch (error) {
@@ -216,8 +266,9 @@ describe('T050 current authorized exercise Video resolution', () => {
           where workspace_id = ${workspaceId} and user_id = ${trainerId} and revoked_at is null`;
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
-        await expect(tx`select payload from public.catalog_workspace_exercise_detail(${workspaceId}, ${privateId})`)
-          .rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+        await expect(
+          tx`select payload from public.catalog_workspace_exercise_detail(${workspaceId}, ${privateId})`,
+        ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
         throw new Error(rollback);
       });
     } catch (error) {
@@ -225,8 +276,12 @@ describe('T050 current authorized exercise Video resolution', () => {
     }
   });
 
-  it.each(['https://evil.example/video', 'https://docs.google.com/document/d/x'])(
-    'filters a stored disallowed workspace-private Video and returns none (%s)', async (badUrl) => {
+  it.each([
+    'https://evil.example/video',
+    'https://docs.google.com/document/d/x',
+  ])(
+    'filters a stored disallowed workspace-private Video and returns none (%s)',
+    async (badUrl) => {
       const privateId = await createPrivate('https://youtu.be/initialprivate');
       const rollback = 'rollback_t050_bad_private';
       try {
@@ -237,7 +292,8 @@ describe('T050 current authorized exercise Video resolution', () => {
             where workspace_id = ${workspaceId} and id = ${privateId}`;
           await tx`select set_config('role', 'authenticated', true)`;
           await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
-          const [detail] = await tx`select payload from public.catalog_workspace_exercise_detail(${workspaceId}, ${privateId})`;
+          const [detail] =
+            await tx`select payload from public.catalog_workspace_exercise_detail(${workspaceId}, ${privateId})`;
           expect(detail?.payload.video_url).toBeNull();
           throw new Error(rollback);
         });
@@ -254,12 +310,22 @@ describe('T050 current authorized exercise Video resolution', () => {
       await tx`select set_config('role', 'authenticated', true)`;
       await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
       for (const planAuthorized of [false, true]) {
-        await expect(tx.savepoint((sp) => sp`select * from app_private.catalog_resolve_exercise_video(
+        await expect(
+          tx.savepoint(
+            (sp) => sp`select * from app_private.catalog_resolve_exercise_video(
           ${exerciseId}, ${workspaceId}, ${planAuthorized}
-        )`)).rejects.toMatchObject({ code: '42501' });
-        await expect(tx.savepoint((sp) => sp`select * from app_private.catalog_resolve_workspace_exercise_video(
+        )`,
+          ),
+        ).rejects.toMatchObject({ code: '42501' });
+        await expect(
+          tx.savepoint(
+            (
+              sp,
+            ) => sp`select * from app_private.catalog_resolve_workspace_exercise_video(
           ${workspaceId}, ${privateId}, ${planAuthorized}
-        )`)).rejects.toMatchObject({ code: '42501' });
+        )`,
+          ),
+        ).rejects.toMatchObject({ code: '42501' });
       }
     });
   });
@@ -286,9 +352,14 @@ describe('T050 current authorized exercise Video resolution', () => {
         await tx.unsafe(mutant);
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
-        const [detail] = await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`;
+        const [detail] =
+          await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`;
         await expectMutantToFail(async () => {
-          expect(detail?.variation).toEqual({ workspace_id: workspaceId, video_url: 'https://youtu.be/mutantcanonical', source: 'canonical' });
+          expect(detail?.variation).toEqual({
+            workspace_id: workspaceId,
+            video_url: 'https://youtu.be/mutantcanonical',
+            source: 'canonical',
+          });
         }, 'override read-time host filter must reject stored evil.example URL');
         throw new Error(marker);
       });
@@ -318,9 +389,14 @@ describe('T050 current authorized exercise Video resolution', () => {
         await tx.unsafe(mutant);
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
-        const [detail] = await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`;
+        const [detail] =
+          await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`;
         await expectMutantToFail(async () => {
-          expect(detail?.variation).toEqual({ workspace_id: workspaceId, video_url: null, source: 'none' });
+          expect(detail?.variation).toEqual({
+            workspace_id: workspaceId,
+            video_url: null,
+            source: 'none',
+          });
         }, 'canonical read-time host filter must reject stored docs.google.com URL');
         throw new Error(marker);
       });
@@ -338,8 +414,9 @@ describe('T050 current authorized exercise Video resolution', () => {
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
         await expectMutantToFail(async () => {
-          await expect(tx`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${workspaceId}, true)`)
-            .rejects.toMatchObject({ code: '42501' });
+          await expect(
+            tx`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${workspaceId}, true)`,
+          ).rejects.toMatchObject({ code: '42501' });
         }, 'direct-call denial must reject an authenticated EXECUTE grant even with p_plan_authorized=true');
         throw new Error(marker);
       });
@@ -349,7 +426,9 @@ describe('T050 current authorized exercise Video resolution', () => {
   });
 
   it('T050 mutation: dropping has_workspace_access makes revoked caller denial fail', async () => {
-    const privateId = await createPrivate('https://youtu.be/privateaccessmutant');
+    const privateId = await createPrivate(
+      'https://youtu.be/privateaccessmutant',
+    );
     const marker = 'rollback_t050_access_predicate_mutation';
     try {
       await db.begin(async (tx) => {
@@ -358,24 +437,36 @@ describe('T050 current authorized exercise Video resolution', () => {
         await tx`update public.workspace_memberships set revoked_at = statement_timestamp(), revoked_by = ${poId}
           where workspace_id = ${workspaceId} and user_id = ${trainerId} and revoked_at is null`;
         const membershipFunctions: Array<[string, string]> = [
-          ['public.catalog_workspace_exercise_detail(uuid,uuid)', 'private detail'],
-          ['app_private.catalog_resolve_workspace_exercise_video(uuid,uuid,boolean)', 'private resolver'],
+          [
+            'public.catalog_workspace_exercise_detail(uuid,uuid)',
+            'private detail',
+          ],
+          [
+            'app_private.catalog_resolve_workspace_exercise_video(uuid,uuid,boolean)',
+            'private resolver',
+          ],
         ];
         for (const [signature, label] of membershipFunctions) {
-          const [definition] = await tx`select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as sql`;
-          if (!definition?.sql) throw new Error(`T050 ${label} definition missing`);
+          const [definition] =
+            await tx`select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as sql`;
+          if (!definition?.sql)
+            throw new Error(`T050 ${label} definition missing`);
           const mutant = (definition.sql as string).replace(
             "and not app_private.has_workspace_access(p_workspace_id, 'coaching_work')",
             'and false',
           );
-          if (mutant === definition.sql) throw new Error(`T050 ${label} membership predicate mutation target missing`);
+          if (mutant === definition.sql)
+            throw new Error(
+              `T050 ${label} membership predicate mutation target missing`,
+            );
           await tx.unsafe(mutant);
         }
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
         await expectMutantToFail(async () => {
-          await expect(tx`select payload from public.catalog_workspace_exercise_detail(${workspaceId}, ${privateId})`)
-            .rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+          await expect(
+            tx`select payload from public.catalog_workspace_exercise_detail(${workspaceId}, ${privateId})`,
+          ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
         }, 'private revoked-membership caller assertion must fail if has_workspace_access is removed');
         throw new Error(marker);
       });
@@ -385,7 +476,10 @@ describe('T050 current authorized exercise Video resolution', () => {
   });
 });
 
-async function expectMutantToFail(assertion: () => Promise<void>, label: string) {
+async function expectMutantToFail(
+  assertion: () => Promise<void>,
+  label: string,
+) {
   let failure: unknown;
   try {
     await assertion();
@@ -396,7 +490,9 @@ async function expectMutantToFail(assertion: () => Promise<void>, label: string)
 }
 
 async function createPrivate(videoUrl: string) {
-  const [row] = await asActor(trainerId, (tx) => tx`select public.catalog_write_workspace_exercise(
+  const [row] = await asActor(
+    trainerId,
+    (tx) => tx`select public.catalog_write_workspace_exercise(
     ${workspaceId}, null, null, ${randomUUID()}, ${tx.json({
       name_en: `T050 private ${randomUUID()}`,
       name_ar: 'تمرين خاص',
@@ -404,6 +500,7 @@ async function createPrivate(videoUrl: string) {
       equipment_codes: ['barbell'],
       video_url: videoUrl,
     })}
-  ) as result`);
+  ) as result`,
+  );
   return (row!.result as { exercise_id: string }).exercise_id;
 }

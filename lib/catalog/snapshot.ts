@@ -25,8 +25,7 @@ export type ExerciseSnapshotV2 = {
   description?: string;
   notes?: string;
   alternatives: (
-    | { globalExerciseId: string }
-    | { workspaceExerciseId: string }
+    { globalExerciseId: string } | { workspaceExerciseId: string }
   )[];
   defaults: {
     restSeconds?: number;
@@ -666,9 +665,9 @@ export const deserializeSnapshot = parseSnapshot;
 function isExerciseSnapshotV2(input: unknown): input is ExerciseSnapshotV2 {
   return Boolean(
     input &&
-      typeof input === 'object' &&
-      !Array.isArray(input) &&
-      (input as Record<string, unknown>).schemaVersion === 2,
+    typeof input === 'object' &&
+    !Array.isArray(input) &&
+    (input as Record<string, unknown>).schemaVersion === 2,
   );
 }
 
@@ -690,7 +689,9 @@ function canonicalExerciseSnapshotV2(
   out.name = { ...input.name };
   if (input.description !== undefined) out.description = input.description;
   if (input.notes !== undefined) out.notes = input.notes;
-  out.alternatives = input.alternatives.map((alternative) => ({ ...alternative }));
+  out.alternatives = input.alternatives.map((alternative) => ({
+    ...alternative,
+  }));
   out.defaults = { ...input.defaults };
   return out;
 }
@@ -731,16 +732,13 @@ function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
   if (obj.source === 'global') {
     asString(obj.exerciseId, 'exerciseId');
     asInt(obj.canonicalVersion, 'canonicalVersion');
-    if (obj.overrideVersion !== null) asInt(obj.overrideVersion, 'overrideVersion');
+    if (obj.overrideVersion !== null)
+      asInt(obj.overrideVersion, 'overrideVersion');
   } else {
     asString(obj.workspaceExerciseId, 'workspaceExerciseId');
     asInt(obj.workspaceExerciseVersion, 'workspaceExerciseVersion');
   }
-  if (
-    !obj.name ||
-    typeof obj.name !== 'object' ||
-    Array.isArray(obj.name)
-  )
+  if (!obj.name || typeof obj.name !== 'object' || Array.isArray(obj.name))
     throw new Error('name must be an object');
   const name = obj.name as Record<string, unknown>;
   assertNoUnknownKeys(name, ['ar', 'en'], 'name');
@@ -773,7 +771,11 @@ function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
       throw new Error('alternatives must be unique');
     alternativeKeys.add(uniqueKey);
   }
-  if (!obj.defaults || typeof obj.defaults !== 'object' || Array.isArray(obj.defaults))
+  if (
+    !obj.defaults ||
+    typeof obj.defaults !== 'object' ||
+    Array.isArray(obj.defaults)
+  )
     throw new Error('defaults must be an object');
   const defaults = obj.defaults as Record<string, unknown>;
   assertNoUnknownKeys(defaults, ['restSeconds', 'rir', 'reps'], 'defaults');
@@ -787,7 +789,9 @@ function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
   if (
     defaults.rir !== undefined &&
     defaults.rir !== null &&
-    (typeof defaults.rir !== 'number' || !Number.isFinite(defaults.rir) || defaults.rir < 0)
+    (typeof defaults.rir !== 'number' ||
+      !Number.isFinite(defaults.rir) ||
+      defaults.rir < 0)
   )
     throw new Error('defaults.rir must be a non-negative number or null');
   if (defaults.reps !== undefined) {
@@ -796,13 +800,21 @@ function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
       throw new Error('defaults.reps must be an object');
     if (reps.kind === 'fixed') {
       assertNoUnknownKeys(reps, ['kind', 'value'], 'defaults.reps');
-      if (typeof reps.value !== 'number' || !Number.isFinite(reps.value) || reps.value <= 0)
+      if (
+        typeof reps.value !== 'number' ||
+        !Number.isFinite(reps.value) ||
+        reps.value <= 0
+      )
         throw new Error('defaults.reps.value must be positive');
     } else if (reps.kind === 'range') {
       assertNoUnknownKeys(reps, ['kind', 'min', 'max'], 'defaults.reps');
       if (
-        typeof reps.min !== 'number' || !Number.isFinite(reps.min) || reps.min <= 0 ||
-        typeof reps.max !== 'number' || !Number.isFinite(reps.max) || reps.max < reps.min
+        typeof reps.min !== 'number' ||
+        !Number.isFinite(reps.min) ||
+        reps.min <= 0 ||
+        typeof reps.max !== 'number' ||
+        !Number.isFinite(reps.max) ||
+        reps.max < reps.min
       )
         throw new Error('defaults.reps range is invalid');
     } else throw new Error('defaults.reps.kind is invalid');
@@ -820,9 +832,12 @@ export function toExerciseSnapshotV2(
   const entry = input.plannerEntry;
   const defaultsRaw = (entry.defaults ?? {}) as Record<string, unknown>;
   const defaults: ExerciseSnapshotV2['defaults'] = {};
-  if (defaultsRaw.restSeconds !== undefined) defaults.restSeconds = defaultsRaw.restSeconds as number;
-  if (defaultsRaw.rir !== undefined) defaults.rir = defaultsRaw.rir as number | null;
-  if (defaultsRaw.reps !== undefined) defaults.reps = clone(defaultsRaw.reps) as ExerciseDefaults['reps'];
+  if (defaultsRaw.restSeconds !== undefined)
+    defaults.restSeconds = defaultsRaw.restSeconds as number;
+  if (defaultsRaw.rir !== undefined)
+    defaults.rir = defaultsRaw.rir as number | null;
+  if (defaultsRaw.reps !== undefined)
+    defaults.reps = clone(defaultsRaw.reps) as ExerciseDefaults['reps'];
   const snapshot: Record<string, unknown> = {
     schemaVersion: 2,
     source: input.source,
@@ -834,18 +849,30 @@ export function toExerciseSnapshotV2(
   if (entry.notes !== undefined) snapshot.notes = entry.notes;
   if (input.source === 'global') {
     snapshot.exerciseId = asString(input.exerciseId, 'exerciseId');
-    snapshot.canonicalVersion = asInt(input.canonicalVersion, 'canonicalVersion');
-    snapshot.overrideVersion = input.overrideVersion === undefined || input.overrideVersion === null
-      ? null
-      : asInt(input.overrideVersion, 'overrideVersion');
+    snapshot.canonicalVersion = asInt(
+      input.canonicalVersion,
+      'canonicalVersion',
+    );
+    snapshot.overrideVersion =
+      input.overrideVersion === undefined || input.overrideVersion === null
+        ? null
+        : asInt(input.overrideVersion, 'overrideVersion');
   } else {
-    snapshot.workspaceExerciseId = asString(input.workspaceExerciseId, 'workspaceExerciseId');
-    snapshot.workspaceExerciseVersion = asInt(input.workspaceExerciseVersion, 'workspaceExerciseVersion');
+    snapshot.workspaceExerciseId = asString(
+      input.workspaceExerciseId,
+      'workspaceExerciseId',
+    );
+    snapshot.workspaceExerciseVersion = asInt(
+      input.workspaceExerciseVersion,
+      'workspaceExerciseVersion',
+    );
   }
   return validateExerciseSnapshotV2Impl(snapshot);
 }
 
-export function serializeExerciseSnapshotV2(snapshot: ExerciseSnapshotV2): string {
+export function serializeExerciseSnapshotV2(
+  snapshot: ExerciseSnapshotV2,
+): string {
   return JSON.stringify(canonicalExerciseSnapshotV2(snapshot), null, 2);
 }
 

@@ -142,12 +142,19 @@ describe('T048 exercise override alternatives storage contract', () => {
     });
     expect(resolved!.result).toEqual({
       present: true,
-      items: [{ position: 1, global_exercise_id: activeTargetId, workspace_exercise_id: null }],
+      items: [
+        {
+          position: 1,
+          global_exercise_id: activeTargetId,
+          workspace_exercise_id: null,
+        },
+      ],
     });
     await expect(db`insert into public.exercise_override_alternatives(
         workspace_id, exercise_id, override_version, position, global_exercise_id
-      ) values (${fixture.wsA.id}, ${sourceId}, 1, 3, ${removedLaterId})`)
-      .rejects.toThrow('catalog_exercise_alternatives_invalid');
+      ) values (${fixture.wsA.id}, ${sourceId}, 1, 3, ${removedLaterId})`).rejects.toThrow(
+      'catalog_exercise_alternatives_invalid',
+    );
   });
 
   it('uses forced workspace RLS with no direct DML grants', async () => {

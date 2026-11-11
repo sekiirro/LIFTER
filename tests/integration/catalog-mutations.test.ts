@@ -515,7 +515,11 @@ describe('F16 mutation probes', () => {
           values (${exerciseId}, ${po.userId}, 1)`;
         await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
           values (${exerciseId}, 1, ${tx.json({
-            name_en: 'T050 mutation', name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: canonicalUrl,
+            name_en: 'T050 mutation',
+            name_ar: 'تمرين',
+            primary_muscle_code: 'chest',
+            equipment_codes: ['barbell'],
+            video_url: canonicalUrl,
           })}, ${po.userId})`;
         await tx`insert into public.exercise_variations(workspace_id, exercise_id, created_by, current_version)
           values (${wsA}, ${exerciseId}, ${trainerA.userId}, 1)`;
@@ -531,32 +535,57 @@ describe('F16 mutation probes', () => {
         const [resolver] = await tx`select pg_catalog.pg_get_functiondef(
           'app_private.catalog_resolve_exercise_video(uuid,uuid,boolean)'::regprocedure
         ) as definition`;
-        if (!resolver?.definition) throw new Error('T050 internal resolver missing');
+        if (!resolver?.definition)
+          throw new Error('T050 internal resolver missing');
         const original = resolver.definition as string;
         const precedenceMutant = original.replace(
           'coalesce(override_video, canonical_video)',
           'coalesce(canonical_video, override_video)',
         );
-        if (precedenceMutant === original) throw new Error('T050 precedence mutation target missing');
+        if (precedenceMutant === original)
+          throw new Error('T050 precedence mutation target missing');
         await tx.unsafe(precedenceMutant);
         await tx`select set_config('role', 'authenticated', true)`;
-        const [wrongPrecedence] = await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`;
-        await expectMutationToBreak(async () => {
-          expect(wrongPrecedence?.variation).toMatchObject({ video_url: overrideUrl, source: 'override' });
-        }, 'T050 must reject canonical-before-override precedence', true);
+        const [wrongPrecedence] =
+          await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`;
+        await expectMutationToBreak(
+          async () => {
+            expect(wrongPrecedence?.variation).toMatchObject({
+              video_url: overrideUrl,
+              source: 'override',
+            });
+          },
+          'T050 must reject canonical-before-override precedence',
+          true,
+        );
         await tx`select set_config('role', 'postgres', true)`;
         await tx.unsafe(original);
 
         const legacyMutant = original
-          .replace('public.exercise_overrides o', 'public.exercise_variations o')
-          .replace('public.exercise_override_versions v', 'public.exercise_variation_versions v');
-        if (legacyMutant === original) throw new Error('T050 legacy-source mutation target missing');
+          .replace(
+            'public.exercise_overrides o',
+            'public.exercise_variations o',
+          )
+          .replace(
+            'public.exercise_override_versions v',
+            'public.exercise_variation_versions v',
+          );
+        if (legacyMutant === original)
+          throw new Error('T050 legacy-source mutation target missing');
         await tx.unsafe(legacyMutant);
         await tx`select set_config('role', 'authenticated', true)`;
-        const [legacyResult] = await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`;
-        await expectMutationToBreak(async () => {
-          expect(legacyResult?.variation).toMatchObject({ video_url: overrideUrl, source: 'override' });
-        }, 'T050 must reject legacy exercise_variations as a Video source', true);
+        const [legacyResult] =
+          await tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`;
+        await expectMutationToBreak(
+          async () => {
+            expect(legacyResult?.variation).toMatchObject({
+              video_url: overrideUrl,
+              source: 'override',
+            });
+          },
+          'T050 must reject legacy exercise_variations as a Video source',
+          true,
+        );
         await tx`select set_config('role', 'postgres', true)`;
         await tx.unsafe(original);
 
@@ -564,16 +593,27 @@ describe('F16 mutation probes', () => {
           "or (not p_plan_authorized and (auth.uid() is null\n      or not app_private.catalog_can_read_global()\n      or (not app_private.is_platform_owner()\n        and not app_private.has_workspace_access(p_workspace_id, 'coaching_work'))))",
           'or false',
         );
-        if (accessMutant === original) throw new Error('T050 workspace authorization mutation target missing');
+        if (accessMutant === original)
+          throw new Error(
+            'T050 workspace authorization mutation target missing',
+          );
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerB.userId, role: 'authenticated' })}, true)`;
-        await expect(tx.savepoint((sp) =>
-          sp`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${wsA}, false)`,
-        )).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+        await expect(
+          tx.savepoint(
+            (sp) =>
+              sp`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${wsA}, false)`,
+          ),
+        ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
         await tx.unsafe(accessMutant);
-        const [baseline] = await tx`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${wsA}, false)`;
-        await expectMutationToBreak(async () => {
-          expect(baseline).toBeUndefined();
-        }, 'T050 must reject video resolution for an unauthorized workspace', true);
+        const [baseline] =
+          await tx`select * from app_private.catalog_resolve_exercise_video(${exerciseId}, ${wsA}, false)`;
+        await expectMutationToBreak(
+          async () => {
+            expect(baseline).toBeUndefined();
+          },
+          'T050 must reject video resolution for an unauthorized workspace',
+          true,
+        );
         await tx.unsafe(original);
         throw new Error(rollback);
       });
