@@ -90,3 +90,20 @@ CRITICAL 0; HIGH 0; open MCQ 0. The plan-identity cache-key criterion is carried
 
 - Scope: architect review finding on S46-R1 carry-forward: cache key must include plan version per F16 FR-034 (authenticated user + plan identity + plan version + workspace); mutations drop plan identity and drop plan version -> test fails; Video never stored in a cached projection. Edited `spec.md` (FR-003, SC-007), `tasks.md` (T020 cache-key constraint), `traceability.md` (FR-003 row and carry-forward note). No other content change.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+---
+
+## Analyze — merge of main, no PR content change
+
+**Analyzed:** 2026-11-11 11:15 UTC
+**Scope:** Sync rebase/merge of `origin/main` (8a846340) into PR #81 branch; no PR content change. Merge commit 1ce5570b4e16353b260ad5179761cf279ca62dec.
+
+## Entry check
+
+- PASS — spec.md, plan.md, tasks.md, traceability.md unchanged by merge; analyze.md appended only.
+- PASS — No new FR/SC/task ids introduced; merge brought F18 specs only.
+- PASS — 0 open CRITICAL/HIGH findings.
+
+## Analyze result
+
+CRITICAL 0; HIGH 0. Merge of main, no PR content change.
