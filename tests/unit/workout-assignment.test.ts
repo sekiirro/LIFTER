@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   planAssignment,
+  assignmentState,
+  hasOwnTemplates,
   type AssignmentTemplate,
   type AssignmentWorkspace,
 } from '../../lib/workout-planner/assignment';
@@ -29,7 +31,12 @@ function workspaces(): AssignmentWorkspace[] {
       heldTemplateIds: TEMPLATES.map((t) => t.id),
     },
     { id: 'Beta', everReceivedGlobal: false, heldTemplateIds: [] },
-    { id: 'Gamma', everReceivedGlobal: false, heldTemplateIds: [] },
+    {
+      id: 'Gamma',
+      everReceivedGlobal: false,
+      heldTemplateIds: [],
+      hasOwnTemplates: true,
+    },
   ];
 }
 
@@ -144,5 +151,27 @@ describe('F17 assignment retired-held reporting (FR-010, FR-011, SC-004)', () =>
     expect(result.error).toBeUndefined();
     expect(result.outcomes[0]!.createdTemplateIds).toEqual(['t1', 't3']);
     expect(result.outcomes[0]!.skippedTemplateIds).toEqual(['t2']);
+  });
+});
+
+describe('F17 assignment state classification (FR-011)', () => {
+  it('distinguishes never / partial / own-only states', () => {
+    expect(
+      assignmentState({ id: 'a', everReceivedGlobal: false, heldTemplateIds: [] }),
+    ).toBe('never_assigned');
+    expect(
+      assignmentState({ id: 'b', everReceivedGlobal: true, heldTemplateIds: ['t1'] }),
+    ).toBe('intentionally_partial');
+    expect(
+      assignmentState({
+        id: 'c',
+        everReceivedGlobal: false,
+        heldTemplateIds: [],
+        hasOwnTemplates: true,
+      }),
+    ).toBe('own_templates_only');
+    expect(
+      hasOwnTemplates({ id: 'x', everReceivedGlobal: false, heldTemplateIds: [] }),
+    ).toBe(false);
   });
 });
