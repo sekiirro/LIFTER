@@ -58,16 +58,43 @@ describe('F17 Copy AI Prompt builder (FR-019, SC-009)', () => {
     }
   });
 
-  it('rejects prohibited invent/replace/alter/generate instructions', () => {
+  it('rejects prohibited invent/replace/rename/add/alter/generate instructions', () => {
     const prohibited = [
       'You may invent additional exercises for variety.',
       'Feel free to replace exercises with easier ones.',
+      'Rename the exercise to something friendlier.',
+      'Add three more exercises to each session.',
       'Generate three alternative exercises for the client.',
+      'Generate alternatives for the client.',
+      'Alter the reps to suit the client.',
+      'Alter the load to suit the client.',
+      'Alter the rest to suit the client.',
+      'Alter the RIR to suit the client.',
+      'Alter the set counts to suit the client.',
+      'Alter the order to suit the client.',
       'Alter the programming values to suit the client.',
+      'Change the programming values to suit the client.',
       'Suggest new exercises if the plan looks boring.',
+      'Suggest new alternatives if needed.',
     ];
     for (const sentence of prohibited) {
       expect(containsProhibitedInstruction(sentence)).toBe(true);
     }
+  });
+
+  it('does not flag negated approved prohibitions', () => {
+    for (const sentence of [
+      'Do not invent exercises.',
+      'Do not replace exercises.',
+      'Do not rename exercises.',
+      'Do not add exercises.',
+      'Do not alter the reps.',
+      'Do not generate alternatives.',
+      'Do not suggest new exercises.',
+    ]) {
+      expect(containsProhibitedInstruction(sentence)).toBe(false);
+    }
+    expect(containsProhibitedInstruction(AI_PROMPT_EN)).toBe(false);
+    expect(containsProhibitedInstruction(AI_PROMPT_AR)).toBe(false);
   });
 });

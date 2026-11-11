@@ -23,18 +23,64 @@ export function buildAiPrompt(
   return template.split(PLAN_CONTENT_TOKEN).join(planContent);
 }
 
-// Imperative frames that instruct the AI to invent/replace/alter/generate.
-// The approved bodies only ever use these verbs under "Do not ...", so the
-// "suggest new exercises" frame carries a not-negation lookbehind.
-const PROHIBITED = [
-  /\binvent\b/i,
-  /\bfeel free to (replace|invent|alter|generate|change|add)\b/i,
-  /\byou may (invent|add|replace|alter|generate|change)\b/i,
-  /\bgenerate\b[\s\S]{0,60}?\b(alternatives|exercises)\b/i,
-  /\balter\b[\s\S]{0,60}?\bprogramming values\b/i,
-  /(?<!\bnot )\bsuggest new exercises\b/i,
+// Prohibited instruction classes per contract section 4 (A4-5, SC-009):
+//   1. invent / replace / rename / add exercises
+//   2. alter reps, load, rest, RIR, set counts, order or any programming value
+//   3. generate alternatives
+// The approved prompt bodies only ever use these verbs inside negated
+// prohibitions ("Do not ..."), so a negation cue immediately preceding the
+// verb (within the same sentence) disqualifies the match.
+const PROHIBITED_VERBS = [
+  'invent',
+  'replace',
+  'rename',
+  'add',
+  'alter',
+  'change',
+  'generate',
+  'suggest',
 ];
 
+const NEGATION_CUE = /\b(do not|don't|never|must not|should not|cannot|can't|won't|no|not)\b|لا/gi;
+
+function isNegated(prompt: string, index: number): boolean {
+  const start = Math.max(0, index - 120);
+  const prefix = prompt.slice(start, index);
+  let lastNeg = -1;
+  let match: RegExpExecArray | null;
+  const re = new RegExp(NEGATION_CUE.source, 'gi');
+  while ((match = re.exec(prefix)) !== null) {
+    lastNeg = match.index + match[0].length;
+  }
+  if (lastNeg < 0) return false;
+  const between = prefix.slice(lastNeg);
+  // A sentence terminator between the cue and the verb breaks the negation.
+  return !/[.!?\n]/.test(between);
+}
+
 export function containsProhibitedInstruction(prompt: string): boolean {
-  return PROHIBITED.some((pattern) => pattern.test(prompt));
+  for (const verb of PROHIBITED_VERBS) {
+    const re = new RegExp('\\b' + verb + '\\b', 'gi');
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(prompt)) !== null) {
+      if (!isNegated(prompt, m.index)) return true;
+    }
+  }
+  const suggestNew = /\bsuggest\s+new\s+(exercises|alternatives)\b/gi;
+  let sn: RegExpExecArray | null;
+  while ((sn = suggestNew.exec(prompt)) !== null) {
+    if (!isNegated(prompt, sn.index)) return true;
+  }
+  const genAlt = /\bgenerate\b[\s\S]{0,60}?\b(alternatives|exercises)\b/gi;
+  let ga: RegExpExecArray | null;
+  while ((ga = genAlt.exec(prompt)) !== null) {
+    if (!isNegated(prompt, ga.index)) return true;
+  }
+  const alterProg =
+    /\balter\b[\s\S]{0,80}?\b(reps|load|rest|rir|set counts|order|programming values)\b/gi;
+  let ap: RegExpExecArray | null;
+  while ((ap = alterProg.exec(prompt)) !== null) {
+    if (!isNegated(prompt, ap.index)) return true;
+  }
+  return false;
 }
