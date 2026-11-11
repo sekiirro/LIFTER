@@ -331,102 +331,106 @@ PO record: S33-PO-3 in the PO decision register, 2026-11-04. Verbatim:
 
 Clarification: these exact strings apply to Arabic only. The T03 digits are Western digits. N07 substitutes each selected meal number in the Arabic template. English T03 and N07 remain as approved in S32-PO-8. **No open ambiguities remain for T061–T063.**
 
-| Stable ID                 | EN-mode translation                                                                            |
-| ------------------------- | ---------------------------------------------------------------------------------------------- |
-| B01                       | Full name (three parts)                                                                        |
-| B02                       | Age                                                                                            |
-| B03                       | Do you have any chronic conditions?                                                            |
-| B03.details               | Please describe your chronic conditions.                                                       |
-| B04                       | What is your current weight?                                                                   |
-| B05                       | What is your occupation?                                                                       |
-| B06                       | Gender                                                                                         |
-| T01                       | What is your near-term goal?                                                                   |
-| T02                       | Do you have any injuries?                                                                      |
-| T02.details               | Tell us about the injury.                                                                      |
-| T03                       | How many days a week would you like to train?                                                  |
-| T04                       | How much time can you set aside for a workout?                                                 |
-| T05                       | Do you play a sport in addition to going to the gym?                                           |
-| T05.sport                 | Which sport do you play?                                                                       |
-| T06                       | What do you consider your weak points?                                                         |
-| T07                       | Which exercises do you like most and dislike most?                                             |
-| T07.liked                 | Exercises you like                                                                             |
-| T07.disliked              | Exercises you dislike                                                                          |
-| T08                       | Training split                                                                                 |
-| T08.system                | What training split would you like to follow?                                                  |
-| N01                       | What is your goal for your nutrition plan?                                                     |
-| N01.cut.title             | Fat loss                                                                                       |
-| N01.cut                   | Fat loss at a moderate rate while preserving as much muscle mass as possible.                  |
-| N01.cut_fast.title        | Fast fat loss                                                                                  |
-| N01.cut_fast              | Faster fat loss, with a higher chance of muscle loss or reduced performance.                   |
-| N01.bulk.title            | Muscle gain                                                                                    |
-| N01.bulk                  | Increase muscle mass while limiting fat gain as much as possible.                              |
-| N01.bulk_fast.title       | Fast muscle gain                                                                               |
-| N01.bulk_fast             | Increase body weight and muscle mass faster, with a higher chance of gaining fat.              |
-| N01.recomposition.title   | Body recomposition                                                                             |
-| N01.recomposition         | Increase muscle mass while reducing body-fat percentage at the same time.                      |
-| N02                       | What is your height in centimeters?                                                            |
-| N03                       | How active are you and how much do you move during the day?                                    |
-| N04                       | Are you allergic to any foods?                                                                 |
-| N04.details               | List the foods you are allergic to.                                                            |
-| N05                       | Are you currently taking any medications or supplements?                                       |
-| N05.medications           | List the medications and supplements you take.                                                 |
-| N05.supplement_suggestion | Would you like us to suggest dietary supplements?                                              |
-| N06                       | Tell us what a typical day of eating looks like for you.                                       |
-| N07                       | How many meals would you like to eat per day?                                                  |
-| N07.training_timing       | After which meal would you like to train?                                                      |
-| N08                       | What’s your food budget?                                                                       |
-| N08.foods                 | _(Food chips are shown within the N08 budget question; there is no separate question prompt.)_ |
-| N09                       | Which foods do you like most and dislike most?                                                 |
-| N09.liked                 | Foods you like                                                                                 |
-| N09.disliked              | Foods you dislike                                                                              |
-| N10                       | Would you rather weigh food before or after cooking?                                           |
-| N11                       | How hungry do you feel, from 0 to 10?                                                          |
-| N11.feedback.0_2          | Very little hunger                                                                             |
-| N11.feedback.3_4          | Mild hunger                                                                                    |
-| N11.feedback.5_6          | Moderate hunger                                                                                |
-| N11.feedback.7_8          | High hunger                                                                                    |
-| N11.feedback.9_10         | Very strong hunger                                                                             |
-| N12                       | Choose the body-fat reference that most closely resembles your body shape.                     |
-| N12.disclaimer            | This percentage is an estimate and is not a substitute for measuring body-fat percentage.      |
+<!-- prettier-ignore-start -->
+| Stable ID | EN-mode translation |
+| --- | --- |
+| B01 | Full name (three parts) |
+| B02 | Age |
+| B03 | Do you have any chronic conditions? |
+| B03.details | Please describe your chronic conditions. |
+| B04 | What is your current weight? |
+| B05 | What is your occupation? |
+| B06 | Gender |
+| T01 | What is your near-term goal? |
+| T02 | Do you have any injuries? |
+| T02.details | Tell us about the injury. |
+| T03 | How many days a week would you like to train? |
+| T04 | How much time can you set aside for a workout? |
+| T05 | Do you play a sport in addition to going to the gym? |
+| T05.sport | Which sport do you play? |
+| T06 | What do you consider your weak points? |
+| T07 | Which exercises do you like most and dislike most? |
+| T07.liked | Exercises you like |
+| T07.disliked | Exercises you dislike |
+| T08 | Training split |
+| T08.system | What training split would you like to follow? |
+| N01 | What is your goal for your nutrition plan? |
+| N01.cut.title | Fat loss |
+| N01.cut | Fat loss at a moderate rate while preserving as much muscle mass as possible. |
+| N01.cut_fast.title | Fast fat loss |
+| N01.cut_fast | Faster fat loss, with a higher chance of muscle loss or reduced performance. |
+| N01.bulk.title | Muscle gain |
+| N01.bulk | Increase muscle mass while limiting fat gain as much as possible. |
+| N01.bulk_fast.title | Fast muscle gain |
+| N01.bulk_fast | Increase body weight and muscle mass faster, with a higher chance of gaining fat. |
+| N01.recomposition.title | Body recomposition |
+| N01.recomposition | Increase muscle mass while reducing body-fat percentage at the same time. |
+| N02 | What is your height in centimeters? |
+| N03 | How active are you and how much do you move during the day? |
+| N04 | Are you allergic to any foods? |
+| N04.details | List the foods you are allergic to. |
+| N05 | Are you currently taking any medications or supplements? |
+| N05.medications | List the medications and supplements you take. |
+| N05.supplement_suggestion | Would you like us to suggest dietary supplements? |
+| N06 | Tell us what a typical day of eating looks like for you. |
+| N07 | How many meals would you like to eat per day? |
+| N07.training_timing | After which meal would you like to train? |
+| N08 | What’s your food budget? |
+| N08.foods | *(Food chips are shown within the N08 budget question; there is no separate question prompt.)* |
+| N09 | Which foods do you like most and dislike most? |
+| N09.liked | Foods you like |
+| N09.disliked | Foods you dislike |
+| N10 | Would you rather weigh food before or after cooking? |
+| N11 | How hungry do you feel, from 0 to 10? |
+| N11.feedback.0_2 | Very little hunger |
+| N11.feedback.3_4 | Mild hunger |
+| N11.feedback.5_6 | Moderate hunger |
+| N11.feedback.7_8 | High hunger |
+| N11.feedback.9_10 | Very strong hunger |
+| N12 | Choose the body-fat reference that most closely resembles your body shape. |
+| N12.disclaimer | This percentage is an estimate and is not a substitute for measuring body-fat percentage. |
+<!-- prettier-ignore-end -->
 
 The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
 
 #### EN option translations — PO review
 
-| Source option locator | EN-mode option                                                    |
-| --------------------- | ----------------------------------------------------------------- |
-| B06.male              | Male                                                              |
-| B06.female            | Female                                                            |
-| T03.2                 | 2 days                                                            |
-| T03.3                 | 3 days                                                            |
-| T03.4                 | 4 days                                                            |
-| T03.5                 | 5 days                                                            |
-| T03.6                 | 6 days                                                            |
-| N03.1                 | Sitting for most of the day                                       |
-| N03.2                 | Light movement and walking                                        |
-| N03.3                 | Moderate movement and walking                                     |
-| N03.4                 | A lot of movement or physically demanding work                    |
-| T04.less_than_90      | Less than an hour and a half                                      |
-| T04.at_least_90       | An hour and a half or more                                        |
-| N07.2                 | Two meals _(pending PO review)_                                   |
-| N07.3                 | 3 meals _(pending PO review)_                                     |
-| N07.4                 | 4 meals _(pending PO review)_                                     |
-| N07.5                 | 5 meals _(pending PO review)_                                     |
-| N07.before_first      | Before the first meal                                             |
-| N07.after_meal_n      | After meal {n}, for each n from 1 through the selected meal count |
-| N07.no_fixed_time     | I don't have a fixed time                                         |
-| N08.low               | Low budget                                                        |
-| N08.medium            | Medium budget                                                     |
-| N08.high              | High budget                                                       |
-| N08.low.foods         | Cottage cheese / plant protein / eggs / baladi bread              |
-| N08.medium.foods      | Eggs / chicken / meat / toast / fish _(pending PO review)_        |
-| N08.high.foods        | Salmon / smoked turkey / steak / ribeye _(pending PO review)_     |
-| N10.before            | Before cooking                                                    |
-| N10.after             | After cooking                                                     |
-| N10.no_preference     | No preference                                                     |
-| N11.label.0           | I barely feel hungry                                              |
-| N11.label.5           | Moderate hunger                                                   |
-| N11.label.10          | Very strong hunger                                                |
+<!-- prettier-ignore-start -->
+| Source option locator | EN-mode option |
+| --- | --- |
+| B06.male | Male |
+| B06.female | Female |
+| T03.2 | 2 days |
+| T03.3 | 3 days |
+| T03.4 | 4 days |
+| T03.5 | 5 days |
+| T03.6 | 6 days |
+| N03.1 | Sitting for most of the day |
+| N03.2 | Light movement and walking |
+| N03.3 | Moderate movement and walking |
+| N03.4 | A lot of movement or physically demanding work |
+| T04.less_than_90 | Less than an hour and a half |
+| T04.at_least_90 | An hour and a half or more |
+| N07.2 | Two meals *(pending PO review)* |
+| N07.3 | 3 meals *(pending PO review)* |
+| N07.4 | 4 meals *(pending PO review)* |
+| N07.5 | 5 meals *(pending PO review)* |
+| N07.before_first | Before the first meal |
+| N07.after_meal_n | After meal {n}, for each n from 1 through the selected meal count |
+| N07.no_fixed_time | I don't have a fixed time |
+| N08.low | Low budget |
+| N08.medium | Medium budget |
+| N08.high | High budget |
+| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread |
+| N08.medium.foods | Eggs / chicken / meat / toast / fish *(pending PO review)* |
+| N08.high.foods | Salmon / smoked turkey / steak / ribeye *(pending PO review)* |
+| N10.before | Before cooking |
+| N10.after | After cooking |
+| N10.no_preference | No preference |
+| N11.label.0 | I barely feel hungry |
+| N11.label.5 | Moderate hunger |
+| N11.label.10 | Very strong hunger |
+<!-- prettier-ignore-end -->
 
 The T04, N08 budget and food-chip, and N12 percentage-specific option records are authored from their exact fixture values; do not paraphrase or manufacture missing card choices. S34-PO-6 approves every English row in the pending intake review inventory, including these options, and preserves earlier approvals. Budget food chips are children of the N08 question, not a separate prompt.
 
