@@ -36,3 +36,33 @@
 - All implementation tasks remain unchecked; this spec-only PR adds no implementation or executed test evidence.
 
 **Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. No open product ambiguity remains for the S44-PO-7 scope, the CodeRabbit PR #79 fixes or the Greptile concurrent-Assign reconciliation.
+
+---
+
+## Analyze — F18 Phase 0 implementation (S47/S48)
+
+**Analyzed:** 2026-11-11T18:20:00Z
+**Scope:** tasks.md Phase 0 only (T001–T006, all `[INDEPENDENT]`), authorized by PO S47-PO-13 ("F19 plan core, F17+F18 Phase 0 only"). No requirement text in spec.md, plan.md, data-model.md or contracts/ was changed by implementation; all tasks copied behavior already specified.
+
+### Entry check re-validation (S29-PO-3 Q5)
+
+- PASS — spec.md/plan.md/tasks.md unchanged since commit `15df5af6`; the analyze above covers that state, and no product decision was taken during implementation.
+- PASS — tasks.md `Status` line ("Implementation entry requires the F19 contract merged") is satisfied for Phase 0 by PO S47-PO-13, which authorizes exactly the Phase-0 `[INDEPENDENT]` tasks; Phase 1+ remain gated on F19.
+
+### Findings
+
+- CRITICAL: 0 open.
+- HIGH: 0 open.
+- MEDIUM: 0 open product decisions.
+- LOW: T005's reference renderer labels (`Meal Notes`, `Food Notes`, `Totals`) are data-field codes inside a contract-test model, not shipped UI strings; the only display strings asserted are the S43-PO-2 approved side-note labels (P5) and the S43-PO-5 approved prompt bodies (byte-compared: P3 956 bytes, P4 1497 bytes, both equal to `runs/s43-po/copy-ai-prompt-approved.md`, SHA-256 `cc388b80…b421e03` as recorded in contracts/copy-ai-prompt.md). T003/T004/T005 encode their contracts as in-test reference models because their `Files:` lists name only test files; the DB tasks (T009/T010/T023) must satisfy these fixtures.
+
+### Cross-artifact decisions and task status
+
+- T001: frozen v1 validator with stable field codes; the D18-6 host allowlist (youtube.com, www.youtube.com, m.youtube.com, youtu.be, drive.google.com; HTTPS only; no credentials) lives in the implementation validator per contract §2.7 and is contract-tested for allowed and rejected hosts.
+- T002: exact persistence at the declared-input product scale (no trailing-zero trimming, no storage rounding); half-up applied once at display from the exact value; `1.44996` → `1.4`; empty aggregates render `0`.
+- T003/T004: publish and selection boundary semantics fixed as executable fixtures (ignore caller data, replay-before-eligibility, durable per-revision counter never reset, no-op writes nothing).
+- T005: export/prompt fidelity contract as above; totals rows carry client-selection totals only.
+- T006: assignment state machine — All never tops up a partial workspace; zero-copy rejection before writes; nutrition-only state.
+- Tasks T001–T006 are ticked in tasks.md with executed evidence in traceability.md §4a; Phase 1+ tasks remain unticked and gated on F19.
+
+**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. No new requirement text was added by implementation; no re-clarification needed.

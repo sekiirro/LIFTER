@@ -66,6 +66,24 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 
 ## 4. Verification status
 
+- Tasks: **T001–T006 ticked** — Phase 0 (frozen contracts and fixtures) implemented on branch `018-impl-s47-p0` (PO S47-PO-13: F18 Phase 0 only).
+- Tests executed for F18 Phase 0 on implementation head `fd73d7b5`: T001 `tests/unit/nutrition-schema.test.ts` 24 passed; T002 `tests/golden/nutrition-macros.ts` 11 passed; T003 `tests/contracts/nutrition-publish.test.ts` 11 passed; T004 `tests/contracts/nutrition-selection.test.ts` 11 passed; T005 `tests/contracts/nutrition-export-contract.test.ts` 9 passed; T006 `tests/unit/nutrition-assignment.test.ts` 10 passed. Full unit suite on the final head: 174 files / 2372 tests passed (`npx tsc --noEmit` OK; `npx eslint . --max-warnings=0` OK). RED and mutation logs are archived in the run dirs `runs/s47-glm-f18-p0/` and `runs/s48-glm-f18-p0b2/`.
+- `tests/contracts/*.test.ts` and `tests/golden/*.ts` are collected by `vitest.config.ts` (include extended in the T002 commit `c0c572a4`); no DB, migration or UI file was touched.
+- Rows for §1/§2 below remain specification-status rows; executed evidence per task is listed in section 4a.
+
+## 4a. Executed evidence (FR → Task → Test → commit)
+
+| FR | Task | Test | Evidence |
+| -- | ---- | ---- | -------- |
+| F18-FR-002, FR-004, FR-006, FR-021, FR-023 | T001 | `tests/unit/nutrition-schema.test.ts` (24) | commit `da94d1da`; RED `t001-red.log`, mutation (implicitDayTypeId optional) `t001-mutation.log` in `runs/s47-glm-f18-p0/` |
+| F18-FR-002, FR-003, FR-004 | T002 | `tests/golden/nutrition-macros.ts` (11) | commit `c0c572a4`; RED `t002-red.log`, mutation (aggregate from displayed values) `t002-mutation.log` in `runs/s47-glm-f18-p0/` |
+| F18-FR-005, FR-019 | T003 | `tests/contracts/nutrition-publish.test.ts` (11) | commit `e3f1d19a`; RED (no-contract stub, 9 failing) `t003-red.log`, mutation (replay conflation, 2 failing) `t003-mutation.log` in `runs/s47-glm-f18-p0/` |
+| F18-FR-011..013, FR-016 | T004 | `tests/contracts/nutrition-selection.test.ts` (11) | commit `5d5aa65c`; RED (no-contract stub, 11 failing) `t004-red.log`, mutation (approved-list check removed, 2 failing) `t004-mutation.log` in `runs/s47-glm-f18-p0/` |
+| F18-FR-006, FR-014, FR-015, FR-023 | T005 | `tests/contracts/nutrition-export-contract.test.ts` (9) | commit `3b7816af`; RED (stubbed renderers, 8 failing) `t005-red.log`, mutation (note merge, 1 failing) `t005-mutation.log` in `runs/s48-glm-f18-p0b2/` |
+| F18-FR-008, FR-009 | T006 | `tests/unit/nutrition-assignment.test.ts` (10) | commit `fd73d7b5`; RED (module absent) `t006-red.log`, mutation (All tops up partial workspace, 1 failing) `t006-mutation.log` in `runs/s48-glm-f18-p0b2/` |
+
+## 4b. Historical verification status (pre-implementation)
+
 - Tasks: **0 ticked** — no task in `tasks.md` is marked complete.
 - Tests executed for F18: **0**. This branch contains no code, SQL, migration, fixture or test.
 - The only verified facts are read-only observations on `main` and on historic branches, each cited in `research/conflicts.md`.
