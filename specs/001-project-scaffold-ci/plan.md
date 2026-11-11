@@ -44,19 +44,19 @@ Design decisions are in [research.md](research.md).
 
 ## Constitution Check
 
-| Principle | Status |
-|---|---|
-| I Isolation | N/A (no tenant data). Health route exposes no data. ✅ |
-| II Financial truth | N/A ✅ |
-| III Governance | N/A ✅ |
-| IV Approved scope only | Scope matches roadmap P0. No excluded features. ✅ |
-| V Versioning | N/A ✅ |
-| VI People decisions | N/A ✅ |
-| VII Privacy | No secrets committed; `.env.example` holds placeholders only; health route returns no env. ✅ |
-| VIII Design System UI | No UI at all; deferred to P0-F2 after PO approval. ✅ |
-| IX Reliability | N/A ✅ |
-| Platform constraints | Approved stack, $0, no deploy. ✅ |
-| Workflow gates | Establishes the gates themselves. ✅ |
+| Principle              | Status                                                                                        |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| I Isolation            | N/A (no tenant data). Health route exposes no data. ✅                                        |
+| II Financial truth     | N/A ✅                                                                                        |
+| III Governance         | N/A ✅                                                                                        |
+| IV Approved scope only | Scope matches roadmap P0. No excluded features. ✅                                            |
+| V Versioning           | N/A ✅                                                                                        |
+| VI People decisions    | N/A ✅                                                                                        |
+| VII Privacy            | No secrets committed; `.env.example` holds placeholders only; health route returns no env. ✅ |
+| VIII Design System UI  | No UI at all; deferred to P0-F2 after PO approval. ✅                                         |
+| IX Reliability         | N/A ✅                                                                                        |
+| Platform constraints   | Approved stack, $0, no deploy. ✅                                                             |
+| Workflow gates         | Establishes the gates themselves. ✅                                                          |
 
 Post-design re-check: no violations.
 
@@ -142,3 +142,13 @@ References: **FR-020**, **SC-010**, **US6**, **T019**. PO source **S32-PO-3** (v
 - Conflict rule: one 14-digit version mapped to two or more **different** filenames across refs ⇒ exit non-zero, reporting the version, both filenames and the carrying refs. Same filename on several refs ⇒ pass. Filenames that do not match the 14-digit pattern are ignored by the cross-ref check (they remain the in-tree validator's concern).
 - `main` prints one report block per conflict; a summary line and exit 0 otherwise. Exit code 1 when at least one conflict exists.
 - The cross-ref check is detection-and-fail only; it does not rename migrations, does not touch the working tree and does not alter CI behaviour. Running it against the real repo (after `git fetch`) is expected to flag `20261107030000` until the #44 rename lane lands; that output is recorded, not fixed, in this lane.
+
+## S41 CI/CodeRabbit optimization plan (2026-11-09; S41-R11, S41-R15)
+
+Implement FR-027..FR-030 and SC-016..SC-019. First add red unit coverage for `scripts/spec-consistency.mjs` and docs-only path classification; run tests to prove RED before implementation. The CI mode enumerates the changed paths for the event (pull_request base...head, using the merge commit's first parent because the event's base SHA can lag the base the merge ref was built on; push before...after; workflow_dispatch first parent...merge) and fails closed on any enumeration error; it maps them to `specs/<feature>/` directories, requires `spec.md` and `tasks.md` in each touched feature, and for each one checks identifiers in tasks/traceability/analyze against spec/tasks, Analyze date versus latest spec/plan/tasks commit, and pending-PO markers against `docs/04-changes-and-questions.md`; `traceability.md` and `checklists/analyze.md` are checked only when present and untouched features are skipped. Add it to `validate` (full-history checkout already present) before implementing the workflow change. Verify existing `format:check` is repository-wide (Prettier check) before modifying it. Configure CodeRabbit exclusions for generated evidence only.
+
+Use allow-list: Markdown files under `docs/`, `specs/`, `.specify/`, plus root README.md and CHANGELOG.md. On pull_request only, skip integration-shard/integration/storage when all changed paths qualify; for errors, renames, empty/unparseable output, or any other path, classify as full CI. workflow_dispatch has unconditional full jobs. Keep required job IDs/names. Make integration aggregator fail closed when matrix result is not success, including skipped.
+
+Amend Constitution to 1.11.0 with the three-dispatch docs-only form and no gate relaxation; cite S41-PO-8/9/10. Do not implement gate-check.mjs changes. Produce exact proposed patch and rationale in the run directory. Run local unit, format, lint/typecheck and actionlint if available. This PR changes ci.yml, so post-approval greens follow the CI-config exception: three sequential executed PR reruns, no dispatches. Do not merge.
+
+Constitution check: preserves every existing quality/security gate; workflow config PR has explicit PO exact-SHA approval; gate d proposal is separate and does not change its implementation.
