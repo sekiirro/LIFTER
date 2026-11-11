@@ -736,3 +736,15 @@ T900 has been marked complete only after its focused integration test passed on 
 - T052 before-commit gates remain PASS from 00:29:06 UTC; migration contents and filename are unchanged.
 - Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed.
 - Gate: PASS for T050 commit preparation.
+
+## S46 T050 coverage-restoration analysis — 2026-11-11 00:50:28 UTC (Z)
+
+- Scope: architect-required T050 regression coverage for FR-014/FR-023/FR-024/FR-028/FR-029, plus a minimal resolver projection correction found by the new private Video tests. No spec, plan or product decision text changed.
+- Entry check: PASS. `spec.md` contains the numbered requirements, measurable success criteria, and Given/When/Then scenarios for revoked access, current authorized video resolution and the no-direct-call boundary. Clarifications/D16-3 close host and access behavior and state no open ambiguities. `plan.md` covers both internal resolvers, their read callers, access predicates and EXECUTE boundary. `tasks.md` T050 is FR-tagged. This analysis follows the T050 task and traceability evidence updates.
+- RED: Stack A tests exposed `catalog_workspace_exercise_detail` returning a stored `evil.example`/`docs.google.com` Video directly from its payload. This violated the existing resolver host filtering rule; no PO decision was needed.
+- Fix: new migration `20261111003800_catalog_private_video_read_filter.sql` explicitly replaces the current detail function, routes Video through `catalog_resolve_workspace_exercise_video`, and preserves payload shape when no Video was stored.
+- GREEN: after Stack A reset, five affected integration suites passed 52/52. `npm run lint` and `npm run typecheck` passed on the current test head. The private lifecycle compatibility suite passed with original non-Video payload shape preserved.
+- Mutations: removal of override host filter, canonical host filter, authenticated EXECUTE revocation, and workspace access predicate each caused the new caller assertion to fail under rollback-scoped mutation; mutations were rolled back and Stack A reset before final replay.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision or ambiguity found.
+- T052 before commit: PASS. Fresh fetch scanned all 107 origin refs / 7,948 migration appearances; max existing version `20261111001145`; new `20261111003800` is strictly greater with valid clock fields. Separate `npm run check:migration-versions:remote` passed across 106 remote refs.
+- Gate: PASS for T050 coverage restoration; repeat both T052 checks before commit and push.
