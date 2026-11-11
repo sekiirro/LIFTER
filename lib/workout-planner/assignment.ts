@@ -36,9 +36,8 @@ export type AssignmentWorkspace = {
   everReceivedGlobal: boolean;
   /** Template identities already held as copies, regardless of source version. */
   heldTemplateIds: string[];
-  /** Derived (not stored): does the workspace hold self-created templates only. */
+  /** Derived (not stored): the workspace holds self-created templates only. */
   hasOwnTemplates?: boolean;
-  [key: string]: unknown;
 };
 
 export type WorkspaceOutcome =
@@ -66,32 +65,20 @@ export type AssignmentResult = {
 export type AssignmentState =
   'never_assigned' | 'intentionally_partial' | 'own_templates_only';
 
-const OWN_TEMPLATE_KEYS = [
-  'hasOwnTemplates',
-  'hasSelfCreatedTemplates',
-  'ownsTemplates',
-  'hasWorkspaceTemplates',
-  'selfCreatedTemplates',
-  'workspaceTemplates',
-  'ownTemplateIds',
-  'selfCreatedTemplateIds',
-  'workspaceTemplateIds',
-];
-
 export function hasOwnTemplates(workspace: AssignmentWorkspace): boolean {
-  for (const key of OWN_TEMPLATE_KEYS) {
-    const value = (workspace as Record<string, unknown>)[key];
-    if (value === true) return true;
-    if (typeof value === 'number' && value > 0) return true;
-    if (Array.isArray(value) && value.length > 0) return true;
-  }
-  return false;
+  return workspace.hasOwnTemplates === true;
 }
 
 export function assignmentState(
   workspace: AssignmentWorkspace,
 ): AssignmentState {
   if (workspace.everReceivedGlobal) return 'intentionally_partial';
+  // Data model §5 / contract §5: state (c) is zero origin-global copies plus
+  // the flag false plus own templates. Held copies disqualify (c); a
+  // flag-false workspace holding copies is inconsistent input (the contract
+  // sets the flag whenever a copy is received) and reports partial because
+  // copies exist.
+  if (workspace.heldTemplateIds.length > 0) return 'intentionally_partial';
   if (hasOwnTemplates(workspace)) return 'own_templates_only';
   return 'never_assigned';
 }

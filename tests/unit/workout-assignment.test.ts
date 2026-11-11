@@ -190,4 +190,26 @@ describe('F17 assignment state classification (FR-011)', () => {
       }),
     ).toBe(false);
   });
+
+  it('ignores undocumented alias spellings and requires zero held copies (NEW-3)', () => {
+    // Invented aliases must not enable the own-templates report.
+    expect(
+      hasOwnTemplates({
+        id: 'x',
+        everReceivedGlobal: false,
+        heldTemplateIds: [],
+        ownsTemplates: true,
+      } as AssignmentWorkspace),
+    ).toBe(false);
+    // State (c) is derived as zero origin-global copies plus the flag false
+    // plus own templates: held copies disqualify it even with the flag set.
+    expect(
+      assignmentState({
+        id: 'w',
+        everReceivedGlobal: false,
+        heldTemplateIds: ['t1'],
+        hasOwnTemplates: true,
+      }),
+    ).toBe('intentionally_partial');
+  });
 });
