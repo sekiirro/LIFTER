@@ -151,7 +151,7 @@ describe('F17 id remap load variants and reps (FR-002, SC-012)', () => {
         },
       ],
     };
-    const copy = duplicateItem(item as WorkoutItem, () => 'nid');
+    const copy = duplicateItem(item as WorkoutItem, makeIds('z'));
     expect(copy.id).not.toBe(item.id);
     expect({
       ...copy,
@@ -165,5 +165,13 @@ describe('F17 id remap load variants and reps (FR-002, SC-012)', () => {
       value: '20',
       unit: 'kg',
     });
+    // Fresh-id coverage (NEW-6): every id in the copy is new and unique.
+    const fresh = [copy.id, ...copy.sets.map((s) => s.id)];
+    expect(new Set(fresh).size).toBe(fresh.length);
+    const before = new Set([
+      item.id,
+      ...item.sets.map((s) => (s as { id: string }).id),
+    ]);
+    for (const id of fresh) expect(before.has(id)).toBe(false);
   });
 });
