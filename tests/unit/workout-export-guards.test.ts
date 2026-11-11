@@ -1,0 +1,84 @@
+import { describe, expect, it } from 'vitest';
+import {
+  EXPORT_FIELDS,
+  isExportField,
+  toSafeCell,
+} from '../../lib/workout-planner/export-guards';
+
+// T007-note: FR-017/FR-018 export field coverage + formula guard (SC-008).
+// RED first. Mutation target: removing one leading-character check must fail.
+
+describe('F17 export field coverage (FR-018, SC-008)', () => {
+  it('covers the full FR-018 field list including document-level notes', () => {
+    const required = [
+      'planTitle',
+      'planIdentity',
+      'documentNotes',
+      'dayTitles',
+      'restDays',
+      'exerciseNames',
+      'exerciseDescriptions',
+      'setOrder',
+      'setTypes',
+      'reps',
+      'load',
+      'loadUnits',
+      'loadModes',
+      'rest',
+      'rir',
+      'planNotes',
+      'dayNotes',
+      'exerciseNotes',
+      'alternatives',
+      'videoLinks',
+    ];
+    for (const field of required) {
+      expect(isExportField(field)).toBe(true);
+      expect(EXPORT_FIELDS).toContain(field);
+    }
+  });
+
+  it('keeps ordinary coach-authored cells unchanged as strings', () => {
+    for (const plain of ['Bench Press', '90 s', '8-12', 'coach note', '']) {
+      const cell = toSafeCell(plain);
+      expect(cell.value).toBe(plain);
+      expect(cell.type).toBe('text');
+      expect(cell.quotePrefix).toBe(false);
+    }
+    expect(toSafeCell('notes').type).toBe('text');
+  });
+
+  it('flags formula-leading values as forced text without changing value', () => {
+    const attacks = [
+      '=1+1',
+      '+1',
+      '-1',
+      '@SUM(A1)',
+      '  =cmd',
+      '\t@x',
+      ' \u200B+evil',
+      '-5 kg',
+    ];
+    for (const attack of attacks) {
+      const cell = toSafeCell(attack);
+      expect(cell.value).toBe(attack);
+      expect(cell.type).toBe('text');
+      expect(cell.quotePrefix).toBe(true);
+    }
+  });
+
+  it('flags formula markers after Unicode whitespace (CR-84)', () => {
+    for (const attack of [' =1+1', ' @SUM(A1)']) {
+      const cell = toSafeCell(attack);
+      expect(cell.value).toBe(attack);
+      expect(cell.type).toBe('text');
+      expect(cell.quotePrefix).toBe(true);
+    }
+  });
+
+  it('does not flag non-leading formula characters', () => {
+    for (const plain of ['a=1', 'note -5 kg', 'x@y', '1+1']) {
+      expect(toSafeCell(plain).quotePrefix).toBe(false);
+    }
+  });
+});
