@@ -112,7 +112,15 @@
 ## S46 CodeRabbit round-5 finding re-analysis
 
 - Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F4 SC-010 traceability correction.
-- Scope: F4 — SC-010 is now PARTIAL: the cited status-page/route tests assert redirect-on-transition and home-fallback-on-failure but do not assert page-level link retention after a redirect failure (spec SC-010). Summary counts updated to FR 20 VERIFIED / 9 PARTIAL, SC 5 VERIFIED / 6 PARTIAL. No other row changed.
+- Scope: F4 — SC-010 is now PARTIAL: the cited status-page/route tests assert redirect-on-transition and home-fallback-on-failure but do not assert page-level link retention after a redirect failure (spec SC-010). Summary counts updated to FR 20 VERIFIED / 9 PARTIAL, SC 6 VERIFIED / 5 PARTIAL. No other row changed.
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks are present. No task checkbox changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed.
 - Verdict: PASS for this documentation reconciliation; no product decision or requirement meaning changed.
+
+## S46 Greptile round finding reconciliation — 2026-11-11T01:37:00Z
+
+- Scope: Greptile review PRR_kwDOVYgYQ88AAAABXNMIkw (COMMENTED 2026-11-11T01:26:51Z, confidence 4/5) on cf6664982: 2 P2 findings. Fixed both documentation-only: (1) docs/01-traceability.md coverage note now records the F1 SC-010-and-later rows plus the restored baseline SC-001..SC-005, with SC-006..SC-009 having no row in that map; (2) traceability.md SC summary corrected to 6 VERIFIED / 5 PARTIAL with the repeated current totals in this file corrected to match. No spec, plan, task, evidence, or requirement meaning changed.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications (zero open ambiguities), plan and FR-tagged tasks present. No task checkbox changed.
+- Evidence: rechecked all 29 FR and 11 SC rows. SC-001..SC-005 and SC-011 are VERIFIED (6); SC-006, SC-007, SC-008, SC-009, SC-010 are PARTIAL (5). FR 20 VERIFIED / 9 PARTIAL unchanged.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed.
+- Verdict: PASS for this documentation-only reconciliation.

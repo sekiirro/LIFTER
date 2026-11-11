@@ -33,5 +33,5 @@ Static source inspection only. No test suite was executed in this compliance lan
 ## Summary
 
 - Functional requirements: 20 VERIFIED, 9 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. FR-012 is PARTIAL because the cited replay and revocation-after-wait tests do not assert the full lock order (client, subscription, then obligations/ledger).
-- Success criteria: 5 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Success criteria: 6 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Execution: static verification only; no suite run. T050-T054 are not checked by this reconciliation.
