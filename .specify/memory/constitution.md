@@ -12,9 +12,13 @@ from `LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md` (DR-01) and the regis
 
 - Every tenant-owned record MUST carry `workspace_id`, and its relations MUST use composite
   `(workspace_id, id)` keys.
-- Access MUST be authorized server-side by actual membership: deny by default, at two walls (an
-  app-layer policy check and database RLS keyed to the signed identity). The UI is never a
-  security boundary.
+- Access MUST deny by default and be authorized server-side at two walls (an app-layer policy
+  check and database RLS/authorization functions keyed to the signed identity). For every actor except the verified
+  Platform Owner, authorization requires actual workspace membership. The verified Platform
+  Owner is authorized across workspaces without a workspace-membership row, as defined by the
+  merged F3 rule (`specs/003-tenancy-rls/spec.md` FR-004 and FR-007;
+  `supabase/migrations/20261027120000_tenancy.sql:43-46` and `supabase/migrations/20261027140000_access_capability_for_po.sql:1-18`). The UI is never a security
+  boundary.
 - Every surface MUST be isolated: APIs, exports, Telegram bot, jobs, storage, notifications, logs.
   No data, existence or membership of one workspace may be revealed in another. Duplicate
   email/phone responses MUST be the generic support message only (D-08).
@@ -183,7 +187,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.12.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-10 (S44-PO-5; S44-R5)
+**Version**: 1.13.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-11 (S47-PO-14)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
@@ -283,3 +287,27 @@ MINOR (version 1.11.0 to 1.12.0).
 Changed: the main merge gate requires three independent executed successful full CI attempts on the exact PR head, with no timing tie to AI review; docs-only PRs use three full workflow_dispatch runs. Each counted attempt records merge SHA `M`, tree `T`, and base SHA. Greens remain valid while the current merge result for the exact head has the same tree as every counted attempt, even if `main` advances. Immediately before merge, record the current merge SHA, tree `T'`, and base tip; compare `T'` with each counted `T`. A changed head or tree, uncomputable merge ref, or mergeability `UNKNOWN`/`CONFLICTING` fails closed and requires three fresh attempts once a valid merge result is available. An old pull_request rerun tests its old merge SHA and does not count for a changed result. AI PR review is optional and provider-independent. When used on the exact head, actionable findings must be fixed or answered with evidence, blockers resolved, and review threads resolved; no redundant provider review or CI rerun is allowed while the current merge-result tree remains equal to all three counted trees, except recorded infrastructure-failure retries. A merge without AI review on the exact head requires explicit PO approval of that exact SHA. With an AI review, the existing standing-approval rule and independent architect review on the same SHA remain. The authoritative CI job list no longer includes an AI provider review. Authority: S44-PO-5, S44-R5, and S44-PO-6 as mapped by S44-R6.
 
 Unchanged: exact-head CI provenance, executed-step, infrastructure-failure and CI form requirements; the `check:secrets` security check; independent architect review; threads-resolved when review findings exist; Spec Kit and agent limits; the Absolute PO Decision Rule; exact-SHA approval for Constitution PRs; branch protections and all other live gates. Branch-protection required checks and the gate-check tool remain PO admin / follow-up work outside this amendment. Authority: S44-PO-5 / S44-R5 and S44-PO-6 / S44-R6. Dependent current-rule text updated in `docs/08-agent-workflow.md`, `docs/03-roadmap.md`, and `docs/10-feature-tracker.md`. No workflow or application code changed.
+
+### Sync impact report and amendment note - 2026-11-11 (S47-PO-14)
+
+MINOR (version 1.12.0 to 1.13.0): Principle I now states the explicit, identity-verified
+Platform Owner exception already implemented by merged F3. Spec 003 FR-004 defines database
+authorization for the PO across every workspace and active membership plus capability for other
+actors; FR-007 requires the matching app-layer policy. Migration
+`supabase/migrations/20261027120000_tenancy.sql:43-46` defines
+`app_private.is_platform_owner()` from the signed-in actor's staff role, and `supabase/migrations/20261027140000_access_capability_for_po.sql:1-18` defines
+`app_private.has_workspace_access()` with the PO branch and membership branch. The two
+authorization walls remain mandatory. Every other actor still requires actual workspace
+membership. No other Principle I semantics changed; Principle III and its capability grants are
+unchanged.
+
+Authority: PO S47-PO-14, `C:/Users/NEW LAP/.lifter/runs/s47-po/s47-po-14.verbatim.txt`,
+SHA-256 `945c9c68387d0ceb7e03a8ba4ea089b567e89bd8a9bb086a58645cd39a20d56e`. The source's
+verbatim text is “Amend constitution (Rec.)”. The approved amendment scope is the explicit
+Principle I exception above; no new capability is granted.
+
+Sync checklist: no dependent templates, commands, or docs are changed. The
+`.claude/skills/speckit-constitution/SKILL.md` scope guard says dependent templates and commands
+read the constitution at runtime and are not modified in this workflow. No other dependent-file
+sync is required by that checklist. The F20 spec and plan remain unchanged; their entry check is
+recorded in the external run report.
