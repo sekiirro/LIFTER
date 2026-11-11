@@ -24,9 +24,9 @@ Every DB unit must use the landed selector/harness with explicit `LIFTER_SUPABAS
 | U4   | T018–T022 | US3/4 collect/correct/recollect                                    | B lock; U3; final sequential/correction-month policy                                        | full money/correction/idempotency assertions GREEN                         |
 | U5   | T023–T027 | US5/6 safe readers, client helper, activation projection           | B lock; U4; final custom/default calendar-day rule                                          | direct reads/RLS/self-status GREEN, no P4 writer                           |
 | U6   | T028–T032 | Server Actions/services and app authorization                      | DB-free mocks; U5 contracts fixed                                                           | accepting-backend mocks cannot bypass app wall                             |
-| U7   | T033–T037 | Staff queue/full review/payment/correction UI                      | DB-free component/mocked render; final badge/dashboard/retry policy; real e2e deferred      | UI unit GREEN; rendered authenticated matrix pending U9/Stack A                  |
+| U7   | T033–T037 | Staff queue/full review/payment/correction UI                      | DB-free component/mocked render; final badge/dashboard/retry policy; real e2e deferred      | UI unit GREEN; rendered authenticated matrix pending U9/Stack A            |
 | U8   | T038–T041 | Self-status presentation and live refresh                          | DB-free component/action mocks; U5/6, final standalone-status policy; U7 shared i18n merged | no-relogin refresh behavior unit GREEN; real session proof pending U9      |
-| U9   | T042–T047 | Integrated verification, mutations, frontend gate/evidence         | Exclusive Stack A lock, owned DB/Storage and app; all prior units                                 | money/isolation/AR-EN/log-scrub/gates + exact-head CI evidence             |
+| U9   | T042–T047 | Integrated verification, mutations, frontend gate/evidence         | Exclusive Stack A lock, owned DB/Storage and app; all prior units                           | money/isolation/AR-EN/log-scrub/gates + exact-head CI evidence             |
 | U10  | T048      | Independent architect/PO acceptance review                         | DB-free review of diff/CI/evidence; no Claude git/tests                                     | independent verdict; PO release/merge decisions remain reserved            |
 
 ## Phase 1 — Setup and foundational readiness (U0)
@@ -134,7 +134,7 @@ Execute U8 as T038 → T040 (message tests/strings) → T039 → T041, after U7 
 
 (s14 architect ruling: Stack A.)
 
-- [ ] T042 [US7] Add missing RED integrated real-F11-signup/session cases first to `tests/integration/registration-approval-operations.test.ts`, `registration-approval-client-access.test.ts`, `registration-approval-replay.test.ts`; exercise real sessions/Revocation/PostgREST/Storage, not grant-masked or mock-only denials. Run scoped GREEN after approved implementation fixes in separately assigned owned paths; no broad ownership license to edit another unit silently.
+- [ ] T042 [US7] Add missing RED integrated real-F11-signup/session cases first to `tests/integration/registration-approval-operations.test.ts`, `registration-approval-client-access.test.ts`, `registration-approval-replay.test.ts`; exercise real sessions/Revocation/PostgREST/Storage, not grant-masked or mock-only denials. Run scoped GREEN after approved implementation fixes in separately assigned owned paths; no broad ownership license to edit another unit silently. Deletion-state replay and deleted-client reconsideration cases are assigned to T055 outside the U9 gate; this task retains the remaining U9 integrated coverage.
 - [ ] T043 [US6] Write RED real staff/client UI, axe and eight-cell screenshot journeys in `tests/e2e/registration-approval.spec.ts` and `tests/e2e/registration-approval-a11y.spec.ts`; then verify GREEN on Stack A app/session. Gate covers full review/collections/correction/status and state matrix, all role denials, no P2 form; retained evidence links required.
 - [ ] T044 [US7] Execute Q-M01..Q-M24 on disposable Stack A/module fixtures, capture expected failing meaningful assertions and restored GREEN in `tests/integration/registration-approval-verification.md`. No committed mutants, historical migration edits, unowned stack access or arbitrary destructive reset.
 - [ ] T045 Run the later authorized full repository gates (typecheck/lint/format/unit/integration/e2e/axe/edge-build/secrets/size plus diff check), relevant F11/F9/F10/audit/matrix/recovery regressions, explicit money/isolation/log-scrub and frontend review; record exact commands/results and gaps in `tests/integration/registration-approval-verification.md`. Do not claim P2/P4 behavior from fixture seams.
@@ -145,6 +145,10 @@ Execute U8 as T038 → T040 (message tests/strings) → T039 → T041, after U7 
 
 - [ ] T048 Architect independently reviews actual final diff, traceability, mutation evidence, selected-stack proof, money/isolation/UI gate results and exact-head CI. Record verdict in `specs/012-registration-approval/review.md` through the authorized git operator; PO retains plan/production/main-merge approvals. Do not mark self-approved or rerun git/tests as Claude. D-26 intermediate integration and full main merge gate remain mandatory.
 
+## Phase 12 - 011 deletion release verification (outside F12 U9)
+
+- [ ] T055 [US7, FR-011, FR-017] After 011 T048 installs the forward-only 012 deletion-state operation changes and T042's remaining U9 coverage passes on the current head, verify the deletion-state cases in `tests/integration/registration-approval-operations.test.ts`, `registration-approval-client-access.test.ts` and `registration-approval-replay.test.ts`: for each operation (approve, reject and registration_reconsider) whose receipt predates deletion, an exact authorised replay re-authorizes and returns the identical earlier receipt without duplicate subscription, obligation, payment or audit rows; a new approve, reject or registration_reconsider is refused with the FR-017 stale-state response under the client lock and creates no subscription, obligation or payment; for a deleted rejected client, `approval_state` remains `rejected` and registration_reconsider creates no subscription or payment. Run scoped GREEN on the current head. This task is outside U9 and MUST pass together with T042 before 011 T048 step D (the deletion release) ships; 011 T048 owns the forward-only operation changes, preserving the FR-011 authorised receipt replay unchanged (S41 round 7 CodeRabbit finding 3; S41-PO-11 cross-reference). Keep unticked until executed.
+
 ## Dependencies and parallel opportunities
 
 Critical path: U0 → U1 → U1F → U2 → U3 → U4 → U5 → U6 → U7 → U8 → U9 → U10. Pure U1 preparation can proceed while B provisioning is externally blocked only after its relevant plan items are approved. U6 mock tests can be prepared from approved contracts while DB units run in another disjoint worktree, but cannot claim integration before U5. T004 and T006, or T028 and T029, may be file-disjoint preparation; serialize shared validation/results, migrations, fixtures, messages and evidence. No concurrent database agents even on B; separate A/B locks and at most three total agents per governance.
@@ -153,23 +157,23 @@ Stories 1/2 share the atomic client transition foundation; 3/4 share obligation 
 
 ## Traceability and unit exits
 
-| Requirement / outcome                                 | Tasks / evidence                                                        |
-| ----------------------------------------------------- | ----------------------------------------------------------------------- |
-| FR-001 / ND1 role removal                             | T006–T011/T014/T028; Q-V03, Q-M01/02/09                                 |
-| FR-002..003 immutable binding/subscription            | T008–T017; Q-V05, Q-M03/06/12                                           |
-| FR-004..005/009..010 confirmed full ledger/commission | T004–T005/T009/T013/T018–T022; Q-V02/07/08, Q-M05..08/12                |
-| FR-006/008/017..018 isolation/projection              | T008/T010/T023/T026/T028–T032/T042; Q-V03/04/09/12, Q-M01..04/09..11/15 |
-| FR-007 live client status                             | T024/T026/T029/T031/T038–T043; Q-V12/14, Q-M14                          |
-| FR-011..012 receipts/locks                            | T015–T016/T020–T021/T028–T030/T042; Q-V09/10, Q-M05/10/11               |
-| FR-013 historical dates                               | T006–T009/T018/T021; Q-V07, fresh Cairo/invalid date probes             |
-| FR-014..015 correction                                | T019–T022/T035/T043; Q-V08..10, Q-M06/08/09                             |
-| FR-016 audit                                          | T010–T017/T022/T044; Q-V11, Q-M13                                       |
-| FR-019..021 / DG2..4 UI                               | T033–T043/T045; Q-V14, Q-M18; docs/09 retained evidence                 |
-| FR-022 / REQ-P2-01                                    | T013/T016–T017/T025–T027; Q-V13, Q-M16/17; no form implementation       |
-| SC-001..003                                           | Q-V02/05/07/08/10; U1–U4/U9                                             |
-| SC-004..005                                           | Q-V03/04/09/12; U5/U6/U8/U9                                             |
-| SC-006..007                                           | Q-V05/08..11/13 and Q-M checks; U2–U4/U9                                |
-| SC-008                                                | Q-V14/doc09; U7–U9                                                      |
+| Requirement / outcome                                 | Tasks / evidence                                                                                                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-001 / ND1 role removal                             | T006–T011/T014/T028; Q-V03, Q-M01/02/09                                                                                                           |
+| FR-002..003 immutable binding/subscription            | T008–T017; Q-V05, Q-M03/06/12                                                                                                                     |
+| FR-004..005/009..010 confirmed full ledger/commission | T004–T005/T009/T013/T018–T022; Q-V02/07/08, Q-M05..08/12                                                                                          |
+| FR-006/008/017..018 isolation/projection              | T008/T010/T023/T026/T028–T032/T042/T055; Q-V03/04/09/12, Q-M01..04/09..11/15                                                                      |
+| FR-007 live client status                             | T024/T026/T029/T031/T038–T043; Q-V12/14, Q-M14                                                                                                    |
+| FR-011..012 receipts/locks                            | T015–T016/T020–T021/T028–T030/T042/T055; Q-V09/10, Q-M05/10/11                                                                                    |
+| FR-013 historical dates                               | T006–T009/T018/T021; Q-V07, fresh Cairo/invalid date probes                                                                                       |
+| FR-014..015 correction                                | T019–T022/T035/T043; Q-V08..10, Q-M06/08/09                                                                                                       |
+| FR-016 audit                                          | T010–T017/T022/T044; Q-V11, Q-M13                                                                                                                 |
+| FR-019..021 / DG2..4 UI                               | T033–T043/T045; Q-V14, Q-M18; docs/09 retained evidence                                                                                           |
+| FR-022 / REQ-P2-01                                    | T013/T016–T017/T025–T027; planned follow-up 011 T063 emits the distribution job outside this F12 U9 gate; Q-V13, Q-M16/17; no form implementation |
+| SC-001..003                                           | Q-V02/05/07/08/10; U1–U4/U9                                                                                                                       |
+| SC-004..005                                           | Q-V03/04/09/12; U5/U6/U8/U9                                                                                                                       |
+| SC-006..007                                           | Q-V05/08..11/13 and Q-M checks; U2–U4/U9                                                                                                          |
+| SC-008                                                | Q-V14/doc09; U7–U9                                                                                                                                |
 
 Final extension coverage: FR-023 and SC-009 -> T049-T054/Q-V15/Q-M19..21; FR-024/SC-010 -> T038-T043/Q-V16/Q-M23; FR-025/SC-011 -> T019-T022/Q-V17/Q-M22; FR-026 -> T014; FR-027 -> T018-T021/Q-M21; FR-028 -> T033-T034/Q-V18; FR-029 -> T028/T033-T035/Q-M24. U9 T043 adds default/custom link issuance, status redirect/manual fallback and dashboard role journeys before GREEN.
 
