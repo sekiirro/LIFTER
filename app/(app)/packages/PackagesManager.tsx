@@ -7,6 +7,7 @@ import { Alert } from '../../../components/ui/Alert';
 import { EmptyState, Skeleton } from '../../../components/ui/States';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { getMessages } from '../../../lib/i18n';
+import { tierLabel } from '../../../lib/packages/tier-label';
 import type { Locale } from '../../../lib/design/preferences';
 import type {
   PackageReadResult,
@@ -16,7 +17,7 @@ import {
   formatMinorUnits,
   formatCommission,
 } from '../../../lib/packages/money';
-import { PRESET_MONTHS } from '../../../lib/packages/validation';
+import { PRESET_MONTHS, TIER_RANKS } from '../../../lib/packages/validation';
 import {
   createPackage,
   publishPackageVersion,
@@ -45,6 +46,9 @@ export function PackagesManager({
     'saved' | 'denied' | 'invalid_input' | 'unavailable' | null
   >(null);
   const [months, setMonths] = useState<number | 'custom' | null>(null);
+  const [tierRank, setTierRank] = useState<(typeof TIER_RANKS)[number] | null>(
+    null,
+  );
   const [confirm, setConfirm] = useState<PackageOffer | null>(null);
   useEffect(() => {
     active.current = true;
@@ -88,7 +92,7 @@ export function PackagesManager({
   }
   function publish(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (months === null) {
+    if (months === null || tierRank === null) {
       setMessage('invalid_input');
       return;
     }
@@ -99,6 +103,7 @@ export function PackagesManager({
         publishPackageVersion({
           workspaceId,
           packageId: v.get('packageId'),
+          tierRank,
           durationMonths: months === 'custom' ? null : months,
           durationDays:
             months === 'custom' ? v.get('durationDays') : months * 30,
@@ -111,6 +116,7 @@ export function PackagesManager({
       () => {
         form.reset();
         setMonths(null);
+        setTierRank(null);
       },
     );
   }
@@ -135,6 +141,7 @@ export function PackagesManager({
             active.current = false;
             setSwitching(true);
             setMessage(null);
+            setTierRank(null);
             setConfirm(null);
             router.push(
               `/packages?workspace=${encodeURIComponent(e.target.value)}`,
@@ -194,6 +201,21 @@ export function PackagesManager({
                   ))}
                 </select>
               </label>
+              <div className={styles.presets}>
+                {TIER_RANKS.map((rank) => (
+                  <label key={rank}>
+                    <input
+                      type="radio"
+                      name="tierRank"
+                      value={rank}
+                      required
+                      checked={tierRank === rank}
+                      onChange={() => setTierRank(rank)}
+                    />{' '}
+                    {tierLabel(rank, locale)}
+                  </label>
+                ))}
+              </div>
               <div className={styles.stack}>
                 <p id="duration-label">{m['packages.duration']}</p>
                 <div
@@ -315,6 +337,8 @@ export function PackagesManager({
                   <tr key={offer.id}>
                     <th scope="row">
                       <bdi>{codes.get(offer.package_id)}</bdi>
+                      {' · '}
+                      {tierLabel(offer.tier_rank, locale)}
                       {v && <p>{locale === 'ar' ? v.name_ar : v.name_en}</p>}
                     </th>
                     <td>

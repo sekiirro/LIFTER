@@ -62,7 +62,7 @@ export async function pgcryptoCheck() {
 }
 async function offerFixture() {
   const f = await packagesFixture();
-  const p = await publishedFixture(f, { price_minor: '1200' });
+  const p = await publishedFixture(f, { tier_rank: 1, price_minor: '1200' });
   return { ...f, p };
 }
 export type RegistrationOfferFixture = Awaited<ReturnType<typeof offerFixture>>;
@@ -80,7 +80,11 @@ export type RegistrationFixture = Awaited<
  */
 export async function crossWorkspaceOffer(f: RegistrationFixture) {
   const versionId = checked(
-    await publish(f, f.p.id, { workspace_id: f.wsB.id, price_minor: '1200' }),
+    await publish(f, f.p.id, {
+      tier_rank: 1,
+      workspace_id: f.wsB.id,
+      price_minor: '1200',
+    }),
   ) as string;
   const offer = checked(
     await f.po.client
@@ -120,7 +124,7 @@ export async function historicalVersionFixture() {
   const f = await registrationFixture();
   const historicalVersionId = f.p.versionId;
   const currentVersionId = checked(
-    await publish(f, f.p.id, { price_minor: '1300' }),
+    await publish(f, f.p.id, { tier_rank: 1, price_minor: '1300' }),
   ) as string;
   return { ...f, historicalVersionId, currentVersionId };
 }

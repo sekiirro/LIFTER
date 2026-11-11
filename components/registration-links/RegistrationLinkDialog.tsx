@@ -17,6 +17,7 @@ import styles from './registration-links.module.css';
 export function RegistrationLinkDialog({
   workspaceId,
   versionId,
+  tierLabel,
   priceMinor,
   canSchedule,
   locale,
@@ -24,6 +25,7 @@ export function RegistrationLinkDialog({
 }: {
   workspaceId: string;
   versionId: string;
+  tierLabel: string;
   priceMinor: string;
   canSchedule: boolean;
   locale: Locale;
@@ -128,6 +130,7 @@ export function RegistrationLinkDialog({
       ) : (
         <>
           <p>{m['registration.confirmDescription']}</p>
+          <p>{tierLabel}</p>
           {canSchedule && (
             <fieldset disabled={pending}>
               <legend>{m['registration.schedule']}</legend>

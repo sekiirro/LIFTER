@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseCode, parseTerms, isUuid } from '../../lib/packages/validation';
 const valid = {
+  tierRank: 1,
   durationMonths: 1,
   durationDays: 30,
   nameAr: 'test-ar',
@@ -25,6 +26,9 @@ describe('package validation', () => {
     expect(isUuid('00000000-0000-0000-0000-000000000001')).toBe(true);
     expect(isUuid('forged')).toBe(false);
   });
+  it.each([1, 2, 3])('accepts immutable tier rank %s', (tierRank) =>
+    expect(parseTerms({ ...valid, tierRank })).toMatchObject({ tierRank }),
+  );
   it.each([1, 3, 6, 8, 12])('maps preset %s', (m) =>
     expect(
       parseTerms({
@@ -45,6 +49,9 @@ describe('package validation', () => {
     ).not.toBeNull(),
   );
   it.each([
+    ...[undefined, null, 0, 4, 1.5, '1x', true].map((tierRank) => ({
+      tierRank,
+    })),
     { nameAr: '' },
     { nameEn: 'x'.repeat(121) },
     { nameAr: '\u{1f600}'.repeat(121) },

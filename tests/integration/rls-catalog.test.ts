@@ -831,6 +831,7 @@ describe('package security catalog', () => {
     for (const name of [
       'public.create_package(text)',
       'public.publish_package_version(uuid,uuid,smallint,integer,text,text,bigint,text,integer)',
+      'public.publish_package_version(uuid,uuid,smallint,integer,smallint,text,text,bigint,text,integer)',
       'public.set_package_offer_available(uuid,uuid,boolean)',
       'public.get_package_version_commissions(uuid)',
       'app_private.guard_package_offer_update()',
@@ -845,7 +846,9 @@ describe('package security catalog', () => {
         const [grant] =
           await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
         expect(grant?.allowed).toBe(
-          role === 'authenticated' && name.startsWith('public.'),
+          role === 'authenticated' &&
+            name.startsWith('public.') &&
+            !name.includes('uuid,uuid,smallint,integer,text'),
         );
       }
     }
