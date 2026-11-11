@@ -1,8 +1,7 @@
-# Spec Kit Analyze - F9 Packages S35 (S33-PO-6 + S34-PO-1 + S34-PO-2 + S34-PO-6 + S35-PO-1)
+# Spec Kit Analyze — F9 S43-PO-8 tier offer identity amendment
 
-- Date: 2026-11-06 (Africa/Cairo), after the round-10 edits applying the PR #53 review-thread fix for the C5/T065/T070 circular gate (new pre-implementation teardown design/security review gate T064b; T065 now depends on T064, T064a and T064b; T070 kept as the post-implementation acceptance review) on top of the round-9 edits applying the PR #53 review-thread fixes (SC-019 per-workspace wording; FR-031/data-model aligned to the unqualified S33-04 FX rule; T048 coder-rule carve-out; new T064a; T074/T069 dependency-cycle fix; FX-rounding recorded as PO-DECISION-NEEDED) on top of the round-8 edits applying S35-PO-1 F9=A (PD-S34-NEW-02 resolved) to spec, contract, plan, tasks, data model, research, quickstart, requirements checklist and traceability.
-- Scope: `specs/009-packages/**` specification/documentation delta only. No tests, SQL, migrations, application code, stack, build, CI or UI render was run or added.
-- Method: static cross-artifact analysis of numbered FRs, measurable SCs, Given/When/Then scenarios, verbatim PO clarifications, supersession notes, plan, model, contracts, task dependencies and traceability.
+**Analyzed:** 2026-11-10 16:50 UTC
+**Method:** Reconciled FR-002, S43-PO-8 acceptance scenarios, offer logical key and uniqueness, publication input, T077 tags, plan, data model, contract, traceability, and availability-independent tier reads; verified the forward-only migration boundary.
 
 ## Entry check
 
@@ -13,9 +12,17 @@
 | Plan and FR-tagged tasks                                   | PASS   | `plan.md`; `tasks.md` T042-T045, T055, T064, T064a, T064b, T065-T071 tagged to FR/SC. No task remains blocked by PD-S34-NEW-02 (resolved by S35-PO-1 F9=A); T065 still awaits the T064b pre-implementation teardown design/security review gate; T070 remains the post-implementation acceptance review; T064a implements the read-only preflight covered by T064 RED tests. |
 | Analyze after spec/plan/tasks edits; no open CRITICAL/HIGH | PASS   | Dated after the last such edit. 0 CRITICAL, 0 HIGH.                                                                                                                                                                                                                                                                                                                          |
 
+- PASS — numbered FRs, measurable SCs and Given/When/Then scenarios cover all three tier ranks in each category and same-duration coexistence.
+- PASS — S43-PO-8 is the binding clarification; no open product ambiguity remains for rank placement.
+- PASS — plan, offer model, publication/action contracts, T077 and FR-002 traceability agree on workspace/category/duration/rank identity.
+- PASS — this Analyze pass follows the latest spec, plan and task edits.
+
 ## Findings
 
-**No open CRITICAL or HIGH findings.** The following items are explicitly blocked or gated; none is encoded as a guessed requirement.
+- CRITICAL: 0 open.
+- HIGH: 0 open.
+- MEDIUM: 0 open PO decisions.
+- LOW: 0 cross-artifact ID or task-tag mismatches found in the tier-offer identity scope.
 
 | ID  | Category                                | Severity                  | Location                                                                                                                                                            | Assessment                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | --- | --------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -26,23 +33,25 @@
 | A5  | Existing retained decisions             | BLOCKED                   | `spec.md` PO-decision register; `traceability.md`                                                                                                                   | ND-F9-2/3/5 remain as recorded.                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | A6  | Design implication of S34-PO-6          | INFO (not a new decision) | `data-model.md` S34-PO-6 delta                                                                                                                                      | The package row becomes workspace-scoped (gains `workspace_id`, unique `(workspace_id, market, type)`); the baseline platform-owned shape is superseded by a forward migration only. Retention/uniqueness of `code`, exact signatures and RLS predicates are T042 design and are reviewed there.                                                                                                                                                    |
 
-## Coverage and consistency
+## Evidence status
 
-- S34-PO-6 is recorded verbatim in the spec register; data model, contract, plan, research, quickstart, requirements checklist, tasks and traceability all use the package-row-is-category model. Publication takes `package_id` and derives the market from the stored row; market/type are initialization-only and immutable; versions hold commercial terms; offers may not pair with a package row of another workspace.
-- S35-PO-1 is recorded verbatim in the spec register ("F9=A (Egypt/International)") with the architect note (not PO words) that option A makes the title-case tokens the wire and stored value. Every artifact now uses `Egypt`/`International` as the sole market literal; the lowercase tokens survive only inside verbatim historical PO quotes (spec.md register), which are byte-exact records and not literals.
-- Stale pending/blocked wording for PD-S34-NEW-01 and PD-S34-NEW-02 was removed from every artifact; remaining references describe both as resolved.
-- The stale plan sentence that awaited English-label approval was replaced (S34-PO-2 approves the four labels). Machine-local PO source paths were removed from the spec; decisions are cited by ID and quoted verbatim.
-- S33-PO-6 recommendations, C1-C5, LABELS and S34-PO-2 are unchanged. S32-R1 all-origin-reference uniqueness and "never edit a pushed migration" remain explicit.
-- The merge from `origin/main` preserved main's S33-PO-4 test-hygiene record (T900, ticked on its own evidence) in tasks, plan, traceability and the historical analyses below.
-- No future task is marked complete; no implementation or test evidence is claimed for the S34/S35 tasks.
+- T077 remains unchecked; rank-inclusive implementation and tests are pending. Existing PR #9 tests only verify pre-tier duration uniqueness; traceability marks the new outcome UNVERIFIED.
+- No implementation task is marked complete; this lane changes specifications only.
 
-## Frontend Design Gate review
+**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open PO decisions; LOW 0.
 
-- This round changes specification and decision records only; no rendered UI, component, token or visual behavior changed. Future dashboard/Installments UI remains subject to T061/T069 and the Frontend Design Gate; all copy beyond the four approved label pairs remains BLOCKED-COPY.
+## S45 R3 review-fix analysis
 
-## Verdict
+**Analyzed:** 2026-11-11 00:51 Africa/Cairo
+**Scope:** CodeRabbit round-3 fixes in the baseline/forward-contract descriptions and FR-002 traceability.
 
-**PASS - 0 CRITICAL, 0 HIGH.** PD-S34-NEW-01 is resolved (S34-PO-6, option A) and consistently applied. PD-S34-NEW-02 is resolved (S35-PO-1, option A: `Egypt`/`International` as wire and stored value) and consistently applied. The round-10 C5/T065/T070 circular gate is resolved by the T064b split (pre-implementation teardown design/security review gate; T070 kept post-implementation). This Analyze covers specification consistency only; it does not authorize implementation or claim tests passed.
+- PASS: FR-002 remains rank-inclusive only in the planned delta; the shipped baseline and its old publication signature are described without tier_rank.
+- PASS: T077 remains the tagged implementation task; traceability retains UNVERIFIED and separately identifies the absent behavioral test. No task was marked complete.
+- PASS: no new product behavior or PO decision was introduced.
+- PASS: current spec, plan, data model, task tags, and traceability agree on the forward-only rank requirement.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze — Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
 
 ## Historical analyses (merged from main)
 
@@ -153,3 +162,14 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Coverage: every FR/SC is covered in tasks and traceability (combined and ranged rows resolve to the same ordered mapping, unchanged); every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
 - Findings: 0 open CRITICAL, 0 open HIGH. The pre-existing copy and review gates remain exactly as recorded above; nothing was upgraded or introduced by the format-only commit.
 - Verdict: PASS for this format-only re-affirmation.
+- Scope: restore the verbatim S39-R8 architect quotation and state the later S43-PO-8 tier-rank amendment separately.
+- PASS: S39-R8 quote matches the archived original wording; the amendment cites S43-PO-8 source line 3, architect mapping S43-R10, and the existing FR-034 acceptance scope.
+- PASS: no FR, SC, task, plan step, or PO decision was added or renumbered; tier-rank scope remains consistent with FR-002/034 and the existing task/traceability mapping.
+- PASS: the amendment is separate from the historical quote and does not alter any PO quotation.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.
+
+## 2026-11-11T02:40:45Z Analyze — merge of main d1b1aff3 (PR #77 F13 continuity), no PR content change
+
+- Scope: merged main tip d1b1aff3; conflict resolution only. 3 hunks, all keep-both: HEAD entry-check table + MAIN S43-PO-8 tier-rank bullets; HEAD A1-A6 findings table + MAIN Evidence-status section; HEAD S33-S46 history + MAIN tier-rank amendment note. No statement chosen between alternatives; no PO text altered.
+- Entry: numbered FR-001..FR-034, measurable SCs, Given/When/Then scenarios, Clarifications register, FR-tagged tasks T042-T077 present; this pass follows the merge.
+- Findings: 0 CRITICAL, 0 HIGH. Pre-existing BLOCKED-COPY and review gates unchanged.

@@ -2,8 +2,8 @@
 
 **Feature Branch**: `009-packages`
 **Created**: 2026-10-27  
-**Last Updated**: 2026-11-08
-**Status**: S33-PO-6, S34-PO-1, S34-PO-2, S34-PO-6 (PD-S34-NEW-01=A, package row is the category), S35-PO-1 (PD-S34-NEW-02=A, canonical market literal `Egypt`/`International` as wire and stored value), S36-PO-2 and S36-PO-3 F9 decisions are recorded. The prior FX-rounding, FX business-day/publication and optional promotion-bound ambiguities are resolved; no open ambiguity remains in those scopes. UI copy beyond the four approved Arabic/English market/type label pairs remains BLOCKED-COPY.
+**Last Updated**: 2026-11-10
+**Status**: S33-PO-6, S34-PO-1, S34-PO-2, S34-PO-6 (PD-S34-NEW-01=A, package row is the category), S35-PO-1 (PD-S34-NEW-02=A, canonical market literal `Egypt`/`International` as wire and stored value), S36-PO-2 and S36-PO-3 F9 decisions are recorded. The prior FX-rounding, FX business-day/publication and optional promotion-bound ambiguities are resolved. S43-PO-8 resolves tier structure, label authority, historical nutrition export, post-lapse anchor, and cross-currency upgrade; no open product ambiguity remains in these affected scopes. See the resolved decision register below. UI copy beyond the four approved Arabic/English market/type label pairs remains BLOCKED-COPY.
 **Input**: P1-F9, approved architect/reviewer design supplied for this run. Sources (PO records are cited by decision ID and quoted verbatim in this document, not by machine-local path): [BRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) lines 30, 40–41, 53–54, 102, 196, 317; [decision register](../../docs/04-changes-and-questions.md) D-09/D-10, D-11, D-13, D-17; [Constitution v1.4.0](../../.specify/memory/constitution.md) I–III, V, VII–IX. Later decisions supersede historical BRD installment/refund wording. S31 sources: S31-PO-4 and S31-PO-5 (S31-Q4). S32 source: S32-PO-4, quoted verbatim in `## Clarifications` below and in the PO decision register.
 
 ## Clarifications
@@ -124,6 +124,8 @@ No further product ambiguity remains in the resolved FX rounding, calendar/publi
 Architect rulings on PR #53 review findings PD-F9-CR-01 and PD-F9-CR-02 are recorded verbatim below. They are architect words, not PO words; no PO approval is claimed for them.
 
 > S39-R8 (#53 PD-F9-CR-01, not a PO question): duration is offer identity, already decided in FR-002 ("workspace, package and duration identity MUST remain fixed"), FR-005 (publication snapshots its duration) and spec.md:262. spec.md:84 "duration terms" is an editorial inconsistency: reword to say versions snapshot the offer's fixed duration (no versioned duration change). No retirement/lifecycle question arises: a different duration is a different offer, and availability changes only through existing PO operations (FR-002); no automatic retirement is added (S38-PO-3).
+
+Subsequent amendment (S43-PO-8 source line 3; architect mapping (S43-R10)): immutable tier rank is also part of offer identity, as specified in FR-034 and its acceptance scenarios below.
 
 > S39-R9 (#53 PD-F9-CR-02, not a PO question): the Spec Kit gate section 3 (S29-PO-2) requires the implementer to record evidence in specs/<feature>/traceability.md. Amend tasks.md:10 so the implementer may edit traceability.md and verification evidence files within the task's scope; all other specs/ files stay off-limits to implementers.
 
@@ -292,7 +294,7 @@ prices stay in own currency while collection reporting uses only the approved im
 ## Functional Requirements
 
 - **FR-001**: Only PO may create a globally unique canonical lowercase-slug package code. Code and creation attribution MUST remain historically recoverable. Existing mock deletion follows the C5 preflight in FR-028; future real-package retirement follows FR-023 and preserves referenced history. Labels MUST NOT identify canonical package codes (BRD 53; S32-PO-4; C5).
-- **FR-002**: Each workspace/package/duration-days combination MUST have exactly one offer. Offers MUST be created by publication only; their workspace, package and duration identity MUST remain fixed. Only availability and current version may change, through PO operations (BRD 40/53).
+- **FR-002**: Each workspace/package/duration-days/tier-rank combination MUST have exactly one offer. `tier_rank` MUST be one of Silver, Gold, or Platinum and remain immutable with the offer’s workspace, category package and duration identity. Offers MUST be created by publication only; publication MUST allow different tier ranks in the same workspace, category package and duration. Only availability and current version may change, through PO operations (BRD 40/53; S43-PO-8).
 - **FR-003**: Durations MUST be preset 1/3/6/8/12 thirty-day months or explicit custom whole days ≥1. No calendar-month arithmetic or invented business upper bound is allowed (D-11; ND-F9-2).
 - **FR-004**: Every published version MUST require authored AR/EN names of 1..120 characters excluding blank-only values, positive integer minor-unit price with uppercase three-letter currency, and explicitly supplied commission of 0..10000 basis points. No financial/catalog defaults or seed data (BRD 54/317; Constitution II/IV).
 - **FR-005**: Publication MUST atomically number versions from 1 per offer, snapshot its duration and author/time, and set the current version. Concurrent distinct publications MUST be consecutive; identical-term retries MUST be handled in the database without duplicated effects (Constitution IX).
@@ -324,6 +326,9 @@ prices stay in own currency while collection reporting uses only the approved im
 - **FR-031**: The dashboard MUST show actual monthly collections and package-specific commissions with installment-level detail. Settlement/accounting events remain separate records. Converted commission is visible to PO/WO only; Sales/Trainer remain denied. FX reporting follows FR-026: Africa/Cairo transaction date, ECB/TARGET business-day selection of the latest prior valid Frankfurter publication, verified coverage for every supported currency, exact per-line conversion, one half-up rounding of each reported aggregate to EGP minor units, exact 1 for EGP→EGP, and idempotent rate-pending retries excluded from converted totals until fetched. Existing payment rules remain unchanged. (C4; S33-PO-6 S33-03/04/08/09/10/12; S36-PO-2/S36-PO-3)
 - **FR-032**: Installment clients MUST be identified as installment clients, and the dashboard MUST provide an Installments section with due dates, paid amounts, and remaining amounts. This specifies data/behavior only; UI copy beyond the four approved English/Arabic market/type label pairs is BLOCKED-COPY. (C4)
 - **FR-033**: Market/type labels MUST use exactly the approved pairs Egypt/«مصر», International/«دولي», Promotional/«وقت العـروض», and Year-Round/«طول السنـة», with Arabic strings copied exactly including tatweel. No additional English market/type labels or translations may be introduced beyond these four approved labels. All other UI copy remains BLOCKED-COPY. (LABELS; S34-PO-2)
+- **FR-034**: The package model MUST represent all three fixed immutable platform tier ranks Silver, Gold, and Platinum in each of the four package categories. Rank is carried by the tier offer within its category, independently of price, duration, market/type, and localized display labels. (S43-PO-8 source line 3; architect mapping (S43-R10))
+- **FR-035**: The package model MUST preserve the PO-approved default tier names in English and Arabic. The PO may rename them globally per locale; a Workspace Owner may override names only within that workspace. Renaming MUST NOT change rank, price, duration, currency, or other commercial terms. (S43-PO-8 source line 4; architect mapping (S43-R10))
+- **FR-036**: Upgrade eligibility MUST compare immutable tier-offer rank within a category and duration according to S43-PO-5 item 2 and S43-PO-6. Each category offers all three tiers, with rank stored on each tier offer. Price rules remain as specified by the existing F13 requirements. (S43-PO-8 source line 3; architect mapping (S43-R10))
 
 #### S34 acceptance scenarios
 
@@ -334,11 +339,13 @@ prices stay in own currency while collection reporting uses only the approved im
 5. **Given** an FX rate is pending, **When** converted totals are rendered, **Then** the pending transaction is excluded until an idempotent retry obtains a verified rate; EGP→EGP uses exactly 1.
 6. **Given** a C5 preflight finds non-synthetic data, a required financial/audit dependency, or unknown dependency state, **When** removal is requested, **Then** it refuses/escalates with zero writes. **Given** a complete clean synthetic-only inventory, **When** removal completes, **Then** only obsolete mocks are safely deleted, required history is preserved, and exactly four empty categories are initialized without commercial values; partial completion is not accepted.
 7. **Given** any market/type UI surface, **When** labels render, **Then** they use only the approved pairs Egypt/«مصر», International/«دولي», Promotional/«وقت العـروض», Year-Round/«طول السنـة»; all other UI copy remains BLOCKED-COPY.
+8. **Given** packages are compared for upgrade eligibility, **When** rank and duration are evaluated, **Then** the fixed tier rank concept is Silver < Gold < Platinum and the approved duration/price rules apply; each category offers all three tiers and rank is on each tier offer within that category.
+9. **Given** a workspace renames a tier in one locale, **When** its display name changes, **Then** the fixed rank concept remains unchanged; the PO may rename globally per locale and a Workspace Owner may override only within that workspace; rank and terms do not change.
 
 ### Key Entities
 
 - **Package category**: one of four immutable market × type identities per workspace, represented by the workspace-scoped package row itself (S34-PO-6; no separate category entity), unique on `(workspace_id, market, type)`. Commercial values live on versions and are workspace-specific; initialization supplies no real commercial values.
-- **Package offer**: the logical workspace sellable package/duration identity, availability and current published version of one category package row; it references that row by `package_id` and MUST NOT pair a package row with a different workspace.
+- **Package offer**: the logical workspace sellable package/duration/tier-rank identity, availability and current published version of one category package row; it references that row by `package_id` and MUST NOT pair a package row with a different workspace. Different tier ranks may coexist at the same duration.
 - **Package version**: immutable numbered commercial terms; edits append a version and preserve client/assignment snapshots. Market/type remain immutable category attributes (C1; S33-11).
 - **Market**: approved attribute with display labels Egypt and International (S34-PO-2 and S35-PO-1 F9=A; the canonical machine literal is exactly `Egypt`/`International`, the same title-case tokens as the wire and stored value); it controls the permitted currency set but is never inferred from a stored currency.
 - **Package type**: approved value `Year-round` or `Promotional`; Promotional availability follows the Africa/Cairo half-open period and issued-link rules in FR-030.
@@ -371,6 +378,31 @@ prices stay in own currency while collection reporting uses only the approved im
 - **SC-021**: Promotion tests cover missing-start availability from creation, missing-end indefinite availability and exact Africa/Cairo start-inclusive/end-exclusive boundaries for supplied bounds; expiry blocks all new links after an approved end and changes zero already-issued link snapshots.
 - **SC-022**: Dashboard fixtures reconcile monthly collections to actual collection source rows and package-specific commissions to applicable commission calculations or commission source rows, show installment details, preserve separate settlement rows, exclude pending FX from converted totals, use exact per-line conversion with one half-up aggregate rounding to EGP minor units, use 1 for EGP→EGP, and deny commission to all Sales/Trainer fixtures.
 - **SC-023**: 100% of category label output matches the four approved English/Arabic pairs exactly, including Arabic tatweel; zero unapproved market/type labels or unapproved installment/report UI copy is shipped.
+- **SC-024**: Each of the four package categories offers all three tiers; each tier offer carries its immutable Silver < Gold < Platinum rank.
+- **SC-025**: Tier display defaults match PO-approved EN/AR names byte-exactly; PO global and workspace-local renames preserve immutable rank and all commercial terms.
+- **SC-026**: Upgrade eligibility fixtures use the approved offer-level rank/duration and F13 price rules; each category has all three tier offers.
+
+## Clarifications / PO-decision register - S43-PO-6/7 package-tier amendment (2026-11-10)
+
+### S43-PO-6 tier hierarchy
+
+S43-PO-6 (2026-11-10): Fixed tier hierarchy: Silver < Gold < Platinum. Workspaces can rename tiers, but their underlying rank never changes.
+
+**architect mapping (S43-R7, reconsidered by S43-R9):** Preserve the immutable platform rank concept and its fixed values/order, but defer which offer/category entity stores the rank until the tier-structure decision. Workspace-specific localized display names may be edited without changing rank.
+
+### S43-PO-7 Arabic default tier names
+
+S43-PO-7 (2026-11-10): Arabic tier names are سيلفر، جولد، بلاتينيوم.
+
+**architect mapping (S43-R8):** The Arabic defaults correspond in order to Silver, Gold, and Platinum; copy the PO source bytes exactly. English defaults Silver, Gold, and Platinum are approved by S43-PO-6.
+
+### PO-DECISION-NEEDED
+
+- **S43-F9-MCQ-2 - tier structure and rank placement (historical question; resolved by S43-PO-8):** where: specs/009-packages/spec.md:327-329 (FR-034..036), :340-341 (scenarios 8-9), data-model.md:230-232, contracts/packages-surface.md:165-167. Question: what offer structure should carry the fixed tier hierarchy? Options: (A) multiple ranked offers per category (recommended); (B) one fixed tier per category; (C) replace the four-category model. Implications: A permits Silver/Gold/Platinum offers inside each market/type category and requires rank at the offer level; B preserves one offer per category and makes the category's tier singular; C changes category identity and initialization, with broader package setup and consumer impacts. Recommendation: A, because it preserves the four market/type categories while allowing multiple tier offers in each. Status: RESOLVED by S43-PO-8 source line 3; offer/rank placement and dependent F13 rank-based upgrade work are specified. The prior question wording is retained as history.
+- **S43-F9-MCQ-3 - tier-label authority (historical question; resolved by S43-PO-8):** where: specs/009-packages/spec.md:328 (FR-035) and :313 (FR-020), contracts/packages-surface.md:165-167. Question: who may edit workspace-localized tier names? Options: (A) PO only; (B) WO only; (C) PO globally and WO in that WO's workspace (Sol recommendation). Implications: A gives centralized global control; B limits changes to workspace owners; C enables global defaults plus workspace-local renames, requiring scoped mutation/audit rules. Recommendation: C. Status: RESOLVED by S43-PO-8 source line 4; mutation permissions, audit actor policy, and role-authorization acceptance tests are specified. This MCQ is distinct from rank/offer placement.
+- **S43-F18-MCQ-1 - historical nutrition exports:** where: specs/018-nutrition-planner/contracts/nutrition-api.md:93 and specs/018-nutrition-planner/research/po-decision-matrix.md:49 (Sol-9 finding). Question: when exporting a historical nutrition revision after its selection has been removed or invalidated, what should the export show? Options: (A) that revision's last valid client selection (Sol recommendation); (B) coach original only; (C) require an explicit authorized export choice. Implications: A requires retaining/reconstructing revision-scoped selection; B loses the selected state from the historical export; C adds an export-time choice and authorization path. Recommendation before PO answer: A, preserving the historical delivered revision. Status: RESOLVED by S43-PO-8 source line 5; F18 historical export representation and acceptance fixtures are specified in the paired F18 PR.
+- **S43-F13-MCQ-12 - post-lapse upgrade anchor:** where: specs/013-freeze-renewal-refunds/spec.md:461, 470, 652 and T042. Question: after an expired renewal restarts service today, what date anchors a later equal/longer upgrade? Options: (A) the restarted paid-period start (Sol recommendation); (B) the lifetime first activation date. Implications: A preserves the restarted purchase period; B can count elapsed time before the restarted period. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 6; the post-lapse renewal-start anchor and acceptance fixtures are specified in F13.
+- **S43-F13-MCQ-13 - cross-currency upgrade:** where: specs/009-packages/spec.md:312, 321, 328 and specs/013-freeze-renewal-refunds/spec.md:461, T042. Question: may an upgrade credit one currency against a package priced in another? Options: (A) same-currency upgrades only (Sol recommendation); (B) permit cross-currency upgrades using a PO-approved conversion policy. Implications: A refuses mixed-currency upgrade pairs without writes; B needs an authoritative conversion source, date/rate, rounding, audit and revenue treatment. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 7; mixed-currency upgrades are refused before writes with no conversion.
 
 ## PO decision register
 
@@ -431,3 +463,85 @@ I: active membership, two walls, composite tenant relations and negative tests. 
 ### Session 2026-11-04 — S33-PO-4
 
 PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” S33 changes only the package acceptance test's empty-state fixture precondition and failure diagnostics. It does not change package behavior, copy, authorization, or UI. No open ambiguities remain within this test-only scope.
+
+## S43 PO 5-7 exact source blocks - S43-R9 reference
+
+These PO source blocks were copied programmatically. Older quotations above are retained; the controlling PO text appears here without edits. Architect mappings remain labelled separately.
+
+### s43-po-5 - PO words copied byte-exact
+
+```text
+Final PO decisions — update F13/F17/F18/F19:
+
+1. One continuous subscription per client.
+2. Upgrade: higher tier (even shorter duration) or same tier with longer duration. Credit FULL previously paid amount, never prorate. Equal price = free; lower price = not an upgrade. Example: EGP 750 → 1,400; charge 650.
+3. Renewal: extend current expiry by full purchased duration; expired renewals start today. Record full renewal revenue.
+4. Frozen subscriptions must be unfrozen before upgrade/renewal. Freezing extends expiry by frozen days.
+5. Pre-activation upgrades allowed.
+6. Refund covers the full package, not just upgrade difference.
+7. Returning clients never count as new clients. Trainer points awarded once per new client, never per plan, upgrade, or renewal. Unlimited plan publishing.
+8. Renewal then Upgrade: upgrade the original package while preserving separately paid renewal duration.
+9. Higher-tier, shorter-duration upgrade starts on upgrade date, using full previously paid credit.
+10. Expired subscriptions cannot upgrade; renew into the desired package instead.
+11. Manual subscription edits: Platform Owner only, no revenue.
+
+Approve all four EN/AR AI prompt drafts, removing “certified coach” and using “كابتن” consistently in Arabic. Coach-original notes appear per item and in copied prompts, never totals.
+
+F17: Week 1 = program days 1–7, including rest days; no calendar start required.
+
+Reconcile conflicts without inventing rules; flag any remaining ambiguity. Complete the approved Sol Medium debate, then finalize, commit and push under existing governance gates.
+```
+
+### s43-po-6 - PO words copied byte-exact
+
+```text
+Fixed tier hierarchy: Silver < Gold < Platinum. Workspaces can rename tiers, but their underlying rank never changes.
+* Higher-tier upgrades with equal/longer duration count from the original subscription start. Shorter-duration upgrades start on the upgrade date.
+* Pre-activation upgrades are allowed; duration starts upon activation.
+* Refunds cover the full selected package payment, including upgrade charges, but don’t automatically refund separate renewals.
+* After renewal then upgrade, credit only the original package’s full payment. Preserve separately purchased renewal duration and payments.
+* Never prorate upgrade credit. Record only additional payments as new revenue.
+```
+
+### s43-po-7 - PO words copied byte-exact
+
+```text
+Arabic tier names are سيلفر، جولد، بلاتينيوم.
+```
+
+## S43-PO-8 decision register — PO words and architect mapping are separate
+
+### S43-F9-MCQ-2 — resolved
+
+- Where: FR-034..036, SC-024..026, package data model, package contract, T077, and F13 T042.
+- Question: What offer structure carries the fixed tier hierarchy?
+- Options: A) every package category offers all three tiers; B) one fixed tier per category; C) replace the four-category model.
+- Implications: A requires three ranked offers inside each category; B retains a single tier offer; C changes category identity and initialization.
+- Recommendation before PO answer: A.
+- Status: RESOLVED by S43-PO-8 source line 3. F9 rank placement and dependent F13 rank eligibility are unblocked.
+- PO words (byte-exact):
+
+> Every package category supports all 3 tiers: Silver, Gold, Platinum.
+
+- architect mapping (S43-R10): Each of the four package categories has Silver, Gold, and Platinum tier offers; immutable rank is stored on each tier offer within its category.
+
+### S43-F9-MCQ-3 — resolved
+
+- Where: FR-035, SC-025, package data model, package contract, and T078.
+- Question: Who may rename localized tier display names, and what may renaming affect?
+- Options: A) PO only; B) Workspace Owner only; C) PO globally and Workspace Owner within that owner's workspace.
+- Implications: A limits changes to platform defaults; B removes global authority; C permits global defaults and workspace-local overrides while rank and commercial terms remain invariant.
+- Recommendation before PO answer: C.
+- Status: RESOLVED by S43-PO-8 source line 4. Authorization/audit task T078 is unblocked.
+- PO words (byte-exact):
+
+> 2. Platform Owner can rename tiers globally; Workspace Owners within their workspace only. Fixed ranks remain unchanged.
+
+- architect mapping (S43-R10): PO controls platform-wide tier display names per locale; a Workspace Owner may override display names only in their own workspace. Ranks stay immutable; names never change prices, duration, or other terms.
+
+### S43-PO-8 acceptance scenarios
+
+- **Given** any one of the four package categories with published Silver, Gold, and Platinum offers, **When** its tier offers are read without filtering by availability, **Then** all three are present and each offer carries its immutable rank within that category. (FR-002/034/036; SC-024/026; architect mapping (S43-R10))
+- **Given** one category has offers at the same duration, **When** the PO publishes Silver, Gold, and Platinum, **Then** three offers coexist with distinct immutable ranks, even if one or more are unavailable. (FR-002/007/034; SC-024; architect mapping (S43-R10))
+- **Given** a PO renames a tier in one locale, **When** workspaces read that locale, **Then** the new global display name is used unless a workspace-local override exists, and no rank or commercial term changes. (FR-035; SC-025; architect mapping (S43-R10))
+- **Given** a Workspace Owner renames a tier in one locale, **When** their workspace reads that locale, **Then** the override appears only in that workspace; other workspaces retain their resolved names, and no rank or commercial term changes. (FR-035; SC-025; architect mapping (S43-R10))

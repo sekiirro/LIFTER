@@ -1,32 +1,39 @@
-# F13 plan analysis
+# Spec Kit Analyze: F13 continuity decisions
 
 ## Historical analysis (retained)
 
 The original analysis and S24 addendum below are preserved as history. The current-head refresh is appended after that record.
 
 **Pass**: spec ↔ plan ↔ tasks consistency review. No implementation or tests run. **Model/effort**: Luna High.
+**Analyzed:** 2026-11-10 17:48 UTC
+**Method:** Reconciled S45-PO-2/S45-R3 with byte-exact source verification; reviewed FR-005/012/038/039, scenarios 13/14, SC-033 and SC-034, plan, T041/T042, traceability, lifecycle/data model, research, and earlier S43-PO-6/architect mapping for credit after upgrade, renewal, then upgrade. Reviewed in-flight, unknown-result, retry, deletion, concurrency, crash-between-step, and no-partial-write states for these spec-only changes.
+
+## Entry check
+
+- PASS - FR-005/012/039, scenarios 13/14, and measurable SC-033 and SC-034 specify the changed renewal and credit behavior.
+- PASS - S45-F13-MCQ-1 is resolved by the exact PO quote and separate S45-R3 mapping in the PO-decision register. The earlier credit finding is covered by S43-PO-6 residual 5 and S43-R7; no new product choice is inferred.
+- PASS - plan.md and tagged tasks T041/T042 cover the new behavior and expected tests; implementation tasks remain unchecked.
+- PASS - this Analyze pass follows the latest spec, plan, and task edits.
 
 ## Findings
 
-- FR-001–FR-036 are mapped to one or more named units in tasks.md; FR-034/035/036 have dedicated gate and parity coverage. SC-001–SC-013 map to the financial, freeze, renewal, calendar, authorization, audit, UI-gate and P4/P5 integration units listed there.
-- Every task names an originating FR/SC/decision, owner files, DB need, tests-first RED→GREEN evidence and a named mutation check for security/financial logic. No implementation code is included.
-- PO-1 uses atomic deactivation/outbox plus a synchronous Custom Access Token hook to deny new issuance; the server-side Auth Admin ban worker remains defense in depth. Stack C integration verifies sign-in/refresh denial while the worker fails. F12 U4 is merged and verified at PR #18 / `e3a2534`; reuse its writer and function contracts.
-- F13 database and Auth API verification is assigned to isolated Stack C (lifter-stack-c). Stack A/B remain prohibited targets.
-- Order F13 migrations after the integrated replay baseline: enumerate only F12/F14 migrations present in the implementation branch and replay; never depend on unmerged migrations. Rebuild shared audit and capability bodies from the latest integrated versions.
-- Capability delta and bidirectional parity are sequenced after both F12 and F14. Cross-feature table/FK/function/i18n/dashboard/nav/CI interactions and merge ordering are stated in tasks.md.
-- Remaining production blocker: technical and legal feasibility of 30-day retention across all recoverable copies, including backups.
+- CRITICAL: 0 open.
+- HIGH: 0 open.
+- MEDIUM: 0 open PO decisions in this change scope.
+- LOW: 0 FR/task/SC ID or task-tag mismatches found in the touched continuity and credit scope.
 
-## Issues corrected during analysis
+## Decision and evidence status
 
-No critical or high inconsistency found in the generated planning artifacts. No PO policy is inferred beyond the binding decision record and feature spec. Constitution check has no exception. No rendered UI task is included; the future UI gate requirement is explicit in plan.md.
+- FR-012/039 are specified as pre-activation refusal with no writes/no queued duration, then FR-039 active/expired rules after activation. Existing T010 evidence is historical and does not verify all current no-write outcomes; see traceability.md.
+- S43-PO-6 residual 5 states the original package full payment is the sole credit after renewal then upgrade. FR-038 and scenario 14 clarify that prior upgrade charges and separate renewal payments are excluded even when an earlier upgrade preceded the renewal.
+- SC-033 and SC-034 map to unchecked T041/T042; no test execution or implementation is claimed. Other implementation evidence gaps and independent technical/security gates remain as recorded.
 
-## Remaining medium/low observations
+**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open PO decisions; LOW 0.
 
-- F12 U4 RPC and receipt shapes are verified against merged PR #18 at `e3a2534`; planning copies must use the pinned merged contract and must not create a duplicate payment writer.
-- The Auth design is resolved as the Custom Access Token hook plus the Auth Admin worker; the isolated database and Auth API stack is assigned to Stack C (`lifter-stack-c`).
-- F13 UI is outside this plan's implementation units; any later request to add rendered UI must use the Frontend Design Gate and DESIGN.md.
+## S45 R3 review-fix analysis
 
-## S24 round 16 implementation addendum
+**Analyzed:** 2026-11-11 00:51 Africa/Cairo
+**Scope:** CodeRabbit round-3 fixes for expired-renewal term anchoring and cumulative refund caps.
 
 Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each required `record_renewal` key reject absence as `invalid_input`. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
 
@@ -105,3 +112,28 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks are present.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
 - Verdict: PASS for this documentation-only correction.
+- PASS: the expired-renewal anchor is the renewal operation date in lifecycle mapping; this follows the existing approved mapping and makes no new product choice.
+- PASS: each source's cumulative refunded principal is bounded by eligible collections; group cumulative refunds use total eligible collections, while a new request is bounded by the pre-operation residual.
+- PASS: subscription/group locking and deterministic allocation remain unchanged; FR/SC/task IDs and task tags are untouched.
+- PASS: no product ambiguity or new PO decision found.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze — Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
+
+- Scope: correct the two S43-PO-8 scenario-to-SC citations and the 50-row traceability status summary.
+- PASS: scenario 2 maps upgrade term anchors to SC-027; scenario 3 maps pre-activation duration start to SC-028. SC-029 remains mapped to renewal-then-upgrade credit.
+- PASS: recomputed matrix statuses are 37 PARTIAL and 13 UNVERIFIED across 50 rows; the summary IDs exactly match the matrix rows and status counts.
+- PASS: FR-012/FR-039 and S45-R3's pre-activation renewal refusal, zero-write/no-queued-duration rule remain unchanged. No PO behavior or copy was introduced.
+- PASS: numbered FRs, measurable SCs, GWT acceptance, clarifications, plan coverage, task mappings, and dated analysis artifacts exist for the touched feature.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.
+
+## 2026-11-11 Analyze — merge of main, no PR content change (01:52 UTC)
+
+- Scope: merged main commit b1476db5f95d447ed2b0525e19ed4a9c890b90cc; no PR content change.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11T02:40:45Z Analyze — merge of main d1b1aff3 (PR #77 F13 continuity), no PR content change
+
+- Scope: merged main tip d1b1aff3; conflict resolution only. 7 hunks across 3 files: analyze.md 2 keep-both (HEAD S30-S46 history + MAIN continuity/Greptile/merge notes); spec.md 2 take-main (PR decision-traceability rows restating successor-lineage and purchase-selection facts superseded by S43-PO-5/FR-037..039, recorded as superseded); traceability.md hunk1 keep-both (distinct gap notes), hunks 2-3 take-main (successor-era PARTIAL rows superseded by current UNVERIFIED/PARTIAL). No product choice taken.
+- Entry: numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications/PO-decision register, FR-tagged tasks present; this pass follows the merge.
+- Findings: 0 CRITICAL, 0 HIGH. T019/T020 gates remain open/blocked as recorded.
