@@ -32,13 +32,19 @@ describe('F17 zero-set prescription persistence (FR-004, FR-005, SC-001)', () =>
     };
     const saved = serializeEntry(entry);
     // Library defaults change after save; reload must not reread them.
-    const reloaded = deserializeEntry(saved, DEFAULTS_V2_CHANGED);
+    const reloaded = deserializeEntry(saved);
     expect(reloaded.sets).toEqual([]);
     expect(reloaded.restSec).toBe(90);
     expect(reloaded.rir).toBe(1);
     expect(reloaded.reps).toEqual({ min: 8, max: 12 });
     expect(reloaded.notes).toBe('coach note');
     expect(reloaded.alternatives).toEqual(['ex-alt-1', 'ex-alt-2']);
+    // A fresh add after the library change uses the current defaults,
+    // proving copy happens at add time while saved entries stay frozen.
+    const fresh = copyDefaultsToEntry(DEFAULTS_V2_CHANGED);
+    expect(fresh.restSec).toBe(120);
+    expect(fresh.rir).toBe(3);
+    expect(fresh.reps).toEqual({ value: 10 });
   });
 
   it('retains trainer-edited entry values across save/reload', () => {
@@ -51,7 +57,7 @@ describe('F17 zero-set prescription persistence (FR-004, FR-005, SC-001)', () =>
       alternatives: ['ex-alt-9'],
       sets: [],
     };
-    const reloaded = deserializeEntry(serializeEntry(edited), DEFAULTS_V2_CHANGED);
+    const reloaded = deserializeEntry(serializeEntry(edited));
     expect(reloaded.restSec).toBe(150);
     expect(reloaded.rir).toBe(0);
     expect(reloaded.reps).toEqual({ value: 5 });
@@ -78,7 +84,7 @@ describe('F17 zero-set prescription persistence (FR-004, FR-005, SC-001)', () =>
     expect(withSet.reps).toEqual({ min: 8, max: 12 });
     expect(withSet.notes).toBe('keep me');
     // Serialized reload after the set still ignores changed defaults.
-    const reloaded = deserializeEntry(serializeEntry(withSet), DEFAULTS_V2_CHANGED);
+    const reloaded = deserializeEntry(serializeEntry(withSet));
     expect(reloaded.restSec).toBe(90);
     expect(reloaded.rir).toBe(1);
   });
@@ -88,10 +94,7 @@ describe('F17 zero-set prescription persistence (FR-004, FR-005, SC-001)', () =>
     expect(entry.restSec).toBeUndefined();
     expect(entry.rir).toBeUndefined();
     expect(entry.reps).toBeUndefined();
-    const reloaded = deserializeEntry(
-      serializeEntry({ ...entry, sets: [] }),
-      DEFAULTS_V2_CHANGED,
-    );
+    const reloaded = deserializeEntry(serializeEntry({ ...entry, sets: [] }));
     expect(reloaded.restSec).toBeUndefined();
     expect(reloaded.rir).toBeUndefined();
     expect(reloaded.reps).toBeUndefined();

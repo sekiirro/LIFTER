@@ -48,14 +48,11 @@ export function serializeEntry(entry: PlanEntry): string {
 }
 
 /**
- * Reload a saved entry. The second argument is accepted only so tests can
- * prove the reloaded entry ignores changed library defaults; it is never
- * read. Unknown fields are dropped to keep the entry shape exact.
+ * Reload a saved entry. The reload takes no library input by design, which is
+ * what proves the entry ignores changed library defaults: there is nothing
+ * to reread. Unknown fields are dropped to keep the entry shape exact.
  */
-export function deserializeEntry(
-  saved: string,
-  _currentDefaults: LibraryDefaults,
-): PlanEntry {
+export function deserializeEntry(saved: string): PlanEntry {
   const raw = JSON.parse(saved) as Record<string, unknown>;
   const entry: PlanEntry = {
     sets: Array.isArray(raw.sets) ? (raw.sets as PlanSet[]) : [],
