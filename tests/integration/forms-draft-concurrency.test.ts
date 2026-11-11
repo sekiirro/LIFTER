@@ -33,7 +33,7 @@ it('T012 resumes a committed draft from another session and resolves concurrent 
         ).status,
       ).toBe('ok');
       const definition = {
-        questions: [{ id: 'q1', sectionId: 'basic', type: 'short_text' }],
+        questions: [{ id: 'q1', sectionId: 'basic', type: 'shortText' }],
       };
       await tx`
         insert into app_private.terms_policy_versions(version,policy_kind,status)

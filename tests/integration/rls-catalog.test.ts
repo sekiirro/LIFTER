@@ -277,6 +277,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_builder_store_result',
           'f15_current_terms_policy',
           'f15_answer_is_present',
+          'f15_answer_values_valid',
           'f15_approval_reconcile_trigger',
           'f15_is_assigned_answer',
           'f15_is_assigned_client',
