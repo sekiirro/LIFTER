@@ -346,6 +346,9 @@ describe('tenancy security catalog (T007)', () => {
         ![
           'audit_events_immutable',
           'f15_answer_is_present',
+          // FR-008's snapshot validator is intentionally pure, immutable, and invoker-mode.
+          // See 20261111024828_f15_direct_rpc_answer_validation.sql:3-108.
+          'f15_answer_values_valid',
           'f15_question_applies',
           'f15_submission_complete',
           'f15_valid_builder_definition',
