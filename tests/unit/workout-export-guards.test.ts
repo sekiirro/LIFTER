@@ -11,10 +11,13 @@ import {
 describe('F17 export field coverage (FR-018, SC-008)', () => {
   it('covers the full FR-018 field list including document-level notes', () => {
     const required = [
+      'planTitle',
+      'planIdentity',
       'documentNotes',
       'dayTitles',
       'restDays',
       'exerciseNames',
+      'exerciseDescriptions',
       'setOrder',
       'setTypes',
       'reps',
