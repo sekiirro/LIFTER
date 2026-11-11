@@ -954,6 +954,23 @@ it('T045 keeps the upgrade refund source guard and SECURITY DEFINER boundary int
     service_role: false,
   });
   expect(security!.config).toContain('search_path=""');
+  const [validator] = await db`
+    select p.prosecdef as security_definer,p.proconfig as config,r.rolname as owner,
+      has_function_privilege('authenticated',p.oid,'execute') as authenticated,
+      has_function_privilege('anon',p.oid,'execute') as anon,
+      has_function_privilege('public',p.oid,'execute') as public,
+      has_function_privilege('service_role',p.oid,'execute') as service_role
+    from pg_proc p join pg_roles r on r.oid=p.proowner
+    where p.oid='app_private.f13_validate_refund_ledger(uuid,uuid)'::regprocedure`;
+  expect(validator).toMatchObject({
+    security_definer: true,
+    owner: 'postgres',
+    authenticated: false,
+    anon: false,
+    public: false,
+    service_role: false,
+  });
+  expect(validator!.config).toContain('search_path=""');
   const [tablePolicy] = await db`
     select c.relforcerowsecurity as force_rls,
       has_table_privilege('authenticated','public.refund_allocation_events','SELECT') as direct_read
