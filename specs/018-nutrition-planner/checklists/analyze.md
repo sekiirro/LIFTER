@@ -33,7 +33,7 @@
 - Day types, including training/rest classification and carb-cycling targets, remain for nutrition behavior unrelated to meal visibility or totals.
 - Meal Notes and Food Notes are distinct per-meal and per-item fields. Schema, editor and export tasks test independent edit/clear behavior; changing either preserves the other.
 - S44-MCQ-F18-1 is closed by S44-PO-7. Its historical text remains marked superseded; it is absent from active requirements, contracts, plan and tests.
-- All implementation tasks remain unchecked; this spec-only PR adds no implementation or executed test evidence.
+- All implementation tasks remain unchecked; this spec-only PR adds no implementation or executed test evidence. (Historical for the S43 pass — superseded by the Phase 0 section below: T001–T006 are ticked with executed evidence.)
 
 **Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. No open product ambiguity remains for the S44-PO-7 scope, the CodeRabbit PR #79 fixes or the Greptile concurrent-Assign reconciliation.
 
@@ -46,7 +46,7 @@
 
 ### Entry check re-validation (S29-PO-3 Q5)
 
-- PASS — spec.md/plan.md/tasks.md unchanged since commit `15df5af6`; the analyze above covers that state, and no product decision was taken during implementation.
+- PASS — spec.md/plan.md unchanged since commit `15df5af6`; no requirement text was changed by Phase 0 implementation. tasks.md changed only by task ticks (`395895e0`) and the S48-R13 status-line correction (this pass); both are non-requirement bookkeeping, re-analyzed below.
 - PASS — tasks.md `Status` line ("Implementation entry requires the F19 contract merged") is satisfied for Phase 0 by PO S47-PO-13, which authorizes exactly the Phase-0 `[INDEPENDENT]` tasks; Phase 1+ remain gated on F19.
 
 ### Findings
@@ -66,3 +66,24 @@
 - Tasks T001–T006 are ticked in tasks.md with executed evidence in traceability.md §4a; Phase 1+ tasks remain unticked and gated on F19.
 
 **Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. No new requirement text was added by implementation; no re-clarification needed.
+
+---
+
+## Analyze — F18 Phase 0 review fixes (S48-R13)
+
+**Analyzed:** 2026-11-12T00:00:00Z
+**Scope:** independent review `runs/s48-beam-f18-review/review.md` (range `8a846340..395895e0`); architect ruling S48-R13 (`runs/s48-arch/s48-architect-rulings.md`). No requirement text in spec.md/plan.md/data-model.md/contracts/ was changed.
+
+### Review findings addressed
+
+- Display threshold (review F18-PO-D1, resolved by S48-R13 as technical): `displayMacroGrams` now evaluates the below/at-10 g threshold on the exact persisted value — below 10 g exact renders one decimal even when half-up lands on 10.0 (9.96 → `10.0`, 9.95 → `10.0`, 9.94 → `9.9`); at or above 10 g exact renders an integer (10.00 → `10`, 10.04 → `10`). RED first (`t002-red-r13.log`, 2 goldens failing), GREEN 11/11 (`t002-green-r13.log`), mutation reintroduced the rounded-value threshold and failed the same 2 goldens (`t002-mutation-r13.log`), restored (`t002-green-r13b.log`). Commit `d8e48ea4` (Task: T002; FR: F18-FR-003). No SQL twin exists in Phase 0 (SQL parity is T008, gated on F19/stack). data-model.md §2's sentence "a below-threshold value that rounds to 10.0 renders `10`" describes the superseded behavior; it was not edited because S48-R13 orders an implementation/golden fix, not a spec change — recorded here as the authoritative reconciliation.
+- M1: tasks.md:5 status line corrected — Phase 0 tasks T001–T006 ticked with executed evidence; Phase 1+ unticked and gated on F19.
+- M2: traceability.md:5 scope line corrected — §4a records the executed Phase 0 evidence; §4b (ex-§4) is the historical pre-implementation state.
+- M3 + LOW: analyze.md — the entry-check line now distinguishes spec/plan (unchanged since `15df5af6`) from tasks.md bookkeeping changes (ticks `395895e0`, status-line fix `d8e48ea4`-adjacent docs commit); the historical "all tasks unchecked" line is marked superseded by this section.
+
+### Verification on the fix head
+
+- RED: `runs/s48-glm-f18-fix/t002-red-r13.log` (2 failed | 9 passed). GREEN: `t002-green-r13.log` (11/11). Mutation: `t002-mutation-r13.log` (2 failed | 9 passed). Restore: `t002-green-r13b.log` (11/11).
+- `npx tsc --noEmit` OK; `npx eslint lib/plans tests/golden --max-warnings=0` OK; full `npm test` 174 files / 2372 tests passed (`fix-tsc.log`, `fix-lint.log`, `fix-unit.log`).
+
+**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. No requirement text changed; no re-clarification needed.

@@ -2,7 +2,7 @@
 
 **Date**: 2026-11-11 (CodeRabbit + Greptile PR #79 spec-consistency fixes). **Base**: `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`. **Branch**: `speckit-018-nutrition-planner-s42`.
 
-**Scope**: specification artefacts only. **No test was executed; no implementation exists on this branch.** Statuses below are specification statuses, not verification claims.
+**Scope**: sections 1–3 and 4b record the specification artefacts only (pre-implementation state). Section 4a records the executed Phase 0 evidence on branch `018-impl-s47-p0` (PO S47-PO-13).
 
 Status legend: `SPECIFIED` = requirement and design are complete and internally consistent; `SPECIFIED (resolved by S43-PO-5; architect mapping (S43-R6))` = approved prompt body is byte-exact in the local contract; `BLOCKED-MCQ` = dependent behavior awaits the listed PO decision; `EXCLUDED` = deliberately out of scope; `DELEGATED` = owned by another feature and referenced only.
 
@@ -76,7 +76,7 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 | FR | Task | Test | Evidence |
 | -- | ---- | ---- | -------- |
 | F18-FR-002, FR-004, FR-006, FR-021, FR-023 | T001 | `tests/unit/nutrition-schema.test.ts` (24) | commit `da94d1da`; RED `t001-red.log`, mutation (implicitDayTypeId optional) `t001-mutation.log` in `runs/s47-glm-f18-p0/` |
-| F18-FR-002, FR-003, FR-004 | T002 | `tests/golden/nutrition-macros.ts` (11) | commit `c0c572a4`; RED `t002-red.log`, mutation (aggregate from displayed values) `t002-mutation.log` in `runs/s47-glm-f18-p0/` |
+| F18-FR-002, FR-003, FR-004 | T002 | `tests/golden/nutrition-macros.ts` (11) | commits `c0c572a4` + display-threshold fix `d8e48ea4` (S48-R13); RED `t002-red.log`, mutation (aggregate from displayed values) `t002-mutation.log` in `runs/s47-glm-f18-p0/`; S48-R13 RED `t002-red-r13.log`, mutation `t002-mutation-r13.log` in `runs/s48-glm-f18-fix/` |
 | F18-FR-005, FR-019 | T003 | `tests/contracts/nutrition-publish.test.ts` (11) | commit `e3f1d19a`; RED (no-contract stub, 9 failing) `t003-red.log`, mutation (replay conflation, 2 failing) `t003-mutation.log` in `runs/s47-glm-f18-p0/` |
 | F18-FR-011..013, FR-016 | T004 | `tests/contracts/nutrition-selection.test.ts` (11) | commit `5d5aa65c`; RED (no-contract stub, 11 failing) `t004-red.log`, mutation (approved-list check removed, 2 failing) `t004-mutation.log` in `runs/s47-glm-f18-p0/` |
 | F18-FR-006, FR-014, FR-015, FR-023 | T005 | `tests/contracts/nutrition-export-contract.test.ts` (9) | commit `3b7816af`; RED (stubbed renderers, 8 failing) `t005-red.log`, mutation (note merge, 1 failing) `t005-mutation.log` in `runs/s48-glm-f18-p0b2/` |

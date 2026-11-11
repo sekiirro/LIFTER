@@ -2,7 +2,7 @@
 
 **Input**: [spec.md](spec.md) (requirements), [plan.md](plan.md) and [data-model.md](data-model.md) (design is binding), [contracts/](contracts/), the pending F19 Plan Core contract at `C:/Users/NEW LAP/Desktop/LFTR-s42-f19/specs/019-plan-core/`, F16 catalog contracts on `main`.
 
-**Status**: Updated spec-only draft (S43, 2026-11-10). Every task is unticked. No implementation, migration, test or workflow change is authorized by this file. Implementation entry requires the F19 contract merged; S43-MCQ-A is resolved by S43-PO-5 (architect mapping (S43-R6)). S43-MCQ-B is resolved by S43-PO-2.
+**Status**: Updated spec-only draft (S43, 2026-11-10). Phase 0 tasks T001–T006 are ticked with executed evidence (traceability.md §4a; branch `018-impl-s47-p0`, authorized by PO S47-PO-13); Phase 1+ tasks remain unticked. Implementation, migration, test or workflow change beyond the ticked Phase 0 requires the F19 contract merged; S43-MCQ-A is resolved by S43-PO-5 (architect mapping (S43-R6)). S43-MCQ-B is resolved by S43-PO-2.
 
 **Execution rule per task**: write the named failing test first and record the intended failing assertion (RED); make the smallest implementation change; run the named test and the relevant regressions (GREEN); run the listed mutation and prove the intended test fails; restore. A task is ticked only with executed evidence cited in [traceability.md](traceability.md).
 
