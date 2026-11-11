@@ -199,3 +199,38 @@ Scope: Greptile P2 `data-model.md` Workout document row omits the editable `name
 | LOW      | 0 open  | FR/task/SC cross-references remain aligned.                                       |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S47 Phase-0 [INDEPENDENT] implementation Analyze — 2026-11-11 12:02 UTC
+
+Scope: pure-TS implementation of the eight Phase-0 `[PURE-TS][INDEPENDENT]`
+tasks on branch `017-impl-s47-p0` (T001, T003, T053, T006, T007, T008, T009,
+T010). No spec/plan requirement text was added, changed or reinterpreted; no
+DB, migration, RLS, UI or export-runtime work was done.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then
+  scenarios; §8.8 states no open ambiguities remain in F17 scope.
+- PASS — `plan.md` covers the touched pure-function scope; `tasks.md` carries
+  the eight task IDs with unchanged FR tags; the eight boxes are ticked only
+  after their tests passed on the current head.
+- PASS — this Analyze section is dated after the last spec/plan/tasks edit in
+  this lane (task ticks + traceability evidence).
+- PASS — `traceability.md` cites test file::name evidence for FR-020 (T001),
+  FR-002 (T003), FR-004 (T053), FR-016 (T006), FR-017/FR-018 (T007), FR-019
+  (T008), FR-010/FR-011 (T009), FR-022 (T010); remaining rows stay PLANNED
+  with `none` evidence.
+- PASS — every task followed RED (missing-module failure recorded) → smallest
+  change → GREEN → guard-removal mutation (test fails, recorded) → restore →
+  GREEN. No test was weakened; no requirement, copy or default was invented.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Disposition                                                              |
+| -------- | ------- | ------------------------------------------------------------------------ |
+| CRITICAL | 0 open  | No schema, migration, privilege or runtime behavior implemented.         |
+| HIGH     | 0 open  | Matrix, remap, volume, guard, prompt, assignment and registry match FRs. |
+| MEDIUM   | 0 open  | No new product ambiguity or MCQ introduced.                              |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned.                              |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
