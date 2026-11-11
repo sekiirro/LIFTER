@@ -526,7 +526,8 @@ export function createCatalogServer(deps: CatalogDependencies) {
         ): Promise<CatalogResult<CatalogExerciseOption[]>> => {
           const options: CatalogExerciseOption[] = [];
           let cursor: string | null = null;
-          for (let page = 0; page < 100; page += 1) {
+          const seenCursors = new Set<string>();
+          while (true) {
             const result = await rpc<unknown>(ready.client!, 'catalog_search', {
               kind,
               query: '',
@@ -535,11 +536,18 @@ export function createCatalogServer(deps: CatalogDependencies) {
               workspace_id: workspaceId,
             });
             if (result.status !== 'ok') return { status: result.status };
-            const rows = Array.isArray(result.data) ? result.data : [];
+            if (!Array.isArray(result.data)) return { status: 'unavailable' };
+            const rows = result.data;
             options.push(...toOptions(rows, optionKind));
             const last = rows.at(-1) as { result_id?: string } | undefined;
-            if (rows.length < 50 || typeof last?.result_id !== 'string') break;
+            if (rows.length < 50) break;
+            if (
+              typeof last?.result_id !== 'string' ||
+              seenCursors.has(last.result_id)
+            )
+              return { status: 'unavailable' };
             cursor = last.result_id;
+            seenCursors.add(cursor);
           }
           return { status: 'ok', data: options };
         };

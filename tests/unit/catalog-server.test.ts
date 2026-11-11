@@ -227,6 +227,46 @@ describe('catalog server authorization and RPC boundary', () => {
     });
   });
 
+  it('continues Alternative pagination beyond 100 pages', async () => {
+    let call = 0;
+    const row = (index: number) => ({
+      result_id: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+      result_payload: {
+        name_en: `Option ${index}`,
+        primary_muscle_code: 'chest',
+        equipment_codes: ['barbell'],
+      },
+    });
+    rpc.mockImplementation(async () => {
+      call += 1;
+      const start = (call - 1) * 50 + 1;
+      const count = call <= 100 ? 50 : 1;
+      return {
+        data: Array.from({ length: count }, (_, index) => row(start + index)),
+        error: null,
+      };
+    });
+
+    const result = await catalog().alternativeOptions({ workspaceId: null });
+
+    expect(result.status).toBe('ok');
+    expect((result as { data: unknown[] }).data).toHaveLength(5001);
+    expect(rpc).toHaveBeenCalledTimes(101);
+  });
+
+  it('fails closed when Alternative pagination repeats a full-page cursor', async () => {
+    const rows = Array.from({ length: 50 }, (_, index) => ({
+      result_id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      result_payload: { name_en: `Option ${index + 1}` },
+    }));
+    rpc.mockResolvedValue({ data: rows, error: null });
+
+    const result = await catalog().alternativeOptions({ workspaceId: null });
+
+    expect(result).toEqual({ status: 'unavailable' });
+    expect(rpc).toHaveBeenCalledTimes(2);
+  });
+
   it('does not restore canonical Arabic in an option when the resolved name clears it', async () => {
     rpc.mockResolvedValueOnce({
       data: [
