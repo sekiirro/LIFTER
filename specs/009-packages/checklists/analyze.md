@@ -189,3 +189,66 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T078 resolves in `tasks.md` and in the traceability rows; no task status changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no status changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+## 2026-11-11 S48-PO-10 / S48-R10 T077 re-analysis (17:08 Africa/Cairo)
+
+- Scope: record the binding legacy-offer decision and migration/cleanup boundary before T077 implementation.
+- PASS: FR-002/034/036, SC-024/026 and the S43-PO-8 Given/When/Then scenarios still define immutable offer-level Silver < Gold < Platinum rank and rank/duration eligibility.
+- PASS: S48-PO-10 is recorded byte-exact in the F9 decision register; S48-R10 is separately labeled architect mapping.
+- PASS: spec, data-model.md, plan.md and T077 agree: no default/backfill; forward migration raises if any legacy offer is unranked; reviewed cleanup is separate, verified-test-only, no-cascade, and retains protected references; fixtures supply explicit rank.
+- PASS: T077 retains FR-002, FR-034, FR-036, SC-024 and SC-026 tags; no task or identifier was added or renumbered.
+- Environment note (not a feature-design finding): the existing local Stack C has 330 offers and every offer has an audit-event reference; the architect-mandated cleanup must retain referenced rows, so the fail-closed migration cannot be applied to that database as inventoried.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings.
+
+## 2026-11-11 S48-PO-10 status cross-reference re-analysis (17:33 Africa/Cairo)
+
+- Scope: include the resolved S48-PO-10 status in the spec header after adding its decision-register entry.
+- PASS: the header status, byte-exact decision-register quote, S48-R10 mapping, T077 task, plan, data model, and SC/FR references agree; no open product ambiguity is implied.
+- PASS: no requirement, acceptance scenario, identifier, or task tag changed.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.
+
+## 2026-11-11 S48-PO-10 metadata recheck (17:26 Africa/Cairo)
+
+- Scope: reflect the S48-PO-10 clarification date in the spec header; no requirement, identifier, or task changed.
+- PASS: numbered FRs, SCs, acceptance scenarios, resolved PO clarification, T077 tags, and S48-R10 forward migration/cleanup mapping remain consistent across spec.md, plan.md, data-model.md, tasks.md, and traceability.md.
+- PASS: no stale pending status was changed or inferred; task evidence remains unverified until implementation tests pass.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings.
+
+## 2026-11-11 S48 T077 implementation status analysis (17:37 Africa/Cairo)
+
+- Scope: update T077's task status description to reflect implemented code and the unresolved environment gate; no requirement, acceptance scenario, identifier, or task tag changed.
+- PASS: FR-002/034/036, SC-024/026, S48-PO-10 and S48-R10 remain consistent across spec.md, plan.md, data-model.md, tasks.md, and traceability.md.
+- PASS: T077 remains unchecked because rank-aware DB integration evidence is blocked; Stack C's 330 unranked offers all have protected references and cleanup retained them.
+- PASS: no new product decision or scope ambiguity; no stale implementation/tests unstarted status remains for T077.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings.
+
+## 2026-11-11 S48 T077 completion Analyze (18:35 Africa/Cairo)
+
+- Scope: tick T077, reconcile current status summaries, and record baseline-vs-candidate Stack C evidence; no requirement or acceptance text changed.
+- PASS: T077 remains tagged to FR-002/034/036 and SC-024/026, and traceability now maps those IDs to explicit rank, identity, eligibility, fail-closed, and cleanup tests.
+- PASS: S48-PO-10 and S48-R11 govern the legacy cleanup/reset path; the candidate reset observed zero offers before T077 migration, and the migration applied as the final 117th migration.
+- PASS: baseline at origin/main passed 828/828 across 49 suites; candidate passed 836/836 across 51 suites; candidate failures are a subset of baseline failures (both empty).
+- PASS: no new product decision or scope ambiguity.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings.
+
+## 2026-11-11 S48 T077 final cross-reference Analyze (18:41 Africa/Cairo)
+
+- Scope: remove the stale tier-section summary that said all tasks were unchecked and no migration existed; no requirements or task tags changed.
+- PASS: T077 is checked with its Stack C evidence; T078 remains unchecked and unstarted.
+- PASS: FR-002/034/036 and SC-024/026 traceability points to the Stack C baseline/candidate tests and migration evidence.
+- PASS: S48-PO-10/R11 remain the governing decisions; no open product decision or ambiguity.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings.
+
+## 2026-11-11 S48 T077 E2E regression Analyze (19:15 Africa/Cairo)
+
+- Scope: record the focused Stack C Playwright pass for explicit-rank package and registration-link fixtures; no requirement or plan text changed.
+- PASS: the package acceptance flow explicitly selects Silver for each publication; no UI default was added.
+- PASS: the stale-terms registration-link fixture passes `tier_rank: 1` explicitly.
+- PASS: FR-002/034/036, SC-024/026 and T077 cross-references remain consistent; no open product question.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings.
+
+## S48 merge of main 69cb85ee (PR #83 T077 tier rank), no PR content change
+
+- Scope: protocol merge of main `69cb85ee` into PR #52. This file conflicted because both sides appended an Analyze section: keep-both, HEAD history first and the main T077 re-analysis sections after it, each side byte-identical. No statement was chosen between alternatives, no requirement text changed, and no PO text was altered.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed. **No open ambiguities** remain for this merge.
+- Verdict: PASS for this merge reconciliation.

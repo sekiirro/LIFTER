@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getMessages } from '../../lib/i18n';
 import type { RegistrationData } from '../../lib/registration-links/read';
+import { tierLabel } from '../../lib/packages/tier-label';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/States';
 import { RegistrationLinkDialog } from './RegistrationLinkDialog';
@@ -68,7 +69,8 @@ export function RegistrationLinksManager({
                 {data.offers.map((v) => (
                   <option value={v.id} key={v.id}>
                     {locale === 'ar' ? v.name_ar : v.name_en} ·{' '}
-                    {v.duration_days} {m['registration.days']}
+                    {tierLabel(v.tier_rank, locale)} · {v.duration_days}{' '}
+                    {m['registration.days']}
                   </option>
                 ))}
               </select>
@@ -150,6 +152,7 @@ export function RegistrationLinksManager({
           key={`${workspaceId}:${version.id}`}
           workspaceId={workspaceId}
           versionId={version.id}
+          tierLabel={tierLabel(version.tier_rank, locale)}
           priceMinor={version.price_minor}
           locale={locale}
           canSchedule={canSchedule}

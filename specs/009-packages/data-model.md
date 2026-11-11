@@ -237,3 +237,9 @@ The constitutional external-model rule applies to development AI handling. S31-P
 ## S43-PO-8 tier-offer data model
 
 Each of the four existing package category rows has all three tier offers: Silver, Gold, and Platinum. Each tier offer belongs to one category and stores the immutable platform rank; rank is compared within a category and never inferred from price, duration, or localized label. Tier display names resolve per locale from PO-controlled global names with optional Workspace Owner override scoped to that owner's workspace. Renaming affects display only and cannot alter price, duration, currency, or other commercial terms. **architect mapping (S43-R10).**
+
+## S48-PO-10 legacy offer migration boundary
+
+**PO words (byte-exact):** “Choose B. Verify all existing offers are mock/test data, delete them safely, then apply T077 with mandatory immutable tier ranks. Preserve required audit/payment test records. No arbitrary Silver defaults.”
+
+**architect mapping (S48-R10):** In a new forward migration, add `tier_rank` with no default, raise before applying `NOT NULL` if any unranked offer remains, and replace uniqueness with `(workspace_id, package_id, duration_days, tier_rank)`. Do not backfill or assign Silver. A separate reviewed cleanup script may delete verified test offers only when there are no payment, audit, subscription, registration-link, or restrictive version references; it must preserve those records and report retained offers without cascading. Inventory local Stacks A–D and CI's fresh database; any hosted/non-local target stops the work. New fixtures pass explicit ranks.

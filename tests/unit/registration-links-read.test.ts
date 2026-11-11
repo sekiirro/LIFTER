@@ -9,7 +9,11 @@ const m = vi.hoisted(() => ({
 vi.mock('../../lib/supabase/server', () => ({
   createSessionClient: m.session,
 }));
-vi.mock('../../lib/packages/read', () => ({ loadPackageOffers: m.packages }));
+vi.mock('../../lib/packages/read', () => ({
+  loadPackageOffers: m.packages,
+  SAFE_VERSION_COLUMNS:
+    'workspace_id,id,offer_id,version,name_ar,name_en,price_minor,currency,duration_days,duration_months,published_at,published_by',
+}));
 import {
   loadRegistrationLinks,
   SAFE_INSTALLMENT_COLUMNS,
@@ -38,6 +42,7 @@ type Query = {
 };
 let rows: Record<string, unknown>[],
   children: Record<string, unknown>[],
+  currentVersions: Record<string, unknown>[],
   linkError: unknown,
   childError: unknown,
   queries: Query[],
@@ -89,7 +94,9 @@ const makeQuery = (table: string): Query => {
       return Promise.resolve(
         table === 'registration_links_safe'
           ? { data: rows, error: linkError }
-          : { data: children, error: childError },
+          : table === 'registration_link_installments_safe'
+            ? { data: children, error: childError }
+            : { data: currentVersions, error: null },
       ).then(resolve);
     },
   };
@@ -100,6 +107,11 @@ beforeEach(() => {
   vi.spyOn(Date, 'now').mockReturnValue(NOW);
   rows = [baseRow()];
   children = [];
+  currentVersions = [
+    { id, workspace_id: ws, price_minor: '1200' },
+    { id: version2, workspace_id: ws, price_minor: '1200' },
+    { id: ws, workspace_id: ws, price_minor: '1200' },
+  ];
   linkError = null;
   childError = null;
   queries = [];
@@ -107,8 +119,8 @@ beforeEach(() => {
   m.packages.mockResolvedValue({
     status: 'ok',
     offers: [
-      { current_version_id: id, available: true },
-      { current_version_id: ws, available: false },
+      { current_version_id: id, available: true, tier_rank: 2 },
+      { current_version_id: ws, available: false, tier_rank: 3 },
     ],
     versions: [{ id }, { id: ws }],
   });
@@ -164,17 +176,47 @@ it('filters F9 offers to available current versions only', async () => {
   m.packages.mockResolvedValue({
     status: 'ok',
     offers: [
-      { current_version_id: id, available: true },
-      { current_version_id: version2, available: true },
-      { current_version_id: ws, available: false },
-      { current_version_id: null, available: true },
+      { current_version_id: id, available: true, tier_rank: 1 },
+      { current_version_id: version2, available: true, tier_rank: 3 },
+      { current_version_id: ws, available: false, tier_rank: 2 },
+      { current_version_id: null, available: true, tier_rank: 1 },
     ],
     versions: [{ id }, { id: version2 }, { id: ws }, { id: uuid(9) }],
   });
   const r = await loadRegistrationLinks(actor, ws);
   expect(r.status).toBe('ok');
   if (r.status === 'ok')
-    expect(r.offers.map((v) => v.id)).toEqual([id, version2]);
+    expect(r.offers.map((v) => [v.id, v.tier_rank])).toEqual([
+      [id, 1],
+      [version2, 3],
+    ]);
+});
+it('fetches current versions explicitly when history omits them', async () => {
+  m.packages.mockResolvedValue({
+    status: 'ok',
+    offers: [{ current_version_id: id, available: true, tier_rank: 2 }],
+    versions: [],
+  });
+  const r = await loadRegistrationLinks(actor, ws);
+  expect(r.status).toBe('ok');
+  if (r.status === 'ok')
+    expect(r.offers.map((v) => [v.id, v.tier_rank])).toEqual([[id, 2]]);
+  const query = queries.find((q) => q.table === 'package_versions_safe')!;
+  expect(query.selectColumns).toBe(
+    'workspace_id,id,offer_id,version,name_ar,name_en,price_minor,currency,duration_days,duration_months,published_at,published_by',
+  );
+  expect(query.eqCalls).toEqual([['workspace_id', ws]]);
+  expect(query.inCall).toEqual(['id', [id]]);
+});
+it('fails closed when an available current version has no immutable rank', async () => {
+  m.packages.mockResolvedValue({
+    status: 'ok',
+    offers: [{ current_version_id: id, available: true }],
+    versions: [{ id }],
+  });
+  expect(await loadRegistrationLinks(actor, ws)).toEqual({
+    status: 'unavailable',
+  });
 });
 it('computes consumed/expired/opened/valid status with server time', async () => {
   rows = [

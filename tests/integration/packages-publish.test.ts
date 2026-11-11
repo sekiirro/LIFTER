@@ -47,7 +47,12 @@ describe('package publication', () => {
     const p = await createSynthetic(f);
     for (const [name, actor] of Object.entries(f.actors))
       for (const workspace_id of [f.wsA.id, f.wsB.id]) {
-        const r = await publish(f, p.id, { workspace_id }, actor.client);
+        const r = await publish(
+          f,
+          p.id,
+          { tier_rank: 1, workspace_id },
+          actor.client,
+        );
         if (name === 'po') expect(r.error).toBeNull();
         else expect(r.error?.code, `${name}/${workspace_id}`).toBe('42501');
       }
@@ -57,23 +62,25 @@ describe('package publication', () => {
       { package_id: null },
       { workspace_id: null },
     ])
-      expect((await publish(f, p.id, patch)).error).toMatchObject({
+      expect(
+        (await publish(f, p.id, { tier_rank: 1, ...patch })).error,
+      ).toMatchObject({
         code: '42501',
         message: 'not_permitted',
       });
   });
   it('R1: current replay is no-op; v1 -> v2 -> v1 terms appends v3 and moves current', async () => {
-    const p = await publishedFixture(f);
-    const replay = checked(await publish(f, p.id));
+    const p = await publishedFixture(f, { tier_rank: 1 });
+    const replay = checked(await publish(f, p.id, { tier_rank: 1 }));
     expect(replay).toBe(p.versionId);
     const v2 = checked(
-      await publish(f, p.id, { price_minor: '9007199254740994' }),
+      await publish(f, p.id, { tier_rank: 1, price_minor: '9007199254740994' }),
     );
     expect(v2).not.toBe(p.versionId);
-    const v3 = checked(await publish(f, p.id));
+    const v3 = checked(await publish(f, p.id, { tier_rank: 1 }));
     expect(v3).not.toBe(p.versionId);
     expect(v3).not.toBe(v2);
-    expect(checked(await publish(f, p.id))).toBe(v3);
+    expect(checked(await publish(f, p.id, { tier_rank: 1 }))).toBe(v3);
     const versions =
       await db`select id,version,price_minor::text from public.package_versions where offer_id=${p.offer.id} order by version`;
     expect(versions).toEqual([
@@ -82,8 +89,12 @@ describe('package publication', () => {
       { id: v3, version: 3, price_minor: '9007199254740993' },
     ]);
     const [offer] =
-      await db`select current_version_id,available from public.package_offers where id=${p.offer.id}`;
-    expect(offer).toEqual({ current_version_id: v3, available: false });
+      await db`select current_version_id,available,tier_rank from public.package_offers where id=${p.offer.id}`;
+    expect(offer).toEqual({
+      current_version_id: v3,
+      available: false,
+      tier_rank: 1,
+    });
     const events =
       await db`select action,details,details->>'price_minor' as exact_price from public.audit_events where target_id in (select id from public.package_versions where offer_id=${p.offer.id}) order by (details->>'version')::int`;
     expect(events).toHaveLength(3);
@@ -112,7 +123,7 @@ describe('package publication', () => {
     'commission_rate_bp',
     'price_minor',
   ] as const)('includes %s in replay identity', async (field) => {
-    const p = await publishedFixture(f);
+    const p = await publishedFixture(f, { tier_rank: 1 });
     const values = {
       name_ar: 'test-revised-ar',
       name_en: 'test-revised-en',
@@ -121,17 +132,23 @@ describe('package publication', () => {
       price_minor: '1',
     };
     expect(
-      checked(await publish(f, p.id, { [field]: values[field] })),
+      checked(await publish(f, p.id, { tier_rank: 1, [field]: values[field] })),
     ).not.toBe(p.versionId);
   });
   it('keeps fixed representation and immutable copied duration', async () => {
     const p = await publishedFixture(f, {
+      tier_rank: 1,
       duration_months: 3,
       duration_days: 90,
     });
     expect(
-      (await publish(f, p.id, { duration_months: null, duration_days: 90 }))
-        .error?.code,
+      (
+        await publish(f, p.id, {
+          tier_rank: 1,
+          duration_months: null,
+          duration_days: 90,
+        })
+      ).error?.code,
     ).toBe('22023');
     const [v] =
       await db`select duration_days,duration_months,published_by from public.package_versions where id=${p.versionId}`;
@@ -140,6 +157,108 @@ describe('package publication', () => {
       duration_months: 3,
       published_by: f.po.userId,
     });
+  });
+  it('allows all immutable ranks to coexist at the same category and duration', async () => {
+    const categories = await Promise.all(
+      Array.from({ length: 4 }, () => createSynthetic(f)),
+    );
+    for (const category of categories) {
+      const versionIds = [];
+      for (const [tier_rank, price_minor] of [
+        [1, '1100'],
+        [2, '2200'],
+        [3, '3300'],
+      ] as const) {
+        versionIds.push(
+          checked(
+            await publish(f, category.id, {
+              tier_rank,
+              duration_months: 3,
+              duration_days: 90,
+              price_minor,
+            }),
+          ),
+        );
+      }
+      const offers =
+        await db`select tier_rank,duration_days,available,current_version_id from public.package_offers where package_id=${category.id} order by tier_rank`;
+      expect(offers).toEqual([
+        {
+          tier_rank: 1,
+          duration_days: 90,
+          available: false,
+          current_version_id: versionIds[0],
+        },
+        {
+          tier_rank: 2,
+          duration_days: 90,
+          available: false,
+          current_version_id: versionIds[1],
+        },
+        {
+          tier_rank: 3,
+          duration_days: 90,
+          available: false,
+          current_version_id: versionIds[2],
+        },
+      ]);
+      expect(
+        checked(
+          await publish(f, category.id, {
+            tier_rank: 2,
+            duration_months: 3,
+            duration_days: 90,
+            price_minor: '2200',
+          }),
+        ),
+      ).toBe(versionIds[1]);
+      expect(
+        checked(
+          await publish(f, category.id, {
+            tier_rank: 2,
+            duration_months: null,
+            duration_days: 120,
+            price_minor: '4400',
+          }),
+        ),
+      ).not.toBe(versionIds[1]);
+      const eligibilityFixture = await db`
+        select tier_rank,duration_days from public.package_offers
+        where package_id=${category.id} order by tier_rank,duration_days
+      `;
+      expect(eligibilityFixture).toEqual([
+        { tier_rank: 1, duration_days: 90 },
+        { tier_rank: 2, duration_days: 90 },
+        { tier_rank: 2, duration_days: 120 },
+        { tier_rank: 3, duration_days: 90 },
+      ]);
+    }
+  });
+  it('stores rank as mandatory with no default and uses the rank-inclusive identity key', async () => {
+    const [column] = await db`
+      select is_nullable,column_default
+      from information_schema.columns
+      where table_schema='public' and table_name='package_offers' and column_name='tier_rank'
+    `;
+    expect(column).toEqual({ is_nullable: 'NO', column_default: null });
+    const keys = await db`
+      select pg_get_constraintdef(oid) as definition
+      from pg_constraint where conrelid='public.package_offers'::regclass and contype='u'
+    `;
+    expect(keys.map((row) => row.definition)).toContain(
+      'UNIQUE (workspace_id, package_id, duration_days, tier_rank)',
+    );
+  });
+  it('keeps publication rank mandatory and the rankless RPC fail-closed', async () => {
+    const p = await createSynthetic(f);
+    for (const tier_rank of [null, 0, 4])
+      expect((await publish(f, p.id, { tier_rank })).error?.code).toBe('22023');
+    await expect(
+      db`select public.publish_package_version(${f.wsA.id}::uuid,${p.id}::uuid,null::smallint,61,'test-ar','test-en',2,'XTS',0)`,
+    ).rejects.toMatchObject({ message: 'tier_rank_required' });
+    expect(
+      await db`select id from public.package_offers where package_id=${p.id}`,
+    ).toHaveLength(0);
   });
   it.each([
     ...[null, '', ' '.repeat(4), '\t\n', 'x'.repeat(121)].flatMap((v) => [
@@ -153,6 +272,7 @@ describe('package publication', () => {
     ...[null, -1, 10001, 1.5].map((commission_rate_bp) => ({
       commission_rate_bp,
     })),
+    ...[null, 0, 4, 1.5].map((tier_rank) => ({ tier_rank })),
     ...[null, 0, -1, 1.5, 2147483648].map((duration_days) => ({
       duration_days,
     })),
@@ -163,7 +283,7 @@ describe('package publication', () => {
     'rejects DB field boundary %# with no partial publication',
     async (patch) => {
       const p = await createSynthetic(f);
-      const result = await publish(f, p.id, patch);
+      const result = await publish(f, p.id, { tier_rank: 1, ...patch });
       expect(result.error).not.toBeNull();
       expect(
         await db`select id from public.package_offers where package_id=${p.id}`,
@@ -176,6 +296,7 @@ describe('package publication', () => {
       expect(
         (
           await publish(f, p.id, {
+            tier_rank: 1,
             duration_months: m,
             duration_days: m * 30,
             price_minor: '9223372036854775807',
@@ -186,14 +307,16 @@ describe('package publication', () => {
         ).error,
       ).toBeNull();
     for (const d of [1, 60, 120, 2147483647])
-      expect((await publish(f, p.id, { duration_days: d })).error).toBeNull();
+      expect(
+        (await publish(f, p.id, { tier_rank: 1, duration_days: d })).error,
+      ).toBeNull();
   });
   it('serializes independent first/later distinct publications and identical calls', async () => {
     const p = await createSynthetic(f);
     const race = (prices: string[]) => {
       const startAt = new Date(Date.now() + 500).toISOString();
       return Promise.all(
-        prices.map((price) => independentPublish(f, p.id, price, startAt)),
+        prices.map((price) => independentPublish(f, p.id, 1, price, startAt)),
       );
     };
     const first = await race(['11', '12', '13', '14']);
@@ -210,8 +333,8 @@ describe('package publication', () => {
     expect(events).toHaveLength(9);
   });
   it('all DML roles hit update/delete guards independently of grants', async () => {
-    const p = await publishedFixture(f);
-    checked(await publish(f, p.id, { price_minor: '8' }));
+    const p = await publishedFixture(f, { tier_rank: 1 });
+    checked(await publish(f, p.id, { tier_rank: 1, price_minor: '8' }));
     for (const role of ['postgres', 'service_role', 'authenticated', 'anon'])
       for (const table of ['packages', 'package_versions'])
         for (const op of ['update', 'delete']) {
@@ -268,9 +391,12 @@ describe('package publication', () => {
       }
   });
   it('rejects cross-workspace FKs, same-workspace wrong-offer pointer and duration snapshot mismatches', async () => {
-    const p = await publishedFixture(f);
-    const q = await publishedFixture(f);
-    const foreign = await publishedFixture(f, { workspace_id: f.wsB.id });
+    const p = await publishedFixture(f, { tier_rank: 1 });
+    const q = await publishedFixture(f, { tier_rank: 1 });
+    const foreign = await publishedFixture(f, {
+      tier_rank: 1,
+      workspace_id: f.wsB.id,
+    });
     for (const versionId of [q.versionId, foreign.versionId])
       await expect(
         db.begin(async (tx) => {
@@ -296,6 +422,7 @@ describe('package publication', () => {
       { package_id: q.id },
       { duration_days: 62 },
       { duration_months: 1 },
+      { tier_rank: 2 },
     ])
       await expect(
         db.begin(async (tx) => {
@@ -306,7 +433,7 @@ describe('package publication', () => {
       ).rejects.toMatchObject({ code: '23514' });
   });
   it('rolls back first/later publication when audit insertion fails, preserving legacy audit body', async () => {
-    const p = await publishedFixture(f);
+    const p = await publishedFixture(f, { tier_rank: 1 });
     const q = await createSynthetic(f);
     for (const packageId of [p.id, q.id])
       await expect(
@@ -314,7 +441,7 @@ describe('package publication', () => {
           await tx`create function pg_temp.reject_package_audit() returns trigger language plpgsql as $$ begin raise exception 'test_audit_failure'; end $$`;
           await tx`create trigger test_package_audit_failure before insert on public.audit_events for each row execute function pg_temp.reject_package_audit()`;
           await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId })},true)`;
-          await tx`select public.publish_package_version(${f.wsA.id}::uuid,${packageId}::uuid,null::smallint,61,'test-ar','test-en',2,'XTS',0)`;
+          await tx`select public.publish_package_version(${f.wsA.id}::uuid,${packageId}::uuid,null::smallint,61,1::smallint,'test-ar','test-en',2,'XTS',0)`;
           throw new Error('audit_trigger_missing');
         }),
       ).rejects.toMatchObject({ message: 'test_audit_failure' });
