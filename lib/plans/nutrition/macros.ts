@@ -135,12 +135,15 @@ export type ComputedValues = {
   totals: MacroSet;
 };
 
-/** F18 snapshot map entry (contract section 4), per100 as decimal strings. */
+/**
+ * F18 snapshot map entry (contract section 4), per100 as decimal strings.
+ * Locale fields follow F16: either `ar` or `en` (at least one) may be set.
+ */
 export type BasisSnapshotEntry = {
   kind: 'basis';
   foodId: string;
   version: number;
-  names: { ar: string; en: string };
+  names: { ar?: string; en?: string };
   basis: 'g' | 'ml';
   productIdentity: string;
   preparationIdentity: string;
@@ -160,7 +163,7 @@ export type ServingSnapshotEntry = {
   snapshot: {
     foodId: string;
     version: number;
-    names: { ar: string; en: string };
+    names: { ar?: string; en?: string };
     basis: 'g' | 'ml';
     productIdentity: string;
     preparationIdentity: string;
@@ -172,7 +175,7 @@ export type ServingSnapshotEntry = {
     fiber: string | null;
     serving: {
       servingId: string;
-      labels: { ar: string; en: string };
+      labels: { ar?: string; en?: string };
       basisQuantity: string;
     };
   };

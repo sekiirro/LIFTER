@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   computeDocumentValues,
+  snapshotMapKey,
   type NutritionSnapshotEntry,
   type NutritionSnapshotMap,
 } from '../../lib/plans/nutrition/macros';
+import type { NutritionQuantityUnit } from '../../lib/plans/nutrition/types';
 import {
   NUTRITION_DOCUMENT_SCHEMA_VERSION,
   NutritionDocumentError,
@@ -33,14 +35,14 @@ const FOODS: Record<
 > = {
   'f1@3': {
     basis: 'g',
-    unitKeys: ['g'],
-    servings: { g: '100.000' },
+    unitKeys: ['g', 'scoop:large'],
+    servings: { g: '100.000', 'scoop:large': '250.000' },
     per100: { kcal: '250.0', protein: '12.34', carbs: '50.00', fat: '12.34' },
   },
 };
 
 const UNIT_CONTEXT_F1 = {
-  [`${'f1'}@3`]: { basis: 'g' as const, servingUnitKeys: ['g'] },
+  [`${'f1'}@3`]: { basis: 'g' as const, servingUnitKeys: ['g', 'scoop:large'] },
   // The catalog's unit-resolution context knows the declared basis and
   // serving identities of the food whose version row is missing from the
   // loadable registry; the publish then fails at the load step (§5/§8).
@@ -93,10 +95,12 @@ function buildSnapshotMap(
     const versionKey = `${foodId}@${foodVersion}`;
     const food = FOODS[versionKey];
     if (!food) return; // missing version is reported by the validator context
-    const key =
-      unit.kind === 'basis'
-        ? `food:${foodId}@${foodVersion}#basis:${unit.value}`
-        : `food:${foodId}@${foodVersion}#serving:${unit.unitKey}`;
+    // canonical key builder: RFC 3986 encoding for serving keys (contract §4)
+    const key = snapshotMapKey(
+      foodId,
+      foodVersion,
+      unit as NutritionQuantityUnit,
+    );
     if (unit.kind === 'basis') {
       map[key] = {
         kind: 'basis',
@@ -268,6 +272,9 @@ function publishNutritionRevision(
     }
     throw error;
   }
+  // the committed record is a DETACHED copy: later caller edits to the
+  // submitted draft must never change the published revision content
+  const committedDocument = structuredClone(document);
   // 6. load every referenced exact food version (items + alternatives); a
   //    missing version aborts the whole transaction with no revision
   for (const foodId of collectReferencedFoodVersions(document)) {
@@ -284,7 +291,7 @@ function publishNutritionRevision(
   state.currentRevision = revisionId;
   state.contents.push({
     revisionId,
-    document: request.payload.document,
+    document: committedDocument,
     snapshotMap,
     computedValues,
   });
@@ -377,6 +384,61 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
       (content.computedValues as { items: Record<string, { protein: string }> })
         .items['i-serving']!.protein,
     ).toBe('12.3400000');
+  });
+
+  it('publishes a serving key that requires RFC 3986 encoding under its canonical key', () => {
+    const state = freshState();
+    const encodedDoc = structuredClone(DOC_F1) as Record<string, unknown>;
+    const meals = encodedDoc.meals as Array<Record<string, unknown>>;
+    meals[0]!.items = [
+      {
+        id: 'i-encoded',
+        foodId: 'f1',
+        foodVersion: 3,
+        quantity: {
+          value: '1',
+          unit: { kind: 'serving', unitKey: 'scoop:large' },
+        },
+        note: null,
+        alternatives: [],
+      },
+    ];
+    const result = publishNutritionRevision(
+      state,
+      baseRequest({ payload: { document: encodedDoc } }),
+    );
+    expect(result.status).toBe('ok');
+    const content = state.contents[0]!;
+    // the canonical encoded key holds the entry; the raw key does not exist
+    expect(
+      content.snapshotMap['food:f1@3#serving:scoop%3Alarge'],
+    ).toBeDefined();
+    expect(
+      content.snapshotMap['food:f1@3#serving:scoop:large'],
+    ).toBeUndefined();
+    // 12.34 × 250.000 / 100 = 30.85 exactly (scale 2+3+2 = 7)
+    expect(
+      (content.computedValues as { items: Record<string, { protein: string }> })
+        .items['i-encoded']!.protein,
+    ).toBe('30.8500000');
+  });
+
+  it('stores a detached document: later caller edits never change the committed record', () => {
+    const state = freshState();
+    const submitted = structuredClone(DOC_F1) as Record<string, unknown>;
+    const result = publishNutritionRevision(
+      state,
+      baseRequest({ payload: { document: submitted } }),
+    );
+    expect(result.status).toBe('ok');
+    const committedBefore = JSON.stringify(state.contents[0]!.document);
+    // the caller edits the submitted draft after publication
+    (submitted.meals as Array<Record<string, unknown>>)[0]!.note =
+      'tampered after publish';
+    expect(JSON.stringify(state.contents[0]!.document)).toBe(committedBefore);
+    expect(JSON.stringify(state.contents[0]!.document)).not.toContain(
+      'tampered after publish',
+    );
   });
 
   it('returns the original receipt for an identical key/request without new writes', () => {

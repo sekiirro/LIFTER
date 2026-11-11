@@ -5,10 +5,12 @@ import {
   computeDocumentValues,
   displayCalories,
   displayMacroGrams,
+  snapshotMapKey,
   type MacroSet,
   type NutritionSnapshotEntry,
   type NutritionSnapshotMap,
 } from '../../lib/plans/nutrition/macros';
+import type { NutritionQuantityUnit } from '../../lib/plans/nutrition/types';
 import {
   NUTRITION_DOCUMENT_SCHEMA_VERSION,
   validateNutritionDocument,
@@ -159,7 +161,6 @@ const DOC = validateNutritionDocument(
 );
 
 const COACH_VALUES = computeDocumentValues(DOC, SNAPSHOT_MAP);
-const ALT_VALUES = computeAlternativeValues(DOC, SNAPSHOT_MAP);
 const SELECTED_VALUES = computeDocumentValues(DOC, SNAPSHOT_MAP, {
   'i-1': 'a-1',
 });
@@ -169,6 +170,8 @@ type ExportProjection = {
   computedValues: typeof COACH_VALUES;
   selectedValues: typeof SELECTED_VALUES | null;
   selectedAlternativeIds: Record<string, string>;
+  /** The immutable revision's snapshot map: renderers resolve from it only. */
+  snapshotMap: NutritionSnapshotMap;
 };
 
 const NO_SELECTION: ExportProjection = {
@@ -176,6 +179,7 @@ const NO_SELECTION: ExportProjection = {
   computedValues: COACH_VALUES,
   selectedValues: null,
   selectedAlternativeIds: {},
+  snapshotMap: SNAPSHOT_MAP,
 };
 
 const WITH_SELECTION: ExportProjection = {
@@ -183,6 +187,7 @@ const WITH_SELECTION: ExportProjection = {
   computedValues: COACH_VALUES,
   selectedValues: SELECTED_VALUES,
   selectedAlternativeIds: { 'i-1': 'a-1' },
+  snapshotMap: SNAPSHOT_MAP,
 };
 
 // Seven-day fidelity fixture: two different meals on two different days,
@@ -272,6 +277,106 @@ const SEVEN_DAY_PROJECTION: ExportProjection = {
   computedValues: SEVEN_DAY_COACH,
   selectedValues: null,
   selectedAlternativeIds: {},
+  snapshotMap: SNAPSHOT_MAP,
+};
+
+// Second snapshot map: a distinct food whose catalog serving key requires
+// RFC 3986 encoding, proving renderers resolve from the projection only.
+const FOOD_D = 'fd4';
+const UNIT_CONTEXT_2 = {
+  [`${FOOD_D}@1`]: { basis: 'g' as const, servingUnitKeys: ['cup/large'] },
+};
+const SNAPSHOT_MAP_2: NutritionSnapshotMap = {
+  [`food:${FOOD_D}@1#basis:g`]: {
+    kind: 'basis',
+    foodId: FOOD_D,
+    version: 1,
+    names: { en: 'Yogurt' },
+    basis: 'g',
+    productIdentity: 'raw',
+    preparationIdentity: 'raw',
+    weighingState: 'raw',
+    per100: {
+      kcal: '60.0',
+      protein: '3.50',
+      carbs: '5.00',
+      fat: '1.50',
+      fiber: null,
+    },
+  } satisfies NutritionSnapshotEntry,
+  [snapshotMapKey(FOOD_D, 1, { kind: 'serving', unitKey: 'cup/large' })]: {
+    kind: 'serving',
+    unitKey: 'cup/large',
+    snapshot: {
+      foodId: FOOD_D,
+      version: 1,
+      names: { en: 'Yogurt' },
+      basis: 'g',
+      productIdentity: 'raw',
+      preparationIdentity: 'raw',
+      weighingState: 'raw',
+      kcal: '60.0',
+      protein: '3.50',
+      carbs: '5.00',
+      fat: '1.50',
+      fiber: null,
+      serving: {
+        servingId: 'cup/large',
+        labels: { en: 'cup (large)' },
+        basisQuantity: '250.000',
+      },
+    },
+  } satisfies NutritionSnapshotEntry,
+};
+
+const DOC_2 = validateNutritionDocument(
+  {
+    schemaVersion: NUTRITION_DOCUMENT_SCHEMA_VERSION,
+    structure: 'single_day',
+    implicitDayTypeId: 'dt-rest',
+    dayTypes: [
+      {
+        id: 'dt-rest',
+        name: { ar: 'راحة', en: 'Rest' },
+        trainingDay: false,
+        targets: null,
+      },
+    ],
+    meals: [
+      {
+        id: 'm-x',
+        name: { ar: '=خطير', en: '=Suspicious Meal' },
+        note: null,
+        recipeUrl: null,
+        items: [
+          {
+            id: 'i-d',
+            foodId: FOOD_D,
+            foodVersion: 1,
+            quantity: {
+              value: '1',
+              unit: { kind: 'serving', unitKey: 'cup/large' },
+            },
+            note: null,
+            alternatives: [],
+          },
+        ],
+      },
+    ],
+    title: { ar: 'خطة', en: 'Plan' },
+    notes: null,
+  },
+  UNIT_CONTEXT_2,
+);
+
+const DOC_2_COACH = computeDocumentValues(DOC_2, SNAPSHOT_MAP_2);
+
+const DOC_2_PROJECTION: ExportProjection = {
+  document: DOC_2,
+  computedValues: DOC_2_COACH,
+  selectedValues: null,
+  selectedAlternativeIds: {},
+  snapshotMap: SNAPSHOT_MAP_2,
 };
 
 // S43-PO-2 approved per-item side-note labels (contract P5).
@@ -313,26 +418,31 @@ function macroTotals(values: {
 }
 
 function snapshotEntry(
+  projection: ExportProjection,
   foodId: string,
   foodVersion: number,
   unit: { kind: string; value?: string; unitKey?: string },
 ): NutritionSnapshotEntry {
-  const key =
-    unit.kind === 'basis'
-      ? `food:${foodId}@${foodVersion}#basis:${unit.value ?? ''}`
-      : `food:${foodId}@${foodVersion}#serving:${unit.unitKey ?? ''}`;
-  const entry = SNAPSHOT_MAP[key];
+  // canonical key builder: RFC 3986 encoding for serving keys (contract §4)
+  const key = snapshotMapKey(
+    foodId,
+    foodVersion,
+    unit as NutritionQuantityUnit,
+  );
+  const entry = projection.snapshotMap[key];
   if (!entry) throw new Error(`missing snapshot entry for ${key}`);
   return entry;
 }
 
 function entryName(entry: NutritionSnapshotEntry): string {
-  return entry.kind === 'basis' ? entry.names.en : entry.snapshot.names.en;
+  // F16 allows either locale: prefer `en`, fall back to `ar`.
+  const names = entry.kind === 'basis' ? entry.names : entry.snapshot.names;
+  return names.en ?? names.ar ?? '';
 }
 
 /** Canonical portion line: food name, exact quantity/unit, displayed macros. */
 function portionLine(
-  document: typeof DOC,
+  projection: ExportProjection,
   foodId: string,
   foodVersion: number,
   quantity: {
@@ -341,7 +451,7 @@ function portionLine(
   },
   values: MacroSet,
 ): string {
-  const entry = snapshotEntry(foodId, foodVersion, quantity.unit);
+  const entry = snapshotEntry(projection, foodId, foodVersion, quantity.unit);
   const unit =
     quantity.unit.kind === 'basis'
       ? quantity.unit.value
@@ -351,12 +461,12 @@ function portionLine(
 
 /** Coach-authored item line rendered with the item's canonical values. */
 function itemDescriptor(
-  document: typeof DOC,
+  projection: ExportProjection,
   item: NutritionItem,
   values: MacroSet,
 ): string {
   return portionLine(
-    document,
+    projection,
     item.foodId,
     item.foodVersion,
     item.quantity,
@@ -366,13 +476,13 @@ function itemDescriptor(
 
 /** Coach-configured alternative line rendered with its canonical values. */
 function alternativeDescriptor(
-  document: typeof DOC,
+  projection: ExportProjection,
   item: NutritionItem,
   alt: NutritionAlternative,
   values: MacroSet,
 ): string {
   return portionLine(
-    document,
+    projection,
     alt.foodId,
     alt.foodVersion,
     alt.quantity,
@@ -381,16 +491,29 @@ function alternativeDescriptor(
 }
 
 /** Meals of the document in day order, whatever the structure. */
-function documentMeals(
-  document: typeof DOC,
-): Array<{ dayIndex: number | null; meals: NutritionMeal[] }> {
+function documentMeals(document: typeof DOC): Array<{
+  dayIndex: number | null;
+  dayTypeId: string | null;
+  meals: NutritionMeal[];
+}> {
   if (document.structure === 'single_day') {
-    return [{ dayIndex: null, meals: document.meals ?? [] }];
+    return [{ dayIndex: null, dayTypeId: null, meals: document.meals ?? [] }];
   }
   return (document.days ?? [])
     .slice()
     .sort((a, b) => a.dayIndex - b.dayIndex)
-    .map((d) => ({ dayIndex: d.dayIndex, meals: d.meals ?? [] }));
+    .map((d) => ({
+      dayIndex: d.dayIndex,
+      dayTypeId: d.dayTypeId,
+      meals: d.meals ?? [],
+    }));
+}
+
+/** Display name of a document day type (coach-authored, either locale). */
+function dayTypeName(document: typeof DOC, dayTypeId: string | null): string {
+  if (dayTypeId === null) return '';
+  const dayType = document.dayTypes.find((dt) => dt.id === dayTypeId);
+  return dayType ? dayType.name.en : '';
 }
 
 /**
@@ -414,7 +537,7 @@ function renderExcel(projection: ExportProjection): ExportCell[] {
     for (const meal of group.meals) {
       cells.push({
         field: `meal:${meal.id}:name`,
-        value: meal.name.en,
+        value: asTextCell(meal.name.en),
         isCoachText: true,
         section: 'items',
       });
@@ -425,7 +548,7 @@ function renderExcel(projection: ExportProjection): ExportCell[] {
           cells.push({
             field: `item:${item.id}:selected:${selectedId}`,
             value: `${alternativeDescriptor(
-              document,
+              projection,
               item,
               item.alternatives.find(
                 (a: NutritionAlternative) => a.id === selectedId,
@@ -438,7 +561,7 @@ function renderExcel(projection: ExportProjection): ExportCell[] {
           // labelled coach-original side note beside the affected item
           cells.push({
             field: `item:${item.id}:coach-original`,
-            value: `${SIDE_NOTE_LABEL.en}: ${itemDescriptor(document, item, projection.computedValues.items[item.id]!)}`,
+            value: `${SIDE_NOTE_LABEL.en}: ${itemDescriptor(projection, item, projection.computedValues.items[item.id]!)}`,
             isCoachText: true,
             section: 'items',
           });
@@ -446,7 +569,7 @@ function renderExcel(projection: ExportProjection): ExportCell[] {
           cells.push({
             field: `item:${item.id}`,
             value: itemDescriptor(
-              document,
+              projection,
               item,
               projection.computedValues.items[item.id]!,
             ),
@@ -459,10 +582,10 @@ function renderExcel(projection: ExportProjection): ExportCell[] {
           cells.push({
             field: `item:${item.id}:alternative:${alt.id}`,
             value: alternativeDescriptor(
-              document,
+              projection,
               item,
               alt,
-              ALT_VALUES[item.id]![alt.id]!,
+              alternativeValuesFor(projection, item.id, alt.id),
             ),
             isCoachText: true,
             section: 'items',
@@ -504,7 +627,13 @@ function renderExcel(projection: ExportProjection): ExportCell[] {
       });
     }
     if (group.dayIndex !== null) {
-      // seven_day: each day's own totals row (day types never filter)
+      // seven_day: the day's type and its own totals row (day types never filter)
+      cells.push({
+        field: `day:${group.dayIndex}:type`,
+        value: dayTypeName(document, group.dayTypeId),
+        isCoachText: true,
+        section: 'items',
+      });
       const dayValues =
         projection.selectedValues?.days[String(group.dayIndex)] ??
         projection.computedValues.days[String(group.dayIndex)];
@@ -562,7 +691,9 @@ function planContentText(
   }
   for (const group of documentMeals(document)) {
     if (group.dayIndex !== null) {
-      lines.push(`day ${group.dayIndex}`);
+      lines.push(
+        `day ${group.dayIndex} ${dayTypeName(document, group.dayTypeId)}`.trimEnd(),
+      );
     }
     for (const meal of group.meals) {
       lines.push(`meal ${meal.id} ${meal.name.en}`);
@@ -574,7 +705,7 @@ function planContentText(
           const value = projection.selectedValues.items[item.id]!;
           lines.push(
             `item ${item.id} selected ${selectedId} ${alternativeDescriptor(
-              document,
+              projection,
               item,
               item.alternatives.find(
                 (a: NutritionAlternative) => a.id === selectedId,
@@ -583,17 +714,17 @@ function planContentText(
             )} | kcal ${macroDisplay(value.kcal, 'kcal')} | protein ${macroDisplay(value.protein, 'protein')} | carbs ${macroDisplay(value.carbs, 'carbs')} | fat ${macroDisplay(value.fat, 'fat')}`,
           );
           lines.push(
-            `${SIDE_NOTE_LABEL[locale]}: ${itemDescriptor(document, item, projection.computedValues.items[item.id]!)}`,
+            `${SIDE_NOTE_LABEL[locale]}: ${itemDescriptor(projection, item, projection.computedValues.items[item.id]!)}`,
           );
         } else {
           lines.push(
-            `item ${item.id} ${itemDescriptor(document, item, projection.computedValues.items[item.id]!)}`,
+            `item ${item.id} ${itemDescriptor(projection, item, projection.computedValues.items[item.id]!)}`,
           );
         }
         if (item.note !== null) lines.push(`food-notes: ${item.note}`);
         for (const alt of item.alternatives) {
           lines.push(
-            `alternative ${alt.id} ${alternativeDescriptor(document, item, alt, ALT_VALUES[item.id]![alt.id]!)}`,
+            `alternative ${alt.id} ${alternativeDescriptor(projection, item, alt, alternativeValuesFor(projection, item.id, alt.id))}`,
           );
         }
       }
@@ -611,6 +742,25 @@ function planContentText(
     projection.selectedValues?.totals ?? projection.computedValues.totals;
   lines.push(`totals ${macroTotals(totals)}`);
   return lines.join('\n');
+}
+
+/** Alternative values derived from the projection's snapshot map. */
+function alternativeValuesFor(
+  projection: ExportProjection,
+  itemId: string,
+  alternativeId: string,
+): MacroSet {
+  const altValues = computeAlternativeValues(
+    projection.document,
+    projection.snapshotMap,
+  );
+  const value = altValues[itemId]?.[alternativeId];
+  if (!value) {
+    throw new Error(
+      `missing alternative values for ${itemId}/${alternativeId}`,
+    );
+  }
+  return value;
 }
 
 function renderPrompt(
@@ -823,5 +973,24 @@ describe('export and prompt fidelity contract (T005)', () => {
       planContentText(SEVEN_DAY_PROJECTION, 'en') +
       body.slice(tokenIndex + '{{PLAN_CONTENT}}'.length);
     expect(prompt).toBe(expected);
+  });
+
+  it('resolves an RFC 3986 encoded serving key and guards formula-prefixed meal names (DOC_2)', () => {
+    const cells = renderExcel(DOC_2_PROJECTION);
+    // the serving key cup/large is looked up through its encoded canonical key
+    const itemCell = cells.find((c) => c.field === 'item:i-d')!;
+    expect(itemCell.value).toContain('Yogurt 1 cup/large');
+    // portion values: 3.50 × 250 / 100 = 8.75 protein; kcal 60 × 250/100 = 150
+    expect(itemCell.value).toContain(
+      'kcal 150 | protein 8.8 | carbs 13 | fat 3.8',
+    );
+    // the formula-prefixed coach meal name is written as text
+    const mealName = cells.find((c) => c.field === 'meal:m-x:name')!;
+    expect(mealName.value).toBe("'=Suspicious Meal");
+    expect(mealName.isCoachText).toBe(true);
+    // the prompt renders the same projection faithfully
+    const prompt = renderPrompt(DOC_2_PROJECTION, 'en');
+    expect(prompt).toContain('meal m-x =Suspicious Meal');
+    expect(prompt).toContain('item i-d Yogurt 1 cup/large');
   });
 });

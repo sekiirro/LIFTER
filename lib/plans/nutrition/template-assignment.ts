@@ -126,7 +126,16 @@ export function resolveNutritionTemplateAssignment(
       );
     }
   } else {
-    const excluded = input.excludeIds ?? [];
+    // excludeIds is REQUIRED for all_except (data-model §5: "required for
+    // all_except, otherwise null"); an absent field would silently assign
+    // every active template to the resolved workspaces.
+    if (input.excludeIds === undefined) {
+      throw new NutritionAssignmentError(
+        'invalid_selection',
+        'excludeIds is required for all_except mode',
+      );
+    }
+    const excluded = input.excludeIds;
     for (const id of excluded) {
       const template = input.globalTemplates.find((t) => t.id === id);
       if (!template) {

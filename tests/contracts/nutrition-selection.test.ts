@@ -26,6 +26,10 @@ type SelectionWorld = {
   auditEvents: Array<{ action: string; denial?: boolean }>;
   /** operation-key ledger: retained across calls (nutrition-api §3) */
   receipts: Map<string, Receipt>;
+  /** The plan of PLAN_CLIENT: the only plan this client may select in. */
+  ownPlanId: string;
+  /** Published revision → owning plan id (plan ownership authority). */
+  planIdByRevision: Record<string, string>;
 };
 
 type AuthContext = {
@@ -60,15 +64,21 @@ type Receipt = { hash: string; result: SelectionStatus };
 
 /** Deterministic canonical request hash bound to the request arguments. */
 function canonicalHashOf(request: SelectionRequest): string {
-  return [
+  // JSON encoding: unambiguous (no delimiter collisions; null and the string
+  // "null" encode differently)
+  return JSON.stringify([
     'client.nutrition_select',
     request.planVersionId,
     request.itemId,
-    request.alternativeId === null ? 'null' : request.alternativeId,
+    request.alternativeId,
     request.auth.authUid,
     request.auth.role,
-  ].join('|');
+  ]);
 }
+
+/** Operation keys are client UUIDv4s bound to the action (nutrition-api §3). */
+const UUID_V4_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function freshWorld(): SelectionWorld {
   return {
@@ -83,6 +93,8 @@ function freshWorld(): SelectionWorld {
     counters: {},
     auditEvents: [],
     receipts: new Map(),
+    ownPlanId: 'plan-1',
+    planIdByRevision: { 4: 'plan-1', 5: 'plan-1' },
   };
 }
 
@@ -118,11 +130,22 @@ function selectNutritionAlternative(
   world: SelectionWorld,
   request: SelectionRequest,
 ): SelectionStatus {
-  // 1. resolve the client from authentication and require a current
-  //    subscription (nutrition-api §4.1: plan of that client, current
-  //    subscription) BEFORE any revision or receipt lookup
+  // 0. operation-key format validation before any lookup or write
+  if (!UUID_V4_RE.test(request.operationKey)) {
+    world.auditEvents.push({ action: 'client.nutrition_select', denial: true });
+    return { status: 'not_permitted' };
+  }
+  // 1. resolve the client from authentication, the plan ownership of the
+  //    requested revision, and require a current subscription
+  //    (nutrition-api §4.1) BEFORE any revision or receipt lookup
   const clientId = clientOf(world, request.auth);
-  if (!clientId || !world.subscriptionActive) {
+  const revisionPlan = world.planIdByRevision[String(request.planVersionId)];
+  if (
+    !clientId ||
+    !world.subscriptionActive ||
+    revisionPlan === undefined ||
+    revisionPlan !== world.ownPlanId
+  ) {
     world.auditEvents.push({ action: 'client.nutrition_select', denial: true });
     return { status: 'not_permitted' };
   }
@@ -586,5 +609,68 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       { action: 'client.nutrition_select', denial: true },
     ]);
     expect(world.counters['5']).toBeUndefined();
+  });
+
+  it('rejects a malformed operation key before any lookup or write', () => {
+    const world = freshWorld();
+    const result = selectNutritionAlternative(
+      world,
+      clientRequest({ operationKey: 'not-a-uuid' }),
+    );
+    expect(result.status).toBe('not_permitted');
+    expect(world.auditEvents).toEqual([
+      { action: 'client.nutrition_select', denial: true },
+    ]);
+    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(world.counters['5']).toBeUndefined();
+    expect(world.receipts.size).toBe(0);
+  });
+
+  it('rejects a revision owned by a different plan generically', () => {
+    const world = freshWorld();
+    // revision 9 was published for a plan of another client
+    world.planIdByRevision[9] = 'plan-other';
+    const result = selectNutritionAlternative(
+      world,
+      clientRequest({
+        operationKey: '5e1c1d2e-7777-4222-8333-444455556666',
+        planVersionId: 9,
+      }),
+    );
+    expect(result.status).toBe('not_permitted');
+    expect(world.auditEvents).toEqual([
+      { action: 'client.nutrition_select', denial: true },
+    ]);
+    expect(world.selections['9:i-1']).toBeUndefined();
+    expect(world.counters['9']).toBeUndefined();
+  });
+
+  it('encodes clear and the alternative id "null" without collision (key_conflict)', () => {
+    const world = freshWorld();
+    // select a-1 first, then clear it with a distinct key: the clear result
+    // is stored under its canonical hash
+    selectNutritionAlternative(world, clientRequest({ alternativeId: 'a-1' }));
+    const cleared = selectNutritionAlternative(
+      world,
+      clientRequest({
+        operationKey: '5e1c1d2e-2222-4222-8333-444455556666',
+        alternativeId: null,
+      }),
+    );
+    expect(cleared.status).toBe('ok');
+    // the same key + alternativeId 'null' (a valid string id) has a different
+    // canonical hash than the clear: it must be a key_conflict, not a replay
+    const collision = selectNutritionAlternative(
+      world,
+      clientRequest({
+        operationKey: '5e1c1d2e-2222-4222-8333-444455556666',
+        itemId: 'i-null',
+        alternativeId: 'null',
+      }),
+    );
+    expect(collision.status).toBe('key_conflict');
+    // nothing was written for the colliding request
+    expect(world.selections['5:i-null']).toBeUndefined();
+    expect(world.counters['5']).toBe(2);
   });
 });
