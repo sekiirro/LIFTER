@@ -114,3 +114,10 @@
 - After the final T043/T044 task evidence edit, the exact candidate passed: unit 181 files / 2425 tests; lint; typecheck; Prettier on all touched Markdown/TypeScript; local migration validation (122); remote cross-reference scan (115); all-origin max scan (116 refs; max 20261111222000 < candidate 20261111222100); F12/F13 Stack C 26 files / 630 tests.
 - T043 remains verified for FR-040/SC-018. T044 remains unticked and blocked only at its missing production award integration path, recorded as S48-F13-MCQ-3.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze - S48-PO-19 T044 P4 deferral and T042 entry gate (20:50 UTC)
+
+- Spec Kit entry gate for T042: PASS. `spec.md` has FR-038, measurable SCs and GWT scenarios 1-10/13-14; the clarification/PO register records S43-PO-8, and S48-PO-18 resolves the only newly identified commission-rate question. `plan.md` slices (1), (2), and (4) cover continuity, upgrade branches, and refunds. `tasks.md` T042 remains tagged FR-037/FR-038 and the specified SC set. No open product ambiguity remains in T042 scope at entry.
+- T044 status: S48-PO-19 verbatim answer, mapped by S48-R24, defers award wiring to P4's first-delivery transaction. F13 storage/rules remain recorded; T044 stays unchecked and FR-041 PARTIAL until the P4 writer/assigned-trainer source is available. No F13 award writer or inferred assignment is authorized.
+- T043 is complete and ticked at commit `71754d709decf424c4ca62fb83fa252c3c3c4ead`; older Analyze snapshots describing its pending state are superseded by the later exact-head verification entry.
+- No requirement or behavior was added in this documentation step. CRITICAL: 0 open; HIGH: 0 open.

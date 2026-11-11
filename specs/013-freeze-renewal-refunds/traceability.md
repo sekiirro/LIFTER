@@ -85,7 +85,7 @@ Columns: `Requirement` (FR/SC from `spec.md`) â†’ `Task(s)` (from `tasks.md`) â†
 ## S48 PO-decision status (s48-muse-f13-t043; updated 2026-11-11)
 
 - **S48-F13-MCQ-1 - F13 T043 - spec.md FR-040.** RESOLVED by S48-PO-14 and S48-R22; exact PO source and architect mapping are recorded in spec.md under "S48-PO-14 / S48-R22 - T043 manual date behavior". T043 current-head implementation evidence is recorded below.
-- **S48-F13-MCQ-2 - F13 T044 - spec.md FR-041.** RESOLVED by S48-PO-15 and S48-R22; exact PO source and architect mapping are recorded in spec.md under "S48-PO-15 / S48-R22 - T044 point award event". The production activation/plan-delivery writer and assigned-trainer source were not found; see PO-DECISION-NEEDED S48-F13-MCQ-3 in the run report.
+- **S48-F13-MCQ-2 - F13 T044 - spec.md FR-041.** Event and role resolved by S48-PO-15/S48-R22, then S48-PO-19/S48-R24 explicitly deferred production award wiring to P4. T044 remains unticked and FR-041 PARTIAL until P4's first-delivery transaction and assigned-trainer source exist; no F13 writer is inferred.
 
 ## S43-PO-5/6 decision encoding (2026-11-10; documentation only)
 
@@ -123,7 +123,7 @@ No implementation or tests are claimed by this lane. New behaviors are specified
 | --- | --- | --- | --- | --- |
 | FR-040 manual dates | T043 | `tests/integration/subscription-manual-dates.test.ts::T043 projected entitlement uses the latest PO-adjusted effective dates`; `::T043 refuses a frozen subscription with zero date/audit writes`; `::T043 refuses a deactivated subscription with zero date/audit writes` | Commit `F13 T043: manual-date effective projection`; Stack C, 7/7 manual-date tests, full F12/F13 baseline and candidate documented in tasks.md | PARTIAL - FR-040 also includes T044 plan/point behavior |
 | SC-018 | T043 | `tests/integration/subscription-manual-dates.test.ts` (PO success/audit/zero-revenue, after-expiry, non-PO denial, exact replay, effective projection, frozen/deactivated zero-write cases) | Commit `F13 T043: manual-date effective projection`; migration `20261111222100_f13_manual_date_projection.sql`; unit migration source 6/6; both frozen/deactivated guard mutants killed | VERIFIED |
-| FR-041 productivity | T044 | `tests/integration/trainer-productivity-points.test.ts` historical persistence tests; award-path test not available | S48-F13-MCQ-3 in report.md | PARTIAL |
+| FR-041 productivity | T044 | `tests/integration/trainer-productivity-points.test.ts` historical storage/rules tests; P4 award-path test not available | S48-PO-19 / S48-R24; P4 first-delivery transaction dependency | PARTIAL |
 
 
 ### SC-018 completion detail
