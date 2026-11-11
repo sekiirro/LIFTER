@@ -123,4 +123,17 @@ describe('F17 Copy AI Prompt builder (FR-019, SC-009)', () => {
       expect(containsProhibitedInstruction(prompt2)).toBe(false);
     }
   });
+
+  it('flags a prohibited instruction following a negation in a new clause (NEW-2)', () => {
+    expect(
+      containsProhibitedInstruction(
+        'Do not change the reps; instead generate alternatives.',
+      ),
+    ).toBe(true);
+    expect(
+      containsProhibitedInstruction(
+        'Do not drop the last set, instead add two more sets.',
+      ),
+    ).toBe(true);
+  });
 });

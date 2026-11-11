@@ -32,9 +32,10 @@ export function buildAiPrompt(
 // prohibited object (e.g. "add 5kg", "suggest heavier weight") are plan
 // content, not instructions to the AI. The approved prompt bodies only ever
 // use these frames inside negated prohibitions ("Do not ..."), so a negation
-// cue in the same clause disqualifies the match. A sentence terminator
-// (`.!?` or newline) between the cue and the verb breaks the negation.
-// Plan payload after the `Plan:`/`الخطة:` marker is authorized
+// cue in the same clause disqualifies the match. A clause boundary
+// (`.!?` newline `;`) or a contrastive reset (`instead`/`but`/`however`)
+// between the cue and the verb starts a new instruction and re-enables the
+// match. Plan payload after the `Plan:`/`الخطة:` marker is authorized
 // content (§2) and is never scanned.
 const PLAN_MARKERS = ['\nPlan:\n', '\nالخطة:\n'];
 
@@ -50,7 +51,8 @@ function instructionScope(prompt: string): string {
 const NEGATION_CUE =
   /\b(do not|don't|never|must not|should not|cannot|can't|won't|no|not)\b|لا/gi;
 
-const CLAUSE_BREAK = /[.!?\n\r]/;
+const CLAUSE_BREAK = /[.!?\n\r;]/;
+const CLAUSE_RESET = /\b(instead|but|however)\b/i;
 
 function isNegated(text: string, index: number): boolean {
   const start = Math.max(0, index - 120);
@@ -63,8 +65,10 @@ function isNegated(text: string, index: number): boolean {
   }
   if (lastNeg < 0) return false;
   const between = prefix.slice(lastNeg);
-  // A sentence terminator between the cue and the verb breaks the negation.
+  // A clause terminator or a contrastive reset between the cue and the verb
+  // starts a new instruction: the earlier negation no longer covers it.
   if (CLAUSE_BREAK.test(between)) return false;
+  if (CLAUSE_RESET.test(between)) return false;
   return true;
 }
 
