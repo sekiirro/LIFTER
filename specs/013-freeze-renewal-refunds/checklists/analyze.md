@@ -35,3 +35,12 @@
 - PASS: subscription/group locking and deterministic allocation remain unchanged; FR/SC/task IDs and task tags are untouched.
 - PASS: no product ambiguity or new PO decision found.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze — Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
+
+- Scope: correct the two S43-PO-8 scenario-to-SC citations and the 50-row traceability status summary.
+- PASS: scenario 2 maps upgrade term anchors to SC-027; scenario 3 maps pre-activation duration start to SC-028. SC-029 remains mapped to renewal-then-upgrade credit.
+- PASS: recomputed matrix statuses are 37 PARTIAL and 13 UNVERIFIED across 50 rows; the summary IDs exactly match the matrix rows and status counts.
+- PASS: FR-012/FR-039 and S45-R3's pre-activation renewal refusal, zero-write/no-queued-duration rule remain unchanged. No PO behavior or copy was introduced.
+- PASS: numbered FRs, measurable SCs, GWT acceptance, clarifications, plan coverage, task mappings, and dated analysis artifacts exist for the touched feature.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.

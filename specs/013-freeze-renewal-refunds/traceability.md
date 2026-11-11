@@ -77,8 +77,8 @@ Columns: `Requirement` (FR/SC from `spec.md`) â†’ `Task(s)` (from `tasks.md`) â†
 ## Counts by status
 
 - VERIFIED: 0
-- PARTIAL: 43 (FR-001 to FR-015, FR-017 to FR-020, FR-022 to FR-023, FR-025 to FR-030, FR-033 to FR-036; SC-001 to SC-004, SC-006 to SC-010, SC-012 to SC-014)
-- UNVERIFIED: 7 (FR-016, FR-021, FR-024, FR-031, FR-032, SC-005, SC-011)
+- PARTIAL: 37 (FR-001 to FR-010, FR-015, FR-019 to FR-020, FR-022 to FR-023, FR-025 to FR-030, FR-033 to FR-036; SC-001 to SC-004, SC-006 to SC-010, SC-012 to SC-014)
+- UNVERIFIED: 13 (FR-011 to FR-014, FR-016 to FR-018, FR-021, FR-024, FR-031 to FR-032, SC-005, SC-011)
 - Blocked tasks: 2 (T019, T020)
 - Total matrix rows: 50 (36 FR + 14 SC)
 

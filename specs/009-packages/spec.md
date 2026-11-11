@@ -123,7 +123,9 @@ No further product ambiguity remains in the resolved FX rounding, calendar/publi
 
 Architect rulings on PR #53 review findings PD-F9-CR-01 and PD-F9-CR-02 are recorded verbatim below. They are architect words, not PO words; no PO approval is claimed for them.
 
-> S39-R8 (#53 PD-F9-CR-01, not a PO question): duration is one part of offer identity, already decided in FR-002 (workspace/package/duration-days/tier-rank identity MUST remain fixed), FR-005 (publication snapshots its duration) and spec.md:262. spec.md:84 "duration terms" is an editorial inconsistency: reword to say versions snapshot the offer's fixed duration (no versioned duration change). No retirement/lifecycle question arises: a different duration is a different offer, and availability changes only through existing PO operations (FR-002); no automatic retirement is added (S38-PO-3).
+> S39-R8 (#53 PD-F9-CR-01, not a PO question): duration is offer identity, already decided in FR-002 ("workspace, package and duration identity MUST remain fixed"), FR-005 (publication snapshots its duration) and spec.md:262. spec.md:84 "duration terms" is an editorial inconsistency: reword to say versions snapshot the offer's fixed duration (no versioned duration change). No retirement/lifecycle question arises: a different duration is a different offer, and availability changes only through existing PO operations (FR-002); no automatic retirement is added (S38-PO-3).
+
+Subsequent amendment (S43-PO-8 source line 3; architect mapping (S43-R10)): immutable tier rank is also part of offer identity, as specified in FR-034 and its acceptance scenarios below.
 
 > S39-R9 (#53 PD-F9-CR-02, not a PO question): the Spec Kit gate section 3 (S29-PO-2) requires the implementer to record evidence in specs/<feature>/traceability.md. Amend tasks.md:10 so the implementer may edit traceability.md and verification evidence files within the task's scope; all other specs/ files stay off-limits to implementers.
 
