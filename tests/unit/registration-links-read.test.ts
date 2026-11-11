@@ -107,8 +107,8 @@ beforeEach(() => {
   m.packages.mockResolvedValue({
     status: 'ok',
     offers: [
-      { current_version_id: id, available: true },
-      { current_version_id: ws, available: false },
+      { current_version_id: id, available: true, tier_rank: 2 },
+      { current_version_id: ws, available: false, tier_rank: 3 },
     ],
     versions: [{ id }, { id: ws }],
   });
@@ -164,17 +164,30 @@ it('filters F9 offers to available current versions only', async () => {
   m.packages.mockResolvedValue({
     status: 'ok',
     offers: [
-      { current_version_id: id, available: true },
-      { current_version_id: version2, available: true },
-      { current_version_id: ws, available: false },
-      { current_version_id: null, available: true },
+      { current_version_id: id, available: true, tier_rank: 1 },
+      { current_version_id: version2, available: true, tier_rank: 3 },
+      { current_version_id: ws, available: false, tier_rank: 2 },
+      { current_version_id: null, available: true, tier_rank: 1 },
     ],
     versions: [{ id }, { id: version2 }, { id: ws }, { id: uuid(9) }],
   });
   const r = await loadRegistrationLinks(actor, ws);
   expect(r.status).toBe('ok');
   if (r.status === 'ok')
-    expect(r.offers.map((v) => v.id)).toEqual([id, version2]);
+    expect(r.offers.map((v) => [v.id, v.tier_rank])).toEqual([
+      [id, 1],
+      [version2, 3],
+    ]);
+});
+it('fails closed when an available current version has no immutable rank', async () => {
+  m.packages.mockResolvedValue({
+    status: 'ok',
+    offers: [{ current_version_id: id, available: true }],
+    versions: [{ id }],
+  });
+  expect(await loadRegistrationLinks(actor, ws)).toEqual({
+    status: 'unavailable',
+  });
 });
 it('computes consumed/expired/opened/valid status with server time', async () => {
   rows = [

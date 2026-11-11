@@ -7,6 +7,7 @@ import { Alert } from '../../../components/ui/Alert';
 import { EmptyState, Skeleton } from '../../../components/ui/States';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { getMessages } from '../../../lib/i18n';
+import { tierLabel } from '../../../lib/packages/tier-label';
 import type { Locale } from '../../../lib/design/preferences';
 import type {
   PackageReadResult,
@@ -211,7 +212,7 @@ export function PackagesManager({
                       checked={tierRank === rank}
                       onChange={() => setTierRank(rank)}
                     />{' '}
-                    {(['Silver', 'Gold', 'Platinum'] as const)[rank - 1]}
+                    {tierLabel(rank, locale)}
                   </label>
                 ))}
               </div>
@@ -337,11 +338,7 @@ export function PackagesManager({
                     <th scope="row">
                       <bdi>{codes.get(offer.package_id)}</bdi>
                       {' · '}
-                      {
-                        (['Silver', 'Gold', 'Platinum'] as const)[
-                          offer.tier_rank - 1
-                        ]
-                      }
+                      {tierLabel(offer.tier_rank, locale)}
                       {v && <p>{locale === 'ar' ? v.name_ar : v.name_en}</p>}
                     </th>
                     <td>

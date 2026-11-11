@@ -2,6 +2,7 @@ import 'server-only';
 import { authorize, type Actor } from '../auth/authorize';
 import { createSessionClient } from '../supabase/server';
 import { loadPackageOffers, type PackageVersion } from '../packages/read';
+import type { TierRank } from '../packages/tier-label';
 import { exactAmount, isUuid } from './validation';
 import { registrationLinkStatus } from './grace';
 import type { RegistrationFailure } from './results';
@@ -34,7 +35,7 @@ export type InstallmentRow = {
 };
 export type RegistrationData = {
   status: 'ok';
-  offers: PackageVersion[];
+  offers: (PackageVersion & { tier_rank: TierRank })[];
   links: LinkRow[];
   installments: InstallmentRow[];
 };
@@ -55,10 +56,21 @@ export async function loadRegistrationLinks(
     if (packages.status !== 'ok') return { status: 'unavailable' };
     const current = new Set(
       packages.offers
-        .filter((o) => o.available)
+        .filter((o) => o.available && o.current_version_id !== null)
         .map((o) => o.current_version_id),
     );
-    const offers = packages.versions.filter((v) => current.has(v.id));
+    const rankByVersion = new Map(
+      packages.offers
+        .filter((offer) => offer.current_version_id !== null)
+        .map((offer) => [offer.current_version_id!, offer.tier_rank]),
+    );
+    const offers = packages.versions
+      .filter((v) => current.has(v.id))
+      .flatMap((version) => {
+        const tier_rank = rankByVersion.get(version.id);
+        return tier_rank === undefined ? [] : [{ ...version, tier_rank }];
+      });
+    if (offers.length !== current.size) return { status: 'unavailable' };
     const result = await client
       .from('registration_links_safe')
       .select(SAFE_LINK_COLUMNS)
