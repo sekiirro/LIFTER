@@ -1,6 +1,6 @@
 # F18 traceability
 
-**Date**: 2026-11-11 (CodeRabbit PR #79 spec-consistency fixes). **Base**: `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`. **Branch**: `speckit-018-nutrition-planner-s42`.
+**Date**: 2026-11-11 (CodeRabbit + Greptile PR #79 spec-consistency fixes). **Base**: `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`. **Branch**: `speckit-018-nutrition-planner-s42`.
 
 **Scope**: specification artefacts only. **No test was executed; no implementation exists on this branch.** Statuses below are specification statuses, not verification claims.
 
@@ -17,7 +17,7 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 | F18-FR-005  | F16 FR-020, retained F18 FR-005 (DIRECT)                          | T003, T009, T022                   | data-model §1-2, contract §4           | SPECIFIED                                                                                                          |
 | F18-FR-006  | PRD-05, S20-11/S20-13, PRD-12 (DIRECT)                            | T001, T005, T023, T025             | `nutrition-document.md` §1             | SPECIFIED                                                                                                          |
 | F18-FR-007  | S20-17/D18-1, A2, A5 Q1=A (DIRECT)                                | T012, T013, T015                   | `template-assignment.md` §1, §3        | SPECIFIED                                                                                                          |
-| F18-FR-008  | A5 Q1=A + A2 (DIRECT)                                             | T006, T014                         | `template-assignment.md` §2            | SPECIFIED (skip/report all held versions)                                                                          |
+| F18-FR-008  | A5 Q1=A + A2 (DIRECT)                                             | T006, T014                         | `template-assignment.md` §2            | SPECIFIED (held copies skipped/reported; zero-copy race rejected)                                                  |
 | F18-FR-009  | S20-17, F19-FR-008, A2 (DIRECT)                                   | T006, T012, T013                   | `template-assignment.md` §1            | SPECIFIED                                                                                                          |
 | F18-FR-010  | PRD-05, A6, F19-FR-003 (DIRECT/DELEGATED)                         | T026                               | plan §1                                | SPECIFIED                                                                                                          |
 | F18-FR-011  | A5 Q2=A, S20-19, S42-PO-3 Q9 (DIRECT)                             | T004, T010                         | `nutrition-api.md` §4, data-model §3   | SPECIFIED                                                                                                          |
@@ -44,7 +44,7 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 | F18-SC-004 | T001, T008, T027       | invalid-unit matrix                                           | SPECIFIED                                                           |
 | F18-SC-005 | T005, T023, T024       | Current and historical AR/EN export goldens + prompt fidelity | Current revision specified; historical export specified by S43-PO-8 |
 | F18-SC-006 | T021                   | recorded envelope + benchmark report                          | SPECIFIED                                                           |
-| F18-SC-007 | T006, T014             | assignment state-machine fixtures                             | SPECIFIED (skip/report all held versions)                           |
+| F18-SC-007 | T006, T014             | assignment state-machine fixtures                             | SPECIFIED (held copies skipped/reported; zero-copy race rejected)   |
 | F18-SC-008 | T004, T010, T011       | selection/carry-forward fixtures                              | SPECIFIED                                                           |
 | F18-SC-009 | T012, T015             | template isolation + Make it Global fixtures                  | SPECIFIED                                                           |
 | F18-SC-010 | T016                   | log-scrub report                                              | SPECIFIED                                                           |

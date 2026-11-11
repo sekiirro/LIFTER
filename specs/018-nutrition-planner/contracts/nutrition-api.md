@@ -128,6 +128,7 @@ Every action in §1 appears in the allowlist; the log-scrub test asserts zero fo
 | Assign retried (same key)                                                   | same batch, zero duplicate copies                                                     |
 | All Workspaces with a partial workspace                                     | workspace skipped, no top-up                                                          |
 | Specific Workspaces with an existing copy                                   | `skipped_existing`, no overwrite                                                      |
+| Concurrent Assign leaves zero copies                                        | loser rejected before writes; no second batch or duplicate copy                       |
 | Make it Global with client data                                             | refused with field codes, no global row                                               |
 | Non-PO global template read                                                 | generic denial                                                                        |
 | Sales on every plan/template/export surface                                 | generic denial                                                                        |

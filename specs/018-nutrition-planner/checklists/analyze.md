@@ -1,7 +1,7 @@
 # Spec Kit Analyze — F18 nutrition planner
 
-**Analyzed:** 2026-11-11 02:27 UTC
-**Method:** Rechecked spec.md, plan.md, tasks.md, nutrition API/document and template-assignment contracts, data-model.md, traceability.md, research decision matrix/conflicts/Section B assessment, and S43-PO-5 / S44-PO-7 / architect mappings S43-R6, S43-R10 and S44-R7. This pass follows the CodeRabbit CHANGES_REQUESTED review on PR #79 (`PRR_kwDOVYgYQ88AAAABXM9hLA`, 2026-11-11T01:06:00Z, head `f588e222`) and fixes seven inline findings, one outside-diff finding and one additional comment: template-root identity in the retire/version contracts, decimal-string scope, F16 serving identity mapping, the publish carry-forward write path and attribution, publish replay before eligibility, the T021 mutation, per-day total wording, and one copy per selected template.
+**Analyzed:** 2026-11-11 05:40 UTC
+**Method:** Rechecked spec.md, plan.md, tasks.md, nutrition API/document and template-assignment contracts, data-model.md, traceability.md, research decision matrix/conflicts/Section B assessment, and S43-PO-5 / S44-PO-7 / architect mappings S43-R6, S43-R10 and S44-R7. This pass follows the Greptile P2 thread `PRRT_kwDOVYgYQ862AhVE` on head `d742eb5a` (template-assignment test 11) and reconciles the concurrent Assign single-pair race with the existing zero-copy rejection; it also retains the earlier CodeRabbit PR #79 fixes (`PRR_kwDOVYgYQ88AAAABXM9hLA`, head `f588e222`).
 
 ## Entry check
 
@@ -29,9 +29,10 @@
 - Assign `All × All` gives each uninitialized workspace one copy of each selected active global template, so two active templates yield two copies, not one.
 - The copy-ai-prompt contract names the approved source archive, its byte size and SHA-256, and the byte-comparison procedure; the approved EN/AR bodies are unchanged.
 - Template assignment separates an exact-key replay (returns the original batch unchanged) from a new-key operation (includes a workspace created later that is still uninitialized).
+- Concurrent Assign records a pair taken by another transaction as `skipped_existing` only while the later batch still creates at least one copy. If re-reading leaves zero copies (the single-pair race), the new operation is rejected before batch/state writes, matching F18-FR-008, F18-SC-007, template-assignment tests 6/11/12 and T014. This removes the former test 11 contradiction with the zero-copy rule; no new behaviour is added.
 - Day types, including training/rest classification and carb-cycling targets, remain for nutrition behavior unrelated to meal visibility or totals.
 - Meal Notes and Food Notes are distinct per-meal and per-item fields. Schema, editor and export tasks test independent edit/clear behavior; changing either preserves the other.
 - S44-MCQ-F18-1 is closed by S44-PO-7. Its historical text remains marked superseded; it is absent from active requirements, contracts, plan and tests.
 - All implementation tasks remain unchecked; this spec-only PR adds no implementation or executed test evidence.
 
-**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. No open product ambiguity remains for the S44-PO-7 scope or the CodeRabbit PR #79 fixes.
+**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. No open product ambiguity remains for the S44-PO-7 scope, the CodeRabbit PR #79 fixes or the Greptile concurrent-Assign reconciliation.
