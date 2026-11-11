@@ -1,4 +1,5 @@
 export const PRESET_MONTHS = [1, 3, 6, 8, 12] as const;
+export const TIER_RANKS = [1, 2, 3] as const;
 export const BIGINT_MAX = 9223372036854775807n;
 export function isUuid(value: unknown): value is string {
   return (
@@ -48,6 +49,7 @@ function isName(value: unknown): value is string {
   );
 }
 export type PackageTerms = {
+  tierRank: (typeof TIER_RANKS)[number];
   durationMonths: number | null;
   durationDays: number;
   nameAr: string;
@@ -59,6 +61,7 @@ export type PackageTerms = {
 export function parseTerms(
   input: Record<string, unknown>,
 ): PackageTerms | null {
+  const tierRank = parseInteger(input.tierRank, 1, 3);
   const durationDays = parseInteger(input.durationDays, 1, 2147483647);
   const durationMonths =
     input.durationMonths === null
@@ -67,6 +70,7 @@ export function parseTerms(
   const priceMinor = parsePrice(input.priceMinor);
   const commissionRateBp = parseInteger(input.commissionRateBp, 0, 10000);
   if (
+    tierRank === null ||
     durationDays === null ||
     (input.durationMonths !== null && durationMonths === null) ||
     (durationMonths !== null &&
@@ -81,6 +85,7 @@ export function parseTerms(
   )
     return null;
   return {
+    tierRank: tierRank as (typeof TIER_RANKS)[number],
     durationDays,
     durationMonths,
     nameAr: input.nameAr,

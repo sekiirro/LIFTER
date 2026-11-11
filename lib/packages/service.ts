@@ -60,6 +60,7 @@ export async function publishPackageVersion(
     const result = await ctx.client.rpc('publish_package_version', {
       workspace_id: ctx.workspaceId,
       package_id: data.packageId,
+      tier_rank: terms.tierRank,
       duration_months: terms.durationMonths,
       duration_days: terms.durationDays,
       name_ar: terms.nameAr,

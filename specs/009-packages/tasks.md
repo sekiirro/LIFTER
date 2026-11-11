@@ -216,13 +216,13 @@ No task is complete or ticked by this documentation-only cycle. RED-first descri
 
 - [x] T900 [FR-013, FR-014] Make the authenticated package empty-state Playwright fixture explicit and include route/render diagnostics on failure. Preserve the existing empty-state, role, theme, and localization assertions; do not alter product behavior.
 
-## S43-PO-6/7 tier requirements tasks (documentation only; implementation unstarted)
+## S43-PO-6/7 tier requirements tasks
 
-These tasks follow separately labelled **architect mapping (S43-R7/R8)** in spec.md. They remain unchecked and no migration is authored.
+These tasks follow separately labelled architect mapping in spec.md. T077 has its forward migration; T078 remains unchecked.
 
-- [ ] T077 [FR-002, FR-034, FR-036, SC-024, SC-026] Specify and implement all three immutable Silver < Gold < Platinum tier offers within every category, with rank in the offer identity and publication input using a new forward migration; preserve shipped migration history, then implement rank/duration eligibility. Decision resolved by S43-PO-8; implementation/tests remain unstarted.
+- [x] T077 [FR-002, FR-034, FR-036, SC-024, SC-026] Implement all three immutable Silver < Gold < Platinum tier offers within every category, with rank in the offer identity and publication input using a new forward migration; fail closed on unranked legacy rows with no default/backfill; add a separate reviewed cleanup script that removes only verified test offers without protected or restrictive references; preserve audit/payment records and shipped migration history; add explicit-rank and rank/duration fixtures, including cleanup refusal coverage. Decisions resolved by S43-PO-8 and S48-PO-10; Stack C baseline/candidate regression passed at `537b51a5`; explicit-rank F9 E2E coverage passed 3/3 on test fix `cb32f8ea`.
 - [ ] T078 [FR-035, SC-025] Specify PO global per-locale renaming and Workspace Owner overrides within their workspace only; keep rank and terms unchanged. Decision resolved by S43-PO-8; implementation/tests remain unstarted.
 
 ## S43-PO-8 resolved tier tasks
 
-T077 and T078 are unblocked. T077 covers three ranked offers per each of the four categories, offer-level immutable rank placement, workspace/category/duration/rank uniqueness and publication input, and rank/duration eligibility fixtures. T078 covers PO global per-locale renaming, workspace-only Workspace Owner overrides, authorization/audit coverage, and proof that names change neither rank nor commercial terms. Tasks remain unchecked until implementation tests pass.
+T077 is verified as recorded below; T078 remains unstarted. T077 covers three ranked offers per each of the four categories, offer-level immutable rank placement, workspace/category/duration/rank uniqueness and publication input, and rank/duration eligibility fixtures. T078 covers PO global per-locale renaming, workspace-only Workspace Owner overrides, authorization/audit coverage, and proof that names change neither rank nor commercial terms.
