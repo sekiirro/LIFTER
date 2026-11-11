@@ -58,12 +58,17 @@ const registrationPrivate = [
   'f13_audit_refund_ledger',
   'f13_check_freeze',
   'f13_check_refund_ledger',
+  'f13_audit_manual_date',
+  'f13_audit_productivity_point',
   'f13_freeze_contribution',
   'f13_freeze_event_guard',
   'f13_freeze_guard',
   'f13_reflow_unstarted_renewal',
   'f13_guard_terminal_payment',
   'f13_validate_freeze',
+  'f13_validate_renewal',
+  // T041 20261111123000 added the (uuid,uuid,uuid) overload; pg_proc carries
+  // both rows, so the pinned inventory lists the name twice.
   'f13_validate_renewal',
   'f13_validate_refund_ledger',
 ];
@@ -583,6 +588,13 @@ describe('audit security catalog (T005)', () => {
       },
       {
         tgname: 'f13_no_update',
+        relname: 'subscription_manual_date_adjustments',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
         relname: 'subscription_obligation_cancellations',
         type: 19,
         tgenabled: 'O',
@@ -598,6 +610,13 @@ describe('audit security catalog (T005)', () => {
       {
         tgname: 'f13_no_update',
         relname: 'subscription_renewals',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'trainer_productivity_points',
         type: 19,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
@@ -1000,6 +1019,8 @@ describe('registration security catalog', () => {
       'app_private.f13_audit_renewal()',
       'app_private.f13_audit_renewal_date_revision()',
       'app_private.f13_audit_refund_ledger()',
+      'app_private.f13_audit_manual_date()',
+      'app_private.f13_audit_productivity_point()',
       'app_private.f13_check_freeze()',
       'app_private.f13_check_refund_ledger()',
       'app_private.f13_freeze_contribution(uuid,uuid,uuid)',
@@ -1011,6 +1032,7 @@ describe('registration security catalog', () => {
       'app_private.f13_validate_renewal(uuid,uuid)',
       'app_private.f13_validate_refund_ledger(uuid,uuid)',
       'public.record_renewal(jsonb)',
+      'public.record_subscription_date_adjustment(jsonb)',
     ];
     for (const name of signatures) {
       const [r] =

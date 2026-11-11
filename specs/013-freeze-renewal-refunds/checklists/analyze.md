@@ -49,3 +49,27 @@
 
 - Scope: merged main commit b1476db5f95d447ed2b0525e19ed4a9c890b90cc; no PR content change.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-11 Analyze — T043 PO-only manual date adjustment (FR-040; SC-018)
+
+- Entry check: PASS — FR-040 states the PO-only/after-expiry/audit/zero-revenue rules; SC-018 is measurable; GWT scenario 11 covers PO-after-expiry success and non-PO refusal; task T043 is tagged FR-040/SC-018; plan.md slice (5) covers PO date edits.
+- Specified (implement): only `platform_owner` attempts commit; attempts by any other role (including null actor) are refused before any write; adjustment commits even when the subscription term is expired; every commit writes exactly one immutable audit row; zero payment/revenue/ledger rows are written by the operation. Input well-formedness (valid UUIDs, valid Cairo dates, end-exclusive after start) is rejected as `invalid_input`; this is input validity, not product policy.
+- NOT specified (no code): which subscription dates are adjustable beyond asserted effective start/end, permitted shift ranges or backdating limits, previous-value derivation, whether entitlement/P4 projections must reflect manual edits, behavior for frozen or deactivated subscriptions, and expected-revision concurrency. These are escalated as PO-DECISION-NEEDED with the adjustment fact recording only the PO-asserted dates.
+- Design: new immutable table `public.subscription_manual_date_adjustments` (no money columns by construction) + `public.record_subscription_date_adjustment(jsonb)` (SECURITY DEFINER, authenticated-only grant, explicit `app_private.is_platform_owner()` pre- and post-lock checks, per-actor request-key exact replay, `key_conflict` on changed intent) + audit trigger writing `subscription.manual_date_adjusted`. No new capability (T017 parity untouched). TS service `lib/subscriptions/manual-date-service.ts` enforces PO-before-RPC with an allow-listed receipt.
+- Catalog impact: two new `app_private`/`public` objects require updating the pinned `rls-catalog` private-function list; both follow the hardened owner/search-path/grant pattern.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions in the specified scope (open questions escalated, not encoded).
+
+## 2026-11-11 Analyze — T044 productivity points (FR-040/041; SC-019/026)
+
+- Entry check: PASS — FR-041 states one point per new client, no repeat for returning clients, and no points for upgrades/renewals/plan publications; FR-040 states unlimited plan revisions/publications and no trainer point for plan publication; GWT scenario 12 and SC-019/SC-026 are measurable; task T044 is tagged FR-040/FR-041/SC-019/SC-026; plan.md slice (6) covers point uniqueness.
+- Specified (implement): exactly one point per new client (`points = 1` CHECK); at most one point row per client (`UNIQUE(client_id)`, immutable, never deleted); repeat awards for the same client are rejected with zero new rows; upgrade, renewal and plan-publication operations write zero point rows (no writer is invoked from those paths); no count limit is imposed on plan revisions/publications. Pure rules module pins `new_client -> 1`, all other events -> 0.
+- NOT specified (no code): which event/role awards the point in production (award entry point and authorizer), whether a returning client under a new client row can be linked by identity, and point display/reporting. The award entry point is escalated as PO-DECISION-NEEDED; no public award RPC is added. Persistence, uniqueness/immutability guards, audit trigger (`trainer.productivity_point_awarded`), and behavioral no-point coverage are the shippable core.
+- Catalog impact: one new audit trigger function requires updating the pinned `rls-catalog` private-function list; hardened pattern followed.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions in the specified scope (award entry escalated, not encoded).
+
+## 2026-11-11 Analyze — T047 frozen-state operations (FR-038/039; SC-022)
+
+- Entry check: PASS — FR-038/039 state frozen upgrade/renewal refusal until unfrozen and freeze-day expiry extension; GWT scenario 10 and SC-022 are measurable; task T047 is tagged FR-038/FR-039/SC-022 with paths in freeze-service/freeze-dates and unit/integration freeze-lifecycle tests; plan.md slice (3) covers frozen refusal and freeze-day extension.
+- Specified (implement): pure `requireUnfrozenForOperation` gate (upgrade/renewal refused while frozen; mirrors existing `requireFreezeRole` style) + `isFrozenOn` window predicate derived from the specified Apply-counts/Stop-excluded day semantics + exact 10-counted-days → +10-expiry unit fixture + integration fixtures in freeze-lifecycle.test.ts (frozen renewal refusal with zero writes via existing `record_renewal`, DB-level 10-day extension via `f13_project_entitlement`, concurrent-apply race serialization, apply/stop/remove audit counts with replay silence).
+- NOT in scope: DB-level frozen upgrade refusal has no upgrade writer until T042 (forbidden to this lane); covered by the pure gate plus a T042 handoff note. No migration is required (freeze guards exist); no catalog changes.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open.

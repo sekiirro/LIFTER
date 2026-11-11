@@ -429,7 +429,11 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
-          (['record_refund', 'record_renewal'].includes(fn.proname)
+          ([
+            'record_refund',
+            'record_renewal',
+            'record_subscription_date_adjustment',
+          ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
               result.data?.status === 'invalid_input'),

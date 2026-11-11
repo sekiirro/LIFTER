@@ -309,7 +309,13 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           throw new Error('Uncovered public RPC argument type');
         args.push(values[typeName]!);
       }
-      if (['record_refund', 'record_renewal'].includes(fn.proname)) {
+      if (
+        [
+          'record_refund',
+          'record_renewal',
+          'record_subscription_date_adjustment',
+        ].includes(fn.proname)
+      ) {
         await tx.savepoint(async (inner) => {
           await inner`set local role authenticated`;
           const [row] = await inner.unsafe(
@@ -354,6 +360,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
     expect(unauthorizedPaymentRpcResults).toEqual({
       record_refund: { status: 'not_permitted' },
       record_renewal: { status: 'not_permitted' },
+      record_subscription_date_adjustment: { status: 'not_permitted' },
     });
   });
 });
