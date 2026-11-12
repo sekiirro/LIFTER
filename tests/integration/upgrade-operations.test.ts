@@ -16,6 +16,10 @@ import {
   request,
 } from './registration-approval-operations-fixture';
 import { checked, publish } from './registration-links-fixture';
+import {
+  waitForLock,
+  worker,
+} from './registration-approval-operations-fixture';
 
 const db = sql();
 afterAll(() => db.end());
@@ -374,8 +378,14 @@ it('T042 records additional-payment commission at the original subscription rate
     expect(receipt).toMatchObject({
       operation_id: expect.any(String),
       upgrade_id: expect.any(String),
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
       package_offer_id: target,
       package_version_id: expect.any(String),
+      tier_rank: 2,
+      package_price_minor: '1600',
+      credit_minor: '1200',
       additional_payment_minor: '400',
       currency: 'XTS',
       service_start_date: expect.any(String),
@@ -1027,7 +1037,7 @@ it('T042 carries only unconsumed counted-freeze extension into the upgraded proj
       join public.package_offers o
         on o.workspace_id=v.workspace_id and o.id=v.offer_id
       where s.workspace_id=${f.wsA.id} and s.id=${purchase.sid}`;
-    const [expected] = await tx`select
+    const [expected] = await tx`select greatest(
       ((case when ${targetTerms!.tier_rank}::integer>${baseTerms!.tier_rank}::integer
           and ${targetTerms!.duration_days}::integer<${baseTerms!.duration_days}::integer
         then (clock_timestamp() at time zone 'Africa/Cairo')::date
@@ -1035,7 +1045,9 @@ it('T042 carries only unconsumed counted-freeze extension into the upgraded proj
         + greatest(0, ${effectiveEnd}::date - greatest(
             (clock_timestamp() at time zone 'Africa/Cairo')::date,
             ${base!.end_on}::date
-          )))::text as end_on`;
+          )))::date,
+      ${effectiveEnd}::date
+    )::text as end_on`;
     expect(
       (result.receipt as Record<string, unknown>).service_end_exclusive,
     ).toBe(expected!.end_on);
@@ -1775,4 +1787,70 @@ it('T045 refunds the original package plus upgrade charge and leaves a paid rene
     expect(originalCommission).toMatchObject({ rate_bp: 1000 });
     expect(Object.hasOwn(originalCommission!, 'source_upgrade_id')).toBe(false);
   });
+});
+
+it('T045 rejects a refund confirmation waiting on an upgrade committed after its revision snapshot', async () => {
+  const { f, purchase } = await egp750Purchase();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1400',
+    currency: 'EGP',
+    duration_days: 90,
+    commission_rate_bp: 2000,
+  });
+  const label = `f13-t045-upgrade-first-${randomUUID()}`;
+  const blocker = sql();
+  const pending = worker(label);
+  let flight: Promise<Record<string, unknown>> | undefined;
+
+  try {
+    await blocker.begin(async (tx) => {
+      await activate(tx, f, purchase);
+      await fullyPayAmounts(tx, f, purchase, '250');
+      const [beforeUpgrade] = await tx`
+        select count(*)::int as revision from public.payment_events
+        where workspace_id=${f.wsA.id} and subscription_id=${purchase.sid}`;
+      await tx`select id from public.clients where workspace_id=${f.wsA.id} and id=${purchase.t.id} for update`;
+
+      flight = pending.begin((workerTx) =>
+        refund(workerTx, f.po.userId, {
+          workspace_id: f.wsA.id,
+          client_id: purchase.t.id,
+          purchase_id: purchase.sid,
+          request_key: randomUUID(),
+          amount_minor: '1400',
+          external_confirmation: true,
+          expected_revision: beforeUpgrade!.revision,
+        }),
+      ) as unknown as Promise<Record<string, unknown>>;
+      void flight.catch(() => undefined);
+      expect(await waitForLock(db, label)).toBe(true);
+
+      const upgraded = await upgrade(tx, f.trainerA.userId, {
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        subscription_id: purchase.sid,
+        package_offer_id: target,
+        request_key: randomUUID(),
+        expected_revision: 0,
+        upgrade_confirmed: true,
+      });
+      expect(upgraded).toMatchObject({
+        status: 'ok',
+        receipt: { additional_payment_minor: '650' },
+      });
+    });
+
+    expect(await flight).toEqual({ status: 'stale_state' });
+    const [facts] = await db`
+      select
+        (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
+        (select count(*)::int from public.refund_operations where subscription_id=${purchase.sid}) as refunds,
+        (select count(*)::int from public.refund_allocation_events where subscription_id=${purchase.sid}) as allocations`;
+    expect(facts).toEqual({ upgrades: 1, refunds: 0, allocations: 0 });
+  } finally {
+    if (flight) await flight.catch(() => undefined);
+    await pending.end();
+    await blocker.end();
+  }
 });

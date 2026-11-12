@@ -90,6 +90,22 @@ describe('recordRenewal', () => {
     expect(result).toEqual({ status: 'ok', receipt });
   });
 
+  it('returns an exact replay receipt stored before renewal_id was added', async () => {
+    const legacyReceipt = Object.fromEntries(
+      Object.entries(receipt).filter(([field]) => field !== 'renewal_id'),
+    );
+    const rpc = vi.fn(async () => ({
+      data: { status: 'ok', receipt: legacyReceipt },
+      error: null,
+    }));
+    const result = await recordRenewal(request, {
+      actor: { userId: 'trainer-1', role: 'trainer', activeWorkspaceIds: [ws] },
+      client: { rpc },
+    });
+
+    expect(result).toEqual({ status: 'ok', receipt: legacyReceipt });
+  });
+
   it('denies actors outside the authorized workspace before RPC disclosure', async () => {
     const rpc = vi.fn();
     const result = await recordRenewal(request, {

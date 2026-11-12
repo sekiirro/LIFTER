@@ -5,10 +5,9 @@
  * upgrades, renewals and plan publications award no additional points, and
  * plan revisions/publications carry no product-imposed count limit.
  *
- * The production award entry point (which event and role records the point)
- * is pending a PO decision; persistence and guard coverage live in migration
- * `20261111222000_f13_trainer_productivity_points.sql` and the T044
- * integration suite. Do not add award callers until the PO decides.
+ * The assigned trainer's one point is awarded on the first normal plan
+ * delivery/activation. The award caller remains deferred to P4 (T044); this
+ * module only defines event totals and the current persistence guard.
  */
 export const POINTS_PER_NEW_CLIENT = 1 as const;
 

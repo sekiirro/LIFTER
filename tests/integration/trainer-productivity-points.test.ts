@@ -98,6 +98,24 @@ it('T044 rejects a repeat point for the same returning client', async () => {
   });
 });
 
+it('T044 rejects a trainer without an active membership in the point workspace', async () => {
+  const f = await clientContext();
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    await expect(
+      tx.savepoint(
+        (
+          inner,
+        ) => inner`insert into public.trainer_productivity_points(workspace_id,trainer_user_id,client_id,recorded_by)
+          values(${f.wsA.id},${f.trainerB.userId},${ids.client},${f.po.userId})`,
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+    const [counts] = await tx`
+      select count(*)::int as points from public.trainer_productivity_points where client_id=${ids.client}`;
+    expect(counts!.points).toBe(0);
+  });
+});
+
 it('T044 renewal writes zero point rows and preserves the single new-client point', async () => {
   const f = await clientContext();
   const purchase = await bought(f);
@@ -182,7 +200,23 @@ it('T044 point rows are tenant-bound, immutable and carry no publication limit',
     'f13_no_truncate',
     'f13_no_update',
     'f13_productivity_point_audit',
+    'f13_productivity_point_validate',
   ]);
+  const [validator] = await db`
+    select p.prosecdef as security_definer, p.proconfig as settings,
+      pg_get_userbyid(p.proowner) as owner,
+      has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+      has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+      has_function_privilege('service_role',p.oid,'EXECUTE') as service_execute
+    from pg_proc p where p.oid='app_private.f13_validate_productivity_point()'::regprocedure`;
+  expect(validator).toMatchObject({
+    security_definer: true,
+    owner: 'postgres',
+    anon_execute: false,
+    authenticated_execute: false,
+    service_execute: false,
+  });
+  expect(validator!.settings).toContain('search_path=""');
   const checks = await db`
     select pg_get_constraintdef(oid) as definition from pg_constraint
     where conrelid='public.trainer_productivity_points'::regclass and contype='c'`;

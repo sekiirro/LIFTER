@@ -7,9 +7,55 @@ import {
   probe,
   sql,
 } from './registration-approval-fixture';
+import {
+  waitForLock,
+  worker,
+} from './registration-approval-operations-fixture';
 
 const db = sql();
 afterAll(() => db.end());
+
+it('T043 date-adjustment writer holds the PO profile lock before replay lookup', async () => {
+  const [row] = await db`
+    select pg_get_functiondef('public.record_subscription_date_adjustment(jsonb)'::regprocedure) as definition`;
+  const definition = row!.definition as string;
+  const lock = definition.indexOf('from public.staff_profiles sp');
+  const lockMode = definition.indexOf('for share', lock);
+  const replayLookup = definition.indexOf('select * into previous');
+
+  expect(lock).toBeGreaterThanOrEqual(0);
+  expect(lockMode).toBeGreaterThan(lock);
+  expect(replayLookup).toBeGreaterThan(lockMode);
+});
+
+it('T043 projector bounds remove floors per term and retains a matched interval across a later gap', async () => {
+  const [row] = await db`
+    select pg_get_functiondef('app_private.f13_project_entitlement(uuid,uuid,date)'::regprocedure) as definition`;
+  const definition = row!.definition as string;
+
+  expect(definition).toContain(
+    "(e.recorded_at at time zone 'Africa/Cairo')::date>=term_start",
+  );
+  expect(
+    definition.match(
+      /min\(coalesce\(d\.service_start_date,r\.service_start_date\)\)/g,
+    ),
+  ).toHaveLength(2);
+  expect(definition).toContain("'infinity'::date");
+  expect(definition).toContain('r.expected_revision>term.expected_revision');
+  expect(definition).toContain(
+    "(e.recorded_at at time zone 'Africa/Cairo')::date>=next_start",
+  );
+  expect(definition).not.toContain(
+    "(e.recorded_at at time zone 'Africa/Cairo')::date<term_end",
+  );
+  expect(definition).not.toContain(
+    "(e.recorded_at at time zone 'Africa/Cairo')::date<next_end",
+  );
+  expect(definition).not.toContain(
+    'elsif has_current and next_start>coverage_end then has_current:=false',
+  );
+});
 
 type AdjustmentInput = {
   workspace_id: string;
@@ -61,7 +107,9 @@ it('T043 PO commits a date adjustment with immutable audit and zero revenue', as
     const [before] = await tx`
       select (select count(*)::int from public.payment_events where subscription_id=${ids.subscription}) as payments,
         (select count(*)::int from public.subscription_installments where subscription_id=${ids.subscription}) as installments,
-        (select count(*)::int from public.refund_operations where subscription_id=${ids.subscription}) as refunds`;
+        (select count(*)::int from public.refund_operations where subscription_id=${ids.subscription}) as refunds,
+        (select count(*)::int from public.subscription_renewals where subscription_id=${ids.subscription}) as renewals,
+        (select count(*)::int from public.subscription_upgrades where subscription_id=${ids.subscription}) as upgrades`;
     const result = await adjustTx(tx, f.po.userId, adjustmentInput(f, ids));
     expect(result.status).toBe('ok');
     expect(result.receipt).toMatchObject({
@@ -95,10 +143,57 @@ it('T043 PO commits a date adjustment with immutable audit and zero revenue', as
     const [after] = await tx`
       select (select count(*)::int from public.payment_events where subscription_id=${ids.subscription}) as payments,
         (select count(*)::int from public.subscription_installments where subscription_id=${ids.subscription}) as installments,
-        (select count(*)::int from public.refund_operations where subscription_id=${ids.subscription}) as refunds`;
+        (select count(*)::int from public.refund_operations where subscription_id=${ids.subscription}) as refunds,
+        (select count(*)::int from public.subscription_renewals where subscription_id=${ids.subscription}) as renewals,
+        (select count(*)::int from public.subscription_upgrades where subscription_id=${ids.subscription}) as upgrades`;
     expect(after).toEqual(before);
     expect(after).toMatchObject({ refunds: 0 });
   });
+});
+
+it('T043 holds platform-owner authorization until transaction end and denies a later revoked replay', async () => {
+  const f = await clientContext();
+  const label = `f13-t043-owner-lock-${randomUUID()}`;
+  const pending = worker(label);
+  let revocation: Promise<unknown> | undefined;
+  let replayInput: ReturnType<typeof adjustmentInput> | undefined;
+  let writerPid = 0;
+
+  try {
+    await probe(async (tx) => {
+      const [backend] = await tx`select pg_backend_pid() as pid`;
+      writerPid = backend!.pid as number;
+      const ids = await graph(tx, f);
+      const input = adjustmentInput(f, ids);
+      replayInput = input;
+      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+        values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+      const result = await adjustTx(tx, f.po.userId, input);
+      expect(result.status).toBe('ok');
+      revocation = pending.begin(async (workerTx) => {
+        await workerTx`
+            select user_id from public.staff_profiles where user_id=${f.po.userId} for update`;
+        await workerTx`
+            update public.staff_profiles set role='trainer' where user_id=${f.po.userId}`;
+      }) as unknown as Promise<unknown>;
+      void revocation.catch(() => undefined);
+      expect(await waitForLock(db, label)).toBe(true);
+      const [waiter] = await db`
+        select pg_blocking_pids(pid) as blockers from pg_stat_activity
+        where application_name=${label}`;
+      expect(waiter!.blockers).toContain(writerPid);
+    });
+
+    await revocation;
+    const replay = await db.begin((tx) =>
+      adjustTx(tx, f.po.userId, replayInput!),
+    );
+    expect(replay).toEqual({ status: 'not_permitted' });
+  } finally {
+    if (revocation) await revocation.catch(() => undefined);
+    await pending.end();
+    await db`update public.staff_profiles set role='platform_owner' where user_id=${f.po.userId}`;
+  }
 });
 
 it('T043 PO adjustment commits after expiry with no expiry gate', async () => {

@@ -273,6 +273,70 @@ it('T041 renews the continuous subscription without a successor or activation ro
   });
 });
 
+it('T041 writer contains a stale-state guard for a legacy successor renewal row', async () => {
+  const [row] = await db`
+    select pg_get_functiondef('public.record_renewal(jsonb)'::regprocedure) as definition`;
+  const definition = row!.definition as string;
+  const guard = definition.indexOf('r.subscription_id<>predecessor_id');
+  const refusal = definition.indexOf(
+    "jsonb_build_object('status','stale_state')",
+    guard,
+  );
+  const firstRenewalWrite = definition.indexOf(
+    'insert into public.subscription_renewals',
+  );
+
+  expect(guard).toBeGreaterThanOrEqual(0);
+  expect(refusal).toBeGreaterThan(guard);
+  expect(firstRenewalWrite).toBeGreaterThan(refusal);
+});
+
+it('T041 refuses a mocked legacy successor renewal before recording another renewal', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const [version] = await tx`
+      select current_version_id from public.package_offers
+      where workspace_id=${f.wsA.id} and id=${offerId}`;
+    const [recording] = await tx`
+      select ((clock_timestamp() at time zone 'Africa/Cairo')::date)::text as day`;
+    const legacySuccessorId = randomUUID();
+    const legacyRenewalId = randomUUID();
+
+    await tx`set constraints all deferred`;
+    await tx`set local session_replication_role = replica`;
+    await tx`insert into public.subscription_renewals(
+      id,workspace_id,client_id,predecessor_subscription_id,subscription_id,
+      package_offer_id,package_version_id,expected_revision,recording_date,
+      service_start_date,service_end_exclusive,recorded_by
+    ) values(
+      ${legacyRenewalId},${f.wsA.id},${purchase.t.id},${purchase.sid},${legacySuccessorId},
+      ${offerId},${version!.current_version_id},0,${recording!.day}::date,
+      ${recording!.day}::date,${recording!.day}::date + 30,${f.trainerA.userId}
+    )`;
+    await tx`set local session_replication_role = origin`;
+
+    const [before] = await tx`
+      select (select count(*)::int from public.subscription_renewals where workspace_id=${f.wsA.id}) as renewals,
+        (select count(*)::int from public.subscriptions where workspace_id=${f.wsA.id}) as subscriptions`;
+    const result = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(result).toEqual({ status: 'stale_state' });
+    const [after] = await tx`
+      select (select count(*)::int from public.subscription_renewals where workspace_id=${f.wsA.id}) as renewals,
+        (select count(*)::int from public.subscriptions where workspace_id=${f.wsA.id}) as subscriptions`;
+    expect(after).toEqual(before);
+  });
+});
+
 it('accepts uppercase renewal UUIDs and replays without recording a second renewal', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {

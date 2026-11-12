@@ -16,6 +16,20 @@ import {
 const db = sql();
 afterAll(() => db.end());
 
+it('T045 refund revision and allocation ordering include upgrade facts and Cairo time', async () => {
+  const [row] = await db`
+    select pg_get_functiondef('public.record_refund(jsonb)'::regprocedure) as definition`;
+  const definition = row!.definition as string;
+
+  expect(definition).toContain(
+    'revision_count:=revision_count+(select count(*)::integer from public.subscription_upgrades',
+  );
+  expect(definition).toContain('e.collected_on::timestamp as source_time');
+  expect(definition).toContain(
+    "u.recorded_at at time zone 'Africa/Cairo' as source_time",
+  );
+});
+
 async function seed() {
   const f = await clientContext();
   const ids = await db.begin((tx) => graph(tx, f));

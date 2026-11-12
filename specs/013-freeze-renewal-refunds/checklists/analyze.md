@@ -300,3 +300,21 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - CI's changed-file formatter now passes for all six changed Markdown/YAML/JSON files in the branch diff when run with the same candidate set.
 - Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-11 remains the only PO-decision question; no disposition was introduced.
 - Verdict: PASS; no behavior or product decision changed.
+
+## S51-PO-5 compatibility-field and review-fix re-analysis — 2026-11-12T18:17:23Z
+
+- Entry gate: PASS. `spec.md` has numbered FR-043, measurable SC-036, the GWT scenario for successful upgrade receipt and explicit decision register; `plan.md`, FR-tagged T048 in `tasks.md`, contract, and traceability cover the touched receipt scope. This entry follows the latest spec/plan/task edits.
+- Decision record: S51-PO-5 is copied byte-exact in `spec.md` with source path and SHA-256 `ccfe05c2e10d36f3a77ebcd6a69e9645721facc5ce176df79468c88c41575eee`. It resolves MCQ-11: retain all six compatibility fields. The successful integration test now asserts those fields.
+- Cross-reference/status review: corrected FR-043, plan, and T048 wording to mark MCQ-11 resolved. T044 remains P4/open and FR-041 PARTIAL. S51-F13-MCQ-12 remains open only for independent renewal-purchase refund selection; no behavior was added for it.
+- Review-fix analysis: checked replay preservation for old stored receipts; Stack C validated migration definitions/grants/owners/search_path; tested the renewal legacy receipt, projector boundary retention, renewal successor refusal, refund upgrade revision, trainer membership validation, and upgrade continuity. Targeted Stack C regression passed 5 files / 75 tests after one corrected upgrade-date regression.
+- Findings: 0 open CRITICAL, 0 open HIGH within the authorized scope. PO-decision-needed: MCQ-12, independent renewal-purchase refund selection only.
+- Verdict: PASS for S51-PO-5 receipt compatibility and review corrections; T044 remains untouched.
+
+## S51-PO-5 and CodeRabbit follow-up analysis — 2026-11-12T18:39:29Z
+
+- Entry gate: PASS after the final receipt edits. `spec.md` contains numbered FR-043, measurable SC-036, and GWT scenario 18 including all six compatibility fields; Clarifications includes byte-exact S51-PO-5 source/hash and explicit remaining MCQ-12. Plan, T048 and the lifecycle contract align; this Analyze entry follows the last spec/plan/task edits.
+- PO resolution: MCQ-11 is resolved by S51-PO-5. The six fields are in the scenario, SC-036, contract, task, and decision register. Earlier Analyze entries that called MCQ-11 open are historical and superseded by this entry. T044 remains P4/open and FR-041 PARTIAL.
+- Scope/gap sweep: receipt replay returns its historical stored payload unchanged; no new defaults or user-facing copy added. The pending renewal-refund selection question is S51-F13-MCQ-12 and blocks only that separate selection behavior; no such code was added.
+- Projector review: full selected Stack C run initially failed only `freeze-lifecycle.test.ts::T008 Remove preserves the Cairo day on which its fact is recorded` after term bounds excluded the latest-term removal. The forward migration now bounds removal events by the next renewal's effective start, or infinity when no later renewal exists. Focused freeze/manual-date run passed 23/23 assertions, including T008; the shell returned 1 because of stderr warning handling, so a clean full-suite exit is still required. A further full run is waiting for active Playwright/Next processes in a separate `LFTR-s45-f16` worktree to finish.
+- Findings: 0 open CRITICAL, 0 open HIGH within this analysis. PO-DECISION-NEEDED S51-F13-MCQ-12 only.
+- Verdict: PASS for requirement coherence and technical correction; final 27-file Stack C validation remains pending.
