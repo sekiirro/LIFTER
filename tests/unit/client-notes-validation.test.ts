@@ -16,9 +16,7 @@ describe('client note input validation', () => {
     expect(normalizeClientNoteBody('one\ninside\ttext')).toBe(
       'one\ninside\ttext',
     );
-    expect(normalizeClientNoteBody('🧪'.repeat(5000))).toBe(
-      '🧪'.repeat(5000),
-    );
+    expect(normalizeClientNoteBody('🧪'.repeat(5000))).toBe('🧪'.repeat(5000));
   });
 
   it('rejects blank and whitespace-only, NUL, and non-string bodies', () => {

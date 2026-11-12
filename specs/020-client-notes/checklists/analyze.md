@@ -253,3 +253,38 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 - T013 clauses verified: the UI test compares spec rows 1–34 against EN/AR message values byte-for-byte; the E2E checks the text-only horizontal tab, names/roles, keyboard focus visibility, reduced motion, RTL/LTR, 390/1440 viewports, and axe across light/dark; screenshot matrix is stored and reviewed. Existing `branding-contrast-matrix.test.ts` covers sample brand colors in light/dark.
 - T006, T008-T014 verified task states and their test evidence remain consistent. T015 remains unchecked for its delayed-original-response reconciliation clause, as noted in the report. T007 remains unchecked pending remaining PR gates.
 - **Findings:** 0 open CRITICAL, 0 open HIGH. No open ambiguities. This analysis does not infer a product decision or resolve T015's test gap.
+
+## Round 28 - T015 stale-response reconciliation (2026-11-12)
+
+**Analysis date:** 2026-11-12T08:46:47Z, after T015 task/traceability update.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, delayed-response unit regression and implementation diff.
+**Scope:** Complete the specified idempotency recovery edge case; no product requirement, user-visible copy, role, or retention rule changed.
+
+- The delayed definite refusal now compares the persisted attempt's idempotency key to the request it is resolving before removal. A stale response cannot remove a newer unresolved record. The test exercises original pending request, same-key retry resolution, a new attempt, then the original refusal.
+- T015 RED reproduced the bug (`sessionStorage` became null where the newer record was expected); GREEN passed after the key-scoped clear. Mutation with the key comparison removed reproduced the same failure. Restored implementation passes.
+- Rechecked FR-007/FR-011 mappings and traceability. No open behavioral ambiguity or copy question.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH.
+
+## Round 29 - T015 FR cross-reference (2026-11-12)
+
+**Analysis date:** 2026-11-12T08:55:06Z, after the T015 task and traceability tags were aligned.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, T015 final-head tests.
+**Scope:** Cross-reference consistency only. T015's delayed refusal/recovery-state clauses span FR-007 and FR-011; task and traceability tags now name both. No behavior, copy, or scope changed.
+
+- T015 tests cover delayed definite refusal preserving a newer tab recovery record, same-key idempotency, and resolution flows. Evidence is recorded with the implementation and test commit.
+- FR-007 and FR-011 map to T015 in task and traceability records; no stale unchecked status for T015.
+- S50-R23 is the independent architect review; remaining T007 PR-gate checks are still pending and T007 remains unticked.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH. No open ambiguities.
+## Round 30 - T015 trace evidence update (2026-11-12)
+
+**Analysis date:** 2026-11-12T08:55:47Z, after the T015 traceability evidence and FR tags were updated.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, final-head test results.
+**Scope:** Trace evidence precision only; no requirement, behavior, copy, or scope changed.
+
+- T015's FR-007, FR-011 tags agree between task and traceability rows. Traceability names the delayed-response test and fix commit 9bea24d9; the Stack D suites passed after the fix.
+- Analyze confirms T015 clauses are verified and ticked. T007 remains unticked until the required PR gates are completed.
+- S50-R23 is cited as the independent architect review; no open ambiguity remains.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH.
