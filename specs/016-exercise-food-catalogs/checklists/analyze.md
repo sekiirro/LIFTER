@@ -944,6 +944,7 @@ A hostile pass found that a pending next-page response could append results afte
 - Current-state verification (2026-11-12 15:00:39 +02:00): Stack A dependency/identity issue is resolved under S51-R5; the full migration chain replayed from the F16 worktree and the FIX2-1 integration test plus the touched F16 batch passed. A plan source-glob formatting correction preserves the intended literal paths using inline code; no requirement or behavior text changed. Entry remains PASS; 0 open CRITICAL and 0 open HIGH findings; no open product ambiguity.
 
 ## S51 migration timestamp collision follow-up
+
 - Checked: 2026-11-12 15:49:42 +02:00
 - Scope: rename the 21 PR-added F16 migration filenames, preserving their order, because gate-check found two timestamp collisions with different F13 migration blobs on origin/013-impl-s47. Migration contents and requirements are unchanged; all in-repo references were updated.
 - Check: candidate versions 20261112130000–20261112130020 are valid and not in the future; no matching versions exist in fetched origin migration trees. Re-run migration timestamp validation and full Stack A replay before acceptance.
