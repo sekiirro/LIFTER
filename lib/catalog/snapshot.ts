@@ -686,13 +686,24 @@ function canonicalExerciseSnapshotV2(
     out.workspaceExerciseId = input.workspaceExerciseId;
     out.workspaceExerciseVersion = input.workspaceExerciseVersion;
   }
-  out.name = { ...input.name };
+  const name: ExerciseSnapshotV2['name'] = { en: input.name.en };
+  if (input.name.ar !== undefined) name.ar = input.name.ar;
+  out.name = name;
   if (input.description !== undefined) out.description = input.description;
   if (input.notes !== undefined) out.notes = input.notes;
   out.alternatives = input.alternatives.map((alternative) => ({
     ...alternative,
   }));
-  out.defaults = { ...input.defaults };
+  const d = input.defaults;
+  const defaults: ExerciseSnapshotV2['defaults'] = {};
+  if (d.restSeconds !== undefined) defaults.restSeconds = d.restSeconds;
+  if (d.rir !== undefined) defaults.rir = d.rir;
+  if (d.reps !== undefined)
+    defaults.reps =
+      d.reps.kind === 'fixed'
+        ? { kind: 'fixed', value: d.reps.value }
+        : { kind: 'range', min: d.reps.min, max: d.reps.max };
+  out.defaults = defaults;
   return out;
 }
 

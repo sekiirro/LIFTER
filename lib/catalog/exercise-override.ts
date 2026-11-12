@@ -10,6 +10,7 @@ import {
   type NormalizedExercise,
 } from './schemas';
 import {
+  alternativeOptionValue,
   alternativeRef,
   type ExerciseEditorErrorCode,
   type ExerciseRepsMode,
@@ -68,7 +69,14 @@ export function overrideDraftFromExercise(
     description: exercise.description ?? '',
     notes: exercise.notes ?? '',
     videoUrl: exercise.videoUrl ?? '',
-    alternativeExerciseIds: [...(defaults?.alternativeExerciseIds ?? [])],
+    alternativeExerciseIds: (defaults?.alternativeExerciseIds ?? []).map(
+      (value) => {
+        const ref = alternativeRef(value);
+        return ref
+          ? alternativeOptionValue({ id: ref.id, kind: ref.kind, names: {} })
+          : value;
+      },
+    ),
     repsMode: reps?.kind === 'range' ? 'range' : 'fixed',
     repsValue: reps?.kind === 'fixed' ? String(reps.value) : '',
     repsMin: reps?.kind === 'range' ? String(reps.min) : '',
@@ -154,7 +162,9 @@ export function validateOverrideDraft(
   }
 
   if (dirty.has('video')) {
-    if (draft.videoUrl.trim() && !isAllowedCatalogVideoUrl(draft.videoUrl))
+    if (Array.from(draft.videoUrl.trim()).length > MAX_CATALOG_NOTE_LENGTH)
+      errors.video = 'text_too_long';
+    else if (draft.videoUrl.trim() && !isAllowedCatalogVideoUrl(draft.videoUrl))
       errors.video = 'invalid_video_url';
   }
 

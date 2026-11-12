@@ -100,6 +100,42 @@ describe('T037 Global and workspace-private write contracts', () => {
     ).rejects.toBeDefined();
   });
 
+  it('enforces the Notes and Video text cap for Global and workspace-private versions', async () => {
+    const video2000 = 'https://youtu.be/abcdefghijk?x='.padEnd(2000, 'a');
+    const video2001 = `${video2000}a`;
+    expect(video2000).toHaveLength(2000);
+    expect(video2001).toHaveLength(2001);
+    const accepted = { ...core, notes: 'n'.repeat(2000), video_url: video2000 };
+    await expect(
+      createGlobal({ ...accepted, name_en: `T037 cap global ${randomUUID()}` }),
+    ).resolves.toMatchObject([{ catalog_create_exercise: { version: 1 } }]);
+    await expect(
+      createPrivate({
+        ...accepted,
+        name_en: `T037 cap private ${randomUUID()}`,
+      }),
+    ).resolves.toMatchObject([
+      { catalog_write_workspace_exercise: { version: 1 } },
+    ]);
+
+    for (const write of [createGlobal, createPrivate]) {
+      await expect(
+        write({
+          ...core,
+          name_en: `T037 long note ${randomUUID()}`,
+          notes: 'n'.repeat(2001),
+        }),
+      ).rejects.toBeDefined();
+      await expect(
+        write({
+          ...core,
+          name_en: `T037 long video ${randomUUID()}`,
+          video_url: video2001,
+        }),
+      ).rejects.toBeDefined();
+    }
+  });
+
   it('rejects non-PO Global writes (T037)', async () => {
     await expect(
       createGlobal({ ...core, name_ar: 'تمرين اختبار' }, trainerId),
@@ -653,7 +689,7 @@ describe('T037 contract distinctions', () => {
           select pg_get_functiondef('public.catalog_version_exercise(uuid,integer,uuid,jsonb)'::regprocedure) as definition
         `;
         const definition = current?.definition as string;
-        const needle = 'where a.target_id = p_exercise_id::text';
+        const needle = 'where a.target_id::uuid = p_exercise_id';
         if (!definition.includes(needle))
           throw new Error('T074 self-target mutation target missing');
         await tx.unsafe(definition.replace(needle, 'where false'));

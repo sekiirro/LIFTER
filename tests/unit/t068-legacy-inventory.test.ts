@@ -2,9 +2,47 @@ import { describe, expect, it } from 'vitest';
 import {
   summarizeInventory,
   serializeInventoryReport,
+  readInventory,
 } from '../../scripts/f16/t068-legacy-inventory.mjs';
 
 describe('T068 legacy inventory output', () => {
+  it('reads inventory and cutover identities in one repeatable-read snapshot', async () => {
+    const queries: string[] = [];
+    type FakeRow = Record<string, string>;
+    type FakeQuery = (
+      strings: TemplateStringsArray,
+      ...values: unknown[]
+    ) => Promise<FakeRow[]>;
+    const tx: FakeQuery = async (strings) => {
+      const query = strings.join('?');
+      queries.push(query);
+      if (query.includes('from public.exercises'))
+        return [{ id: 'exercise-1', lifecycle_state: 'active' }];
+      if (query.includes('from public.workspace_exercises'))
+        return [{ workspace_id: 'workspace-1', id: 'private-1' }];
+      return [];
+    };
+    const db = {
+      begin: (body: (query: FakeQuery) => Promise<unknown>) => body(tx),
+    };
+    const result = await readInventory(db, { includeIdentitySet: true });
+    expect(queries[0]).toContain(
+      'set transaction isolation level repeatable read, read only',
+    );
+    expect(
+      queries.filter((query) => query.includes('from public.exercises')),
+    ).toHaveLength(1);
+    expect(
+      queries.filter((query) =>
+        query.includes('from public.workspace_exercises'),
+      ),
+    ).toHaveLength(1);
+    expect(result.identitySet).toEqual({
+      exercises: ['exercise-1'],
+      workspace_exercises: [['workspace-1', 'private-1']],
+    });
+  });
+
   it('emits counts only when fake rows contain notes, URLs, or payload text', () => {
     const privateNote = 'PRIVATE_NOTE_SENTINEL_4f2c';
     const privateUrl =

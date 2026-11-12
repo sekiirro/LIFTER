@@ -49,18 +49,20 @@ async function search(
   actorId: string,
   scope: string | null,
   exerciseId: string,
+  query = '',
 ) {
   return asActor(
     actorId,
     (tx) => tx`select result_payload from public.catalog_search(
-    'exercise', null, '{}'::jsonb, null, ${scope}
+    'exercise', ${query}, '{}'::jsonb, null, ${scope}
   ) where result_id = ${exerciseId}`,
   );
 }
 
 describe('T049 staff effective exercise resolution', () => {
   it('resolves each of the eight fields per workspace with a source and keeps canonical-only search', async () => {
-    const exerciseId = await createGlobal(`T049 fields ${randomUUID()}`);
+    const searchName = `T049 fields ${randomUUID()}`;
+    const exerciseId = await createGlobal(searchName);
     const local = {
       name_en: 'Workspace name',
       description: 'Workspace description',
@@ -73,7 +75,12 @@ describe('T049 staff effective exercise resolution', () => {
     };
     await writeOverride(exerciseId, local);
 
-    const [workspace] = await search(trainerId, workspaceId, exerciseId);
+    const [workspace] = await search(
+      trainerId,
+      workspaceId,
+      exerciseId,
+      searchName,
+    );
     expect(workspace?.result_payload).toMatchObject({
       effective_fields: {
         name: {
@@ -103,18 +110,20 @@ describe('T049 staff effective exercise resolution', () => {
     ]);
     const detail = await asActor(
       trainerId,
-      (tx) => tx`select payload
+      (tx) => tx`select payload, override_version
       from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`,
     );
+    expect(detail[0]?.override_version).toBe(1);
     expect(detail[0]?.payload.effective_fields).toEqual(
       workspace?.result_payload.effective_fields,
     );
 
     const canonical = await asActor(
       poId,
-      (tx) => tx`select payload
+      (tx) => tx`select payload, override_version
       from public.catalog_exercise_detail(${exerciseId}, null)`,
     );
+    expect(canonical[0]?.override_version).toBeNull();
     expect(canonical[0]?.payload.effective_fields).toMatchObject({
       name: {
         value: { name_en: expect.any(String), name_ar: 'ØªÙ…Ø±ÙŠÙ†' },
@@ -131,13 +140,19 @@ describe('T049 staff effective exercise resolution', () => {
   });
 
   it('treats null as inherit and an explicit-empty Alternatives override as empty', async () => {
-    const exerciseId = await createGlobal(`T049 inherit ${randomUUID()}`);
+    const exerciseName = `T049 inherit ${randomUUID()}`;
+    const exerciseId = await createGlobal(exerciseName);
     const targetId = await createGlobal(`T049 alternative ${randomUUID()}`);
     await db`insert into public.exercise_version_alternatives(exercise_id, version, position, global_exercise_id)
       values (${exerciseId}, 1, 1, ${targetId})`;
     await writeOverride(exerciseId, { name_en: null, alternatives: [] });
 
-    const [workspace] = await search(trainerId, workspaceId, exerciseId);
+    const [workspace] = await search(
+      trainerId,
+      workspaceId,
+      exerciseId,
+      exerciseName,
+    );
     expect(workspace?.result_payload.effective_fields.name).toMatchObject({
       value: { name_en: expect.stringMatching(/^T049 inherit /) },
       source: 'canonical',
@@ -148,13 +163,35 @@ describe('T049 staff effective exercise resolution', () => {
     });
   });
 
+  it('rejects a canonical self Alternative even when UUID text uses uppercase', async () => {
+    let exerciseId = await createGlobal(`T049 self ${randomUUID()}`);
+    while (!/[a-f]/i.test(exerciseId))
+      exerciseId = await createGlobal(`T049 self ${randomUUID()}`);
+    const [version] = await db`select payload from public.exercise_versions
+      where exercise_id=${exerciseId} and version=1`;
+    const uppercaseSelf = exerciseId.toUpperCase();
+    expect(uppercaseSelf).not.toBe(exerciseId);
+    await expect(
+      asActor(
+        poId,
+        (tx) => tx`select public.catalog_version_exercise(
+      ${exerciseId}, 1, ${randomUUID()}, ${tx.json({
+        ...version!.payload,
+        alternatives: [uppercaseSelf],
+      })}
+    )`,
+      ),
+    ).rejects.toThrow(/catalog_exercise_alternatives_invalid/);
+  });
+
   it('requires current coaching_work for the explicitly selected workspace', async () => {
-    const exerciseId = await createGlobal(`T049 scope ${randomUUID()}`);
+    const exerciseName = `T049 scope ${randomUUID()}`;
+    const exerciseId = await createGlobal(exerciseName);
     await expect(
       search(trainerId, foreignWorkspaceId, exerciseId),
     ).rejects.toMatchObject({ code: '42501' });
     await expect(
-      search(trainerId, workspaceId, exerciseId),
+      search(trainerId, workspaceId, exerciseId, exerciseName),
     ).resolves.toHaveLength(1);
   });
 

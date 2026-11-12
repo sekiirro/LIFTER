@@ -198,11 +198,11 @@ export function ExerciseDetailView({
       </Card>
       <Card as="section" className={styles.card}>
         <h2>{m['catalog.detailWorkspace']}</h2>
-        {row.variation ? (
+        {row.variation || typeof row.payload.video_url === 'string' ? (
           <div className={styles.variation}>
             <p>{m['catalog.detailVideo']}</p>
             <a
-              href={row.variation.video_url}
+              href={row.variation?.video_url ?? String(row.payload.video_url)}
               rel="noopener noreferrer"
               target="_blank"
             >

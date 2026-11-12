@@ -54,6 +54,65 @@ async function write(
 }
 
 describe('T047 workspace exercise override writes', () => {
+  it('accepts Notes and Video references at 2,000 characters and rejects 2,001', async () => {
+    const acceptedExercise = await createGlobal(
+      `T047 cap accepted ${randomUUID()}`,
+    );
+    const baseVideo = 'https://youtu.be/abcdefghijk?x=';
+    const acceptedVideo = baseVideo.padEnd(2000, 'a');
+    expect(acceptedVideo).toHaveLength(2000);
+    const accepted = await write(
+      trainerId,
+      workspaceId,
+      acceptedExercise,
+      0,
+      randomUUID(),
+      {
+        notes: 'n'.repeat(2000),
+        video_url: acceptedVideo,
+      },
+    );
+    expect(accepted[0]?.result).toMatchObject({ version: 1 });
+
+    const rejectedExercise = await createGlobal(
+      `T047 cap rejected ${randomUUID()}`,
+    );
+    await expect(
+      write(trainerId, workspaceId, rejectedExercise, 0, randomUUID(), {
+        notes: 'n'.repeat(2001),
+      }),
+    ).rejects.toThrow(
+      /catalog_exercise_override_invalid|catalog_exercise_payload_invalid|catalog_exercise_notes_too_long/,
+    );
+    await expect(
+      write(trainerId, workspaceId, rejectedExercise, 0, randomUUID(), {
+        video_url: `${acceptedVideo}a`,
+      }),
+    ).rejects.toThrow(
+      /exercise_override_versions_notes_video_text_limit|catalog_exercise_override_invalid|catalog_exercise_payload_invalid|catalog_exercise_video_too_long/,
+    );
+  });
+
+  it('fails the data audit with a count before writing and never truncates', async () => {
+    const exercise = await createGlobal(`T047 audit guard ${randomUUID()}`);
+    await expect(
+      db.begin(async (tx) => {
+        await tx`alter table public.exercise_versions
+        drop constraint exercise_versions_notes_video_text_limit`;
+        const [base] =
+          await tx`select payload, created_by from public.exercise_versions
+        where exercise_id=${exercise} and version=1`;
+        await tx`insert into public.exercise_versions
+        (exercise_id, version, payload, notes, created_by)
+        values (${exercise}, 2, ${tx.json(base!.payload)}, ${'x'.repeat(2001)}, ${base!.created_by})`;
+        await tx`select app_private.catalog_assert_exercise_text_limits()`;
+      }),
+    ).rejects.toThrow(/catalog_exercise_text_limit_existing_data:1/);
+    const rows = await db`select version from public.exercise_versions
+      where exercise_id=${exercise} order by version`;
+    expect(rows.map((row) => row.version)).toEqual([1]);
+  });
+
   it('creates, versions, resets, and records exactly one audit per write', async () => {
     const exercise = await createGlobal(`T047 ${randomUUID()}`);
     const key1 = randomUUID();
@@ -187,6 +246,32 @@ describe('T047 workspace exercise override writes', () => {
       },
     );
     expect(boundary[0]?.result).toMatchObject({ version: 2 });
+  });
+
+  it('preserves removed targets in override history on a Notes write but rejects re-selection', async () => {
+    const source = await createGlobal(`T047 source ${randomUUID()}`);
+    const target = await createGlobal(`T047 target ${randomUUID()}`);
+    await write(trainerId, workspaceId, source, 0, randomUUID(), {
+      alternatives: [{ global_exercise_id: target }],
+    });
+    await asActor(
+      poId,
+      (tx) => tx`select public.catalog_transition_exercise(
+      ${target}, 0, 'remove', ${randomUUID()}
+    )`,
+    );
+    await write(trainerId, workspaceId, source, 1, randomUUID(), {
+      notes: 'Keep the recorded target reference',
+    });
+    const preserved =
+      await db`select global_exercise_id from public.exercise_override_alternatives
+      where workspace_id=${workspaceId} and exercise_id=${source} and override_version=2`;
+    expect(preserved).toEqual([{ global_exercise_id: target }]);
+    await expect(
+      write(trainerId, workspaceId, source, 2, randomUUID(), {
+        alternatives: [{ global_exercise_id: target }],
+      }),
+    ).rejects.toThrow(/catalog_exercise_alternatives_invalid/);
   });
 
   it('enforces workspace authorization and permits the PO workspace override reach', async () => {

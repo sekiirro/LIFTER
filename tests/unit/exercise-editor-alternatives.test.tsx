@@ -5,6 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExerciseEditor } from '../../components/catalog/ExerciseEditor';
 import { normalizeExerciseInput } from '../../lib/catalog/schemas';
 
+const searchAction = vi.hoisted(() => vi.fn());
+vi.mock('../../app/(app)/exercise-library/actions', () => ({
+  searchAlternativeOptionsAction: searchAction,
+}));
+
 let host: HTMLDivElement;
 let root: Root;
 
@@ -111,5 +116,103 @@ describe('exercise editor selected alternatives keys', () => {
     expect(summary?.textContent).toContain('Private target');
     expect(summary?.textContent).not.toContain('g:1111');
     expect(summary?.textContent).not.toContain('w:2222');
+  });
+
+  it('debounces authoring search and retains selected Alternatives across pages', async () => {
+    const selectedId = '11111111-1111-4111-8111-111111111111';
+    const exercise = normalizeExerciseInput({
+      names: { en: 'Main Exercise' },
+      primaryMuscle: 'chest',
+      equipment: 'barbell',
+      defaults: { alternativeExerciseIds: [`g:${selectedId}`] },
+    });
+    searchAction
+      .mockResolvedValueOnce({
+        status: 'ok',
+        data: {
+          options: [
+            { id: selectedId, kind: 'global', names: { en: 'Selected' } },
+            {
+              id: '22222222-2222-4222-8222-222222222222',
+              kind: 'global',
+              names: { en: 'Page one' },
+            },
+          ],
+          nextCursor: 'g:33333333-3333-4333-8333-333333333333',
+        },
+      })
+      .mockResolvedValueOnce({
+        status: 'ok',
+        data: {
+          options: [
+            { id: selectedId, kind: 'global', names: { en: 'Selected' } },
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              kind: 'global',
+              names: { en: 'Page two' },
+            },
+          ],
+          nextCursor: 'g:55555555-5555-4555-8555-555555555555',
+        },
+      })
+      .mockResolvedValueOnce({
+        status: 'ok',
+        data: {
+          options: [
+            { id: selectedId, kind: 'global', names: { en: 'Selected' } },
+            {
+              id: '66666666-6666-4666-8666-666666666666',
+              kind: 'global',
+              names: { en: 'Page three' },
+            },
+          ],
+          nextCursor: null,
+        },
+      });
+
+    await act(async () =>
+      root.render(
+        createElement(ExerciseEditor, {
+          locale: 'en',
+          role: 'po',
+          exercise,
+          alternatives: [],
+        }),
+      ),
+    );
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 320)));
+    const isSelectedVisible = () =>
+      [...host.querySelectorAll('label')].some(
+        (label) =>
+          label.textContent?.includes('Selected') &&
+          (document.getElementById(label.htmlFor) as HTMLInputElement | null)
+            ?.checked,
+      );
+    expect(isSelectedVisible()).toBe(true);
+
+    const search = host.querySelector<HTMLInputElement>(
+      'input[type="search"]',
+    )!;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value',
+      )!.set!;
+      setter.call(search, 'page two');
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 320)));
+    expect(isSelectedVisible()).toBe(true);
+    expect(searchAction).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        query: 'page two',
+        selectedIds: [`g:${selectedId}`],
+      }),
+    );
+    const next = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Next page',
+    )!;
+    await act(async () => next.click());
+    expect(isSelectedVisible()).toBe(true);
   });
 });

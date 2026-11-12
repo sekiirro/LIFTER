@@ -27,6 +27,15 @@ beforeEach(() => {
     activeWorkspaceIds: [],
   };
   rpc.mockResolvedValue({ data: { ok: true }, error: null });
+  from.mockImplementation(() => ({
+    select: () => ({
+      eq: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: null, error: null }),
+        }),
+      }),
+    }),
+  }));
 });
 
 describe('catalog server authorization and RPC boundary', () => {
@@ -132,6 +141,77 @@ describe('catalog server authorization and RPC boundary', () => {
     });
   });
 
+  it('uses the actual override revision when a video-only caller has no variation row', async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { current_version: 4 },
+      error: null,
+    });
+    from.mockReturnValue({
+      select: () => ({
+        eq: () => ({ eq: () => ({ maybeSingle }) }),
+      }),
+    });
+    currentActor = {
+      userId: 'owner',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    await catalog().writeVariation({
+      operationKey: key,
+      workspaceId: ws,
+      id: '55555555-5555-4555-8555-555555555555',
+      request: { video_url: 'https://youtu.be/abcdefghijk' },
+    });
+    expect(from).toHaveBeenCalledWith('exercise_overrides');
+    expect(maybeSingle).toHaveBeenCalledOnce();
+    expect(rpc).toHaveBeenCalledWith(
+      'catalog_write_exercise_override',
+      expect.objectContaining({ p_expected_version: 4 }),
+    );
+  });
+
+  it('rejects unsupported variation restore before writing', async () => {
+    currentActor = {
+      userId: 'actor',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    expect(
+      await catalog().transitionVariation({
+        operationKey: key,
+        workspaceId: ws,
+        id: '55555555-5555-4555-8555-555555555555',
+        expectedVersion: 1,
+        transition: 'restore',
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects over-limit Notes and Video references in server normalization', async () => {
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    for (const request of [
+      { notes: 'x'.repeat(2001) },
+      { video_url: 'https://youtu.be/abcdefghijk?x='.padEnd(2001, 'a') },
+    ]) {
+      rpc.mockClear();
+      await expect(
+        catalog().writeExerciseOverride({
+          operationKey: key,
+          workspaceId: ws,
+          id: targetId,
+          expectedVersion: 0,
+          request,
+        }),
+      ).resolves.toEqual({ status: 'invalid' });
+      expect(rpc).not.toHaveBeenCalled();
+    }
+  });
+
   it.each([
     ['missing', undefined],
     ['empty', ''],
@@ -187,84 +267,132 @@ describe('catalog server authorization and RPC boundary', () => {
     });
   });
 
-  it('pages through every Alternative option instead of stopping at 50', async () => {
+  it('returns one bounded Alternative page with an opaque keyset cursor', async () => {
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
     const row = (index: number) => ({
       result_id: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
-      result_payload: {
-        name_en: `Option ${index}`,
-        primary_muscle_code: 'chest',
-        equipment_codes: ['barbell'],
-        effective_fields: {
-          name: {
-            value: { name_en: `Option ${index}`, name_ar: null },
-            source: 'canonical',
-          },
-        },
-      },
+      result_payload: { name_en: `Option ${index}` },
     });
     rpc.mockResolvedValueOnce({
       data: Array.from({ length: 50 }, (_, index) => row(index + 1)),
       error: null,
     });
-    rpc.mockResolvedValueOnce({ data: [row(51)], error: null });
-
-    const result = await catalog().alternativeOptions({ workspaceId: null });
-    expect(result.status).toBe('ok');
-    expect((result as { data: unknown[] }).data).toHaveLength(51);
-    expect(rpc).toHaveBeenNthCalledWith(1, 'catalog_search', {
-      kind: 'exercise',
-      query: '',
-      filters: { page_size: 50 },
-      cursor: null,
-      workspace_id: null,
+    const result = await catalog().alternativePickerOptions({
+      workspaceId: ws,
+      query: 'option',
+      selectedIds: [],
     });
-    expect(rpc).toHaveBeenNthCalledWith(2, 'catalog_search', {
-      kind: 'exercise',
-      query: '',
-      filters: { page_size: 50 },
-      cursor: row(50).result_id,
-      workspace_id: null,
-    });
-  });
-
-  it('continues Alternative pagination beyond 100 pages', async () => {
-    let call = 0;
-    const row = (index: number) => ({
-      result_id: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
-      result_payload: {
-        name_en: `Option ${index}`,
-        primary_muscle_code: 'chest',
-        equipment_codes: ['barbell'],
+    expect(result).toMatchObject({
+      status: 'ok',
+      data: {
+        options: expect.arrayContaining([
+          { id: row(1).result_id, kind: 'global', names: { en: 'Option 1' } },
+        ]),
+        nextCursor: `g:${row(50).result_id}`,
       },
     });
-    rpc.mockImplementation(async () => {
-      call += 1;
-      const start = (call - 1) * 50 + 1;
-      const count = call <= 100 ? 50 : 1;
-      return {
-        data: Array.from({ length: count }, (_, index) => row(start + index)),
-        error: null,
-      };
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+  it('uses authorized keyset search and explicitly fetches selected Alternative ids', async () => {
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    const candidateId = '55555555-5555-4555-8555-555555555555';
+    rpc.mockImplementation(
+      async (name: string, args: Record<string, unknown>) => {
+        if (name === 'catalog_search') {
+          if (args.kind === 'exercise')
+            return {
+              data: [
+                {
+                  result_id: candidateId,
+                  result_payload: { name_en: 'Current result' },
+                },
+              ],
+              error: null,
+            };
+          return { data: [], error: null };
+        }
+        if (name === 'catalog_exercise_detail')
+          return {
+            data: [
+              {
+                exercise_id: targetId,
+                name_en: 'Selected outside this query',
+                name_ar: null,
+                payload: {},
+              },
+            ],
+            error: null,
+          };
+        return { data: null, error: { code: '42501' } };
+      },
+    );
+
+    const result = await catalog().alternativePickerOptions({
+      workspaceId: ws,
+      query: 'current',
+      selectedIds: [`g:${targetId}`],
     });
-
-    const result = await catalog().alternativeOptions({ workspaceId: null });
-
-    expect(result.status).toBe('ok');
-    expect((result as { data: unknown[] }).data).toHaveLength(5001);
-    expect(rpc).toHaveBeenCalledTimes(101);
+    expect(result).toEqual({
+      status: 'ok',
+      data: {
+        options: [
+          {
+            id: targetId,
+            kind: 'global',
+            names: { en: 'Selected outside this query' },
+          },
+          { id: candidateId, kind: 'global', names: { en: 'Current result' } },
+        ],
+        nextCursor: null,
+      },
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      'catalog_search',
+      expect.objectContaining({
+        kind: 'exercise',
+        query: 'current',
+        filters: { page_size: 50 },
+        cursor: null,
+        workspace_id: ws,
+      }),
+    );
+    expect(rpc).toHaveBeenCalledWith('catalog_exercise_detail', {
+      p_exercise_id: targetId,
+      p_workspace_id: ws,
+    });
   });
 
-  it('fails closed when Alternative pagination repeats a full-page cursor', async () => {
-    const rows = Array.from({ length: 50 }, (_, index) => ({
-      result_id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
-      result_payload: { name_en: `Option ${index + 1}` },
-    }));
-    rpc.mockResolvedValue({ data: rows, error: null });
-
-    const result = await catalog().alternativeOptions({ workspaceId: null });
-
-    expect(result).toEqual({ status: 'unavailable' });
-    expect(rpc).toHaveBeenCalledTimes(2);
+  it('authorizes Alternative search before querying any workspace data', async () => {
+    currentActor = { userId: 'sales', role: 'sales', activeWorkspaceIds: [ws] };
+    expect(
+      await catalog().alternativePickerOptions({
+        workspaceId: ws,
+        query: 'press',
+        selectedIds: [],
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(rpc).not.toHaveBeenCalled();
+    currentActor = {
+      userId: 'foreign-trainer',
+      role: 'trainer',
+      activeWorkspaceIds: ['44444444-4444-4444-8444-444444444444'],
+    };
+    expect(
+      await catalog().alternativePickerOptions({
+        workspaceId: ws,
+        query: 'press',
+        selectedIds: [],
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it('does not restore canonical Arabic in an option when the resolved name clears it', async () => {
@@ -288,16 +416,23 @@ describe('catalog server authorization and RPC boundary', () => {
       ],
       error: null,
     });
-    const result = await catalog().alternativeOptions({ workspaceId: null });
+    const result = await catalog().alternativePickerOptions({
+      workspaceId: null,
+      query: '',
+      selectedIds: [],
+    });
     expect(result).toEqual({
       status: 'ok',
-      data: [
-        {
-          id: '55555555-5555-4555-8555-555555555555',
-          kind: 'global',
-          names: { en: 'English only' },
-        },
-      ],
+      data: {
+        options: [
+          {
+            id: '55555555-5555-4555-8555-555555555555',
+            kind: 'global',
+            names: { en: 'English only' },
+          },
+        ],
+        nextCursor: null,
+      },
     });
   });
 

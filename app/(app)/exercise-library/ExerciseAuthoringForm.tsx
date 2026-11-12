@@ -23,6 +23,7 @@ export function ExerciseAuthoringForm({
   exercise,
   equipmentCodes,
   alternatives = [],
+  alternativesNextCursor = null,
 }: {
   locale: Locale;
   role: CatalogStaffRole;
@@ -33,6 +34,7 @@ export function ExerciseAuthoringForm({
   exercise?: NormalizedExercise;
   equipmentCodes?: string[];
   alternatives?: readonly ExerciseAlternativeOption[];
+  alternativesNextCursor?: string | null;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<'ready' | 'saving' | 'error'>('ready');
@@ -86,7 +88,9 @@ export function ExerciseAuthoringForm({
         status={status}
         exercise={exercise}
         exerciseId={id}
+        workspaceId={workspaceId}
         alternatives={alternatives}
+        alternativesNextCursor={alternativesNextCursor}
         onSubmit={submit}
       />
     </>

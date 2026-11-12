@@ -6,15 +6,18 @@ import { ExerciseDetailView } from '../../../../components/catalog/ExerciseDetai
 import { requireActor } from '../../../../lib/auth/actor';
 import { authorize } from '../../../../lib/auth/authorize';
 import {
-  alternativeOptions,
+  alternativePickerOptions,
   authoringWorkspaces,
   exerciseDetail,
-  exerciseOverrideVersion,
   type CatalogExerciseOption,
 } from '../../../../lib/catalog/server';
 import { normalizeExerciseInput } from '../../../../lib/catalog/schemas';
 import { exerciseInput } from '../../../../lib/catalog/exercise-input';
-import { overrideSources } from '../../../../lib/catalog/exercise-override';
+import { draftFromExercise } from '../../../../lib/catalog/exercise-editor';
+import {
+  overrideDraftFromExercise,
+  overrideSources,
+} from '../../../../lib/catalog/exercise-override';
 import { ExerciseOverrideEditor } from '../../../../components/catalog/ExerciseOverrideEditor';
 import {
   LOCALE_COOKIE,
@@ -120,18 +123,29 @@ export default async function ExerciseDetailPage({
     row.lifecycle_state === 'active' &&
     row.requested_id === row.survivor_id &&
     authorize(actor, 'coaching_work', workspaceId);
+  let authoringOptions: CatalogExerciseOption[] = [];
   let overrideOptions: CatalogExerciseOption[] = [];
-  let overrideVersion = 0;
+  let overrideNextCursor: string | null = null;
+  const overrideVersion =
+    typeof row.override_version === 'number' ? row.override_version : 0;
   if (canCustomize) {
-    const [options, version] = await Promise.all([
-      alternativeOptions({ workspaceId }),
-      exerciseOverrideVersion({ workspaceId: workspaceId!, exerciseId }),
-    ]);
-    if (options.status === 'ok')
-      overrideOptions = options.data.filter(
+    const options = await alternativePickerOptions({
+      workspaceId,
+      selectedIds: overrideDraftFromExercise(exercise).alternativeExerciseIds,
+    });
+    if (options.status === 'ok') {
+      overrideOptions = options.data.options.filter(
         (option) => option.id !== exerciseId,
       );
-    if (version.status === 'ok') overrideVersion = version.data.version;
+      overrideNextCursor = options.data.nextCursor;
+    }
+  }
+  const allOptions = await alternativePickerOptions({
+    workspaceId: scope === 'workspace' ? workspaceId : null,
+    selectedIds: draftFromExercise(exercise).alternativeExerciseIds,
+  });
+  if (allOptions.status === 'ok') {
+    authoringOptions = allOptions.data.options;
   }
   const payload = row.payload as Record<string, unknown>;
   const sources = overrideSources(
@@ -187,7 +201,7 @@ export default async function ExerciseDetailPage({
         }
         scope={scope}
         workspaceId={workspaceId}
-        alternatives={overrideOptions}
+        alternatives={authoringOptions}
       />
       {canCustomize ? (
         <ExerciseOverrideEditor
@@ -199,6 +213,7 @@ export default async function ExerciseDetailPage({
           exercise={exercise}
           sources={sources}
           alternatives={overrideOptions}
+          nextCursor={overrideNextCursor}
         />
       ) : null}
     </main>

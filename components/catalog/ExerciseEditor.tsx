@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import { Alert } from '../ui/Alert';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
@@ -32,6 +32,7 @@ import {
 import { dirFor, type Locale } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 import styles from './ExerciseEditor.module.css';
+import { searchAlternativeOptionsAction } from '../../app/(app)/exercise-library/actions';
 
 export type ExerciseEditorStatus = 'ready' | 'saving' | 'error';
 
@@ -42,7 +43,9 @@ export type ExerciseEditorProps = {
   hasCoachingWork?: boolean;
   exercise?: NormalizedExercise | null;
   exerciseId?: string;
+  workspaceId?: string | null;
   alternatives?: readonly ExerciseAlternativeOption[];
+  alternativesNextCursor?: string | null;
   initialDraft?: ExerciseEditorDraft;
   initialErrors?: ExerciseEditorErrors;
   status?: ExerciseEditorStatus;
@@ -119,7 +122,9 @@ export function ExerciseEditor({
   hasCoachingWork = false,
   exercise = null,
   exerciseId,
+  workspaceId = null,
   alternatives = [],
+  alternativesNextCursor = null,
   initialDraft,
   initialErrors,
   status = 'ready',
@@ -135,6 +140,87 @@ export function ExerciseEditor({
   const [errors, setErrors] = useState<ExerciseEditorErrors>(
     initialErrors ?? {},
   );
+  const [alternativeQuery, setAlternativeQuery] = useState('');
+  const [alternativeOptions, setAlternativeOptions] = useState([
+    ...alternatives,
+  ]);
+  const [alternativeCursor, setAlternativeCursor] = useState(
+    alternativesNextCursor,
+  );
+  const [alternativeLoading, setAlternativeLoading] = useState(false);
+  const [alternativeLoadError, setAlternativeLoadError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setAlternativeLoading(true);
+      setAlternativeLoadError(false);
+      try {
+        const result = await searchAlternativeOptionsAction({
+          workspaceId,
+          query: alternativeQuery,
+          cursor: null,
+          selectedIds: draft.alternativeExerciseIds,
+        });
+        if (cancelled) return;
+        if (result.status !== 'ok') {
+          setAlternativeLoadError(true);
+          return;
+        }
+        const data = result.data as {
+          options: ExerciseAlternativeOption[];
+          nextCursor: string | null;
+        };
+        setAlternativeOptions(data.options);
+        setAlternativeCursor(data.nextCursor);
+      } catch {
+        if (!cancelled) setAlternativeLoadError(true);
+      } finally {
+        if (!cancelled) setAlternativeLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [alternativeQuery, workspaceId, draft.alternativeExerciseIds]);
+
+  async function loadNextAlternatives() {
+    if (!alternativeCursor || alternativeLoading) return;
+    const requestedQuery = alternativeQuery;
+    setAlternativeLoading(true);
+    setAlternativeLoadError(false);
+    try {
+      const result = await searchAlternativeOptionsAction({
+        workspaceId,
+        query: requestedQuery,
+        cursor: alternativeCursor,
+        selectedIds: draft.alternativeExerciseIds,
+      });
+      if (requestedQuery !== alternativeQuery) return;
+      if (result.status !== 'ok') {
+        setAlternativeLoadError(true);
+        return;
+      }
+      const data = result.data as {
+        options: ExerciseAlternativeOption[];
+        nextCursor: string | null;
+      };
+      setAlternativeOptions((previous) => {
+        const merged = new Map(
+          previous.map((option) => [alternativeOptionValue(option), option]),
+        );
+        for (const option of data.options)
+          merged.set(alternativeOptionValue(option), option);
+        return [...merged.values()];
+      });
+      setAlternativeCursor(data.nextCursor);
+    } catch {
+      setAlternativeLoadError(true);
+    } finally {
+      setAlternativeLoading(false);
+    }
+  }
 
   const canEdit = canEditExercise(scope, role, hasCoachingWork);
   const reps = repsFromDraft(draft);
@@ -142,7 +228,6 @@ export function ExerciseEditor({
   const repsError =
     errors.repsValue ?? errors.repsMin ?? errors.repsMax ?? errors.repsMode;
   const alternativesAtMax = draft.alternativeExerciseIds.length >= 3;
-  const alternativeOptions = alternatives;
   const selectedAlternatives = draft.alternativeExerciseIds.map((id) => {
     const option = alternativeOptions.find(
       (item) => alternativeOptionValue(item) === id,
@@ -555,6 +640,25 @@ export function ExerciseEditor({
             <p className={styles.hint} id={`${base}-alternatives-hint`}>
               {m['catalog.editorAlternativesHint']}
             </p>
+            <Field
+              label={m['catalog.searchLabel']}
+              inputProps={{
+                id: `${base}-alternative-search`,
+                type: 'search',
+                value: alternativeQuery,
+                disabled: !canEdit,
+                onChange: (event) =>
+                  setAlternativeQuery(event.currentTarget.value),
+              }}
+            />
+            <p role="status" aria-live="polite" aria-busy={alternativeLoading}>
+              {alternativeLoading ? m['catalog.loading'] : ''}
+            </p>
+            {alternativeLoadError ? (
+              <p className={styles.error} role="alert">
+                {m['catalog.editorStatusErrorDescription']}
+              </p>
+            ) : null}
             {alternativeOptions.length ? (
               <ul className={styles.alternativeList}>
                 {alternativeOptions.map((option) => {
@@ -583,8 +687,21 @@ export function ExerciseEditor({
                 })}
               </ul>
             ) : (
-              <p className={styles.hint}>{m['catalog.editorNone']}</p>
+              <div className={styles.hint}>
+                <p>{m['catalog.noResultsTitle']}</p>
+                <p>{m['catalog.noResultsDescription']}</p>
+              </div>
             )}
+            {alternativeCursor ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!canEdit || alternativeLoading}
+                onClick={loadNextAlternatives}
+              >
+                {m['catalog.nextPage']}
+              </Button>
+            ) : null}
             {alternativesAtMax && (
               <p className={styles.hint}>
                 {m['catalog.editorAlternativesMax']}

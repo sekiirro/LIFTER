@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
@@ -27,6 +27,7 @@ import { getMessages } from '../../lib/i18n';
 import {
   resetExerciseOverrideFieldAction,
   saveExerciseOverrideAction,
+  searchAlternativeOptionsAction,
 } from '../../app/(app)/exercise-library/actions';
 
 type Messages = ReturnType<typeof getMessages>;
@@ -61,6 +62,7 @@ export function ExerciseOverrideEditor({
   exercise,
   sources,
   alternatives,
+  nextCursor: initialNextCursor,
 }: {
   locale: Locale;
   workspaceId: string;
@@ -69,6 +71,7 @@ export function ExerciseOverrideEditor({
   exercise: NormalizedExercise;
   sources: Record<OverrideField, OverrideFieldSource>;
   alternatives: readonly ExerciseAlternativeOption[];
+  nextCursor?: string | null;
 }) {
   const m = getMessages(locale);
   const router = useRouter();
@@ -79,6 +82,94 @@ export function ExerciseOverrideEditor({
   const [errors, setErrors] = useState<OverrideErrors>({});
   const [busy, setBusy] = useState<'idle' | 'saving' | OverrideField>('idle');
   const [failed, setFailed] = useState(false);
+  const [alternativeQuery, setAlternativeQuery] = useState('');
+  const [alternativeOptions, setAlternativeOptions] = useState([
+    ...alternatives,
+  ]);
+  const [alternativeCursor, setAlternativeCursor] = useState(
+    initialNextCursor ?? null,
+  );
+  const [alternativeLoading, setAlternativeLoading] = useState(false);
+  const operationKeys = useRef(new Map<string, string>());
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setAlternativeLoading(true);
+      try {
+        const result = await searchAlternativeOptionsAction({
+          workspaceId,
+          query: alternativeQuery,
+          cursor: null,
+          selectedIds: draft.alternativeExerciseIds,
+        });
+        if (cancelled) return;
+        if (result.status === 'ok') {
+          const data = result.data as {
+            options: ExerciseAlternativeOption[];
+            nextCursor: string | null;
+          };
+          setAlternativeOptions(data.options);
+          setAlternativeCursor(data.nextCursor);
+        } else {
+          setFailed(true);
+        }
+      } catch {
+        if (!cancelled) setFailed(true);
+      } finally {
+        if (!cancelled) setAlternativeLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [alternativeQuery, workspaceId, exerciseId, draft.alternativeExerciseIds]);
+
+  async function loadNextAlternatives() {
+    if (!alternativeCursor || alternativeLoading) return;
+    const requestedQuery = alternativeQuery;
+    setAlternativeLoading(true);
+    try {
+      const result = await searchAlternativeOptionsAction({
+        workspaceId,
+        query: requestedQuery,
+        cursor: alternativeCursor,
+        selectedIds: draft.alternativeExerciseIds,
+      });
+      if (requestedQuery !== alternativeQuery) return;
+      if (result.status !== 'ok') {
+        setFailed(true);
+        return;
+      }
+      const data = result.data as {
+        options: ExerciseAlternativeOption[];
+        nextCursor: string | null;
+      };
+      setAlternativeOptions((previous) => {
+        const merged = new Map(
+          previous.map((option) => [`${option.kind}:${option.id}`, option]),
+        );
+        for (const option of data.options)
+          merged.set(`${option.kind}:${option.id}`, option);
+        return [...merged.values()];
+      });
+      setAlternativeCursor(data.nextCursor);
+    } catch {
+      setFailed(true);
+    } finally {
+      setAlternativeLoading(false);
+    }
+  }
+
+  function operationKeyFor(signature: string) {
+    let key = operationKeys.current.get(signature);
+    if (!key) {
+      key = globalThis.crypto.randomUUID();
+      operationKeys.current.set(signature, key);
+    }
+    return key;
+  }
 
   function markDirty(field: OverrideField) {
     setDirty((previous) => new Set(previous).add(field));
@@ -110,6 +201,13 @@ export function ExerciseOverrideEditor({
     if (Object.keys(nextErrors).length) return;
     const request = buildOverrideRequest(draft, dirty);
     if (!request) return;
+    const signature = JSON.stringify([
+      'save',
+      workspaceId,
+      exerciseId,
+      expectedVersion,
+      request,
+    ]);
     setFailed(false);
     setBusy('saving');
     try {
@@ -117,10 +215,11 @@ export function ExerciseOverrideEditor({
         workspaceId,
         exerciseId,
         expectedVersion,
-        operationKey: globalThis.crypto.randomUUID(),
+        operationKey: operationKeyFor(signature),
         request,
       });
       if (result.status === 'ok') {
+        operationKeys.current.delete(signature);
         router.refresh();
         return;
       }
@@ -136,15 +235,23 @@ export function ExerciseOverrideEditor({
     if (busy !== 'idle' || dirty.size > 0) return;
     setFailed(false);
     setBusy(field);
+    const signature = JSON.stringify([
+      'reset',
+      workspaceId,
+      exerciseId,
+      expectedVersion,
+      field,
+    ]);
     try {
       const result = await resetExerciseOverrideFieldAction({
         workspaceId,
         exerciseId,
         expectedVersion,
-        operationKey: globalThis.crypto.randomUUID(),
+        operationKey: operationKeyFor(signature),
         field,
       });
       if (result.status === 'ok') {
+        operationKeys.current.delete(signature);
         router.refresh();
         return;
       }
@@ -441,47 +548,80 @@ export function ExerciseOverrideEditor({
               <p className={styles.hint} id={`${exerciseId}-override-alt-hint`}>
                 {m['catalog.editorAlternativesHint']}
               </p>
-              {alternatives.length ? (
+              <Field
+                label={m['catalog.searchLabel']}
+                inputProps={{
+                  id: `${exerciseId}-override-alternative-search`,
+                  type: 'search',
+                  value: alternativeQuery,
+                  disabled,
+                  onChange: (event) =>
+                    setAlternativeQuery(event.currentTarget.value),
+                }}
+              />
+              <p
+                role="status"
+                aria-live="polite"
+                aria-busy={alternativeLoading}
+              >
+                {alternativeLoading ? m['catalog.loading'] : ''}
+              </p>
+              {alternativeOptions.length ? (
                 <ul className={styles.alternativeList}>
-                  {alternatives.map((option) => {
-                    const value =
-                      option.kind === 'private'
-                        ? `w:${option.id}`
-                        : `g:${option.id}`;
-                    const checked =
-                      draft.alternativeExerciseIds.includes(value);
-                    const id = `${exerciseId}-override-alt-${option.id}`;
-                    return (
-                      <li key={value}>
-                        <input
-                          id={id}
-                          type="checkbox"
-                          checked={checked}
-                          disabled={
-                            disabled ||
-                            (!checked &&
-                              draft.alternativeExerciseIds.length >= 3)
-                          }
-                          aria-describedby={`${exerciseId}-override-alt-hint`}
-                          onChange={(event) =>
-                            toggleAlternative(
-                              value,
-                              event.currentTarget.checked,
-                            )
-                          }
-                        />
-                        <label htmlFor={id}>
-                          <Bidi dir="auto">
-                            {alternativeName(option, locale)}
-                          </Bidi>
-                        </label>
-                      </li>
-                    );
-                  })}
+                  {alternativeOptions
+                    .filter((option) => option.id !== exerciseId)
+                    .map((option) => {
+                      const value =
+                        option.kind === 'private'
+                          ? `w:${option.id}`
+                          : `g:${option.id}`;
+                      const checked =
+                        draft.alternativeExerciseIds.includes(value);
+                      const id = `${exerciseId}-override-alt-${option.id}`;
+                      return (
+                        <li key={value}>
+                          <input
+                            id={id}
+                            type="checkbox"
+                            checked={checked}
+                            disabled={
+                              disabled ||
+                              (!checked &&
+                                draft.alternativeExerciseIds.length >= 3)
+                            }
+                            aria-describedby={`${exerciseId}-override-alt-hint`}
+                            onChange={(event) =>
+                              toggleAlternative(
+                                value,
+                                event.currentTarget.checked,
+                              )
+                            }
+                          />
+                          <label htmlFor={id}>
+                            <Bidi dir="auto">
+                              {alternativeName(option, locale)}
+                            </Bidi>
+                          </label>
+                        </li>
+                      );
+                    })}
                 </ul>
               ) : (
-                <p className={styles.hint}>{m['catalog.editorNone']}</p>
+                <div className={styles.hint}>
+                  <p>{m['catalog.noResultsTitle']}</p>
+                  <p>{m['catalog.noResultsDescription']}</p>
+                </div>
               )}
+              {alternativeCursor ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={disabled || alternativeLoading}
+                  onClick={loadNextAlternatives}
+                >
+                  {m['catalog.nextPage']}
+                </Button>
+              ) : null}
               {errors.alternatives && (
                 <p className={styles.error} role="alert">
                   {errorText(errors.alternatives, m)}

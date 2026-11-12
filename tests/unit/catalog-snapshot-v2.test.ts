@@ -1,4 +1,4 @@
-﻿import { readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -6,6 +6,7 @@ import {
   parseSnapshot,
   serializeExerciseSnapshotV2,
   toExerciseSnapshotV2,
+  type ExerciseSnapshotV2,
 } from '../../lib/catalog/snapshot';
 
 const fixturePath = join(
@@ -15,7 +16,9 @@ const fixturePath = join(
   'catalog-snapshots',
   'exercise-v2-planner-entry.json',
 );
-const fixture = JSON.parse(readFileSync(fixturePath, 'utf8')) as unknown;
+const fixture = JSON.parse(
+  readFileSync(fixturePath, 'utf8'),
+) as ExerciseSnapshotV2;
 
 const plannerEntry = {
   name: { en: 'Planner edited name', ar: 'اسم المدرب' },
@@ -115,6 +118,29 @@ describe('ExerciseSnapshotV2 (T056)', () => {
     entry.alternatives.push({ globalExerciseId: 'ex-3' });
     expect(snapshot.defaults.restSeconds).toBe(75);
     expect(snapshot.alternatives).toEqual([{ globalExerciseId: 'ex-2' }]);
+  });
+
+  it('serializes name and defaults in canonical key order and deep-copies reps', () => {
+    const source = structuredClone(fixture);
+    const reordered = {
+      ...source,
+      name: { ar: source.name.ar, en: source.name.en },
+      defaults: {
+        reps: { ...source.defaults.reps },
+        rir: source.defaults.rir,
+        restSeconds: source.defaults.restSeconds,
+      },
+    };
+    expect(serializeExerciseSnapshotV2(reordered as ExerciseSnapshotV2)).toBe(
+      readFileSync(fixturePath, 'utf8').trim(),
+    );
+    const parsed = parseExerciseSnapshotV2(reordered as ExerciseSnapshotV2);
+    const mutableReps = source.defaults.reps as {
+      kind: 'fixed';
+      value: number;
+    };
+    mutableReps.value = 999;
+    expect(parsed.defaults.reps).toEqual(fixture.defaults.reps);
   });
 
   it('preserves both allowed target kinds for workspace-private exercises', () => {

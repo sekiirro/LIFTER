@@ -4,6 +4,7 @@ import { authorize, type Actor } from '../auth/authorize';
 import type { Role } from '../auth/capabilities';
 import { createSessionClient } from '../supabase/server';
 import { isUuidV4 } from './uuid';
+import { MAX_CATALOG_NOTE_LENGTH } from './schemas';
 
 type RpcError = { code?: string; message?: string };
 type RpcResult<T = unknown> = { data: T | null; error: RpcError | null };
@@ -61,6 +62,7 @@ export type CatalogExerciseDetailRow = {
   survivor_id: string;
   lifecycle_state: 'active' | 'removed';
   lifecycle_revision: number;
+  override_version: number | null;
   variation: { workspace_id: string; video_url: string } | null;
 };
 export type CatalogAlternativeInput = {
@@ -200,6 +202,64 @@ export function createCatalogServer(deps: CatalogDependencies) {
       return { status: 'invalid' };
     return rpc(ready.client!, name, args(input));
   }
+  async function writeOverride(input: CatalogMutation, variationOnly: boolean) {
+    const ready = await prepare(
+      (a) =>
+        typeof input.workspaceId === 'string' &&
+        input.workspaceId.trim().length > 0 &&
+        (isPO(a) || scoped(a, input.workspaceId)),
+    );
+    if (ready.result) return ready.result;
+    if (!keyValid(input.operationKey)) return { status: 'invalid' } as const;
+    if (!isUuidV4(input.workspaceId!) || !isUuidV4(input.id ?? ''))
+      return { status: 'invalid' } as const;
+    let expectedVersion = input.expectedVersion;
+    if (expectedVersion == null) {
+      try {
+        const response = await ready
+          .client!.from('exercise_overrides')
+          .select('current_version')
+          .eq('workspace_id', input.workspaceId)
+          .eq('exercise_id', input.id)
+          .maybeSingle();
+        if (response.error)
+          return { status: mapError(response.error) } as const;
+        const current = response.data?.current_version;
+        expectedVersion =
+          Number.isInteger(current) && current >= 0 ? current : 0;
+      } catch {
+        return { status: 'unavailable' } as const;
+      }
+    }
+    const request = {
+      ...(variationOnly
+        ? {
+            ...(typeof input.request?.video_url === 'string'
+              ? { video_url: input.request.video_url }
+              : {}),
+            ...(typeof input.request?.note === 'string'
+              ? { notes: input.request.note }
+              : {}),
+          }
+        : (input.request ?? {})),
+    };
+    for (const field of ['notes', 'video_url'] as const) {
+      const text = request[field];
+      if (typeof text === 'string') {
+        const normalized = text.trim();
+        if (Array.from(normalized).length > MAX_CATALOG_NOTE_LENGTH)
+          return { status: 'invalid' } as const;
+        request[field] = normalized || null;
+      }
+    }
+    return rpc(ready.client!, operationNames.writeVariation, {
+      p_workspace_id: input.workspaceId,
+      p_exercise_id: input.id,
+      p_expected_version: expectedVersion,
+      p_operation_key: input.operationKey,
+      p_request: request,
+    });
+  }
   return {
     authoringWorkspaces() {
       return (async (): Promise<CatalogResult<CatalogWorkspaceOption[]>> => {
@@ -249,11 +309,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
     workspaceLibrary(input: WorkspaceLibraryInput) {
       return (async (): Promise<CatalogResult> => {
         const workspaceId = input.workspaceId ?? null;
-        const ready = await prepare(
-          (a) =>
-            coachingSomewhere(a) &&
-            (!workspaceId || isPO(a) || scoped(a, workspaceId)),
-        );
+        const ready = await prepare(() => true);
         if (ready.result) return ready.result;
         if (!workspaceId) return { status: 'invalid' };
         return rpc(ready.client!, 'catalog_workspace_library', {
@@ -370,34 +426,12 @@ export function createCatalogServer(deps: CatalogDependencies) {
           p_request: x.request,
         }),
       ),
-    writeVariation: (i: CatalogMutation) =>
-      mutate(
-        i,
-        operationNames.writeVariation,
-        (a) =>
-          typeof i.workspaceId === 'string' &&
-          i.workspaceId.trim().length > 0 &&
-          (isPO(a) || scoped(a, i.workspaceId)),
-        (x) => ({
-          p_workspace_id: x.workspaceId,
-          p_exercise_id: x.id,
-          p_expected_version: x.expectedVersion ?? 0,
-          p_operation_key: x.operationKey,
-          p_request: {
-            ...(typeof x.request?.video_url === 'string'
-              ? { video_url: x.request.video_url }
-              : {}),
-            ...(typeof x.request?.note === 'string'
-              ? { notes: x.request.note }
-              : {}),
-          },
-        }),
-      ),
+    writeVariation: (i: CatalogMutation) => writeOverride(i, true),
     transitionVariation: (i: CatalogMutation) =>
       mutate(
         i,
         operationNames.transitionVariation,
-        (a) => scoped(a, i.workspaceId),
+        (a) => scoped(a, i.workspaceId) && i.transition === 'remove',
         (x) => ({
           p_workspace_id: x.workspaceId,
           p_exercise_id: x.id,
@@ -406,22 +440,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
           p_request: { video_url: null, notes: null },
         }),
       ),
-    writeExerciseOverride: (i: CatalogMutation) =>
-      mutate(
-        i,
-        operationNames.writeVariation,
-        (a) =>
-          typeof i.workspaceId === 'string' &&
-          i.workspaceId.trim().length > 0 &&
-          (isPO(a) || scoped(a, i.workspaceId)),
-        (x) => ({
-          p_workspace_id: x.workspaceId,
-          p_exercise_id: x.id,
-          p_expected_version: x.expectedVersion ?? 0,
-          p_operation_key: x.operationKey,
-          p_request: x.request ?? {},
-        }),
-      ),
+    writeExerciseOverride: (i: CatalogMutation) => writeOverride(i, false),
     exerciseOverrideVersion(input: {
       workspaceId: string;
       exerciseId: string;
@@ -454,8 +473,18 @@ export function createCatalogServer(deps: CatalogDependencies) {
         }
       })();
     },
-    alternativeOptions(input: { workspaceId?: string | null }) {
-      return (async (): Promise<CatalogResult<CatalogExerciseOption[]>> => {
+    alternativePickerOptions(input: {
+      workspaceId?: string | null;
+      query?: string;
+      cursor?: string | null;
+      selectedIds?: readonly string[];
+    }) {
+      return (async (): Promise<
+        CatalogResult<{
+          options: CatalogExerciseOption[];
+          nextCursor: string | null;
+        }>
+      > => {
         const workspaceId = input.workspaceId ?? null;
         const ready = await prepare(
           (a) =>
@@ -463,9 +492,10 @@ export function createCatalogServer(deps: CatalogDependencies) {
             (!workspaceId || isPO(a) || scoped(a, workspaceId)),
         );
         if (ready.result)
-          return { status: ready.result.status } as CatalogResult<
-            CatalogExerciseOption[]
-          >;
+          return { status: ready.result.status } as CatalogResult<{
+            options: CatalogExerciseOption[];
+            nextCursor: string | null;
+          }>;
         const toOptions = (
           rows: unknown,
           kind: 'global' | 'private',
@@ -518,45 +548,127 @@ export function createCatalogServer(deps: CatalogDependencies) {
             ];
           });
         };
-        // The picker needs every active target, not just the first page, so a
-        // stored Alternative outside page one stays selectable/removable.
-        const allOptions = async (
+        const limit = 50;
+        const cursor = input.cursor ?? null;
+        let source: 'global' | 'private' = 'global';
+        let sourceCursor: string | null = null;
+        if (cursor) {
+          const match = /^(g|w):([0-9a-f-]+)$/i.exec(cursor);
+          if (!match || !isUuidV4(match[2])) return { status: 'invalid' };
+          source = match[1]!.toLowerCase() === 'g' ? 'global' : 'private';
+          sourceCursor = match[2]!;
+          if (source === 'private' && !workspaceId)
+            return { status: 'invalid' };
+        }
+        const searchPage = async (
           kind: 'exercise' | 'workspace_exercise',
-          optionKind: 'global' | 'private',
-        ): Promise<CatalogResult<CatalogExerciseOption[]>> => {
-          const options: CatalogExerciseOption[] = [];
-          let cursor: string | null = null;
-          const seenCursors = new Set<string>();
-          while (true) {
-            const result = await rpc<unknown>(ready.client!, 'catalog_search', {
-              kind,
-              query: '',
-              filters: { page_size: 50 },
-              cursor,
-              workspace_id: workspaceId,
-            });
-            if (result.status !== 'ok') return { status: result.status };
-            if (!Array.isArray(result.data)) return { status: 'unavailable' };
-            const rows = result.data;
-            options.push(...toOptions(rows, optionKind));
-            const last = rows.at(-1) as { result_id?: string } | undefined;
-            if (rows.length < 50) break;
-            if (
-              typeof last?.result_id !== 'string' ||
-              seenCursors.has(last.result_id)
-            )
+          pageCursor: string | null,
+          pageLimit: number,
+        ) =>
+          rpc<unknown>(ready.client!, 'catalog_search', {
+            kind,
+            query: input.query ?? '',
+            filters: { page_size: pageLimit },
+            cursor: pageCursor,
+            workspace_id: workspaceId,
+          });
+        const pageOptions: CatalogExerciseOption[] = [];
+        let nextCursor: string | null = null;
+        if (source === 'global') {
+          const globals = await searchPage('exercise', sourceCursor, limit);
+          if (globals.status !== 'ok') return { status: globals.status };
+          if (!Array.isArray(globals.data)) return { status: 'unavailable' };
+          pageOptions.push(...toOptions(globals.data, 'global'));
+          const lastGlobal = globals.data.at(-1) as
+            { result_id?: string } | undefined;
+          if (globals.data.length === limit) {
+            if (!isUuidV4(lastGlobal?.result_id))
               return { status: 'unavailable' };
-            cursor = last.result_id;
-            seenCursors.add(cursor);
+            nextCursor = `g:${lastGlobal.result_id}`;
+          } else if (workspaceId) {
+            const remaining = limit - globals.data.length;
+            const privates = await searchPage(
+              'workspace_exercise',
+              null,
+              remaining,
+            );
+            if (privates.status !== 'ok') return { status: privates.status };
+            if (!Array.isArray(privates.data)) return { status: 'unavailable' };
+            pageOptions.push(...toOptions(privates.data, 'private'));
+            const lastPrivate = privates.data.at(-1) as
+              { result_id?: string } | undefined;
+            if (privates.data.length === remaining && remaining > 0) {
+              if (!isUuidV4(lastPrivate?.result_id))
+                return { status: 'unavailable' };
+              nextCursor = `w:${lastPrivate.result_id}`;
+            }
           }
-          return { status: 'ok', data: options };
+        } else {
+          const privates = await searchPage(
+            'workspace_exercise',
+            sourceCursor,
+            limit,
+          );
+          if (privates.status !== 'ok') return { status: privates.status };
+          if (!Array.isArray(privates.data)) return { status: 'unavailable' };
+          pageOptions.push(...toOptions(privates.data, 'private'));
+          const lastPrivate = privates.data.at(-1) as
+            { result_id?: string } | undefined;
+          if (privates.data.length === limit) {
+            if (!isUuidV4(lastPrivate?.result_id))
+              return { status: 'unavailable' };
+            nextCursor = `w:${lastPrivate.result_id}`;
+          }
+        }
+
+        // Selected values are resolved by exact ID in the same authorized
+        // workspace scope. This keeps selections visible outside the query or
+        // current result page without loading the full catalog.
+        const selectedOptions: CatalogExerciseOption[] = [];
+        const selectedIds = [...new Set(input.selectedIds ?? [])];
+        if (selectedIds.length > 3) return { status: 'invalid' };
+        for (const selected of selectedIds) {
+          const match = /^(g|w):([0-9a-f-]+)$/i.exec(selected);
+          if (!match || !isUuidV4(match[2])) return { status: 'invalid' };
+          const kind = match[1]!.toLowerCase() === 'g' ? 'global' : 'private';
+          if (kind === 'private' && !workspaceId) continue;
+          const detail = await rpc<unknown>(
+            ready.client!,
+            kind === 'global'
+              ? 'catalog_exercise_detail'
+              : 'catalog_workspace_exercise_detail',
+            kind === 'global'
+              ? { p_exercise_id: match[2], p_workspace_id: workspaceId }
+              : { p_exercise_id: match[2], p_workspace_id: workspaceId },
+          );
+          if (detail.status !== 'ok' || !Array.isArray(detail.data)) continue;
+          selectedOptions.push(
+            ...toOptions(
+              detail.data.map((row) => {
+                const item = row as Record<string, unknown>;
+                const payload = item.payload as
+                  Record<string, unknown> | undefined;
+                return {
+                  result_id: item.requested_id ?? item.exercise_id ?? match[2],
+                  result_payload: {
+                    ...(payload ?? {}),
+                    name_en: item.name_en,
+                    name_ar: item.name_ar,
+                  },
+                };
+              }),
+              kind,
+            ),
+          );
+        }
+        const options = [...selectedOptions, ...pageOptions];
+        const unique = new Map<string, CatalogExerciseOption>();
+        for (const option of options)
+          unique.set(`${option.kind}:${option.id}`, option);
+        return {
+          status: 'ok',
+          data: { options: [...unique.values()], nextCursor },
         };
-        const globals = await allOptions('exercise', 'global');
-        if (globals.status !== 'ok') return { status: globals.status };
-        if (!workspaceId) return { status: 'ok', data: globals.data };
-        const privates = await allOptions('workspace_exercise', 'private');
-        if (privates.status !== 'ok') return { status: privates.status };
-        return { status: 'ok', data: [...globals.data, ...privates.data] };
       })();
     },
     createFood: (i: CatalogFoodMutation) =>
@@ -647,7 +759,7 @@ export const {
   writeVariation,
   writeExerciseOverride,
   exerciseOverrideVersion,
-  alternativeOptions,
+  alternativePickerOptions,
   transitionVariation,
   createFood,
   versionFood,

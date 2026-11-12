@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Bidi } from '../../../../../components/ui/Bidi';
 import { requireActor } from '../../../../../lib/auth/actor';
 import {
-  alternativeOptions,
+  alternativePickerOptions,
   exerciseDetail,
 } from '../../../../../lib/catalog/server';
 import { normalizeExerciseInput } from '../../../../../lib/catalog/schemas';
@@ -15,6 +15,7 @@ import {
 import { getMessages } from '../../../../../lib/i18n';
 import { ExerciseAuthoringForm } from '../../ExerciseAuthoringForm';
 import { exerciseInput } from '../../../../../lib/catalog/exercise-input';
+import { draftFromExercise } from '../../../../../lib/catalog/exercise-editor';
 import styles from '../../exercise-library.module.css';
 
 const UUID =
@@ -47,10 +48,15 @@ export default async function EditExercisePage({
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
   const payload = row.payload as Record<string, unknown>;
-  const options = await alternativeOptions({ workspaceId: null });
-  const alternatives = (options.status === 'ok' ? options.data : []).filter(
-    (option) => option.id !== row.exercise_id,
-  );
+  const options = await alternativePickerOptions({
+    workspaceId: null,
+    selectedIds: draftFromExercise(exercise).alternativeExerciseIds,
+  });
+  const alternatives = (
+    options.status === 'ok' ? options.data.options : []
+  ).filter((option) => option.id !== row.exercise_id);
+  const alternativesNextCursor =
+    options.status === 'ok' ? options.data.nextCursor : null;
   return (
     <main className={styles.main} dir={dirFor(locale)} lang={locale}>
       <header className={styles.header}>
@@ -75,6 +81,7 @@ export default async function EditExercisePage({
         expectedVersion={row.version}
         exercise={exercise}
         alternatives={alternatives}
+        alternativesNextCursor={alternativesNextCursor}
         equipmentCodes={
           Array.isArray(payload.equipment_codes)
             ? payload.equipment_codes.filter(

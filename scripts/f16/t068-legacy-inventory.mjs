@@ -346,9 +346,9 @@ export function serializeInventoryReport(report) {
   return `${JSON.stringify(report, null, 2)}\n`;
 }
 
-export async function readInventory(db) {
+export async function readInventory(db, { includeIdentitySet = false } = {}) {
   return db.begin(async (tx) => {
-    await tx`set transaction read only`;
+    await tx`set transaction isolation level repeatable read, read only`;
     const [
       workspaces,
       variations,
@@ -366,7 +366,7 @@ export async function readInventory(db) {
       tx`select exercise_id, version, payload from public.exercise_versions order by exercise_id, version`,
       tx`select workspace_id, workspace_exercise_id, version, payload from public.workspace_exercise_versions order by workspace_id, workspace_exercise_id, version`,
     ]);
-    return summarizeInventory({
+    const report = summarizeInventory({
       workspaces,
       variations,
       variationVersions,
@@ -375,26 +375,16 @@ export async function readInventory(db) {
       exerciseVersions,
       workspaceExerciseVersions,
     });
-  });
-}
-
-/**
- * Reads the identity set the cutover guard compares against (S48-PO-17).
- * IDs only: no payload, note, URL or other content is read or written.
- */
-async function readIdentitySet(db) {
-  return db.begin(async (tx) => {
-    await tx`set transaction read only`;
-    const [exercises, workspaceExercises] = await Promise.all([
-      tx`select id from public.exercises order by id`,
-      tx`select workspace_id, id from public.workspace_exercises order by workspace_id, id`,
-    ]);
+    if (!includeIdentitySet) return report;
     return {
-      exercises: exercises.map((row) => row.id),
-      workspace_exercises: workspaceExercises.map((row) => [
-        row.workspace_id,
-        row.id,
-      ]),
+      report,
+      identitySet: {
+        exercises: exercises.map((row) => row.id),
+        workspace_exercises: workspaceExercises.map((row) => [
+          row.workspace_id,
+          row.id,
+        ]),
+      },
     };
   });
 }
@@ -418,17 +408,23 @@ async function main() {
     identityIndex >= 0 ? resolve(args[identityIndex + 1]) : null;
   const db = postgres(process.env.SUPABASE_DB_URL, { max: 1, prepare: false });
   try {
-    const report = await readInventory(db);
+    const inventory = await readInventory(db, {
+      includeIdentitySet: identityPath !== null,
+    });
+    const report = identityPath ? inventory.report : inventory;
     report.mainSha = mainSha;
     await mkdir(dirname(outputPath), { recursive: true });
     const serialized = serializeInventoryReport(report);
     await writeFile(outputPath, serialized, { encoding: 'utf8', flag: 'wx' });
-    if (identityPath) {
-      const identitySet = await readIdentitySet(db);
-      await mkdir(dirname(identityPath), { recursive: true });
-      await writeFile(identityPath, `${JSON.stringify(identitySet)}\n`, 'utf8');
-    }
     process.stdout.write(serialized);
+    if (identityPath) {
+      await mkdir(dirname(identityPath), { recursive: true });
+      await writeFile(
+        identityPath,
+        `${JSON.stringify(inventory.identitySet)}\n`,
+        'utf8',
+      );
+    }
   } finally {
     await db.end({ timeout: 5 });
   }

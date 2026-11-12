@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { requireActor } from '../../../lib/auth/actor';
 import {
   createExercise,
+  alternativePickerOptions,
   removeWorkspaceExercise,
   transitionExercise,
   versionExercise,
@@ -22,7 +23,10 @@ import {
   OVERRIDE_FIELDS,
   type OverrideField,
 } from '../../../lib/catalog/exercise-override';
-import { EQUIPMENT_CODES } from '../../../lib/catalog/schemas';
+import {
+  EQUIPMENT_CODES,
+  MAX_CATALOG_NOTE_LENGTH,
+} from '../../../lib/catalog/schemas';
 import { isUuidV4 } from '../../../lib/catalog/uuid';
 
 export type SaveExerciseInput = {
@@ -41,6 +45,13 @@ export type RemoveExerciseInput = {
   exerciseId: string;
   expectedRevision: number;
   operationKey: string;
+};
+
+export type SearchAlternativeOptionsInput = {
+  workspaceId: string | null;
+  query: string;
+  cursor?: string | null;
+  selectedIds: string[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -141,6 +152,29 @@ export async function removeExerciseAction(
     revalidatePath(`/exercise-library/${input.exerciseId}`);
   }
   return result;
+}
+
+export async function searchAlternativeOptionsAction(
+  input: SearchAlternativeOptionsInput,
+): Promise<CatalogResult> {
+  if (
+    !isRecord(input) ||
+    (input.workspaceId !== null && !isUuidV4(input.workspaceId)) ||
+    typeof input.query !== 'string' ||
+    (input.cursor !== undefined &&
+      input.cursor !== null &&
+      typeof input.cursor !== 'string') ||
+    !Array.isArray(input.selectedIds) ||
+    input.selectedIds.length > 3 ||
+    !input.selectedIds.every(
+      (value) =>
+        typeof value === 'string' &&
+        /^(g|w):[0-9a-f-]+$/i.test(value) &&
+        isUuidV4(value.slice(2)),
+    )
+  )
+    return { status: 'invalid' };
+  return alternativePickerOptions(input);
 }
 
 /**
@@ -344,6 +378,14 @@ function validOverrideRequest(
     )
   )
     return false;
+  for (const field of ['notes', 'video_url'] as const) {
+    const text = value[field];
+    if (
+      typeof text === 'string' &&
+      Array.from(text.trim()).length > MAX_CATALOG_NOTE_LENGTH
+    )
+      return false;
+  }
   return Object.values(value).every(
     (item) =>
       item === null ||

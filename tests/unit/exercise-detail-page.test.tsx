@@ -10,6 +10,7 @@ const m = vi.hoisted(() => ({
   detail: vi.fn(),
   workspaces: vi.fn(),
   alternatives: vi.fn(),
+  pickerOptions: vi.fn(),
   overrideVersion: vi.fn(),
   cookies: vi.fn(),
   notFound: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock('../../lib/catalog/server', () => ({
   exerciseDetail: m.detail,
   authoringWorkspaces: m.workspaces,
   alternativeOptions: m.alternatives,
+  alternativePickerOptions: m.pickerOptions,
   exerciseOverrideVersion: m.overrideVersion,
 }));
 vi.mock('../../components/catalog/ExerciseOverrideEditor', () => ({
@@ -80,6 +82,7 @@ const row = {
   survivor_id: id,
   lifecycle_state: 'active',
   lifecycle_revision: 0,
+  override_version: 5,
   variation: {
     workspace_id: workspaceId,
     video_url: 'https://youtu.be/abcdefghijk',
@@ -100,6 +103,10 @@ beforeEach(() => {
   });
   m.detail.mockResolvedValue({ status: 'ok', data: [row] });
   m.alternatives.mockResolvedValue({ status: 'ok', data: [] });
+  m.pickerOptions.mockResolvedValue({
+    status: 'ok',
+    data: { options: [], nextCursor: null },
+  });
   m.overrideVersion.mockResolvedValue({ status: 'ok', data: { version: 0 } });
   m.notFound.mockImplementation(() => {
     throw new Error('404');
@@ -137,6 +144,41 @@ describe('production exercise detail route', () => {
       scope: 'global',
       workspaceId: null,
     });
+  });
+
+  it('uses the override version returned with the authorized detail snapshot', async () => {
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+    expect(html).toContain('data-testid="override-editor"');
+    expect(html).toContain('data-version="5"');
+    expect(m.overrideVersion).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the canonical payload video when no workspace variation row exists', async () => {
+    m.detail.mockResolvedValue({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          variation: null,
+          payload: {
+            ...row.payload,
+            video_url: 'https://youtu.be/canonical01',
+          },
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+    expect(html).toContain('href="https://youtu.be/canonical01"');
   });
 
   it('shows the empty workspace choice only for platform-owner global detail', async () => {

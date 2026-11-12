@@ -6,7 +6,7 @@ import Page from '../../app/(app)/exercise-library/new/page';
 const m = vi.hoisted(() => ({
   actor: vi.fn(),
   authoringWorkspaces: vi.fn(),
-  alternativeOptions: vi.fn(),
+  pickerOptions: vi.fn(),
   cookies: vi.fn(),
   notFound: vi.fn(),
 }));
@@ -14,7 +14,7 @@ const m = vi.hoisted(() => ({
 vi.mock('../../lib/auth/actor', () => ({ requireActor: m.actor }));
 vi.mock('../../lib/catalog/server', () => ({
   authoringWorkspaces: m.authoringWorkspaces,
-  alternativeOptions: m.alternativeOptions,
+  alternativePickerOptions: m.pickerOptions,
 }));
 vi.mock('next/headers', () => ({ cookies: m.cookies }));
 vi.mock('next/navigation', () => ({ notFound: m.notFound }));
@@ -48,7 +48,10 @@ beforeEach(() => {
     throw new Error('404');
   });
   m.authoringWorkspaces.mockResolvedValue({ status: 'ok', data: workspaces });
-  m.alternativeOptions.mockResolvedValue({ status: 'ok', data: [] });
+  m.pickerOptions.mockResolvedValue({
+    status: 'ok',
+    data: { options: [], nextCursor: null },
+  });
 });
 
 describe('production Add Exercise route', () => {

@@ -870,3 +870,17 @@ T900 has been marked complete only after its focused integration test passed on 
 - Guard: `app_private.cutover_identity_guard(text)` runs inside the cutover transaction under the exclusive locks, before the first write. It compares the live `exercises` and `workspace_exercises` identity sets with the T068-verified set from `app.cutover_verified_identities`; a missing, invalid or different set raises with zero deletes. A fresh database has no identities, so CI/replay needs no input. The T068 inventory emits the identity set with `--identity-json`.
 - Verification: Stack A RED 5/5 (`42883`), GREEN 5/5; the guard-always-passes mutant failed the mismatch/missing/invalid tests (3/5) and was restored; `db reset` replay from scratch plus 56 focused integration tests passed (guard, workspace library, variation compatibility, rls-catalog, privileges).
 - Findings: 0 open CRITICAL, 0 open HIGH. No open PO decision remains for this scope.
+
+## 2026-11-12 — S49 F16 T091 analysis
+
+**Scope:** S49-PO-3 CodeRabbit follow-up, FR-003, FR-025, FR-026, FR-031, SC-019, SC-020, T091. This analysis is dated after the current spec, plan, and task edits. Entry check: PASS. S49-PO-3 is recorded byte-exact in `decision-register.md`; S49-R9 is separately labeled as architect implementation mapping. No open product ambiguities remain within this scoped work.
+
+**Cross-reference check:** PASS — T091 links FR-003/025/026/031; SC-019 covers authorized picker search, pagination, debounce and selected target preservation; SC-020 covers 2,000-character Notes/Video text-reference limits, inventory and fail-closed/no-truncation migration. Scenarios 11–12 exercise the same scope. The plan sequences T091 after this analysis and inventory.
+
+**Edge-case and security review:** PASS — selected IDs outside current result pages must be explicitly fetched in the same authorized workspace context; foreign, removed, inactive, or stale targets must not leak or become newly selectable. Query/page races must not overwrite a newer selection/query state. Cursor pagination must be stable and bounded at 50. Cap boundary is 2,000 accepted / 2,001 rejected; whitespace normalization must not silently truncate. Audit/migration must count every relevant stored Notes and Video text reference on each local stack used and fresh CI DB; migration must fail before writes with a count and never truncate. No file/media-size rule is introduced. Deletion, version immutability, existing RLS/authorization and tenant isolation contracts remain unchanged.
+
+**Character semantics:** PASS — use Unicode code-point counting consistently. Existing Notes normalization uses `Array.from(...).length` (`lib/catalog/video-variation.ts`); PostgreSQL `char_length` counts database characters. Tests must cover multibyte input and confirm application/database boundaries align.
+
+**Copy/design/data retention:** PASS — no new user-visible string is required; reuse existing approved Notes/Video validation copy. No data retention/deletion decision is changed. UI behavior stays within approved Design System patterns; visual/empty/error/loading strings must use existing bilingual messages.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH. Implementation remains contingent on inventory, tests-first RED/GREEN and mutation evidence required by T091. This is an analysis record, not evidence that implementation or tests have passed.

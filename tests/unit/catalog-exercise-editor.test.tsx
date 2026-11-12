@@ -1,6 +1,8 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
 import { ExerciseEditor } from '../../components/catalog/ExerciseEditor';
 import {
   buildExerciseInput,
@@ -71,7 +73,7 @@ describe('exercise editor defaults presentation', () => {
         reps: { kind: 'fixed', value: 8 },
         restSeconds: 90,
         rir: 2,
-        alternativeExerciseIds: ['mock-exercise-2', 'mock-exercise-3'],
+        alternativeExerciseIds: ['g:mock-exercise-2', 'g:mock-exercise-3'],
       },
     });
   });

@@ -352,3 +352,17 @@ S37-PO-1 Q2: Q2 "F16: S36-PO-5 says 'Published plans retain frozen values' insid
 
 S37-PO-10: S37-PO-10 (2026-11-08, PO message verbatim, answering F16-MCQ-Q, -P, -F-R, -G-R, -D-R; F16-MCQ-O was answered by S37-PO-1 Q2 = A, video stays live):
 PO final: English name required, Arabic optional (Global/Workspace). One optional Description, any language. Max 3 unique Alternatives. Remove dummy docs.google.com links; no legacy support. Account deletion frees email/phone for fresh registration in another workspace, no data transfer. Record in F11/F12. Decisions closed; proceed through gates, no merge without approval.
+
+## S49-PO-3 F16 decisions (2026-11-12; byte-exact)
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s49-po/s49-po-3.verbatim.txt`; SHA256: `193ed59b59c6d77bb641ac2fc22ce85bd157c1271db322f3a5c613567dfec550`.
+
+Verbatim PO record follows; S49-R9 is the separate architect mapping.
+
+#86 decisions:
+MCQ-1 = A
+MCQ-2 = A
+Use server-side search, pagination, debouncing, and preserve selected alternatives.
+Enforce 2,000 characters consistently for Notes and stored Video text references only, not actual video files. Audit existing data and never silently truncate.
+Commit the CodeRabbit fixes and rerun all required gates on the new exact SHA.
+Implementation mapping: architect ruling S49-R9 (not PO words). S49-R11 governs merge sequencing and greens.

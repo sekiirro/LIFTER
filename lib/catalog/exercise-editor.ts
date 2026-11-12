@@ -197,7 +197,14 @@ export function draftFromExercise(
       defaults?.rir === null || defaults?.rir === undefined
         ? ''
         : String(defaults.rir),
-    alternativeExerciseIds: [...(defaults?.alternativeExerciseIds ?? [])],
+    alternativeExerciseIds: (defaults?.alternativeExerciseIds ?? []).map(
+      (value) => {
+        const ref = alternativeRef(value);
+        return ref
+          ? alternativeOptionValue({ id: ref.id, kind: ref.kind, names: {} })
+          : value;
+      },
+    ),
   };
 }
 
