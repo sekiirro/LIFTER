@@ -189,3 +189,8 @@
 - Final Spec Kit re-entry: PASS. Task requirements are unchanged; task notes now accurately require the renewal-then-upgrade test to assert duration/payment preservation before T041/T042 can be ticked together. Their checkboxes and current traceability status are PARTIAL/unticked because the existing test did not assert the renewed term's resulting end date.
 - No new date policy or implementation default was introduced. `S49-F13-MCQ-1` remains the blocking PO question for carrying pre-upgrade renewal/freeze extension through date re-anchoring. The independent T041 renewal-receipt change remains verified at commit `3df9928b`.
 - T043/T045 remain verified; T044 remains unticked/P4 with FR-041 PARTIAL. CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-12 Analyze - final changed-Markdown formatter correction (03:32Z)
+
+- The CI-equivalent formatter initially flagged Analyze, tasks, and traceability despite the normal Prettier command passing (those spec files are ignored by its broad file walk). Direct Prettier API formatting now passes for all four changed F13 Markdown files; no requirement or PO text changed.
+- Spec Kit status remains PASS: T041/T042 are unticked/PARTIAL pending `S49-F13-MCQ-1` and a test asserting resulting renewal coverage; T044 remains P4/FR-041 PARTIAL; T043 and T045 remain verified. CRITICAL: 0 open; HIGH: 0 open.
