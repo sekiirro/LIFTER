@@ -87,6 +87,57 @@ describe('F20 T003 client note persistence and constraints', () => {
     expect(await f.countNotes()).toBe(before + 1);
   });
 
+  it('checks retries against the original body fingerprint and preserves edits', async () => {
+    const before = await f.countNotes();
+    const key = f.key();
+    const note = await f.createAsTrainer({ body: 'original submission', key });
+    const edit = await f.context.trainerA.client.rpc('update_client_note', {
+      p_note_id: note.id,
+      p_body: 'committed edit',
+    });
+    expect(edit.error).toBeNull();
+
+    const sameSubmission = await f.createAs(
+      f.context.trainerA,
+      '  original submission  ',
+      key,
+    );
+    expect(sameSubmission.error).toBeNull();
+    const sameRow = Array.isArray(sameSubmission.data)
+      ? sameSubmission.data[0]
+      : sameSubmission.data;
+    expect(sameRow).toMatchObject({ id: note.id, outcome: 'existing' });
+
+    const editedBodyRetry = await f.createAs(
+      f.context.trainerA,
+      'committed edit',
+      key,
+    );
+    expect(editedBodyRetry.error).not.toBeNull();
+    const [row] = await f.db`
+      select body from public.client_notes where id = ${String(note.id)}
+    `;
+    expect(row?.body).toBe('committed edit');
+    const [counts] = await f.db`
+      select count(*)::int as notes from public.client_notes
+        where workspace_id = ${f.workspaceId} and client_id = ${f.clientId};
+    `;
+    expect(counts?.notes).toBe(before + 1);
+    const [createEvents] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where action = 'client_note.created' and target_id = ${String(note.id)}
+    `;
+    expect(createEvents?.count).toBe(1);
+  });
+
+  it('creates independent notes for distinct idempotency keys', async () => {
+    const before = await f.countNotes();
+    const first = await f.createAsTrainer({ body: 'first independent note' });
+    const second = await f.createAsTrainer({ body: 'second independent note' });
+    expect(second.id).not.toBe(first.id);
+    expect(await f.countNotes()).toBe(before + 2);
+  });
+
   it('serializes concurrent same-key creates and refuses direct duplicate note rows', async () => {
     const key = f.key();
     const results = await Promise.all([
