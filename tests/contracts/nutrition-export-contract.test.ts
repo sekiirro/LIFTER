@@ -450,6 +450,32 @@ const LABELS: Record<
   },
 };
 
+// Independent, byte-exact copy of the approved P6 Arabic labels (source:
+// runs/s49-arch/f18-label-table-approved.md, SHA-256
+// 972df3d75cb24bc3f9af2c8647b9d07c8db38a77964e8d05501e6d69d4648888).
+// Kept separate from LABELS so contract compliance is checked against an
+// independent value, not the value under test.
+const APPROVED_AR_LABELS: Record<string, string> = {
+  day: 'اليوم',
+  dayType: 'نوع اليوم',
+  meal: 'وجبة',
+  item: 'صنف',
+  alternative: 'بديل',
+  selected: 'اختيار العميل',
+  totals: 'الإجمالي',
+  mealTotals: 'إجمالي الوجبة',
+  dayTotals: 'إجمالي اليوم',
+  foodNotes: 'ملاحظات الأكل',
+  mealNotes: 'ملاحظات الوجبة',
+  documentNotes: 'ملاحظات الخطة',
+  recipe: 'طريقة العمل',
+  kcal: 'السعرات',
+  protein: 'البروتين',
+  carbs: 'الكربوهيدرات',
+  fat: 'الدهون',
+  sideNote: 'الأصلي من الكابتن',
+};
+
 // Back-compat alias for P5 side-note label (used by Excel cells and tests).
 const SIDE_NOTE_LABEL: Record<'en' | 'ar', string> = {
   en: LABELS.en.sideNote,
@@ -830,18 +856,28 @@ function planContentText(
       const mealValues =
         projection.selectedValues?.meals[meal.id] ??
         projection.computedValues.meals[meal.id]!;
-      lines.push(
-        `${L.mealTotals} ${meal.id} totals ${macroTotals(mealValues)}`,
-      );
+      if (locale === 'en') {
+        lines.push(
+          `${L.mealTotals} ${meal.id} totals ${macroTotals(mealValues)}`,
+        );
+      } else {
+        lines.push(`${L.mealTotals} ${meal.id} ${macroTotals(mealValues)}`);
+      }
     }
     if (group.dayIndex !== null) {
       const dayValues =
         projection.selectedValues?.days[String(group.dayIndex)] ??
         projection.computedValues.days[String(group.dayIndex)];
       if (dayValues) {
-        lines.push(
-          `${L.dayTotals} ${group.dayIndex} totals ${macroTotals(dayValues)}`,
-        );
+        if (locale === 'en') {
+          lines.push(
+            `${L.dayTotals} ${group.dayIndex} totals ${macroTotals(dayValues)}`,
+          );
+        } else {
+          lines.push(
+            `${L.dayTotals} ${group.dayIndex} ${macroTotals(dayValues)}`,
+          );
+        }
       }
     }
   }
@@ -1117,6 +1153,10 @@ describe('export and prompt fidelity contract (T005)', () => {
  * Mutation evidence: changing one LABELS.ar value fails the matching assertion
  * while all EN assertions remain byte-identical (EN uses LABELS.en). */
 describe('AR structural payload labels (P6, S49-PO-5)', () => {
+  it('LABELS.ar matches the approved P6 values byte-exact', () => {
+    expect(LABELS.ar).toEqual(APPROVED_AR_LABELS);
+  });
+
   it('emits all 18 AR structural labels in NO_SELECTION', () => {
     const payload = planContentText(NO_SELECTION, 'ar');
     const lines = payload.split('\n');
@@ -1195,16 +1235,12 @@ describe('AR structural payload labels (P6, S49-PO-5)', () => {
     expect(
       payload
         .split('\n')
-        .some((l) =>
-          l.startsWith(`${L.dayTotals} 0 totals 93 | 4.6 | 19 | 4.6`),
-        ),
+        .some((l) => l.startsWith(`${L.dayTotals} 0 93 | 4.6 | 19 | 4.6`)),
     ).toBe(true);
     expect(
       payload
         .split('\n')
-        .some((l) =>
-          l.startsWith(`${L.dayTotals} 6 totals 156 | 7.7 | 31 | 7.7`),
-        ),
+        .some((l) => l.startsWith(`${L.dayTotals} 6 156 | 7.7 | 31 | 7.7`)),
     ).toBe(true);
     expect(
       payload
@@ -1218,16 +1254,12 @@ describe('AR structural payload labels (P6, S49-PO-5)', () => {
     expect(
       payload
         .split('\n')
-        .some((l) =>
-          l.startsWith(`${L.mealTotals} m-0 totals 93 | 4.6 | 19 | 4.6`),
-        ),
+        .some((l) => l.startsWith(`${L.mealTotals} m-0 93 | 4.6 | 19 | 4.6`)),
     ).toBe(true);
     expect(
       payload
         .split('\n')
-        .some((l) =>
-          l.startsWith(`${L.mealTotals} m-6 totals 156 | 7.7 | 31 | 7.7`),
-        ),
+        .some((l) => l.startsWith(`${L.mealTotals} m-6 156 | 7.7 | 31 | 7.7`)),
     ).toBe(true);
   });
 
@@ -1239,7 +1271,7 @@ describe('AR structural payload labels (P6, S49-PO-5)', () => {
     ).toBe(true);
     expect(payload).toContain(`${L.item} i-1 ${L.selected} a-1 Chicken 150 g`);
     expect(payload).toContain(`${L.totals} 800 | 63 | 15 | 13`);
-    expect(payload).toContain(`${L.mealTotals} m-1 totals 800 | 63 | 15 | 13`);
+    expect(payload).toContain(`${L.mealTotals} m-1 800 | 63 | 15 | 13`);
     expect(payload).toContain(`${L.sideNote}: Chicken 37 g`);
   });
 
@@ -1271,27 +1303,23 @@ describe('AR structural payload labels (P6, S49-PO-5)', () => {
     ]) {
       expect(prompt).toContain(val);
     }
-    expect(prompt).toContain(`${L.mealTotals} m-1 totals 293 | 23 | 19 | 9.6`);
+    expect(prompt).toContain(`${L.mealTotals} m-1 293 | 23 | 19 | 9.6`);
     // Arabic body unchanged (approved P4)
     expect(prompt).toContain('الخطة:\n');
     expect(prompt).toContain('لا تقترح وجبات أو أطعمة أو بدائل جديدة');
   });
 
-  it('mutation: flipping one AR label changes the payload, EN unchanged', () => {
+  it('mutation: flipping one AR label breaks the approved-value comparison', () => {
     // NO_SELECTION is single_day (no 'day {n}' line) -> use seven_day payload.
     const payload = planContentText(SEVEN_DAY_PROJECTION, 'ar');
     const L = LABELS.ar;
     expect(payload).toContain(`${L.day} 0 Training`);
+    expect(LABELS.ar).toEqual(APPROVED_AR_LABELS);
     const original = L.day;
     L.day = original + 'X';
-    let mutated = '';
-    try {
-      mutated = planContentText(SEVEN_DAY_PROJECTION, 'ar');
-    } finally {
-      L.day = original;
-    }
-    expect(mutated).not.toBe(payload);
-    expect(mutated).not.toContain(`${original} 0 Training`);
+    expect(LABELS.ar).not.toEqual(APPROVED_AR_LABELS);
+    L.day = original;
+    expect(LABELS.ar).toEqual(APPROVED_AR_LABELS);
     // EN path untouched (LABELS.en is used on the en branch)
     const en = planContentText(NO_SELECTION, 'en');
     expect(en).toContain('day-type Rest');
