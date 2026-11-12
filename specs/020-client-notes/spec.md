@@ -285,9 +285,9 @@ Rows 1–29 are approved byte-exact as amended by the PO (row 26 Arabic: “صا
 | 19  | Delete error                                                           | Unable to delete the note. Please try again.                              | تعذّر حذف الملاحظة. يرجى المحاولة مرة أخرى.             |
 | 20  | Blank note error                                                       | Enter a note before saving.                                               | أدخل ملاحظة قبل الحفظ.                                  |
 | 21  | Too long error                                                         | Notes can be up to 5,000 characters.                                      | يمكن أن تصل الملاحظة إلى 5,000 حرف كحد أقصى.            |
-| 22  | Created toast                                                          | Note added | اتضافت الملاحظة |
-| 23  | Edited toast*                                                          | Changes saved | اتحفظت التغييرات |
-| 24  | Deleted toast                                                          | Note deleted | اتحذفت الملاحظة |
+| 22  | Created toast                                                          | Note added                                                                | اتضافت الملاحظة                                         |
+| 23  | Edited toast*                                                          | Changes saved                                                             | اتحفظت التغييرات                                        |
+| 24  | Deleted toast                                                          | Note deleted                                                              | اتحذفت الملاحظة                                         |
 | 25  | Edited marker                                                          | Edited {time}                                                             | عُدّلت {time}                                           |
 | 26  | Unavailable author                                                     | Unavailable author                                                        | صاحب الملاحظة غير متاح                                  |
 | 27  | Permission refused                                                     | You don't have permission to do this.                                     | ليست لديك صلاحية للقيام بذلك.                           |
@@ -298,7 +298,7 @@ Rows 1–29 are approved byte-exact as amended by the PO (row 26 Arabic: “صا
 | 32  | Stay button                                                            | Stay                                                                      | البقاء                                                  |
 | 33  | Discard button                                                         | Discard                                                                   | تجاهل                                                   |
 | 34  | Warning body (save in flight) — `clientNotes.exitWarning.bodyInFlight` | Your note is being saved. Leaving now won't cancel the save.              | ملاحظتك بتتحفظ. لو خرجت دلوقتي، الحفظ مش هيتلغي.        |
-| 35  | Load more notes, key `clientNotes.loadMore` (S51-PO-1, CN-MCQ-26) | Load more notes | حمّل ملاحظات أكتر |
+| 35  | Load more notes, key `clientNotes.loadMore` (S51-PO-1, CN-MCQ-26)      | Load more notes                                                           | حمّل ملاحظات أكتر                                       |
 
 Timestamp: viewer's local time zone (CN-MCQ-12), day month-name year + 12-hour time; Western digits 0-9 (S38-PO-2).
 

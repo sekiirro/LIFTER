@@ -19,6 +19,7 @@
 - [x] **T018 [FR-002, FR-008, SC-010]** Verify the existing author-name source against schema, server control, and current RLS. Do not use user-editable auth metadata. Where no trustworthy authorized name source exists, render the approved unavailable-author fallback; test for UUID/name non-disclosure. Record CN-MCQ-30 for any future data-model change; no migration.
 - [x] **T019 [FR-007, FR-009, SC-005]** On unknown edit outcome, Discard closes the editor, retains the attempted body in page memory, and exposes Retry elsewhere in the Notes tab using the unchanged approved Retry string. Verify Retry submits the retained body as a new last-save-wins edit; add mutation evidence for retry visibility and retained-body guard.
 - [ ] **T007 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011]** Run independent UI/security review, Analyze, repository checks, and required PR gates on the implementation head. Record the executed authorization/RLS mutation evidence (tested SHA and tool versions) and create `specs/020-client-notes/traceability.md` (FR → Task → Test → Evidence). Runs last.
+
 ## Test tasks (test-first; each runs before its implementation task is accepted)
 
 - [x] **T008 [P] [FR-008]** Add failing tests for list order: newest-created first, deterministic tie-break on equal `created_at`, and an edit does not change a note's position.
