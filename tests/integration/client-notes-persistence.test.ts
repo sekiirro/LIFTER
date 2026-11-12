@@ -47,6 +47,35 @@ describe('F20 T003 client note persistence and constraints', () => {
     expect(await f.countNotes()).toBe(before);
   });
 
+  it('enforces trimmed body limits at the direct database boundary', async () => {
+    const before = await f.countNotes();
+    await f.rawInsertNote({ key: f.key(), body: 'x' });
+    await f.rawInsertNote({ key: f.key(), body: 'x'.repeat(5000) });
+    expect(await f.countNotes()).toBe(before + 2);
+    for (const body of [
+      ` ${'x'.repeat(5000)}`,
+      `${'x'.repeat(5000)}\t`,
+      'x'.repeat(5001),
+      ' \t\n',
+    ]) {
+      await expect(
+        f.rawInsertNote({ key: f.key(), body }),
+      ).rejects.toBeDefined();
+    }
+    await expect(
+      f.db.begin((tx) =>
+        tx`insert into public.client_notes (
+          workspace_id, client_id, author_user_id, body, idempotency_key
+        ) values (
+          ${f.workspaceId}, ${f.clientId}, ${f.context.trainerA.userId},
+          pg_catalog.convert_from(pg_catalog.decode('610062', 'hex'), 'UTF8'),
+          ${f.key()}
+        )`,
+      ),
+    ).rejects.toBeDefined();
+    expect(await f.countNotes()).toBe(before + 2);
+  });
+
   it('returns one live note for a same-key same-body retry and rejects mismatch', async () => {
     const before = await f.countNotes();
     const key = f.key();
@@ -140,6 +169,11 @@ describe('F20 T003 client note persistence and constraints', () => {
 
   it('writes one metadata-only create audit event', async () => {
     const note = await f.createAsTrainer({ body: 'private note text' });
+    const [eventCount] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where action = 'client_note.created' and target_id = ${String(note.id)}
+    `;
+    expect(eventCount?.count).toBe(1);
     const [event] = await f.db`
       select actor_user_id, action, target_table, target_id, workspace_id, details
       from public.audit_events
