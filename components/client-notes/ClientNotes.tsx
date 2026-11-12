@@ -125,6 +125,13 @@ export function ClientNotes(props: ClientNotesProps) {
   );
   const storageAvailable = useRef(true);
   const tabId = useRef<string | null>(null);
+  const recoveryIdentity =
+    props.actorId && props.clientId && props.workspaceId
+      ? `${props.actorId}:${props.workspaceId}:${props.clientId}`
+      : null;
+  const [recoveryReadyFor, setRecoveryReadyFor] = useState<string | null>(null);
+  const recoveryReady =
+    recoveryIdentity === null || recoveryReadyFor === recoveryIdentity;
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [exitOpen, setExitOpen] = useState(false);
   const [exitMode, setExitMode] = useState<'unsaved' | 'inflight' | 'unknown'>(
@@ -160,45 +167,64 @@ export function ClientNotes(props: ClientNotesProps) {
   );
 
   useEffect(() => {
-    if (!storageKey || !props.actorId || !props.clientId || !props.workspaceId)
+    if (
+      !storageKey ||
+      !props.actorId ||
+      !props.clientId ||
+      !props.workspaceId ||
+      !recoveryIdentity
+    )
       return;
     let active = true;
+    let recordToRestore: PendingCreate | null = null;
     try {
       const currentId = currentTabId();
       tabId.current = currentId;
       const raw = window.sessionStorage.getItem(storageKey);
-      if (!raw) return;
-      const stored = JSON.parse(raw) as Partial<PendingCreate>;
-      if (
-        stored.tabId !== currentId ||
-        stored.actorId !== props.actorId ||
-        stored.clientId !== props.clientId ||
-        stored.workspaceId !== props.workspaceId ||
-        typeof stored.text !== 'string' ||
-        typeof stored.body !== 'string' ||
-        typeof stored.idempotencyKey !== 'string' ||
-        typeof stored.retrySent !== 'boolean'
-      ) {
-        window.sessionStorage.removeItem(storageKey);
-        return;
+      if (raw) {
+        const stored = JSON.parse(raw) as Partial<PendingCreate>;
+        if (
+          stored.tabId !== currentId ||
+          stored.actorId !== props.actorId ||
+          stored.clientId !== props.clientId ||
+          stored.workspaceId !== props.workspaceId ||
+          typeof stored.text !== 'string' ||
+          typeof stored.body !== 'string' ||
+          typeof stored.idempotencyKey !== 'string' ||
+          typeof stored.retrySent !== 'boolean'
+        ) {
+          window.sessionStorage.removeItem(storageKey);
+        } else {
+          recordToRestore = stored as PendingCreate;
+        }
       }
-      const record = stored as PendingCreate;
-      queueMicrotask(() => {
-        if (!active) return;
+    } catch {
+      // Treat unavailable or malformed session storage as page-memory only.
+      storageAvailable.current = false;
+    }
+    queueMicrotask(() => {
+      if (!active) return;
+      if (recordToRestore) {
+        const record = recordToRestore;
         setPendingCreate(record);
         setDraft(record.text);
         setIdempotencyKey(record.idempotencyKey);
         setUnknownCreate(true);
         setSaveError(m['clientNotes.saveError']);
-      });
-    } catch {
-      // Treat unavailable or malformed session storage as page-memory only.
-      storageAvailable.current = false;
-    }
+      }
+      setRecoveryReadyFor(recoveryIdentity);
+    });
     return () => {
       active = false;
     };
-  }, [m, props.actorId, props.clientId, props.workspaceId, storageKey]);
+  }, [
+    m,
+    props.actorId,
+    props.clientId,
+    props.workspaceId,
+    recoveryIdentity,
+    storageKey,
+  ]);
 
   // dirty tracking handled by draft length
 
@@ -546,13 +572,13 @@ export function ClientNotes(props: ClientNotesProps) {
                     setIdempotencyKey(null);
                   }}
                   aria-label={m['clientNotes.noteLabel']}
-                  readOnly={saving || unknownCreate}
+                  readOnly={saving || unknownCreate || !recoveryReady}
                 />
               </label>
               <span className={styles.counter}>{counterText(draft)}</span>
               {saveError && <Alert tone="error" title={saveError} />}
               <div className={styles.actions}>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving || !recoveryReady}>
                   {saving
                     ? m['clientNotes.saving']
                     : unknownCreate

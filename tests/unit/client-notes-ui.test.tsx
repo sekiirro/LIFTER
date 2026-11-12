@@ -261,6 +261,7 @@ describe('ClientNotes behaviour', () => {
     await act(async () => {
       root?.render(createElement(ClientNotes, props as never));
     });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
     return { dom, host: host!, root: root! };
   }
 
