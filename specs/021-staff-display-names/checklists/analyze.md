@@ -40,7 +40,7 @@ Date: 2026-11-13. Scope: spec-only artifacts for `specs/021-staff-display-names/
 
 ## Review-thread fixes in this pass
 
-- Greptile thread `PRRT_kwDOVYgYQ8623T4y` (`spec.md:100`, FR-016, "Old retries lose their result"): fixed by architect ruling S52-R10. FR-016 no longer promises an outcome status on every retry; it states the status-only retry while the record exists, and the two post-purge branches (stale rejection with no name value when the original write applied; exactly one applied change when it did not). FR-014, FR-015, SC-013, Story 4 scenario 7, plan "Write safety"/"Risks", T012 and traceability were aligned in the same commit.
+- Greptile thread `PRRT_kwDOVYgYQ8623T4y` (anchored at `spec.md:100` in the reviewed revision, on FR-016, "Old retries lose their result"): fixed by architect ruling S52-R10. FR-016 no longer promises an outcome status on every retry; it states the status-only retry while the record exists, and the two post-purge branches (stale rejection with no name value when the original write applied; exactly one applied change when it did not, or the ordinary stale rejection after an intervening change). FR-014, FR-015, SC-013, Story 4 scenario 7, plan "Write safety"/"Risks", T012 and traceability were aligned in the same commit.
 - Earlier fixes retained: Greptile thread `PRRT_kwDOVYgYQ8621xiw` (`tasks.md` T002) split provisioning from backfill so the Platform Owner provisioning path is not narrowed; Greptile thread `PRRT_kwDOVYgYQ8621xii` (`tasks.md` T012) states the resolved NAME-19=A record instead of asserting an open question.
 
 ## Constitution check
