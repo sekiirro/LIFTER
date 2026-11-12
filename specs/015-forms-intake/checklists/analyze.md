@@ -240,6 +240,7 @@ Revalidated T144's traceability after the final Stack A run: the direct correcti
 ## S50 explicit correction removal analysis — 2026-11-12
 
 ### Entry check
+
 - [x] `spec.md` has numbered FR-013, measurable SC-029, and Given/When/Then scenarios covering conflicts, malformed/unknown/duplicate/over-count IDs, request-size cap, absent and inapplicable answers, required-applicable refusal, replay and audit.
 - [x] PO decisions cite S49-PO-5 and S50-PO-2; architect mappings S49-R13/S50-R12 are labeled separately. **No open ambiguities remain for T145-T150.** The future UI copy decision blocks only T149's separate UI implementation; no copy or UI is in this PR.
 - [x] `plan.md` covers TS/RPC parity, complete canonical request sizing, RPC behavior, forward migration security requirements, Stack A busy/identity checks, and deferred UI copy.
@@ -247,6 +248,7 @@ Revalidated T144's traceability after the final Stack A run: the direct correcti
 - [x] This Analyze follows the final spec, plan and task edits, dated 2026-11-12.
 
 ### Edge-case analysis
+
 - In-flight/concurrency: correction's existing lock, expected revision and intent replay flow remain authoritative; removal participates in canonical request hash.
 - Unknown result/retry: same intent and same canonical request returns stored response; changed request under same intent remains conflict per existing RPC behavior.
 - Delete/removal: only explicit remove IDs alter answers; absent ID is a no-op; present inapplicable values are removed; required applicable values reject the whole request before writes.
