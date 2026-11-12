@@ -180,6 +180,42 @@ describe('F20 T003 client note persistence and constraints', () => {
     expect(anonymousRead.error).not.toBeNull();
   });
 
+  it('checks write access by role and preserves the membership-free PO branch', async () => {
+    const [poMembership] = await f.db`
+      select exists (
+        select 1 from public.workspace_memberships
+        where workspace_id = ${f.workspaceId}
+          and user_id = ${f.context.po.userId}
+          and revoked_at is null
+      ) as active
+    `;
+    expect(poMembership?.active).toBe(false);
+
+    const poCreate = await f.context.po.client.rpc('create_client_note', {
+      p_workspace_id: f.workspaceId,
+      p_client_id: f.clientId,
+      p_body: 'platform owner workspace note',
+      p_idempotency_key: f.key(),
+    });
+    expect(poCreate.error).toBeNull();
+
+    for (const actor of [f.context.salesA, f.context.trainerB]) {
+      const denied = await f.createAs(
+        actor,
+        'unauthorized role create',
+        f.key(),
+      );
+      expect(denied.error).not.toBeNull();
+    }
+    const anonymousCreate = await anonClient().rpc('create_client_note', {
+      p_workspace_id: f.workspaceId,
+      p_client_id: f.clientId,
+      p_body: 'anonymous create',
+      p_idempotency_key: f.key(),
+    });
+    expect(anonymousCreate.error).not.toBeNull();
+  });
+
   it('writes one metadata-only create audit event', async () => {
     const note = await f.createAsTrainer({ body: 'private note text' });
     const [eventCount] = await f.db`
