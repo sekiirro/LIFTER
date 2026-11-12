@@ -10,6 +10,12 @@ Analyzed source commit: `a1a4412` (implementation); round-2 CodeRabbit-fix commi
 ## Notes
 
 - Default in-tree behaviour is covered by the pre-existing tests (`validateMigrationFilenames` block, unchanged: 5 passed before and after).
+
+## CI-1 (S50-PO-6 CI=A; S51-R9) — GHCR image registry
+
+| Requirement | Task(s) | Test(s) (file::test name) | Evidence | Status | Gap |
+| --- | --- | --- | --- | --- | --- |
+| FR-009 (CI uses Supabase images from GHCR via env override; keep mailpit running per S51-R9) | T034 | `.github/workflows/ci.yml::integration-shard` and `::storage` (supabase start) | Pending greens on PR #92 | IMPLEMENTED (pending verification) | Greens pending |
 - Gate results on the implementation commit: typecheck ✓, lint ✓, format:check ✓, check:migration-timestamps ✓ (111 migrations), check:secrets ✓ (after `npm run build`, since the worktree had no client build output; fresh-clone default is exit 1 with "No client build directories found.").
 - Round 2 (CodeRabbit PR #54): `parseOriginRemoteRefs` / `parseMigrationTreeOutput` extracted as exported pure helpers; `git ls-tree` now runs with `-z`; `check:migration-versions:remote` reports a clean pass across 78 fetched remote refs (exit 0). Gates on the round-2 head: `test:unit` ✓ (141 files / 2021 tests), lint ✓, typecheck ✓, format:check ✓, check:migration-timestamps ✓ (111 migrations), check:secrets ✓ (exit 0). Default in-tree mode unchanged and performs no git/network access.
 - Existing `tests/unit/migration-timestamps.test.ts::migration timestamp validation` rows are untouched.
