@@ -222,5 +222,12 @@ test.describe('staff Client Details Notes tab on Stack D', () => {
         fullPage: true,
       });
     }
+
+    const tab = page.getByRole('tab');
+    const panel = page.getByRole('tabpanel');
+    await tab.focus();
+    await expect(tab).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(panel).toBeFocused();
   });
 });

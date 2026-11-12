@@ -210,14 +210,8 @@ PASS for implementation entry: 0 open CRITICAL, 0 open HIGH. No open ambiguities
 ### Round 18 addendum — numbering and final cross-reference check (2026-11-12)
 
 After the final spec numbering edit, rechecked GWT scenario numbering (1–4), FR/SC/task mappings, plan step 7, T016 placement after T006 and before T007, and task tags. Result: no open CRITICAL or HIGH finding; no ambiguity.
+## Round 22 - route refinement and implementation traceability (2026-11-12)
 
-
-### Round 18 addendum ? numbering and final cross-reference check (2026-11-12)
-
-After the final spec numbering edit, rechecked GWT scenario numbering (1?4), FR/SC/task mappings, plan step 7, T016 placement after T006 and before T007, and task tags. Result: no open CRITICAL or HIGH finding; no ambiguity.
-
-## Round 19 ? authorized client context resolver (2026-11-12)
-
-- Technical plan refinement: the public clients table has no authenticated SELECT grant. T016 now specifies a session-bound database resolver that returns only client/workspace identifiers after database has_workspace_access(workspace_id, coaching_work) passes, followed by independent app authorize and note RLS/RPC checks. No client name or unrelated client data is exposed.
-- Unknown, foreign-workspace, revoked and unauthenticated requests produce the same empty resolver result and the route uses the existing staff-route notFound() behavior.
-- Rechecked FR/SC/task references and design authority. No new product choice or user-visible copy is introduced. Result: 0 open CRITICAL/HIGH; no ambiguity.
+- Re-analyzed the T016 plan refinement: the session-bound database resolver exposes only client/workspace identifiers after the coaching_work access check; the route separately checks the verified actor and active membership, then reads notes through the RLS/RPC boundary. Unknown, foreign, revoked and unauthorized IDs use the same notFound behavior. No user-visible copy or product behavior was added.
+- Marked T005 and T016 complete only after exact-head unit, route, Stack D integration, E2E, lint, typecheck, format and migration evidence was recorded in traceability.md. Rechecked FR/SC/task references and resolved decision statuses.
+- Focused F20 Stack D evidence is green (5/5); the repository-wide integration suite remains an operational blocker with unrelated fixture/schema failures (26/95 files, 238/1,500 tests failed), recorded in the run report. Analyze findings: 0 open CRITICAL/HIGH; no PO ambiguity.
