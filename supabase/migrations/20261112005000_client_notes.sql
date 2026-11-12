@@ -56,6 +56,35 @@ create table app_private.client_note_create_keys (
 );
 alter table app_private.client_note_create_keys owner to postgres;
 
+create function app_private.require_client_note_create_key()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1
+    from app_private.client_note_create_keys k
+    where k.workspace_id = new.workspace_id
+      and k.client_id = new.client_id
+      and k.idempotency_key = new.idempotency_key
+      and k.outcome = 'created'
+      and k.body_fingerprint = extensions.digest(
+        convert_to(new.body, 'UTF8'), 'sha256'
+      )
+  ) then
+    raise exception 'client note create key mismatch' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+alter function app_private.require_client_note_create_key() owner to postgres;
+revoke all on function app_private.require_client_note_create_key()
+  from public, anon, authenticated, service_role;
+create trigger client_notes_require_create_key
+  before insert on public.client_notes
+  for each row execute function app_private.require_client_note_create_key();
+
 create function app_private.guard_client_note_update()
 returns trigger
 language plpgsql

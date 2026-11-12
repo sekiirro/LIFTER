@@ -4,7 +4,7 @@ import {
   clientNotesFixture,
   type ClientNotesFixture,
 } from './client-notes-fixture';
-import { admin, anonClient } from './harness';
+import { admin, anonClient, createStaff, sql } from './harness';
 import { issue } from './registration-links-fixture';
 
 let f: ClientNotesFixture;
@@ -449,18 +449,23 @@ describe('F20 T004 client note mutation boundaries', () => {
       p_idempotency_key: f.key(),
     });
     expect(created.error).toBeNull();
+    const createdNote = Array.isArray(created.data)
+      ? created.data[0]
+      : created.data;
+    const clientNoteId = String((createdNote as { id?: string } | null)?.id);
+    expect(clientNoteId).not.toBe('undefined');
     const clientRead = await clientActor
       .from('client_notes')
       .select('id')
-      .eq('id', note.id);
+      .eq('id', clientNoteId);
     expect(clientRead.data).toEqual([]);
     const clientUpdate = await clientActor.rpc('update_client_note', {
-      p_note_id: note.id,
+      p_note_id: clientNoteId,
       p_body: 'client update',
     });
     expect(clientUpdate.error).not.toBeNull();
     const clientDelete = await clientActor.rpc('delete_client_note', {
-      p_note_id: note.id,
+      p_note_id: clientNoteId,
     });
     expect(clientDelete.error).not.toBeNull();
 
@@ -509,26 +514,15 @@ describe('F20 T004 client note mutation boundaries', () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 40));
 
-    const completed: string[] = [];
-    const authorSave = f.context.trainerA.client
-      .rpc('update_client_note', {
-        p_note_id: note.id,
-        p_body: 'author locked save',
-      })
-      .then((result) => {
-        completed.push('author');
-        return result;
-      });
+    const authorSave = f.context.trainerA.client.rpc('update_client_note', {
+      p_note_id: note.id,
+      p_body: 'author locked save',
+    });
     await new Promise((resolve) => setTimeout(resolve, 60));
-    const platformOwnerSave = f.context.po.client
-      .rpc('update_client_note', {
-        p_note_id: note.id,
-        p_body: 'platform owner locked save',
-      })
-      .then((result) => {
-        completed.push('platform_owner');
-        return result;
-      });
+    const platformOwnerSave = f.context.po.client.rpc('update_client_note', {
+      p_note_id: note.id,
+      p_body: 'platform owner locked save',
+    });
 
     await lockHeld;
     const [authorResult, platformOwnerResult] = await Promise.all([
@@ -537,21 +531,157 @@ describe('F20 T004 client note mutation boundaries', () => {
     ]);
     expect(authorResult.error).toBeNull();
     expect(platformOwnerResult.error).toBeNull();
-    expect(completed).toHaveLength(2);
-
     const [row] = await f.db`
       select body from public.client_notes where id = ${String(note.id)}
     `;
-    expect(row?.body).toBe(
-      completed.at(-1) === 'author'
-        ? 'author locked save'
-        : 'platform owner locked save',
-    );
+    const returnedNotes = [authorResult, platformOwnerResult].map((result) => {
+      const returned = Array.isArray(result.data)
+        ? result.data[0]
+        : result.data;
+      return returned as { body: string; edited_at: string };
+    });
+    const latestDatabaseWrite = returnedNotes.sort((a, b) =>
+      a.edited_at.localeCompare(b.edited_at),
+    )[1];
+    expect(row?.body).toBe(latestDatabaseWrite?.body);
     const [events] = await f.db`
       select count(*)::int as count from public.audit_events
       where action = 'client_note.updated' and target_id = ${String(note.id)}
     `;
     expect(events?.count).toBe(2);
+  });
+
+  it('denies unauthorized mutations without waiting for a note lock', async () => {
+    const note = await f.createAsTrainer({ body: 'denial lock probe' });
+    let releaseLock!: () => void;
+    let signalLock!: () => void;
+    const lockGate = new Promise<void>((resolve) => (releaseLock = resolve));
+    const lockReady = new Promise<void>((resolve) => (signalLock = resolve));
+    const lockHeld = f.db.begin(async (tx) => {
+      await tx`select id from public.client_notes
+        where id = ${String(note.id)} for update`;
+      signalLock();
+      await lockGate;
+    });
+
+    try {
+      await lockReady;
+      const deniedCalls = Promise.all([
+        f.context.salesA.client.rpc('update_client_note', {
+          p_note_id: note.id,
+          p_body: 'unauthorized lock update',
+        }),
+        f.context.trainerA.client.rpc('delete_client_note', {
+          p_note_id: note.id,
+        }),
+      ]);
+      const completedBeforeUnlock = await Promise.race([
+        deniedCalls,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+      ]);
+      expect(completedBeforeUnlock).not.toBeNull();
+      expect(
+        completedBeforeUnlock?.map((result) => result.error?.code),
+      ).toEqual(['42501', '42501']);
+    } finally {
+      releaseLock();
+      await lockHeld;
+    }
+  });
+
+  it('rechecks workspace authorization after a locked update resumes', async () => {
+    const revocableTrainer = await createStaff(
+      'trainer',
+      'client-notes-lock-revoke',
+    );
+    const membership = await f.context.po.client
+      .from('workspace_memberships')
+      .insert({
+        user_id: revocableTrainer.userId,
+        workspace_id: f.workspaceId,
+        granted_by: f.context.po.userId,
+      });
+    expect(membership.error).toBeNull();
+    const noteResult = await f.createAs(
+      revocableTrainer,
+      'revocation lock probe',
+    );
+    expect(noteResult.error).toBeNull();
+    const note = Array.isArray(noteResult.data)
+      ? (noteResult.data[0] as { id: string })
+      : (noteResult.data as { id: string });
+    let releaseLock!: () => void;
+    let signalLock!: (backendPid: number) => void;
+    const lockGate = new Promise<void>((resolve) => (releaseLock = resolve));
+    const lockReady = new Promise<number>((resolve) => (signalLock = resolve));
+    const lockHeld = f.db.begin(async (tx) => {
+      const [backend] = await tx`select pg_backend_pid() as pid`;
+      await tx`select id from public.client_notes
+        where id = ${String(note.id)} for update`;
+      signalLock(Number(backend?.pid));
+      await lockGate;
+    });
+    const observer = sql();
+
+    try {
+      const blockerPid = await lockReady;
+      let updateOutcome = 'pending';
+      const update = revocableTrainer.client
+        .rpc('update_client_note', {
+          p_note_id: note.id,
+          p_body: 'must be denied after revocation',
+        })
+        .then((result) => {
+          updateOutcome = result.error?.code ?? 'success';
+          return result;
+        });
+      const deadline = Date.now() + 3000;
+      let observedBlock = false;
+      while (Date.now() < deadline) {
+        const blockers = await observer`
+          select pid from pg_catalog.pg_stat_activity
+          where pid <> pg_backend_pid()
+            and ${blockerPid} = any(pg_catalog.pg_blocking_pids(pid))
+        `;
+        if (blockers.length > 0) {
+          observedBlock = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      const activity = await observer`
+        select state, wait_event_type, wait_event,
+          pg_catalog.pg_blocking_pids(pid) as blockers
+        from pg_catalog.pg_stat_activity
+        where pid <> pg_backend_pid() and state = 'active'
+      `;
+      expect(observedBlock, JSON.stringify({ activity, updateOutcome })).toBe(
+        true,
+      );
+
+      const revoked = await admin()
+        .from('workspace_memberships')
+        .update({
+          revoked_at: new Date().toISOString(),
+          revoked_by: f.context.po.userId,
+        })
+        .eq('workspace_id', f.workspaceId)
+        .eq('user_id', revocableTrainer.userId)
+        .is('revoked_at', null);
+      expect(revoked.error).toBeNull();
+      releaseLock();
+      await lockHeld;
+      const result = await update;
+      expect(result.error?.code).toBe('42501');
+      const [current] = await f.db`
+        select body from public.client_notes where id = ${String(note.id)}
+      `;
+      expect(current?.body).toBe('revocation lock probe');
+    } finally {
+      releaseLock();
+      await lockHeld;
+      await observer.end();
+    }
   });
 
   it('rolls back key state, note deletion, and audit on key-state failure', async () => {

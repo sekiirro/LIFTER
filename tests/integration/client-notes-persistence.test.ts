@@ -77,6 +77,39 @@ describe('F20 T003 client note persistence and constraints', () => {
     expect(await f.countNotes()).toBe(before + 2);
   });
 
+  it('requires a live matching create-key for direct inserts and prevents tombstone reuse', async () => {
+    const before = await f.countNotes();
+    const missingKey = f.key();
+    await expect(
+      f.db`
+        insert into public.client_notes (
+          workspace_id, client_id, author_user_id, body, idempotency_key
+        ) values (
+          ${f.workspaceId}, ${f.clientId}, ${f.context.trainerA.userId},
+          'missing create key', ${missingKey}
+        )
+      `,
+    ).rejects.toBeDefined();
+
+    const key = f.key();
+    const note = await f.createAsTrainer({ body: 'tombstoned key', key });
+    const deleted = await f.context.po.client.rpc('delete_client_note', {
+      p_note_id: note.id,
+    });
+    expect(deleted.error).toBeNull();
+    await expect(
+      f.db`
+        insert into public.client_notes (
+          workspace_id, client_id, author_user_id, body, idempotency_key
+        ) values (
+          ${f.workspaceId}, ${f.clientId}, ${f.context.trainerA.userId},
+          'tombstone reuse', ${key}
+        )
+      `,
+    ).rejects.toBeDefined();
+    expect(await f.countNotes()).toBe(before);
+  });
+
   it('returns one live note for a same-key same-body retry and rejects mismatch', async () => {
     const before = await f.countNotes();
     const key = f.key();

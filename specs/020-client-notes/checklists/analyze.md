@@ -340,3 +340,14 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 **Cross-reference sweep:** FR-002, SC-010, Story 3 author scenario, S51-PO-1 decision register, T018 and CN-MCQ-30 now consistently require an authorized trustworthy source or the approved unavailable-author fallback.
 **Findings:** 0 open CRITICAL; 0 open HIGH.
 **Ambiguity status:** No in-scope ambiguity remains. CN-MCQ-30 is the sole future-scope PO question; current fallback is resolved and implementable.
+
+## Round 37 - S51-R14 CodeRabbit fix-batch analysis (2026-11-12)
+
+**Analysis date:** 2026-11-12T16:00:19Z. After the S51-PO-1 FR/SC and plan/task reconciliation and the current review-fix implementation plan.
+**Inputs:** S51-R14; review 5876694890 (all inline and body findings); current FR-001/002/007/008/009, SC-005/009/010, plan and T017-T019; current SQL lock ordering and actor/session recovery behavior.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** T017-T019 remain tagged to FR-001/008, FR-002/008, and FR-007/009 respectively. Pagination stays ordered and bounded; author label uses the approved unavailable fallback; unknown edit retry remains actor/tab scoped with unchanged approved Retry copy. T005 behavior-test coverage remains applicable. No spec or user-visible copy is introduced by this fix batch.
+**Authorization and data integrity:** Update/delete denial remains generic until workspace and author/platform-owner access are proven. Update must check authorization before row-lock acquisition and recheck after the lock; delete checks platform-owner status before lock and checks scope after it. Existing SECURITY DEFINER, empty search path, ownership, grants, and revokes remain required. Create-key inserts remain content-free and tied to the exact note scope/body fingerprint.
+**Failure and retry states:** Sign-out failure preserves session-local note recovery; successful sign-out clears it only after the server action succeeds. Actor changes remount the panel. A deleted create outcome clears its unresolved key before exposing a fresh editor; discard closes the create editor and the approved existing create action reopens it. Retry remains reachable for an unknown edit after closing its editor. Server errors remain mapped to approved generic copy.
+**Ambiguity status:** No new in-scope ambiguity found. CN-MCQ-30 remains the only future-scope PO question; current fallback is in force and requires no schema change.
+**Verification:** Implementation and integration test evidence is recorded below in the report and will be attached to traceability after the final fix-batch commit. The baseline full-suite failure-ID delta remains inconclusive because the one authorized main baseline run lacked local signup provisioning and its exact failure IDs were not retained; no unrelated-failure claim is made.

@@ -1,11 +1,16 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useTransition, type FormEvent } from 'react';
 import { signOut } from '../../app/(app)/actions';
 import { Button } from '../ui/Button';
 
 const CLIENT_NOTES_PENDING_PREFIX = 'lifter-client-notes-pending-create:v1:';
 
 export function SignOutForm({ label }: { label: string }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
   const clearPendingClientNotes = () => {
     try {
       const keys = Array.from(
@@ -21,9 +26,25 @@ export function SignOutForm({ label }: { label: string }) {
     }
   };
 
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pending) return;
+    startTransition(async () => {
+      try {
+        if (!(await signOut())) return;
+        clearPendingClientNotes();
+        router.replace('/login');
+      } catch {
+        // Keep the pending note recovery when sign-out cannot be confirmed.
+      }
+    });
+  };
+
   return (
-    <form action={signOut} onSubmit={clearPendingClientNotes}>
-      <Button type="submit">{label}</Button>
+    <form onSubmit={submit}>
+      <Button type="submit" disabled={pending}>
+        {label}
+      </Button>
     </form>
   );
 }

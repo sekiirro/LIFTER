@@ -80,6 +80,7 @@ function ClientDetailsTabsContent({
         tabIndex={0}
       >
         <ClientNotes
+          key={actorId}
           clientId={clientId}
           workspaceId={workspaceId}
           locale={locale}

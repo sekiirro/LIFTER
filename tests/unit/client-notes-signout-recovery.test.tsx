@@ -2,9 +2,13 @@ import { act, createElement, type ReactNode } from 'react';
 import { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const router = vi.hoisted(() => ({ replace: vi.fn() }));
+
 vi.mock('../../app/(app)/actions', () => ({ signOut: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
 import { SignOutForm } from '../../components/auth/SignOutForm';
+import { signOut } from '../../app/(app)/actions';
 
 describe('Client Notes session recovery on sign-out', () => {
   let dom: JSDOM | undefined;
@@ -22,9 +26,10 @@ describe('Client Notes session recovery on sign-out', () => {
     dom = undefined;
     root = undefined;
     globals = undefined;
+    vi.clearAllMocks();
   });
 
-  it('clears only Client Notes pending-create records before sign-out', async () => {
+  async function renderForm() {
     dom = new JSDOM('<!doctype html><html><body></body></html>', {
       url: 'http://localhost/',
     });
@@ -57,6 +62,19 @@ describe('Client Notes session recovery on sign-out', () => {
     await act(async () =>
       root?.render(createElement(SignOutForm, { label: 'Sign out' })),
     );
+    return { storage, host };
+  }
+
+  it('clears only Client Notes pending-create records after confirmed sign-out', async () => {
+    vi.mocked(signOut).mockImplementation(async () => {
+      expect(
+        dom!.window.sessionStorage.getItem(
+          'lifter-client-notes-pending-create:v1:workspace:client',
+        ),
+      ).toBe('pending');
+      return true;
+    });
+    const { storage, host } = await renderForm();
     await act(async () => {
       host
         .querySelector('form')!
@@ -65,9 +83,31 @@ describe('Client Notes session recovery on sign-out', () => {
         );
     });
 
+    expect(signOut).toHaveBeenCalledTimes(1);
     expect(
       storage.getItem('lifter-client-notes-pending-create:v1:workspace:client'),
     ).toBeNull();
     expect(storage.getItem('unrelated-session-state')).toBe('keep');
+    expect(router.replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('preserves recovery and the current route when sign-out fails', async () => {
+    vi.mocked(signOut).mockResolvedValue(false);
+    const { storage, host } = await renderForm();
+    await act(async () => {
+      host
+        .querySelector('form')!
+        .dispatchEvent(
+          new dom!.window.Event('submit', { bubbles: true, cancelable: true }),
+        );
+      await Promise.resolve();
+    });
+
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(
+      storage.getItem('lifter-client-notes-pending-create:v1:workspace:client'),
+    ).toBe('pending');
+    expect(storage.getItem('unrelated-session-state')).toBe('keep');
+    expect(router.replace).not.toHaveBeenCalled();
   });
 });

@@ -415,7 +415,19 @@ export function ClientNotes(props: ClientNotesProps) {
           setPendingCreate(null);
           setUnknownCreate(false);
         } else {
-          setSaveError(m['clientNotes.saveError']);
+          setSaveError(
+            res?.status === 'denied' && !retryingUnknown
+              ? m['clientNotes.permissionRefused']
+              : m['clientNotes.saveError'],
+          );
+          if (res?.status === 'not_found' && retryingUnknown) {
+            removePendingCreate(key);
+            setIdempotencyKey(null);
+            setPendingCreate(null);
+            setUnknownCreate(false);
+            setCreateEditorClosed(false);
+            return;
+          }
           const definiteRefusal =
             res?.status === 'denied' ||
             res?.status === 'invalid_input' ||
@@ -472,7 +484,11 @@ export function ClientNotes(props: ClientNotesProps) {
           setUnknownEdit(false);
           setPendingEdit(null);
         } else {
-          setSaveError(m['clientNotes.saveError']);
+          setSaveError(
+            res?.status === 'denied'
+              ? m['clientNotes.permissionRefused']
+              : m['clientNotes.saveError'],
+          );
           const unknown =
             res?.status !== 'denied' &&
             res?.status !== 'invalid_input' &&
@@ -504,7 +520,11 @@ export function ClientNotes(props: ClientNotesProps) {
         if (res?.status === 'ok') {
           props.onSuccess?.('deleted');
         } else {
-          setSaveError(m['clientNotes.deleteError']);
+          setSaveError(
+            res?.status === 'denied'
+              ? m['clientNotes.permissionRefused']
+              : m['clientNotes.deleteError'],
+          );
         }
       } catch {
         setSaveError(m['clientNotes.deleteError']);
@@ -556,6 +576,7 @@ export function ClientNotes(props: ClientNotesProps) {
     } else {
       setDraft('');
       setIdempotencyKey(null);
+      setCreateEditorClosed(true);
     }
   };
 
@@ -579,6 +600,7 @@ export function ClientNotes(props: ClientNotesProps) {
     }
     setDraft('');
     setIdempotencyKey(null);
+    setCreateEditorClosed(true);
   };
 
   const counterText = (value: string) =>
@@ -752,6 +774,12 @@ export function ClientNotes(props: ClientNotesProps) {
                 {m['clientNotes.retry']}
               </Button>
             </Alert>
+          )}
+
+          {canCreate && !editingId && createEditorClosed && !unknownCreate && (
+            <Button type="button" onClick={() => setCreateEditorClosed(false)}>
+              {m['clientNotes.create']}
+            </Button>
           )}
 
           {pendingEdit && !editingId && (

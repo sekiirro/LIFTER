@@ -593,6 +593,110 @@ describe('ClientNotes behaviour', () => {
     ).toBe(false);
   });
 
+  it('resolves a deleted create after an unknown-result Retry returns not-found', async () => {
+    let attempts = 0;
+    const bodies: string[] = [];
+    const keys: string[] = [];
+    const onCreate = vi.fn(async (body: string, key: string) => {
+      attempts += 1;
+      bodies.push(body);
+      keys.push(key);
+      return attempts === 1
+        ? { status: 'unavailable' }
+        : { status: 'not_found' };
+    });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+    });
+    const storageKey =
+      'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'retried note'),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const originalKey = onCreate.mock.calls[0]![1];
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onCreate.mock.calls[1]).toEqual(['retried note', originalKey]);
+    expect(bodies).toEqual(['retried note', 'retried note']);
+    expect(keys[1]).toBe(keys[0]);
+    expect(dom!.window.sessionStorage.getItem(storageKey)).toBeNull();
+    expect(
+      (host!.querySelector('textarea') as HTMLTextAreaElement).readOnly,
+    ).toBe(false);
+  });
+
+  it('uses the approved permission-refusal copy for definite denied mutations', async () => {
+    const note = {
+      id: 'n-denied',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'owner',
+      body: 'approved denial copy',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const onCreate = vi.fn(async () => ({ status: 'denied' }));
+    const onUpdate = vi.fn(async () => ({ status: 'denied' }));
+    const onDelete = vi.fn(async () => ({ status: 'denied' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      actorId: 'owner',
+      role: 'platform_owner',
+      canCreate: true,
+      onCreate,
+      onUpdate,
+      onDelete,
+    });
+
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'denied create'),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
+
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () => {
+      byText(mEn['clientNotes.saveChanges']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
+
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    await act(async () => byText(mEn['clientNotes.delete']).click());
+    await act(async () => {
+      byText(mEn['clientNotes.deleteDialogConfirm']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
   it('does not let a delayed definite refusal erase a newer recovery record', async () => {
     let resolveOriginal: ((result: { status: string }) => void) | undefined;
     const originalCreate = vi.fn(
@@ -1058,6 +1162,13 @@ describe('ClientNotes behaviour', () => {
     ).toBe('');
     expect(onCreate).not.toHaveBeenCalled();
     expect(host!.textContent?.toLowerCase()).not.toContain('save draft');
+    expect(host!.querySelector('form')).toBeNull();
+    const reopen = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.create'],
+    );
+    expect(reopen).toBeDefined();
+    await act(async () => reopen!.click());
+    expect(host!.querySelector('form')).not.toBeNull();
   });
 
   it('uses the browser beforeunload warning only for unresolved text', async () => {

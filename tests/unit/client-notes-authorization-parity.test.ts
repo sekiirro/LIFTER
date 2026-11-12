@@ -5,7 +5,10 @@ import { authorize } from '../../lib/auth/authorize';
 import { ROLES, roleHasCapability } from '../../lib/auth/capabilities';
 
 const capabilitySql = readFileSync(
-  resolve(process.cwd(), 'supabase/migrations/20261027120000_tenancy.sql'),
+  resolve(
+    process.cwd(),
+    'supabase/migrations/20261103129200_f13_f14_capability_reconciliation.sql',
+  ),
   'utf8',
 );
 const ownerSql = readFileSync(

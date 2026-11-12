@@ -111,15 +111,25 @@ export async function clientNotesFixture(): Promise<ClientNotesFixture> {
       return Number(row?.count ?? 0);
     },
     async rawInsertNote({ key, body }) {
-      const [row] = await db`
-        insert into public.client_notes (
-          workspace_id, client_id, author_user_id, body, idempotency_key
-        ) values (
-          ${client.workspace_id}, ${client.id}, ${context.trainerA.userId},
-          ${body}, ${key}
-        ) returning id
-      `;
-      return row;
+      return db.begin(async (tx) => {
+        await tx`
+          insert into app_private.client_note_create_keys (
+            workspace_id, client_id, idempotency_key, body_fingerprint
+          ) values (
+            ${client.workspace_id}, ${client.id}, ${key},
+            extensions.digest(convert_to(${body}, 'UTF8'), 'sha256')
+          )
+        `;
+        const [row] = await tx`
+          insert into public.client_notes (
+            workspace_id, client_id, author_user_id, body, idempotency_key
+          ) values (
+            ${client.workspace_id}, ${client.id}, ${context.trainerA.userId},
+            ${body}, ${key}
+          ) returning id
+        `;
+        return row;
+      });
     },
     async readNote(actor, id) {
       return (await actor.client

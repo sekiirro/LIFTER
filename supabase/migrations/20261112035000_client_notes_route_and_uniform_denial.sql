@@ -29,6 +29,11 @@ begin
   select n.* into v_note
   from public.client_notes n
   where n.id = p_note_id
+    and app_private.has_workspace_access(n.workspace_id, 'coaching_work')
+    and (
+      app_private.is_platform_owner()
+      or n.author_user_id = auth.uid()
+    )
   for update;
   if not found then
     raise exception 'client note update denied' using errcode = '42501';
@@ -85,10 +90,15 @@ begin
   if auth.uid() is null then
     raise exception 'client note delete denied' using errcode = '42501';
   end if;
+  if not app_private.is_platform_owner() then
+    raise exception 'client note delete denied' using errcode = '42501';
+  end if;
 
   select n.* into v_note
   from public.client_notes n
   where n.id = p_note_id
+    and app_private.is_platform_owner()
+    and app_private.has_workspace_access(n.workspace_id, null)
   for update;
   if not found then
     raise exception 'client note delete denied' using errcode = '42501';

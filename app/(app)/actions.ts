@@ -1,14 +1,15 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { createSessionClient } from '../../lib/supabase/server';
 
 export async function signOut() {
   try {
     const client = await createSessionClient();
-    if (client) await client.auth.signOut({ scope: 'local' });
+    if (!client) return false;
+    const { error } = await client.auth.signOut({ scope: 'local' });
+    return error === null;
   } catch {
-    // Do not expose provider failures through a server-action exception.
+    // Preserve the current session and client recovery state on failure.
+    return false;
   }
-  redirect('/login');
 }
