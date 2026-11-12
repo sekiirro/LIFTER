@@ -107,3 +107,10 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope. FR-006 and T035 resolve in the current spec and task text.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no task status changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
+
+- Scope: CodeRabbit inline-thread finding on the F11 boundary paragraph, plus the two outside-diff-range comments on this feature. `tasks.md` now labels the F11 boundary statement as the historical F10 audit snapshot, keeps its description of the F10 implementation boundary and points at `traceability.md` for the current F11 signup form and integration tests. `checklists/requirements.md` now labels its "implementation tasks remain unchecked" and "independent implementation audit remains pending" statements as the original checklist snapshot and records the current status (T001-T033 complete, T034 audited). No task status changed and no requirement text changed.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

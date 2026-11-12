@@ -6,7 +6,7 @@
 
 **Feature**: [spec.md](../spec.md)
 
-**Validation**: Artifact author's pass only. Checked means documentation criterion reviewed, not application completion or Claude approval. Implementation tasks remain unchecked.
+**Validation**: Artifact author's pass only. Checked means documentation criterion reviewed, not application completion or Claude approval. Implementation tasks remain unchecked. (Original checklist snapshot: that was the state when this checklist was written; `tasks.md` now records T001-T033 complete and T034 audited.)
 
 ## Content Quality
 
@@ -39,4 +39,4 @@
 
 ## Notes
 
-Artifact traceability result: PASS. R10-1 is binding and recorded in research R3; displayed-version rejection and translated reload are required. Owner policy NDs remain unresolved. Independent implementation audit remains pending.
+Artifact traceability result: PASS. R10-1 is binding and recorded in research R3; displayed-version rejection and translated reload are required. Owner policy NDs remain unresolved. Independent implementation audit remains pending. (Original checklist snapshot: the independent audit is now recorded as done under T034 in `tasks.md`; this line describes the checklist as written.)

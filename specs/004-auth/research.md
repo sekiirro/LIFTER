@@ -35,19 +35,20 @@
 ## R5 — Audit and rate-limit ordering (two walls, no orphaned links)
 
 - **Decision**: The flow has four steps.
-  1. `public.recovery_link_authorize(target)` (RPC, user JWT): checks the capability on the target's workspace, the target kind, and the rate limits, and reserves the capacity it checked under the same target and actor advisory locks that step 4 uses. It returns the workspace id or raises a generic error.
+  **Status of the reservation steps (planned under task T031, not implemented):** steps 1 and 4 below reserve and convert capacity. That sequence is the planned design tracked by T031 and it is not in the code today: `public.recovery_link_authorize` currently calls only `app_private.recovery_link_guard`, so two concurrent requests can both reach `generateLink` before any issuance is recorded.
+  1. `public.recovery_link_authorize(target)` (RPC, user JWT): checks the capability on the target's workspace, the target kind, and the rate limits, and, under task T031 (planned, not implemented), reserves the capacity it checked under the same target and actor advisory locks that step 4 uses and returns the workspace id together with a request-bound reservation credential, or raises a generic error.
   2. The app-layer `authorize(actor, 'generate_recovery_link', ws)`.
   3. `generateLink` (service role).
-  4. `public.recovery_link_record(target)` (RPC, user JWT): repeats every check under a transaction advisory lock on the target and the actor, converts the reservation from step 1 into the `recovery_link_issuances` row, and releases the reservation in the same transaction. Its audit trigger writes `recovery_link.generated` in the same transaction.
+  4. `public.recovery_link_record(target)` (RPC, user JWT): repeats every check under a transaction advisory lock on the target and the actor, takes the request-bound credential from step 1, converts that reservation into the `recovery_link_issuances` row, and releases the reservation in the same transaction. Its audit trigger writes `recovery_link.generated` in the same transaction.
 
   The link is returned to the UI only after step 4 commits.
 
 - **Rationale**:
   - Unauthorized callers never reach `generateLink`. Otherwise they could invalidate a client's live link, and the call would reveal that the account exists.
-  - Capacity is reserved before step 3, so two concurrent requests cannot both reach the provider when only one issuance is allowed: the second is rejected with `rate_limited` at step 1 and never supersedes a live link. The reservation is released when step 2, step 3 or step 4 fails - including a failed application-level `authorize()` check in step 2 - so the pre-request counts are restored.
+  - Planned (T031): capacity is reserved before step 3, so that two concurrent requests cannot both reach the provider when only one issuance is allowed: the second is rejected with `rate_limited` at step 1 and never supersedes a live link. The reservation is released when step 2, step 3 or step 4 fails - including a failed application-level `authorize()` check in step 2 - so the pre-request counts are restored.
   - Every link shown has exactly one audit row (FR-009, SC-004). If step 4 fails (an audit failure, for example), the link is never shown.
   - The audit actor is `auth.uid()`, because step 4 runs with the user's JWT, not the service role.
-- **Accepted residual**: if step 3 succeeds and step 4 fails, the client's earlier unused link is superseded without an audit row. Nobody can see the new link. This needs a DB failure between two calls; the limit race that used to reach this residual is removed by the step-1 reservation, and a reservation that is never released expires with the window it consumed.
+- **Accepted residual**: if step 3 succeeds and step 4 fails, the client's earlier unused link is superseded without an audit row. Nobody can see the new link. This needs a DB failure between two calls; the limit race that used to reach this residual will be removed once T031 implements the step-1 reservation, and a reservation that is never released will expire with the window it consumed.
 
 ## R6 — Client target before P1 (ND-F4-5)
 

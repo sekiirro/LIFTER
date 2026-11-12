@@ -406,13 +406,13 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 
 - Date: 2026-11-09 19:56:44 UTC, after the FR-011 and SC-007 statuses were corrected to PARTIAL and the historical core record restored.
 - Scope: current spec/traceability evidence; proxy success and error cache headers are asserted. Invalid registration responses assert no-store and referrer-policy, but the full private, no-store registration matrix is not established. Preserve F14-A01..A03 and all later recorded findings/gates.
-- Current core matrix: 16 VERIFIED, 13 PARTIAL (10 VERIFIED / 8 PARTIAL requirements plus 6 VERIFIED / 5 PARTIAL success criteria; the FR-009 owner-editor row is DEFERRED and counted separately); FR-011 and SC-007 remain PARTIAL.
+- Current core matrix: 15 VERIFIED, 14 PARTIAL (10 VERIFIED / 8 PARTIAL requirements plus 5 VERIFIED / 6 PARTIAL success criteria; the FR-009 owner-editor row is DEFERRED and counted separately; SC-004 moved to PARTIAL in the S49 round recorded below); FR-011, SC-004 and SC-007 remain PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH; the existing medium production/evidence gaps remain. No tests or tasks were changed.
 
 ## S41-R12 round-3 PR-wide re-analysis
 
 - Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after correcting the current core total; no later spec/plan/tasks edits follow this analysis.
-- Scope: rechecked every traceability row and current Analyze total. Core matrix is 16 VERIFIED / 13 PARTIAL; FR-011 and SC-007 remain PARTIAL. Other historical/current feature rows, decision references, links and task evidence were checked without changing status.
+- Scope: rechecked every traceability row and current Analyze total. Core matrix is 15 VERIFIED / 14 PARTIAL (current; SC-004 moved to PARTIAL in the S49 round recorded below); FR-011, SC-004 and SC-007 remain PARTIAL. Other historical/current feature rows, decision references, links and task evidence were checked without changing status.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the feature.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
 - Verdict: PASS for this documentation-only correction.
@@ -448,7 +448,7 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 
 ## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
 
-- Scope: CodeRabbit inline-thread findings on this head. (a) The current core matrix total is corrected to 16 VERIFIED / 13 PARTIAL, counted from the core traceability table: 10 VERIFIED and 8 PARTIAL requirements plus 6 VERIFIED and 5 PARTIAL success criteria, with the FR-009 owner-editor row counted as DEFERRED and kept separate. The repeated total in the S41-R12 record above now matches. (b) Q-M16 in `quickstart.md` now requires the branding preview success and preview error responses to assert both `private` and `no-store`, in addition to the registration-route valid, invalid and redirect responses, so T041 cannot close on the registration-route checks alone. FR-011 and SC-007 remain PARTIAL and T041 stays unchecked.
+- Scope: CodeRabbit inline-thread findings on this head. (a) The current core matrix total is corrected to 16 VERIFIED / 13 PARTIAL, counted from the core traceability table: 10 VERIFIED and 8 PARTIAL requirements plus 6 VERIFIED and 5 PARTIAL success criteria, with the FR-009 owner-editor row counted as DEFERRED and kept separate (SC-004 moved to PARTIAL in the S49 round recorded below, making the current total 15 VERIFIED / 14 PARTIAL). The repeated total in the S41-R12 record above now matches. (b) Q-M16 in `quickstart.md` now requires the branding preview success and preview error responses to assert both `private` and `no-store`, in addition to the registration-route valid, invalid and redirect responses, so T041 cannot close on the registration-route checks alone. FR-011 and SC-007 remain PARTIAL and T041 stays unchecked.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope. T041 resolves in `tasks.md`; no task status changed and no verification status was upgraded.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
@@ -457,5 +457,12 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 
 - Scope: CodeRabbit inline-thread finding on the Q-M16 acceptance criterion. Q-M16 now records the T041 implementation prerequisite explicitly: the draft handler and middleware.ts must set the private cache directive alongside no-store on the registration responses (verified: app/api/branding/draft/route.ts line 32 and middleware.ts line 77 set no-store only, while lib/branding/proxy-response.ts line 24 already sets private, no-store), and the preview success and preview error responses must assert both directives. T041 stays open until that implementation is complete and the preview checks exist. The existing registration-response requirements are preserved.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T041 resolves in tasks.md and remains unchecked.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
+
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
+
+- Scope: CodeRabbit inline-thread findings on three traceability rows. (a) SC-004 is now PARTIAL: the cited tests cover the malformed and unsupported image rejection and the bounded GC cleanup (now also citing `keeps validated bytes referenced by a draft out of stale-upload cleanup` for the referenced-object clause), while the previous asset remaining unchanged after a rejected upload and the absence of a client-visible signed URL on the upload path have no automated assertion. (b) SC-020 is now PARTIAL: the signup-profile, validation and focus clauses remain evidenced, but no cited test or artifact verifies that Intake reads the persisted `public.clients` fields, so the F15 Intake boundary clause is unevidenced. (c) SC-021 is now PARTIAL: the Glisse contrast matrix and screenshot evidence is the r18/r19 set at code heads `1fd528d` and `ad32eb21`, and the current Hero contrast gate (T063 rendered screenshot matrix and computed browser contrast) has not run at this head. The core matrix total therefore moves to 15 VERIFIED / 14 PARTIAL (10 VERIFIED / 8 PARTIAL requirements plus 5 VERIFIED / 6 PARTIAL success criteria; the FR-009 owner-editor row stays DEFERRED and counted separately). No task status changed and no requirement text changed.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T041 and T063 remain unchecked.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.

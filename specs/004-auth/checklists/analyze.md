@@ -157,3 +157,10 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T031 remains unchecked and still owns the unimplemented limits; no task status changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
+
+- Scope: CodeRabbit inline-thread findings on the round-8 review. (a) data-model.md now binds each reservation to its request: `recovery_link_authorize` returns a request-bound reservation credential (an opaque single-use handle bound to the requesting actor, the target and that generation request), `recovery_link_record` takes that credential and converts exactly that reservation, and the new `public.recovery_link_release` operation requires the same credential, so two concurrent requests for the same target from the same session cannot consume each other's reservation or leave their own capacity held. The record-time capacity check and the transaction guarantees are preserved. (b) research.md R5 and plan.md now qualify the reservation sequence and its race-protection claim as planned work under task T031 and not current behavior: `recovery_link_authorize` calls only the guard today, so two concurrent requests can still reach `generateLink` before an issuance is recorded. The approved per-issuer and per-client limits and the one-audit-row-per-issued-link rule are unchanged, and T031 stays unchecked.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

@@ -204,3 +204,10 @@
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T009 and T013 both resolve in tasks.md; no task status changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
+
+- Scope: CodeRabbit inline-thread findings on two traceability rows. (a) The FR-004..FR-005, FR-009..FR-010 row now cites the default remainder schedule evidence - `tests/unit/registration-links-flexible.test.ts::constructs chosen upfront at approval and exact positive residual at activation offset 30`, where the default terms constructor selects offsets 0/30 - together with the T025 activation cases, whose issued 30-day remainder projects to the Cairo activation date + 30 days, and the T013 case that the first full installment is collected at approval. The separate T025 evidence for immutable issued offsets is preserved. (b) The FR-013 row now cites the `recorded_at` evidence: the T013 negative case that rejects a client-supplied `recorded_at`, the receipt's system `recorded_at`, the `public.payment_events` privileged UPDATE/DELETE/TRUNCATE guard, and the corrections test that reads `recorded_at` separately from `collected_on`. No status was upgraded or downgraded and the collection-date evidence is unchanged.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

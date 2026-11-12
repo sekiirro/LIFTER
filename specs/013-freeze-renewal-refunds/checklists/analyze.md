@@ -161,3 +161,10 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
+
+- Scope: CodeRabbit outside-diff-range finding on the T020 entry. The D-20 conflict is now described as an existing production gate blocked on a decision and not a new PO question, consistent with the decision register (`docs/04-changes-and-questions.md` lists T020 among the existing production-readiness items and states that no PO deferral exists for T020). The separate F13-PB-03 status and the remaining T020 details are preserved, and no answer is proposed.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

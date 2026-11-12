@@ -91,7 +91,7 @@
 ## S41-R12 round-3 PR-wide re-analysis
 
 - Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after the shared-register link edit; no later spec/plan/tasks edits follow this analysis.
-- Scope: rechecked all 29 FR and 11 SC traceability rows, their cited evidence/statuses, current matrix totals (FR 19 VERIFIED / 10 PARTIAL; SC 6 VERIFIED / 5 PARTIAL), analysis totals, internal links and decision references. The S31-PO-7 Q5 quotation is at User Story 4 in the repository at this head; the register now targets that actual heading. PO wording is unchanged.
+- Scope: rechecked all 29 FR and 11 SC traceability rows, their cited evidence/statuses, current matrix totals (FR 19 VERIFIED / 10 PARTIAL; SC 6 VERIFIED / 5 PARTIAL), analysis totals, internal links and decision references. The S31-PO-7 Q5 quotation is at User Story 6 in the repository at this head; the register now targets that actual heading. PO wording is unchanged.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature; no open ambiguity is introduced. Existing PARTIAL rows remain PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task or verification status changed.
 - Verdict: PASS for this docs-only reconciliation.
@@ -104,3 +104,10 @@
 - Coverage: every FR/SC row is present in traceability (19 VERIFIED / 10 PARTIAL FR; 6 VERIFIED / 5 PARTIAL SC, unchanged); every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
 - Findings: 0 open CRITICAL, 0 open HIGH. The 3 pre-existing MEDIUM evidence gaps remain exactly as recorded above; nothing was upgraded or introduced by the format-only commit.
 - Verdict: PASS for this format-only re-affirmation.
+
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
+
+- Scope: CodeRabbit inline-thread finding on the S41-R12 round-3 analysis entry. The quotation location is corrected: the verbatim S31-PO-7 Q5 quotation sits under User Story 6 ("User Story 6 - Selective floating Liquid Glass surfaces") in `specs/002-design-system/spec.md`, not User Story 4, and the decision register row already links that heading (the S31-PO-7 Q5 row in `docs/04-changes-and-questions.md`). The PO wording is unchanged.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
