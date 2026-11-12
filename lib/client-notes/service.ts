@@ -102,7 +102,9 @@ async function noteContext(noteId: unknown) {
     .eq('id', noteId)
     .maybeSingle();
   if (result.error) return { status: 'unavailable' } as const;
-  if (!result.data) return { status: 'not_found' } as const;
+  // Without a note row there is no workspace scope to prove. Keep absence
+  // indistinguishable from an out-of-scope identifier at this boundary.
+  if (!result.data) return { status: 'denied' } as const;
   return { status: 'ok', actor, client, note: result.data } as const;
 }
 

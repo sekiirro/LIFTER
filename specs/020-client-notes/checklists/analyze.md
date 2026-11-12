@@ -210,3 +210,14 @@ PASS for implementation entry: 0 open CRITICAL, 0 open HIGH. No open ambiguities
 ### Round 18 addendum — numbering and final cross-reference check (2026-11-12)
 
 After the final spec numbering edit, rechecked GWT scenario numbering (1–4), FR/SC/task mappings, plan step 7, T016 placement after T006 and before T007, and task tags. Result: no open CRITICAL or HIGH finding; no ambiguity.
+
+
+### Round 18 addendum ? numbering and final cross-reference check (2026-11-12)
+
+After the final spec numbering edit, rechecked GWT scenario numbering (1?4), FR/SC/task mappings, plan step 7, T016 placement after T006 and before T007, and task tags. Result: no open CRITICAL or HIGH finding; no ambiguity.
+
+## Round 19 ? authorized client context resolver (2026-11-12)
+
+- Technical plan refinement: the public clients table has no authenticated SELECT grant. T016 now specifies a session-bound database resolver that returns only client/workspace identifiers after database has_workspace_access(workspace_id, coaching_work) passes, followed by independent app authorize and note RLS/RPC checks. No client name or unrelated client data is exposed.
+- Unknown, foreign-workspace, revoked and unauthenticated requests produce the same empty resolver result and the route uses the existing staff-route notFound() behavior.
+- Rechecked FR/SC/task references and design authority. No new product choice or user-visible copy is introduced. Result: 0 open CRITICAL/HIGH; no ambiguity.

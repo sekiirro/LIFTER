@@ -1,4 +1,5 @@
-﻿import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   clientNotesFixture,
   type ClientNotesFixture,
@@ -13,6 +14,75 @@ afterAll(async () => {
 });
 
 describe('F20 T004 client note mutation boundaries', () => {
+  it('resolves client context only for authorized workspace actors', async () => {
+    const resolve = (actor: typeof f.context.trainerA) =>
+      actor.client.rpc('client_notes_client_context', {
+        p_client_id: f.clientId,
+      });
+    const [trainer, owner, platformOwner] = await Promise.all([
+      resolve(f.context.trainerA),
+      resolve(f.context.woA),
+      resolve(f.context.po),
+    ]);
+    expect(trainer.error).toBeNull();
+    expect(owner.error).toBeNull();
+    expect(platformOwner.error).toBeNull();
+    expect(trainer.data).toEqual([
+      { client_id: f.clientId, workspace_id: f.workspaceId },
+    ]);
+    expect(owner.data).toEqual(trainer.data);
+    expect(platformOwner.data).toEqual(trainer.data);
+
+    const [sales, foreign, unknown] = await Promise.all([
+      resolve(f.context.salesA),
+      resolve(f.context.trainerB),
+      f.context.trainerA.client.rpc('client_notes_client_context', {
+        p_client_id: randomUUID(),
+      }),
+    ]);
+    expect(sales.data).toEqual([]);
+    expect(foreign.data).toEqual([]);
+    expect(unknown.data).toEqual([]);
+  });
+
+  it('gives Sales one generic update/delete denial for existing and absent note IDs', async () => {
+    const note = await f.createAsTrainer({
+      body: 'existence must stay private',
+    });
+    const absentId = randomUUID();
+
+    const updateErrors = await Promise.all(
+      [note.id, absentId].map(async (noteId) => {
+        const result = await f.context.salesA.client.rpc('update_client_note', {
+          p_note_id: noteId,
+          p_body: 'unauthorized update',
+        });
+        return result.error;
+      }),
+    );
+    expect(updateErrors.map((error) => error?.code)).toEqual([
+      '42501',
+      '42501',
+    ]);
+    expect(updateErrors[0]?.message).toBe(updateErrors[1]?.message);
+    expect(updateErrors[0]?.message).toBe('client note update denied');
+
+    const deleteErrors = await Promise.all(
+      [note.id, absentId].map(async (noteId) => {
+        const result = await f.context.salesA.client.rpc('delete_client_note', {
+          p_note_id: noteId,
+        });
+        return result.error;
+      }),
+    );
+    expect(deleteErrors.map((error) => error?.code)).toEqual([
+      '42501',
+      '42501',
+    ]);
+    expect(deleteErrors[0]?.message).toBe(deleteErrors[1]?.message);
+    expect(deleteErrors[0]?.message).toBe('client note delete denied');
+  });
+
   it('lets an authorized note author edit in place and writes metadata-only audit', async () => {
     const note = await f.createAsTrainer({ body: 'before edit' });
     const edited = await f.context.trainerA.client.rpc('update_client_note', {
