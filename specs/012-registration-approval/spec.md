@@ -210,7 +210,7 @@ Authorized PO/WO/Sales configure the upfront amount, total payment count, indivi
 - **SC-009**: Flexible link issuance captures the chosen upfront/count/individual amounts/timing, rejects an inexact total and preserves all pre-existing agreement fingerprints unchanged.
 - **SC-010**: Pending approval detection stays within its documented bounded request budget, redirects only to an existing authorized route, and always retains Manual Refresh/navigation recovery without implying activation.
 - **SC-011**: Correction across a Cairo month boundary books the exact reversal in the correction month and leaves original event bytes and original collection month unchanged.
-- **SC-012 (S47-PO-12)**: In 100% of deleted-client fixtures with a preserved unreversed collection, a PO correction reversal appends one reversal, reverses the exact stored amount and commission, and leaves the original event unchanged; 100% of new `installment_collect` attempts for a client in the F11 deletion lifecycle are refused with the FR-017 stale-state response and create zero collection, charge, obligation, subscription, financial or audit rows.
+- **SC-012 (S47-PO-12)**: In 100% of deleted-client fixtures with a preserved unreversed collection, a PO correction reversal appends one reversal, reverses the exact stored amount and commission, and leaves the original event unchanged; 100% of new authorized `installment_collect` attempts for a client in the F11 deletion lifecycle are refused with the FR-017 stale-state response and create zero collection, charge, obligation, subscription, financial or audit rows; unauthorized attempts receive the `not_permitted` response.
 
 ## Assumptions
 
