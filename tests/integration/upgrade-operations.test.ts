@@ -210,7 +210,7 @@ async function boughtWithAmounts(
   }
 }
 
-it('T042 prices the FR-038 EGP 750 to EGP 1400 upgrade as EGP 650 revenue', async () => {
+it('T042 prices the FR-038 EGP 750 to EGP 1400 upgrade as EGP 650 revenue with the original commission rate', async () => {
   const { f, purchase } = await egp750Purchase();
   const target = await targetOffer(f, {
     tier_rank: 2,
@@ -238,8 +238,8 @@ it('T042 prices the FR-038 EGP 750 to EGP 1400 upgrade as EGP 650 revenue', asyn
         credit_minor: '750',
         additional_payment_minor: '650',
         currency: 'EGP',
-        commission_rate_bp: 2000,
-        commission_minor: '130',
+        commission_rate_bp: 1000,
+        commission_minor: '65',
       },
     });
     const [ledger] = await tx`select count(*)::int as count,
@@ -275,13 +275,17 @@ async function fullyPayAmounts(
   }
 }
 
-it('T042 records only the additional payment at the selected version commission rate and keeps one subscription/activation', async () => {
+it('T042 records additional-payment commission at the original subscription rate and keeps one subscription/activation', async () => {
   const f = await clientContext();
   const purchase = await bought(f);
-  const target = await targetOffer(f, {});
+  const target = await targetOffer(f, { commission_rate_bp: 5000 });
   await probe(async (tx) => {
     await activate(tx, f, purchase);
     await fullyPayInitial(tx, f, purchase);
+    const [original] =
+      await tx`select commission_rate_bp from public.subscriptions
+      where workspace_id=${f.wsA.id} and id=${purchase.sid}`;
+    expect(original).toBeDefined();
     const result = await upgrade(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
@@ -299,7 +303,7 @@ it('T042 records only the additional payment at the selected version commission 
         credit_minor: '1200',
         additional_payment_minor: '400',
         currency: 'XTS',
-        commission_rate_bp: 2500,
+        commission_rate_bp: original!.commission_rate_bp,
       },
     });
     const [counts] = await tx`
@@ -316,8 +320,10 @@ it('T042 records only the additional payment at the selected version commission 
       package_price_minor: '1600',
       credit_minor: '1200',
       additional_payment_minor: '400',
-      commission_rate_bp: 2500,
-      commission_minor: '100',
+      commission_rate_bp: original!.commission_rate_bp,
+      commission_minor: (
+        await tx`select app_private.f12_commission_minor(400::bigint,${original!.commission_rate_bp})::text as value`
+      )[0]!.value,
     });
   });
 });
@@ -427,6 +433,7 @@ it('T041/T042 upgrade then renewal then upgrade credits only the original purcha
       upgrade_confirmed: true,
     });
     expect(first.status).toBe('ok');
+    const firstReceipt = first.receipt as Record<string, unknown>;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
     await tx`set local role authenticated`;
     let renewed: Record<string, unknown>;
@@ -446,6 +453,13 @@ it('T041/T042 upgrade then renewal then upgrade credits only the original purcha
       await tx`reset role`;
     }
     expect(renewed!.status).toBe('ok');
+    const renewalReceipt = renewed!.receipt as Record<string, unknown>;
+    const firstStart = firstReceipt.service_start_date as string;
+    const firstEnd = firstReceipt.service_end_exclusive as string;
+    const renewalEnd = renewalReceipt.service_end_exclusive as string;
+    const [expectedEnd] = await tx`
+      select (${firstStart}::date + 150
+        + (${renewalEnd}::date - ${firstEnd}::date))::text as end_on`;
     const result = await upgrade(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
@@ -462,7 +476,14 @@ it('T041/T042 upgrade then renewal then upgrade credits only the original purcha
         package_price_minor: '2200',
         credit_minor: '1200',
         additional_payment_minor: '1000',
+        service_end_exclusive: expectedEnd!.end_on,
       },
+    });
+    const [projection] = await tx`select app_private.f13_project_entitlement(
+      ${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as value`;
+    expect(projection!.value).toMatchObject({
+      effective_end_exclusive: expectedEnd!.end_on,
+      coverage_end_exclusive: expectedEnd!.end_on,
     });
     const [rows] = await tx`
       select
@@ -776,6 +797,20 @@ it('T042 preserves a paid renewal and uses the post-lapse renewal start for late
         service_start_date: renewalReceipt.service_start_date,
       },
     });
+    const renewalStart = renewalReceipt.service_start_date as string;
+    const renewalEnd = renewalReceipt.service_end_exclusive as string;
+    const [expectedEnd] = await tx`select
+      (${renewalStart}::date + 120
+        + (${renewalEnd}::date - (clock_timestamp() at time zone 'Africa/Cairo')::date))::text as end_on`;
+    expect(
+      (second.receipt as Record<string, unknown>).service_end_exclusive,
+    ).toBe(expectedEnd!.end_on);
+    const [projection] = await tx`select app_private.f13_project_entitlement(
+      ${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as value`;
+    expect(projection!.value).toMatchObject({
+      effective_end_exclusive: expectedEnd!.end_on,
+      coverage_end_exclusive: expectedEnd!.end_on,
+    });
     const [preserved] = await tx`select
       (select count(*)::int from public.subscription_renewals where id=${renewalId}) as renewal,
       (select count(*)::int from public.payment_events e join public.subscription_installments i
@@ -791,7 +826,84 @@ it('T042 preserves a paid renewal and uses the post-lapse renewal start for late
   });
 });
 
-it('T042 snapshots selected-version commission and permits an equal-price longer upgrade without revenue', async () => {
+it('T042 carries only unconsumed counted-freeze extension into the upgraded projection', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  const target = await targetOffer(f, { duration_days: 60 });
+  await probe(async (tx) => {
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    const [dates] = await tx`select
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date - s.duration_days - 3)::date as activated_on,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date - 3)::date as original_end,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date - s.duration_days - 3 + s.duration_days)::date as base_end
+      from public.subscriptions s where s.workspace_id=${f.wsA.id} and s.id=${purchase.sid}`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},(${dates!.activated_on}::date::timestamp + interval '12 hours') at time zone 'Africa/Cairo',${randomUUID()})`;
+    const [terms] = await tx`select s.duration_days::integer,
+        (a.activated_at at time zone 'Africa/Cairo')::date::text as activated_on from public.subscriptions s
+      join public.subscription_activations a on a.workspace_id=s.workspace_id and a.subscription_id=s.id
+      where s.workspace_id=${f.wsA.id} and s.id=${purchase.sid}`;
+    const [base] =
+      await tx`select (${terms!.activated_on}::date + ${terms!.duration_days}::integer)::text as end_on`;
+    const freezeId = randomUUID();
+    await tx`insert into public.subscription_freezes(id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+      values(${freezeId},${f.wsA.id},${purchase.sid},${base!.end_on}::date - 10,10,${f.trainerA.userId},clock_timestamp())`;
+    await tx`insert into public.subscription_freeze_events(workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id,recorded_at)
+      values(${f.wsA.id},${purchase.sid},${freezeId},'stop',${base!.end_on}::date - 5,${f.trainerA.userId},clock_timestamp())`;
+    const [before] = await tx`select app_private.f13_project_entitlement(
+      ${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as value`;
+    expect(before!.value).toMatchObject({ status: 'active' });
+    const result = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: target,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+    expect(result.status).toBe('ok');
+    const effectiveEnd = (
+      before!.value as {
+        effective_end_exclusive: string;
+      }
+    ).effective_end_exclusive;
+    const [targetTerms] = await tx`
+      select v.duration_days::integer, o.tier_rank::integer
+      from public.package_offers o
+      join public.package_versions v
+        on v.workspace_id=o.workspace_id and v.id=o.current_version_id
+      where o.workspace_id=${f.wsA.id} and o.id=${target}`;
+    const [baseTerms] = await tx`
+      select v.duration_days::integer, o.tier_rank::integer
+      from public.subscriptions s
+      join public.package_versions v
+        on v.workspace_id=s.workspace_id and v.id=s.package_version_id
+      join public.package_offers o
+        on o.workspace_id=v.workspace_id and o.id=v.offer_id
+      where s.workspace_id=${f.wsA.id} and s.id=${purchase.sid}`;
+    const [expected] = await tx`select
+      ((case when ${targetTerms!.tier_rank}::integer>${baseTerms!.tier_rank}::integer
+          and ${targetTerms!.duration_days}::integer<${baseTerms!.duration_days}::integer
+        then (clock_timestamp() at time zone 'Africa/Cairo')::date
+        else ${terms!.activated_on}::date end) + ${targetTerms!.duration_days}::integer
+        + greatest(0, ${effectiveEnd}::date - greatest(
+            (clock_timestamp() at time zone 'Africa/Cairo')::date,
+            ${base!.end_on}::date
+          )))::text as end_on`;
+    expect(
+      (result.receipt as Record<string, unknown>).service_end_exclusive,
+    ).toBe(expected!.end_on);
+    const [after] = await tx`select app_private.f13_project_entitlement(
+      ${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as value`;
+    expect(after!.value).toMatchObject({
+      effective_end_exclusive: expected!.end_on,
+      coverage_end_exclusive: expected!.end_on,
+    });
+  });
+});
+
+it('T042 records zero commission for an equal-price longer upgrade without additional revenue', async () => {
   const f = await clientContext();
   const purchase = await bought(f);
   const target = await targetOffer(f, {
@@ -816,7 +928,7 @@ it('T042 snapshots selected-version commission and permits an equal-price longer
       receipt: {
         credit_minor: '1200',
         additional_payment_minor: '0',
-        commission_rate_bp: 5000,
+        commission_rate_bp: 17,
         commission_minor: '0',
       },
     });
@@ -824,7 +936,7 @@ it('T042 snapshots selected-version commission and permits an equal-price longer
       await tx`select commission_rate_bp,additional_payment_minor::text,commission_minor::text
       from public.subscription_upgrades where subscription_id=${purchase.sid}`;
     expect(snapshot).toEqual({
-      commission_rate_bp: 5000,
+      commission_rate_bp: 17,
       additional_payment_minor: '0',
       commission_minor: '0',
     });
@@ -1379,7 +1491,7 @@ it('T045 refunds the original package plus upgrade charge and leaves a paid rene
     });
     expect(upgraded).toMatchObject({
       status: 'ok',
-      receipt: { additional_payment_minor: '650', commission_minor: '130' },
+      receipt: { additional_payment_minor: '650', commission_minor: '65' },
     });
     const [upgradeFact] = await tx`
       select id from public.subscription_upgrades
@@ -1425,7 +1537,7 @@ it('T045 refunds the original package plus upgrade charge and leaves a paid rene
       from public.refund_allocation_events where subscription_id=${purchase.sid}`;
     expect(allocation).toEqual({
       principal: '1400',
-      commission: '205',
+      commission: '140',
       allocations: 4,
       upgrade_allocations: 1,
       renewal_allocations: 0,
@@ -1460,8 +1572,8 @@ it('T045 refunds the original package plus upgrade charge and leaves a paid rene
     );
     expect(upgradeCommission).toMatchObject({
       event_id: upgradeFact!.id,
-      rate_bp: 2000,
-      commission_minor: '130',
+      rate_bp: 1000,
+      commission_minor: '65',
       source_upgrade_id: upgradeFact!.id,
     });
     const upgradeRefundCommission = commissionEvents.find(
@@ -1470,8 +1582,8 @@ it('T045 refunds the original package plus upgrade charge and leaves a paid rene
         event.source_upgrade_id === upgradeFact!.id,
     );
     expect(upgradeRefundCommission).toMatchObject({
-      rate_bp: 2000,
-      commission_minor: '-130',
+      rate_bp: 1000,
+      commission_minor: '-65',
     });
     const renewalCommission = commissionEvents.find(
       (event) => event.event_id === renewalCollectionEvent!.id,

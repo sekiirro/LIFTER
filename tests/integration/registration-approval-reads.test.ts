@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, it } from 'vitest';
+﻿import { afterAll, beforeAll, expect, it } from 'vitest';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -150,7 +150,7 @@ it('Q1 keeps the installed subscription payment status body equal to the latest 
       process.cwd(),
       'supabase',
       'migrations',
-      '20261111123000_f13_continuous_renewal.sql',
+      '20261111170858_f13_continuous_renewal.sql',
     ),
     'utf8',
   );
