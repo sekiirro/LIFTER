@@ -329,9 +329,15 @@ describe('ClientNotes behaviour', () => {
   });
 
   it('create: retry after failed result re-sends same key and body', async () => {
+    let requests = 0;
     const onCreate = vi.fn<
       (b: string, k: string) => Promise<{ status: string; error?: string }>
-    >(async () => ({ status: 'unavailable', error: 'boom' }));
+    >(async () => {
+      requests += 1;
+      return requests === 1
+        ? { status: 'unavailable', error: 'boom' }
+        : { status: 'denied', error: 'refused' };
+    });
     await render({
       locale: 'en',
       messages: mEn,
@@ -371,6 +377,36 @@ describe('ClientNotes behaviour', () => {
       idempotencyKey: onCreate.mock.calls[0]![1],
       retrySent: true,
     });
+  });
+
+  it('clears create recovery after a definite not-found result before Retry', async () => {
+    const onCreate = vi.fn(async () => ({ status: 'not_found' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+    });
+    const textarea = host!.querySelector('textarea')!;
+    await act(async () => setValue(textarea, 'deleted outcome'));
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(
+      dom!.window.sessionStorage.getItem(
+        'lifter-client-notes-pending-create:v1:workspace-1:client-1',
+      ),
+    ).toBeNull();
+    expect(
+      (host!.querySelector('textarea') as HTMLTextAreaElement).readOnly,
+    ).toBe(false);
   });
 
   it('keeps unresolved create recovery after the unknown-result exit discard', async () => {
@@ -535,6 +571,26 @@ describe('ClientNotes behaviour', () => {
       (copied.host.querySelector('textarea') as HTMLTextAreaElement).value,
     ).toBe('');
     expect(copied.dom.window.sessionStorage.getItem(key)).toBeNull();
+  });
+
+  it('starts a new tab without a pending create record', async () => {
+    const key = 'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate: vi.fn(async () => ({ status: 'ok' })),
+      canCreate: true,
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+    });
+    expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      '',
+    );
+    expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
+    expect(dom!.window.sessionStorage.getItem(key)).toBeNull();
   });
 
   it('create: proceeds when writing the pre-dispatch recovery record fails', async () => {
