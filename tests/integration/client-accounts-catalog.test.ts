@@ -313,6 +313,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
         [
           'record_refund',
           'record_renewal',
+          'record_subscription_upgrade',
           'record_subscription_date_adjustment',
         ].includes(fn.proname)
       ) {
