@@ -1400,6 +1400,14 @@ describe('T037 remaining workspace and identity contracts', () => {
       'utf8',
     );
     await db.unsafe(securityFix);
+    const effectiveNamesAndPagination = await readFile(
+      join(
+        process.cwd(),
+        'supabase/migrations/20261111205300_catalog_search_effective_names_and_variation_pagination.sql',
+      ),
+      'utf8',
+    );
+    await db.unsafe(effectiveNamesAndPagination);
     const searchBehaviorFix = await readFile(
       join(
         process.cwd(),

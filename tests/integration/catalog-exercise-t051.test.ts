@@ -30,15 +30,17 @@ async function asActor<T>(actorId: string, body: (tx: Tx) => Promise<T>) {
   });
 }
 
-async function createGlobal(videoUrl: string) {
+async function createGlobal(
+  videoUrl: string,
+  exerciseName = `T051 ${randomUUID()}`,
+) {
   return asActor(poId, async (tx) => {
-    const name = `T051 ${randomUUID()}`;
     const [row] = await tx`select public.catalog_create_exercise(
-      ${randomUUID()}, ${tx.json({ name_en: name, name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: videoUrl })}
+      ${randomUUID()}, ${tx.json({ name_en: exerciseName, name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: videoUrl })}
     ) as result`;
     const [selected] = await tx`select result_id from public.catalog_search(
-      'exercise', ${name}, '{"page_size":5}'::jsonb, null, ${workspaceAId}
-    ) where result_payload ->> 'name_en' = ${name}`;
+      'exercise', ${exerciseName}, '{"page_size":5}'::jsonb, null, ${workspaceAId}
+    ) where result_payload ->> 'name_en' = ${exerciseName}`;
     expect(selected?.result_id).toBe(
       (row!.result as { exercise_id: string }).exercise_id,
     );
@@ -172,13 +174,14 @@ describe('T051 internal resolver boundary and current Video reads', () => {
     const changedGlobal = 'https://youtu.be/BBBBBBBBBBB';
     const firstOverride = 'https://youtu.be/CCCCCCCCCCC';
     const changedOverride = 'https://youtu.be/DDDDDDDDDDD';
-    const exerciseId = await createGlobal(firstGlobal);
+    const exerciseName = `T051 current Video ${randomUUID()}`;
+    const exerciseId = await createGlobal(firstGlobal, exerciseName);
     await writeOverride(exerciseId, firstOverride, 0);
 
     const readVideo = async () =>
       asActor(trainerAId, async (tx) => {
         const [row] = await tx`select result_payload
-        from public.catalog_search('exercise', null, '{}'::jsonb, null, ${workspaceAId})
+        from public.catalog_search('exercise', ${exerciseName}, '{"page_size":5}'::jsonb, null, ${workspaceAId})
         where result_id = ${exerciseId}`;
         return row?.result_payload.effective_fields.video;
       });
@@ -201,7 +204,7 @@ describe('T051 internal resolver boundary and current Video reads', () => {
     await asActor(
       poId,
       (tx) => tx`select public.catalog_version_exercise(
-      ${exerciseId}, 1, ${randomUUID()}, ${tx.json({ name_en: 'T051 versioned', name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: changedGlobal })}
+      ${exerciseId}, 1, ${randomUUID()}, ${tx.json({ name_en: exerciseName, name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: changedGlobal })}
     )`,
     );
     expect(await readVideo()).toEqual({
