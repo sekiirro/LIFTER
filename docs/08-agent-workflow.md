@@ -65,7 +65,7 @@ Route according to task complexity, security risk, model capability, and quota (
 
 ## Controlled Parallel Development
 
-- Use at most eight concurrent delegated agents (the orchestrating architect is not counted), of which at most five may write to pull requests at the same time (S37-PO-15). On-demand slots include the PO-approved Sol Medium critique, which keeps its per-invocation PO approval.
+- Use at most nine concurrent delegated agents (the orchestrating architect is not counted), of which at most five may write to pull requests at the same time (S48-R28). On-demand slots include the PO-approved Sol Medium critique, which keeps its per-invocation PO approval.
 - Each writer gets an isolated worktree and branch. Writers edit disjoint files and do not share a
   branch.
 - Only one writer may hold a stack lock for Docker or Supabase operations that start, stop, restart,

@@ -94,7 +94,6 @@ AI-F12-1..7 in plan.md are the complete remaining technical/dependency register 
 
 Conflicts for PO: none requiring new policy. Final decisions expressly settle custom-offset/default, correction-month and F12 status/P2 intake boundaries. Existing older Sales-approval wording is superseded by ND-F12-1/D-23. Historical debate text stays historical; former PA alternatives are not approved or executable defaults. F11 PR #14 is not merged in this session.
 
-
 ## Session 12 — final F11 reconciliation (T001)
 
 PR #14 reviewed head `12036e26fb5e23da22af4ddf0e8d33de800779a2` merged as
@@ -111,7 +110,7 @@ and purge scheduling migrations introduce no replacement audit body. Latest main
 `20261031130000_purge_scheduling_pg_cron.sql`. The four U2–U5 F12 migrations run
 from `20261101120000_registration_approval_model.sql` through
 `20261101123000_registration_approval_reads.sql`, strictly after it. The planned
-U1F wrapper migration is `20261101124000_flexible_registration_link_terms.sql`,
+U1F wrapper migration is `20261101131000_flexible_registration_link_terms_forward.sql`,
 after those four migrations.
 
 Session-12 architect/user instruction supersedes historical Stack-B prerequisites:
@@ -128,7 +127,6 @@ admission and recovery behavior remain authoritative. No new F11/F12 product
 policy conflict was found; the historical claim that PR #14 is unmerged and the
 B-only execution assumption above are superseded by these recorded facts.
 
-
 ## U3 architect carry-forward (accepted U2)
 
 `f12_guard_client_transition` intentionally blocks every clients UPDATE except
@@ -142,7 +140,6 @@ these functions. PO's global membership bypass does not prove workspace existenc
 Every U3 authorization path joins an existing `public.workspaces` row, and returns
 the same `not_permitted` response for nonexistent and foreign targets. Authorization
 is repeated after target and operation-key waits before any receipt disclosure.
-
 
 ### U3 observed U2 subtransaction compatibility correction
 

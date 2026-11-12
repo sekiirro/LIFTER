@@ -114,14 +114,14 @@
 ### Implementation and release evidence — GREEN
 
 - [x] T038 [U09] Configure required Storage-enabled CI lane with readiness gate, direct API bucket/path tests, isolated fixtures, zero allowed skips, and F11 denial coverage. **Owner files**: `.github/workflows/ci.yml`, agreed runner/config paths. **DB: local root profile; Storage: enabled; CI stack: root.** Evidence: CI uses the root profile, gates Storage readiness, runs F11's pending-client test and enforces zero skips; local forced-skip mutation fails the guard. Local end-to-end verification ran against Stack B. Hosted CI is unavailable while the repo is private.
-- [ ] T039 [U09] Run capacity model for up to two current assets/workspace, draft/staging, workspace count and no-store egress against verified Storage allowances and 70% exit trigger; benchmark worst-case CPU/memory and record source/evidence. **Owner files**: `specs/014-workspace-branding/quickstart.md`, approved evidence artifact path. **DB: none; Storage: estimates; Stack: none.**
-- [ ] T040 [U09] Demonstrate Storage backup/restore and independently verify audit retention; retain results as production-blocker evidence. **Owner files**: approved recovery evidence artifact only. **DB: B for linked metadata/audit checks; Storage: enabled and restored; Stack: B.**
-- [ ] T041 [U09] Run the complete Q-M01..Q-M30 matrix from quickstart on isolated stack B, confirm zero skipped Storage checks, state restoration, and collect CI run IDs/evidence. **Owner files**: `tests/integration/branding-storage-verification.md`, test result artifacts. **DB: B; Storage: enabled; Stack: B.**
+- [ ] T039 [U09] Run capacity model for up to two current assets/workspace, draft/staging, workspace count and no-store egress against verified Storage allowances and 70% exit trigger; benchmark worst-case CPU/memory and record source/evidence. **Owner files**: `specs/014-workspace-branding/quickstart.md`, approved evidence artifact path. **DB: none; Storage: estimates; Stack: none.** FR-009, FR-017; SC-010.
+- [ ] T040 [U09] Demonstrate Storage backup/restore and independently verify audit retention; retain results as production-blocker evidence. **Owner files**: approved recovery evidence artifact only. **DB: B for linked metadata/audit checks; Storage: enabled and restored; Stack: B.** FR-014, FR-017, FR-018; SC-010.
+- [ ] T041 [U09] Run the complete Q-M01..Q-M30 matrix from quickstart on isolated stack B, confirm zero skipped Storage checks, state restoration, and collect CI run IDs/evidence. **Owner files**: `tests/integration/branding-storage-verification.md`, test result artifacts. **DB: B; Storage: enabled; Stack: B.** FR-011, FR-017, FR-018; SC-007, SC-009, SC-010.
 
 ## Phase 8: Conditional P4 contract and final integration
 
 - [x] T042 [U10] Add the brand data/token contract test first (RED), then implement only the contract definition and nonfunctional Client Portal preview placeholder. Do not implement or modify P4/Client Portal behavior even if P4 exists. **Owner files**: `lib/branding/portal-contract.ts`, associated contract tests and placeholder component only. **DB: none beyond authorized projection contract; Storage: none; Stack: none.** Evidence: contract/placeholder tests RED before component existed, then GREEN; preview is static, published-only, no Client Portal behavior. Design gate evidence in report.
-- [ ] T043 [U00/U09] Reconcile final F11 changes and migration order; rerun required stack-B Storage lane with no skips, UI gate, format/lint and `git diff --check`; collect run IDs and evidence before production approval. **Owner files**: feature-owned integration and evidence files. **DB: B; Storage: enabled; Stack: B.**
+- [ ] T043 [U00/U09] Reconcile final F11 changes and migration order; rerun required stack-B Storage lane with no skips, UI gate, format/lint and `git diff --check`; collect run IDs and evidence before production approval. **Owner files**: feature-owned integration and evidence files. **DB: B; Storage: enabled; Stack: B.** FR-001..FR-018; SC-001..SC-011.
 
 ## Phase 9: Restricted Storage identities and proxy acceptance gates
 
@@ -155,24 +155,24 @@
 
 ### Remaining open tasks and blockers
 
-| Task | Blocker / remaining work |
-| --- | --- |
-| T004 | Complete: F14-owned CI contract tests cover required F11 denial runner/report; no F11-owned files changed. |
-| T019 | Complete: publication RED/GREEN and six required reversible mutations are recorded in s17-r3 evidence. |
-| T020 | Complete: current F11 audit mapping compatibility RED/GREEN and mapping-drop mutation are recorded in s17-r3 evidence. |
-| T021 | Complete: permanent detached audit retention and privacy tests pass on fresh Stack B. |
-| T022 | Complete: extension migration `20261102139000` is after main's final migration and preserves F11 mappings. |
-| T023 | Complete: serialized, CAS-checked atomic publish/no-op/rollback behavior and mutations pass on fresh Stack B. |
-| T027 | Green published-only implementation evidence is recorded. RED evidence is unit-level, not Stack-B integration; see report. Function-body mutation was denied by function ownership and was not attempted with elevated grants. |
+| Task | Blocker / remaining work                                                                                                                                                                                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T004 | Complete: F14-owned CI contract tests cover required F11 denial runner/report; no F11-owned files changed.                                                                                                                                                                               |
+| T019 | Complete: publication RED/GREEN and six required reversible mutations are recorded in s17-r3 evidence.                                                                                                                                                                                   |
+| T020 | Complete: current F11 audit mapping compatibility RED/GREEN and mapping-drop mutation are recorded in s17-r3 evidence.                                                                                                                                                                   |
+| T021 | Complete: permanent detached audit retention and privacy tests pass on fresh Stack B.                                                                                                                                                                                                    |
+| T022 | Complete: extension migration `20261102139000` is after main's final migration and preserves F11 mappings.                                                                                                                                                                               |
+| T023 | Complete: serialized, CAS-checked atomic publish/no-op/rollback behavior and mutations pass on fresh Stack B.                                                                                                                                                                            |
+| T027 | Green published-only implementation evidence is recorded. RED evidence is unit-level, not Stack-B integration; see report. Function-body mutation was denied by function ownership and was not attempted with elevated grants.                                                           |
 | T030 | Complete: registration surface, approved Stack-B uploaded/published image fixture, 12 loaded-image geometry/axe cases, decoded dimensions, form separation and CLS evidence are recorded in `tests/integration/evidence/f14-ui/loaded-banner-geometry.json` and the S16 evidence report. |
-| T031 | Complete: persisted editor save/publish flow, current-only publication display, workspace switching and editor/preview e2e contracts are recorded in the S16 evidence report and `tests/e2e/branding-production-ui.spec.ts`. |
-| T037 | Complete: F14 contract requires the F11 Storage denial test/report; no F11-owned file changed. |
-| T038 | Complete locally: readiness-gated Storage CI lane uses the root profile, isolated fixtures, and a hard zero-skip check; hosted execution unavailable while repository is private. |
-| T039 | Verified Storage plan allowances and capacity source/evidence are missing; no allowance values are assumed. |
-| T040 | Approved recovery-evidence artifact path and Stack-B Storage backup/restore proof are missing. |
-| T041 | The complete Q-M01..Q-M30 acceptance matrix and recorded CI/run artifacts are not complete; the broad integration suite is not a substitute for this matrix. |
-| T042 | Complete: static published-brand placeholder and contract pass; see T035 design-gate evidence in s17-r3 report. |
-| T043 | Production/release blocker: full Q-M01..Q-M30 isolated Storage matrix, hosted CI run IDs, complete state restoration, and backup/restore evidence are not available; related T039–T041 remain open. |
+| T031 | Complete: persisted editor save/publish flow, current-only publication display, workspace switching and editor/preview e2e contracts are recorded in the S16 evidence report and `tests/e2e/branding-production-ui.spec.ts`.                                                             |
+| T037 | Complete: F14 contract requires the F11 Storage denial test/report; no F11-owned file changed.                                                                                                                                                                                           |
+| T038 | Complete locally: readiness-gated Storage CI lane uses the root profile, isolated fixtures, and a hard zero-skip check; hosted execution unavailable while repository is private.                                                                                                        |
+| T039 | Verified Storage plan allowances and capacity source/evidence are missing; no allowance values are assumed.                                                                                                                                                                              |
+| T040 | Approved recovery-evidence artifact path and Stack-B Storage backup/restore proof are missing.                                                                                                                                                                                           |
+| T041 | The complete Q-M01..Q-M30 acceptance matrix and recorded CI/run artifacts are not complete; the broad integration suite is not a substitute for this matrix.                                                                                                                             |
+| T042 | Complete: static published-brand placeholder and contract pass; see T035 design-gate evidence in s17-r3 report.                                                                                                                                                                          |
+| T043 | Production/release blocker: full Q-M01..Q-M30 isolated Storage matrix, hosted CI run IDs, complete state restoration, and backup/restore evidence are not available; related T039–T041 remain open.                                                                                      |
 
 ### F14b — owner-facing upload and alt-text editor (PO-approved deferral)
 
@@ -198,33 +198,33 @@ Start F14b immediately after F14 merges, in parallel with F13/F15. F14b complete
 - **Full suites: PASS.** After the final fresh reset, the established local Vault fixture provisioner ran for the integration prerequisites. `npm test`: 70 files, 1421 passed, 0 failed, 0 skipped. `LIFTER_SUPABASE_STACK=b npm run test:integration`: 33 files, 32 passed, 1 skipped; 920 passed, 0 failed, 2 skipped.
 - **Stack A/C isolation: PASS.** Captured before and after with `docker ps --format` only; no CLI, query, start, stop, reset, or other operation targeted either stack. Container IDs, ports, and statuses were unchanged (elapsed uptime aside). A's `supabase_vector_lifter` was already `Restarting (0)` before and remained so.
 
-| Stack A container | ID | Ports | Status before / after |
-| --- | --- | --- | --- |
-| `supabase_db_lifter` | `907b4a66c306` | `54322:5432` | healthy / healthy |
-| `supabase_studio_lifter` | `08e2daabebd1` | `54323:3000` | healthy / healthy |
-| `supabase_pg_meta_lifter` | `8135ec9aafe7` | `8080/tcp` | Up / Up |
-| `supabase_edge_runtime_lifter` | `2f018f0d539f` | none | Up / Up |
-| `supabase_storage_lifter` | `24d9c7a70c7f` | `5000/tcp` | healthy / healthy |
-| `supabase_rest_lifter` | `4e3b3e548565` | `3000/tcp` | Up / Up |
-| `supabase_realtime_lifter` | `5fa68117ec03` | `4000/tcp` | healthy / healthy |
-| `supabase_inbucket_lifter` | `6ab10d9d5744` | `54324:8025`, `54325:1025`, `54326:1110` | healthy / healthy |
-| `supabase_auth_lifter` | `7145a5a226e0` | `9999/tcp` | healthy / healthy |
-| `supabase_kong_lifter` | `c1b8f21208b6` | `54321:8000` | healthy / healthy |
-| `supabase_vector_lifter` | `62fc97d17240` | none | Restarting (0) / Restarting (0) |
-| `supabase_analytics_lifter` | `ad57b43ece15` | `54327:4000` | healthy / healthy |
+| Stack A container              | ID             | Ports                                    | Status before / after           |
+| ------------------------------ | -------------- | ---------------------------------------- | ------------------------------- |
+| `supabase_db_lifter`           | `907b4a66c306` | `54322:5432`                             | healthy / healthy               |
+| `supabase_studio_lifter`       | `08e2daabebd1` | `54323:3000`                             | healthy / healthy               |
+| `supabase_pg_meta_lifter`      | `8135ec9aafe7` | `8080/tcp`                               | Up / Up                         |
+| `supabase_edge_runtime_lifter` | `2f018f0d539f` | none                                     | Up / Up                         |
+| `supabase_storage_lifter`      | `24d9c7a70c7f` | `5000/tcp`                               | healthy / healthy               |
+| `supabase_rest_lifter`         | `4e3b3e548565` | `3000/tcp`                               | Up / Up                         |
+| `supabase_realtime_lifter`     | `5fa68117ec03` | `4000/tcp`                               | healthy / healthy               |
+| `supabase_inbucket_lifter`     | `6ab10d9d5744` | `54324:8025`, `54325:1025`, `54326:1110` | healthy / healthy               |
+| `supabase_auth_lifter`         | `7145a5a226e0` | `9999/tcp`                               | healthy / healthy               |
+| `supabase_kong_lifter`         | `c1b8f21208b6` | `54321:8000`                             | healthy / healthy               |
+| `supabase_vector_lifter`       | `62fc97d17240` | none                                     | Restarting (0) / Restarting (0) |
+| `supabase_analytics_lifter`    | `ad57b43ece15` | `54327:4000`                             | healthy / healthy               |
 
-| Stack C container | ID | Ports | Status before / after |
-| --- | --- | --- | --- |
-| `supabase_db_lifter-stack-c` | `204d352b06d9` | `35422:5432` | healthy / healthy |
-| `supabase_studio_lifter-stack-c` | `5fba3e79c38b` | `35423:3000` | healthy / healthy |
-| `supabase_pg_meta_lifter-stack-c` | `52fc47e0bb01` | `8080/tcp` | healthy / healthy |
-| `supabase_edge_runtime_lifter-stack-c` | `4f9bab92c483` | none | Up / Up |
-| `supabase_storage_lifter-stack-c` | `2809399aaf25` | `5000/tcp` | healthy / healthy |
-| `supabase_rest_lifter-stack-c` | `3651fa32ec03` | `3000/tcp` | Up / Up |
-| `supabase_realtime_lifter-stack-c` | `596680f85e72` | `4000/tcp` | healthy / healthy |
-| `supabase_inbucket_lifter-stack-c` | `fc99c3ba902f` | `35424:8025`, `35425:1025`, `35426:1110` | healthy / healthy |
-| `supabase_auth_lifter-stack-c` | `31cc3f43e428` | `9999/tcp` | healthy / healthy |
-| `supabase_kong_lifter-stack-c` | `36c5d72129f9` | `35421:8000` | healthy / healthy |
+| Stack C container                      | ID             | Ports                                    | Status before / after |
+| -------------------------------------- | -------------- | ---------------------------------------- | --------------------- |
+| `supabase_db_lifter-stack-c`           | `204d352b06d9` | `35422:5432`                             | healthy / healthy     |
+| `supabase_studio_lifter-stack-c`       | `5fba3e79c38b` | `35423:3000`                             | healthy / healthy     |
+| `supabase_pg_meta_lifter-stack-c`      | `52fc47e0bb01` | `8080/tcp`                               | healthy / healthy     |
+| `supabase_edge_runtime_lifter-stack-c` | `4f9bab92c483` | none                                     | Up / Up               |
+| `supabase_storage_lifter-stack-c`      | `2809399aaf25` | `5000/tcp`                               | healthy / healthy     |
+| `supabase_rest_lifter-stack-c`         | `3651fa32ec03` | `3000/tcp`                               | Up / Up               |
+| `supabase_realtime_lifter-stack-c`     | `596680f85e72` | `4000/tcp`                               | healthy / healthy     |
+| `supabase_inbucket_lifter-stack-c`     | `fc99c3ba902f` | `35424:8025`, `35425:1025`, `35426:1110` | healthy / healthy     |
+| `supabase_auth_lifter-stack-c`         | `31cc3f43e428` | `9999/tcp`                               | healthy / healthy     |
+| `supabase_kong_lifter-stack-c`         | `36c5d72129f9` | `35421:8000`                             | healthy / healthy     |
 
 ## Dependencies and execution order
 
