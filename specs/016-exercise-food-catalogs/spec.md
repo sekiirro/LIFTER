@@ -45,6 +45,7 @@ Coaching staff see one shared global exercise catalog in every authorized worksp
 
 11. **Given** the workspace editor has selected Alternatives across multiple search pages, **When** staff search, paginate, or clear a query, **Then** each selected target remains selected and available even when it is outside the current result page; search is authorized and returns no more than 50 rows per keyset page (FR-025; S49-PO-3; implementation mapping S49-R9).
 12. **Given** Notes or a stored Video text reference contains 2,000 characters, **When** an authorized editor saves it, **Then** it is accepted unchanged; **When** it contains 2,001 characters, **Then** editing, normalization, and database validation reject it without truncation. **Given** pre-existing stored values exceed the limit, **When** the cap migration runs, **Then** it raises with the count and leaves all rows unchanged (FR-003, FR-031; SC-020; S49-PO-3).
+
 ### User Story 3 - Add foods directly to the global food database (Priority: P1)
 
 Any staff member with `coaching_work` adds a food to the global database immediately (no moderation queue), with structured nutrition per reference quantity and serving units. Validation and duplicate detection prevent invalid or duplicate entries without bureaucracy.
@@ -199,6 +200,7 @@ A global workout template keeps canonical exercise identity. Client access remai
 
 - **SC-019** In picker tests with more than 50 candidates and selected targets outside the active query/page, search uses authorized server-side keyset pagination capped at 50 rows, debounces input, fetches selected IDs explicitly, and preserves the selected set across query/page changes; unauthorized search and ID fetch return no foreign-workspace data.
 - **SC-020** Notes and stored Video text references accept exactly 2,000 characters and reject 2,001 in editor validation, read normalization, and every database write validator. Inventory reports zero over-limit values on every used local stack and CI fresh DB; migration mutation with an over-limit fixture raises with the count, writes nothing, and no code truncates stored values.
+
 ## Approved PO decisions
 
 D16-1a/b/c and D16-2 through D16-10 for the existing catalog/food scope are approved and recorded in docs/04-changes-and-questions.md, S20-03 through S20-13. The PO dataset is a future input; audit it and obtain import approval when supplied. Do not invent food values or exercise content. S36-PO-2 answers F16-MCQ-1, -3, -4, -5 and -6 (F16-MCQ-2 and -7 are moot), recorded in `decision-register.md`. S36-PO-3 answers F16-MCQ-A, -B, -C, -D, -E, -F (workspace name field), -G, -H, -I and -9 (see `decision-register.md`, S36-PO-3). F16-MCQ-J/K/L are answered by S36-PO-5 (exactly eight local fields; Instructions removed and unique data preserved into Notes). S37-PO-1 Q2 and S37-PO-10 close F16-MCQ-O, -P, -Q, -F-R and -G-R. F16-MCQ-D-R is outside F16 scope; its F11/F12 follow-up is pending as a separate lane. No product ambiguities remain open in F16; A7 is dispositioned by S38 round 7 under S37-PO-11 (see Clarifications).

@@ -884,6 +884,7 @@ T900 has been marked complete only after its focused integration test passed on 
 **Copy/design/data retention:** PASS — no new user-visible string is required; reuse existing approved Notes/Video validation copy. No data retention/deletion decision is changed. UI behavior stays within approved Design System patterns; visual/empty/error/loading strings must use existing bilingual messages.
 
 **Findings:** 0 open CRITICAL, 0 open HIGH. Implementation remains contingent on inventory, tests-first RED/GREEN and mutation evidence required by T091. This is an analysis record, not evidence that implementation or tests have passed.
+
 ## 2026-11-12 — S49 F16 T091 completion re-analysis
 
 **Scope:** T091 completion evidence/status only; approved requirements remain FR-003, FR-025, FR-026 and FR-031.
@@ -893,9 +894,18 @@ T900 has been marked complete only after its focused integration test passed on 
 - Data safety and permissions: PASS — Stack A audit is zero over-limit values; migration fails closed and never truncates; authorization precedes picker search/detail RPCs.
 - Ambiguities: none open within T091 scope.
 - Findings: 0 open CRITICAL, 0 open HIGH.
+
 ## 2026-11-12 — T091 status cross-reference recheck
 
 T091 is marked verified only after the passing committed-head checks recorded in `traceability.md`. The stale “after new Analyze and data inventory” status is removed. T091, FR-003/025/026/031 and the cited test/evidence row agree. Entry check remains PASS; 0 open CRITICAL/HIGH; no open ambiguities.
+
 ## 2026-11-12 — T091 hostile-review concurrency recheck
 
 A hostile pass found that a pending next-page response could append results after the search query changed. Added delayed-response tests for both authoring and override pickers; both failed before the guard and pass afterward. A current search key now gates page success, error, and loading updates. No product behavior/copy changed. T091/FR-025/FR-026 cross-references remain aligned. No open ambiguities; 0 open CRITICAL/HIGH findings.
+
+## 2026-11-12 03:36 UTC � post-format and CI reconciliation analysis
+
+- Entry check: PASS. FR/SC/GWT/plan/task cross-references remain intact; S49-PO-3 remains byte-exact; S49-R9 remains labeled as architect mapping. No product ambiguity or new copy was introduced by formatting normalization.
+- Scope revalidation: Prettier normalization changes formatting only in the existing F16 spec, plan, tasks, decision register, traceability, and analysis artifacts. It does not change requirement meaning, acceptance behavior, permissions, defaults, retention, or user-visible copy.
+- CI inventory revalidation: the new `app_private.catalog_assert_exercise_text_limits()` helper is invoker-rights, owned by `postgres`, has an empty `search_path`, and revokes EXECUTE from `public`, `anon`, `authenticated`, and `service_role`. The RLS catalog integration inventory now explicitly asserts that function's presence, invoker status, and lack of authenticated/service-role execution. No migration change and no data rewrite.
+- Remaining findings: 0 open CRITICAL/HIGH. The formatter and inventory gaps are technical corrections within approved T091 scope.

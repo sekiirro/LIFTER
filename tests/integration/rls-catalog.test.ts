@@ -224,6 +224,7 @@ describe('tenancy security catalog (T007)', () => {
         'audit_events_immutable',
         'audit_row_change',
         'apply_food_default_alternatives',
+        'catalog_assert_exercise_text_limits',
         'catalog_can_read_global',
         'catalog_create_food_legacy',
         'catalog_effective_exercise_fields',
@@ -284,6 +285,7 @@ describe('tenancy security catalog (T007)', () => {
       const expectedDefiner = ![
         'audit_events_immutable',
         'branding_actor_id',
+        'catalog_assert_exercise_text_limits',
         'forbid_delete',
         'jobs_updated_at',
         'normalize_ar_en_v1',
@@ -308,8 +310,13 @@ describe('tenancy security catalog (T007)', () => {
             : 'postgres'),
       );
       expect(row.anon_execute).toBe(false);
-      if (row.proname === 'signup_auth_identity_column') {
-        // 20261108230000 revokes EXECUTE from PUBLIC, anon, authenticated, and service_role.
+      if (
+        [
+          'signup_auth_identity_column',
+          'catalog_assert_exercise_text_limits',
+        ].includes(row.proname)
+      ) {
+        // These internal helpers revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
         expect(row.service_role_execute, row.proname).toBe(false);
       }
       expect(row.authenticated_execute, row.proname).toBe(
@@ -331,6 +338,7 @@ describe('tenancy security catalog (T007)', () => {
               'apply_food_default_alternatives',
               'audit_events_immutable',
               'audit_row_change',
+              'catalog_assert_exercise_text_limits',
               'catalog_create_food_legacy',
               'catalog_food_duplicate_exists',
               'catalog_food_writer_authorized',
