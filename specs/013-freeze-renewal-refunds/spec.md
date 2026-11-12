@@ -942,6 +942,7 @@ S51-PO-1 supersedes the S50-PO-6 answer `F13=C` (source `C:/Users/NEW LAP/.lifte
 
 **S51-PO-5 decision record (verbatim):**
 
+<!-- prettier-ignore -->
 ```text
 F13 11 b 
 merge #91 at 700819c2e4b7c4f5f25fd780c4afbc0e2b4a020d

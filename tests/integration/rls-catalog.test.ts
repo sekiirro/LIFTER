@@ -246,6 +246,8 @@ describe('tenancy security catalog (T007)', () => {
         'f13_guard_subscription_upgrade',
         'f13_materialize_entitlement',
         'f13_project_entitlement',
+        // Created by 20261112175511_f13_review_integrity_corrections.sql.
+        'f13_validate_productivity_point',
         'f13_audit_client_deactivation',
         'guard_membership_update',
         'guard_package_offer_update',
@@ -360,6 +362,9 @@ describe('tenancy security catalog (T007)', () => {
               'validate_food_request',
             ].includes(row.proname)),
       );
+      if (row.proname === 'f13_validate_productivity_point') {
+        expect(row.service_role_execute, row.proname).toBe(false);
+      }
     }
   });
 });

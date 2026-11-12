@@ -301,7 +301,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-11 remains the only PO-decision question; no disposition was introduced.
 - Verdict: PASS; no behavior or product decision changed.
 
-## S51-PO-5 compatibility-field and review-fix re-analysis — 2026-11-12T18:17:23Z
+## S51-PO-5 compatibility-field and review-fix re-analysis ï¿½ 2026-11-12T18:17:23Z
 
 - Entry gate: PASS. `spec.md` has numbered FR-043, measurable SC-036, the GWT scenario for successful upgrade receipt and explicit decision register; `plan.md`, FR-tagged T048 in `tasks.md`, contract, and traceability cover the touched receipt scope. This entry follows the latest spec/plan/task edits.
 - Decision record: S51-PO-5 is copied byte-exact in `spec.md` with source path and SHA-256 `ccfe05c2e10d36f3a77ebcd6a69e9645721facc5ce176df79468c88c41575eee`. It resolves MCQ-11: retain all six compatibility fields. The successful integration test now asserts those fields.
@@ -310,7 +310,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL, 0 open HIGH within the authorized scope. PO-decision-needed: MCQ-12, independent renewal-purchase refund selection only.
 - Verdict: PASS for S51-PO-5 receipt compatibility and review corrections; T044 remains untouched.
 
-## S51-PO-5 and CodeRabbit follow-up analysis — 2026-11-12T18:39:29Z
+## S51-PO-5 and CodeRabbit follow-up analysis ï¿½ 2026-11-12T18:39:29Z
 
 - Entry gate: PASS after the final receipt edits. `spec.md` contains numbered FR-043, measurable SC-036, and GWT scenario 18 including all six compatibility fields; Clarifications includes byte-exact S51-PO-5 source/hash and explicit remaining MCQ-12. Plan, T048 and the lifecycle contract align; this Analyze entry follows the last spec/plan/task edits.
 - PO resolution: MCQ-11 is resolved by S51-PO-5. The six fields are in the scenario, SC-036, contract, task, and decision register. Earlier Analyze entries that called MCQ-11 open are historical and superseded by this entry. T044 remains P4/open and FR-041 PARTIAL.
@@ -318,3 +318,19 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Projector review: full selected Stack C run initially failed only `freeze-lifecycle.test.ts::T008 Remove preserves the Cairo day on which its fact is recorded` after term bounds excluded the latest-term removal. The forward migration now bounds removal events by the next renewal's effective start, or infinity when no later renewal exists. Focused freeze/manual-date run passed 23/23 assertions, including T008; the shell returned 1 because of stderr warning handling, so a clean full-suite exit is still required. A further full run is waiting for active Playwright/Next processes in a separate `LFTR-s45-f16` worktree to finish.
 - Findings: 0 open CRITICAL, 0 open HIGH within this analysis. PO-DECISION-NEEDED S51-F13-MCQ-12 only.
 - Verdict: PASS for requirement coherence and technical correction; final 27-file Stack C validation remains pending.
+
+## S51-R36 traceability reconciliation - 2026-11-12T20:56:26Z
+
+- T007 inventory fix: the new `app_private.f13_validate_productivity_point` entry cites its creating migration. The shared loop checks each inventoried function's SECURITY DEFINER expectation, empty search path, postgres owner, anon execute denial, and expected authenticated privilege; the new helper additionally asserts service_role execute denial. Focused T007 passes 34/34. Granting EXECUTE to authenticated caused the expected T007 failure; revoking restored 34/34.
+- T048/FR-043 reconciliation: SC-036 receipt/success behavior remains verified. SC-035 remains partial because post-lock pending/in-flight refusal lacks behavioral assertion. T048 is unticked and its final FR-043 traceability row is PARTIAL; no requirement or refund behavior changed.
+- Branding investigation: base CI run 43285908045 succeeded including shard 1; PR #88's diff has no branding/storage paths. Full Stack C shard 1 passed 53 suites / 299 tests (1 skipped) with no new failure IDs. Earlier missing-JWT local setup attempts were corrected by safe Stack C status environment injection.
+- S51-F13-MCQ-12 remains with the PO; renewal refund selection is unchanged. No product ambiguity was introduced by this correction.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for catalog inventory and T048/FR-043 status reconciliation.
+
+## S51-R36 post-format re-analysis - 2026-11-12T20:57:42Z
+
+- The only spec edit after the prior analysis preserves the byte-exact S51-PO-5 verbatim code block while making the formatter directive explicit. No requirement text, scope, or product decision changed. T048 remains unticked and FR-043 PARTIAL pending behavioral post-lock payment refusal evidence.
+- The changed-file formatter passes for all six changed Markdown files. The S51-R36 inventory test passed within Stack C shard 1 (53 suites, 299 passed, 1 skipped); authenticated-EXECUTE mutation caused T007 to fail and the restored catalog passed 34/34. Unit 381 suites / 2,526 tests pass; lint and typecheck pass.
+- Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-12 remains with the PO and refund-selection behavior is unchanged.
+- Verdict: PASS for the authorized review correction.
