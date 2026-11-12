@@ -117,7 +117,7 @@ export function ClientNotes(props: ClientNotesProps) {
           setDraft('');
           setIdempotencyKey(null);
         } else {
-          setSaveError(res?.error ?? m['clientNotes.saveError']);
+          setSaveError(m['clientNotes.saveError']);
         }
       } catch {
         setSaveError(m['clientNotes.saveError']);
@@ -144,7 +144,7 @@ export function ClientNotes(props: ClientNotesProps) {
           setEditingId(null);
           setEditDraft('');
         } else {
-          setSaveError(res?.error ?? m['clientNotes.saveError']);
+          setSaveError(m['clientNotes.saveError']);
         }
       } catch {
         setSaveError(m['clientNotes.saveError']);
@@ -161,7 +161,7 @@ export function ClientNotes(props: ClientNotesProps) {
       try {
         const res = await props.onDelete?.(noteId);
         if (res?.status !== 'ok') {
-          setSaveError(res?.error ?? m['clientNotes.deleteError']);
+          setSaveError(m['clientNotes.deleteError']);
         }
       } catch {
         setSaveError(m['clientNotes.deleteError']);

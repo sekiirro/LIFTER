@@ -256,6 +256,8 @@ describe('ClientNotes behaviour', () => {
     expect(onCreate).toHaveBeenCalledTimes(2);
     expect(onCreate.mock.calls[1]![1]).toBe(onCreate.mock.calls[0]![1]);
     expect(onCreate.mock.calls[1]![0]).toBe('hello');
+    expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
+    expect(host!.textContent).not.toContain('boom');
   });
 
   it('create: after success a new key is used', async () => {
@@ -340,7 +342,8 @@ describe('ClientNotes behaviour', () => {
       resolveCreate?.({ status: 'error', error: 'boom' });
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(host!.textContent).toContain('boom');
+    expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
+    expect(host!.textContent).not.toContain('boom');
   });
 
   it('pending: submit disabled while saving', async () => {
@@ -382,13 +385,20 @@ describe('ClientNotes behaviour', () => {
   });
 
   it('timestamps rendered in local time', async () => {
+    const previousTimeZone = process.env.TZ;
+    process.env.TZ = 'America/Los_Angeles';
     const note = {
       id: 'n1', workspace_id: 'w', client_id: 'c', author_user_id: 'u1',
       body: 'hello', created_at: '2026-11-08T10:15:00Z', edited_at: null,
     };
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [note], role: 'trainer', actorId: 'u1', canCreate: true });
-    expect(host!.innerHTML).not.toContain('2026-11-08T10:15:00Z');
-    expect(host!.textContent).toContain('Nov');
+    try {
+      await render({ locale: 'en', messages: mEn, status: 'ready', notes: [note], role: 'trainer', actorId: 'u1', canCreate: true });
+      expect(host!.innerHTML).not.toContain('2026-11-08T10:15:00Z');
+      expect(host!.textContent).toContain('Nov 8, 2026, 2:15 AM');
+    } finally {
+      if (previousTimeZone === undefined) delete process.env.TZ;
+      else process.env.TZ = previousTimeZone;
+    }
   });
 
   it('edit editor: unsaved exit protection keeps/clears text', async () => {
@@ -440,6 +450,25 @@ describe('ClientNotes behaviour', () => {
       resolveUpdate?.({ status: 'error', error: 'boom' });
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(host!.textContent).toContain('boom');
+    expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
+    expect(host!.textContent).not.toContain('boom');
+  });
+
+  it('delete failures use approved generic copy only', async () => {
+    const note = {
+      id: 'n1', workspace_id: 'w', client_id: 'c', author_user_id: 'u1',
+      body: 'hello', created_at: '2026-11-08T10:15:00Z', edited_at: null,
+    };
+    const onDelete = vi.fn(async () => ({ status: 'error', error: 'database secret' }));
+    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [note], role: 'platform_owner', actorId: 'po', onDelete });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const deleteButton = Array.from(host!.querySelectorAll('button')).find((button) => button.textContent === mEn['clientNotes.delete'])!;
+    await act(async () => {
+      deleteButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onDelete).toHaveBeenCalledWith('n1');
+    expect(host!.textContent).toContain(mEn['clientNotes.deleteError']);
+    expect(host!.textContent).not.toContain('database secret');
   });
 });
