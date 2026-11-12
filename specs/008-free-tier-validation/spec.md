@@ -9,7 +9,7 @@
 
 F8 **prepares** the validation: it adds the measurement tooling, the procedure and a report template, and records the measurements that can be taken without deploying. The measured run against real Cloudflare and Supabase environments is a later step that needs the PO's explicit approval. It isn't part of this feature.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 Actors: **Product Owner (PO)**, **Technical Lead (reviewer)**.
 
@@ -57,7 +57,7 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 - Pilot volumes (clients, staff, plans per client) aren't confirmed. Projections take them as explicit inputs and are labeled by their assumptions.
 - A probe that targets a host that isn't approved is refused unless that host is passed explicitly.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 - **FR-001**: Measurement tooling MUST NOT deploy, create, or modify any cloud resource, and MUST NOT write to a database. Database reads MUST run in a read-only session.
 - **FR-002**: The tooling MUST NOT print or persist secrets: connection strings, keys, cookies, tokens.
@@ -68,7 +68,7 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 - **FR-007**: The report template MUST cover: Workers requests/day, CPU per request, Worker size; Supabase DB size, egress, storage, MAU, active-project count, inactivity pause, backups (not included on Free, so F7 covers them); default auth SMTP restrictions; each row with source, date and verdict.
 - **FR-008**: Every limit value in the template MUST cite the official page and the date it was checked.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - **SC-001**: All offline rows of the report can be filled from repository commands alone.
 - **SC-002**: 0 cloud resources created or changed while preparing F8.
@@ -77,9 +77,21 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 
 ## NEEDS DECISION
 
-- **ND-F8-1 — Pilot volumes** for the projection: clients per workspace, workspaces, staff, plans and versions per client per month. NEEDS SOURCE CONFIRMATION.
+- **ND-F8-1 — Pilot volumes. Decided (S31-PO-4, illustrative pilot only):** the pilot inputs are independent values, not factors of one product: 2 workspaces; 150 clients per workspace; 2 staff per workspace; 2 plans per client; 2 new plan versions per client per month. Derived volumes: 2 workspaces × 150 clients per workspace = 300 clients, and 300 clients × 2 new plan versions per client per month = 600 new plan versions per month. The staff count and the plans-per-client count are inputs for other tables and are not factors of the plan-version volume. This is an illustrative pilot input; verify schema and units before measurement.
 - **ND-F8-2 — Deployment approval** for the measured run: which Cloudflare account, which Supabase organization/project (see the eligibility report), and the region (bounded by B4).
 - **ND-F8-3 — Authenticated route measurement**: whether a dedicated test account may be used against the approved staging environment.
+
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-06 and the owner decision dated 2026-10-27 cited in this spec. The F8 pilot-volume analysis was unresolved at this session; ND-F8-2/3 also remained unresolved.
+- **Result at this session:** F8 remained preparation-only; actual environment measurements were gated on explicit PO deployment approval. Authenticated-route permission remained open and was not defaulted.
+- **Evidence limit:** Static source/test inspection only; no tests or cloud actions were performed in this lane.
+
+### S31-PO-4 decision refresh — 2026-11-04
+
+S31-PO-4 decided ND-F8-1 as illustrative pilot values only: 2 workspaces; 150 clients per workspace; 2 staff per workspace; 2 plans per client; 2 new plan versions per client per month. These are independent inputs, so the derived monthly new plan versions are 300 clients × 2 new plan versions per client per month = 600 new plan versions per month. T012 verifies schema units before recording table-level volumes. ND-F8-2/3 remain unresolved; no deployment or authenticated-route measurement is authorized by this refresh.
 
 ## Assumptions
 

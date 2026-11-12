@@ -1,5 +1,10 @@
-﻿# Spec Kit Analyze: F13 continuity decisions
+# Spec Kit Analyze: F13 continuity decisions
 
+## Historical analysis (retained)
+
+The original analysis and S24 addendum below are preserved as history. The current-head refresh is appended after that record.
+
+**Pass**: spec ↔ plan ↔ tasks consistency review. No implementation or tests run. **Model/effort**: Luna High.
 **Analyzed:** 2026-11-10 17:48 UTC
 **Method:** Reconciled S45-PO-2/S45-R3 with byte-exact source verification; reviewed FR-005/012/038/039, scenarios 13/14, SC-033 and SC-034, plan, T041/T042, traceability, lifecycle/data model, research, and earlier S43-PO-6/architect mapping for credit after upgrade, renewal, then upgrade. Reviewed in-flight, unknown-result, retry, deletion, concurrency, crash-between-step, and no-partial-write states for these spec-only changes.
 
@@ -30,13 +35,93 @@
 **Analyzed:** 2026-11-11 00:51 Africa/Cairo
 **Scope:** CodeRabbit round-3 fixes for expired-renewal term anchoring and cumulative refund caps.
 
+Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each of the five validated keys (`client_id`, `predecessor_subscription_id`, `package_offer_id`, `request_key`, `expected_revision`) reject absence as `invalid_input`, and requires `renewal_confirmed` to be `true`. That `invalid_input` result is reached only after authentication and the workspace preflight succeed: an unauthenticated caller returns `not_permitted`, and a missing or malformed `workspace_id` returns `not_permitted` before that branch. `installments` is optional: an omitted or null `installments` is not `invalid_input` — the renewal then uses the package price — and the initial shape check rejects a present, non-null `installments` that is not an array or is an empty array. That is the only check on the request shape: a non-empty array passes the shape check and can still return `invalid_input` later, when an installment amount or due offset is invalid or when the installment total differs from the package price. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
+
+**S45 R3 results (kept with the S45 R3 scope above):**
+
 - PASS: the expired-renewal anchor is the renewal operation date in lifecycle mapping; this follows the existing approved mapping and makes no new product choice.
 - PASS: each source's cumulative refunded principal is bounded by eligible collections; group cumulative refunds use total eligible collections, while a new request is bounded by the pre-operation residual.
 - PASS: subscription/group locking and deterministic allocation remain unchanged; FR/SC/task IDs and task tags are untouched.
 - PASS: no product ambiguity or new PO decision found.
 - CRITICAL: 0 open; HIGH: 0 open.
 
-## 2026-11-11 Analyze Ã¢â‚¬â€ Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
+## S30 analysis snapshot at reviewed revision `0449b100`
+
+- **Date:** 2026-11-03
+- **Analyzed revisions:** baseline `506e3bf4135b49319e0bdabab4d5166e2d608f5b`; S30 static review at `0449b10075254be9bd31ce6296cf0404abea63d8`, including the final Clarifications and T020 D-20 deferral.
+- **Scope:** current `spec.md`, `plan.md`, `tasks.md`, existing analysis history, code/tests, and D-20/B4 production readiness. Static review only; no tests, stack operations, hosted queries, or deployments.
+- **Entry inventory:** 36 FRs and 14 SCs; plan/tasks exist; existing requirements and analysis checklists exist; Clarifications at the reviewed head cite D-13, D-15, D-20, and S22-PO-5. T001-T018 are checked with historical evidence, T019 remains open, and T020 is explicitly deferred by D-20.
+
+### Findings
+
+| ID      | Severity | Artifact                                                 | Finding                                                                                                                                                               | Disposition                                                                                                                         |
+| ------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| F13-A01 | MEDIUM   | `tasks.md:T019`; D-20; `docs/13-production-readiness.md` | RET-1..3 technical/legal feasibility across backups remains unresolved; B4 client/audit retention values remain open and block production with real client data.      | Preserve T019 open and record the existing B4 production blockers; no retention threshold or legal interpretation added.            |
+| F13-A02 | MEDIUM   | `tasks.md:T020`; D-20                                    | The task requires a hosted non-production Supabase project, while D-20 limits hosting to one production project and requires development/testing to use local Docker. | Mark T020 `[DEFERRED: docs/04-changes-and-questions.md D-20]`; this is directly sourced and does not claim the hosted proof passed. |
+
+### Coverage and verdict
+
+- FR-to-task mapping: 36/36; SC-to-task mapping: 14/14. Existing T017 records cross-feature FR/SC reconciliation and T018 records runtime consumer boundaries.
+- Clarifications cite D-13, D-15, D-20, and S22-PO-5. Resolved ND-01/ND-08 remain closed; unresolved retention items are explicit.
+- **PASS WITH OPEN PRODUCTION BLOCKERS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM; 50/50 FR/SC items mapped. Static evidence only; no tests executed.
+
+## S31 round 6 refresh
+
+- **Date:** 2026-11-04
+- **Analyzed commit:** `cb08f711716d7f0667dadb4fdce286c1a09cdc92` plus the S31 documentation updates to SC-009 traceability.
+- **Scope:** Spec/plan/tasks/traceability consistency only; no tests or code changed.
+- **Finding:** SC-009 has named evidence for over-balance validation, audit rollback, outbox rollback, deactivation rollback, authorization and hook behavior. No asserting test was found for an injected numeric overflow failure with zero partial lifecycle/financial/receipt effects. Retention and hosted-hook evidence are separate criteria and do not lower SC-009.
+- **Coverage:** FR mapping remains 36/36 and SC mapping 14/14. SC-009 stays PARTIAL for the specific numeric-overflow assertion gap; retention remains tracked under FR-029 and B4/ND-F5-1 (DP-01/DP-02), and hosted verification remains tracked under FR-019/FR-035, T020, and Go-Live gate F13-PB-03. SC-014 is not downgraded or held PARTIAL by the hosted gate; retention and hosted verification are separate criteria from SC-010/SC-014.
+- **Verdict:** 0 CRITICAL, 0 HIGH; 3 MEDIUM. Static source/test-name review only; no tests executed.
+- **Severity note (S33):** this file defines no separate rubric for a missing-verification evidence gap, so the S31 count is stated both ways. Reading 1 (gap excluded as an evidence limitation): 2 MEDIUM carried forward from the S30 snapshot (F13-A01 — RET-1..3/B4 retention production blockers; F13-A02 — T020 D-20 deferral), plus the SC-009 numeric-overflow evidence gap tracked separately as SC-009 PARTIAL. Reading 2 (gap included as a MEDIUM finding): 3 MEDIUM. The higher total is retained: **3 MEDIUM** (F13-A01, F13-A02, and the S31 SC-009 numeric-overflow evidence gap). No severity is lowered and no finding is reclassified downward.
+
+## S33 SK-52 fix round 4 refresh
+
+- **Date:** 2026-11-04T21:49:05+02:00 (after the S33 PR #52 round-4 edits).
+- **Analyzed commit:** `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` (this round-4 fix commit's parent; the analyzed state is held in that revision, and this section lands in the round-4 fix commit). Baseline for the S30 snapshot remains `0449b10075254be9bd31ce6296cf0404abea63d8`; S31 round 6 remains `cb08f711716d7f0667dadb4fdce286c1a09cdc92`.
+- **Scope:** documentation-only consistency fixes from PR #52 round-4 review threads (`tasks.md` T020; `spec.md` Clarifications result line; `traceability.md` SC-014 and summaries; this file's S31 Coverage line). No tests, scans, stacks, deployments, cloud queries, or implementation actions performed.
+- **Findings:**
+
+| ID        | Severity | Artifact                                                                                | Finding                                                                                                                                                                                                                 | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------- | -------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F13-R4-01 | LOW      | `tasks.md:T020`; `spec.md` Clarifications (2026-11-03 session); S30 F13-A02 disposition | T020 carried `[DEFERRED: docs/04-changes-and-questions.md D-20]`, but no PO deferral exists. D-20 limits development/testing to local Docker and provides no hosted non-production project; it does not defer the task. | T020 kept OPEN, annotated "blocked by D-20 (no cloud staging); Go-Live gate F13-PB-03 remains open". The S30 F13-A02 disposition text is superseded by fact and architect ruling; the S30 snapshot above is retained as the historical record at `0449b100`. No gate is lowered: F13-PB-03 remains an open Go-Live gate and no hosted proof is claimed.                                                                                                                                                                                                                                                                                    |
+| F13-R4-02 | LOW      | `traceability.md` SC-014 and summaries                                                  | SC-014 covered Stack C Auth hook/worker behavior with recorded executed test evidence; its PARTIAL status rested only on the hosted non-production proof, which is the separate FR-035/T020 gate.                       | SC-014 upgraded to VERIFIED citing executed test file::name with quoted assertions (see `traceability.md` SC-014 row: `refund-auth-lockout-hook.test.ts::denies client sign-in and refresh immediately after committed deactivation, even while lockout worker is unavailable` asserts HTTP 403 sign-in/refresh with no access token; its before-hook branch asserts HTTP 400 after the Auth Admin ban; `keeps the service-role admin client behind a server-only worker boundary`, etc.). Summaries updated: success criteria 9 VERIFIED / 5 PARTIAL; total 41 VERIFIED / 9 PARTIAL. FR-035 stays PARTIAL (hosted proof blocked by D-20). |
+| F13-R4-03 | LOW      | This file, S31 round 6 Coverage line                                                    | Retention was tracked under SC-010 and hosted verification under SC-014. SC-010 covers audit/delivered-productivity; SC-014 covers Stack C Auth hook/worker.                                                            | Coverage line corrected: retention under FR-029 and B4/ND-F5-1 (DP-01/DP-02); hosted verification under FR-019/FR-035, T020, and F13-PB-03. Coverage counts and SC-009 status unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+
+- **Coverage:** FR mapping remains 36/36; SC mapping 14/14. SC-005, SC-009, SC-011, SC-012, SC-013 remain PARTIAL; FR-035 remains PARTIAL (hosted proof blocked by D-20). FR/SC verification counts in `traceability.md`: 32 VERIFIED / 4 PARTIAL FRs; 9 VERIFIED / 5 PARTIAL SCs; 41 VERIFIED / 9 PARTIAL total.
+- **Verdict:** 0 CRITICAL, 0 HIGH, 3 MEDIUM carried (F13-A01 retention production blockers; F13-A02/T020 D-20 hosting conflict remains open and blocked; S31 SC-009 numeric-overflow evidence gap). T020 remains open; no finding is reclassified downward. Static review only; no tests executed.
+
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: The current traceability matrix is 0 VERIFIED, 43 PARTIAL, and 7 UNVERIFIED; SC-014 is PARTIAL. This is the S41 status; S33 counts remain historical. Existing findings, approvals, implementation gates and verification details remain unchanged. No new product ambiguity or behavior was introduced.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after PR-wide status/reference inspection; no later spec/plan/tasks edits follow this analysis.
+- Scope: rechecked all 36 FR and 14 SC traceability rows, current totals, status wording, cross-links and pending/blocked statements against docs/04 and later decisions. Current matrix remains 0 VERIFIED / 43 PARTIAL / 7 UNVERIFIED; SC-014 remains PARTIAL. T019/T020 and hosted proof remain open/blocked as recorded; no historical S33 count is presented as current.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks are present.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
+- Verdict: PASS for this PR-wide documentation audit.
+
+## S41 CodeRabbit round-3 historical finding-count re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after correcting the carried-medium count.
+- Scope: S33 historical disposition of F13-A02/T020 alongside F13-A01 and SC-009. F13-A02 remains counted as a carried medium finding; T020 remains open and blocked.
+- Findings: 0 open CRITICAL, 0 open HIGH. No task/status changed.
+
+## S46 CodeRabbit round-5 finding re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F5 traceability date-check rewrite.
+- Scope: F5 — the Known-gaps date-check row now retains the S35-R4 UNCERTAIN record as history and states the current check is satisfied (S41 re-analyses of 2026-11-09 postdate the latest spec/plan/tasks changes of 2026-11-04/11-01). This S46 section postdates all spec/plan/tasks edits. Matrix totals unchanged (0 VERIFIED / 43 PARTIAL / 7 UNVERIFIED); T019/T020 remain open/blocked.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks are present.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction. (The S45 R3 PASS results are recorded with the S45 R3 scope above, not here.)
+
+## 2026-11-11 Analyze — Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
 
 - Scope: correct the two S43-PO-8 scenario-to-SC citations and the 50-row traceability status summary.
 - PASS: scenario 2 maps upgrade term anchors to SC-027; scenario 3 maps pre-activation duration start to SC-028. SC-029 remains mapped to renewal-then-upgrade credit.
@@ -45,152 +130,50 @@
 - PASS: numbered FRs, measurable SCs, GWT acceptance, clarifications, plan coverage, task mappings, and dated analysis artifacts exist for the touched feature.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.
 
-## 2026-11-11 Analyze Ã¢â‚¬â€ merge of main, no PR content change (01:52 UTC)
+## 2026-11-11 Analyze — merge of main, no PR content change (01:52 UTC)
 
 - Scope: merged main commit b1476db5f95d447ed2b0525e19ed4a9c890b90cc; no PR content change.
 - CRITICAL: 0 open; HIGH: 0 open.
 
-## 2026-11-11 Analyze Ã¢â‚¬â€ T043 PO-only manual date adjustment (FR-040; SC-018)
+## 2026-11-11T02:40:45Z Analyze — merge of main d1b1aff3 (PR #77 F13 continuity), no PR content change
 
-- Entry check: PASS Ã¢â‚¬â€ FR-040 states the PO-only/after-expiry/audit/zero-revenue rules; SC-018 is measurable; GWT scenario 11 covers PO-after-expiry success and non-PO refusal; task T043 is tagged FR-040/SC-018; plan.md slice (5) covers PO date edits.
-- Specified (implement): only `platform_owner` attempts commit; attempts by any other role (including null actor) are refused before any write; adjustment commits even when the subscription term is expired; every commit writes exactly one immutable audit row; zero payment/revenue/ledger rows are written by the operation. Input well-formedness (valid UUIDs, valid Cairo dates, end-exclusive after start) is rejected as `invalid_input`; this is input validity, not product policy.
-- NOT specified (no code): which subscription dates are adjustable beyond asserted effective start/end, permitted shift ranges or backdating limits, previous-value derivation, whether entitlement/P4 projections must reflect manual edits, behavior for frozen or deactivated subscriptions, and expected-revision concurrency. These are escalated as PO-DECISION-NEEDED with the adjustment fact recording only the PO-asserted dates.
-- Design: new immutable table `public.subscription_manual_date_adjustments` (no money columns by construction) + `public.record_subscription_date_adjustment(jsonb)` (SECURITY DEFINER, authenticated-only grant, explicit `app_private.is_platform_owner()` pre- and post-lock checks, per-actor request-key exact replay, `key_conflict` on changed intent) + audit trigger writing `subscription.manual_date_adjusted`. No new capability (T017 parity untouched). TS service `lib/subscriptions/manual-date-service.ts` enforces PO-before-RPC with an allow-listed receipt.
-- Catalog impact: two new `app_private`/`public` objects require updating the pinned `rls-catalog` private-function list; both follow the hardened owner/search-path/grant pattern.
-- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions in the specified scope (open questions escalated, not encoded).
+- Scope: merged main tip d1b1aff3; conflict resolution only. 7 hunks across 3 files: analyze.md 2 keep-both (HEAD S30-S46 history + MAIN continuity/Greptile/merge notes); spec.md 2 take-main (PR decision-traceability rows restating successor-lineage and purchase-selection facts superseded by S43-PO-5/FR-037..039, recorded as superseded); traceability.md hunk1 keep-both (distinct gap notes), hunks 2-3 take-main (successor-era PARTIAL rows superseded by current UNVERIFIED/PARTIAL). No product choice taken.
+- Entry: numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications/PO-decision register, FR-tagged tasks present; this pass follows the merge.
+- Findings: 0 CRITICAL, 0 HIGH. T019/T020 gates remain open/blocked as recorded.
 
-## 2026-11-11 Analyze Ã¢â‚¬â€ T044 productivity points (FR-040/041; SC-019/026)
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
 
-- Entry check: PASS Ã¢â‚¬â€ FR-041 states one point per new client, no repeat for returning clients, and no points for upgrades/renewals/plan publications; FR-040 states unlimited plan revisions/publications and no trainer point for plan publication; GWT scenario 12 and SC-019/SC-026 are measurable; task T044 is tagged FR-040/FR-041/SC-019/SC-026; plan.md slice (6) covers point uniqueness.
-- Specified (implement): exactly one point per new client (`points = 1` CHECK); at most one point row per client (`UNIQUE(client_id)`, immutable, never deleted); repeat awards for the same client are rejected with zero new rows; upgrade, renewal and plan-publication operations write zero point rows (no writer is invoked from those paths); no count limit is imposed on plan revisions/publications. Pure rules module pins `new_client -> 1`, all other events -> 0.
-- NOT specified (no code): which event/role awards the point in production (award entry point and authorizer), whether a returning client under a new client row can be linked by identity, and point display/reporting. The award entry point is escalated as PO-DECISION-NEEDED; no public award RPC is added. Persistence, uniqueness/immutability guards, audit trigger (`trainer.productivity_point_awarded`), and behavioral no-point coverage are the shippable core.
-- Catalog impact: one new audit trigger function requires updating the pinned `rls-catalog` private-function list; hardened pattern followed.
-- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions in the specified scope (award entry escalated, not encoded).
+- Scope: CodeRabbit review-body findings F1-F3 (required-key claim, S45 R3 placement, date-check rationale). The migration summary names the five validated keys with workspace_id returning not_permitted first; S45 R3 results sit with the S45 R3 scope; the date-check rationale cites the post-merge re-analyses and the S35-R4 UNCERTAIN record is marked historical.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.
 
-## 2026-11-11 Analyze Ã¢â‚¬â€ T047 frozen-state operations (FR-038/039; SC-022)
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
 
-- Entry check: PASS Ã¢â‚¬â€ FR-038/039 state frozen upgrade/renewal refusal until unfrozen and freeze-day expiry extension; GWT scenario 10 and SC-022 are measurable; task T047 is tagged FR-038/FR-039/SC-022 with paths in freeze-service/freeze-dates and unit/integration freeze-lifecycle tests; plan.md slice (3) covers frozen refusal and freeze-day extension.
-- Specified (implement): pure `requireUnfrozenForOperation` gate (upgrade/renewal refused while frozen; mirrors existing `requireFreezeRole` style) + `isFrozenOn` window predicate derived from the specified Apply-counts/Stop-excluded day semantics + exact 10-counted-days Ã¢â€ â€™ +10-expiry unit fixture + integration fixtures in freeze-lifecycle.test.ts (frozen renewal refusal with zero writes via existing `record_renewal`, DB-level 10-day extension via `f13_project_entitlement`, concurrent-apply race serialization, apply/stop/remove audit counts with replay silence).
-- NOT in scope: DB-level frozen upgrade refusal has no upgrade writer until T042 (forbidden to this lane); covered by the pure gate plus a T042 handoff note. No migration is required (freeze guards exist); no catalog changes.
-- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open.
+- Scope: CodeRabbit inline-thread finding on the required-key migration summary above. The claim is narrowed to what the migration does: the five validated keys (`client_id`, `predecessor_subscription_id`, `package_offer_id`, `request_key`, `expected_revision`) reject absence as `invalid_input` and `renewal_confirmed` must be `true`; `invalid_input` is reached only after authentication and the workspace preflight succeed, so an unauthenticated caller and a missing or malformed `workspace_id` both return `not_permitted` first. `installments` is optional: an omitted or null value is not `invalid_input` and the renewal uses the package price; only a present, non-null value that is not an array or is an empty array is rejected as `invalid_input`.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed, and no status changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
 
-## 2026-11-11 Analyze Ã¢â‚¬â€ S48-PO-14/15 clarification and T043/T044 untick (19:37 UTC)
+## S48 CodeRabbit round-8 review-fix analysis - 2026-11-11T18:15:00Z
 
-- Entry check for T043: PASS. `spec.md` contains numbered FR-040, measurable SC-018, and GWT scenario 11; the new Clarifications entries preserve S48-PO-14 words and separately label S48-R22 mapping; no open product ambiguity remains for T043. `plan.md` slice (5) covers PO date edits; `tasks.md` T043 is tagged FR-040/SC-018 and is now unchecked pending current-head verification.
-- Entry check for T044: PASS for requirements and plan mapping. FR-041, SC-019/026 and GWT scenario 12 exist; PO event/role is resolved by S48-PO-15 and S48-R22; task remains unchecked. Production writer and assigned-trainer source must be established from repository evidence before implementation; no path or identity is assumed.
-- S48-R22 T043 acceptance to verify: manual dates affect effective entitlement/expiry through the projector and P4 consumers; frozen/deactivated attempts refuse with `stale_state` and zero writes; audit and zero-revenue behavior remain intact.
-- Scope is decision-record/status bookkeeping only; no behavior, schema, or test expectations were added. Previous T043/T044 implementation evidence remains historical and their tasks are unticked until current-head revalidation.
-- CRITICAL: 0 open; HIGH: 0 open.
+- Scope: CodeRabbit inline-thread finding on the required-key migration summary above. The "only" claim is now limited to the initial shape check: an omitted or null installments uses the package price, and a present non-null value that is not an array or is an empty array fails that shape check. The summary now also records that a non-empty array passes the shape check and can still return invalid_input later, when an installment amount or due offset is invalid or the installment total differs from the package price (verified against supabase/migrations/20261103130700_f13_renewal_required_keys.sql lines 31-34 and 106-115).
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
 
-## 2026-11-11 Analyze - final T043/T044 authority record (19:38 UTC)
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
 
-- Revalidated the Spec Kit entry gate after the last spec/tasks edit. PASS: numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications, plan coverage, and tagged tasks are present. S48-PO-14/15 wording is copied from the verbatim decision files; S48-R22 is separately labeled as architect mapping.
-- T043 has no open product ambiguity. T044's product event/role is decided; its repository implementation path remains an evidence-gathering prerequisite and is not inferred.
-- T043/T044 are unchecked pending current-head tests; the historical test records are retained and are not claimed as current verification.
-- CRITICAL: 0 open; HIGH: 0 open.
+- Scope: CodeRabbit outside-diff-range finding on the T020 entry. The D-20 conflict is now described as an existing production gate blocked on a decision and not a new PO question, consistent with the decision register (`docs/04-changes-and-questions.md` lists T020 among the existing production-readiness items and states that no PO deferral exists for T020). The separate F13-PB-03 status and the remaining T020 details are preserved, and no answer is proposed.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
 
-## 2026-11-11 Analyze - S48-R22 T043 acceptance update (19:53 UTC)
+## 2026-11-12T04:56Z — S49-R10 main-sync re-analysis
 
-- Spec Kit entry check: PASS after this final requirement edit. `spec.md` has numbered FR-040, measurable SC-018, and GWT scenario 11 covering the PO-approved effective-date projection, frozen/deactivated refusal with zero writes, audit, zero revenue, and role refusal. Clarifications cite S48-PO-14 and S48-R22; plan slice (5) covers the adjustment; T043 is tagged FR-040/SC-018.
-- The mapping is confined to the PO answer and S48-R22; it adds no shift limits or other date policy. Renewal and freeze projection rules remain the existing projector behavior.
-- RED tests were written before implementation and currently fail on the old projector/adjustment writer. No implementation change has been made after this Analyze.
-- CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-11 Analyze - T043 verified; T044 award path inventory (20:14 UTC)
-
-- After T043 task tick, revalidated FR-040/SC-018 evidence. PASS: the forward migration feeds latest PO dates to the entitlement projector and returns `stale_state` before date/audit writes for frozen/deactivated clients; the current Stack C suite passes the after-expiry, authorization, audit, zero-revenue, replay, projection, and state-refusal cases.
-- T043 traceability marks SC-018 VERIFIED and FR-040 PARTIAL because T044 remains open. The T043 code, migration, test, and traceability changes are within FR-040/SC-018 and S48-R22.
-- T044 repository inventory found no production activation/plan-delivery writer or assigned-trainer mapping. The existing activation helper is a synthetic rolled-back probe; P4's migration comment assigns the production atomic writer to P4. S48-F13-MCQ-3 records the two implementation-path options, implications, recommendation, and blocked scope. No guess or T044 code was added.
-- CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-11 Analyze - final T043 task and traceability evidence (20:15 UTC)
-
-- T043 is ticked only after Stack C focused integration 7/7, full F12/F13 candidate 26/630, full unit 2425/2425, lint/typecheck, migration timestamp/ref scans, and both frozen/deactivated guard mutations passed/killed. Traceability cites the T043 commit subject and test evidence.
-- FR-040 remains PARTIAL because the distinct T044 productivity award path is blocked by S48-F13-MCQ-3; SC-018 is VERIFIED for T043's full clarified scope.
-- Cross-reference check: T043 -> FR-040/SC-018; T044 -> FR-040/FR-041/SC-019/SC-026. No T044 code or task tick is claimed.
-- CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-11 Analyze - post-format T043 exact-head gates (20:20 UTC)
-
-- After the final T043/T044 task evidence edit, the exact candidate passed: unit 181 files / 2425 tests; lint; typecheck; Prettier on all touched Markdown/TypeScript; local migration validation (122); remote cross-reference scan (115); all-origin max scan (116 refs; max 20261111222000 < candidate 20261111222100); F12/F13 Stack C 26 files / 630 tests.
-- T043 remains verified for FR-040/SC-018. T044 remains unticked and blocked only at its missing production award integration path, recorded as S48-F13-MCQ-3.
-- CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-11 Analyze - S48-PO-19 T044 P4 deferral and T042 entry gate (20:50 UTC)
-
-- Spec Kit entry gate for T042: PASS. `spec.md` has FR-038, measurable SCs and GWT scenarios 1-10/13-14; the clarification/PO register records S43-PO-8, and S48-PO-18 resolves the only newly identified commission-rate question. `plan.md` slices (1), (2), and (4) cover continuity, upgrade branches, and refunds. `tasks.md` T042 remains tagged FR-037/FR-038 and the specified SC set. No open product ambiguity remains in T042 scope at entry.
-- T044 status: S48-PO-19 verbatim answer, mapped by S48-R24, defers award wiring to P4's first-delivery transaction. F13 storage/rules remain recorded; T044 stays unchecked and FR-041 PARTIAL until the P4 writer/assigned-trainer source is available. No F13 award writer or inferred assignment is authorized.
-- T043 is complete and ticked at commit `71754d709decf424c4ca62fb83fa252c3c3c4ead`; older Analyze snapshots describing its pending state are superseded by the later exact-head verification entry.
-- No requirement or behavior was added in this documentation step. CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-11 Analyze - S48-PO-18/21 upgrade clarifications and T042 re-entry (21:35 UTC)
-
-- Spec Kit entry gate: PASS after final S48-PO-18/21/task edit. `spec.md` has FR-038, measurable SCs and Given/When/Then upgrade scenarios; Clarifications record byte-exact S48-PO-18 and S48-PO-21 decisions with separate S48-R24 and S48-R26 mappings. `plan.md` slices (1), (2), and (4) cover continuity, upgrades, and refunds; T042 remains tagged FR-037/FR-038 with applicable SCs. No open product ambiguity remains for T042 at entry.
-- S48-PO-18 resolves the upgrade-payment commission rate: snapshot the selected package version's rate on the additional payment; non-upgrade validation and original payment snapshots remain unchanged.
-- S48-PO-21 resolves F13-T042-D2: upgrade calculation starts from the manually adjusted current effective dates under normal FR-038 rules; a later adjustment supersedes the upgrade projection. No extra date policy is inferred.
-- At this 21:35 UTC checkpoint T044 remained P4-deferred and T041/T042 awaited the S48-R5 renewal-then-upgrade test; the later 22:39 UTC entry below records their verified completion. T044 remains unticked.
-- CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-11 Analyze - T041/T042 Stack C implementation and verification (22:39 UTC)
-
-- Entry check: PASS. `spec.md` defines FR-037..039, measurable SC-015..034, and GWT scenarios for pre-activation refusal, upgrade pricing/date branches, and renewal-then-upgrade. PO-18 and PO-21 are byte-exact in Clarifications with separate S48-R24/R26 mappings; no T041/T042 product ambiguity remains. `plan.md` covers continuity, upgrades, and refunds; `tasks.md` T041/T042 are tagged and now ticked after current-head tests. T044 remains unticked and explicitly P4-deferred.
-- T042 evidence: focused Stack C integration 14/14; full F12/F13 Stack C regression 27 files / 644 tests, compared with the 630-test pre-change baseline; no new failure IDs. Unit 181 files / 2425 passed; lint and typecheck passed. Local migration timestamp validation passed (123 migrations, 11 documented exceptions); remote all-ref scan passed across 115 refs.
-- Guard mutations were restored and killed for frozen/expired refusal, selected-version commission snapshot, lower-price/rank/duration/same-currency validation, stale revision, workspace authorization, original-package-only credit excluding paid renewal, SECURITY DEFINER, forced RLS, and authenticated execute grant. Post-mutation focused suite passed 14/14.
-- Migration review: new forward-only `20261111233600_f13_subscription_upgrades.sql` is newer than the origin-ref max `20261111222100`; no legacy/mock successor rows were rewritten. The writer is SECURITY DEFINER with empty search_path and authenticated-only execute; operation/projection helpers use empty search_path; upgrade fact tables have forced RLS and revoked app-role reads; each is covered by catalog, authorization, audit, and focused behavior assertions.
-- Cross-reference review at the 22:39 UTC checkpoint: T041/T042 and SC-027..030, SC-032..034 cite current test names and commit subject in traceability. At that checkpoint SC-015..026 was PARTIAL while T045 refund composition remained open; the dated T045 completion entry below supersedes that status. No stale T042 pending status remains outside this historical Analyze entry.
-- CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-11 Analyze - T045 full-package refund after upgrade (23:23 UTC)
-
-- Spec Kit entry gate for T045: PASS. `spec.md` contains FR-042, measurable SC-025/SC-031, and Given/When/Then scenario 5; S43-PO-5 item 6 / S43-PO-6 resolve the refund basis in Clarifications; `plan.md` slice 4 covers refund composition; `tasks.md` T045 is tagged FR-042 and SC-025/SC-031. No open product ambiguity remains in the stated T045 scope. S48-PO-21 remains byte-exact in the F13 decision register with its separate S48-R26 mapping; the prior dated Analyze records that resolution.
-- Implementation is one forward migration `20261112010200_f13_refund_upgrade_purchase_selection.sql`. It extends the existing append-only refund allocations with an exclusive source choice: existing F12 payment collection or immutable upgrade fact, with tenant/subscription composite keys and source-specific unique indexes. Existing payment rows are not rewritten or synthesized. The effective `record_refund` body was copied from `20261111140400_f13_refund_renewal_purchase_selection.sql`; the validator was copied from the current F13 refund ledger definition and extended for upgrade principal/commission caps. Paid renewal collections remain excluded from available refund basis; their existing rows and balances are unchanged.
-- Validation-before-write: the RPC computes refundable balances from eligible original collections plus positive immutable upgrade charges, then rejects amounts above the selected basis before inserting operation, refund, allocation, cancellation, lockout, or deactivation facts. Stack C test asserts EGP 1,401 and EGP 1,500 reject with zero refund writes, then EGP 1,400 commits for EGP 750 original + EGP 650 upgrade, commission allocations total EGP 205, and no renewal allocation is written.
-- Security review: `record_refund` and `f13_validate_refund_ledger` are SECURITY DEFINER with empty search_path and postgres owner; only authenticated can execute the RPC, internal validator execute is revoked; existing allocation-table forced RLS/direct-read denial remain. Integration catalog/source-constraint assertions pass. SQL additions found by security/grant scan are intentional and covered.
-- RED: Stack C T045 case returned `invalid_input` for the specified EGP 1,400 refund; first setup-only attempts stopped before refund behavior and are separately labelled in the run logs. GREEN: focused T045 2/2. Mutations killed/restored: renewal-source exclusion (`t045-mutation-renewal.txt`), upgrade-source inclusion (`t045-mutation-upgrade-source.txt`), stored upgrade commission (`t045-mutation-commission.txt`), SECURITY DEFINER (`t045-mutation-definer.txt`), execute grant (`t045-mutation-grant.txt`), source XOR constraint (`t045-mutation-source-xor.txt`).
-- Regression: full established F12/F13 Stack C set plus `upgrade-operations.test.ts` passed 27 files / 646 tests; baseline 26 files / 630; no new failure IDs. Unit 181 files / 2,425; lint; typecheck; local timestamp validation (124 migrations, 11 documented exceptions); remote cross-ref scan (116 refs); focused Prettier and git diff checks passed. Migration version `20261112010200` is above the all-origin maximum `20261111233600` and uses a valid current Cairo timestamp.
-- T045 traceability is updated to VERIFIED; T041/T042 stay ticked, T044 remains P4-deferred and unticked. CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-12 Analyze - T045 exact-head Spec Kit date correction (01:44 UTC+02; 23:44 UTC)
-
-- CI's Check feature spec consistency reported that the prior T045 Analyze heading preceded the latest asks.md commit timestamp. This entry is appended after that task/traceability edit and records the CI-detected consistency correction.
-- No spec, plan, task, or behavior requirements changed. T045 remains limited to FR-042 refund composition and its stated SC-025/SC-031 scenarios; the follow-up test asserts the existing validator's SECURITY DEFINER, owner, empty search_path, and revoked execute boundary.
-- Spec Kit cross-reference remains PASS: FR-042, SC-025/SC-031, T045, and the S48-PO-21/R26 decision are present in their relevant records. T044 remains P4-deferred/unticked; no new ambiguity or product choice was identified.
-- CI consistency check will be rerun on this exact candidate. CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-12 Analyze - S49 exact-head regression and review-fix completion (02:38Z)
-
-- Spec Kit re-entry: PASS. `spec.md` retains numbered FR-037..042, measurable SCs, and GWT scenarios for continuity, upgrades, date projection, and refunds; S48 decisions remain byte-exact in Clarifications with their mappings separately identified. `plan.md` covers the touched paths; tasks T041/T042/T043/T045 remain tagged with the corresponding FRs. No requirement text changed in this evidence update. No open CRITICAL/HIGH findings.
-- Verified after a clean Stack C reset/replay (`lifter-stack-c`, API 35421, DB 35422): full F12/F13 regression 27 files / 653 tests passed. Baseline 26 files / 630 tests; zero failure IDs were added. Full unit 181 files / 2,426 tests; lint, typecheck, format check, local timestamp and 118-ref remote migration checks passed.
-- T041/T042 renewal-then-upgrade test passed; T045 renewal purchase remains excluded from refund selection. T043 frozen/deactivated refusal client status is preserved as `stale_state`. Guard-removal mutations for continuity/upgrade/refund plus SECURITY DEFINER, empty search_path, execute grant, and TS stale-state mapping were killed and restored; logs are in the S49 run directory. New forward migration `20261112015500_f13_review_continuity_commission_fixes.sql` is above the observed all-ref migration maximum `20261112012100` and was applied by clean replay.
-- T044 remains unticked/P4-deferred per S48-PO-19 / S48-R24; FR-041 remains PARTIAL. `S48-F13-MCQ-4` (unpaid earlier installment obligations after upgrade) remains open and is not implemented or tested as a selected rule.
-- CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-12 Analyze - changed Markdown CI formatting correction (02:59Z)
-
-- The exact-head CI changed-Markdown check identified Prettier differences in the F13 Analyze, task, and traceability files; formatting was normalized using the repository Prettier configuration. `spec.md` had no formatting diff. This is formatting-only; no FR, SC, acceptance scenario, PO decision, or task scope changed.
-- Spec Kit re-entry: PASS. Numbered FR-037..042, measurable SCs, GWT scenarios, recorded clarifications, plan coverage, and task tags remain intact. T041/T042/T043/T045 evidence and T044 P4/FR-041 PARTIAL status are unchanged. No new product ambiguity was introduced.
-- Exact changed-Markdown formatter now passes for all four F13 markdown paths; CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-12 Analyze - T041 receipt review fix and date-arithmetic MCQ (03:26Z)
-
-- Spec Kit re-entry remains PASS: numbered FRs/SCs/GWT scenarios and Clarifications are present; T041 remains tagged FR-037/039 and tasks/traceability now cite current test evidence. No requirement, acceptance scenario, or plan scope changed in this follow-up.
-- T041 receipt change accepts the SQL-emitted UUID field only after exact-key-set and UUID validation; RED/GREEN and validation-guard mutation are recorded in the S49 run report. F12/F13 Stack C regression remains 27/653 with no new failures against the 26/630 baseline.
-- Greptile's upgrade re-anchoring finding exposes an unspecified date calculation for pre-upgrade renewal/freeze extensions. `S49-F13-MCQ-1` is recorded in the run report and PR body; no implementation or expected-date test chooses a policy. Existing `S48-F13-MCQ-4` remains open.
-- T044 remains unticked/P4-deferred; FR-041 remains PARTIAL. CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-12 Analyze - superseding T041/T042 tick assessment (03:28Z)
-
-- Revalidation against Greptile 5868270359 shows the current renewal-then-upgrade test retains renewal payment facts but does not assert that the paid renewal duration survives upgrade recalculation. The SQL projection anchors after the upgrade and excludes earlier renewal/freeze events. Therefore T041 and T042 are unticked and their current-head traceability rows are PARTIAL pending `S49-F13-MCQ-1`; the narrower receipt validation follow-up remains verified independently.
-- This records a coverage/status correction only; no FR, SC, GWT scenario, plan step, or behavior text changed. No guessed date arithmetic or test expectation was added. Existing unresolved `S48-F13-MCQ-4` remains open.
-- T044 stays open/P4-deferred and FR-041 PARTIAL. T043 and T045 remain verified. CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-12 Analyze - T041/T042 current verification status correction (03:29Z)
-
-- Final Spec Kit re-entry: PASS. Task requirements are unchanged; task notes now accurately require the renewal-then-upgrade test to assert duration/payment preservation before T041/T042 can be ticked together. Their checkboxes and current traceability status are PARTIAL/unticked because the existing test did not assert the renewed term's resulting end date.
-- No new date policy or implementation default was introduced. `S49-F13-MCQ-1` remains the blocking PO question for carrying pre-upgrade renewal/freeze extension through date re-anchoring. The independent T041 renewal-receipt change remains verified at commit `3df9928b`.
-- T043/T045 remain verified; T044 remains unticked/P4 with FR-041 PARTIAL. CRITICAL: 0 open; HIGH: 0 open.
-
-## 2026-11-12 Analyze - final changed-Markdown formatter correction (03:32Z)
-
-- The CI-equivalent formatter initially flagged Analyze, tasks, and traceability despite the normal Prettier command passing (those spec files are ignored by its broad file walk). Direct Prettier API formatting now passes for all four changed F13 Markdown files; no requirement or PO text changed.
-- Spec Kit status remains PASS: T041/T042 are unticked/PARTIAL pending `S49-F13-MCQ-1` and a test asserting resulting renewal coverage; T044 remains P4/FR-041 PARTIAL; T043 and T045 remain verified. CRITICAL: 0 open; HIGH: 0 open.
+- Entry gate: PASS — `spec.md` retains numbered FRs, measurable SCs, GWT scenarios and the Clarifications section; `plan.md` covers T041/T042/T045; `tasks.md` includes FR-tagged task IDs and S48-PO-19 T044/P4 deferral; this Analyze section follows the merge reconciliation and latest task/traceability edits.
+- Scope: static review after merging `origin/main` at `f7f8a96c470325692f70258814a39fb54eb76533`. Main's F13 Clarifications state T020 remains open (no D-20 PO deferral), blocked by local-only staging and F13-PB-03. The task and traceability text now preserve that distinction. Current T041/T042 statuses are unticked/PARTIAL due the unasserted renewal extension end date; T043 and T045 remain verified/ticked; T044 remains open/P4 and FR-041 PARTIAL.
+- Cross-reference/status sweep: older T041/T042 verification rows are labeled historical and point to the current S49 partial rows. No stale claim remains that T041/T042 are currently complete. Task/FR mapping and T044 deferral align with traceability.
+- Ambiguities: no new ambiguity was introduced by this sync. Existing open product questions remain explicit: `S49-F13-MCQ-1` blocks renewal/freeze extension date arithmetic; `S48-F13-MCQ-4` blocks the treatment of unpaid original installments after upgrade. Neither is answered by implementation or test expectation.
+- Findings: 0 open CRITICAL, 0 open HIGH. This was documentation/status reconciliation only; no product behavior or test code changed. Prior Stack C regression evidence remains 27 files / 653 passing with no new failure IDs. Exact-head CI is currently blocked by repeated Docker Hub `toomanyrequests: Rate exceeded` errors; those runs are not counted as green.
+- Verdict: PASS for documentation reconciliation; production/CI and the two cited PO decisions remain explicit blockers.
