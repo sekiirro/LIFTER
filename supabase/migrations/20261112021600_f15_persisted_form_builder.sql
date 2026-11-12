@@ -398,11 +398,21 @@ begin
     return jsonb_build_object('status','invalid'); end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
     'f15-builder-request:'||p_workspace_id::text||':'||p_actor_user_id::text||':'||p_request_id::text,0));
+  if auth.uid() is not null and (
+    app_private.current_staff_role() is null
+    or not app_private.role_has_capability(app_private.current_staff_role(),'author_forms')
+    or not app_private.has_workspace_access(p_workspace_id,'author_forms')
+  ) then return null; end if;
   hash:=pg_catalog.md5(p_form_id::text);
   cached:=app_private.f15_builder_cached_result(p_workspace_id,p_actor_user_id,p_request_id,'publish',hash);
   if cached is not null then return cached; end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
     'f15-form:'||p_workspace_id::text||':'||p_form_id::text,0));
+  if auth.uid() is not null and (
+    app_private.current_staff_role() is null
+    or not app_private.role_has_capability(app_private.current_staff_role(),'author_forms')
+    or not app_private.has_workspace_access(p_workspace_id,'author_forms')
+  ) then return null; end if;
   select v.* into current_version from public.form_versions v
     where v.workspace_id=p_workspace_id and v.form_id=p_form_id
     order by v.version_number desc limit 1 for update;
@@ -446,6 +456,11 @@ begin
     return jsonb_build_object('status','invalid'); end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
     'f15-builder-request:'||p_workspace_id::text||':'||p_actor_user_id::text||':'||p_request_id::text,0));
+  if auth.uid() is not null and (
+    app_private.current_staff_role() is null
+    or not app_private.role_has_capability(app_private.current_staff_role(),'author_forms')
+    or not app_private.has_workspace_access(p_workspace_id,'author_forms')
+  ) then return null; end if;
   hash:=pg_catalog.md5(p_source_form_id::text);
   cached:=app_private.f15_builder_cached_result(p_workspace_id,p_actor_user_id,p_request_id,'copy',hash);
   if cached is not null then return cached; end if;

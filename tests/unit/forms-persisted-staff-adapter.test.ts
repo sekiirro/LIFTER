@@ -180,6 +180,26 @@ describe('persisted Forms staff adapter', () => {
     });
   });
 
+  it('accepts retirement success without a returned form definition', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        status: 'ok',
+        formId: 'form-1',
+        revision: 4,
+        formStatus: 'retired',
+      },
+      error: null,
+    });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+
+    await expect(adapter.retire('wo', 'form-1', 'retire-key')).resolves.toEqual(
+      { status: 'ok' },
+    );
+  });
+
   it('maps a reused request key with a different payload to conflict', async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: { status: 'idempotency_conflict' },

@@ -273,3 +273,19 @@ The 78 added migrations are now renamed after `origin/main` in their previous re
 Re-read `spec.md`, `plan.md`, `tasks.md`, API/audit contracts and traceability after the explicit-removal implementation. The clarified behavior remains fully scoped: optional applicable and present-inapplicable values may be removed; absent IDs are successful no-op removals; required applicable values reject before writes; `remove` is part of validation, complete-request sizing and replay identity. No-change correction behavior is preserved as defined in the pre-existing RPC. The PO authority remains byte-exact; architect mappings are labeled separately. No new UI/copy, permission, retention, or deletion behavior was introduced. The S50-R26 migration overlap audit found one PR/main collision and corrected it minimally with `CREATE OR REPLACE`, preserving SECURITY DEFINER, empty search_path, ownership and grants. OLD/NEW Stack A schema-only dumps with ownership and ACLs are identical (normalized 32,836 lines, zero diff). Migration ordering is valid; 0 CRITICAL and 0 HIGH findings. No open product ambiguities for the authorized scope; the T149 future UI copy MCQ remains deferred and blocks only that follow-up.
 
 **Result: PASS for current F15 removal scope.**
+
+## S51 T151 entry revalidation — 2026-11-12
+
+- Scope: verified Greptile defects within existing FR-013 correction authorization and FR-004/030 retirement adapter contracts; no requirement, permission, UX, copy, or RPC-contract change.
+- `spec.md` contains FR-013 and FR-030, correction authorization and form retirement behavior, and measurable acceptance criteria. Existing clarification and PO records govern both behaviors; no open ambiguity for these fixes.
+- `plan.md` maps T151 to the established correction and retirement contracts. `tasks.md` adds T151 tagged `[FR-004/030/013]`.
+- Adapter unit regression failed before its mapping change and passed after it. The controlled concurrent-revocation integration regression is written and awaiting Stack A release before execution. No task will be ticked before current-head tests pass.
+- Effective-writer audit is recorded in the lane report; correction's post-lock authorization recheck is the identified defect.
+- Findings: **0 CRITICAL / 0 HIGH**. No spec contradiction or product decision is required. Stack A integration and security mutation evidence remain acceptance gates.
+- **PASS for T151 analysis and implementation entry**, dated after the T151 plan/task change. Revalidate if requirements or plan/task scope changes.
+
+## S51 T151 writer-audit scope refresh — 2026-11-12
+
+Expanded the technical audit to include public Builder save, publish, copy, and retire wrappers: they check `author_forms` before entering private SECURITY DEFINER writers that wait on advisory locks. T151 now requires post-wait rechecks for those writer paths and controlled concurrent-revocation regressions with zero writes. These are existing FR-004/030 authorization constraints; no new permission or returned status contract is specified. Copy remains scoped to existing workspace membership authorization. RED regressions are written and pending Stack A availability; do not mark T151 complete before the controlled race suite and mutations pass. **CRITICAL findings: 0. HIGH findings: 0. Result: PASS for implementation entry within existing requirements.**
+
+T151's lock audit/test matrix includes each lock that can block: Builder request idempotency locks for save/publish/copy/retire; form resource locks for save/publish/retire; workspace default lock for retire; and the correction assignment row lock. All are covered by concurrent-revocation assertions, with no UI/copy/permission-contract changes. **CRITICAL findings: 0. HIGH findings: 0. PASS.**

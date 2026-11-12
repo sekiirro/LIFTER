@@ -72,6 +72,15 @@ begin
 
   perform 1 from public.form_assignments a
   where a.workspace_id = p_workspace_id and a.id = p_assignment_id for update;
+  -- Re-read staff authorization after the assignment lock wait.
+  if assigned_user is distinct from actor then
+    role := app_private.current_staff_role();
+    if role is null
+      or not app_private.role_has_capability(role, 'read_form_answers')
+      or not app_private.has_workspace_access(p_workspace_id, 'read_form_answers') then
+      return jsonb_build_object('status', 'not_permitted');
+    end if;
+  end if;
   select r.revision,r.answer_values into current_revision,current_answers
   from public.form_answer_revisions r
   where r.workspace_id = p_workspace_id and r.assignment_id = p_assignment_id

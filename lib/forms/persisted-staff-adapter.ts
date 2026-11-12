@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   FormsStaffAdapter,
   FormsStaffResult,
+  FormsStaffRetireResult,
   FormsStaffSelectionResult,
   FormsStaffSnapshot,
   StaffFormDraft,
@@ -139,12 +140,23 @@ export function createPersistedFormsStaffAdapter(
       });
       return builderResult(data, error);
     },
-    async retire(_role, formId, requestId): Promise<FormsStaffResult> {
+    async retire(_role, formId, requestId): Promise<FormsStaffRetireResult> {
       const { data, error } = await client.rpc('retire_workspace_form', {
         p_workspace_id: workspaceId,
         p_form_id: formId,
         p_request_id: requestIdOrNew(requestId),
       });
+      const response = data as BuilderResponse | null;
+      if (
+        !error &&
+        response?.status === 'ok' &&
+        response.formId === formId &&
+        typeof response.revision === 'number' &&
+        response.formStatus === 'retired' &&
+        !response.definition
+      ) {
+        return { status: 'ok' };
+      }
       return builderResult(data, error);
     },
     async copy(_role, formId, requestId): Promise<FormsStaffResult> {

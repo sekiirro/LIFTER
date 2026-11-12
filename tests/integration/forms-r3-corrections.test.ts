@@ -2,12 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { afterAll, expect, it } from 'vitest';
 import type { JSONValue } from 'postgres';
-import { sql } from './harness';
+import { createStaff, sql } from './harness';
+import { pending as createPendingClient } from './client-accounts-fixture';
 import {
   clientContext,
   registered,
   request,
   sqlCall,
+  waitForLock,
+  worker,
 } from './registration-approval-operations-fixture';
 
 const db = sql();
@@ -20,6 +23,153 @@ const prewriteBoundsSql = readFileSync(
   ),
   'utf8',
 );
+
+async function runCorrectionRevocationRace() {
+  const context = await clientContext();
+  const pendingClient = await db.begin((tx) =>
+    createPendingClient(tx, context),
+  );
+  const client = {
+    id: pendingClient.id as string,
+    userId: pendingClient.auth_user_id as string,
+    link: pendingClient.registration_link_id as string,
+    rows: null,
+  };
+  await db.begin(async (tx) => {
+    expect(
+      (
+        await sqlCall(
+          tx,
+          context.po.userId,
+          'approve',
+          request(context, client),
+        )
+      ).status,
+    ).toBe('ok');
+  });
+  const trainer = await createStaff(
+    'trainer',
+    't151-stale-correction-authorization',
+  );
+  const formId = randomUUID();
+  const assignmentId = randomUUID();
+  const policy = `t151-${randomUUID()}`;
+  const label = `t151-correction-${randomUUID()}`;
+  await db`
+    insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+    values(${context.wsA.id},${trainer.userId},${context.po.userId})
+  `;
+  const definition = { questions: [{ id: 'ordinary', type: 'shortText' }] };
+  await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
+    values(${policy},'terms','published')`;
+  await db`insert into public.forms(id,workspace_id,name)
+    values(${formId},${context.wsA.id},${label})`;
+  await db`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+    values(${context.wsA.id},${formId},1,${policy},${db.json(definition)},'published')`;
+  await db`insert into public.form_assignments(id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
+    values(${assignmentId},${context.wsA.id},${client.id},${formId},1,${policy},${db.json(definition)})`;
+  await db`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
+    values(${context.wsA.id},${assignmentId},1,${db.json({ ordinary: 'before' })})`;
+  await db`insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
+    values(${context.wsA.id},${assignmentId},1,clock_timestamp())`;
+
+  const blocker = sql();
+  const labelForWait = `${label}-worker`;
+  const corrector = worker(labelForWait);
+  let signalLock!: () => void;
+  let releaseLock!: () => void;
+  const lockAcquired = new Promise<void>((resolve) => {
+    signalLock = resolve;
+  });
+  const hold = blocker.begin(async (tx) => {
+    await tx`select 1 from public.form_assignments
+      where workspace_id=${context.wsA.id} and id=${assignmentId} for update`;
+    signalLock();
+    await new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+  });
+  await lockAcquired;
+  let attempt: Promise<unknown> | undefined;
+  try {
+    attempt = corrector.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: trainer.userId, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      const [row] = await tx`select public.correct_form_answer(
+        ${context.wsA.id},${assignmentId},1,${randomUUID()},
+        ${tx.json({ ordinary: 'after' })},'T151 concurrent revocation',${tx.json([])}
+      ) as result`;
+      return row?.result;
+    });
+    expect(
+      await waitForLock(db, labelForWait),
+      'correct_form_answer must wait on the assignment lock',
+    ).toBe(true);
+    await db`update public.workspace_memberships
+      set revoked_at=clock_timestamp(),revoked_by=${context.po.userId}
+      where workspace_id=${context.wsA.id} and user_id=${trainer.userId} and revoked_at is null`;
+    releaseLock();
+    await hold;
+    return {
+      result: await attempt,
+      revisions:
+        await db`select revision,answer_values from public.form_answer_revisions
+      where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,
+      intents: await db`select 1 from app_private.form_correction_intents
+      where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,
+      audits: await db`select 1 from public.audit_events
+      where action='form.answer_corrected' and target_id=${assignmentId}`,
+    };
+  } finally {
+    if (releaseLock) releaseLock();
+    await Promise.allSettled([hold, ...(attempt ? [attempt] : [])]);
+    await blocker.end();
+    await corrector.end();
+  }
+}
+
+it('T151 rechecks correction authorization after waiting for the assignment lock', async () => {
+  const state = await runCorrectionRevocationRace();
+  expect(state.result).toEqual({ status: 'not_permitted' });
+  expect(state.revisions).toEqual([
+    { revision: 1, answer_values: { ordinary: 'before' } },
+  ]);
+  expect(state.intents).toHaveLength(0);
+  expect(state.audits).toHaveLength(0);
+});
+
+it('T151 correction recheck removal mutation is killed by the revocation race', async () => {
+  const signature =
+    'public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)';
+  const [original] = await db`
+    select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition`;
+  const guard = `  -- Re-read staff authorization after the assignment lock wait.\n  if assigned_user is distinct from actor then\n    role := app_private.current_staff_role();\n    if role is null\n      or not app_private.role_has_capability(role, 'read_form_answers')\n      or not app_private.has_workspace_access(p_workspace_id, 'read_form_answers') then\n      return jsonb_build_object('status', 'not_permitted');\n    end if;\n  end if;\n`;
+  const mutant = (original?.definition as string).replace(guard, '');
+  expect(mutant).not.toBe(original?.definition);
+  await db.unsafe(mutant);
+  try {
+    const state = await runCorrectionRevocationRace();
+    let mutationKilled = false;
+    try {
+      expect(state.result).toEqual({ status: 'not_permitted' });
+      expect(state.revisions).toEqual([
+        { revision: 1, answer_values: { ordinary: 'before' } },
+      ]);
+    } catch {
+      mutationKilled = true;
+    }
+    expect(mutationKilled).toBe(true);
+    expect(state.result).toMatchObject({ status: 'corrected', revision: 2 });
+    expect(state.revisions).toHaveLength(2);
+    expect(state.intents).toHaveLength(1);
+    expect(state.audits).toHaveLength(1);
+  } finally {
+    await db.unsafe(original?.definition as string);
+  }
+  const [restored] = await db`
+    select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition`;
+  expect(restored?.definition).toBe(original?.definition);
+});
 
 it('T014 appends a client self-correction without changing the original or logging content', async () => {
   const context = await clientContext();

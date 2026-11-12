@@ -50,6 +50,8 @@ export type FormsStaffResult =
         'invalid' | 'conflict' | 'forbidden' | 'missing' | 'default_selected';
     };
 
+export type FormsStaffRetireResult = FormsStaffResult | { status: 'ok' };
+
 export type FormsStaffSelectionResult = {
   status: 'ok' | 'forbidden' | 'missing' | 'unavailable';
 };
@@ -70,7 +72,7 @@ export interface FormsStaffAdapter {
     role: FormsStaffRole,
     formId: string,
     requestId?: string,
-  ): Promise<FormsStaffResult>;
+  ): Promise<FormsStaffRetireResult>;
   copy(
     role: FormsStaffRole,
     formId: string,

@@ -1,8 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
-import { sql } from './harness';
+import { createStaff, sql } from './harness';
 import { clientContext, pending } from './client-accounts-fixture';
+import {
+  waitForLock,
+  worker,
+} from './registration-approval-operations-fixture';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
 import starter from '../../lib/forms/s14-starter-content.json';
 
@@ -10,6 +14,134 @@ const db = sql();
 afterAll(() => db.end());
 
 const rollback = new Error('T006 synthetic fixture rollback');
+
+it('T151 rechecks Builder authorization after waiting on each writer lock', async () => {
+  const context = await clientContext();
+  const definitionSnapshot = structuredClone(starter);
+  const policy = `t151-builder-${randomUUID()}`;
+  const [publishable] =
+    await db`select app_private.f15_valid_builder_definition(
+    ${db.json(definitionSnapshot)},true) as valid`;
+  expect(publishable?.valid).toBe(true);
+  await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
+    values(${policy},'terms','published')`;
+  const operations = ['save', 'publish', 'copy', 'retire'] as const;
+  const unexpectedWrites: string[] = [];
+
+  for (const operation of operations) {
+    const lockKinds =
+      operation === 'copy'
+        ? (['request'] as const)
+        : operation === 'retire'
+          ? (['request', 'default', 'resource'] as const)
+          : (['request', 'resource'] as const);
+    for (const lockKind of lockKinds) {
+      const actor = await createStaff(
+        'trainer',
+        `t151-builder-${operation}-${lockKind}`,
+      );
+      const formId = randomUUID();
+      const requestId = randomUUID();
+      const label = `t151-builder-${operation}-${randomUUID()}`;
+      await db`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+      values(${context.wsA.id},${actor.userId},${context.po.userId})`;
+      await db`insert into public.forms(id,workspace_id,name)
+      values(${formId},${context.wsA.id},${label})`;
+      await db`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+      values(${context.wsA.id},${formId},1,${policy},${db.json(definitionSnapshot)},'draft')`;
+
+      const lockKey =
+        lockKind === 'request'
+          ? `f15-builder-request:${context.wsA.id}:${actor.userId}:${requestId}`
+          : lockKind === 'default'
+            ? `f15-default-onboarding:${context.wsA.id}`
+            : `f15-form:${context.wsA.id}:${formId}`;
+      const [formsBefore] =
+        await db`select count(*)::int as count from public.forms
+      where workspace_id=${context.wsA.id}`;
+      const blocker = sql();
+      const labelForWait = `t151-${randomUUID().slice(0, 16)}`;
+      const writer = worker(labelForWait);
+      let signalLock!: () => void;
+      let releaseLock!: () => void;
+      const lockAcquired = new Promise<void>((resolve) => {
+        signalLock = resolve;
+      });
+      const hold = blocker.begin(async (tx) => {
+        await tx`select pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(${lockKey},0))`;
+        signalLock();
+        await new Promise<void>((resolve) => {
+          releaseLock = resolve;
+        });
+      });
+      await lockAcquired;
+      let attempt: Promise<unknown> | undefined;
+      try {
+        attempt = writer.begin(async (tx) => {
+          await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: actor.userId, role: 'authenticated' })},true)`;
+          await tx`set local role authenticated`;
+          const [row] =
+            operation === 'save'
+              ? await tx`select public.save_workspace_form_draft(${context.wsA.id},${formId},1,${tx.json(definitionSnapshot)},${requestId},${label}) as result`
+              : operation === 'publish'
+                ? await tx`select public.publish_workspace_form(${context.wsA.id},${formId},${requestId}) as result`
+                : operation === 'copy'
+                  ? await tx`select public.copy_workspace_form(${context.wsA.id},${formId},${requestId}) as result`
+                  : await tx`select public.retire_workspace_form(${context.wsA.id},${formId},${requestId}) as result`;
+          return row?.result;
+        });
+        expect(
+          await waitForLock(db, labelForWait),
+          `${operation} must wait on its ${lockKind} lock`,
+        ).toBe(true);
+        await db`update public.workspace_memberships
+        set revoked_at=clock_timestamp(),revoked_by=${context.po.userId}
+        where workspace_id=${context.wsA.id} and user_id=${actor.userId} and revoked_at is null`;
+        releaseLock();
+        await hold;
+        const result = await attempt;
+        if (result !== null)
+          unexpectedWrites.push(`${operation}/${lockKind}: returned a result`);
+        const formsAfter = await db`select id from public.forms
+          where workspace_id=${context.wsA.id} and id=${formId}`;
+        if (formsAfter.length !== 1)
+          unexpectedWrites.push(`${operation}/${lockKind}: form row changed`);
+        const versionsAfter =
+          await db`select version_number,status from public.form_versions
+          where workspace_id=${context.wsA.id} and form_id=${formId}`;
+        if (
+          versionsAfter.length !== 1 ||
+          versionsAfter[0]?.version_number !== 1 ||
+          versionsAfter[0]?.status !== 'draft'
+        ) {
+          unexpectedWrites.push(
+            `${operation}/${lockKind}: form version changed`,
+          );
+        }
+        const auditsAfter =
+          await db`select 1 from public.audit_events where workspace_id=${context.wsA.id}
+          and target_id=${formId} and action in ('form.draft_saved','form.published','form.retired')`;
+        if (auditsAfter.length !== 0)
+          unexpectedWrites.push(`${operation}/${lockKind}: audit inserted`);
+        if (operation === 'copy') {
+          const countsAfter =
+            await db`select count(*)::int as count from public.forms
+            where workspace_id=${context.wsA.id}`;
+          if (countsAfter[0]?.count !== formsBefore?.count)
+            unexpectedWrites.push(
+              `${operation}/${lockKind}: copied form inserted`,
+            );
+        }
+      } finally {
+        if (releaseLock) releaseLock();
+        await Promise.allSettled([hold, ...(attempt ? [attempt] : [])]);
+        await blocker.end();
+        await writer.end();
+      }
+    }
+  }
+  expect(unexpectedWrites).toEqual([]);
+});
 type JSONObject = { [key: string]: postgres.JSONValue };
 type MutableDefinition = JSONObject & { questions: JSONObject[] };
 

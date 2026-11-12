@@ -14,13 +14,28 @@ begin
     return jsonb_build_object('status','invalid'); end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
     'f15-builder-request:'||p_workspace_id::text||':'||p_actor_user_id::text||':'||p_request_id::text,0));
+  if auth.uid() is not null and (
+    app_private.current_staff_role() is null
+    or not app_private.role_has_capability(app_private.current_staff_role(),'author_forms')
+    or not app_private.has_workspace_access(p_workspace_id,'author_forms')
+  ) then return null; end if;
   hash:=pg_catalog.md5(p_form_id::text);
   cached:=app_private.f15_builder_cached_result(p_workspace_id,p_actor_user_id,p_request_id,'retire',hash);
   if cached is not null then return cached; end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
     'f15-default-onboarding:'||p_workspace_id::text,0));
+  if auth.uid() is not null and (
+    app_private.current_staff_role() is null
+    or not app_private.role_has_capability(app_private.current_staff_role(),'author_forms')
+    or not app_private.has_workspace_access(p_workspace_id,'author_forms')
+  ) then return null; end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
     'f15-form:'||p_workspace_id::text||':'||p_form_id::text,0));
+  if auth.uid() is not null and (
+    app_private.current_staff_role() is null
+    or not app_private.role_has_capability(app_private.current_staff_role(),'author_forms')
+    or not app_private.has_workspace_access(p_workspace_id,'author_forms')
+  ) then return null; end if;
   if exists(select 1 from public.workspace_default_onboarding_forms d
     where d.workspace_id=p_workspace_id and d.form_id=p_form_id) then
     return jsonb_build_object('status','default_selected'); end if;

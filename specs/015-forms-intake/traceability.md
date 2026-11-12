@@ -168,3 +168,12 @@ Local gates on `13ef649927e03cf7d5e62b11d65c8eeb5ea4d4f1`: typecheck, lint, form
 
 T149 remains deferred: no UI or copy is included; a future PO MCQ must approve exact English and Egyptian Arabic strings before implementation.
 | FR-013 / SC-029 — final Analyze, cross-reference sweep, and evidence record | T150 | Analyze dated 2026-11-12 with 0 CRITICAL/HIGH; FR/SC/T145-T150 sweep across spec, plan, tasks, traceability, Analyze and research passed; no PDN-S50-F15 placeholders or stale Pending rows. After main merge `a01e6e0b`, focused unit 16/16 and Stack A integration 2/2 passed. S41 self-review found no unresolved state, retry, concurrency, retention or copy gap; 143 review threads are resolved. | `a01e6e0b79c46d8abfa281ece68f4fedb3343796` |
+
+## S51 Greptile P1 regressions
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-004/030 ? persisted retirement adapter accepts the established success response without `definition` | T151 | RED unit failed (`invalid`); GREEN `tests/unit/forms-persisted-staff-adapter.test.ts::accepts retirement success without a returned form definition` passed 9/9. | Pending implementation commit |
+| FR-013 ? authorization is rechecked after the assignment lock; concurrent revocation prevents all writes | T151 | RED Stack A race returned `corrected` revision 2 after membership revocation. GREEN `tests/integration/forms-r3-corrections.test.ts::T151 rechecks correction authorization after waiting for the assignment lock` returns `not_permitted` and verifies no answer/intent/audit writes. Recheck-removal mutation was killed by the concurrent race; function definition restored byte-for-byte. | Pending implementation commit |
+| FR-004/030 ? Builder writes recheck membership after request/default/resource lock waits | T151 | RED Stack A matrix found unauthorized results/writes in 23 lock cases. GREEN `tests/integration/forms-builder-persistence.test.ts::T151 rechecks Builder authorization after waiting on each writer lock` passed all lock cases with no writes. Full touched integration files: 2 files / 28 passed. | Pending implementation commit |
+| FR-013 / FR-004/030 ? preserve SECURITY DEFINER properties and only change the intended function bodies | T151 | OLD/NEW normalized Stack A schema-only dump comparison (owners/ACLs): 18,915 vs 18,964 lines; exact 49 added guard lines in eight hunks, no removals or unrelated changes. `schema-diff.patch`; migrations replayed through `20261112031800`. | Pending implementation commit |
