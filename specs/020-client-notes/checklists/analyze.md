@@ -191,3 +191,22 @@ PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIG
 - **Gate:** PASS. FR/SC/GWT and resolved clarifications remain as revalidated in Round 19. The T004 task remains mapped to FR-002, FR-003, FR-004, FR-008, FR-009, FR-010, and FR-011.
 - **Verification:** T004 boundary and normalization evidence is recorded in `traceability.md`; Stack D integration suites passed 11/11, unit suite passed 180 files / 2,398 tests, lint and typecheck passed, and migration timestamp/cross-ref scans passed.
 - **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. No PO decision was made.
+
+## Round 18 — S49-PO-7 route scope, S49-R18 and S49-R22 revalidation (2026-11-12)
+
+- Scope: S49-PO-7 is recorded verbatim in spec.md with its source path and byte hash. S49-R21 maps the approved outcome to FR-001/SC-008 and task T016: staff Client Details route, one functional Notes tab, no placeholder or unrelated panels, existing app authorization plus database second wall, indistinguishable denial/404 for unknown and unauthorized clients.
+- Cross-reference sweep: FR-001..FR-011 and SC-001..SC-008 each map to task IDs; T016 is tagged FR-001/003/004/005; plan step 7 and task dependency order include route work; decision register has no unresolved product question.
+- Entry gate: numbered FRs, measurable SCs and GWT route scenarios present; PO clarification is cited; route plan and task are present; this Analyze is dated after spec/plan/tasks edits.
+- Constitution Principle I: the existing Platform Owner access rule remains recorded as the resolved S40-PO-12 decision and implementation-time governance note; no constitution text is changed.
+- S49-R18: migration work is forward-only and will preserve function security/search_path/grants; tests must prove an unauthorized actor sees the same generic denial code/message for existing and absent note IDs, with not-found available only after access is proven.
+- S49-R22: candidate behavior tests require no raw server error rendering and a local-time assertion under a fixed TZ with exact expected output.
+- PO decision sweep: no unresolved product behavior or new UI copy is needed for the approved route shape; use existing approved Notes strings and the existing staff route denial behavior. Any additional user-visible copy or design-system gap remains blocked for MCQ escalation.
+
+### Result
+
+PASS for implementation entry: 0 open CRITICAL, 0 open HIGH. No open ambiguities for the authorized S49-PO-7 route slice.
+
+
+### Round 18 addendum — numbering and final cross-reference check (2026-11-12)
+
+After the final spec numbering edit, rechecked GWT scenario numbering (1–4), FR/SC/task mappings, plan step 7, T016 placement after T006 and before T007, and task tags. Result: no open CRITICAL or HIGH finding; no ambiguity.
