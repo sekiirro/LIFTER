@@ -8,7 +8,6 @@ import { getMessages } from '../../lib/i18n';
 import type { Locale } from '../../lib/design/preferences';
 import { dirFor } from '../../lib/design/preferences';
 import { normalizeClientNoteBody } from '../../lib/client-notes/validation';
-import styles from './ClientNotes.module.css';
 
 export type ClientNote = {
   id: string;
@@ -202,12 +201,12 @@ export function ClientNotes(props: ClientNotesProps) {
 
   return (
     <section
-      className={styles.root ?? ''}
+      className={''}
       dir={dir}
       lang={locale === 'ar' ? 'ar' : 'en'}
       data-testid="client-notes"
     >
-      <h2 className={styles.title ?? ''}>{m['clientNotes.tab']}</h2>
+      <h2 className={''}>{m['clientNotes.tab']}</h2>
 
       {status === 'loading' && (
         <p role="status" aria-live="polite">
@@ -226,23 +225,23 @@ export function ClientNotes(props: ClientNotesProps) {
       {status === 'ready' && (
         <>
           {notes.length === 0 && (
-            <p className={styles.empty ?? ''}>{m['clientNotes.empty']}</p>
+            <p className={''}>{m['clientNotes.empty']}</p>
           )}
 
           {notes.length > 0 && (
-            <ul className={styles.list ?? ''}>
+            <ul className={''}>
               {notes.map((note) => {
                 const editing = editingId === note.id;
                 const authorLabel = note.author_user_id
                   ? note.author_user_id
                   : m['clientNotes.unavailableAuthor'];
                 return (
-                  <li key={note.id} className={styles.item ?? ''}>
-                    <div className={styles.byline ?? ''}>
+                  <li key={note.id} className={''}>
+                    <div className={''}>
                       <Bidi>{m['clientNotes.byline'].replace('{author}', authorLabel).replace('{time}', note.created_at)}</Bidi>
                     </div>
                     {note.edited_at && (
-                      <div className={styles.edited ?? ''}>
+                      <div className={''}>
                         {m['clientNotes.editedMarker'].replace(
                           '{time}',
                           note.edited_at,
@@ -250,8 +249,8 @@ export function ClientNotes(props: ClientNotesProps) {
                       </div>
                     )}
                     {editing ? (
-                      <div className={styles.editForm ?? ''}>
-                        <label className={styles.label ?? ''}>{m['clientNotes.noteLabel']}
+                      <div className={''}>
+                        <label className={''}>{m['clientNotes.noteLabel']}
                           <textarea
                             value={editDraft}
                             onChange={(e) => setEditDraft(e.target.value)}
@@ -259,13 +258,13 @@ export function ClientNotes(props: ClientNotesProps) {
                             readOnly={saving}
                           />
                         </label>
-                        <span className={styles.counter ?? ''}>
+                        <span className={''}>
                           {counterText(editDraft)}
                         </span>
                         {saveError && (
                           <Alert tone="error" title={saveError} />
                         )}
-                        <div className={styles.actions ?? ''}>
+                        <div className={''}>
                           <Button
                             type="button"
                             onClick={() => handleUpdate(note.id)}
@@ -287,10 +286,10 @@ export function ClientNotes(props: ClientNotesProps) {
                       </div>
                     ) : (
                       <>
-                        <div className={styles.body ?? ''}>
+                        <div className={''}>
                           <Bidi>{note.body}</Bidi>
                         </div>
-                        <div className={styles.actions ?? ''}>
+                        <div className={''}>
                           {canEditNote(note, actorId, role) && (
                             <Button
                               type="button"
@@ -318,11 +317,11 @@ export function ClientNotes(props: ClientNotesProps) {
 
           {canCreate && !editingId && (
             <>
-              <Button type="button" className={styles.createButton ?? ''}>
+              <Button type="button" className={''}>
                 {m['clientNotes.create']}
               </Button>
-              <form className={styles.createForm ?? ''} onSubmit={handleCreate}>
-              <label className={styles.label ?? ''}>{m['clientNotes.noteLabel']}
+              <form className={''} onSubmit={handleCreate}>
+              <label className={''}>{m['clientNotes.noteLabel']}
                 <textarea
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
@@ -330,9 +329,9 @@ export function ClientNotes(props: ClientNotesProps) {
                   readOnly={saving}
                 />
               </label>
-              <span className={styles.counter ?? ''}>{counterText(draft)}</span>
+              <span className={''}>{counterText(draft)}</span>
               {saveError && <Alert tone="error" title={saveError} />}
-              <div className={styles.actions ?? ''}>
+              <div className={''}>
                 <Button type="submit" disabled={saving}>
                   {saving ? m['clientNotes.saving'] : m['clientNotes.saveNote']}
                 </Button>
@@ -350,7 +349,7 @@ export function ClientNotes(props: ClientNotesProps) {
           )}
 
           {exitOpen && (
-            <div role="dialog" aria-modal="true" className={styles.dialog ?? ''}>
+            <div role="dialog" aria-modal="true" className={''}>
               <h3>{m['clientNotes.exitWarning.title']}</h3>
               <p>
                 {exitMode === 'inflight'
@@ -359,7 +358,7 @@ export function ClientNotes(props: ClientNotesProps) {
                     ? m['clientNotes.saveError']
                     : m['clientNotes.exitWarning.body']}
               </p>
-              <div className={styles.actions ?? ''}>
+              <div className={''}>
                 <Button type="button" onClick={stay}>
                   {m['clientNotes.exitWarning.stay']}
                 </Button>
