@@ -1,6 +1,7 @@
 import { act, createElement, type ReactNode } from 'react';
 import { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getMessages } from '../../lib/i18n';
 
 const router = vi.hoisted(() => ({ replace: vi.fn() }));
 
@@ -60,7 +61,13 @@ describe('Client Notes session recovery on sign-out', () => {
     dom.window.document.body.append(host);
     root = createRoot(host);
     await act(async () =>
-      root?.render(createElement(SignOutForm, { label: 'Sign out' })),
+      root?.render(
+        createElement(SignOutForm, {
+          label: 'Sign out',
+          failureLabel: getMessages('en')['states.error.description'],
+          pendingLabel: getMessages('en')['button.loading'],
+        }),
+      ),
     );
     return { storage, host };
   }
@@ -92,7 +99,12 @@ describe('Client Notes session recovery on sign-out', () => {
   });
 
   it('preserves recovery and the current route when sign-out fails', async () => {
-    vi.mocked(signOut).mockResolvedValue(false);
+    let finish!: (result: boolean) => void;
+    vi.mocked(signOut).mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        finish = resolve;
+      }),
+    );
     const { storage, host } = await renderForm();
     await act(async () => {
       host
@@ -100,14 +112,27 @@ describe('Client Notes session recovery on sign-out', () => {
         .dispatchEvent(
           new dom!.window.Event('submit', { bubbles: true, cancelable: true }),
         );
-      await Promise.resolve();
     });
 
     expect(signOut).toHaveBeenCalledTimes(1);
+    expect(host.querySelector('button')?.getAttribute('aria-busy')).toBe(
+      'true',
+    );
+    expect(host.textContent).toContain(getMessages('en')['button.loading']);
+    expect(host.textContent).not.toContain(
+      getMessages('en')['states.error.description'],
+    );
+    await act(async () => finish(false));
     expect(
       storage.getItem('lifter-client-notes-pending-create:v1:workspace:client'),
     ).toBe('pending');
     expect(storage.getItem('unrelated-session-state')).toBe('keep');
     expect(router.replace).not.toHaveBeenCalled();
+    expect(host.textContent).toContain(
+      getMessages('en')['states.error.description'],
+    );
+    expect((host.querySelector('button') as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 });

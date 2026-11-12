@@ -10,7 +10,9 @@ import {
   type ClientNotesFixture,
 } from '../integration/client-notes-fixture';
 
-const origin = 'http://localhost:3000';
+const origin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+).origin;
 const screenshotDir =
   process.env.F20_SCREENSHOT_DIR ??
   join(tmpdir(), 'lifter', 's49-luna-f20-page', 'client-notes');
@@ -258,5 +260,133 @@ test.describe('staff Client Details Notes tab on Stack D', () => {
             .filter((animation) => animation.playState === 'running').length,
       ),
     ).toBe(0);
+  });
+
+  test('creates a note through the UI and reloads its persisted body', async ({
+    page,
+    context,
+  }) => {
+    await installSession(context, fixture.context.trainerA);
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/clients/${fixture.clientId}`);
+    const body = `F20 persisted note ${Date.now()}`;
+    await page
+      .getByRole('textbox', {
+        name: getMessages('en')['clientNotes.noteLabel'],
+      })
+      .fill(body);
+    await page
+      .getByRole('button', { name: getMessages('en')['clientNotes.saveNote'] })
+      .click();
+    await expect(page.getByText(body, { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(body, { exact: true })).toBeVisible();
+  });
+
+  test('renders the signed-in sign-out control accessibly across locale and theme variants', async ({
+    page,
+    context,
+  }) => {
+    await installSession(context, fixture.context.trainerA);
+    const cases = [
+      {
+        locale: 'en',
+        direction: 'ltr',
+        theme: 'light',
+        width: 390,
+        height: 844,
+      },
+      {
+        locale: 'en',
+        direction: 'ltr',
+        theme: 'light',
+        width: 1440,
+        height: 900,
+      },
+      {
+        locale: 'en',
+        direction: 'ltr',
+        theme: 'dark',
+        width: 390,
+        height: 844,
+      },
+      {
+        locale: 'en',
+        direction: 'ltr',
+        theme: 'dark',
+        width: 1440,
+        height: 900,
+      },
+      {
+        locale: 'ar',
+        direction: 'rtl',
+        theme: 'light',
+        width: 390,
+        height: 844,
+      },
+      {
+        locale: 'ar',
+        direction: 'rtl',
+        theme: 'light',
+        width: 1440,
+        height: 900,
+      },
+      {
+        locale: 'ar',
+        direction: 'rtl',
+        theme: 'dark',
+        width: 390,
+        height: 844,
+      },
+      {
+        locale: 'ar',
+        direction: 'rtl',
+        theme: 'dark',
+        width: 1440,
+        height: 900,
+      },
+    ] as const;
+
+    for (const variant of cases) {
+      await context.addCookies([
+        { name: LOCALE_COOKIE, value: variant.locale, url: origin },
+        { name: THEME_COOKIE, value: variant.theme, url: origin },
+      ]);
+      await page.setViewportSize({
+        width: variant.width,
+        height: variant.height,
+      });
+      await page.goto('/');
+      const messages = getMessages(variant.locale);
+      await expect(page.locator('html')).toHaveAttribute(
+        'dir',
+        variant.direction,
+      );
+      await expect(page.locator('html')).toHaveAttribute(
+        'lang',
+        variant.locale,
+      );
+      await expect(
+        page.getByRole('button', { name: messages['auth.signOut'] }),
+      ).toBeVisible();
+      const axe = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze();
+      expect(
+        axe.violations.filter((violation) =>
+          ['critical', 'serious'].includes(violation.impact ?? ''),
+        ),
+      ).toEqual([]);
+      await page.screenshot({
+        path: join(
+          screenshotDir,
+          `signout-${variant.locale}-${variant.theme}-${variant.width}.png`,
+        ),
+        fullPage: true,
+      });
+    }
   });
 });

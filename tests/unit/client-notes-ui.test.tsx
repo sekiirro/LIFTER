@@ -884,7 +884,7 @@ describe('ClientNotes behaviour', () => {
     ).toBeNull();
   });
 
-  it('create: restores same-tab state but discards opener-copied or other-actor records', async () => {
+  it('create: restores same-tab state but discards opener-copied records', async () => {
     const key = 'lifter-client-notes-pending-create:v1:workspace-1:client-1';
     const record = {
       tabId: 'tab-1',
@@ -934,7 +934,7 @@ describe('ClientNotes behaviour', () => {
         notes: [],
         onCreate: vi.fn(async () => ({ status: 'ok' })),
         canCreate: true,
-        actorId: 'actor-2',
+        actorId: 'actor-1',
         clientId: 'client-1',
         workspaceId: 'workspace-1',
       },
@@ -984,6 +984,7 @@ describe('ClientNotes behaviour', () => {
         workspaceId: 'workspace-1',
       },
       {
+        windowName: 'lifter-client-notes-tab:v1:different-tab',
         session: {
           [storageKey]: JSON.stringify({
             tabId: 'different-tab',
@@ -1289,6 +1290,100 @@ describe('ClientNotes behaviour', () => {
     });
     expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
     expect(host!.textContent).not.toContain('boom');
+  });
+
+  it('keeps the create editor closed when an in-flight create succeeds after Discard', async () => {
+    let resolveCreate: ((v: { status: string }) => void) | undefined;
+    const onCreate = vi.fn<
+      (b: string, k: string) => Promise<{ status: string }>
+    >(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+    });
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'submitted'),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.cancel'],
+    )!;
+    await act(async () => cancel.click());
+    const discard = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
+    await act(async () => discard.click());
+    expect(host!.querySelector('textarea')).toBeNull();
+
+    await act(async () => resolveCreate?.({ status: 'ok' }));
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(host!.querySelector('textarea')).toBeNull();
+    expect(
+      Array.from(host!.querySelectorAll('button')).some(
+        (button) => button.textContent === mEn['clientNotes.create'],
+      ),
+    ).toBe(true);
+  });
+
+  it('disables the closed-editor Retry while its request is in flight', async () => {
+    let resolveRetry: ((v: { status: string }) => void) | undefined;
+    let attempts = 0;
+    const onCreate = vi.fn<
+      (b: string, k: string) => Promise<{ status: string }>
+    >(() => {
+      attempts += 1;
+      if (attempts === 1) return Promise.resolve({ status: 'unavailable' });
+      return new Promise((resolve) => {
+        resolveRetry = resolve;
+      });
+    });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+    });
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'retry me'),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.cancel'],
+    )!;
+    await act(async () => cancel.click());
+    const discard = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
+    await act(async () => discard.click());
+    const retry = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.retry'],
+    ) as HTMLButtonElement;
+
+    await act(async () => {
+      retry.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(retry.disabled).toBe(true);
+    await act(async () => retry.click());
+    expect(onCreate).toHaveBeenCalledTimes(2);
+    await act(async () => resolveRetry?.({ status: 'unavailable' }));
   });
 
   it('pending: submit disabled while saving', async () => {

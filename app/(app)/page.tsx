@@ -39,7 +39,11 @@ export default async function HomePage() {
           {m['registrationApproval.clientStatus']}
         </Link>
       )}
-      <SignOutForm label={m['auth.signOut']} />
+      <SignOutForm
+        label={m['auth.signOut']}
+        failureLabel={m['states.error.description']}
+        pendingLabel={m['button.loading']}
+      />
     </main>
   );
 }

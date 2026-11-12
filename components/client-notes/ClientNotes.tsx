@@ -408,7 +408,6 @@ export function ClientNotes(props: ClientNotesProps) {
         const res = await props.onCreate?.(body, key);
         if (res?.status === 'ok') {
           props.onSuccess?.('created');
-          setCreateEditorClosed(false);
           removePendingCreate(key);
           setDraft('');
           setIdempotencyKey(null);
@@ -770,7 +769,11 @@ export function ClientNotes(props: ClientNotesProps) {
 
           {canCreate && !editingId && createEditorClosed && unknownCreate && (
             <Alert tone="error" title={m['clientNotes.saveError']}>
-              <Button type="button" onClick={() => void handleCreate()}>
+              <Button
+                type="button"
+                disabled={saving}
+                onClick={() => void handleCreate()}
+              >
                 {m['clientNotes.retry']}
               </Button>
             </Alert>
