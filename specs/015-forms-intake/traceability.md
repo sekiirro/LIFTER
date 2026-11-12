@@ -150,8 +150,21 @@ Local gates on `13ef649927e03cf7d5e62b11d65c8eeb5ea4d4f1`: typecheck, lint, form
 
 | Requirement | Task | Test/evidence | Commit |
 | --- | --- | --- | --- |
-| FR-013 / SC-029 — omitted answer keys remain unchanged during corrections | T146 | Pending implementation/evidence. | Pending |
-| FR-013 / SC-029 — explicit removal list clears only non-required applicable answers | T146/T147 | Pending implementation/evidence. | Pending |
-| FR-013 / SC-029 — explicit removal of a required applicable answer returns `invalid` with zero writes | T146/T147 | Pending implementation/evidence. | Pending |
-| FR-013 / SC-029 — supplied `null` or empty values are not inferred as removal | T146/T147 | Pending implementation/evidence. | Pending |
-| FR-013 / SC-029 — removals are audited like edits | T147/T148 | Pending implementation/evidence. | Pending |
+| FR-013 / SC-029 — omitted answer keys remain unchanged during corrections | T146 | Stack A `tests/integration/forms-r3-corrections.test.ts::T014 appends a client self-correction without changing the original or logging content`; omitted answers stayed unchanged in the partial patch. 2/2 passed. | `593fa2e721a6fb672fe31ca3108beb363d3c650b` |
+| FR-013 / SC-029 — explicit removal list clears only non-required applicable answers | T146/T147 | Same Stack A test: optional applicable `ordinary` and present-inapplicable `hiddenQ` were removed; absent `score` removal succeeded as a no-op. | `593fa2e721a6fb672fe31ca3108beb363d3c650b` |
+| FR-013 / SC-029 — explicit removal of a required applicable answer returns `invalid` with zero writes | T146/T147 | Same Stack A test: `mustKeep` refusal left revision/correction/intent/audit counts unchanged; required-removal mutant failed and was restored. | `593fa2e721a6fb672fe31ca3108beb363d3c650b` |
+| FR-013 / SC-029 — supplied `null` or empty values are not inferred as removal | T146/T147 | Unit validator and Stack A RPC reject null list, null/empty IDs, and null answer value; empty list means no removals. Unit 16/16, integration 2/2. | `593fa2e721a6fb672fe31ca3108beb363d3c650b` |
+| FR-013 / SC-029 — removals are audited like edits | T146 | Same Stack A test verifies removal revision and `form.answer_corrected` audit; audit-write mutant failed and was restored. | `593fa2e721a6fb672fe31ca3108beb363d3c650b` |
+
+## S50-PO-2 / S50-R12 traceability — explicit correction removal
+
+<!-- prettier-ignore-start -->
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-013 / SC-029 — record S49-PO-5 and S50-PO-2 verbatim; distinguish architect mappings | T145 | F15 decision register contains byte-exact PO text and verified SHA-256 values; Spec Kit Analyze dated 2026-11-12, 0 CRITICAL/HIGH. | `202fdc38bac94dd8fdd6e2213c4617df3687f374` |
+| FR-013 / SC-029 — RED removal validator and RPC behavior matrix | T146 | RED mutations killed in `tests/unit/forms-corrections.test.ts` and Stack A `tests/integration/forms-r3-corrections.test.ts`: omission, optional/inapplicable removal, required zero-write refusal, absent no-op, null/empty, conflict, unknown, duplicate, shape/type, count, request cap, audit and replay-hash behavior. Final focused runs: unit 16/16, integration 2/2. | `593fa2e721a6fb672fe31ca3108beb363d3c650b` |
+| FR-013 / SC-029 — TypeScript validator and RPC parity | T147 | `tests/unit/forms-corrections.test.ts` 16/16; `tests/integration/forms-r3-corrections.test.ts` 2/2; typecheck, targeted ESLint, targeted Prettier and migration timestamps passed. | `593fa2e721a6fb672fe31ca3108beb363d3c650b` |
+| FR-013 / SC-029 — forward migration, migration overlap/order, and security mutations | T148 | Stack A OLD and NEW chains replayed; normalized schema-only dumps with owners/ACLs equal (32,836 lines, zero diff). 12 SQL guard/security/audit mutations failed and were restored GREEN. `20261112031800_f15_explicit_correction_removals.sql`; all 78 added PR migrations ordered after `origin/main` max and references updated. | `593fa2e721a6fb672fe31ca3108beb363d3c650b` |
+<!-- prettier-ignore-end -->
+
+T149 remains deferred: no UI or copy is included; a future PO MCQ must approve exact English and Egyptian Arabic strings before implementation.
