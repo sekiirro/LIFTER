@@ -163,7 +163,7 @@ PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIG
 
 ## Round 19 — S49 implementation entry revalidation
 
-**Analysis date:** 2026-11-12T00:42Z (after the 2026-11-11 plan.md reconciliation at lines 69–71).
+**Analysis date:** 2026-11-12T01:18:47Z (after the 2026-11-11 plan.md reconciliation at lines 69–71).
 **Inputs:** `spec.md`, `plan.md`, `tasks.md`, `.specify/memory/constitution.md` 1.13.0, and S47-PO-14.
 **Scope:** Revalidate F20's Spec Kit implementation entry gate after S47-PO-14 and the current plan reconciliation; no behavior or scope changes.
 
@@ -171,3 +171,13 @@ PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIG
 - **Plan/task mapping: PASS.** `plan.md` covers the Client Notes persistence, authorization, and UI scope. Its Complexity tracking row at lines 69–71 resolves the former Principle I deviation against constitution 1.13.0 and cites S47-PO-14. `tasks.md` maps T002 [FR-004, FR-005] and T003 [FR-002, FR-003, FR-005, FR-010, FR-011], followed by the remaining ordered tasks.
 - **Constitution check: PASS.** Constitution 1.13.0 Principle I explicitly permits verified Platform Owner access without a workspace-membership row, citing the merged F3 rule; this matches CN-MCQ-25 and the resolved plan row. S47-PO-13 authorizes F20 implementation; S47-PO-14 resolves the former deviation.
 - **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. This round supersedes the historical round-17 analysis for current implementation-entry status. No product decision was made.
+
+## Round 20 — S49 verified task evidence
+
+**Analysis date:** 2026-11-12T01:18:47Z (after T002/T003 task-status updates in `tasks.md`).
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, constitution 1.13.0, and the T002/T003 evidence on commit `f891fcca7e3fd6e56d543d7d23f7d079bbee2e59`.
+**Scope:** Acceptance evidence for completed T002/T003 only; no product requirement or behavior text changed.
+
+- **Gate:** PASS. FR/SC/GWT and clarified behavior remain as revalidated in round 19. T002 and T003 are mapped to their FRs and their tests/evidence are recorded in `traceability.md`.
+- **Verification:** T002 app/database authorization parity checks and T003 Stack D persistence/RLS/audit/idempotency integration checks passed on the implementation head. T003 mutation evidence shows the note-side unique constraint is required.
+- **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. No PO decision was made.

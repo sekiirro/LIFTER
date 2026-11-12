@@ -1,0 +1,12 @@
+﻿# Client Notes implementation traceability
+
+| Requirement | Task | Test | Evidence |
+|---|---|---|---|
+| FR-004, FR-005 | T002 | `tests/unit/client-notes-authorization-parity.test.ts::grants coaching_work to the same staff roles in app and database` | Commit `66f98a62537baec68e0b30ffa6764ee7ebb3b153`; focused authorization suite 2 files / 73 tests passed, and full unit suite passed on T003 head. |
+| FR-004, FR-005 | T002 | `tests/unit/client-notes-authorization-parity.test.ts::requires active membership for non-PO actors but keeps the approved PO branch` | Commit `66f98a62537baec68e0b30ffa6764ee7ebb3b153`; temporary SQL role mutation was detected and restored. |
+| FR-002 | T003 | `tests/integration/client-notes-persistence.test.ts::trims Unicode whitespace before the code-point limit and stores the trimmed body` | Commit `f891fcca7e3fd6e56d543d7d23f7d079bbee2e59`; Stack D, 8/8 integration tests passed on this head. |
+| FR-002 | T003 | `tests/integration/client-notes-persistence.test.ts::refuses blank, oversized, and NUL bodies without persisting a row` | Commit `f891fcca7e3fd6e56d543d7d23f7d079bbee2e59`; Stack D, 8/8 integration tests passed on this head. |
+| FR-003 | T003 | `tests/integration/client-notes-persistence.test.ts::refuses updates to note identity, scope, author, creation time, and key` | Commit `f891fcca7e3fd6e56d543d7d23f7d079bbee2e59`; Stack D, 8/8 integration tests passed on this head. |
+| FR-004, FR-005 | T003 | `tests/integration/client-notes-persistence.test.ts::permits workspace Trainer access and denies Sales, foreign workspace, and anonymous reads` | Commit `f891fcca7e3fd6e56d543d7d23f7d079bbee2e59`; Stack D, 8/8 integration tests passed on this head. |
+| FR-010 | T003 | `tests/integration/client-notes-persistence.test.ts::writes one metadata-only create audit event` | Commit `f891fcca7e3fd6e56d543d7d23f7d079bbee2e59`; Stack D, 8/8 integration tests passed on this head. |
+| FR-011 | T003 | `tests/integration/client-notes-persistence.test.ts::returns one live note for a same-key same-body retry and rejects mismatch`; `::serializes concurrent same-key creates and refuses direct duplicate note rows` | Commit `f891fcca7e3fd6e56d543d7d23f7d079bbee2e59`; Stack D, 8/8 integration tests passed on this head. Dropping `client_notes_key_scope_unique` made the direct duplicate test fail; Stack D was restored from migrations and the suite passed again. |
