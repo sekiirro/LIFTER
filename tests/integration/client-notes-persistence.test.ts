@@ -63,8 +63,9 @@ describe('F20 T003 client note persistence and constraints', () => {
       ).rejects.toBeDefined();
     }
     await expect(
-      f.db.begin((tx) =>
-        tx`insert into public.client_notes (
+      f.db.begin(
+        (tx) =>
+          tx`insert into public.client_notes (
           workspace_id, client_id, author_user_id, body, idempotency_key
         ) values (
           ${f.workspaceId}, ${f.clientId}, ${f.context.trainerA.userId},
@@ -311,8 +312,8 @@ describe('F20 T003 client note persistence and constraints', () => {
     expect(eventCount?.count).toBe(1);
     const [event] = await f.db`
       select actor_user_id, action, target_table, target_id, workspace_id,
-             details, occurred_at
-      from public.audit_events
+             details, occurred_at, pg_catalog.to_jsonb(ae) as payload
+      from public.audit_events ae
       where action = 'client_note.created' and target_id = ${String(note.id)}
     `;
     expect(event).toMatchObject({
@@ -328,5 +329,6 @@ describe('F20 T003 client note persistence and constraints', () => {
     ]);
     expect(event?.occurred_at).toBeTruthy();
     expect(JSON.stringify(event?.details)).not.toContain('private note text');
+    expect(JSON.stringify(event?.payload)).not.toContain('private note text');
   });
 });

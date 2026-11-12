@@ -337,8 +337,8 @@ describe('F20 T004 client note mutation boundaries', () => {
     expect(editEventCount?.count).toBe(1);
     const [event] = await f.db`
       select actor_user_id, action, target_table, target_id, workspace_id,
-             details, occurred_at
-      from public.audit_events
+             details, occurred_at, pg_catalog.to_jsonb(ae) as payload
+      from public.audit_events ae
       where action = 'client_note.updated' and target_id = ${String(note.id)}
     `;
     expect(event).toMatchObject({
@@ -354,6 +354,7 @@ describe('F20 T004 client note mutation boundaries', () => {
     ]);
     expect(event?.occurred_at).toBeTruthy();
     expect(JSON.stringify(event?.details)).not.toContain('after edit');
+    expect(JSON.stringify(event?.payload)).not.toContain('after edit');
   });
 
   it('denies edits to non-authors and permits the Platform Owner branch', async () => {
@@ -618,8 +619,8 @@ describe('F20 T004 client note mutation boundaries', () => {
     expect(retry.error).not.toBeNull();
     const [event] = await f.db`
       select actor_user_id, action, target_table, target_id, workspace_id,
-             details, occurred_at
-      from public.audit_events
+             details, occurred_at, pg_catalog.to_jsonb(ae) as payload
+      from public.audit_events ae
       where action = 'client_note.deleted' and target_id = ${String(note.id)}
     `;
     const [deleteEventCount] = await f.db`
@@ -640,5 +641,6 @@ describe('F20 T004 client note mutation boundaries', () => {
     ]);
     expect(event?.occurred_at).toBeTruthy();
     expect(JSON.stringify(event?.details)).not.toContain('delete atomically');
+    expect(JSON.stringify(event?.payload)).not.toContain('delete atomically');
   });
 });
