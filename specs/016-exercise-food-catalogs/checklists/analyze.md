@@ -939,13 +939,13 @@ A hostile pass found that a pending next-page response could append results afte
 
 - Entry: PASS. No spec, plan, or task requirement text changed; the new PO decision is recorded in decision-register.md with its exact source and SHA256. S50-R32 is cited separately as architect mapping.
 - Decided behavior: the compatibility adapter forwards explicit null Notes/Video fields as null to the existing F16 override RPC; absent fields remain omitted. The RPC's existing version/CAS and workspace authorization boundary remains in force, and null effective values resolve to canonical fields.
-- Verification plan: unit contract for explicit-null mapping with pre-fix RED and guard-removal mutation; Stack A integration verifies Notes/Video resolve to canonical on a variation-only version write. Integration is blocked until Stack A identity matches this worktree.
+- Verification: unit contract for explicit-null mapping passed with pre-fix RED and guard-removal mutation; Stack A integration verified Notes/Video resolve to canonical on a variation-only version write. The full assigned F16 integration batch passed after Stack A reset from this worktree.
 - Scope review: no visible copy, permissions, retention behavior, schema contract, or UI change; no new ambiguity. 0 open CRITICAL and 0 open HIGH findings.
 - Current-state verification (2026-11-12 15:00:39 +02:00): Stack A dependency/identity issue is resolved under S51-R5; the full migration chain replayed from the F16 worktree and the FIX2-1 integration test plus the touched F16 batch passed. A plan source-glob formatting correction preserves the intended literal paths using inline code; no requirement or behavior text changed. Entry remains PASS; 0 open CRITICAL and 0 open HIGH findings; no open product ambiguity.
 
 ## S51 migration timestamp collision follow-up
 
-- Checked: 2026-11-12 15:49:42 +02:00
+- Checked: 2026-11-12 16:22:26 +02:00
 - Scope: rename the 21 PR-added F16 migration filenames, preserving their order, because gate-check found two timestamp collisions with different F13 migration blobs on origin/013-impl-s47. Migration contents and requirements are unchanged; all in-repo references were updated.
-- Check: candidate versions 20261112130000–20261112130020 are valid and not in the future; no matching versions exist in fetched origin migration trees. Re-run migration timestamp validation and full Stack A replay before acceptance.
+- Check: candidate versions 20261112130000–20261112130020 are valid, not in the future, and have no matches in fetched origin migration trees. Migration timestamp validation passed; Stack A reset replayed the full chain through 20261112130020; the 22-file F16 integration batch passed (265 passed, 1 expected failure).
 - Open findings: 0 CRITICAL, 0 HIGH.
