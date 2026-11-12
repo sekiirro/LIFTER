@@ -52,6 +52,7 @@ export default async function ClientDetailsPage({
       locale={locale}
       messages={messages}
       notes={result.status === 'ok' ? result.notes : []}
+      hasMore={result.status === 'ok' ? result.hasMore : false}
       status={result.status === 'ok' ? 'ready' : 'error'}
     />
   );

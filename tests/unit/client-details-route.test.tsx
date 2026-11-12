@@ -7,6 +7,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock('../../app/(app)/clients/[clientId]/actions', () => ({
   createClientNoteAction: vi.fn(),
   deleteClientNoteAction: vi.fn(),
+  loadClientNotesAction: vi.fn(),
   updateClientNoteAction: vi.fn(),
 }));
 
@@ -29,6 +30,7 @@ describe('staff Client Details Notes route surface', () => {
           locale,
           messages,
           notes: [],
+          hasMore: false,
           status: 'ready',
         }),
       );

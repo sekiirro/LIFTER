@@ -15,7 +15,17 @@ type Note = {
   edited_at: string | null;
 };
 type NoteResult = { status: 'ok'; note: Note } | { status: Status };
-type ReadResult = { status: 'ok'; notes: Note[] } | { status: Status };
+type NoteCursor = { created_at: string; id: string };
+type ReadResult =
+  | {
+      status: 'ok';
+      notes: Note[];
+      hasMore: boolean;
+      nextCursor: NoteCursor | null;
+    }
+  | { status: Status };
+
+const NOTES_PAGE_SIZE = 100;
 
 function inputRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -44,9 +54,21 @@ export async function readClientNotes(input: unknown): Promise<ReadResult> {
   try {
     const data = inputRecord(input);
     if (!isUuid(data.clientId)) return { status: 'invalid_input' };
+    const cursor = inputRecord(data.cursor);
+    const cursorCreatedAt = cursor.created_at;
+    if (
+      data.cursor !== undefined &&
+      (!isUuid(cursor.id) ||
+        typeof cursorCreatedAt !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
+          cursorCreatedAt,
+        ) ||
+        Number.isNaN(Date.parse(cursorCreatedAt)))
+    )
+      return { status: 'invalid_input' };
     const context = await workspaceContext(data.workspaceId);
     if (context.status !== 'ok') return context;
-    const result = await context.client
+    let query = context.client
       .from('client_notes')
       .select(
         'id,workspace_id,client_id,author_user_id,body,created_at,edited_at',
@@ -55,8 +77,27 @@ export async function readClientNotes(input: unknown): Promise<ReadResult> {
       .eq('client_id', data.clientId)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false });
+    if (data.cursor !== undefined) {
+      const after: NoteCursor = {
+        id: cursor.id as string,
+        created_at: cursorCreatedAt as string,
+      };
+      query = query.or(
+        `created_at.lt.${after.created_at},and(created_at.eq.${after.created_at},id.lt.${after.id})`,
+      );
+    }
+    const result = await query.limit(NOTES_PAGE_SIZE + 1);
     if (result.error) return { status: 'unavailable' };
-    return { status: 'ok', notes: (result.data ?? []) as Note[] };
+    const rows = (result.data ?? []) as Note[];
+    const hasMore = rows.length > NOTES_PAGE_SIZE;
+    const notes = rows.slice(0, NOTES_PAGE_SIZE);
+    const last = notes.at(-1);
+    return {
+      status: 'ok',
+      notes,
+      hasMore,
+      nextCursor: last ? { created_at: last.created_at, id: last.id } : null,
+    };
   } catch {
     return { status: 'unavailable' };
   }

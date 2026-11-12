@@ -4,10 +4,15 @@ import { revalidatePath } from 'next/cache';
 import {
   createClientNote,
   deleteClientNote,
+  readClientNotes,
   updateClientNote,
 } from '../../../../lib/client-notes/service';
 
 const CLIENT_DETAILS_PATH = '/clients/[clientId]';
+
+export async function loadClientNotesAction(input: unknown) {
+  return readClientNotes(input);
+}
 
 export async function createClientNoteAction(input: unknown) {
   const result = await createClientNote(input);

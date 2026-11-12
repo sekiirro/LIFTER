@@ -12,6 +12,7 @@ import type { getMessages } from '../../../../lib/i18n';
 import {
   createClientNoteAction,
   deleteClientNoteAction,
+  loadClientNotesAction,
   updateClientNoteAction,
 } from './actions';
 import styles from './ClientDetailsTabs.module.css';
@@ -26,6 +27,7 @@ type ClientDetailsTabsProps = {
   locale: Locale;
   messages: Messages;
   notes: readonly ClientNote[];
+  hasMore: boolean;
   status: ClientNotesStatus;
 };
 
@@ -45,6 +47,7 @@ function ClientDetailsTabsContent({
   locale,
   messages,
   notes,
+  hasMore,
   status,
 }: ClientDetailsTabsProps) {
   const router = useRouter();
@@ -82,6 +85,7 @@ function ClientDetailsTabsContent({
           locale={locale}
           messages={messages}
           notes={notes}
+          hasMore={hasMore}
           status={status}
           actorId={actorId}
           role={role}
@@ -96,6 +100,13 @@ function ClientDetailsTabsContent({
             )
           }
           onRetryLoad={() => router.refresh()}
+          onLoadMore={(cursor) =>
+            loadClientNotesAction({
+              clientId,
+              workspaceId,
+              cursor,
+            })
+          }
           onCreate={(body, idempotencyKey) =>
             createClientNoteAction({
               clientId,

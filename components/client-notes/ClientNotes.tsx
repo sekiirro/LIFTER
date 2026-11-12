@@ -29,6 +29,7 @@ export type ClientNote = {
 };
 
 export type ClientNotesStatus = 'idle' | 'loading' | 'error' | 'ready';
+export type ClientNoteCursor = Pick<ClientNote, 'created_at' | 'id'>;
 
 export type ClientNotesProps = {
   clientId?: string;
@@ -36,6 +37,7 @@ export type ClientNotesProps = {
   locale?: Locale;
   messages?: ReturnType<typeof getMessages>;
   notes?: readonly ClientNote[];
+  hasMore?: boolean;
   status?: ClientNotesStatus;
   error?: string | null;
   actorId?: string | null;
@@ -43,6 +45,11 @@ export type ClientNotesProps = {
   canCreate?: boolean;
   onSuccess?: (action: 'created' | 'edited' | 'deleted') => void;
   onRetryLoad?: () => void;
+  onLoadMore?: (cursor: ClientNoteCursor) => Promise<{
+    status: string;
+    notes?: ClientNote[];
+    hasMore?: boolean;
+  }>;
   onCreate?: (
     body: string,
     idempotencyKey: string,
@@ -53,6 +60,8 @@ export type ClientNotesProps = {
   ) => Promise<{ status: string; note?: ClientNote; error?: string }>;
   onDelete?: (noteId: string) => Promise<{ status: string; error?: string }>;
 };
+
+const EMPTY_NOTES: readonly ClientNote[] = [];
 
 const PLATFORM_OWNER = 'platform_owner';
 const PENDING_CREATE_PREFIX = 'lifter-client-notes-pending-create:v1:';
@@ -108,7 +117,23 @@ export function ClientNotes(props: ClientNotesProps) {
   const locale = props.locale ?? 'ar';
   const m = props.messages ?? getMessages(locale);
   const dir = dirFor(locale);
-  const notes = props.notes ?? [];
+  const sourceNotes = props.notes ?? EMPTY_NOTES;
+  const [pageState, setPageState] = useState({
+    source: sourceNotes,
+    extra: [] as readonly ClientNote[],
+    hasMore: props.hasMore ?? false,
+    failed: false,
+  });
+  const pageStateIsCurrent = pageState.source === sourceNotes;
+  const notes = pageStateIsCurrent
+    ? pageState.extra.length > 0
+      ? [...sourceNotes, ...pageState.extra]
+      : sourceNotes
+    : sourceNotes;
+  const hasMore = pageStateIsCurrent
+    ? pageState.hasMore
+    : (props.hasMore ?? false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const status = props.status ?? 'ready';
   const actorId = props.actorId ?? null;
   const role = props.role ?? null;
@@ -128,6 +153,10 @@ export function ClientNotes(props: ClientNotesProps) {
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [unknownCreate, setUnknownCreate] = useState(false);
   const [unknownEdit, setUnknownEdit] = useState(false);
+  const [pendingEdit, setPendingEdit] = useState<{
+    noteId: string;
+    body: string;
+  } | null>(null);
   const [pendingCreate, setPendingCreate] = useState<PendingCreate | null>(
     null,
   );
@@ -145,6 +174,47 @@ export function ClientNotes(props: ClientNotesProps) {
   const [exitMode, setExitMode] = useState<'unsaved' | 'inflight' | 'unknown'>(
     'unsaved',
   );
+
+  const loadMore = async () => {
+    const last = notes.at(-1);
+    if (!last || !hasMore || loadingMore || !props.onLoadMore) return;
+    setLoadingMore(true);
+    setPageState((current) => ({
+      source: sourceNotes,
+      extra: current.source === sourceNotes ? current.extra : [],
+      hasMore: current.source === sourceNotes ? current.hasMore : hasMore,
+      failed: false,
+    }));
+    try {
+      const result = await props.onLoadMore({
+        created_at: last.created_at,
+        id: last.id,
+      });
+      if (result.status !== 'ok' || !result.notes) {
+        setPageState((current) => ({ ...current, failed: true }));
+        return;
+      }
+      setPageState((current) => {
+        const extra = current.source === sourceNotes ? current.extra : [];
+        const seen = new Set([...sourceNotes, ...extra].map((note) => note.id));
+        return {
+          source: sourceNotes,
+          extra: [
+            ...extra,
+            ...result.notes!.filter((note) => !seen.has(note.id)),
+          ],
+          hasMore: result.hasMore === true,
+          failed: false,
+        };
+      });
+    } catch {
+      setPageState((current) => ({ ...current, failed: true }));
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const moreLoadFailed = pageStateIsCurrent && pageState.failed;
 
   const storageKey =
     props.clientId && props.workspaceId
@@ -383,8 +453,8 @@ export function ClientNotes(props: ClientNotesProps) {
   );
 
   const handleUpdate = useCallback(
-    async (noteId: string) => {
-      const body = normalizeClientNoteBody(editDraft);
+    async (noteId: string, retryBody?: string) => {
+      const body = normalizeClientNoteBody(retryBody ?? editDraft);
       if (body === null) {
         if (editDraft.trim().length === 0)
           setSaveError(m['clientNotes.blankError']);
@@ -400,22 +470,30 @@ export function ClientNotes(props: ClientNotesProps) {
           setEditingId(null);
           setEditDraft('');
           setUnknownEdit(false);
+          setPendingEdit(null);
         } else {
           setSaveError(m['clientNotes.saveError']);
-          setUnknownEdit(
+          const unknown =
             res?.status !== 'denied' &&
-              res?.status !== 'invalid_input' &&
-              res?.status !== 'not_found',
-          );
+            res?.status !== 'invalid_input' &&
+            res?.status !== 'not_found';
+          setUnknownEdit(unknown);
+          if (unknown) setPendingEdit({ noteId, body });
+          else if (pendingEdit?.noteId === noteId) {
+            setPendingEdit(null);
+            setEditingId(noteId);
+            setEditDraft(body);
+          }
         }
       } catch {
         setSaveError(m['clientNotes.saveError']);
         setUnknownEdit(true);
+        setPendingEdit({ noteId, body });
       } finally {
         setSaving(false);
       }
     },
-    [editDraft, props, m],
+    [editDraft, pendingEdit, props, m],
   );
 
   const handleDelete = useCallback(
@@ -464,7 +542,13 @@ export function ClientNotes(props: ClientNotesProps) {
       setCreateEditorClosed(true);
       return;
     }
-    if (exitMode === 'unknown' && unknownEdit) return;
+    if (exitMode === 'unknown' && unknownEdit && editingId) {
+      setPendingEdit({ noteId: editingId, body: editDraft });
+      setEditingId(null);
+      setEditDraft('');
+      setUnknownEdit(false);
+      return;
+    }
     if (editingId) {
       setEditingId(null);
       setEditDraft('');
@@ -536,9 +620,7 @@ export function ClientNotes(props: ClientNotesProps) {
             <ul className={styles.list}>
               {notes.map((note) => {
                 const editing = editingId === note.id;
-                const authorLabel = note.author_user_id
-                  ? note.author_user_id
-                  : m['clientNotes.unavailableAuthor'];
+                const authorLabel = m['clientNotes.unavailableAuthor'];
                 return (
                   <li key={note.id} className={styles.note}>
                     <div className={styles.metadata}>
@@ -600,7 +682,7 @@ export function ClientNotes(props: ClientNotesProps) {
                           <Bidi>{note.body}</Bidi>
                         </div>
                         <div className={styles.actions}>
-                          {canEditNote(note, actorId, role) && (
+                          {canEditNote(note, actorId, role) && !pendingEdit && (
                             <Button
                               type="button"
                               onClick={() => startEdit(note)}
@@ -670,6 +752,40 @@ export function ClientNotes(props: ClientNotesProps) {
                 {m['clientNotes.retry']}
               </Button>
             </Alert>
+          )}
+
+          {pendingEdit && !editingId && (
+            <Alert tone="error" title={m['clientNotes.saveError']}>
+              <Button
+                type="button"
+                disabled={saving}
+                onClick={() =>
+                  void handleUpdate(pendingEdit.noteId, pendingEdit.body)
+                }
+              >
+                {m['clientNotes.retry']}
+              </Button>
+            </Alert>
+          )}
+
+          {moreLoadFailed && (
+            <Alert tone="error" title={m['clientNotes.loadError']}>
+              <Button type="button" onClick={() => void loadMore()}>
+                {m['clientNotes.retry']}
+              </Button>
+            </Alert>
+          )}
+
+          {hasMore && (
+            <Button
+              type="button"
+              disabled={loadingMore}
+              onClick={() => void loadMore()}
+            >
+              {loadingMore
+                ? m['clientNotes.loading']
+                : m['clientNotes.loadMore']}
+            </Button>
           )}
 
           {exitOpen && (

@@ -64,6 +64,7 @@ describe('ClientNotes UI', () => {
       'clientNotes.exitWarning.stay',
       'clientNotes.exitWarning.discard',
       'clientNotes.exitWarning.bodyInFlight',
+      'clientNotes.loadMore',
     ] as const;
 
     expect(copyRows.size).toBeGreaterThanOrEqual(keys.length);
@@ -89,6 +90,28 @@ describe('ClientNotes UI', () => {
     expect(html).toContain(m['clientNotes.empty']);
     expect(html).toContain(m['clientNotes.create']);
     expect(html).not.toContain('Save Draft');
+  });
+
+  it('uses the approved unavailable-author label instead of rendering an author identifier', async () => {
+    const note = {
+      id: 'n-author',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: '30000000-0000-4000-8000-000000000099',
+      body: 'private note',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const html = renderToStaticMarkup(
+      createElement(ClientNotes, {
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [note],
+      }),
+    );
+    expect(html).toContain(mEn['clientNotes.unavailableAuthor']);
+    expect(html).not.toContain(note.author_user_id);
   });
 
   it('renders approved copy in AR with rtl', () => {
@@ -300,6 +323,93 @@ describe('ClientNotes behaviour', () => {
   let root:
     { render: (node: ReactNode) => void; unmount: () => void } | undefined;
   let previousGlobals: Map<string, PropertyDescriptor | undefined> | undefined;
+
+  it('loads and appends the next note page, then hides load more at the terminal page', async () => {
+    const note = (id: string, body: string) => ({
+      id,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    });
+    const onLoadMore = vi.fn(async () => ({
+      status: 'ok',
+      notes: [note('n2', 'second page')],
+      hasMore: false,
+    }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note('n1', 'first page')],
+      hasMore: true,
+      onLoadMore,
+    });
+    const button = () =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (item) => item.textContent === mEn['clientNotes.loadMore'],
+      );
+    await act(async () => {
+      button()!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onLoadMore).toHaveBeenCalledWith({
+      created_at: '2026-11-08T10:15:00Z',
+      id: 'n1',
+    });
+    expect(host!.textContent).toContain('first page');
+    expect(host!.textContent).toContain('second page');
+    expect(button()).toBeUndefined();
+  });
+
+  it('uses approved load-error and Retry copy without exposing a server error', async () => {
+    const note = {
+      id: 'n1',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'first page',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const onLoadMore = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'unavailable',
+        error: 'private database diagnostic',
+      })
+      .mockResolvedValueOnce({ status: 'ok', notes: [], hasMore: false });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      hasMore: true,
+      onLoadMore,
+    });
+    const loadMore = () =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.loadMore'],
+      )!;
+    await act(async () => {
+      loadMore().click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.loadError']);
+    expect(host!.textContent).toContain(mEn['clientNotes.retry']);
+    expect(host!.textContent).not.toContain('private database diagnostic');
+    const retry = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.retry'],
+    )!;
+    await act(async () => {
+      retry.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onLoadMore).toHaveBeenCalledTimes(2);
+    expect(host!.textContent).not.toContain(mEn['clientNotes.loadError']);
+  });
 
   afterEach(async () => {
     if (root) await act(async () => root?.unmount());
@@ -1347,6 +1457,60 @@ describe('ClientNotes behaviour', () => {
     expect(host!.textContent).not.toContain('unresolved edit text');
     expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
     expect(host!.textContent).not.toContain(mEn['clientNotes.editedToast']);
+  });
+
+  it('closes an unknown edit on Discard and retries the retained body elsewhere in the tab', async () => {
+    const note = {
+      id: 'n-retry',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'committed body',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const onUpdate = vi
+      .fn()
+      .mockResolvedValueOnce({ status: 'unavailable' })
+      .mockResolvedValueOnce({ status: 'ok' });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      onUpdate,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'retained body'),
+    );
+    await act(async () => {
+      byText(mEn['clientNotes.saveChanges']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+
+    expect(host!.querySelectorAll('textarea')).toHaveLength(1);
+    expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      '',
+    );
+    expect(host!.textContent).toContain(mEn['clientNotes.retry']);
+    expect(host!.textContent).toContain('committed body');
+    expect(host!.textContent).not.toContain('retained body');
+    await act(async () => {
+      byText(mEn['clientNotes.retry']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onUpdate).toHaveBeenNthCalledWith(2, 'n-retry', 'retained body');
   });
 
   it('delete failures use approved generic copy only', async () => {
