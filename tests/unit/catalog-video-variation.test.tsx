@@ -87,6 +87,7 @@ describe('workspace video variation UI (T023)', () => {
     });
     expect(buildVideoVariationRequest(base)).toEqual({
       video_url: 'https://youtu.be/abcdefghijk',
+      note: null,
     });
     const markup = renderToStaticMarkup(
       createElement(VideoVariationEditor, {

@@ -2,6 +2,7 @@
 
 import {
   authoringWorkspaces,
+  exerciseOverrideVersion,
   search,
   writeVariation,
   type CatalogResult,
@@ -115,6 +116,22 @@ export async function loadWorkspaceVideoVariationsAction(
       },
     ];
   });
+  if (exerciseId !== undefined && rows.length === 0) {
+    const current = await exerciseOverrideVersion({ workspaceId, exerciseId });
+    if (current.status !== 'ok') return { status: current.status };
+    return {
+      status: 'ok',
+      data: [
+        {
+          workspaceId,
+          exerciseId,
+          version: current.data.version,
+          videoUrl: '',
+          note: '',
+        },
+      ],
+    };
+  }
   return { status: 'ok', data: rows };
 }
 

@@ -174,6 +174,41 @@ describe('catalog server authorization and RPC boundary', () => {
     );
   });
 
+  it('reads only an authorized workspace override version', async () => {
+    currentActor = { userId: 'trainer', role: 'trainer', activeWorkspaceIds: [] };
+    expect(
+      await catalog().exerciseOverrideVersion({
+        workspaceId: ws,
+        exerciseId: targetId,
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(from).not.toHaveBeenCalled();
+
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    from.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({
+              data: { current_version: 4 },
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    });
+    expect(
+      await catalog().exerciseOverrideVersion({
+        workspaceId: ws,
+        exerciseId: targetId,
+      }),
+    ).toEqual({ status: 'ok', data: { version: 4 } });
+  });
+
   it('keeps a null expected version stable for variation operation-key replays', async () => {
     currentActor = {
       userId: 'owner',

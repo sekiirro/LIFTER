@@ -977,3 +977,11 @@ A hostile pass found that a pending next-page response could append results afte
 - Final behavior review: null expected-version CAS rejects concurrent second first-saves after replay lookup; self-target validation remains in the final RPC; canonical and workspace names remain searchable with existing keyset pagination; cutover triggers install atomically and reject retired fields; checked private video payload is shown only when the effective field is absent, while explicit effective null stays fail-closed.
 - Validation: Stack A F16 batch 269 passed / 1 expected failure across 22 modified integration files; T037 94 passed / 1 expected failure; T092 UI unit RED/GREEN and payload-fallback mutation killed; T040 matrix 8/8 and axe 48 scans / 0 violations. Final code-head lint, typecheck, unit (2,585), formatting and size checks passed. Function replacement audit is recorded at `C:/Users/NEW LAP/.lifter/runs/s51-luna-86c/function-replacement-audit.md`.
 - Findings: 0 open CRITICAL, 0 open HIGH. No PO-DECISION-NEEDED item for T092. This analysis is dated after the final task/traceability edits; no further requirement changes are planned.
+
+## S51-R35 continuation analysis — 2026-11-12 22:34 +02:00
+
+- Entry: PASS. spec.md FR-018 and its workspace-customization requirements remain applicable; plan.md covers the workspace override write/read path; PO decision register contains the prior approved clear-to-canonical behavior. T093 is assigned to FR-018.
+- ID sweep: T093 is unique and maps only to FR-018; the task inventory now contains 95 rows. Traceability will cite the final implementation commit and boundary/auth tests after final verification.
+- Scope: preserve explicit blank Notes/Video resets through the variation action and load the existing workspace-authorized override version when the selected exercise is absent from the video/notes projection. This implements the S51-R35 review mapping and existing FR/PO decisions; it adds no new permission, copy, or product behavior.
+- Authorization: the fallback calls the existing scoped exerciseOverrideVersion server method; denial is propagated. It does not change the workspace check or SQL grants. The existing writer CAS continues to serialize concurrent first writes.
+- Ambiguities: none open for T093. No requirement text changed. Analyze has 0 open CRITICAL and 0 open HIGH findings.

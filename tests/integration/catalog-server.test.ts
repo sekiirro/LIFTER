@@ -169,7 +169,7 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     const exercise = await action.createExercise({
       operationKey: fixtureKey(),
       request: {
-        name_ar: `اختبار ${randomUUID()}`,
+        name_ar: `Hidden revision ${randomUUID()}`,
         name_en: `Variation create ${randomUUID()}`,
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
@@ -188,6 +188,56 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
       request: { video_url: 'https://youtu.be/abcdefghijk' },
     });
     expect(result.status).toBe('ok');
+  });
+
+  it('reads the current revision when a non-video override is hidden from the variation projection', async () => {
+    const owner = server(workspaces.po);
+    const trainer = server(workspaces.trainerA);
+    const created = await owner.createExercise({
+      operationKey: fixtureKey(),
+      request: {
+        name_ar: `اختبار ${randomUUID()}`,
+        name_en: `Hidden variation revision ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: [],
+        equipment_codes: ['dumbbell'],
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
+      },
+    });
+    expect(created.status).toBe('ok');
+    if (created.status !== 'ok') return;
+    const exerciseId = (created.data as { exercise_id: string }).exercise_id;
+    const saved = await trainer.writeExerciseOverride({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      id: exerciseId,
+      expectedVersion: null,
+      request: { description: 'Description only' },
+    });
+    expect(saved.status).toBe('ok');
+
+    const projection = await trainer.search({
+      kind: 'variation',
+      query: '',
+      workspaceId: workspaces.wsA.id,
+      filters: { page_size: 50 },
+    });
+    expect(projection.status).toBe('ok');
+    if (projection.status !== 'ok') return;
+    expect(
+      projection.data.some(
+        (row) => (row as { result_id?: string }).result_id === exerciseId,
+      ),
+    ).toBe(false);
+
+    expect(
+      await trainer.exerciseOverrideVersion({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).toEqual({ status: 'ok', data: { version: 1 } });
   });
 
   it('searches exercises created through the session wall by stored taxonomy payload keys', async () => {
