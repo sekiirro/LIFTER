@@ -246,5 +246,14 @@ test.describe('staff Client Details Notes tab on Stack D', () => {
     await expect(tab).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(panel).toBeFocused();
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(
+      await panel.evaluate(
+        (element) =>
+          element
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.playState === 'running').length,
+      ),
+    ).toBe(0);
   });
 });

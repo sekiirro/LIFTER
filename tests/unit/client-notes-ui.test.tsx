@@ -1,4 +1,5 @@
 import { act, createElement, type ReactNode } from 'react';
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +7,69 @@ import { ClientNotes } from '../../components/client-notes/ClientNotes';
 import { getMessages } from '../../lib/i18n';
 
 describe('ClientNotes UI', () => {
+  it('matches every approved CN-MCQ-08 copy row in both locales byte-for-byte', () => {
+    const spec = readFileSync(
+      new URL('../../specs/020-client-notes/spec.md', import.meta.url),
+      'utf8',
+    );
+    const copyRows = new Map<number, { en: string; ar: string }>();
+    for (const line of spec.split(/\r?\n/)) {
+      const match = line.match(/^\|\s*(\d+)\s*\|/);
+      if (!match) continue;
+      const cells = line
+        .split('|')
+        .slice(1, -1)
+        .map((cell) => cell.trim());
+      if (
+        cells.length === 4 &&
+        cells[2] !== undefined &&
+        cells[3] !== undefined
+      ) {
+        copyRows.set(Number(match[1]), { en: cells[2], ar: cells[3] });
+      }
+    }
+
+    const keys = [
+      'clientNotes.tab',
+      'clientNotes.create',
+      'clientNotes.noteLabel',
+      'clientNotes.charCounter',
+      'clientNotes.saveNote',
+      'clientNotes.cancel',
+      'clientNotes.saving',
+      'clientNotes.edit',
+      'clientNotes.saveChanges',
+      'clientNotes.delete',
+      'clientNotes.deleteDialogTitle',
+      'clientNotes.deleteDialogBody',
+      'clientNotes.deleteDialogConfirm',
+      'clientNotes.loading',
+      'clientNotes.empty',
+      'clientNotes.loadError',
+      'clientNotes.retry',
+      'clientNotes.saveError',
+      'clientNotes.deleteError',
+      'clientNotes.blankError',
+      'clientNotes.tooLongError',
+      'clientNotes.createdToast',
+      'clientNotes.editedToast',
+      'clientNotes.deletedToast',
+      'clientNotes.editedMarker',
+      'clientNotes.unavailableAuthor',
+      'clientNotes.permissionRefused',
+      'clientNotes.byline',
+      'clientNotes.timestamp',
+    ] as const;
+
+    expect(copyRows.size).toBeGreaterThanOrEqual(29);
+    keys.forEach((key, index) => {
+      const approved = copyRows.get(index + 1);
+      if (!approved) throw new Error(`Missing approved copy row ${index + 1}`);
+      expect(getMessages('en')[key]).toBe(approved.en);
+      expect(getMessages('ar')[key]).toBe(approved.ar);
+    });
+  });
+
   it('renders approved copy in EN', () => {
     const m = getMessages('en');
     const html = renderToStaticMarkup(
