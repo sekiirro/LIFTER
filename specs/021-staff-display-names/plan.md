@@ -1,6 +1,6 @@
 # Implementation Plan: F21 Staff Display Names
 
-**Spec**: [spec.md](spec.md) | **Status**: Proposed. NAME-1..NAME-13 are resolved by S51-PO-4 and S51-PO-7. NAME-14..NAME-16 remain PO-DECISION-NEEDED and block final validation and mutation contracts. No implementation is authorized by this spec-only change.
+**Spec**: [spec.md](spec.md) | **Status**: Proposed. NAME-1..NAME-16 are resolved by S51-PO-4, S51-PO-7 and S51-PO-8. NAME-17..NAME-20 remain PO-DECISION-NEEDED and block the final write-API shape, the request-key record, and the exact allowed-character rule. No implementation is authorized by this spec-only change.
 
 ## Summary
 
@@ -22,24 +22,30 @@ Add a server-owned staff display-name source with authorized reads, then consume
 - Reuse `public.staff_profiles` as the staff identity anchor (`supabase/migrations/20261027120000_tenancy.sql:4-8`). A display name belongs to staff identity, not to `public.clients` or `auth.users` metadata.
 - Read access follows NAME-2 and FR-003/FR-004: active same-workspace staff or Platform Owner; never clients.
 - Write access follows NAME-1, NAME-11, and NAME-12: Workspace Owner or Platform Owner sets names at provisioning; Workspace Owners may set/backfill only within their own workspace, and Platform Owners handle platform/PO-owned accounts. Existing unnamed staff retain access while backfill is pending.
-- Validation follows NAME-3 and NAME-13: required, trimmed, 1-80 Unicode code points, and only Unicode letters, combining marks, spaces, hyphens, apostrophes, and periods; names need not be unique. Exact trim set and normalization remain NAME-14. Database CHECK and application validation must agree after that decision.
+- Validation follows NAME-3, NAME-13 and NAME-14: required, trimmed of Unicode White_Space, 1-80 Unicode code points, and only Unicode letters, combining marks, spaces, hyphens, apostrophes, and periods; names need not be unique. The trimmed value is normalized to Unicode NFC before validation and storage, so the character and length checks apply to the NFC form and the stored value is that form (NAME-14=B). The database CHECK and the application validation must agree on the trim, the NFC form, and the code-point count; the repository already normalizes with `normalize(..., NFC)` on both sides of the stack (`lib/catalog/normalize.ts:42`; `supabase/migrations/20261106103000_catalog_search_indexes.sql:7`), so the same primitive is used here. Which code points "space" denotes inside the allowed set is NAME-20 and is not assumed here.
 - One field is used for both AR and EN (NAME-4; FR-012). No separate localized staff-name fields are defined.
-- Client Notes consumes the name only when an authorized server-owned source exists; otherwise it retains `clientNotes.unavailableAuthor` (`specs/020-client-notes/spec.md:90`; `components/client-notes/ClientNotes.tsx:645`).
+- Client Notes consumes the name only when an authorized server-owned source exists; otherwise it retains `clientNotes.unavailableAuthor` (`specs/020-client-notes/spec.md:90`; the F20 byline rendering that reads that message key is on the F20 implementation branch `020-impl-s48` at `components/client-notes/ClientNotes.tsx:645`).
 - For deactivated/closed authors, the retained name is followed by the exact approved EN/AR parenthetical marker strings recorded under NAME-9 (FR-007).
 
 ### Audit and lifecycle
 
-- Name changes emit exactly one metadata-only audit event with actor and timestamp and no old/new name values (NAME-6; FR-008).
-- Failed or unauthorized changes emit no successful name-change event (`specs/005-audit-log/spec.md` US1 scenario 2; `specs/020-client-notes/spec.md:99`).
+- Name changes emit exactly one metadata-only audit event with actor and timestamp and no old/new name values (NAME-6; FR-008). A retry of the same requested change under the same request key returns the original outcome and emits no second event (NAME-15=A; FR-014; SC-008).
+- Failed or unauthorized changes emit no successful name-change event (`specs/005-audit-log/spec.md` US1 scenario 2; `specs/020-client-notes/spec.md:99`). A change rejected as stale emits no name-change event (NAME-16=B; FR-015; SC-009).
 - Deactivation/closure retains the name and follows existing PII pseudonymization and retention rules (NAME-7; NAME-8; `.specify/memory/constitution.md:96-100`; `docs/13-production-readiness.md:40-41`).
 - Retention inherits DP-02; no new retention or purge is added (`docs/13-production-readiness.md:41`; `supabase/migrations/20261027150000_audit_log.sql:29-41`).
 
+### Write safety
+
+- Every name write carries a stable request key that identifies the requested change, and a retry under the same key returns the original outcome (NAME-15=A; FR-014). The key is not identity, scope, or permission proof (FR-005; FR-010). The repository already owns a feature-neutral operation-key ledger with an immutable stored result, a one-time result write and an existing retention purge (`app_private.operation_keys`; `supabase/migrations/20261106100000_catalog_operation_keys.sql:2-49,81-90`) plus the shared consumer contract for mutating RPCs (`specs/016-exercise-food-catalogs/contracts/catalog-api.md:61,65,67`); the staff-name write is designed against that existing contract rather than a new mechanism. Whether the client generates the key per intended change or the server issues it is NAME-17; what the record retains and whether the retried outcome carries a name value is NAME-19; neither is assumed here.
+- Every name write presents the expected current version of that staff member's name, and a stale version is rejected without changing the stored name; the caller reloads the current name before retrying (NAME-16=B; FR-015; SC-009). The version is a versioned-row precondition of the kind the catalog operations already use (`supabase/migrations/20261106110000_catalog_exercise_operations.sql:11`; `specs/016-exercise-food-catalogs/contracts/catalog-api.md:121`). The stale-rejection response shape is NAME-18 and is not assumed here.
+
 ### UI
 
-- The Client Notes author line is the only in-scope consumer (`components/client-notes/ClientNotes.tsx:645`; `lib/client-notes/service.ts:74`). Other existing and future surfaces, including other display, search, sort, and export surfaces, are out of scope (NAME-10; FR-013).
+- The Client Notes author line is the only in-scope consumer (the F20 byline rendering that reads `clientNotes.unavailableAuthor` is on the F20 implementation branch `020-impl-s48` at `components/client-notes/ClientNotes.tsx:645`; the F20 note query is on that branch at `lib/client-notes/service.ts:74`). Other existing and future surfaces, including other display, search, sort, and export surfaces, are out of scope (NAME-10; FR-013).
 - No staff-name display surface exists today except Client Notes byline (search performed). Other potential surfaces are role-based and do not render staff names (`components/shell/ShellNavigation.tsx:39`; `components/registration-approval/PaymentHistory.tsx:59,234`; `components/registration-approval/ApprovalReview.tsx:75`; `components/catalog/FoodEditor.tsx:28`; `components/catalog/FoodCreateFlow.tsx:24`).
 - NAME-10 resolves first implementation scope to the Client Notes author line only, including its search/sort only if those controls already exist there. No other surface is in scope.
 - The deactivated marker uses the exact PO-approved EN/AR strings recorded in spec.md; no other new UI copy is proposed.
+- No staff-name write surface exists in this repository today, so the retry and stale-rejection behavior of FR-014 and FR-015 introduces no new visible string at this point. Any future write surface needs its own PO-approved copy.
 - Reuse existing Design System components and values; do not invent breakpoints, focus values, tokens, or colors (`specs/020-client-notes/spec.md:94`; `specs/020-client-notes/plan.md:40`).
 
 ### RLS read path
@@ -49,22 +55,24 @@ Add a server-owned staff display-name source with authorized reads, then consume
 - No client or Sales read path.
 - No workspace roster RPC is currently implemented; if cross-staff reads require a new RPC, it must be designed separately and tested (`specs/003-tenancy-rls/tasks.md:54`).
 
-## Implementation phases (future, after MCQ decisions)
+## Implementation phases (future, after the remaining MCQ decisions)
 
-1. Revalidate Analyze and resolve NAME-14..NAME-16 before implementation.
+1. Revalidate Analyze and resolve NAME-17..NAME-20 before implementation.
 2. Design the forward-only staff-name source and provisioning flow.
 3. Implement migration, constraints, RLS, read/write paths, and audit.
 4. Integrate Client Notes byline with fallback and deactivated marker.
 5. Do not integrate any surface beyond the Client Notes author line; other surfaces require separate proposals.
-6. Add negative tests for tenant, role, length, metadata non-use, audit payload, and closure behavior.
+6. Add negative tests for tenant, role, length, normalization, metadata non-use, audit payload, retry, concurrency, and closure behavior.
 7. Run feature gates.
 
 ## Risks and mitigations
 
 - **PII exposure**: staff names are personal data and must follow least-privilege reads, no logs, and closure pseudonymization (`.specify/memory/constitution.md:90-100`).
 - **Tenant isolation**: composite workspace/staff integrity and deny-by-default RLS are required (`specs/020-client-notes/plan.md:58`).
-- **Auth metadata misuse**: no `user_metadata`/`raw_user_meta_data` value may be rendered or used to set a name (`specs/020-client-notes/spec.md:113`).
-- **Unicode parity**: resolve NAME-14 before implementing trim/normalization so database and application validation agree; resolve NAME-15/NAME-16 before implementing retry and concurrency behavior.
+- **Auth metadata misuse**: no `user_metadata`/`raw_user_meta_data` value may be rendered or used to set a name (FR-010; no `lib/` or `app/` references to `user_metadata`, `raw_user_meta_data` or `raw_app_meta_data` at this head; search performed).
+- **Unicode parity**: NAME-14=B fixes the trim set to Unicode White_Space and the normalization to NFC before validation and storage, so the application validator and the database CHECK must apply the identical sequence and count code points on the NFC form. Canonically equivalent submissions therefore store identically (SC-007).
+- **Unknown result**: NAME-15=A requires a stable request key per intended change, so a retry after a lost response returns the original outcome and never produces a second audit event (SC-008). The key's origin remains NAME-17.
+- **Concurrent edits**: NAME-16=B requires an expected version, so a stale change is rejected instead of silently overwriting a newer name, and the rejected write emits no audit event (SC-009). The rejection payload remains NAME-18.
 - **Scope control**: only the Client Notes author line is in scope; other surfaces require separate proposals (NAME-10; FR-013).
 - **Backfill**: Workspace Owners handle staff in their own workspace and Platform Owners handle platform/PO-owned accounts; no access block while backfill is pending (NAME-11).
 
@@ -77,6 +85,6 @@ Add a server-owned staff display-name source with authorized reads, then consume
 
 ## PO decisions
 
-- Resolved: NAME-1..NAME-13 by S51-PO-4 and S51-PO-7 (see spec.md Clarifications).
-- PO-DECISION-NEEDED: NAME-14, NAME-15, NAME-16.
+- Resolved: NAME-1..NAME-16 by S51-PO-4, S51-PO-7 and S51-PO-8 (see spec.md Clarifications).
+- PO-DECISION-NEEDED: NAME-17, NAME-18, NAME-19, NAME-20.
 - No implementation is authorized by this spec-only change.

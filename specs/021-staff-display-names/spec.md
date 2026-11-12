@@ -1,7 +1,7 @@
 # Feature Specification: F21 — Staff Display Names
 
 **Feature Branch**: `021-staff-display-names`
-**Status**: Spec-only. NAME-1..NAME-13 are resolved by PO S51-PO-4 and S51-PO-7 (see Clarifications). NAME-14..NAME-16 remain PO-DECISION-NEEDED. No implementation is authorized by this spec-only change.
+**Status**: Spec-only. NAME-1..NAME-16 are resolved by PO S51-PO-4, S51-PO-7 and S51-PO-8 (see Clarifications). NAME-17..NAME-20 remain PO-DECISION-NEEDED. No implementation is authorized by this spec-only change.
 **Scope**: Add a server-owned staff display-name source and authorized read path. The first implementation uses the name in the Client Notes author line only, including search or sort there only if those controls already exist. Other existing and future surfaces, including other displays, search, sorting, and exports, are out of scope and require separate proposals. This does not change roles, tenant boundaries, or account-closure behavior.
 
 ## Binding source quotations
@@ -33,7 +33,7 @@ A Workspace Owner or Platform Owner sets a required display name when provisioni
 
 1. **Given** a Platform Owner or a Workspace Owner provisioning a staff account, **When** they submit a valid name and the Workspace Owner controls that staff member's workspace, **Then** the name is stored as the staff member's required server-owned display name (NAME-1; NAME-3; NAME-12; FR-001; FR-002).
 2. **Given** a Workspace Owner provisioning a staff account outside their own workspace, **When** the request is made, **Then** the request is denied; a Platform Owner may provision it (NAME-12; FR-005).
-3. **Given** a name consisting only of Unicode letters, combining marks, spaces, hyphens, apostrophes, and periods and containing 1-80 code points after the approved trim rule, **When** provisioning is attempted, **Then** the name is accepted; a disallowed character or a value outside the resolved length rule is refused (NAME-3; NAME-13; NAME-14; FR-002).
+3. **Given** a name consisting only of Unicode letters, combining marks, spaces, hyphens, apostrophes, and periods whose trimmed, NFC-normalized form contains 1-80 code points, **When** provisioning is attempted, **Then** the name is accepted and stored in its trimmed, NFC-normalized form; a value whose trimmed, NFC-normalized form contains a disallowed character or falls outside the 1-80 code-point range is refused and no name is persisted (NAME-3; NAME-13; NAME-14; FR-002; SC-007).
 4. **Given** an existing staff account without a name, **When** its own Workspace Owner backfills it, or the Platform Owner backfills a platform/PO-owned account, **Then** the name is saved and the staff member retains access while backfill is pending (NAME-11; NAME-12; FR-001).
 5. **Given** a client, Sales actor, Trainer, or anonymous caller, **When** they attempt to set or change a staff name, **Then** the request is denied by both application and database boundaries (NAME-1; FR-005; FR-010).
 6. **Given** an existing surface other than the Client Notes author line, **When** the first implementation is delivered, **Then** that surface and its search/sort/export behavior remain unchanged and out of scope (NAME-10; FR-013).
@@ -62,7 +62,7 @@ Client Notes no longer uses the approved unavailable-author fallback when a trus
 1. **Given** an authorized reader and a note whose author has an authorized server-owned name, **When** the note list is rendered, **Then** the Client Notes author line uses that name instead of `clientNotes.unavailableAuthor` (NAME-10; FR-006; FR-007).
 2. **Given** an author whose account is deactivated or closed, **When** an authorized reader views their note, **Then** the retained name is followed by the approved marker strings "(deactivated)" in EN and "(متوقف)" in AR, and no client PII is exposed (NAME-7; NAME-9; FR-006; FR-007; FR-011).
 3. **Given** no authorized name source is available for an author, **When** the note is rendered, **Then** the existing approved `clientNotes.unavailableAuthor` fallback remains in use (FR-006; FR-007).
-4. **Given** a user-editable auth metadata value that resembles a name, **When** the Client Notes author line is rendered, **Then** that metadata value is never used (SC-010; FR-006).
+4. **Given** a user-editable auth metadata value that resembles a name, **When** the Client Notes author line is rendered, **Then** that metadata value is never used (FR-010; FR-006).
 
 ### Story 4 — Audit and lifecycle (P2)
 
@@ -75,22 +75,26 @@ Name changes and lifecycle events are audited without exposing old or new name v
 1. **Given** an authorized name change, **When** it succeeds, **Then** exactly one audit event records actor and timestamp and contains no old or new name value (NAME-6; FR-008; FR-011).
 2. **Given** a staff deactivation or closure, **When** it completes, **Then** the name is retained and the closure follows the existing PII pseudonymization and retention rules (NAME-7; NAME-8; FR-009; FR-011).
 3. **Given** an unauthorized name change or a change that fails, **When** it is attempted, **Then** no successful name-change audit event is emitted (FR-008; FR-011).
+4. **Given** an authorized name change whose outcome the caller did not receive, **When** the caller retries it with the same request key, **Then** the retry returns the original outcome, the stored name is unchanged by the retry, and no second name-change audit event is emitted (NAME-15; FR-014).
+5. **Given** two authorized name changes for the same staff member, **When** the second change presents an expected version older than the stored version, **Then** the second change is rejected, the stored name keeps the first change's value, and the caller must reload the current name before retrying (NAME-16; FR-015).
 
 ## Functional Requirements
 
 - **FR-001**: The system MUST require a server-owned staff display name when a new staff account is provisioned by a Workspace Owner for staff in that owner's own workspace or by a Platform Owner (NAME-1; NAME-3; NAME-12). Existing staff accounts without a name MUST be backfilled by their own Workspace Owner, or by the Platform Owner for platform/PO-owned accounts, without blocking the staff member's access while backfill is pending (NAME-11).
-- **FR-002**: A staff display name MUST allow only Unicode letters, combining marks, spaces, hyphens, apostrophes, and periods; MUST be trimmed; and MUST contain 1-80 Unicode code points after trimming. Names need not be unique (NAME-3; NAME-13). The exact trim set and Unicode normalization behavior remain PO-DECISION-NEEDED (NAME-14); no implementation may assume either. A value failing the resolved rule MUST be refused and no name persisted.
+- **FR-002**: A staff display name MUST allow only Unicode letters, combining marks, spaces, hyphens, apostrophes, and periods; MUST be trimmed by removing leading and trailing Unicode White_Space; and MUST contain 1-80 Unicode code points after trimming and NFC normalization. The trimmed value MUST be normalized to Unicode NFC before validation and before storage, so the stored value is the NFC form of the trimmed input and the character and length checks apply to that NFC form (NAME-3; NAME-13; NAME-14). Which code points "space" denotes inside the allowed set is PO-DECISION-NEEDED (NAME-20); no implementation may assume either reading. Names need not be unique. A value failing the resolved rule MUST be refused and no name persisted.
 - **FR-003**: A staff display name MUST be readable only by staff with active membership in the same workspace and by the Platform Owner; clients, Sales actors, anonymous callers, revoked staff, and foreign-workspace staff MUST be denied (NAME-2; FR-005; FR-010).
 - **FR-004**: Platform Owner read access MUST follow the existing merged F3 platform-wide `app_private.has_workspace_access` rule, including its Platform Owner branch without a membership row, and no constitution change is made (FR-003; `specs/020-client-notes/spec.md:92`; `specs/020-client-notes/plan.md:22`).
 - **FR-005**: Application authorization and database RLS MUST enforce the same deny-by-default policy for name read and write; UI visibility MUST NOT act as a security boundary (`specs/020-client-notes/spec.md:93`).
-- **FR-006**: Where an authorized server-owned staff name exists within current schema and authorization boundaries, the Client Notes author line MUST render that name instead of `clientNotes.unavailableAuthor`; otherwise it MUST retain the approved unavailable-author fallback (NAME-10; F20 FR-002; `specs/020-client-notes/spec.md:90`; `components/client-notes/ClientNotes.tsx:645`).
+- **FR-006**: Where an authorized server-owned staff name exists within current schema and authorization boundaries, the Client Notes author line MUST render that name instead of `clientNotes.unavailableAuthor`; otherwise it MUST retain the approved unavailable-author fallback (NAME-10; F20 FR-002; `specs/020-client-notes/spec.md:90`; the F20 byline rendering that reads `clientNotes.unavailableAuthor` is on the F20 implementation branch `020-impl-s48` at `components/client-notes/ClientNotes.tsx:645`).
 - **FR-007**: For a deactivated or closed staff author, the Client Notes author line MUST retain and display the server-owned name followed by the approved EN marker "(deactivated)" or AR marker "(متوقف)", according to the interface language (NAME-7; NAME-9).
-- **FR-008**: A successful staff display-name change MUST emit exactly one audit event containing actor and timestamp, and MUST NOT contain old or new name values (NAME-6).
+- **FR-008**: A successful staff display-name change MUST emit exactly one audit event containing actor and timestamp, and MUST NOT contain old or new name values (NAME-6). Exactly one audit event is emitted per successful change, including when the change is retried under the same request key (NAME-15; FR-014).
 - **FR-009**: On staff deactivation or closure, the display name MUST be retained, and closure MUST continue to deactivate access and pseudonymize PII while keeping legally required ledger and audit records (NAME-7; NAME-8; `.specify/memory/constitution.md:96-100`).
-- **FR-010**: No user-editable `user_metadata`/`raw_user_meta_data` value may be rendered as a staff name or used to set one (F20 SC-010; `specs/020-client-notes/spec.md:113`).
+- **FR-010**: No user-editable `user_metadata`/`raw_user_meta_data` value may be rendered as a staff name or used to set one (F20's equivalent author-label rule is recorded as F20 SC-010 on the F20 implementation branch `020-impl-s48`; F20 on `origin/main` carries the approved unavailable-author label in F20 FR-002 at `specs/020-client-notes/spec.md:90` and carries no auth-metadata criterion). At this head no `lib/` or `app/` reference to `user_metadata`, `raw_user_meta_data` or `raw_app_meta_data` exists; search performed.
 - **FR-011**: Audit and lifecycle behavior for staff names MUST follow the existing `public.audit_events` retention and append-only policy; no new retention setting or purge is added (NAME-8; DP-02; `docs/13-production-readiness.md:41`; `supabase/migrations/20261027150000_audit_log.sql:29-41`).
 - **FR-012**: The staff display name MUST use one field for both AR and EN; no separate localized name fields are defined (NAME-4).
 - **FR-013**: The first implementation MUST use the staff display name in the Client Notes author line only. Search or sort may use the name only if that behavior already exists within the Client Notes surface. All other existing or future surfaces and their search, sorting, and exports are out of scope for this implementation and require separate proposals (NAME-5; NAME-10).
+- **FR-014**: Every staff display-name write MUST carry a stable request key that identifies the requested change. A retry of the same requested change that carries the same key MUST return the original outcome, MUST NOT change the stored name again, and MUST NOT emit a second name-change audit event (NAME-15). A request key MUST NOT be usable as proof of identity, scope, or permission, and MUST NOT be treated as name content (NAME-15; FR-005; FR-010).
+- **FR-015**: Every staff display-name write MUST present the expected current version of that staff member's name. A write whose expected version does not match the stored version MUST be rejected without changing the stored name and without emitting a name-change audit event, and the caller MUST reload the current name before retrying (NAME-16). The version check MUST NOT be used as identity, scope, or permission proof (NAME-16; FR-005; FR-010).
 
 ## Success Criteria
 
@@ -100,12 +104,15 @@ Name changes and lifecycle events are audited without exposing old or new name v
 - **SC-004**: 100% of successful name changes produce exactly one metadata-only audit event with actor and timestamp and no old/new name values; 100% of failed or unauthorized changes produce no successful name-change event.
 - **SC-005**: 100% of deactivated or closed authors with a retained name render that name followed by the exact approved EN "(deactivated)" or AR "(متوقف)" marker in the Client Notes author line.
 - **SC-006**: No new retention, purge, or closure behavior is added; staff-name retention inherits DP-02 and constitution VII (`docs/13-production-readiness.md:40-41`; `.specify/memory/constitution.md:90-100`).
+- **SC-007**: 100% of stored staff display names equal the NFC-normalized form of the trimmed submitted value, so two submissions that differ only by Unicode normalization form store identically; 100% of submitted values whose trimmed and NFC-normalized form contains a disallowed character, or has 0 or more than 80 code points, are refused with no name persisted (FR-002; NAME-13; NAME-14).
+- **SC-008**: 100% of retried name changes that carry the same request key return the original outcome, leave the stored name unchanged by the retry, and emit exactly one name-change audit event for the original change (FR-014; NAME-15).
+- **SC-009**: 100% of name changes that present a stale expected version are rejected with the stored name unchanged and no name-change audit event emitted, and the rejected caller can retry successfully after reloading the current name (FR-015; NAME-16).
 
 ## Clarifications
 
-### PO decision register (NAME-1..NAME-13)
+### PO decision register (NAME-1..NAME-16)
 
-NAME-1..NAME-8 are resolved by PO S51-PO-4. NAME-9..NAME-13 are resolved by PO S51-PO-7: NAME-9=A (parenthetical suffix and the approved marker strings quoted above); NAME-10=A (Client Notes author line only, including search/sort only if present there); NAME-11=B (Workspace Owner backfills their workspace; Platform Owner backfills platform/PO-owned accounts; no access block); NAME-12=A (Workspace Owner writes only within their own workspace); NAME-13=E (Unicode letters, combining marks, space, hyphen, apostrophe, period; trimmed; 1-80 code points).
+NAME-1..NAME-8 are resolved by PO S51-PO-4. NAME-9..NAME-13 are resolved by PO S51-PO-7: NAME-9=A (parenthetical suffix and the approved marker strings quoted above); NAME-10=A (Client Notes author line only, including search/sort only if present there); NAME-11=B (Workspace Owner backfills their workspace; Platform Owner backfills platform/PO-owned accounts; no access block); NAME-12=A (Workspace Owner writes only within their own workspace); NAME-13=E (Unicode letters, combining marks, space, hyphen, apostrophe, period; trimmed; 1-80 code points). NAME-14..NAME-16 are resolved by PO S51-PO-8 and are recorded in the PO decision register (NAME-14..NAME-16) section below.
 
 Verbatim S51-PO-4 decision source, copied byte-for-byte from `C:/Users/NEW LAP/.lifter/runs/s51-arch/pdn-s51-names.txt` (SHA-256 `72c0fd7a194beecf94bfa975187ecbaa9ee3eef4756a124f0e2f43e24e2cc2a6`):
 
@@ -137,46 +144,72 @@ NAME-13=E: allowed characters = Unicode letters, combining marks (accents/Arabic
 
 Source: `C:/Users/NEW LAP/.lifter/runs/s51-po/s51-po-4.verbatim.txt`, sha256 `4be9e250bb55be1e0d70bc1c01d69c78942a0fab118891990491eee377fc5e35`; architect MCQs asked in S51 after S51-PO-3. Verbatim register entries are quoted in the Binding source quotations section above. NAME-1=A, NAME-2=A, NAME-3=A, NAME-4=A, NAME-5=B, NAME-6=A, NAME-7=A, NAME-8=A.
 
-### PO-DECISION-NEEDED (NAME-14..NAME-16)
+### PO decision register (NAME-14..NAME-16)
 
-- **NAME-14** (feature 021; location: FR-002): what exact trim set and Unicode normalization behavior apply before validating and storing a name? NAME-13=E specifies the allowed characters and code-point length but does not define these details.
-  - A: Trim Unicode White_Space at both ends and preserve the remaining code-point sequence without normalization.
-  - B: Trim Unicode White_Space at both ends, then normalize to NFC before validation and storage.
-  - C: Trim ASCII space (U+0020) only and preserve the remaining code-point sequence.
-  - D: Reject any leading/trailing whitespace; do not trim.
-  - Implications: A/C preserve submitted character sequences but differ in accepted boundary whitespace; B treats canonically equivalent input alike; D requires callers to pre-trim. These choices affect database/application parity and future exact matching.
-  - Recommendation: A, if consistent with the existing F20 trim contract; that source must be checked before finalizing implementation.
-  - Blocks: exact validation and database CHECK/application parity.
+NAME-14..NAME-16 are resolved by PO S51-PO-8: NAME-14=B (trim Unicode White_Space at both ends, then normalize to NFC before validation and storage); NAME-15=A (stable request/idempotency key; a retry with the same key returns the original outcome and emits no second audit event); NAME-16=B (expected-version optimistic concurrency; stale update rejected; caller must reload before retrying).
 
-- **NAME-15** (feature 021; location: FR-008 / T006): after a name write succeeds but the caller receives an unknown result, what should a retry of the same requested change do?
-  - A: Require a stable request/idempotency key; a retry with the same key returns the original outcome and does not emit a second audit event.
-  - B: Treat each accepted retry as a new mutation and emit one audit event per successful attempt.
-  - C: Reject retries whose outcome is unknown until an authorized reader checks the stored name and audit record.
-  - Implications: A requires request identity and replay storage; B can create duplicate audit events for one intended action; C requires recovery/read UX and can leave an operation unresolved.
-  - Recommendation: A, to make retry behavior deterministic while preserving one audit event per logical change.
-  - Blocks: mutation API contract, audit deduplication, and retry tests.
+Verbatim S51-PO-8 decision source, copied byte-for-byte from `C:/Users/NEW LAP/.lifter/runs/s51-arch/pdn-s51-names-3.txt` (SHA-256 `ddf82bee4fb0a7ee17f85dad6792c3050bcd43e30d3c233e42494311361a4dad`):
 
-- **NAME-16** (feature 021; location: FR-008 / T006): when two authorized name changes race for the same staff member, how should the system resolve them?
-  - A: Serialize writes and accept both in commit order; the last committed name is current, with one audit event for each successful change.
-  - B: Require an expected version; reject the stale update and require the caller to reload before retrying.
-  - C: First committed write wins; reject every later write until a separate edit begins.
-  - Implications: A is simple but may overwrite an unseen edit; B avoids silent lost updates but needs version state and conflict handling; C prevents overwrite but requires explicit retry flow.
-  - Recommendation: B, to avoid silently replacing a concurrent edit.
-  - Blocks: write API contract, persistence strategy, and concurrency tests.
+```text
+Source: PO S51-PO-8 (C:/Users/NEW LAP/.lifter/runs/s51-po/s51-po-8.verbatim.txt, sha256 45d2e25c1fdfc21d4236bbd45c67da4fca380b62db1d00ff38c6a25ca905acdd) "N14B N15A N16B", answering NAME-14..16 in specs/021-staff-display-names/spec.md (options as listed there).
+NAME-14=B: trim Unicode White_Space at both ends, then normalize to NFC before validation and storage.
+NAME-15=A: stable request/idempotency key; a retry with the same key returns the original outcome and emits no second audit event.
+NAME-16=B: expected-version (optimistic concurrency); stale update rejected; caller must reload before retrying.
+```
+
+The underlying PO answer file `C:/Users/NEW LAP/.lifter/runs/s51-po/s51-po-8.verbatim.txt` (SHA-256 `45d2e25c1fdfc21d4236bbd45c67da4fca380b62db1d00ff38c6a25ca905acdd`) contains exactly:
+
+```text
+N14B N15A N16B
+```
+
+Architect mapping (not PO words; the PO answered only with the option letters above): NAME-14=B is encoded as FR-002 and SC-007 — the trim set is the Unicode White_Space property (the same definition F20 already uses for the Client Notes body trim at `specs/020-client-notes/spec.md:90`), the NFC form is the value that is validated and stored, and the stored form is what every later read returns. NAME-15=A is encoded as FR-014, SC-008 and Story 4 scenario 4; NAME-16=B is encoded as FR-015, SC-009 and Story 4 scenario 5.
+
+### PO-DECISION-NEEDED (NAME-17..NAME-20)
+
+- **NAME-17** (feature 021; location: FR-014 / T012): a request key is required for every name write, and a retry under the same key returns the original outcome. Where does that key come from and who generates it?
+  - A: The client generates the key per intended change and re-sends the same key on every retry of that change; the server stores it and returns the original outcome for a replay.
+  - B: The server generates the key on the first attempt and returns it to the caller, who re-sends it on retry.
+  - C: No key is stored; the expected-version check alone resolves duplicates.
+  - Implications: A matches the Client Notes create key pattern already approved for F20 (`specs/020-client-notes/spec.md:99`; `specs/020-client-notes/data-model.md:27`) and the existing shared operation-key ledger contract (`specs/016-exercise-food-catalogs/contracts/catalog-api.md:61`), so a retry after a lost response is safe without new server-side key issuance. B adds a server-issued key the caller must round-trip, which needs an approved response field and a copy-free presentation; a lost response loses the key and defeats the retry guarantee. C removes the duplicate-prevention guarantee NAME-15=A requires and leaves an unknown-result write indistinguishable from a new write.
+  - Recommendation: A, for consistency with the existing approved key-per-intended-change pattern in this repository.
+  - Blocks: the write API's request shape, the key storage design, and the retry test.
+
+- **NAME-18** (feature 021; location: FR-015 / T012): a stale expected version is rejected and the caller must reload before retrying. What does the caller receive when the write is rejected as stale?
+  - A: The rejection carries the current stored name and its current version, so the caller can show the current value and retry with the fresh version.
+  - B: The rejection carries only a stale/conflict indication with no name value, and the caller re-reads the name through the authorized read path.
+  - Implications: A saves the caller a second read but returns a staff name value on a rejected write, so the rejection path becomes an additional place where a name is disclosed and must respect FR-003/FR-004 read authorization and the FR-008 no-name-values-in-audit rule. B keeps the rejected write free of name values and reuses the already-approved read path; the caller performs one extra authorized read.
+  - Recommendation: B, because it keeps every disclosure of a staff name on the authorized read path (FR-003/FR-004) and avoids defining a second name-bearing response shape with its own copy and authorization rules.
+  - Blocks: the rejected-write response shape and the concurrency test.
+
+- **NAME-19** (feature 021; location: FR-011 / FR-014 / T012): NAME-15=A requires a retry under the same key to return the original outcome. What does the request-key record retain, and does the retried outcome carry a name value?
+  - A: The record is content-free with respect to the name: it stores the scope, the key, a request fingerprint and the outcome status, and the retry returns that outcome; the caller reads the current name through the authorized read path. The record follows the existing operation-key retention and purge, so no new retention rule is added.
+  - B: The record stores the resulting name value so the retry can return it directly. The name then exists in the key record under that record's own retention, in addition to the staff row.
+  - C: The record stores the name value only for a bounded window and returns a status-only outcome afterwards.
+  - Implications: A keeps every staff-name disclosure on the authorized read path (FR-003/FR-004) and keeps the key record free of personal data, which is what constitution VII and FR-011's "no new retention setting or purge is added" require for staff-name data; the retry costs one extra authorized read. B gives a self-contained retry response but creates a second copy of staff-name personal data outside the staff row and adds a retention surface for it, which FR-011 currently forbids, so it would need an explicit retention decision. C splits the behaviour across two regimes and makes the retry response shape change over time.
+  - Recommendation: A, for consistency with the content-free idempotency record already approved for Client Notes (`specs/020-client-notes/data-model.md:44`) and with FR-011's no-new-retention rule.
+  - Blocks: the key-record contents, the retry response shape, and the retention statement for staff-name data.
+
+- **NAME-20** (feature 021; location: FR-002 / T001 / T011): NAME-13=E approves the allowed characters as "Unicode letters, combining marks, space, hyphen, apostrophe, period", and NAME-14=B sets the trim set to Unicode White_Space. Which code points does "space" in the allowed set denote?
+  - A: Only U+0020 SPACE may appear inside a name; other Unicode White_Space characters may only be trimmed at the ends.
+  - B: Any character with the Unicode White_Space property may appear inside a name, matching the trim set.
+  - Implications: A refuses a name containing an interior non-breaking space or tab and accepts a name that differs only by those characters, so the interior whitespace characters are trimmed but not permitted; B accepts interior Unicode whitespace and keeps the allowed set and the trim set on the same definition, so a name with an interior non-breaking space is stored as submitted. The two choices change which submitted values are refused and what the stored value is for names that contain such characters.
+  - Recommendation: B, because it keeps one whitespace definition for both the trim set and the allowed set, matching the definition F20 already states for its trim (`specs/020-client-notes/spec.md:90`) and avoiding a rule where a character is trimmed at the boundary but refused in the interior.
+  - Blocks: the exact allowed-character rule, the database CHECK constraint, and the validation test.
 
 ### Resolved decisions
 
-- NAME-1..NAME-13 are resolved by S51-PO-4 and S51-PO-7 and are encoded in FR-001..FR-013 above.
-- F20's unavailable-author fallback remains valid until an authorized name source exists (`specs/020-client-notes/spec.md:90`; `specs/020-client-notes/spec.md:113`).
-- No product decision is made for NAME-14..NAME-16.
+- NAME-1..NAME-16 are resolved by S51-PO-4, S51-PO-7 and S51-PO-8 and are encoded in FR-001..FR-015 above.
+- F20's unavailable-author fallback remains valid until an authorized name source exists (`specs/020-client-notes/spec.md:90`).
+- No product decision is made for NAME-17..NAME-20.
 
 ### Constraints and evidence notes
 
 - Staff profiles currently have no display-name column (`supabase/migrations/20261027120000_tenancy.sql:4-8`).
 - `public.clients` has `name`, but that is client profile data, not staff (`supabase/migrations/20261031121000_client_accounts_model.sql:62-78`, name at `:70`).
 - Client metadata clearing claim in the earlier evidence pack (`specs/011-client-accounts/plan.md:201`) was checked and is not supported by that line; treat it as UNVERIFIED unless a future evidence pass finds the real line. This spec does not rely on it.
-- Auth metadata is not used for staff names (`specs/020-client-notes/spec.md:113`; no `lib/` or `app/` references to `raw_user_meta_data`, `raw_app_meta_data`, or `user_metadata`; search performed).
+- Auth metadata is not used for staff names (no `lib/` or `app/` references to `raw_user_meta_data`, `raw_app_meta_data`, or `user_metadata`; search performed). F20 on `origin/main` carries no auth-metadata criterion; its equivalent rule is F20 SC-010 on the F20 implementation branch `020-impl-s48`.
 
-### No open behavioural ambiguities outside NAME-14..NAME-16
+### No open behavioural ambiguities outside NAME-17..NAME-20
 
-The addendum C sweep identified NAME-14 (trim/normalization), NAME-15 (retry after unknown outcome), and NAME-16 (concurrent edits) as open product decisions. No outcome is assumed. No UI deletion behavior is added; staff closure/retention follows FR-009 and the existing DP-02 decision. Implementation of validation and mutation behavior remains blocked on these decisions.
+The addendum C sweep was run again after S51-PO-8 resolved NAME-14..NAME-16. NAME-14 (trim and normalization), NAME-15 (retry after unknown outcome) and NAME-16 (concurrent edits) are now resolved and encoded in FR-002, FR-008, FR-014, FR-015, SC-007, SC-008, SC-009 and Story 4 scenarios 4-5. The remaining open product decisions are NAME-17 (request-key origin), NAME-18 (stale-rejection response shape), NAME-19 (what the request-key record retains and whether the retried outcome carries a name value) and NAME-20 (which code points "space" denotes inside the allowed set); no outcome is assumed for any of them, and the affected write-API shape, request-key record, and validation-test details remain blocked on them. No UI deletion behavior is added; staff closure/retention follows FR-009 and the existing DP-02 decision. No new user-visible copy is introduced by this spec: the Client Notes author line keeps the approved marker strings and the existing `clientNotes.unavailableAuthor` fallback, and no staff-name write surface exists yet in this repository, so the rejected-write and retry behavior carry no new visible string at this point.
