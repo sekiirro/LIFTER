@@ -257,3 +257,12 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Cross-reference review: MCQ-9/-10 references are consistent across FR/SC/scenario 18, task, plan, contract, traceability and this analysis. T044 remains P4/open; FR-041 remains PARTIAL.
 - Findings: 0 open CRITICAL; 0 open HIGH. No decision was inferred for receipt fields. T048 remains unticked until its tests pass and evidence is committed.
 - Verdict: PASS; implementation may proceed with receipt shape unchanged pending MCQ-9/-10.
+
+## 2026-11-12T14:41:05Z — T048 verification evidence re-analysis
+
+- Entry gate: PASS. T048 is checked only after Stack C integration tests passed on implementation commit `402b4e02913671be0aac0d6ed8708ff875b3207c`; tasks.md and traceability.md cite the same test names and commit.
+- Implementation review: the forward migration changes only the effective upgrade writer, keeps its `SECURITY DEFINER`, empty search path, owner and grants unchanged, locks client/subscription/installments before checking immutable net payment events, and retains the existing over-balance guard before writes. No historical rows are rewritten and no replacement schedule or receipt-field change is added.
+- Verification: focused upgrade suite 26/26; selected Stack C F12/F13 suite 27 files / 285 tests passed. Mutations removing the settled guard, installment lock and over-balance check were killed. Local unit, lint, typecheck, format and migration scans are recorded in the run report.
+- Clarification/status review: S51-F13-MCQ-9/-10 remain the only open choices and block receipt-shape changes only. T044 remains P4/open; FR-041 PARTIAL. No stale T048 blocked/unverified status remains in current task or traceability rows.
+- Findings: 0 open CRITICAL; 0 open HIGH.
+- Verdict: PASS; T048 evidence is complete for its decided scope.

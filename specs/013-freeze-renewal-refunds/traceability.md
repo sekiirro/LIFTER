@@ -178,4 +178,4 @@ At the prior head, T041 and T042 had been ticked after a renewal-then-upgrade te
 
 | Requirement | Task | Test evidence | Evidence / status |
 | --- | --- | --- | --- |
-| FR-038, FR-043; SC-035/036 | T048 | Not run; S51-PO-1 spec revision precedes implementation | S51-PO-1 settled-only rule; S51-F13-MCQ-9/-10 block receipt-shape choices; current receipt shape retained; T048 unchecked; UNVERIFIED |
+| FR-038, FR-043; SC-035/036 | T048 | `tests/integration/upgrade-operations.test.ts::T048 refuses an upgrade with an unsettled installment before any writes`; `::T048 revalidates after the shared locks and retains the pre-write over-balance guard`; `::T042 records additional-payment commission at the original subscription rate and keeps one subscription/activation` | Implementation commit `402b4e02913671be0aac0d6ed8708ff875b3207c`; Stack C focused upgrade 26/26; selected F12/F13 27 files / 285 tests; settled/lock/over-balance mutations killed; current receipt retained pending MCQ-9/-10 | VERIFIED |
