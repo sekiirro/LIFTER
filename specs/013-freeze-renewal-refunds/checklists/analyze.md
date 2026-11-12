@@ -208,3 +208,19 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - The explicit changed-file Prettier gate is now green for all five changed Markdown files. Formatting made no requirement, behavior or decision changes.
 - Findings: 0 open CRITICAL, 0 open HIGH. No new product question was introduced by formatting.
 - Verdict: PASS for the documentation formatting correction.
+
+## 2026-11-12T12:24:33Z — S51 upgrade installment replacement spec analysis
+
+- Entry gate: PASS. `spec.md` has numbered FR-043, measurable SC-035, and GWT scenario 17; the Clarifications/PO-decision register records the byte-exact S50-PO-6 answer, source path and SHA-256, and explicitly states that open ambiguities remain. `plan.md` covers the blocked work; `tasks.md` adds FR-tagged T048, unchecked; lifecycle contract and traceability identify the same scope. This section is dated after those edits.
+- Scope: documentation-only specification of PO S50-PO-6 / architect mapping S50-R32. The decided core is replacement/repricing of unpaid original-plan installments after upgrade; settled F12 payment/collection facts remain immutable. No implementation, test expectation, numerical repricing formula, schedule date, receipt/commission rule, or additional product default was introduced.
+- Clarification sweep: S51-F13-MCQ-1 (eligible installment states, partial/overdue), -2 (repricing basis), -3 (due-date schedule), -4 (receipt content), -5 (commission), -6 (audit detail), -7 (in-flight payment concurrency), and -8 (overpayment) are numbered with 2–3 options, implications, and recommendations. Each unresolved choice blocks T048 and is not encoded as a requirement.
+- Cross-reference review: FR-038/043, SC-035, GWT 17, T048, plan, lifecycle contract, and traceability all point to MCQ-1..8. T044 remains P4/open and untouched.
+- Findings: 0 open CRITICAL; 0 open HIGH. Product decisions MCQ-1..8 remain open and block implementation semantics. No implementation or tests are claimed in this spec-only lane.
+- Verdict: PASS for this specification phase; T048 remains blocked pending PO answers.
+
+## 2026-11-12T12:26:19Z — S51 final documentation recheck
+
+- Rechecked all six changed F13 documentation files after the final task/status edit. Prettier `--check` passes for all six; `git diff --check` passes after removing introduced EOF whitespace. No source code or tests changed.
+- Status sweep: prior S49 mention of S48-F13-MCQ-4 is explicitly historical and is closed by S50-PO-6 on policy direction; S51 MCQ-1..8 carry only its unresolved details. T044 remains unticked/P4 and untouched; T048 remains unchecked. FR-038/043, SC-035, scenario 17, plan, task, contract, traceability, and the MCQs are cross-referenced.
+- Findings: 0 open CRITICAL; 0 open HIGH. Eight PO questions remain open and block T048 implementation. No implementation/tests/CI greens are claimed.
+- Verdict: PASS for the S51 specification-only phase.

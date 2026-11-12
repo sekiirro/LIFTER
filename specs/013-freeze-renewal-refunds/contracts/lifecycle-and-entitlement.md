@@ -26,6 +26,12 @@ PO source: exact S43-PO-5 item lines 1 through 11 and S43-PO-6 lines are in spec
 - Points/plans: one point per new client once, none for returning client, renewal, upgrade, or publication; eligible clients may receive unlimited revisions/publications.
 - Concurrency: retain expected-revision, authorization-recheck, exact-replay and stale-request behavior; rejected operations produce no subscription/payment/revenue/audit writes.
 
+### S50-PO-6 upgrade installment decision (specification only)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-6.verbatim.txt`, SHA-256 `c62cd198a022efb057517b6d99d258dab7743bb7a9ea259de4e672e364689888`; byte-exact PO words: `F13=C`. Architect mapping is separately recorded as S50-R32 in `C:/Users/NEW LAP/.lifter/runs/s50-arch/s50-architect-rulings.md`.
+
+After an upgrade, unpaid original-plan installments are replaced/repriced. Existing settled F12 payment and collection facts remain immutable. The decision does not determine which partially paid, overdue, or in-flight installments qualify; the replacement amount formula or due dates; the receipt, commission, or audit details; the outcome when a payment is in flight; or overpayment handling. Those are PO-DECISION-NEEDED items S51-F13-MCQ-1 through S51-F13-MCQ-8. This contract does not select defaults for them; T048 remains blocked until answers are recorded.
+
 ### S43-R8 activation event rule
 
 **architect mapping (S43-R8):** The subscription has one activation row, written on initial activation (automatic or PO Override). Renewal and upgrade write their own immutable lifecycle/ledger events and do not write a new activation row. Retire activation_source = 'renewal' for new writes; historic dev rows are disposable mock data. Renewal still restores/extends access when recorded.

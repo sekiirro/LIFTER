@@ -466,11 +466,12 @@ PO source wording: all 11 S43-PO-5 lines are copied byte-exact, and S43-PO-6 lin
 ### Functional requirements
 
 - **FR-037 - Continuous subscription:** Each client has exactly one continuous subscription. Upgrade and renewal mutate its existing subscription state and append immutable operation, payment/revenue, and audit facts; they never create overlapping subscriptions. Serialize concurrent requests by expected revision. Subscription state, operation receipt, payment/revenue, and audit facts commit atomically; a failed operation writes none of them. If a caller loses the response after commit, exact authorized replay returns the same receipt without extra effects; stale distinct requests fail without partial writes. Initial activation occurs once. Renewal and upgrade write their own lifecycle/ledger events and never write a new activation row. (S43-PO-5 item 1; architect mapping (S43-R8))
-- **FR-038 - Upgrade eligibility, credit, term, and revenue:** Permit upgrade to a package with a higher immutable tier-offer rank at any duration, or the same rank with a longer duration. Upgrade only within the same currency; refuse a mixed-currency selection before writes and perform no conversion. Credit the full payment attributable to the package being replaced, never a prorated balance. If a renewal precedes an upgrade, including when an earlier upgrade has occurred, credit only the original package payment; exclude prior upgrade charges and separately paid renewal payments from the credit, and preserve the separately paid renewal duration and payment. Equal package price is a free upgrade; a lower package price is refused. Same-rank longer and higher-rank equal/longer upgrades start from the original subscription start, except after an expired renewal, when the renewal start date is the anchor; higher-rank shorter-duration upgrades start on the upgrade date. For any upgrade completed before activation, the upgraded term begins on activation, overriding those calendar anchors until activation occurs. Record only additional payments as new revenue and calculate their commission using the original subscription’s stored `commission_rate_bp`. Reject upgrade while frozen until unfrozen and reject upgrade after expiry. (S43-PO-5 items 2, 9-10; S43-PO-6; S43-PO-8; S50-PO-3; architect mapping (S43-R10; S50-R16))
+- **FR-038 - Upgrade eligibility, credit, term, and revenue:** Permit upgrade to a package with a higher immutable tier-offer rank at any duration, or the same rank with a longer duration. Upgrade only within the same currency; refuse a mixed-currency selection before writes and perform no conversion. Credit the full payment attributable to the package being replaced, never a prorated balance. If a renewal precedes an upgrade, including when an earlier upgrade has occurred, credit only the original package payment; exclude prior upgrade charges and separately paid renewal payments from the credit, and preserve the separately paid renewal duration and payment. Equal package price is a free upgrade; a lower package price is refused. Same-rank longer and higher-rank equal/longer upgrades start from the original subscription start, except after an expired renewal, when the renewal start date is the anchor; higher-rank shorter-duration upgrades start on the upgrade date. For any upgrade completed before activation, the upgraded term begins on activation, overriding those calendar anchors until activation occurs. Record only additional payments as new revenue and calculate their commission using the original subscription’s stored `commission_rate_bp`. Reject upgrade while frozen until unfrozen and reject upgrade after expiry. After an upgrade, unpaid original-plan installments are replaced/repriced; eligible installment states, repricing basis, schedule, receipt/commission treatment, audit detail, in-flight-payment handling, and overpayment treatment remain blocked by S51-F13-MCQ-1 through S51-F13-MCQ-8 and are not specified here. (S43-PO-5 items 2, 9-10; S43-PO-6; S43-PO-8; S50-PO-3; S50-PO-6; architect mapping (S43-R10; S50-R16))
 - **FR-039 - Renewal:** A renewal attempted before the subscription’s initial activation MUST be refused before any write and MUST NOT queue or retain the purchased duration. Once activated, for a non-frozen subscription, extend current expiry by the full purchased duration and record the full renewal price as revenue. An expired activated subscription renews from today, with expiry today plus the purchased duration. Renewal changes the existing subscription and writes a renewal lifecycle/ledger event; it writes no new activation row. Freezing extends expiry by counted frozen days. If a renewal is followed by upgrade, apply FR-038’s original-package-only credit rule and preserve the separately paid renewal duration and payment. When an upgrade follows a renewal or counted freeze extension, calculate from the effective pre-upgrade coverage boundary produced by the existing event stream, carry only the still-unconsumed renewal/freeze extension, and do not drop unused paid/credited coverage; elapsed days remain consumed. (S43-PO-5 items 1, 3-4, 8; S50-PO-3; architect mapping (S43-R8; S50-R16))
 - **FR-040 - Manual edits and plans:** Only Platform Owner may manually adjust subscription dates, including after expiry; the latest adjusted dates become the effective dates for entitlement/expiry projection through the existing P4 projector; frozen or deactivated subscriptions are refused with stale_state and zero writes; each adjustment is audited and creates no revenue. Eligible new and existing clients may receive unlimited plan revisions/publications under normal permissions. Upgrade and renewal require no plan; plan publication creates no additional trainer point.
 - **FR-041 - Productivity:** Award one production point per new client once. A returning client never counts as new. Upgrades, renewals, and plan publications award no additional points.
 - **FR-042 - Refund basis after upgrade:** A full refund covers the full selected package payment, including upgrade charges; separate renewal payments are not automatically refunded. Partial refunds remain subject to existing collected-balance and allocation limits. (S43-PO-5 item 6; S43-PO-6)
+- **FR-043 - Upgrade installment replacement:** After an upgrade, unpaid installments of the original plan are replaced/repriced, as decided by PO S50-PO-6. Existing settled F12 payment and collection facts remain immutable. Which installment states are included, the repricing formula and schedule, receipt and commission effects, audit detail, concurrency with an in-flight payment, and overpayment treatment remain unspecified pending S51-F13-MCQ-1 through S51-F13-MCQ-8; implementation is blocked until those answers. (PO source: S50-PO-6; architect mapping: S50-R32)
 
 ### Given / When / Then acceptance scenarios
 
@@ -490,6 +491,7 @@ PO source wording: all 11 S43-PO-5 lines are copied byte-exact, and S43-PO-6 lin
 14. **Given** an original package was paid at EGP 750, an earlier upgrade added an EGP 650 charge, and a separate renewal was paid before another qualifying upgrade, **When** that post-renewal upgrade is priced, **Then** credit is EGP 750 only, excludes the earlier upgrade charge and renewal payment, and preserves the separate renewal duration and payment. (FR-038/039; SC-034)
 15. **Given** a separately paid renewal precedes a qualifying upgrade, **When** the upgrade recalculates the term from the effective renewal state, **Then** the projected service end retains only the renewal coverage still unconsumed at upgrade time, while elapsed days stay consumed. (FR-038/039; SC-034; S50-PO-3)
 16. **Given** a counted freeze extension is partially consumed before a qualifying upgrade, **When** the upgrade recalculates the term, **Then** the projected service end carries the remaining freeze extension and does not re-credit elapsed extension days. (FR-038/039; SC-034; S50-PO-3)
+17. **Given** an upgrade replaces an original plan that has unpaid installments, **When** the upgrade commits, **Then** unpaid original-plan installments are replaced/repriced and settled F12 payment/collection facts remain unchanged; exact eligibility, amount, due dates, receipt/commission effects, audit detail, in-flight payment, and overpayment behavior are blocked pending S51-F13-MCQ-1 through S51-F13-MCQ-8. No numerical or timing result is asserted while those decisions are open. (FR-038, FR-043; SC-035)
 
 ### Supersession register
 
@@ -706,6 +708,7 @@ FR-037 requires exactly one subscription per client across the product; an upgra
 - **SC-032:** Renewal and upgrade after initial activation create lifecycle/ledger events but zero additional activation rows.
 - **SC-033:** In every awaiting-activation renewal attempt, refusal occurs with zero subscription/lifecycle/payment/revenue/obligation/collection/audit/receipt writes and zero queued duration; after activation the FR-039 active/expired rules apply.
 - **SC-034:** For upgrade, renewal, then upgrade, the later upgrade credit is only the original package payment; earlier upgrade charges and separate renewal payments are excluded, renewal duration/payment remain unchanged, the projected service end preserves all unconsumed renewal/freeze extension, and additional-payment commission uses the original subscription’s stored `commission_rate_bp`.
+- **SC-035:** For each installment state PO classifies as eligible under S51-F13-MCQ-1, a committed upgrade leaves no eligible unpaid original-plan amount collectible under its superseded schedule and creates the PO-approved replacement/repriced obligation; settled F12 payment/collection facts remain byte-identical. Formula, due dates, receipt/commission effects, audit detail, in-flight payment, and overpayment assertions remain blocked by S51-F13-MCQ-2 through S51-F13-MCQ-8. This criterion is not implementation-verifiable until those decisions are resolved.
 
 This feature’s clarified continuity and renewal-credit questions are decided; no open product ambiguity remains in these scopes. Implementation and independent technical/security gates remain separate.
 
@@ -826,3 +829,76 @@ MCQ-1 c
 - `PDN-S50-MIG-1 A` resolves the migration timestamp policy: rename PR-added migrations at/below main's newest version to valid non-future timestamps after it, preserve order, and update references.
 
 Architect mapping is S50-R16, not PO wording. **No open product ambiguities remain for these T041/T042 rules.** T044 remains deferred to P4 and unticked; FR-041 remains partial.
+
+
+### S50-PO-6 / S50-R32 — upgrade installment replacement (resolved policy direction; semantics open)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-6.verbatim.txt`; SHA-256 `c62cd198a022efb057517b6d99d258dab7743bb7a9ea259de4e672e364689888`.
+
+PO words (byte-exact):
+
+> F13=C
+
+S51 decision record: `C:/Users/NEW LAP/.lifter/runs/s51-arch/pdn-s50-f13-t042-01.txt`; SHA-256 `409DD26AE4D037E6F8E69366EE795DD60F061A633812E1853E11E2CDF662BCAA`; its option C identifies the already-recorded PO answer. Architect mapping S50-R32 is recorded separately in `C:/Users/NEW LAP/.lifter/runs/s50-arch/s50-architect-rulings.md`. PO decision: unpaid original-plan installments after upgrade are replaced/repriced. The PO decision does not resolve the details below.
+
+**No open ambiguities: NO.** Implementation is blocked by these questions; the recommendations below are not decisions and must not be encoded until PO answers.
+
+#### PO-DECISION-NEEDED
+
+**S51-F13-MCQ-1 — Which original-plan installments are eligible for replacement/repricing?**
+
+- A. Every obligation with any outstanding balance, including partially paid and overdue obligations; fully settled obligations are excluded. *(Recommendation: A, because it applies the decision consistently to the unpaid balance while preserving settled facts.)*
+- B. Only obligations with zero collected amount; partially paid obligations keep their original outstanding balance, and overdue status does not exclude an otherwise fully unpaid obligation.
+- C. Only not-yet-due obligations with zero collected amount; overdue and partially paid obligations retain their original schedule.
+- Implications: A changes all outstanding original-plan obligations; B can leave old and replacement schedules coexisting for one purchase; C leaves delinquent obligations under the original terms. This controls which rows T048 may replace.
+
+**S51-F13-MCQ-2 — What is the repricing basis?**
+
+- A. Reprice remaining eligible obligations to the replacement plan's full configured price less amounts already collected against the replaced plan. *(Recommendation: A, with collected amounts preserved and not charged again.)*
+- B. Reprice only the value attributable to the unconsumed coverage period, using a PO-approved pro-rata calculation.
+- C. Preserve the aggregate unpaid amount and redistribute it over the replacement schedule without changing the amount due.
+- Implications: A can increase or decrease the remaining balance based on plan price; B introduces time-based credit arithmetic; C changes timing only. The selected method determines obligation principal and reconciliation.
+
+**S51-F13-MCQ-3 — Which due-date schedule applies to replacement obligations?**
+
+- A. Retain each eligible original installment's due date and replace only its amount.
+- B. Set new dates from the upgrade recording date using the replacement plan's configured offsets.
+- C. Use the replacement plan's configured schedule anchored to its ordinary purchase/activation date rule.
+- Implications: A preserves existing delinquency timing; B restarts the schedule at upgrade; C may leave an activation-relative schedule anchor. This determines overdue status, reminders, and when collection is allowed.
+
+**S51-F13-MCQ-4 — What should the operation receipt show?**
+
+- A. Return the replacement installment schedule and identify which original obligations it supersedes. *(Recommendation: A, so the successful upgrade receipt describes its resulting obligations.)*
+- B. Return only the upgrade payment receipt; expose the replacement schedule through the existing schedule reader.
+- C. Return both old and replacement schedule references, with old obligations explicitly marked superseded.
+- Implications: A makes the operation receipt a schedule snapshot; B keeps schedule details in a separate read; C exposes lineage in the receipt. Existing issued receipts must remain unchanged under every option.
+
+**S51-F13-MCQ-5 — How do commissions relate to replaced installments?**
+
+- A. Do not accrue commission on unpaid obligations; calculate commission from the stored rate when each replacement obligation is collected. *(Recommendation: A, consistent with collection-based earned commission.)*
+- B. Snapshot a commission rate on each replacement obligation at upgrade time, then calculate commission when collected.
+- C. Carry forward the original installment's commission snapshot onto its replacement obligation.
+- Implications: A ties rate selection to the chosen replacement plan/upgrade rule; B freezes the rate at upgrade; C preserves original schedule economics. This determines future earnings without rewriting past commission facts.
+
+**S51-F13-MCQ-6 — What audit facts should be recorded?**
+
+- A. Append one upgrade-linked audit fact with superseded/replacement obligation IDs, old/new amounts, due dates, and currency. *(Recommendation: A, with bounded non-PII identifiers and amounts.)*
+- B. Append one audit fact with the upgrade ID and counts of superseded/replacement obligations, without amounts or dates.
+- C. Append a separate audit fact per superseded/replacement pair with old/new amounts and due dates.
+- Implications: A is a compact aggregate audit; B minimizes financial detail but weakens reconstruction; C gives pair-level detail and increases audit row volume. This does not authorize PII or free text in audit.
+
+**S51-F13-MCQ-7 — How should upgrade serialize with an in-flight installment payment?**
+
+- A. Serialize both under the existing subscription/obligation lock; whichever commits first determines the state revalidated by the second operation. *(Recommendation: A, preserving atomicity and avoiding duplicate collection.)*
+- B. Refuse the upgrade with stale_state while a payment is in flight; retry after its outcome is known.
+- C. Refuse/void the in-flight payment when the upgrade commits, then replace its obligation.
+- Implications: A requires post-lock validation and deterministic ordering; B can delay upgrades during a provider workflow; C requires external-payment cancellation semantics. The system records external payment outcomes only and does not itself execute payments.
+
+**S51-F13-MCQ-8 — What happens if collected amounts exceed the repriced replacement balance?**
+
+- A. Preserve the excess as an account credit applied to a later eligible obligation. *(Recommendation: A only if PO approves an account-credit ledger; this creates a new balance concept.)*
+- B. Record the excess as refundable and require an explicit PO refund operation; do not create a credit.
+- C. Reject the upgrade before writes unless collected amounts are no greater than the replacement balance.
+- Implications: A requires credit balance ownership/expiry/use rules; B relies on existing refund authorization and external execution; C can prevent an otherwise eligible upgrade. This also determines receipt and ledger treatment for excess collections.
+
+These MCQs were added by the S51 clarification sweep. Their answer options and recommendations describe unresolved choices, not requirements. FR-043/SC-035 state only the PO-decided replacement/repricing direction and immutable settled F12 facts. T048 remains unchecked.

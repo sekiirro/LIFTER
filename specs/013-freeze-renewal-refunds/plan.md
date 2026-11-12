@@ -77,3 +77,7 @@ Plan slices: (1) same-row renewal and upgrade with immutable operation facts, re
 **architect mapping (S43-R8):** Activation is recorded once; renewal and upgrade append lifecycle/ledger events without new activation rows. New writes do not use activation_source = 'renewal'. No migration is authored in this lane.
 
 - **Upgrade execution (T042):** preserve the existing one-subscription writer and projection readers; compute the upgraded service boundary from current effective date state and carry only unconsumed event-stream renewal/freeze extension; use the original subscription commission rate for additional upgrade revenue. Add unit/integration coverage for upgrade-after-renewal, counted-freeze-then-upgrade, partial extension consumption, and ledger commission source. No historical migration rewrite or data migration is authorized.
+
+## S51 upgrade installment replacement specification
+
+PO S50-PO-6 resolves the policy direction: after upgrade, unpaid original-plan installments are replaced/repriced. Preserve settled F12 payment and collection facts as immutable. FR-043/SC-035 and the lifecycle contract define only this decided core. T048 is the implementation task and remains unchecked until S51-F13-MCQ-1 through S51-F13-MCQ-8 resolve eligibility (including partial, in-flight, and overdue states), repricing basis, dates, receipt/commission effects, audit detail, concurrency with an in-flight payment, and overpayment. Do not implement or choose a default before those answers. The plan covers no code in this S51 documentation-only phase.
