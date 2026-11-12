@@ -1,6 +1,6 @@
 # Implementation Plan: F20 Client Notes
 
-CN-MCQ-26..29 are resolved by S51-PO-1 and the verified author-source audit. CN-MCQ-30 remains open only for a future data-model/scope change; the current F20 fallback is decided and implementable.
+CN-MCQ-26..30 are resolved by S51-PO-1 and S51-PO-3 plus the verified author-source audit. Staff display-name data-model work is assigned to separate feature 021-staff-display-names; F20 keeps the approved unavailable-author fallback until 021 ships.
 
 ## Summary
 
@@ -83,12 +83,12 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - Resolved: CN-MCQ-23 (exit-warning copy and Stay/Discard behavior while a save outcome is unknown) by S40-PO-10, option A: the unknown-result exit warning uses the approved generic save-error body CN-MCQ-08 row 18 with title/Stay/Discard rows 30/32/33; rows 31 and 34 are not reused; leaving cancels nothing; the unresolved create keeps its key for Retry; no new copy.
 - Resolved: CN-MCQ-24 (unresolved-create recovery state) by S40-PO-12, option A “Browser session (Rec.)”: the text, idempotency key and original body are kept in that tab's browser `sessionStorage` until the server result is known, then cleared; same-tab reload only (a failed pre-dispatch write falls back to page memory, does not block the create, and does not guarantee duplicate prevention across a reload; spec.md Clarifications item 24); no server-side pending note body; no new copy; device-local under Principle VII.
 - Resolved: CN-MCQ-25 (Platform Owner access versus constitution Principle I) by S40-PO-12, option A “Existing PO rule (Rec.)”: follows the existing merged F3 platform-wide `app_private.has_workspace_access` rule, recorded in Complexity tracking. Constitution 1.13.0 (S47-PO-14; PR #82, commit `de7df3b7`) resolves the Principle I wording; no deviation remains. F20 implementation is authorized by S47-PO-13 and S49-PO-7.
-- CN-MCQ-26..29 were resolved by S51-PO-1; their approved copy and behavior are recorded in spec.md and the implementation amendment below. CN-MCQ-30 remains open only for possible future data-model/scope work; it does not block the approved unavailable-author fallback.
+- CN-MCQ-26..29 were resolved by S51-PO-1; their approved copy and behavior are recorded in spec.md and the implementation amendment below. CN-MCQ-30 was resolved by S51-PO-3: future staff display-name modeling is assigned to separate feature 021-staff-display-names, while F20 retains the approved unavailable-author fallback until 021 ships.
 - Removed: CN-MCQ-15 (DESIGN.md §11 UI values) by architect ruling S38-R9; the design-system reuse rule is recorded in spec.md FR-006 and FR-007.
 
 ## S50-PO-6 implementation amendment (S50-R32 mapping)
 
 - F20-01=A (S50-PO-6, architect mapping S50-R32; copy CN-MCQ-26 resolved by S51-PO-1 A): ordered keyset load-more using `(created_at, id)` and approved `clientNotes.loadMore`; terminal page hides the action.
-- F20-02=B (S50-PO-6, architect mapping S50-R32; condition S51-PO-1 29B): use a trustworthy server-controlled author name only if the source exists within current schema and authorization boundaries. Audit found no such source; F20 renders the existing approved unavailable-author fallback. Future profile/name modeling is a separate PO decision CN-MCQ-30; no migration is in scope.
+- F20-02=B (S50-PO-6, architect mapping S50-R32; condition S51-PO-1 29B): use a trustworthy server-controlled author name only if the source exists within current schema and authorization boundaries. Audit found no such source; F20 renders the existing approved unavailable-author fallback. Future profile/name modeling is assigned by S51-PO-3 to separate feature 021-staff-display-names (CN-MCQ-30); no migration is in scope for F20.
 - F20-03=A (S50-PO-6, architect mapping S50-R32): on unknown edit outcome, Discard closes the editor while retaining the request body in page memory and exposes Retry elsewhere in the same Notes tab, reusing existing approved `clientNotes.retry`; retry is a new save under last-save-wins.
-- No copy remains pending within T017-T019; CN-MCQ-30 is limited to future data-model/scope work. No guessed strings, user-editable name source, or role/name mapping is used.
+- No copy remains pending within T017-T019. CN-MCQ-30 is resolved; F20 keeps the approved fallback until separate feature 021-staff-display-names ships. No guessed strings, user-editable name source, or role/name mapping is used.
