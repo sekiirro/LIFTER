@@ -70,10 +70,10 @@ Add a server-owned staff display-name source with authorized reads, then consume
 
 ## Complexity tracking
 
-| Item | Deviation | Status | Blocks |
-| --- | --- | --- | --- |
+| Item                                             | Deviation                                                                                                                                                                                         | Status                                                         | Blocks                               |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------ |
 | Constitution Principle I versus existing PO rule | Platform Owner access follows the existing merged F3 `app_private.has_workspace_access` rule, including its no-membership-check branch, as recorded for F20 (`specs/020-client-notes/plan.md:71`) | Inherited OPEN status from F20; no constitution change is made | Implementation approval for PO cases |
-| Audit retention | Staff-name audit events inherit existing `public.audit_events` retention (DP-02) | Open pre-production decision remains open | Production approval |
+| Audit retention                                  | Staff-name audit events inherit existing `public.audit_events` retention (DP-02)                                                                                                                  | Open pre-production decision remains open                      | Production approval                  |
 
 ## PO decisions
 
