@@ -115,8 +115,8 @@ describe('T047 workspace exercise override writes', () => {
     );
     expect(detail?.override_version).toBe(2);
     expect(detail?.payload.effective_fields).toMatchObject({
-      notes: { value: 'Canonical notes', source: 'global' },
-      video: { value: 'https://youtu.be/canonical01', source: 'global' },
+      notes: { value: 'Canonical notes', source: 'canonical' },
+      video: { value: 'https://youtu.be/canonical01', source: 'canonical' },
     });
   });
 
