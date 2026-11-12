@@ -277,3 +277,12 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Migration scan: candidate version `20261112152326` is after the maximum fetched origin-ref version `20261112133858` and earlier than observed UTC `2026-11-12 15:23:26` at creation time; local timestamp and 120-ref cross-reference scans pass. Stack C identity and API/DB ports were verified before reset.
 - Findings: 0 open CRITICAL, 0 open HIGH. No ambiguity remains for 9A required fields, 10B omission, or unchanged stored-receipt replay; MCQ-11 is the sole explicit open product question and blocks only those extra-field dispositions.
 - Verdict: PASS for the authorized commission omission and replay-preservation changes, with MCQ-11 explicitly held open.
+
+## S51-PO-2 implementation evidence re-analysis — 2026-11-12T16:03:08Z
+
+- Entry gate: PASS. This dated analysis follows the final T048 checkbox and traceability updates. The current tests and implementation commit are recorded in traceability.md.
+- Implementation: `88d689f03a46dbebddecc45f2fd3a04ed4b94f32` adds forward-only migration `20261112152326_f13_upgrade_receipt_commission_omission.sql`, copied from the current effective function. New receipts omit only the two PO-2 commission fields; the stored commission calculation, upgrade-row values, operation replay branch, owner, `SECURITY DEFINER`, empty `search_path`, revokes, and authenticated grant remain intact.
+- Evidence: RED focused suite had the three expected commission-field assertion failures; restored GREEN focused suite passed 26/26; selected F12/F13 Stack C regression passed 27 files / 273 tests with no failure IDs. Commission-field mutation was killed by all three omission assertions. Security-definition/search-path/grant mutation was killed by the existing forced-RLS/definer-boundary test, then restored and passed 1/1.
+- Clarifications: S51-F13-MCQ-11 remains open for the six existing extra receipt fields outside 9A; no field disposition was encoded. It does not block the commission omission, 9A required fields, or exact old-receipt replay verified here. T044 remains P4/open and FR-041 PARTIAL.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity is assumed; MCQ-11 explicitly records the only unresolved receipt-field question.
+- Verdict: PASS; T048 is ticked with current commit and test evidence. Stop for PO direction on MCQ-11 before changing the six extra fields.
