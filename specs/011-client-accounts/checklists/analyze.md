@@ -616,7 +616,7 @@ Scope: the exact-head CodeRabbit review `5874449345` (CHANGES_REQUESTED on `e19e
 
 ### Cross-reference and coverage
 
-- T047 now carries FR-025 and the FR-025 traceability row lists T047, T048 and T059 — the invariant this feature keeps, that an FR row lists exactly the tasks tagged with that FR.
+- T047 now carries FR-025 and the FR-025 traceability row lists T047, T048 and T059. The invariant this feature keeps is that a traceability row lists every task that `tasks.md` assigns to that requirement — by that task's own tag list, or by the dependency sentence of the feature's documentation task T054 (which gates FR-022 and FR-023 on T050, T052 and T055). Under that invariant the FR-023 row lists T052 even though T052 carries no FR-023 tag of its own (S51-R10).
 - The `stale_state` response the new T047 case asserts is the shape F13's `record_renewal` already returns for a deactivated or unapproved client (`20261103130500_f13_reject_deactivated_client_operations.sql`, the `return jsonb_build_object('status','stale_state')` of the client-state check), and it is the same shape 012 FR-017 names, so no new status code is introduced.
 - The F13 citations are existing ones: 012 FR-003 ("Renewal behavior remains F13"), F13 FR-022 (renewal recording) and F13 FR-024 (client-row-first locking order). No 013 file is changed by this round: F13's own spec, plan and tasks live in `specs/013-freeze-renewal-refunds`, outside this PR's file scope, so the F13-side wording is reported to the architect rather than edited here.
 - FR total 28 (FR-001 to FR-028) and SC total 23 (SC-001 to SC-023) are unchanged. Every S40-scope row in `traceability.md` stays PLANNED with no evidence, so no VERIFIED or PARTIAL count changes.
@@ -625,4 +625,39 @@ Scope: the exact-head CodeRabbit review `5874449345` (CHANGES_REQUESTED on `e19e
 
 - CRITICAL open: 0. HIGH open: 0. MEDIUM open: 1 (A-S50-G4, the pre-existing S40 gate and working assumption). LOW open: 1 (A-S50-G2, pre-existing).
 - No PO product question is raised by this round and no option, default, copy string or test expectation was invented. Architect ruling S51-R3 verified both findings as inside already-decided scope.
+- This is a static document review. It makes no implementation-conformity claim, and the S40 implementation gate stays closed.
+
+## S51 CodeRabbit round analysis — 2026-11-12 (supersedes the S51 CodeRabbit round analysis above for current status)
+
+Scope: the exact-head CodeRabbit review `5875403722` (CHANGES_REQUESTED on `72db1c22`, "Actionable comments posted: 2") and the architect ruling S51-R10. This round changes only the FR-023 row of `traceability.md` in this feature. Static documentation review only: no test suite was executed, no task checkbox was changed, no PO verbatim was touched and no product decision was made.
+
+### Entry check (Spec Kit gate section 1)
+
+| Item                                                                                               | Result | Evidence                                                                                                                                         |
+| -------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Numbered FRs, measurable SCs and Given/When/Then acceptance scenarios for the touched scope        | PASS   | No requirement text changed; the change is one traceability row. FR-022 and FR-023 and their acceptance scenarios are unchanged.                 |
+| Clarifications recorded, "no open ambiguities" stated explicitly                                   | PASS   | The Round 7 block (`spec.md:635`) is unchanged and still states the remaining non-PO items explicitly.                                           |
+| plan.md covers the touched scope                                                                   | PASS   | P-S40-1, P-S40-2 and P-S40-5 are unchanged; the FR-023 row's task set follows T054, which follows the plan's assignment and distribution design. |
+| tasks.md has a task ID for the work, tagged with its FR IDs                                        | PASS   | No task tag changed. T054 already states "FR-022 and FR-023 after T050, T052 and T055"; the row now matches it.                                  |
+| checklists/analyze.md exists, dated after the last change to spec/plan/tasks, 0 open CRITICAL/HIGH | PASS   | This entry, dated 2026-11-12, after the traceability change committed on 2026-11-12.                                                             |
+
+### Findings
+
+| ID                                                                        | Severity              | Artifact                                              | Finding                                                                                                                                                                                                                                                               | Disposition                                                                                                                                                                             |
+| ------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N-1 (CodeRabbit, Minor, thread PRRT_kwDOVYgYQ862pMKU, comment 4551168352) | Minor                 | `traceability.md` FR-023 row                          | The FR-023 row listed `T050, T055` while T054 states "FR-022 and FR-023 after T050, T052 and T055", so the row could suggest FR-023 is ready for verification before all required work passes.                                                                        | FIXED: the FR-023 row now lists `T050, T052, T055`, matching T054's gate sentence, and its status cell records why T052 is listed. The FR-022 row already listed T052 and is unchanged. |
+| N-2 (CodeRabbit, Minor, thread PRRT_kwDOVYgYQ862pMKd, comment 4551168363) | Minor                 | `specs/012-registration-approval/tasks.md` FR-022 row | The row assigned the approval-transaction emit to F12 as a planned follow-up, but no 012 task owned the new forward-only migration or its RED-to-GREEN tests, so the consumer 011 T063 owns could ship with no approval transaction that schedules distribution jobs. | FIXED in feature 012; see 012's Analyze for the same id.                                                                                                                                |
+| A-S50-G2                                                                  | LOW (pre-existing)    | `traceability.md` FR-022 row and SC-021 row           | T063 is tagged FR-022 and T062 is tagged SC-021 in `tasks.md`, but the two traceability rows do not list them. Unchanged at `origin/main`; this round alters neither tag.                                                                                             | RECORDED, not changed: pre-existing and outside the scope of this round.                                                                                                                |
+| A-S50-G4                                                                  | MEDIUM (pre-existing) | `tasks.md` S40 implementation gate; `plan.md` P-S40-2 | The S40 implementation gate stays closed, the A-S41-4 architect design gates stay open and the single-current-responsible-Trainer cardinality working assumption stays open.                                                                                          | RECORDED, unchanged: this documentation correction opens no implementation task.                                                                                                        |
+
+### Cross-reference and coverage
+
+- The FR-023 row and T054 now agree: the row lists every task that T054 assigns to FR-023. T052 keeps its own tag list `[FR-022, FR-024, SC-016]`, because v1 finding F4 changed only this traceability row and never T052's tags; the row is therefore a superset of the tag-based mapping by design, and that rule is now stated explicitly in the section above instead of being implied.
+- Architect ruling S51-R10 records that S50-R6 accepted v1 F4 but did not rule that T052 is excluded, and that v1 F4 is not otherwise reverted: the rest of v1 F4 (the T047/T048/T050/T058/T060 tag alignment) is untouched.
+- FR total 28 (FR-001 to FR-028) and SC total 23 (SC-001 to SC-023) are unchanged. Every S40-scope row in `traceability.md` stays PLANNED with no evidence, so no VERIFIED or PARTIAL count changes.
+
+### Gate verdict
+
+- CRITICAL open: 0. HIGH open: 0. MEDIUM open: 1 (A-S50-G4, the pre-existing S40 gate and working assumption). LOW open: 1 (A-S50-G2, pre-existing).
+- No PO product question is raised by this round and no option, default, copy string or test expectation was invented. Architect ruling S51-R10 verified the finding as a consistency correction inside already-decided scope.
 - This is a static document review. It makes no implementation-conformity claim, and the S40 implementation gate stays closed.
