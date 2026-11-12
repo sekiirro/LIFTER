@@ -1,4 +1,4 @@
-import { act, createElement } from 'react';
+import { act, createElement, type ReactNode } from 'react';
 import { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,7 +9,7 @@ import { SignOutForm } from '../../components/auth/SignOutForm';
 describe('Client Notes session recovery on sign-out', () => {
   let dom: JSDOM | undefined;
   let root:
-    { render: (node: unknown) => void; unmount: () => void } | undefined;
+    { render: (node: ReactNode) => void; unmount: () => void } | undefined;
   let globals: Map<string, PropertyDescriptor | undefined> | undefined;
 
   afterEach(async () => {
