@@ -136,7 +136,7 @@ Independent test: the integration matrix plus the link lifecycle.
   - env vars (server only)
   - the local sign-in flow
   - how recovery links work (show once, never logged, audited)
-  - the ND-F4 placeholders: expiry = provider OTP expiry, set per environment; the rate-limit function
+  - the approved ND-F4-3 expiry of 60 minutes in all environments and independent 15-minute recovery session; S31-PO-3 limit values of 10 per issuer per rolling hour and 3 per client per rolling 24 hours across issuers; identify implementation/configuration verification gaps
   - that `recovery_target_workspace` is replaced in P1
   - that generation is denied for every target until then
 - [x] T027 Run locally (Codex sandbox flags): `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test`. All must be green before handing back.
@@ -184,7 +184,6 @@ Source: spec.md FR-016 to FR-031, SC-008 to SC-016, User Story 5, Security Notes
 - [ ] T048 [REVIEW] (FR-028, FR-030) Security review of T043 to T045, T050a and T050b; record the executed Sol Medium critique and its S38-R4 disposition; obtain CodeRabbit review on the exact head; three executed green GitHub Actions `pull_request` runs on the exact final head, including the `validate` (with its `check:secrets` step), `integration` and `storage` jobs (reruns on that unchanged head may supply the three runs; feature-branch `push` events do not create separate runs). Verify the tested merge base: at least one of the three executed green `pull_request` runs must have tested the final head merged with current `main`; reverify before acceptance. PO merge approval must match the head SHA.
 - [ ] T051 [GATE] (FR-028, FR-030; SC-015) Mutation-evidence acceptance for the recovery security controls. For the hook, session-bound guard/intent, authorization, audit transitions, account/global limits and session revocation, execute meaningful mutations that disable or bypass each control and show the corresponding acceptance test fails. Record killed assertions, exact tested SHA, tool/image versions, mutation set, restoration, and clean-diff evidence in traceability/report. No migration, hook, guard or related task is accepted until this evidence is executed on the candidate head and independently checked; carry-forward requires unchanged source, tests and migration proof.
 - [ ] T052 [IMPL] (FR-031, FR-027) Apply the S39-PO-5 Arabic term switch to `lib/i18n/messages/ar.ts` for exactly five keys: `auth.newPassword` = "كلمة السر الجديدة", `auth.confirmPassword` = "تأكيد كلمة السر", `auth.setPassword` = "حفظ كلمة السر", `auth.weak_password` = "اختر كلمة سر أقوى.", `auth.mismatch` = "كلمتا السر غير متطابقتين.". English (`en.ts`) and every other key are unchanged. Add a catalog byte-comparison test for SC-016 and verify the screens/tests listed in spec.md FR-031. No behaviour change. Not implemented in this specification-only PR #65; schedule in the F4 implementation round after T033.
-
 
 ## Dependencies & order
 

@@ -34,7 +34,7 @@
   - Triggers: push + pull_request; runs on `ubuntu-latest`.
   - Node from `.nvmrc`, npm cache.
   - Steps: `npm ci` → typecheck → lint → format:check → test → build:edge → size → install Playwright Chromium → e2e.
-  - `permissions: contents: read`; no `secrets.*`; no deploy.
+  - `permissions: contents: read`; `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests; the `integration` aggregator has no repository-configured secrets and no Docker Hub credentials, and its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`; only `integration-shard` and `storage` may use optional Docker Hub pull credentials, set as job-level environment variables available to every step in those jobs, for authenticated image pulls; no deployment secrets or deploy.
 - [x] T013 [P] Commit only Supabase local config `supabase/config.toml` (+ its `.gitignore`) from `npx supabase init`; no migrations or seed data
 - [x] T014 Unit-test the size-report's pure comparison function in `tests/unit/size-report.test.ts` (under, equal and over the limit → exit code)
 - [x] T015 Run all Windows-capable quickstart steps; fix failures; run `npm run format`
@@ -76,6 +76,10 @@ Tasks remain unchecked until the exact PR head has the required executed green C
 
 Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.
 
+## S41 documentation reconciliation
+
+- [ ] T033 [FR-009] Reconcile the CI credential boundary in the feature specification, plan, and research from merged workflow commit `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`: `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests; the `integration` aggregator has no repository-configured secrets and no Docker Hub credentials, and its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`; only `integration-shard` and `storage` may use optional Docker Hub pull credentials, set as job-level environment variables available to every step in those jobs, for authenticated image pulls; no deployment secrets or deploy. Documentation only; no workflow change.
+
 ## S41 CI/CodeRabbit optimization tasks
 
 - [ ] T025 [FR-027, SC-016] Write unit tests for spec-consistency first (unknown FR/SC/task IDs, date freshness, decided pending-PO markers, valid case, multi-feature diff, untouched inconsistent feature ignored, touched feature missing tasks.md, changed-path enumeration error fails closed), execute RED, then implement `scripts/spec-consistency.mjs` changed-feature enumeration and wire it into validate.
@@ -86,3 +90,5 @@ Tasks remain unchecked until tests and exact-head GitHub gate evidence are recor
 - [ ] T030 [FR-030] Write `s41-luna-ci-opt3/gate-check-d-proposal.md` and matching patch outside the repository; do not edit gate-check.mjs.
 - [ ] T031 [FR-027, FR-028, FR-029, FR-030] Complete pre-request checklist, CodeRabbit review (max 2 requests; incremental first request per S41-R13), fix all valid findings in one push, then exact-head approval and sequential executed PR reruns.
 - [ ] T032 [FR-030] Run gate-check on final exact head; record expected gate e failure. Do not merge.
+
+> NOTE (s47 fix): the `T025 [FR-009]` reconciliation task above was renumbered to `T033 [FR-009]` (unused id) to resolve the duplicate with `T025 [FR-027, SC-016]`; the s46 verbatim-merge note above is retained as history.

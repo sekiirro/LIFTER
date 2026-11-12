@@ -156,3 +156,11 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - Consistency: the S40 round 3 entry cited the F11 task IDs by their F11 tokens, which the feature-consistency check read as identifiers of feature 003. Feature 003 `tasks.md` has no F11 task ids, so those tokens were reported as unknown. The reference now names them as 011 task IDs 47 and 48, which keeps the cross-feature pointer without asserting an F11 identifier in the 003 namespace. No requirement, task, evidence or verdict text changed.
 - Re-check of the 003 Analyze content: 0 open CRITICAL, 0 open HIGH; the 2 open MEDIUM evidence items (A1, A2) and implementation gate G-3 are unchanged; "no open ambiguities" still holds for spec 003.
 - Result: PASS — 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
+
+## S47 merge-main re-analysis — 2026-11-11T02:17:23Z
+
+- Scope: merge of origin/main b1476db5 (PR #73 F11 lifecycle spec) into PR #52 branch at f5ec56e. Static documentation-only recheck of the merged 003 spec.md (departure-path scoping, FR-015 S40 amendment, scenario 4 wording), plan/tasks cross-references and this Analyze history. No migration, code, config or test executed; no task checkbox changed.
+- Conflicts in this feature: none (spec.md and this file auto-merged; the two merge conflicts were docs/01-traceability.md and specs/012-registration-approval/checklists/analyze.md, resolved mechanically with both sides kept byte-exact).
+- Entry gate: PASS for numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications and PO decision citations in the touched scope; FR-014 last-PO guard and FR-015 amendment text unchanged in meaning.
+- Findings: 0 open CRITICAL, 0 open HIGH. The 2 MEDIUM evidence items A1/A2 and implementation gate G-3 remain as recorded above.
+- Verdict: PASS for this merge reconciliation.
