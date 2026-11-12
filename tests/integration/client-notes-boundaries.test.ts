@@ -111,15 +111,12 @@ describe('F20 T004 client note mutation boundaries', () => {
     try {
       const read = await f.readNote(f.context.trainerA, String(note.id));
       expect(read.data).toEqual([]);
-      const create = await f.context.trainerA.client.rpc(
-        'create_client_note',
-        {
-          p_workspace_id: f.workspaceId,
-          p_client_id: f.clientId,
-          p_body: 'revoked create',
-          p_idempotency_key: f.key(),
-        },
-      );
+      const create = await f.context.trainerA.client.rpc('create_client_note', {
+        p_workspace_id: f.workspaceId,
+        p_client_id: f.clientId,
+        p_body: 'revoked create',
+        p_idempotency_key: f.key(),
+      });
       expect(create.error).not.toBeNull();
       const update = await f.context.trainerA.client.rpc('update_client_note', {
         p_note_id: note.id,
@@ -395,6 +392,8 @@ describe('F20 T004 client note mutation boundaries', () => {
       email_confirm: true,
     });
     expect(createdUser.error).toBeNull();
+    const clientUserId = createdUser.data.user?.id;
+    if (!clientUserId) throw new Error('Client role fixture user missing');
     const issuedLink = await issue(f.context);
     expect(issuedLink.error).toBeNull();
     const registrationLinkId = Array.isArray(issuedLink.data)
@@ -416,7 +415,7 @@ describe('F20 T004 client note mutation boundaries', () => {
           id, workspace_id, auth_user_id, registration_link_id,
           package_version_id, email_normalized, phone_e164, name
         ) values (
-          ${clientId}, ${f.workspaceId}, ${createdUser.data.user?.id},
+          ${clientId}, ${f.workspaceId}, ${clientUserId},
           ${registrationLinkId}, ${f.context.p.versionId}, ${email},
           ${phone}, 'Client Notes role fixture'
         )`;
@@ -432,15 +431,12 @@ describe('F20 T004 client note mutation boundaries', () => {
       password,
     });
     expect(signedIn.error).toBeNull();
-    const created = await f.context.trainerA.client.rpc(
-      'create_client_note',
-      {
-        p_workspace_id: f.workspaceId,
-        p_client_id: clientId,
-        p_body: 'client-role denial probe',
-        p_idempotency_key: f.key(),
-      },
-    );
+    const created = await f.context.trainerA.client.rpc('create_client_note', {
+      p_workspace_id: f.workspaceId,
+      p_client_id: clientId,
+      p_body: 'client-role denial probe',
+      p_idempotency_key: f.key(),
+    });
     expect(created.error).toBeNull();
     const clientRead = await clientActor
       .from('client_notes')
