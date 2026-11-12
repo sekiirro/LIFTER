@@ -143,14 +143,24 @@ export function ClientNotes(props: ClientNotesProps) {
       ? pendingStorageKey(props.workspaceId, props.clientId)
       : null;
 
-  const removePendingCreate = useCallback(() => {
-    if (!storageKey || !storageAvailable.current) return;
-    try {
-      window.sessionStorage.removeItem(storageKey);
-    } catch {
-      storageAvailable.current = false;
-    }
-  }, [storageKey]);
+  const removePendingCreate = useCallback(
+    (expectedKey: string) => {
+      if (!storageKey || !storageAvailable.current) return;
+      try {
+        const raw = window.sessionStorage.getItem(storageKey);
+        if (
+          raw &&
+          (JSON.parse(raw) as Partial<PendingCreate>).idempotencyKey !==
+            expectedKey
+        )
+          return;
+        window.sessionStorage.removeItem(storageKey);
+      } catch {
+        storageAvailable.current = false;
+      }
+    },
+    [storageKey],
+  );
 
   const writePendingCreate = useCallback(
     (record: PendingCreate) => {
@@ -278,7 +288,7 @@ export function ClientNotes(props: ClientNotesProps) {
       try {
         const res = await props.onCreate?.(body, key);
         if (res?.status === 'ok') {
-          removePendingCreate();
+          removePendingCreate(key);
           setDraft('');
           setIdempotencyKey(null);
           setPendingCreate(null);
@@ -295,7 +305,7 @@ export function ClientNotes(props: ClientNotesProps) {
             if (!retryingUnknown) writePendingCreate(record);
           } else {
             // A definite refusal before any retry resolves this create attempt.
-            removePendingCreate();
+            removePendingCreate(key);
             setIdempotencyKey(null);
             setPendingCreate(null);
             setUnknownCreate(false);

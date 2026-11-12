@@ -478,6 +478,93 @@ describe('ClientNotes behaviour', () => {
     ).toBe(false);
   });
 
+  it('does not let a delayed definite refusal erase a newer recovery record', async () => {
+    let resolveOriginal: ((result: { status: string }) => void) | undefined;
+    const originalCreate = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveOriginal = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate: originalCreate,
+      canCreate: true,
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+    });
+    await act(async () => setValue(host!.querySelector('textarea')!, 'first'));
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const storageKey =
+      'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    const originalKey = JSON.parse(
+      dom!.window.sessionStorage.getItem(storageKey)!,
+    ).idempotencyKey as string;
+
+    const secondHost = dom!.window.document.createElement('div');
+    dom!.window.document.body.append(secondHost);
+    const { createRoot } = await import('react-dom/client');
+    const secondRoot = createRoot(secondHost);
+    const retryCreate = vi.fn(async (_body: string, key: string) =>
+      key === originalKey ? { status: 'ok' } : { status: 'unavailable' },
+    );
+    await act(async () => {
+      secondRoot.render(
+        createElement(ClientNotes, {
+          locale: 'en',
+          messages: mEn,
+          status: 'ready',
+          notes: [],
+          onCreate: retryCreate,
+          canCreate: true,
+          actorId: 'actor-1',
+          clientId: 'client-1',
+          workspaceId: 'workspace-1',
+        }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const retryButton = Array.from(secondHost.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.retry'],
+    )!;
+    await act(async () => {
+      retryButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () =>
+      setValue(secondHost.querySelector('textarea')!, 'second'),
+    );
+    await act(async () => {
+      secondHost
+        .querySelector<HTMLButtonElement>('button[type="submit"]')!
+        .click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const newerRecord = JSON.parse(
+      dom!.window.sessionStorage.getItem(storageKey)!,
+    ) as { body: string; idempotencyKey: string };
+    expect(newerRecord).toMatchObject({ body: 'second' });
+    expect(newerRecord.idempotencyKey).not.toBe(originalKey);
+
+    await act(async () => {
+      resolveOriginal?.({ status: 'denied' });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(JSON.parse(dom!.window.sessionStorage.getItem(storageKey)!)).toEqual(
+      newerRecord,
+    );
+    await act(async () => secondRoot.unmount());
+    secondHost.remove();
+  });
+
   it('keeps unresolved create recovery after the unknown-result exit discard', async () => {
     const onCreate = vi.fn(async () => ({ status: 'unavailable' }));
     await render({
