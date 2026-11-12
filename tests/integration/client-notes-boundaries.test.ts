@@ -92,6 +92,85 @@ describe('F20 T004 client note mutation boundaries', () => {
     expect(eventsAfter?.count).toBe(eventsBefore?.count);
   });
 
+  it('rechecks revoked membership and refuses forged workspace scope', async () => {
+    const key = f.key();
+    const note = await f.createAsTrainer({ body: 'membership boundary', key });
+    const [eventsBefore] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where target_table = 'client_notes'
+    `;
+    await f.db`
+      update public.workspace_memberships
+      set revoked_at = pg_catalog.clock_timestamp(),
+          revoked_by = ${f.context.po.userId}
+      where workspace_id = ${f.workspaceId}
+        and user_id = ${f.context.trainerA.userId}
+    `;
+    try {
+      const read = await f.readNote(f.context.trainerA, String(note.id));
+      expect(read.data).toEqual([]);
+      const create = await f.context.trainerA.client.rpc(
+        'create_client_note',
+        {
+          p_workspace_id: f.workspaceId,
+          p_client_id: f.clientId,
+          p_body: 'revoked create',
+          p_idempotency_key: f.key(),
+        },
+      );
+      expect(create.error).not.toBeNull();
+      const update = await f.context.trainerA.client.rpc('update_client_note', {
+        p_note_id: note.id,
+        p_body: 'revoked update',
+      });
+      expect(update.error).not.toBeNull();
+      const deletion = await f.context.trainerA.client.rpc(
+        'delete_client_note',
+        { p_note_id: note.id },
+      );
+      expect(deletion.error).not.toBeNull();
+    } finally {
+      await f.db`
+        insert into public.workspace_memberships (
+          workspace_id, user_id, granted_by
+        ) values (
+          ${f.workspaceId}, ${f.context.trainerA.userId}, ${f.context.po.userId}
+        )
+      `;
+    }
+
+    const restoredRetry = await f.context.trainerA.client.rpc(
+      'create_client_note',
+      {
+        p_workspace_id: f.workspaceId,
+        p_client_id: f.clientId,
+        p_body: 'membership boundary',
+        p_idempotency_key: key,
+      },
+    );
+    expect(restoredRetry.error).toBeNull();
+    const restoredRow = Array.isArray(restoredRetry.data)
+      ? restoredRetry.data[0]
+      : restoredRetry.data;
+    expect(restoredRow).toMatchObject({ id: note.id, outcome: 'existing' });
+
+    const forgedScope = await f.context.trainerA.client.rpc(
+      'create_client_note',
+      {
+        p_workspace_id: f.context.wsB.id,
+        p_client_id: f.clientId,
+        p_body: 'forged workspace',
+        p_idempotency_key: f.key(),
+      },
+    );
+    expect(forgedScope.error).not.toBeNull();
+    const [eventsAfter] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where target_table = 'client_notes'
+    `;
+    expect(eventsAfter?.count).toBe(eventsBefore?.count);
+  });
+
   it('rolls back create, edit, and delete when the audit insert fails', async () => {
     const note = await f.createAsTrainer({ body: 'before audit failure' });
     const noteCountBefore = await f.countNotes();
