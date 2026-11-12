@@ -193,3 +193,11 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Migration order: the two renamed PR migrations are 20261111170858_f13_continuous_renewal.sql and 20261111170859_f13_refund_renewal_purchase_selection.sql, after origin/main maximum 20261111170857 and before later F13 migrations; the new S50 migration is 20261112050000_f13_upgrade_coverage_commission.sql.
 - Stack C evidence to date: focused upgrade suite 24/24 and F12/F13 regression 27 files / 654 tests passed, with no failure IDs versus the 26-file / 630-test baseline. No CRITICAL or HIGH findings identified.
 - Verdict: PASS for T041/T042 implementation within the resolved PO scope.
+
+## 2026-11-12T06:35:45Z - S50 task verification and status analysis
+
+- Task status: T041 and T042 are checked only after the Stack C renewal-then-upgrade test asserted service-end and payment preservation; T045 remains verified; T044 remains open/P4 and FR-041 PARTIAL. Traceability points to the implementation commit and exact test names.
+- Revalidation: S50 spec and plan have numbered FR/SC and GWT coverage, the source-hashed PO rulings, and FR-tagged tasks. This analysis follows the final task status change.
+- Regression: Stack C 27 files / 654 tests passed, with no new failure IDs versus the 26-file / 630-test baseline. The 0-remaining-extension mutant failed its expected-date assertion; target-version commission mutant failed the original-rate ledger assertion; removing the T045 renewal-source exclusion failed the no-renewal-refund assertion. All restored paths passed focused tests.
+- Findings: 0 open CRITICAL, 0 open HIGH. No unresolved T041/T042 product ambiguity; T044 P4 deferral is explicit.
+- Verdict: PASS for this verified implementation and status update.
