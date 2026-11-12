@@ -11,12 +11,9 @@ import {
 } from '../integration/client-notes-fixture';
 
 const origin = 'http://localhost:3000';
-const screenshotDir = join(
-  tmpdir(),
-  'lifter',
-  's49-luna-f20-page',
-  'client-notes',
-);
+const screenshotDir =
+  process.env.F20_SCREENSHOT_DIR ??
+  join(tmpdir(), 'lifter', 's49-luna-f20-page', 'client-notes');
 let fixture: ClientNotesFixture;
 
 async function installSession(
@@ -196,12 +193,32 @@ test.describe('staff Client Details Notes tab on Stack D', () => {
         variant.direction,
       );
       await expect(page.getByRole('tablist')).toHaveCount(1);
-      await expect(page.getByRole('tab')).toHaveCount(1);
-      await expect(page.getByRole('tab')).toHaveAttribute(
-        'aria-selected',
-        'true',
+      const tablist = page.getByRole('tablist', {
+        name: messages['clientNotes.tab'],
+      });
+      const tab = page.getByRole('tab', { name: messages['clientNotes.tab'] });
+      await expect(tab).toHaveCount(1);
+      await expect(tab).toHaveAttribute('aria-selected', 'true');
+      expect(
+        await tab.evaluate(
+          (element) => getComputedStyle(element.parentElement!).display,
+        ),
+      ).toBe('flex');
+      expect(
+        await tab.evaluate(
+          (element) => getComputedStyle(element.parentElement!).flexDirection,
+        ),
+      ).toBe('row');
+      expect(await tab.locator('svg').count()).toBe(0);
+      await expect(tablist).toHaveAttribute(
+        'aria-label',
+        messages['clientNotes.tab'],
       );
       await expect(page.getByRole('tabpanel')).toBeVisible();
+      await expect(page.getByRole('tabpanel')).toHaveAttribute(
+        'aria-labelledby',
+        'client-notes-tab',
+      );
       await expect(page.getByText(messages['clientNotes.empty'])).toBeVisible();
       await expect(
         page.getByText(messages['clientNotes.create']),

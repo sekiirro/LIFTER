@@ -41,6 +41,10 @@ describe('staff Client Details Notes route surface', () => {
       expect(html).toContain(messages['clientNotes.tab']);
       expect(html).toContain(messages['clientNotes.empty']);
       expect((html.match(/role="tab"/g) ?? []).length).toBe(1);
+      const tabMarkup = html.match(
+        /<button[^>]*role="tab"[^>]*>(.*?)<\/button>/,
+      )?.[1];
+      expect(tabMarkup).toBe(messages['clientNotes.tab']);
       expect(html).not.toMatch(/Overview|Exercise|Nutrition|History/i);
     },
   );

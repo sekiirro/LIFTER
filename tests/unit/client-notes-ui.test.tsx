@@ -37,6 +37,32 @@ describe('ClientNotes UI', () => {
     expect(html).toContain(m['clientNotes.empty']);
   });
 
+  it('renders unavailable-author copy and Western digits in Arabic', async () => {
+    const messages = getMessages('ar');
+    const note = {
+      id: 'n-ar',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: '',
+      body: 'Arabic locale metadata',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const html = renderToStaticMarkup(
+      createElement(ClientNotes, {
+        locale: 'ar',
+        messages,
+        status: 'ready',
+        notes: [note],
+        role: 'trainer',
+        actorId: 'current-user',
+      }),
+    );
+    expect(html).toContain(messages['clientNotes.unavailableAuthor']);
+    expect(html).toMatch(/[0-9]/);
+    expect(html).not.toMatch(/[٠-٩]/);
+  });
+
   it('renders loading state', () => {
     const m = getMessages('en');
     const html = renderToStaticMarkup(
@@ -324,6 +350,61 @@ describe('ClientNotes behaviour', () => {
     expect(onCreate.mock.calls[1]![0]).toBe('hello');
     expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
     expect(host!.textContent).not.toContain('boom');
+    const stored = JSON.parse(
+      dom!.window.sessionStorage.getItem(
+        'lifter-client-notes-pending-create:v1:workspace-1:client-1',
+      )!,
+    ) as { body: string; idempotencyKey: string; retrySent: boolean };
+    expect(stored).toMatchObject({
+      body: 'hello',
+      idempotencyKey: onCreate.mock.calls[0]![1],
+      retrySent: true,
+    });
+  });
+
+  it('keeps unresolved create recovery after the unknown-result exit discard', async () => {
+    const onCreate = vi.fn(async () => ({ status: 'unavailable' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+    });
+    const textarea = host!.querySelector('textarea')!;
+    await act(async () => setValue(textarea, 'unknown result'));
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const recoveryKey =
+      'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    const originalRecord = dom!.window.sessionStorage.getItem(recoveryKey);
+    expect(originalRecord).not.toBeNull();
+
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.cancel'],
+    )!;
+    await act(async () => cancel.click());
+    const dialog = host!.querySelector('dialog')!;
+    expect(dialog.textContent).toContain(mEn['clientNotes.exitWarning.title']);
+    expect(dialog.textContent).toContain(mEn['clientNotes.saveError']);
+    expect(dialog.textContent).not.toContain(
+      mEn['clientNotes.exitWarning.bodyInFlight'],
+    );
+    const discard = Array.from(dialog.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
+    await act(async () => discard.click());
+    expect(host!.querySelector('dialog')).toBeNull();
+    expect(dom!.window.sessionStorage.getItem(recoveryKey)).toBe(
+      originalRecord,
+    );
+    expect(onCreate).toHaveBeenCalledTimes(1);
   });
 
   it('create: persists before dispatch and clears the unresolved record after Retry succeeds', async () => {
@@ -537,12 +618,13 @@ describe('ClientNotes behaviour', () => {
   });
 
   it('exit protection: unsaved text opens warning; Stay keeps text; Discard clears and closes', async () => {
+    const onCreate = vi.fn();
     await render({
       locale: 'en',
       messages: mEn,
       status: 'ready',
       notes: [],
-      onCreate: vi.fn(),
+      onCreate,
       canCreate: true,
     });
     const textarea = host!.querySelector('textarea')!;
@@ -570,7 +652,36 @@ describe('ClientNotes behaviour', () => {
     expect(
       (host!.querySelector('textarea') as HTMLTextAreaElement)?.value ?? '',
     ).toBe('');
+    expect(onCreate).not.toHaveBeenCalled();
     expect(host!.textContent?.toLowerCase()).not.toContain('save draft');
+  });
+
+  it('renders the approved unsaved-exit copy in Arabic', async () => {
+    const messages = getMessages('ar');
+    await render({
+      locale: 'ar',
+      messages,
+      status: 'ready',
+      notes: [],
+      canCreate: true,
+      onCreate: vi.fn(),
+    });
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'draft text'),
+    );
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === messages['clientNotes.cancel'],
+    )!;
+    await act(async () => cancel.click());
+    const dialog = host!.querySelector('dialog')!;
+    for (const key of [
+      'clientNotes.exitWarning.title',
+      'clientNotes.exitWarning.body',
+      'clientNotes.exitWarning.stay',
+      'clientNotes.exitWarning.discard',
+    ] as const) {
+      expect(dialog.textContent).toContain(messages[key]);
+    }
   });
 
   it('exit protection: in-flight leaving shows row 34 body; Discard leaves without cancelling save', async () => {
