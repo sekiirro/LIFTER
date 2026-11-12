@@ -1266,6 +1266,11 @@ describe('T037 remaining workspace and identity contracts', () => {
     const privateExercise = randomUUID();
     const auditBefore =
       await db`select count(*)::integer as count from public.audit_events`;
+    // The current test database has already crossed F16 cutover. Remove only
+    // the post-cutover guards to emulate the pre-cutover schema whose legacy
+    // rows this migration must remove; the cutover migration reinstalls them.
+    await db`drop trigger exercise_version_retired_fields_guard on public.exercise_versions`;
+    await db`drop trigger exercise_version_retired_fields_guard on public.workspace_exercise_versions`;
     await db.begin(async (tx) => {
       await tx`set constraints all deferred`;
       await tx`insert into public.exercises (id, created_by, lifecycle_state, current_version, lifecycle_revision, superseded_by)
@@ -1367,9 +1372,10 @@ describe('T037 remaining workspace and identity contracts', () => {
         (select count(*) from public.workspace_exercises)::integer as private_identities,
         (select count(*) from public.workspace_exercise_versions)::integer as private_versions,
         (select count(*) from public.exercise_overrides)::integer as overrides,
-        (select count(*) from public.exercise_override_versions)::integer as override_versions,
-        (select count(*) from public.audit_events)::integer as audit_events,
-        (select count(*) from pg_catalog.pg_trigger where tgname in
+         (select count(*) from public.exercise_override_versions)::integer as override_versions,
+         (select count(*) from public.audit_events)::integer as audit_events,
+         (select count(*) from pg_catalog.pg_trigger where tgname = 'exercise_version_retired_fields_guard' and tgenabled = 'O')::integer as active_version_guards,
+         (select count(*) from pg_catalog.pg_trigger where tgname in
           ('exercise_lifecycle_events_append_only','workspace_exercise_lifecycle_events_append_only') and tgenabled = 'O')::integer as active_event_guards`;
     expect(counts[0]).toEqual({
       legacy_rows: 0,
@@ -1383,6 +1389,7 @@ describe('T037 remaining workspace and identity contracts', () => {
       overrides: 0,
       override_versions: 0,
       audit_events: auditBefore[0]!.count,
+      active_version_guards: 2,
       active_event_guards: 2,
     });
     const legacyWriters = await db`
