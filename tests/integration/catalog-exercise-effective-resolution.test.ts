@@ -8,6 +8,7 @@ type Tx = postgres.TransactionSql;
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 let poId: string;
 let trainerId: string;
+let trainerBId: string;
 let workspaceId: string;
 let foreignWorkspaceId: string;
 
@@ -15,6 +16,7 @@ beforeAll(async () => {
   const f = await twoWorkspaceFixture();
   poId = f.po.userId;
   trainerId = f.trainerA.userId;
+  trainerBId = f.trainerB.userId;
   workspaceId = f.wsA.id;
   foreignWorkspaceId = f.wsB.id;
 });
@@ -232,5 +234,19 @@ describe('T049 staff effective exercise resolution', () => {
       default_rir: { value: null, source: 'none' },
       default_reps: { value: null, source: 'none' },
     });
+  });
+
+  it('denies a foreign trainer access to workspace detail', async () => {
+    const exerciseId = await createGlobal(
+      `T049 detail authorization ${randomUUID()}`,
+    );
+    await writeOverride(exerciseId, { name_en: 'Workspace-only detail' });
+    await expect(
+      asActor(
+        trainerBId,
+        (tx) =>
+          tx`select payload, override_version from public.catalog_exercise_detail(${exerciseId}, ${workspaceId})`,
+      ),
+    ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
   });
 });
