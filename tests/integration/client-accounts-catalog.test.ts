@@ -342,6 +342,8 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                       value !== null &&
                       'status' in value &&
                       (value.status === 'invalid' ||
+                        (fn.proname === 'record_subscription_upgrade' &&
+                          value.status === 'not_permitted') ||
                         (['subscription_freeze_operation'].includes(
                           fn.proname,
                         ) &&
@@ -360,6 +362,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
     expect(unauthorizedPaymentRpcResults).toEqual({
       record_refund: { status: 'not_permitted' },
       record_renewal: { status: 'not_permitted' },
+      record_subscription_upgrade: { status: 'not_permitted' },
       record_subscription_date_adjustment: { status: 'not_permitted' },
     });
   });

@@ -432,6 +432,7 @@ export async function pendingHttpAccess(
           ([
             'record_refund',
             'record_renewal',
+            'record_subscription_upgrade',
             'record_subscription_date_adjustment',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
