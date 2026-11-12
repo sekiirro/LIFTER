@@ -69,6 +69,9 @@ Offline preparation (no deployment):
    Run `npm run free-tier:project -- --per-row usage.json --volumes volumes.json`.
    Null or absent volumes print `MISSING` and exit 2; partial totals are incomplete.
    Projection covers the measured top 15 relations, not all database overhead.
+   The printed `Total` is a subtotal over those supplied relations only, not a
+   full database projection, and must not be used as the projection against the
+   70% exit trigger; full database capacity validation stays pending.
    Database/projection `--limit-mb` defaults to 500 decimal MB (1 MB = 1,000,000 bytes).
 4. Parse synthetic logs offline with
    `npm run free-tier:tail -- scripts/free-tier/fixtures/tail-sample.jsonl`.
@@ -93,7 +96,7 @@ After PO approval, capture request events from the approved Worker in Bash with
 `npm run free-tier:tail -- tail.jsonl --json cpu.json`. Keep raw tail files
 private: they can contain headers, logs and exceptions. Only the parser's
 aggregates are suitable for the report. Local latency does not measure platform
-CPU. Pilot volumes remain **NEEDS SOURCE CONFIRMATION** (ND-F8-1).
+CPU. Pilot volumes use the illustrative input decided by S31-PO-4 (ND-F8-1); verify schema and units before measurement. Projection remains pending that verification.
 
 In PowerShell on Windows, create a new empty `tail.jsonl`, disable ACL inheritance,
 and grant only the current user FullControl **before** redirecting
@@ -501,9 +504,16 @@ logged or stored by LIFTER, and returned only after the issuance and audit event
 commit. Opening it does not consume it: the Continue action verifies it, then
 the account holder sets a new password.
 
-ND-F4-3 uses the provider OTP expiry, configured per environment. ND-F4-4
-placeholders live in `app_private.recovery_link_limits()`: 20 per actor and 3
-per target per rolling hour. Both values need owner decisions before production.
-P1 replaces `app_private.recovery_target_workspace`; until then, generation is
-denied for every target. Trainers remain denied pending ND-F4-1. F4 offers copy
-only, with no share button.
+ND-F4-3 requires 60-minute recovery-link expiry in every environment. The
+15-minute recovery-session TTL is independent: the application password-action
+check does not terminate the recovery session or block direct Auth API use after
+15 minutes. Session-lifetime enforcement and hosted Auth expiry verification
+remain open pre-production blockers under docs/13-production-readiness.md AI-04. S31-PO-3 sets recovery generation
+limits at 10 per issuing staff account per rolling hour and 3 per client per
+rolling 24 hours across issuers. A placeholder enforcement exists in
+`app_private.recovery_link_limits()`
+(`20261028120000_auth_recovery_links.sql`): 20 per actor and 3 per target per
+one-hour window. It does not match the approved limits above. P1 supplies client lookup;
+S31-PO-2 approves clients-only scope, all workspace Trainers, and copy-only
+delivery. Approved Trainer and limit behavior remains unimplemented and needs
+its specified future implementation and verification gates.

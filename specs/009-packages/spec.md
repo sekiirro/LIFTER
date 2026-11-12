@@ -433,6 +433,14 @@ S43-PO-7 (2026-11-10): Arabic tier names are سيلفر، جولد، بلاتي�
 - The prior FX-rounding, FX business-day/publication and optional promotion-bound PO-DECISION-NEEDED items are closed by S36-PO-2/S36-PO-3. FR-026/FR-031 and T058/T059/T060/T068/T072/T073 are not blocked by rounding; their remaining task dependencies and independent review gates still apply. Frankfurter coverage for every supported currency remains a required verification (T075), not an assumption; any uncovered currency must be recorded as a blocker when discovered.
 - Existing production-readiness gates remain open; no deployment or cloud migration is authorized.
 
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-09/D-10, D-11, D-13, and D-17; `NEEDS DECISION` ND-F9-2, ND-F9-3 and ND-F9-5 above; ND-F9-1 currency is settled by the S31-PO-4/5 market/currency decisions.
+- **Result:** At this 2026-11-03 session, ND-F9-1..5 remained open as written. Later S31-PO-4/5 settled ND-F9-1 with the market/currency matrix and S31-PO-4 (SK-009-04, 2026-11-04) decided ND-F9-4 as denied; ND-F9-2, ND-F9-3 and ND-F9-5 remain open. These remaining decisions do not block local development; they remain decision gates for the affected product policy/catalog and production uses. No other ambiguity was identified in the merged F9 scope.
+- **Evidence limit:** Static source/test inspection only; no tests were executed in this lane.
+
 ## Assumptions
 
 - Existing auth, tenancy, audit and Design System from `origin/main` are reused. This run writes artifacts only; Claude's independent implementation review remains required.

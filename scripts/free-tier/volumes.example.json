@@ -1,5 +1,5 @@
 {
-  "_note": "ND-F8-1: pilot volumes NEEDS SOURCE CONFIRMATION",
+  "_note": "ND-F8-1: S31-PO-4 pilot inputs are illustrative pending schema/unit verification; do not guess table values",
   "public.staff_profiles": null,
   "public.workspaces": null,
   "public.workspace_memberships": null,
