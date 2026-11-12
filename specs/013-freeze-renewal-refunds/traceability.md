@@ -178,4 +178,4 @@ At the prior head, T041 and T042 had been ticked after a renewal-then-upgrade te
 
 | Requirement | Task | Test evidence | Evidence / status |
 | --- | --- | --- | --- |
-| FR-038, FR-043; SC-035 | T048 | Not run; S51 is specification-only | PO S50-PO-6 `F13=C`; S51-F13-MCQ-1 through S51-F13-MCQ-8 block implementation; UNVERIFIED |
+| FR-038, FR-043; SC-035/036 | T048 | Not run; S51-PO-1 spec revision precedes implementation | S51-PO-1 settled-only rule; S51-F13-MCQ-9/-10 block receipt-shape choices; current receipt shape retained; T048 unchecked; UNVERIFIED |

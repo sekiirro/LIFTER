@@ -26,11 +26,11 @@ PO source: exact S43-PO-5 item lines 1 through 11 and S43-PO-6 lines are in spec
 - Points/plans: one point per new client once, none for returning client, renewal, upgrade, or publication; eligible clients may receive unlimited revisions/publications.
 - Concurrency: retain expected-revision, authorization-recheck, exact-replay and stale-request behavior; rejected operations produce no subscription/payment/revenue/audit writes.
 
-### S50-PO-6 upgrade installment decision (specification only)
+### S51-PO-1 upgrade settlement and audit contract
 
-PO source: `C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-6.verbatim.txt`, SHA-256 `c62cd198a022efb057517b6d99d258dab7743bb7a9ea259de4e672e364689888`; byte-exact PO words: `F13=C`. Architect mapping is separately recorded as S50-R32 in `C:/Users/NEW LAP/.lifter/runs/s50-arch/s50-architect-rulings.md`.
+PO source: `C:/Users/NEW LAP/.lifter/runs/s51-po/s51-po-1.verbatim.txt`, SHA-256 `3800b4dac13b8b17e5b72f83ea46d21a0e9e652c513ab2dfd4ef70d9ca751e7a`; architect mapping is S51-R7. This supersedes S50-PO-6 F13=C and S50-R32 on replacement/repricing.
 
-After an upgrade, unpaid original-plan installments are replaced/repriced. Existing settled F12 payment and collection facts remain immutable. The decision does not determine which partially paid, overdue, or in-flight installments qualify; the replacement amount formula or due dates; the receipt, commission, or audit details; the outcome when a payment is in flight; or overpayment handling. Those are PO-DECISION-NEEDED items S51-F13-MCQ-1 through S51-F13-MCQ-8. This contract does not select defaults for them; T048 remains blocked until answers are recorded.
+An upgrade is permitted only if every existing subscription installment is fully settled and no payment is pending/in flight. After acquiring the existing subscription/obligation locks, revalidate this state; reject an unsettled or pending payment before any write. Collect the full upgrade price difference upfront before the upgraded term activates. Do not create upgrade installments or a new installment schedule. Preserve all existing financial history and the single continuous subscription. Record one upgrade-linked audit fact with bounded non-PII identifiers, amount, and currency, representing the upgrade without installment replacement. Calculate Platform Owner commission only on actual collection using the original subscription's stored `commission_rate_bp`; trainers receive no commission. Reject before writes if collected amounts exceed the remaining balance, an expected-unreachable guard. Successful receipt field selection remains open as S51-F13-MCQ-9/-10; no receipt-shape change is specified here pending S51-F13-MCQ-9/-10.
 
 ### S43-R8 activation event rule
 

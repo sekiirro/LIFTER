@@ -250,6 +250,73 @@ it('T042 prices the FR-038 EGP 750 to EGP 1400 upgrade as EGP 650 revenue with t
   });
 });
 
+it('T048 refuses an upgrade with an unsettled installment before any writes', async () => {
+  const { f, purchase } = await egp750Purchase();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1400',
+    currency: 'EGP',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const [before] = await tx`
+      select
+        (select to_jsonb(s) from public.subscriptions s where s.id=${purchase.sid}) as subscription,
+        (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
+        (select count(*)::int from app_private.subscription_upgrade_operations where subscription_id=${purchase.sid}) as operations,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payment_events,
+        (select count(*)::int from public.audit_events where target_table='subscription_upgrades') as audits`;
+
+    const result = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: target,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+
+    expect(result.status).not.toBe('ok');
+    const [after] = await tx`
+      select
+        (select to_jsonb(s) from public.subscriptions s where s.id=${purchase.sid}) as subscription,
+        (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
+        (select count(*)::int from app_private.subscription_upgrade_operations where subscription_id=${purchase.sid}) as operations,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payment_events,
+        (select count(*)::int from public.audit_events where target_table='subscription_upgrades') as audits`;
+    expect(after).toEqual(before);
+  });
+});
+
+it('T048 revalidates after the shared locks and retains the pre-write over-balance guard', async () => {
+  const [row] = await db`
+    select pg_get_functiondef('public.record_subscription_upgrade(jsonb)'::regprocedure) as definition`;
+  const definition = row!.definition as string;
+  const clientLock = definition.indexOf('select * into c from public.clients');
+  const subscriptionLock = definition.indexOf(
+    'select * into s from public.subscriptions',
+  );
+  const installmentLocks = definition.indexOf(
+    'perform i.id from public.subscription_installments',
+  );
+  const settlementGuard = definition.indexOf(
+    'settled.collected_minor<>i.amount_minor',
+  );
+  const overBalanceGuard = definition.indexOf(
+    'target_version.price_minor<credit',
+  );
+
+  expect(clientLock).toBeGreaterThanOrEqual(0);
+  expect(subscriptionLock).toBeGreaterThan(clientLock);
+  expect(installmentLocks).toBeGreaterThan(subscriptionLock);
+  expect(settlementGuard).toBeGreaterThan(installmentLocks);
+  expect(overBalanceGuard).toBeGreaterThan(settlementGuard);
+});
+
 async function fullyPayAmounts(
   tx: TransactionSql,
   f: Awaited<ReturnType<typeof clientContext>>,
@@ -310,8 +377,46 @@ it('T042 records additional-payment commission at the original subscription rate
       select
         (select count(*)::int from public.subscriptions where workspace_id=${f.wsA.id} and client_id=${purchase.t.id}) as subscriptions,
         (select count(*)::int from public.subscription_activations a where a.workspace_id=${f.wsA.id} and a.subscription_id=${purchase.sid}) as activations,
-        (select count(*)::int from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid}) as upgrades`;
-    expect(counts).toEqual({ subscriptions: 1, activations: 1, upgrades: 1 });
+        (select count(*)::int from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid}) as upgrades,
+        (select count(*)::int from public.subscription_installments i where i.workspace_id=${f.wsA.id} and i.subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.payment_events e where e.workspace_id=${f.wsA.id} and e.subscription_id=${purchase.sid}) as payment_events,
+        (select count(*)::int from public.audit_events a where a.target_table='subscription_upgrades'
+          and a.target_id in (select u.id from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid})) as audit_facts`;
+    expect(counts).toEqual({
+      subscriptions: 1,
+      activations: 1,
+      upgrades: 1,
+      installments: 3,
+      payment_events: 3,
+      audit_facts: 1,
+    });
+    const [audit] = await tx`
+      select a.details from public.audit_events a
+      where a.target_table='subscription_upgrades'
+        and a.target_id in (select u.id from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid})`;
+    const details = audit!.details as Record<string, unknown>;
+    expect(Object.keys(details).sort()).toEqual(
+      [
+        'additional_payment_minor',
+        'client_id',
+        'commission_minor',
+        'credit_minor',
+        'currency',
+        'package_price_minor',
+        'package_version_id',
+        'service_end_exclusive',
+        'service_start_date',
+        'subscription_id',
+        'tier_rank',
+      ].sort(),
+    );
+    expect(details).toMatchObject({
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+    });
+    expect(typeof details.currency).toBe('string');
+    expect(details).not.toHaveProperty('replacement_installment_ids');
+    expect(details).not.toHaveProperty('superseded_installment_ids');
     const [payment] = await tx`
       select package_price_minor::text,credit_minor::text,additional_payment_minor::text,
         commission_rate_bp,commission_minor::text
@@ -330,7 +435,17 @@ it('T042 records additional-payment commission at the original subscription rate
 
 it('T042 allows a qualifying upgrade before activation without consuming duration', async () => {
   const f = await clientContext();
-  const purchase = await bought(f);
+  const t = await registered(f, null);
+  const approved = await call(f.po.client, 'approve', request(f, t));
+  if (approved.status !== 'ok')
+    throw new Error('Single-payment approval failed');
+  const purchase = {
+    t,
+    approved,
+    sid: approved.receipt!.subscription_id as string,
+    rows: await db`select id,seq from public.subscription_installments
+      where subscription_id=${approved.receipt!.subscription_id as string} order by seq`,
+  };
   const target = await targetOffer(f, { duration_days: 90 });
   await probe(async (tx) => {
     const result = await upgrade(tx, f.trainerA.userId, {
@@ -454,6 +569,25 @@ it('T041/T042 upgrade then renewal then upgrade credits only the original purcha
     }
     expect(renewed!.status).toBe('ok');
     const renewalReceipt = renewed!.receipt as Record<string, unknown>;
+    const renewalId = renewalReceipt.renewal_id as string;
+    const [renewalInstallment] = await tx`
+      select id,seq,amount_minor::text,currency from public.subscription_installments
+      where workspace_id=${f.wsA.id} and subscription_id=${purchase.sid} and renewal_id=${renewalId}`;
+    const renewalPayment = await sqlPay(tx, f.trainerA.userId, 'collect', {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      request_key: randomUUID(),
+      subscription_id: purchase.sid,
+      obligation_id: renewalInstallment!.id,
+      expected_installment_seq: renewalInstallment!.seq,
+      expected_revision: 0,
+      expected_previous_event_id: null,
+      expected_amount_minor: renewalInstallment!.amount_minor,
+      currency: renewalInstallment!.currency,
+      collected_on: '1900-01-01',
+      payment_confirmed: true,
+    });
+    expect(renewalPayment.status).toBe('ok');
     const firstStart = firstReceipt.service_start_date as string;
     const firstEnd = firstReceipt.service_end_exclusive as string;
     const renewalEnd = renewalReceipt.service_end_exclusive as string;
@@ -850,6 +984,7 @@ it('T042 carries only unconsumed counted-freeze extension into the upgraded proj
       values(${freezeId},${f.wsA.id},${purchase.sid},${base!.end_on}::date - 10,10,${f.trainerA.userId},clock_timestamp())`;
     await tx`insert into public.subscription_freeze_events(workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id,recorded_at)
       values(${f.wsA.id},${purchase.sid},${freezeId},'stop',${base!.end_on}::date - 5,${f.trainerA.userId},clock_timestamp())`;
+    await fullyPayInitial(tx, f, purchase);
     const [before] = await tx`select app_private.f13_project_entitlement(
       ${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as value`;
     expect(before!.value).toMatchObject({ status: 'active' });

@@ -224,3 +224,36 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Status sweep: prior S49 mention of S48-F13-MCQ-4 is explicitly historical and is closed by S50-PO-6 on policy direction; S51 MCQ-1..8 carry only its unresolved details. T044 remains unticked/P4 and untouched; T048 remains unchecked. FR-038/043, SC-035, scenario 17, plan, task, contract, traceability, and the MCQs are cross-referenced.
 - Findings: 0 open CRITICAL; 0 open HIGH. Eight PO questions remain open and block T048 implementation. No implementation/tests/CI greens are claimed.
 - Verdict: PASS for the S51 specification-only phase.
+
+## 2026-11-12T13:21:08Z — S51-PO-1 settled-only upgrade re-analysis
+
+- Entry gate: PASS. spec.md contains revised FR-038/FR-043, measurable SC-035/036, GWT scenarios 17/18, and the S51-PO-1 decision register with source path/SHA. plan.md, unchecked FR-tagged T048, lifecycle contract, traceability, and this dated analysis cover the implementation scope.
+- Authority: S51-PO-1 byte-exact source SHA-256 3800b4dac13b8b17e5b72f83ea46d21a0e9e652c513ab2dfd4ef70d9ca751e7a. S50-PO-6 F13=C is explicitly superseded without altering the old source. Architect mapping S51-R7 is labeled separately.
+- Clarification sweep: old MCQ-1..3 are N/A because the new policy prohibits replacement/repricing and new schedules; old MCQ-4 receipt is reassessed as S51-F13-MCQ-9; old MCQ-5 commission is resolved; old MCQ-6/7/8 audit/concurrency/overbalance answers are recorded with PO's adaptations. MCQ-9 asks only non-commission receipt fields because the existing contract already excludes commission from receipts. It blocks receipt-shape changes only; settled-only guards, upfront collection, no-schedule, audit, commission, lock/revalidation, and overbalance guard are resolved.
+- Cross-reference and status sweep: FR-038/043, SC-035/036, GWT 17/18, T048, contract, plan, traceability and S51-PO-1 register agree. No S50 replace/reprice requirement remains normative. T044 remains P4/open and untouched.
+- Findings: 0 open CRITICAL; 0 open HIGH. S51-F13-MCQ-9 remains open and blocks only new receipt-field choices. This is the required re-analysis before implementation; no tests/implementation are claimed here.
+- Verdict: PASS to implement settled-only upgrade rules, retaining current safe receipt fields pending MCQ-9.
+
+## 2026-11-12T13:24:05Z — S51 receipt clarification re-analysis
+
+- Reassessed the old receipt MCQ against the actual current upgrade receipt and integration expectations. The current receipt includes `commission_rate_bp` and `commission_minor`; no existing contract text located in the F13 lifecycle contract forbids those fields.
+- Added S51-F13-MCQ-10 for whether the operation receipt exposes Platform Owner commission rate and amount to its caller. MCQ-9 continues to cover the remaining non-commission receipt fields. Both are explicit PO-DECISION-NEEDED questions; implementation must leave receipt shape unchanged pending answers.
+- Updated FR/SC, task, plan, contract and traceability cross-references. Neither open receipt question changes the settled-only eligibility, locking/revalidation, upfront collection, no-schedule, financial-history, single-subscription, audit, or stored-rate commission rules.
+- Entry/scope gate: PASS for resolved upgrade implementation requirements. Findings: 0 open CRITICAL; 0 open HIGH. MCQ-9 and MCQ-10 block receipt-shape changes only. No implementation or test results are asserted in this analysis.
+- Verdict: PASS to implement resolved S51-PO-1 rules while retaining the existing receipt shape.
+
+## 2026-11-12T14:31:02Z — S51 receipt fields cross-reference re-analysis
+
+- Entry gate: PASS. FR-038/043, SC-035/036, GWT scenarios 17/18, T048, plan, lifecycle contract, traceability and the S51-PO-1 register cover settled-only upgrades. The S51-PO-1 byte-exact source/hash and S50 supersession remain recorded.
+- Clarification sweep: S51-F13-MCQ-9 covers non-commission receipt fields; S51-F13-MCQ-10 separately covers whether the existing Platform Owner commission rate/amount fields remain in the successful receipt. Both questions include options, implications and recommendations; either blocks receipt-shape changes only. All other S51-PO-1 rules are resolved.
+- Cross-reference review: scenario 18, SC-036, contract, plan, task and traceability consistently reference MCQ-9/-10. No replacement/repricing direction remains normative. T044 remains P4/open and untouched.
+- Findings: 0 open CRITICAL; 0 open HIGH. No additional product question identified. No defaults or receipt changes were encoded.
+- Verdict: PASS to continue T048 implementation while preserving the current receipt shape pending MCQ-9/-10.
+
+## 2026-11-12T14:40:04Z — S51 implementation status and task cross-reference re-analysis
+
+- Entry gate: PASS. Current FR-038/043, SC-035/036, GWT 17/18, T048, plan, lifecycle contract, traceability and S51-PO-1 decision register agree on settled-only upgrades and preserve the existing receipt shape.
+- Clarification sweep: S51-F13-MCQ-9 (non-commission receipt fields) and MCQ-10 (current commission rate/amount fields) remain numbered product questions with options, implications, and recommendations. They block receipt-shape changes only. All eligibility, upfront collection, no-schedule, stored-rate commission, audit, lock/revalidation, and over-balance requirements are specified by S51-PO-1.
+- Cross-reference review: MCQ-9/-10 references are consistent across FR/SC/scenario 18, task, plan, contract, traceability and this analysis. T044 remains P4/open; FR-041 remains PARTIAL.
+- Findings: 0 open CRITICAL; 0 open HIGH. No decision was inferred for receipt fields. T048 remains unticked until its tests pass and evidence is committed.
+- Verdict: PASS; implementation may proceed with receipt shape unchanged pending MCQ-9/-10.
