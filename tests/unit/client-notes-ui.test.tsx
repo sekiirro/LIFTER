@@ -7,7 +7,7 @@ import { ClientNotes } from '../../components/client-notes/ClientNotes';
 import { getMessages } from '../../lib/i18n';
 
 describe('ClientNotes UI', () => {
-  it('matches every approved CN-MCQ-08 copy row in both locales byte-for-byte', () => {
+  it('matches every approved Client Notes copy row in both locales byte-for-byte', () => {
     const spec = readFileSync(
       new URL('../../specs/020-client-notes/spec.md', import.meta.url),
       'utf8',
@@ -59,9 +59,14 @@ describe('ClientNotes UI', () => {
       'clientNotes.permissionRefused',
       'clientNotes.byline',
       'clientNotes.timestamp',
+      'clientNotes.exitWarning.title',
+      'clientNotes.exitWarning.body',
+      'clientNotes.exitWarning.stay',
+      'clientNotes.exitWarning.discard',
+      'clientNotes.exitWarning.bodyInFlight',
     ] as const;
 
-    expect(copyRows.size).toBeGreaterThanOrEqual(29);
+    expect(copyRows.size).toBeGreaterThanOrEqual(keys.length);
     keys.forEach((key, index) => {
       const approved = copyRows.get(index + 1);
       if (!approved) throw new Error(`Missing approved copy row ${index + 1}`);

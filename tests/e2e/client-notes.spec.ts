@@ -244,6 +244,9 @@ test.describe('staff Client Details Notes tab on Stack D', () => {
     const panel = page.getByRole('tabpanel');
     await tab.focus();
     await expect(tab).toBeFocused();
+    expect(
+      await tab.evaluate((element) => getComputedStyle(element).outlineStyle),
+    ).toBe('solid');
     await page.keyboard.press('Tab');
     await expect(panel).toBeFocused();
     await page.emulateMedia({ reducedMotion: 'reduce' });
