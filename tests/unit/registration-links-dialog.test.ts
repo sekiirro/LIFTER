@@ -87,6 +87,7 @@ type Element = { type: unknown; props: Record<string, unknown> };
 const props = {
   workspaceId: ws,
   versionId: version,
+  tierLabel: 'Gold',
   priceMinor: '1200',
   canSchedule: true,
   locale: 'en' as const,
@@ -214,6 +215,10 @@ it.each([false, true])(
     expect(ui.alerts).toHaveLength(0);
   },
 );
+it('shows the selected tier again in the issue confirmation', () => {
+  const { tree } = render(props);
+  expect(text(tree)).toContain('Gold');
+});
 it('validates the exact live sum, sequence and increasing offsets before issue', async () => {
   const rendered = render(props);
   const ctx = rendered.ctx;

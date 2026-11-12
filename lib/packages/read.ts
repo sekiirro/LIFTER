@@ -16,6 +16,7 @@ export type PackageOffer = {
   id: string;
   workspace_id: string;
   package_id: string;
+  tier_rank: 1 | 2 | 3;
   duration_days: number;
   duration_months: number | null;
   available: boolean;
@@ -69,7 +70,7 @@ export async function loadPackageOffers(
       client
         .from('package_offers')
         .select(
-          'id,workspace_id,package_id,duration_days,duration_months,available,current_version_id',
+          'id,workspace_id,package_id,duration_days,duration_months,tier_rank,available,current_version_id',
         )
         .eq('workspace_id', workspaceId),
       client

@@ -26,6 +26,7 @@ const id = '00000000-0000-0000-0000-000000000002';
 const terms = {
   workspaceId: ws,
   packageId: id,
+  tierRank: 2,
   durationMonths: null,
   durationDays: 60,
   nameAr: 'test-ar',
@@ -107,6 +108,7 @@ describe('package actions two walls', () => {
     expect(mocks.rpc).toHaveBeenCalledWith('publish_package_version', {
       workspace_id: ws,
       package_id: id,
+      tier_rank: 2,
       duration_months: null,
       duration_days: 60,
       name_ar: 'test-ar',

@@ -625,7 +625,7 @@ test.describe('required local authenticated registration acceptance', () => {
     await page.getByRole('button', { name: 'Issue link', exact: true }).click();
     const { publish, checked } =
       await import('../integration/registration-links-fixture');
-    checked(await publish(f, f.p.id, { price_minor: '1300' }));
+    checked(await publish(f, f.p.id, { tier_rank: 1, price_minor: '1300' }));
     await page.getByTestId('dialog-confirm').click();
     await expect(
       page.getByText('These package terms changed. Refresh and try again.'),
