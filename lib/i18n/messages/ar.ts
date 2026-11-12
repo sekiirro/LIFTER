@@ -669,7 +669,8 @@ export const ar = {
   'clientNotes.saveChanges': 'حفظ التغييرات',
   'clientNotes.delete': 'حذف',
   'clientNotes.deleteDialogTitle': 'حذف هذه الملاحظة؟',
-  'clientNotes.deleteDialogBody': 'سيتم حذف هذه الملاحظة نهائيًا، ولا يمكن التراجع عن ذلك.',
+  'clientNotes.deleteDialogBody':
+    'سيتم حذف هذه الملاحظة نهائيًا، ولا يمكن التراجع عن ذلك.',
   'clientNotes.deleteDialogConfirm': 'حذف الملاحظة',
   'clientNotes.loading': 'جارٍ تحميل الملاحظات…',
   'clientNotes.empty': 'لا توجد ملاحظات لهذا العميل بعد.',
@@ -688,8 +689,10 @@ export const ar = {
   'clientNotes.byline': '{author} · {time}',
   'clientNotes.timestamp': '8 نوفمبر 2026، 10:15 م',
   'clientNotes.exitWarning.title': 'تجاهل التغييرات غير المحفوظة؟',
-  'clientNotes.exitWarning.body': 'لم يتم حفظ ملاحظتك. إذا غادرت الآن، فستفقد تغييراتك.',
+  'clientNotes.exitWarning.body':
+    'لم يتم حفظ ملاحظتك. إذا غادرت الآن، فستفقد تغييراتك.',
   'clientNotes.exitWarning.stay': 'البقاء',
   'clientNotes.exitWarning.discard': 'تجاهل',
-  'clientNotes.exitWarning.bodyInFlight': 'ملاحظتك بتتحفظ. لو خرجت دلوقتي، الحفظ مش هيتلغي.',
+  'clientNotes.exitWarning.bodyInFlight':
+    'ملاحظتك بتتحفظ. لو خرجت دلوقتي، الحفظ مش هيتلغي.',
 } as const;

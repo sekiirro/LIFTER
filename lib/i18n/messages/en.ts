@@ -691,7 +691,8 @@ export const en: Record<keyof typeof ar, string> = {
   'clientNotes.saveChanges': 'Save changes',
   'clientNotes.delete': 'Delete',
   'clientNotes.deleteDialogTitle': 'Delete this note?',
-  'clientNotes.deleteDialogBody': "This note will be permanently deleted. This can't be undone.",
+  'clientNotes.deleteDialogBody':
+    "This note will be permanently deleted. This can't be undone.",
   'clientNotes.deleteDialogConfirm': 'Delete note',
   'clientNotes.loading': 'Loading notes…',
   'clientNotes.empty': 'No notes for this client yet.',
@@ -710,8 +711,10 @@ export const en: Record<keyof typeof ar, string> = {
   'clientNotes.byline': '{author} · {time}',
   'clientNotes.timestamp': '8 Nov 2026, 10:15 PM',
   'clientNotes.exitWarning.title': 'Discard unsaved changes?',
-  'clientNotes.exitWarning.body': "Your note hasn't been saved. If you leave now, your changes will be lost.",
+  'clientNotes.exitWarning.body':
+    "Your note hasn't been saved. If you leave now, your changes will be lost.",
   'clientNotes.exitWarning.stay': 'Stay',
   'clientNotes.exitWarning.discard': 'Discard',
-  'clientNotes.exitWarning.bodyInFlight': "Your note is being saved. Leaving now won't cancel the save.",
+  'clientNotes.exitWarning.bodyInFlight':
+    "Your note is being saved. Leaving now won't cancel the save.",
 };
