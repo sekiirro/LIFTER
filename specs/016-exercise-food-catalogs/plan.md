@@ -152,7 +152,7 @@ No dataset has been supplied. Do not invent or import food/exercise content.
 
 ## Project Structure
 
-specs/016-exercise-food-catalogs/{spec.md, plan.md, tasks.md, traceability.md}; implementation source: supabase/migrations/*catalog*, lib/catalog/*, app/(app)/exercise-library/*, tests/unit/*catalog*, tests/integration/*catalog*, tests/e2e/exercise-authoring-t040.spec.ts.
+specs/016-exercise-food-catalogs/{spec.md, plan.md, tasks.md, traceability.md}; implementation source: `supabase/migrations/*catalog*`, `lib/catalog/*`, `app/(app)/exercise-library/*`, `tests/unit/*catalog*`, `tests/integration/*catalog*`, `tests/e2e/exercise-authoring-t040.spec.ts`.
 
 ## Branch reconciliation note
 

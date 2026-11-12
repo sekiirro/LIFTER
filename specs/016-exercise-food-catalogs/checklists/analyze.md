@@ -918,7 +918,9 @@ A hostile pass found that a pending next-page response could append results afte
 - Findings: 0 open CRITICAL, 0 open HIGH in the documentation changes.
 
 ## 2026-11-12 08:18 Africa/Cairo — S50-R22 cutover and migration-order re-analysis
+
 **Scope:** PR-added T054 cutover audit guard and S50-R16 migration timestamp/reference update; T040 Playwright harness only. No product behavior, permissions, data retention, visible copy, schema requirements or acceptance criteria changed in this scope.
+
 - Entry check: PASS. F16 numbered FRs/SCs/GWT scenarios remain in `spec.md`; PO clarifications and no-ambiguity statement remain in `decision-register.md` / `spec.md`; `plan.md` and `tasks.md` cover the touched T040/T054/T068 work; this analysis follows the timestamp/reference edits in `plan.md` and task implementation files.
 - Cutover contract: the lock precedes a comparison of all four T068 identity/version tuple arrays and the first delete; mismatch fails closed. Fresh replay, the T037 T054 migration test and a version-comparison mutation test execute against the cutover contract.
 - Migration-order cross-reference: all 15 files formerly at/below origin/main max `20261111170857` are now `20261111170858`–`20261111170912`, preserving order and preceding `20261111193000`; all path references were updated.
@@ -926,8 +928,10 @@ A hostile pass found that a pending next-page response could append results afte
 - Findings: 0 open CRITICAL, 0 open HIGH for this re-analysis scope. No open product ambiguity in this scope. Separate Major 2 blank-field semantics remains explicitly blocked on `PDN-S50-FIX2-1`; it is not inferred or represented as decided here.
 
 ## 2026-11-12 08:23:00 +02:00 — S50-R22 T068 version-tuple evidence re-analysis
+
 **Scope:** T068 task cross-reference for the cutover identity/version guard. This is a test-evidence clarification under the existing S48-PO-17 / S50-R22 guard; no product behavior or acceptance threshold changed.
-- Entry check: PASS. spec.md retains numbered FRs, measurable SCs and GWT scenarios; PO clarification and explicit scoped no-ambiguity statement remain; plan.md covers the cutover and migration sequence; T068 remains tagged FR-031/FR-003. This analysis follows the T068 wording update in 	asks.md and migration-reference update in plan.md.
+
+- Entry check: PASS. spec.md retains numbered FRs, measurable SCs and GWT scenarios; PO clarification and explicit scoped no-ambiguity statement remain; plan.md covers the cutover and migration sequence; T068 remains tagged FR-031/FR-003. This analysis follows the T068 wording update in asks.md and migration-reference update in plan.md.
 - Concurrency coverage: an identity addition and a committed version tuple added after verification are both rejected by the guard before deletion; cutover locks cover identity and version tables. Stack A full-chain replay plus T037/T068 integration tests execute this contract.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open product ambiguity in this guard scope. Separate PDN-S50-FIX2-1 remains open for Major 2 blank-field semantics; that behavior is excluded from this re-analysis and remains unimplemented.
 
@@ -937,3 +941,4 @@ A hostile pass found that a pending next-page response could append results afte
 - Decided behavior: the compatibility adapter forwards explicit null Notes/Video fields as null to the existing F16 override RPC; absent fields remain omitted. The RPC's existing version/CAS and workspace authorization boundary remains in force, and null effective values resolve to canonical fields.
 - Verification plan: unit contract for explicit-null mapping with pre-fix RED and guard-removal mutation; Stack A integration verifies Notes/Video resolve to canonical on a variation-only version write. Integration is blocked until Stack A identity matches this worktree.
 - Scope review: no visible copy, permissions, retention behavior, schema contract, or UI change; no new ambiguity. 0 open CRITICAL and 0 open HIGH findings.
+- Current-state verification (2026-11-12 15:00:39 +02:00): Stack A dependency/identity issue is resolved under S51-R5; the full migration chain replayed from the F16 worktree and the FIX2-1 integration test plus the touched F16 batch passed. A plan source-glob formatting correction preserves the intended literal paths using inline code; no requirement or behavior text changed. Entry remains PASS; 0 open CRITICAL and 0 open HIGH findings; no open product ambiguity.
