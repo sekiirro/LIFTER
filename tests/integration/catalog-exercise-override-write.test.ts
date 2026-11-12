@@ -99,7 +99,9 @@ describe('T047 workspace exercise override writes', () => {
   });
 
   it('T092 FR-016 conflicts the second concurrent first save when no override existed', async () => {
-    const exercise = await createGlobal(`T092 concurrent first save ${randomUUID()}`);
+    const exercise = await createGlobal(
+      `T092 concurrent first save ${randomUUID()}`,
+    );
     const results = await Promise.allSettled([
       writeConcurrently(trainerId, workspaceId, exercise, null, randomUUID(), {
         notes: 'first concurrent save',
@@ -109,7 +111,9 @@ describe('T047 workspace exercise override writes', () => {
       }),
     ]);
 
-    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(
+      results.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
     const rejected = results.find((result) => result.status === 'rejected');
     expect(rejected).toMatchObject({
       status: 'rejected',
@@ -126,7 +130,9 @@ describe('T047 workspace exercise override writes', () => {
   });
 
   it('T092 FR-025 rejects a direct workspace override that targets its own exercise', async () => {
-    const exercise = await createGlobal(`T092 self alternative ${randomUUID()}`);
+    const exercise = await createGlobal(
+      `T092 self alternative ${randomUUID()}`,
+    );
 
     await expect(
       write(trainerId, workspaceId, exercise, 0, randomUUID(), {

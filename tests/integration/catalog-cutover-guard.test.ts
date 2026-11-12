@@ -186,7 +186,9 @@ describe('T068 cutover identity guard (S48-PO-17)', () => {
 
       await expect(
         tx.savepoint(
-          async (sp) => sp`insert into public.exercise_versions(exercise_id, version, payload, created_by)
+          async (
+            sp,
+          ) => sp`insert into public.exercise_versions(exercise_id, version, payload, created_by)
             values (${globalId}, 2, ${sp.json({ name_en: 'legacy', instructions_en: 'retired' })}, ${poId})`,
         ),
       ).rejects.toMatchObject({
@@ -195,7 +197,9 @@ describe('T068 cutover identity guard (S48-PO-17)', () => {
       });
       await expect(
         tx.savepoint(
-          async (sp) => sp`insert into public.workspace_exercise_versions(workspace_id, workspace_exercise_id, version, payload, created_by)
+          async (
+            sp,
+          ) => sp`insert into public.workspace_exercise_versions(workspace_id, workspace_exercise_id, version, payload, created_by)
             values (${workspaceId}, ${privateId}, 2, ${sp.json({ name_en: 'legacy', instructions_ar: 'retired' })}, ${poId})`,
         ),
       ).rejects.toMatchObject({
