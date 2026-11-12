@@ -88,6 +88,25 @@ describe('T006 persisted Builder mutation probes', () => {
           "or not app_private.has_workspace_access(p_workspace_id,'author_forms')",
           'or false',
         );
+        // The public wrapper is followed by post-lock checks in the private
+        // writer. Remove both layers so this probe still exercises the
+        // unauthorized-write mutant after the lock-wait hardening.
+        const privateSave =
+          'app_private.save_workspace_form_draft(uuid,uuid,integer,jsonb,uuid,uuid,text)';
+        for (let i = 0; i < 2; i += 1) {
+          await installMutant(
+            tx,
+            privateSave,
+            "or not app_private.role_has_capability(app_private.current_staff_role(),'author_forms')",
+            'or false',
+          );
+          await installMutant(
+            tx,
+            privateSave,
+            "or not app_private.has_workspace_access(p_workspace_id,'author_forms')",
+            'or false',
+          );
+        }
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.sales, role: 'authenticated' })},true)`;
         await tx`set local role authenticated`;
         const rows = await tx`
