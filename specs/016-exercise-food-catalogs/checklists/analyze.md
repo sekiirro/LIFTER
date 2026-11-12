@@ -884,3 +884,15 @@ T900 has been marked complete only after its focused integration test passed on 
 **Copy/design/data retention:** PASS — no new user-visible string is required; reuse existing approved Notes/Video validation copy. No data retention/deletion decision is changed. UI behavior stays within approved Design System patterns; visual/empty/error/loading strings must use existing bilingual messages.
 
 **Findings:** 0 open CRITICAL, 0 open HIGH. Implementation remains contingent on inventory, tests-first RED/GREEN and mutation evidence required by T091. This is an analysis record, not evidence that implementation or tests have passed.
+## 2026-11-12 — S49 F16 T091 completion re-analysis
+
+**Scope:** T091 completion evidence/status only; approved requirements remain FR-003, FR-025, FR-026 and FR-031.
+
+- Requirement/task/test cross-reference: PASS — T091 remains linked to the four FRs; `traceability.md` cites committed implementation and executed unit/integration/E2E tests.
+- PO authority and copy: PASS — S49-PO-3 remains byte-exact in the decision register; S49-R9 remains labeled architect mapping; no new visible copy or product behavior was introduced in this status update.
+- Data safety and permissions: PASS — Stack A audit is zero over-limit values; migration fails closed and never truncates; authorization precedes picker search/detail RPCs.
+- Ambiguities: none open within T091 scope.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+## 2026-11-12 — T091 status cross-reference recheck
+
+T091 is marked verified only after the passing committed-head checks recorded in `traceability.md`. The stale “after new Analyze and data inventory” status is removed. T091, FR-003/025/026/031 and the cited test/evidence row agree. Entry check remains PASS; 0 open CRITICAL/HIGH; no open ambiguities.
