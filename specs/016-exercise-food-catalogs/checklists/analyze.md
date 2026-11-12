@@ -896,3 +896,6 @@ T900 has been marked complete only after its focused integration test passed on 
 ## 2026-11-12 — T091 status cross-reference recheck
 
 T091 is marked verified only after the passing committed-head checks recorded in `traceability.md`. The stale “after new Analyze and data inventory” status is removed. T091, FR-003/025/026/031 and the cited test/evidence row agree. Entry check remains PASS; 0 open CRITICAL/HIGH; no open ambiguities.
+## 2026-11-12 — T091 hostile-review concurrency recheck
+
+A hostile pass found that a pending next-page response could append results after the search query changed. Added delayed-response tests for both authoring and override pickers; both failed before the guard and pass afterward. A current search key now gates page success, error, and loading updates. No product behavior/copy changed. T091/FR-025/FR-026 cross-references remain aligned. No open ambiguities; 0 open CRITICAL/HIGH findings.
