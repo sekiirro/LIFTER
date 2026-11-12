@@ -31,12 +31,12 @@ Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / 
 
 ## Findings
 
-| Severity | Open count | Findings |
-| --- | ---: | --- |
-| CRITICAL | 0 | None. Authorization, tenant isolation and deny-by-default are explicit in FR-004/FR-005, the RLS contract and T006/T011. Create idempotency is not an authorization path (FR-011). |
-| HIGH | 0 | None. |
-| MEDIUM | 0 | None. CN-MCQ-16..CN-MCQ-25 are resolved (24 and 25 by S40-PO-12) or ruled and encoded; no open PO question remains. |
-| LOW | 1 | FR-006/FR-007 name the reusable components by family (textarea, button, dialog, toast, States). The repository has `components/ui/` with Button, ConfirmDialog, Field, Toast, States and Bidi; the textarea mapping is not verified in this spec-only round. **Not an ambiguity**: it is a check for the implementation task that uses the component (T005), under the existing design gate. |
+| Severity | Open count | Findings                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ---------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL |          0 | None. Authorization, tenant isolation and deny-by-default are explicit in FR-004/FR-005, the RLS contract and T006/T011. Create idempotency is not an authorization path (FR-011).                                                                                                                                                                                                           |
+| HIGH     |          0 | None.                                                                                                                                                                                                                                                                                                                                                                                        |
+| MEDIUM   |          0 | None. CN-MCQ-16..CN-MCQ-25 are resolved (24 and 25 by S40-PO-12) or ruled and encoded; no open PO question remains.                                                                                                                                                                                                                                                                          |
+| LOW      |          1 | FR-006/FR-007 name the reusable components by family (textarea, button, dialog, toast, States). The repository has `components/ui/` with Button, ConfirmDialog, Field, Toast, States and Bidi; the textarea mapping is not verified in this spec-only round. **Not an ambiguity**: it is a check for the implementation task that uses the component (T005), under the existing design gate. |
 
 ### Inconsistency check (round 14 edits)
 
@@ -126,20 +126,20 @@ The lifter Spec Kit gate applies as well: zero open CRITICAL/HIGH before impleme
 
 ## Coverage map (FR / SC → tasks)
 
-| Requirement | Tasks |
-| --- | --- |
-| FR-001 tab placement | T005, T013 |
-| FR-002 body rule, unavailable-author label | T003, T004, T009, T013, T014 |
-| FR-003 edit, no history | T003, T004, T010 |
-| FR-004 role × action | T002, T006, T011 |
-| FR-005 isolation, RLS | T003, T006, T011, T014 |
-| FR-006 PO decisions, reuse rule | T001, T007 |
-| FR-007 states, copy rows 1–34, Bidi, no icon, exit protection, no Save Draft, field read-only while in flight, unknown-result recovery with existing Retry/save-error rows, unknown-result exit warning rows 30/32/33 + body row 18, unresolved-create storage recovery with page-memory fallback on unavailable storage or a failed pre-dispatch write (CN-MCQ-21; CN-MCQ-23; CN-MCQ-24; S40-PO-6; S40-PO-10; S40-PO-12; DESIGN.md Q51) | T005, T013 |
-| FR-008 ordering | T008 |
-| FR-009 last write wins, local time | T004, T010, T013 |
-| FR-010 audit | T004, T012 |
-| FR-011 create idempotency, duplicate returns existing note, trimmed body equality, note-side uniqueness and hardened boundary, mismatch refusal, retry-after-delete deleted/not-found, retry-after-edit fingerprint (CN-MCQ-20, CN-MCQ-22) | T003, T004, T015 |
-| SC-001..SC-007 | mapped in tasks.md coverage table |
+| Requirement                                                                                                                                                                                                                                                                                                                                                                                                                              | Tasks                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| FR-001 tab placement                                                                                                                                                                                                                                                                                                                                                                                                                     | T005, T013                        |
+| FR-002 body rule, unavailable-author label                                                                                                                                                                                                                                                                                                                                                                                               | T003, T004, T009, T013, T014      |
+| FR-003 edit, no history                                                                                                                                                                                                                                                                                                                                                                                                                  | T003, T004, T010                  |
+| FR-004 role × action                                                                                                                                                                                                                                                                                                                                                                                                                     | T002, T006, T011                  |
+| FR-005 isolation, RLS                                                                                                                                                                                                                                                                                                                                                                                                                    | T003, T006, T011, T014            |
+| FR-006 PO decisions, reuse rule                                                                                                                                                                                                                                                                                                                                                                                                          | T001, T007                        |
+| FR-007 states, copy rows 1–34, Bidi, no icon, exit protection, no Save Draft, field read-only while in flight, unknown-result recovery with existing Retry/save-error rows, unknown-result exit warning rows 30/32/33 + body row 18, unresolved-create storage recovery with page-memory fallback on unavailable storage or a failed pre-dispatch write (CN-MCQ-21; CN-MCQ-23; CN-MCQ-24; S40-PO-6; S40-PO-10; S40-PO-12; DESIGN.md Q51) | T005, T013                        |
+| FR-008 ordering                                                                                                                                                                                                                                                                                                                                                                                                                          | T008                              |
+| FR-009 last write wins, local time                                                                                                                                                                                                                                                                                                                                                                                                       | T004, T010, T013                  |
+| FR-010 audit                                                                                                                                                                                                                                                                                                                                                                                                                             | T004, T012                        |
+| FR-011 create idempotency, duplicate returns existing note, trimmed body equality, note-side uniqueness and hardened boundary, mismatch refusal, retry-after-delete deleted/not-found, retry-after-edit fingerprint (CN-MCQ-20, CN-MCQ-22)                                                                                                                                                                                               | T003, T004, T015                  |
+| SC-001..SC-007                                                                                                                                                                                                                                                                                                                                                                                                                           | mapped in tasks.md coverage table |
 
 Every FR and SC has at least one task. No task lacks a requirement mapping.
 
@@ -206,12 +206,17 @@ PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIG
 
 PASS for implementation entry: 0 open CRITICAL, 0 open HIGH. No open ambiguities for the authorized S49-PO-7 route slice.
 
-
 ### Round 18 addendum — numbering and final cross-reference check (2026-11-12)
 
 After the final spec numbering edit, rechecked GWT scenario numbering (1–4), FR/SC/task mappings, plan step 7, T016 placement after T006 and before T007, and task tags. Result: no open CRITICAL or HIGH finding; no ambiguity.
+
 ## Round 22 - route refinement and implementation traceability (2026-11-12)
 
 - Re-analyzed the T016 plan refinement: the session-bound database resolver exposes only client/workspace identifiers after the coaching_work access check; the route separately checks the verified actor and active membership, then reads notes through the RLS/RPC boundary. Unknown, foreign, revoked and unauthorized IDs use the same notFound behavior. No user-visible copy or product behavior was added.
 - Marked T005 and T016 complete only after exact-head unit, route, Stack D integration, E2E, lint, typecheck, format and migration evidence was recorded in traceability.md. Rechecked FR/SC/task references and resolved decision statuses.
 - Focused F20 Stack D evidence is green (5/5); the repository-wide integration suite remains an operational blocker with unrelated fixture/schema failures (26/95 files, 238/1,500 tests failed), recorded in the run report. Analyze findings: 0 open CRITICAL/HIGH; no PO ambiguity.
+
+## Round 23 - final documentation formatting review (2026-11-12)
+
+- The required changed-document Prettier gate found all five F20 Markdown artifacts needed canonical formatting. Applied Prettier; the only non-whitespace change is the ordered-list index for S49-F20-MCQ-1 changing from 20 to 25 to follow the preceding 24 clarification entries. The stable MCQ ID, PO source, requirement text, task tags and all FR/SC IDs are unchanged. The S49-PO-7 source hash and exact quoted substring still match.
+- Rechecked cross-references and no-open-ambiguities status after formatting. Result: 0 open CRITICAL/HIGH, no PO decision needed.
