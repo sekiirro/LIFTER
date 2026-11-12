@@ -15,7 +15,8 @@
 | FR-011 | T006, T007, T012       | Not implemented | UNVERIFIED |
 | FR-012 | T001                   | Not implemented | UNVERIFIED |
 | FR-013 | T005, T010             | Not implemented | UNVERIFIED |
-| FR-014 | T012                   | Not implemented | UNVERIFIED |
-| FR-015 | T012                   | Not implemented | UNVERIFIED |
+| FR-014 | T012, T013             | Not implemented | UNVERIFIED |
+| FR-015 | T012, T013             | Not implemented | UNVERIFIED |
+| FR-016 | T012                   | Not implemented | UNVERIFIED |
 
-No task is ticked. NAME-1..NAME-16 are resolved by S51-PO-4/S51-PO-7/S51-PO-8; NAME-17..NAME-20 remain PO-DECISION-NEEDED. This spec-only commit is not implementation evidence.
+No task is ticked. NAME-1..NAME-16 are resolved by S51-PO-4/S51-PO-7/S51-PO-8 and NAME-17..NAME-20 by S52-PO-2; no product decision remains open in this feature. This spec-only commit is not implementation evidence.
