@@ -111,3 +111,33 @@
 - Gates on the docs head: typecheck, lint, full unit, prettier — recorded in `final-*.log` (174 files / 2372 tests).
 
 **Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open product decisions. F18-FR-003 wording now matches the merged data-model, S43-R9, the S27 evidence and the PO decision S48-PO-11; no open ambiguity remains for the display rule.
+
+---
+
+## Analyze — F18 structural payload labels (S49, 2026-11-12)
+
+**Analyzed:** 2026-11-12 (lane s49-beam-f18-labels, S49-R12/S49-PO-5).
+**Scope:** copy-only. P6 table in `contracts/copy-ai-prompt.md`; S49-PO-5 entry in `research/po-decision-matrix.md`; `tests/contracts/nutrition-export-contract.test.ts` `LABELS` parameterization. No production renderer (Phase 0).
+
+### Entry check
+
+- PASS — spec.md has numbered FRs (F18-FR-006, FR-014, FR-015) and SCs for export/prompt fidelity.
+- PASS — Clarifications: S49-PO-5 recorded byte-exact in `research/po-decision-matrix.md` (PO words quoted, sha256s cited).
+- PASS — plan.md covers export scope; tasks.md T028 added citing S49-R12.
+- PASS — this Analyze dated after the spec/contract/test edits.
+
+### Findings
+
+- CRITICAL: 0 open.
+- HIGH: 0 open.
+- MEDIUM: 0 open product decisions.
+- LOW: none.
+
+### Cross-artifact decisions
+
+- EN output of `planContentText(projection, 'en')` is byte-identical to pre-change (17/17 tests pass; all pre-existing EN assertions unchanged).
+- AR output uses approved labels from `runs/s49-arch/f18-label-table-approved.md` (SHA-256 `972df3d75cb24bc3f9af2c8647b9d07c8db38a77964e8d05501e6d69d4648888`), Node byte compare verified for the 18-row table.
+- Mutation evidence: swapping one AR label changes the payload and fails the assertion.
+- No production renderer touched (Phase 0); labels live in the contract test only -> #85 not blocked.
+
+**Analyze result:** CRITICAL 0; HIGH 0. Ready for commit/PR.
