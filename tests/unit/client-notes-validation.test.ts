@@ -5,14 +5,27 @@ import {
 } from '../../lib/client-notes/validation';
 
 describe('client note input validation', () => {
-  it('trims Unicode whitespace before counting stored code points', () => {
+  it('trims the complete Unicode boundary whitespace before counting', () => {
     expect(normalizeClientNoteBody('\u2003hello\u00a0')).toBe('hello');
-    expect(normalizeClientNoteBody('😀'.repeat(5000))).toBe('😀'.repeat(5000));
+    expect(normalizeClientNoteBody(` ${'x'.repeat(5000)}\t`)).toBe(
+      'x'.repeat(5000),
+    );
+    expect(normalizeClientNoteBody('x')).toBe('x');
+    expect(normalizeClientNoteBody('x'.repeat(5000))).toBe('x'.repeat(5000));
+    expect(normalizeClientNoteBody('x'.repeat(5001))).toBeNull();
+    expect(normalizeClientNoteBody('one\ninside\ttext')).toBe(
+      'one\ninside\ttext',
+    );
+    expect(normalizeClientNoteBody('🧪'.repeat(5000))).toBe(
+      '🧪'.repeat(5000),
+    );
   });
 
-  it('rejects empty, over-limit, NUL, and non-string bodies', () => {
+  it('rejects blank and whitespace-only, NUL, and non-string bodies', () => {
+    expect(normalizeClientNoteBody('')).toBeNull();
+    expect(normalizeClientNoteBody(' \t\n')).toBeNull();
     expect(normalizeClientNoteBody('\u2003\u00a0')).toBeNull();
-    expect(normalizeClientNoteBody('😀'.repeat(5001))).toBeNull();
+    expect(normalizeClientNoteBody('\u00a0')).toBeNull();
     expect(normalizeClientNoteBody('valid\u0000body')).toBeNull();
     expect(normalizeClientNoteBody(null)).toBeNull();
   });

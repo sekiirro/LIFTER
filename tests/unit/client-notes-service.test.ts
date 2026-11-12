@@ -12,7 +12,10 @@ vi.mock('../../lib/supabase/server', () => ({
   createSessionClient: mocks.createSessionClient,
 }));
 
-import { readClientNotes } from '../../lib/client-notes/service';
+import {
+  createClientNote,
+  readClientNotes,
+} from '../../lib/client-notes/service';
 
 describe('Client Notes list ordering', () => {
   beforeEach(() => {
@@ -48,5 +51,26 @@ describe('Client Notes list ordering', () => {
       ['created_at', { ascending: false }],
       ['id', { ascending: false }],
     ]);
+  });
+
+  it('refuses invalid body boundaries before reaching the database boundary', async () => {
+    for (const body of [
+      '',
+      ' \t\n',
+      '\u00a0',
+      'x'.repeat(5001),
+      `valid\u0000body`,
+    ]) {
+      await expect(
+        createClientNote({
+          workspaceId: '10000000-0000-4000-8000-000000000001',
+          clientId: '20000000-0000-4000-8000-000000000001',
+          idempotencyKey: 'key',
+          body,
+        }),
+      ).resolves.toEqual({ status: 'invalid_input' });
+    }
+    expect(mocks.getActor).not.toHaveBeenCalled();
+    expect(mocks.createSessionClient).not.toHaveBeenCalled();
   });
 });
