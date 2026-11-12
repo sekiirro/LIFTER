@@ -212,4 +212,3 @@ $signup$;
 alter function public.client_signup(text,text,uuid,jsonb) owner to postgres;
 revoke all on function public.client_signup(text,text,uuid,jsonb) from public,anon,authenticated,service_role;
 grant execute on function public.client_signup(text,text,uuid,jsonb) to anon,authenticated;
-

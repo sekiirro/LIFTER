@@ -106,4 +106,3 @@ $$;
 alter function public.save_form_draft(uuid,uuid,integer,uuid,jsonb) owner to postgres;
 revoke all on function public.save_form_draft(uuid,uuid,integer,uuid,jsonb) from public, anon, service_role;
 grant execute on function public.save_form_draft(uuid,uuid,integer,uuid,jsonb) to authenticated;
-

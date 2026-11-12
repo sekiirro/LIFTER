@@ -169,5 +169,3 @@ $$;
 alter function app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer) owner to postgres;
 revoke all on function app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)
   from public,anon,authenticated,service_role;
-
-

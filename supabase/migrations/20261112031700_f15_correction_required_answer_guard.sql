@@ -165,5 +165,3 @@ $$;
 alter function public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text) owner to postgres;
 revoke all on function public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text) from public,anon,service_role;
 grant execute on function public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text) to authenticated;
-
-
