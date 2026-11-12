@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const migration = readFileSync(
   resolve(
     process.cwd(),
-    'supabase/migrations/20261112043000_catalog_exercise_payload_text_cap.sql',
+    'supabase/migrations/20261112130020_catalog_exercise_payload_text_cap.sql',
   ),
   'utf8',
 );
@@ -15,7 +15,7 @@ describe('S50 F16 forward RPC corrections', () => {
     const migration = readFileSync(
       resolve(
         process.cwd(),
-        'supabase/migrations/20261111170909_catalog_exercise_cutover.sql',
+        'supabase/migrations/20261112130011_catalog_exercise_cutover.sql',
       ),
       'utf8',
     );
@@ -45,7 +45,7 @@ describe('S50 F16 forward RPC corrections', () => {
       readFileSync(
         resolve(
           process.cwd(),
-          'supabase/migrations/20261112043000_catalog_exercise_payload_text_cap.sql',
+          'supabase/migrations/20261112130020_catalog_exercise_payload_text_cap.sql',
         ),
         'utf8',
       ),

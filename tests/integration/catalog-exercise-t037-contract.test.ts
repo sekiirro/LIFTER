@@ -1311,7 +1311,7 @@ describe('T037 remaining workspace and identity contracts', () => {
     const migration = await readFile(
       join(
         process.cwd(),
-        'supabase/migrations/20261111170909_catalog_exercise_cutover.sql',
+        'supabase/migrations/20261112130011_catalog_exercise_cutover.sql',
       ),
       'utf8',
     );
@@ -1395,7 +1395,7 @@ describe('T037 remaining workspace and identity contracts', () => {
     const securityFix = await readFile(
       join(
         process.cwd(),
-        'supabase/migrations/20261111170910_catalog_search_invoker_security.sql',
+        'supabase/migrations/20261112130012_catalog_search_invoker_security.sql',
       ),
       'utf8',
     );
@@ -1403,7 +1403,7 @@ describe('T037 remaining workspace and identity contracts', () => {
     const effectiveNamesAndPagination = await readFile(
       join(
         process.cwd(),
-        'supabase/migrations/20261111205300_catalog_search_effective_names_and_variation_pagination.sql',
+        'supabase/migrations/20261112130016_catalog_search_effective_names_and_variation_pagination.sql',
       ),
       'utf8',
     );
@@ -1411,7 +1411,7 @@ describe('T037 remaining workspace and identity contracts', () => {
     const searchBehaviorFix = await readFile(
       join(
         process.cwd(),
-        'supabase/migrations/20261112043000_catalog_exercise_payload_text_cap.sql',
+        'supabase/migrations/20261112130020_catalog_exercise_payload_text_cap.sql',
       ),
       'utf8',
     );
