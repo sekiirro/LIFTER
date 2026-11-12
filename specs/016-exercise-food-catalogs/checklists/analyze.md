@@ -959,17 +959,19 @@ A hostile pass found that a pending next-page response could append results afte
 - Clarifications: no new PO question. S51-R16 resolves implementation mapping; existing spec is authoritative for the behavior. No new copy or rendered layout/styling is planned.
 - Findings: no additional open CRITICAL/HIGH analysis finding beyond the five assigned T092 corrections.
 
-
 ## S51-R23 task-ID collision recheck (2026-11-12 18:51 +02:00)
+
 - T088 remains assigned to the existing SC-003 timing evidence task. The newly assigned S51-R16 implementation work is uniquely T092 and is tagged FR-016, FR-024, FR-025, FR-031 and FR-035.
 - This is an identifier correction only; no requirement or plan behavior changed. No open PO ambiguity; 0 open CRITICAL and 0 open HIGH analysis findings.
 
 ## S51-R23 duplicate-ID sweep (2026-11-12)
+
 - Rechecked after updating `tasks.md`: T088 is the existing SC-003 timing task, T089 the existing S39 spec-only follow-up, T090 the existing storage prerequisite, and T091 the existing S49 task. T092 is unique for this S51-R16 implementation and maps to FR-016, FR-024, FR-025, FR-031 and FR-035.
 - Updated the task inventory to include T091 and T092; it now records 94 task rows. Their FR links and T092's implementation tests are audited in the final traceability sweep.
 - No requirement text changed. This re-analysis follows the task ID correction; 0 open CRITICAL and 0 open HIGH findings, with no open product ambiguity for T092.
 
 ## S51-R16 final revalidation (2026-11-12 20:35 +02:00)
+
 - Entry remains PASS: no spec/plan requirement text changed; T092 is the unique task for FR-016, FR-024, FR-025, FR-031 and FR-035. `traceability.md` now records test evidence per FR. No open ambiguity or PO decision was introduced.
 - The earlier S51-R16 note that Stack A was bound to `LFTR-f15a` was historical and is superseded: under S51-R5 it was stopped, restarted from `LFTR-s45-f16`, identity verified, and the complete chain replayed successfully.
 - Final behavior review: null expected-version CAS rejects concurrent second first-saves after replay lookup; self-target validation remains in the final RPC; canonical and workspace names remain searchable with existing keyset pagination; cutover triggers install atomically and reject retired fields; checked private video payload is shown only when the effective field is absent, while explicit effective null stays fail-closed.
