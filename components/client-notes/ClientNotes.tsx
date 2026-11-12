@@ -85,6 +85,19 @@ export function ClientNotes(props: ClientNotesProps) {
 
   // dirty tracking handled by draft length
 
+  const formatTimestamp = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString(locale === 'ar' ? 'ar-u-nu-latn' : 'en-u-nu-latn', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
   const handleCreate = useCallback(
     async (e?: FormEvent) => {
       e?.preventDefault();
@@ -164,6 +177,11 @@ export function ClientNotes(props: ClientNotesProps) {
   };
 
   const cancelEdit = () => {
+    if (saving) {
+      setExitMode('inflight');
+      setExitOpen(true);
+      return;
+    }
     if (editDraft.trim().length > 0) {
       setExitMode('unsaved');
       setExitOpen(true);
@@ -187,6 +205,11 @@ export function ClientNotes(props: ClientNotesProps) {
   const stay = () => setExitOpen(false);
 
   const cancelCreate = () => {
+    if (saving) {
+      setExitMode('inflight');
+      setExitOpen(true);
+      return;
+    }
     if (draft.trim().length > 0) {
       setExitMode('unsaved');
       setExitOpen(true);
@@ -238,13 +261,13 @@ export function ClientNotes(props: ClientNotesProps) {
                 return (
                   <li key={note.id} className={''}>
                     <div className={''}>
-                      <Bidi>{m['clientNotes.byline'].replace('{author}', authorLabel).replace('{time}', note.created_at)}</Bidi>
+                      <Bidi>{m['clientNotes.byline'].replace('{author}', authorLabel).replace('{time}', formatTimestamp(note.created_at))}</Bidi>
                     </div>
                     {note.edited_at && (
                       <div className={''}>
                         {m['clientNotes.editedMarker'].replace(
                           '{time}',
-                          note.edited_at,
+                          formatTimestamp(note.edited_at as string),
                         )}
                       </div>
                     )}
@@ -278,7 +301,6 @@ export function ClientNotes(props: ClientNotesProps) {
                             type="button"
                             variant="secondary"
                             onClick={cancelEdit}
-                            disabled={saving}
                           >
                             {m['clientNotes.cancel']}
                           </Button>
@@ -324,7 +346,10 @@ export function ClientNotes(props: ClientNotesProps) {
               <label className={''}>{m['clientNotes.noteLabel']}
                 <textarea
                   value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
+                  onChange={(e) => {
+                      setDraft(e.target.value);
+                      setIdempotencyKey(null);
+                    }}
                   aria-label={m['clientNotes.noteLabel']}
                   readOnly={saving}
                 />
@@ -339,7 +364,6 @@ export function ClientNotes(props: ClientNotesProps) {
                   type="button"
                   variant="secondary"
                   onClick={cancelCreate}
-                  disabled={saving}
                 >
                   {m['clientNotes.cancel']}
                 </Button>
