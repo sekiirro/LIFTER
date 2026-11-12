@@ -13,7 +13,7 @@ Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / 
 ## Counts verified against the artifacts
 
 - CN-MCQ IDs in the register: 24 defined (01-14, 16-25; CN-MCQ-15 removed, ID not reused). PO-resolved: 23 (01-14, 16, 17, 18, 19, 20, 21, 23, 24 and 25). Architect-ruled: 1 (22). Open PO decisions: 0.
-- Functional requirements: 11 (FR-001..FR-011). Success criteria: 7 (SC-001..SC-007). Tasks: 15 (T001..T015; T008..T015 are test tasks). Acceptance scenarios: Story 1 = 3, Story 2 = 8, Story 3 = 8.
+- Functional requirements: 11 (FR-001..FR-011). Success criteria: 8 (SC-001..SC-008). Tasks: 16 (T001..T016; T008..T015 are test tasks). Acceptance scenarios: Story 1 = 4, Story 2 = 8, Story 3 = 8.
 - Task ticks: 0 (`grep "\[x\]"` on tasks.md returns no match). All tasks remain unticked (spec-only; S38-R8).
 - Approved copy: CN-MCQ-08 rows 1–29 (S38-PO-2), CN-MCQ-16 rows 30–33 (S38-PO-11) and CN-MCQ-19 row 34 (S40-PO-3). All 34 copy-table rows were re-verified byte-exact against the PO sources in round 16 (34/34 identical, including row 34 EN 60 / AR 48 code points); no copy row changed in rounds 15–16.
 - Authority byte verification: the S40-PO-12 two PO lines “CN-MCQ-24: A: Browser session (Rec.)” and “CN-MCQ-25: A: Existing PO rule (Rec.)” and its parenthesised architect-mapping sentence are present byte-exact in spec.md; the earlier S40-PO-10, S40-PO-6, S40-PO-3 and S40-R9 quotations remain byte-exact. Script: `runs/s40-ds-cn-r12/verify-authority.cjs` (ALL PASS).
@@ -139,14 +139,14 @@ The lifter Spec Kit gate applies as well: zero open CRITICAL/HIGH before impleme
 | FR-009 last write wins, local time                                                                                                                                                                                                                                                                                                                                                                                                       | T004, T010, T013                  |
 | FR-010 audit                                                                                                                                                                                                                                                                                                                                                                                                                             | T004, T012                        |
 | FR-011 create idempotency, duplicate returns existing note, trimmed body equality, note-side uniqueness and hardened boundary, mismatch refusal, retry-after-delete deleted/not-found, retry-after-edit fingerprint (CN-MCQ-20, CN-MCQ-22)                                                                                                                                                                                               | T003, T004, T015                  |
-| SC-001..SC-007                                                                                                                                                                                                                                                                                                                                                                                                                           | mapped in tasks.md coverage table |
+| SC-001..SC-008                                                                                                                                                                                                                                                                                                                                                                                                                           | mapped in tasks.md coverage table |
 
 Every FR and SC has at least one task. No task lacks a requirement mapping.
 
 ## Gate checklist (Spec Kit entry check, spec-only PR)
 
 - [x] FRs have stable IDs and traceable tasks (FR-001..FR-011 each appear in tasks.md and in the coverage map).
-- [x] Success criteria are measurable (SC-001..SC-007), each mapped to tasks in the coverage map.
+- [x] Success criteria are measurable (SC-001..SC-008), each mapped to tasks in the coverage map.
 - [x] Given/When/Then scenarios cover read, create (trim, boundary and idempotent retry), edit (including overlapping saves and immutable columns), delete, tenancy, role denial, Trainer cross-client access, restored membership, last save wins and exit protection (unsubmitted discard and in-flight saves, with the in-flight warning key named and the field read-only while in flight).
 - [x] Current role/membership model and backend/RLS enforcement are described; create idempotency is explicitly not an authorization factor.
 - [x] No SQL/migration version is invented; the migration scan is not relied upon; no migration file is added by this PR.
@@ -167,7 +167,7 @@ PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIG
 **Inputs:** `spec.md`, `plan.md`, `tasks.md`, `.specify/memory/constitution.md` 1.13.0, and S47-PO-14.
 **Scope:** Revalidate F20's Spec Kit implementation entry gate after S47-PO-14 and the current plan reconciliation; no behavior or scope changes.
 
-- **Entry gate: PASS.** `spec.md` has numbered FR-001..FR-011, measurable SC-001..SC-007, and Given/When/Then scenarios for the user stories. The Clarifications register (spec.md:111–139) records all PO resolutions, the S40-R9 ruling, and explicitly states that no open behavioural ambiguities remain.
+- **Entry gate: PASS.** `spec.md` has numbered FR-001..FR-011, measurable SC-001..SC-008, and Given/When/Then scenarios for the user stories. The Clarifications register (spec.md:111–139) records all PO resolutions, the S40-R9 ruling, and explicitly states that no open behavioural ambiguities remain.
 - **Plan/task mapping: PASS.** `plan.md` covers the Client Notes persistence, authorization, and UI scope. Its Complexity tracking row at lines 69–71 resolves the former Principle I deviation against constitution 1.13.0 and cites S47-PO-14. `tasks.md` maps T002 [FR-004, FR-005] and T003 [FR-002, FR-003, FR-005, FR-010, FR-011], followed by the remaining ordered tasks.
 - **Constitution check: PASS.** Constitution 1.13.0 Principle I explicitly permits verified Platform Owner access without a workspace-membership row, citing the merged F3 rule; this matches CN-MCQ-25 and the resolved plan row. S47-PO-13 authorizes F20 implementation; S47-PO-14 resolves the former deviation.
 - **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. This round supersedes the historical round-17 analysis for current implementation-entry status. No product decision was made.
@@ -220,3 +220,13 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 
 - The required changed-document Prettier gate found all five F20 Markdown artifacts needed canonical formatting. Applied Prettier; the only non-whitespace change is the ordered-list index for S49-F20-MCQ-1 changing from 20 to 25 to follow the preceding 24 clarification entries. The stable MCQ ID, PO source, requirement text, task tags and all FR/SC IDs are unchanged. The S49-PO-7 source hash and exact quoted substring still match.
 - Rechecked cross-references and no-open-ambiguities status after formatting. Result: 0 open CRITICAL/HIGH, no PO decision needed.
+
+## Round 24 - refreshed Spec Kit cross-reference counts (2026-11-12)
+
+- Refreshed the Analyze counts after the approved S49-PO-7 route scenario and SC-008: FRs 11, SCs 8, tasks 16, Story 1 scenarios 4, Story 2 scenarios 8, Story 3 scenarios 8. Verified each FR and SC is mapped in tasks.md and the coverage table.
+- Updated the implementation-scope line to include T016 in its specified position before T007. No behavior, PO wording or copy changed. Result: 0 open CRITICAL/HIGH; no ambiguity.
+
+## Round 25 - implementation scope cross-reference (2026-11-12)
+
+- Rechecked the updated task-gate scope line against T002-T006, T016, T007 and test tasks T008-T015. Task order, completion status, FR/SC coverage and the Round 24 scenario counts agree.
+- No requirement or PO decision changed. Result: 0 open CRITICAL/HIGH; no open ambiguities.
