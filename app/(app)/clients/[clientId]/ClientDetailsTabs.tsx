@@ -65,6 +65,8 @@ export function ClientDetailsTabs({
         tabIndex={0}
       >
         <ClientNotes
+          clientId={clientId}
+          workspaceId={workspaceId}
           locale={locale}
           messages={messages}
           notes={notes}

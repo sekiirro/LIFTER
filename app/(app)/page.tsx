@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { requireActor } from '../../lib/auth/actor';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, parseLocale } from '../../lib/design/preferences';
-import { Button } from '../../components/ui/Button';
-import { signOut } from './actions';
+import { SignOutForm } from '../../components/auth/SignOutForm';
 import styles from '../login/login.module.css';
 
 export default async function HomePage() {
@@ -40,9 +39,7 @@ export default async function HomePage() {
           {m['registrationApproval.clientStatus']}
         </Link>
       )}
-      <form action={signOut}>
-        <Button type="submit">{m['auth.signOut']}</Button>
-      </form>
+      <SignOutForm label={m['auth.signOut']} />
     </main>
   );
 }

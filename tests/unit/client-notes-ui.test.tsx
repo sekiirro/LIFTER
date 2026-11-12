@@ -220,10 +220,16 @@ describe('ClientNotes behaviour', () => {
     previousGlobals = undefined;
   });
 
-  async function render(props: Record<string, unknown>) {
+  async function render(
+    props: Record<string, unknown>,
+    options: { windowName?: string; session?: Record<string, string> } = {},
+  ) {
     dom = new JSDOM('<!doctype html><html><body></body></html>', {
       url: 'http://localhost/',
     });
+    if (options.windowName) dom.window.name = options.windowName;
+    for (const [key, value] of Object.entries(options.session ?? {}))
+      dom.window.sessionStorage.setItem(key, value);
     dom.window.HTMLDialogElement.prototype.showModal = function showModal() {
       this.setAttribute('open', '');
     };
@@ -287,7 +293,7 @@ describe('ClientNotes behaviour', () => {
   it('create: retry after failed result re-sends same key and body', async () => {
     const onCreate = vi.fn<
       (b: string, k: string) => Promise<{ status: string; error?: string }>
-    >(async () => ({ status: 'error', error: 'boom' }));
+    >(async () => ({ status: 'unavailable', error: 'boom' }));
     await render({
       locale: 'en',
       messages: mEn,
@@ -295,6 +301,9 @@ describe('ClientNotes behaviour', () => {
       notes: [],
       onCreate,
       canCreate: true,
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
     });
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'hello'));
@@ -314,6 +323,154 @@ describe('ClientNotes behaviour', () => {
     expect(onCreate.mock.calls[1]![0]).toBe('hello');
     expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
     expect(host!.textContent).not.toContain('boom');
+  });
+
+  it('create: persists before dispatch and clears the unresolved record after Retry succeeds', async () => {
+    let calls = 0;
+    const onCreate = vi.fn(async (body: string, key: string) => {
+      calls += 1;
+      const stored = JSON.parse(
+        dom!.window.sessionStorage.getItem(
+          'lifter-client-notes-pending-create:v1:workspace-1:client-1',
+        )!,
+      ) as { body: string; idempotencyKey: string; retrySent: boolean };
+      expect(stored).toMatchObject({
+        body,
+        idempotencyKey: key,
+        retrySent: calls > 1,
+      });
+      return calls === 1 ? { status: 'unavailable' } : { status: 'ok' };
+    });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+    });
+    const textarea = host!.querySelector('textarea')!;
+    await act(async () => setValue(textarea, 'retained body'));
+    const submit = host!.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
+    await act(async () => {
+      submit.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(textarea.readOnly).toBe(true);
+    expect(submit.textContent).toBe(mEn['clientNotes.retry']);
+    const key = onCreate.mock.calls[0]![1];
+    await act(async () => {
+      submit.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onCreate).toHaveBeenCalledTimes(2);
+    expect(onCreate.mock.calls[1]![0]).toBe('retained body');
+    expect(onCreate.mock.calls[1]![1]).toBe(key);
+    expect(
+      dom!.window.sessionStorage.getItem(
+        'lifter-client-notes-pending-create:v1:workspace-1:client-1',
+      ),
+    ).toBeNull();
+  });
+
+  it('create: restores same-tab state but discards opener-copied or other-actor records', async () => {
+    const key = 'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    const record = {
+      tabId: 'tab-1',
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+      text: 'restored text',
+      body: 'restored text',
+      idempotencyKey: 'key-1',
+      retrySent: true,
+    };
+    const sameTab = await render(
+      {
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [],
+        onCreate: vi.fn(async () => ({ status: 'ok' })),
+        canCreate: true,
+        actorId: 'actor-1',
+        clientId: 'client-1',
+        workspaceId: 'workspace-1',
+      },
+      {
+        windowName: 'lifter-client-notes-tab:v1:tab-1',
+        session: { [key]: JSON.stringify(record) },
+      },
+    );
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(
+      (sameTab.host.querySelector('textarea') as HTMLTextAreaElement).value,
+    ).toBe('restored text');
+    expect(
+      (sameTab.host.querySelector('textarea') as HTMLTextAreaElement).readOnly,
+    ).toBe(true);
+    await act(async () => sameTab.root.unmount());
+    sameTab.host.remove();
+    sameTab.dom.window.close();
+    root = undefined;
+    host = undefined;
+    dom = undefined;
+    const copied = await render(
+      {
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [],
+        onCreate: vi.fn(async () => ({ status: 'ok' })),
+        canCreate: true,
+        actorId: 'actor-2',
+        clientId: 'client-1',
+        workspaceId: 'workspace-1',
+      },
+      {
+        windowName: 'lifter-client-notes-tab:v1:tab-2',
+        session: { [key]: JSON.stringify(record) },
+      },
+    );
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(
+      (copied.host.querySelector('textarea') as HTMLTextAreaElement).value,
+    ).toBe('');
+    expect(copied.dom.window.sessionStorage.getItem(key)).toBeNull();
+  });
+
+  it('create: proceeds when writing the pre-dispatch recovery record fails', async () => {
+    const onCreate = vi.fn(async () => ({ status: 'unavailable' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+    });
+    const storage = vi
+      .spyOn(dom!.window.Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+    const textarea = host!.querySelector('textarea')!;
+    await act(async () => setValue(textarea, 'memory only'));
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
+    storage.mockRestore();
   });
 
   it('create: after success a new key is used', async () => {
@@ -350,7 +507,7 @@ describe('ClientNotes behaviour', () => {
   it('create: after editing text a new key is used', async () => {
     const onCreate = vi.fn<
       (b: string, k: string) => Promise<{ status: string; error?: string }>
-    >(async () => ({ status: 'error', error: 'boom' }));
+    >(async () => ({ status: 'denied', error: 'boom' }));
     await render({
       locale: 'en',
       messages: mEn,
