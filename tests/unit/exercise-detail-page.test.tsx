@@ -246,7 +246,7 @@ describe('production exercise detail route', () => {
       data: [
         {
           ...row,
-          origin_workspace_id: workspaceId,
+          origin_workspace_id: null,
           variation: null,
           payload: {
             ...row.payload,
