@@ -234,6 +234,62 @@ describe('F20 T003 client note persistence and constraints', () => {
     });
   });
 
+  it('refuses immutable direct updates for every staff role, including a multi-workspace author', async () => {
+    const note = await f.createAsTrainer({ body: 'role matrix immutable row' });
+    await f.db`
+      insert into public.workspace_memberships (
+        workspace_id, user_id, granted_by
+      ) values (
+        ${f.context.wsB.id}, ${f.context.trainerA.userId}, ${f.context.po.userId}
+      )
+    `;
+    const mutations = [
+      { id: f.key() },
+      { workspace_id: f.context.wsB.id },
+      { client_id: f.key() },
+      { author_user_id: f.context.po.userId },
+      { created_at: '2026-11-11T00:00:00Z' },
+      { idempotency_key: f.key() },
+    ];
+    try {
+      for (const actor of [
+        f.context.trainerA,
+        f.context.trainerB,
+        f.context.woA,
+        f.context.po,
+      ]) {
+        for (const mutation of mutations) {
+          const result = await actor.client
+            .from('client_notes')
+            .update(mutation)
+            .eq('id', note.id);
+          expect(result.error).not.toBeNull();
+        }
+      }
+    } finally {
+      await f.db`
+        update public.workspace_memberships
+        set revoked_at = pg_catalog.clock_timestamp(),
+            revoked_by = ${f.context.po.userId}
+        where workspace_id = ${f.context.wsB.id}
+          and user_id = ${f.context.trainerA.userId}
+      `;
+    }
+    const [row] = await f.db`
+      select id, workspace_id, client_id, author_user_id, body,
+             created_at, idempotency_key
+      from public.client_notes where id = ${String(note.id)}
+    `;
+    expect(row).toMatchObject({
+      id: note.id,
+      workspace_id: f.workspaceId,
+      client_id: f.clientId,
+      author_user_id: f.context.trainerA.userId,
+      body: 'role matrix immutable row',
+      idempotency_key: note.idempotency_key,
+    });
+  });
+
   it('permits workspace Trainer access and denies Sales, foreign workspace, and anonymous reads', async () => {
     const note = await f.createAsTrainer({ body: 'workspace note' });
     const trainerRead = await f.readNote(f.context.trainerA, String(note.id));
