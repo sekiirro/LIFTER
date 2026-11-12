@@ -144,3 +144,14 @@ Local gates on `13ef649927e03cf7d5e62b11d65c8eeb5ea4d4f1`: typecheck, lint, form
 | FR-038 - reject compact-empty username with existing generic feedback before consumption | T143 | This task commit; `client-signup-transaction.test.ts::rejects compact-empty usernames before admission redemption`; mutation test accepts the empty compact form. | Full SHA in run report. |
 | FR-039 - replace stale unconsumed Terms selection with current published version and preserve history | T143 | This task commit; `forms-r3-assignment-consumer.test.ts::S41-PO-12 replaces a stale unconsumed selection and preserves its history`; retry, consumed, missing-current, concurrent retry, stale-refresh mutation, archive mutation, and forced-RLS mutation cases passed. | Full SHA in run report. |
 <!-- prettier-ignore-end -->
+
+
+## S49-R13 correction removal semantics
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-013 / SC-029 — omitted answer keys remain unchanged during corrections | T146 | Pending implementation/evidence. | Pending |
+| FR-013 / SC-029 — explicit removal list clears only non-required applicable answers | T146/T147 | Pending implementation/evidence. | Pending |
+| FR-013 / SC-029 — explicit removal of a required applicable answer returns `invalid` with zero writes | T146/T147 | Pending implementation/evidence. | Pending |
+| FR-013 / SC-029 — supplied `null` or empty values are not inferred as removal | T146/T147 | Pending implementation/evidence. | Pending |
+| FR-013 / SC-029 — removals are audited like edits | T147/T148 | Pending implementation/evidence. | Pending |

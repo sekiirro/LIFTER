@@ -236,3 +236,26 @@ After T144 direct integration verification, rechecked FR-013, SC-029, the T144 t
 ## S47-PO-7 final evidence cross-reference — 2026-11-11T06:18Z
 
 Revalidated T144's traceability after the final Stack A run: the direct correction test records both no-state-change refusals and unrelated-only patch preservation; the guard-removal mutant is detected and rolled back. `spec.md`, `plan.md`, and `tasks.md` retain FR-013, SC-029, S47-PO-7's exact source pointer and architect mapping, and the approved forward-only migration steps. No requirement wording or scope changed since the prior S47-PO-7 Analyze. **CRITICAL: 0. HIGH: 0. No open ambiguities for T144.**
+
+## S50 explicit correction removal analysis — 2026-11-12
+
+### Entry check
+- [x] `spec.md` has numbered FR-013, measurable SC-029, and Given/When/Then scenarios covering conflicts, malformed/unknown/duplicate/over-count IDs, request-size cap, absent and inapplicable answers, required-applicable refusal, replay and audit.
+- [x] PO decisions cite S49-PO-5 and S50-PO-2; architect mappings S49-R13/S50-R12 are labeled separately. **No open ambiguities remain for T145-T150.** The future UI copy decision blocks only T149's separate UI implementation; no copy or UI is in this PR.
+- [x] `plan.md` covers TS/RPC parity, complete canonical request sizing, RPC behavior, forward migration security requirements, Stack A busy/identity checks, and deferred UI copy.
+- [x] `tasks.md` assigns T145-T150, tagged with FR-013; T149 is deferred pending an EN/Egyptian Arabic copy MCQ. No task is ticked before current-head tests.
+- [x] This Analyze follows the final spec, plan and task edits, dated 2026-11-12.
+
+### Edge-case analysis
+- In-flight/concurrency: correction's existing lock, expected revision and intent replay flow remain authoritative; removal participates in canonical request hash.
+- Unknown result/retry: same intent and same canonical request returns stored response; changed request under same intent remains conflict per existing RPC behavior.
+- Delete/removal: only explicit remove IDs alter answers; absent ID is a no-op; present inapplicable values are removed; required applicable values reject the whole request before writes.
+- Shape/security: array/string/unique/count/ID/snapshot checks and full 262,144-byte canonical request cap happen in both TS and RPC before writes. Existing authorization, audit atomicity, function owner/grants and empty search_path remain required.
+- No-change: inspected existing migration `20261111061000_f15_correction_required_answer_guard.sql`; it appends a revision, correction, intent and audit for accepted no-value-change requests. Preserve that defined behavior.
+- Data retention/deletion: explicit correction removal is revisioned and audited; it does not change D1 erasure scope or retention rules.
+- Cross references: FR-013 -> SC-029 -> T145-T150; T149 owns deferred UI/copy approval. Removal rules are also reflected in API, audit and correction matrix contracts.
+- Copy and permissions: no user-visible copy or new permission is introduced.
+
+**CRITICAL findings: 0. HIGH findings: 0.**
+
+**Result: PASS for T145-T150.** Re-run Analyze after any later change to spec, plan, or tasks before acceptance.
