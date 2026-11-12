@@ -293,3 +293,10 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - No requirement or implementation behavior changed. FR-043, SC-036, T048, traceability, and the prior Analyze findings remain aligned; T044 stays P4/open.
 - Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-11 remains the only PO-decision question; no field disposition is encoded.
 - Verdict: PASS; documentation status matches verified task evidence.
+
+## S51 changed-file CI formatting correction — 2026-11-12T16:15:51Z
+
+- Revalidated the receipt requirements after applying Prettier to the three spec files flagged by the CI changed-file formatter. The formatting-only changes do not alter FR-043, SC-036, scenario 18, the six-field MCQ-11 boundary, or task scope.
+- CI's changed-file formatter now passes for all six changed Markdown/YAML/JSON files in the branch diff when run with the same candidate set.
+- Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-11 remains the only PO-decision question; no disposition was introduced.
+- Verdict: PASS; no behavior or product decision changed.

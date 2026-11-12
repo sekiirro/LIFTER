@@ -832,7 +832,6 @@ MCQ-1 c
 
 Architect mapping is S50-R16, not PO wording. **No open product ambiguities remain for these T041/T042 rules.** T044 remains deferred to P4 and unticked; FR-041 remains partial.
 
-
 ### S50-PO-6 / S50-R32 — upgrade installment replacement (historical; superseded by S51-PO-1)
 
 PO source: `C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-6.verbatim.txt`; SHA-256 `c62cd198a022efb057517b6d99d258dab7743bb7a9ea259de4e672e364689888`.
@@ -849,14 +848,14 @@ This policy direction and its MCQ-1..8 dispositions are historical. S51-PO-1 sup
 
 **S51-F13-MCQ-1 — Which original-plan installments are eligible for replacement/repricing?**
 
-- A. Every obligation with any outstanding balance, including partially paid and overdue obligations; fully settled obligations are excluded. *(Recommendation: A, because it applies the decision consistently to the unpaid balance while preserving settled facts.)*
+- A. Every obligation with any outstanding balance, including partially paid and overdue obligations; fully settled obligations are excluded. _(Recommendation: A, because it applies the decision consistently to the unpaid balance while preserving settled facts.)_
 - B. Only obligations with zero collected amount; partially paid obligations keep their original outstanding balance, and overdue status does not exclude an otherwise fully unpaid obligation.
 - C. Only not-yet-due obligations with zero collected amount; overdue and partially paid obligations retain their original schedule.
 - Implications: A changes all outstanding original-plan obligations; B can leave old and replacement schedules coexisting for one purchase; C leaves delinquent obligations under the original terms. This controls which rows T048 may replace.
 
 **S51-F13-MCQ-2 — What is the repricing basis?**
 
-- A. Reprice remaining eligible obligations to the replacement plan's full configured price less amounts already collected against the replaced plan. *(Recommendation: A, with collected amounts preserved and not charged again.)*
+- A. Reprice remaining eligible obligations to the replacement plan's full configured price less amounts already collected against the replaced plan. _(Recommendation: A, with collected amounts preserved and not charged again.)_
 - B. Reprice only the value attributable to the unconsumed coverage period, using a PO-approved pro-rata calculation.
 - C. Preserve the aggregate unpaid amount and redistribute it over the replacement schedule without changing the amount due.
 - Implications: A can increase or decrease the remaining balance based on plan price; B introduces time-based credit arithmetic; C changes timing only. The selected method determines obligation principal and reconciliation.
@@ -870,35 +869,35 @@ This policy direction and its MCQ-1..8 dispositions are historical. S51-PO-1 sup
 
 **S51-F13-MCQ-4 — What should the operation receipt show?**
 
-- A. Return the replacement installment schedule and identify which original obligations it supersedes. *(Recommendation: A, so the successful upgrade receipt describes its resulting obligations.)*
+- A. Return the replacement installment schedule and identify which original obligations it supersedes. _(Recommendation: A, so the successful upgrade receipt describes its resulting obligations.)_
 - B. Return only the upgrade payment receipt; expose the replacement schedule through the existing schedule reader.
 - C. Return both old and replacement schedule references, with old obligations explicitly marked superseded.
 - Implications: A makes the operation receipt a schedule snapshot; B keeps schedule details in a separate read; C exposes lineage in the receipt. Existing issued receipts must remain unchanged under every option.
 
 **S51-F13-MCQ-5 — How do commissions relate to replaced installments?**
 
-- A. Do not accrue commission on unpaid obligations; calculate commission from the stored rate when each replacement obligation is collected. *(Recommendation: A, consistent with collection-based earned commission.)*
+- A. Do not accrue commission on unpaid obligations; calculate commission from the stored rate when each replacement obligation is collected. _(Recommendation: A, consistent with collection-based earned commission.)_
 - B. Snapshot a commission rate on each replacement obligation at upgrade time, then calculate commission when collected.
 - C. Carry forward the original installment's commission snapshot onto its replacement obligation.
 - Implications: A ties rate selection to the chosen replacement plan/upgrade rule; B freezes the rate at upgrade; C preserves original schedule economics. This determines future earnings without rewriting past commission facts.
 
 **S51-F13-MCQ-6 — What audit facts should be recorded?**
 
-- A. Append one upgrade-linked audit fact with superseded/replacement obligation IDs, old/new amounts, due dates, and currency. *(Recommendation: A, with bounded non-PII identifiers and amounts.)*
+- A. Append one upgrade-linked audit fact with superseded/replacement obligation IDs, old/new amounts, due dates, and currency. _(Recommendation: A, with bounded non-PII identifiers and amounts.)_
 - B. Append one audit fact with the upgrade ID and counts of superseded/replacement obligations, without amounts or dates.
 - C. Append a separate audit fact per superseded/replacement pair with old/new amounts and due dates.
 - Implications: A is a compact aggregate audit; B minimizes financial detail but weakens reconstruction; C gives pair-level detail and increases audit row volume. This does not authorize PII or free text in audit.
 
 **S51-F13-MCQ-7 — How should upgrade serialize with an in-flight installment payment?**
 
-- A. Serialize both under the existing subscription/obligation lock; whichever commits first determines the state revalidated by the second operation. *(Recommendation: A, preserving atomicity and avoiding duplicate collection.)*
+- A. Serialize both under the existing subscription/obligation lock; whichever commits first determines the state revalidated by the second operation. _(Recommendation: A, preserving atomicity and avoiding duplicate collection.)_
 - B. Refuse the upgrade with stale_state while a payment is in flight; retry after its outcome is known.
 - C. Refuse/void the in-flight payment when the upgrade commits, then replace its obligation.
 - Implications: A requires post-lock validation and deterministic ordering; B can delay upgrades during a provider workflow; C requires external-payment cancellation semantics. The system records external payment outcomes only and does not itself execute payments.
 
 **S51-F13-MCQ-8 — What happens if collected amounts exceed the repriced replacement balance?**
 
-- A. Preserve the excess as an account credit applied to a later eligible obligation. *(Recommendation: A only if PO approves an account-credit ledger; this creates a new balance concept.)*
+- A. Preserve the excess as an account credit applied to a later eligible obligation. _(Recommendation: A only if PO approves an account-credit ledger; this creates a new balance concept.)_
 - B. Record the excess as refundable and require an explicit PO refund operation; do not create a credit.
 - C. Reject the upgrade before writes unless collected amounts are no greater than the replacement balance.
 - Implications: A requires credit balance ownership/expiry/use rules; B relies on existing refund authorization and external execution; C can prevent an otherwise eligible upgrade. This also determines receipt and ledger treatment for excess collections.
@@ -926,14 +925,14 @@ S51-PO-1 supersedes the S50-PO-6 answer `F13=C` (source `C:/Users/NEW LAP/.lifte
 
 **S51-F13-MCQ-9 — Which non-commission fields should the successful upgrade receipt expose? RESOLVED: 9A by S51-PO-2.**
 
-- A. Return operation and upgrade IDs, package/version, full price difference, currency, and effective dates. *(Recommendation: A; it gives the caller the resulting purchase and coverage summary.)*
+- A. Return operation and upgrade IDs, package/version, full price difference, currency, and effective dates. _(Recommendation: A; it gives the caller the resulting purchase and coverage summary.)_
 - B. Return operation and upgrade IDs, full price difference, and currency; obtain package/version and dates from existing authorized reads.
 - C. Return only operation/upgrade IDs and status; obtain package, amount, currency, and dates from existing authorized reads.
 - Implications: A returns a complete transaction summary; B requires a follow-up for package/coverage details; C keeps the receipt minimal and requires follow-up reads for all purchase details. S51-PO-2 selects A. Existing receipt fields beyond this approved list are separately unresolved under MCQ-11.
 
 **S51-F13-MCQ-10 — Should the successful upgrade receipt include the Platform Owner commission rate and amount? RESOLVED: 10B by S51-PO-2.**
 
-- A. Retain the current `commission_rate_bp` and `commission_minor` receipt fields. *(Recommendation: A; it preserves the current receipt behavior.)*
+- A. Retain the current `commission_rate_bp` and `commission_minor` receipt fields. _(Recommendation: A; it preserves the current receipt behavior.)_
 - B. Omit both commission fields from the successful upgrade receipt.
 - Implications: A preserves the existing response shape and exposes the actual stored rate and collected commission amount; B reduces commission detail in the response but changes the existing receipt shape. S51-PO-2 selects B. Commission remains calculated and stored on the upgrade row as specified by S51-PO-1.
 
