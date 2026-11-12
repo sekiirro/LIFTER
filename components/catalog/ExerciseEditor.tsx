@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useId, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { Alert } from '../ui/Alert';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
@@ -149,6 +156,15 @@ export function ExerciseEditor({
   );
   const [alternativeLoading, setAlternativeLoading] = useState(false);
   const [alternativeLoadError, setAlternativeLoadError] = useState(false);
+  const alternativeSearchKey = JSON.stringify([
+    workspaceId,
+    alternativeQuery,
+    draft.alternativeExerciseIds,
+  ]);
+  const latestAlternativeSearchKey = useRef(alternativeSearchKey);
+  useLayoutEffect(() => {
+    latestAlternativeSearchKey.current = alternativeSearchKey;
+  }, [alternativeSearchKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -188,6 +204,7 @@ export function ExerciseEditor({
   async function loadNextAlternatives() {
     if (!alternativeCursor || alternativeLoading) return;
     const requestedQuery = alternativeQuery;
+    const requestedSearchKey = latestAlternativeSearchKey.current;
     setAlternativeLoading(true);
     setAlternativeLoadError(false);
     try {
@@ -197,7 +214,7 @@ export function ExerciseEditor({
         cursor: alternativeCursor,
         selectedIds: draft.alternativeExerciseIds,
       });
-      if (requestedQuery !== alternativeQuery) return;
+      if (requestedSearchKey !== latestAlternativeSearchKey.current) return;
       if (result.status !== 'ok') {
         setAlternativeLoadError(true);
         return;
@@ -216,9 +233,11 @@ export function ExerciseEditor({
       });
       setAlternativeCursor(data.nextCursor);
     } catch {
-      setAlternativeLoadError(true);
+      if (requestedSearchKey === latestAlternativeSearchKey.current)
+        setAlternativeLoadError(true);
     } finally {
-      setAlternativeLoading(false);
+      if (requestedSearchKey === latestAlternativeSearchKey.current)
+        setAlternativeLoading(false);
     }
   }
 

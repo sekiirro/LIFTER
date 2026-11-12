@@ -252,6 +252,103 @@ describe('workspace exercise override editor', () => {
     );
   });
 
+  it('drops an old override page response after the query changes', async () => {
+    type SearchResult = {
+      status: 'ok';
+      data: {
+        options: {
+          id: string;
+          kind: 'global';
+          names: { en: string };
+        }[];
+        nextCursor: string | null;
+      };
+    };
+    let resolveNext!: (result: SearchResult) => void;
+    const pendingNext = new Promise<SearchResult>((resolve) => {
+      resolveNext = resolve;
+    });
+    actionMocks.search
+      .mockResolvedValueOnce({
+        status: 'ok',
+        data: {
+          options: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              kind: 'global',
+              names: { en: 'Initial result' },
+            },
+          ],
+          nextCursor: 'g:55555555-5555-4555-8555-555555555555',
+        },
+      })
+      .mockReturnValueOnce(pendingNext)
+      .mockResolvedValueOnce({
+        status: 'ok',
+        data: {
+          options: [
+            {
+              id: '66666666-6666-4666-8666-666666666666',
+              kind: 'global',
+              names: { en: 'New query result' },
+            },
+          ],
+          nextCursor: null,
+        },
+      });
+
+    await act(async () =>
+      root.render(
+        createElement(ExerciseOverrideEditor, {
+          locale: 'en',
+          workspaceId: '22222222-2222-4222-8222-222222222222',
+          exerciseId: '33333333-3333-4333-8333-333333333333',
+          expectedVersion: 0,
+          exercise,
+          sources,
+          alternatives: [],
+        }),
+      ),
+    );
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 320)));
+    const next = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === en['catalog.nextPage'],
+    )!;
+    await act(async () => next.click());
+
+    const search = document.getElementById(
+      '33333333-3333-4333-8333-333333333333-override-alternative-search',
+    ) as HTMLInputElement;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value',
+      )!.set!;
+      setter.call(search, 'new query');
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 320)));
+    expect(host.textContent).toContain('New query result');
+
+    await act(async () => {
+      resolveNext({
+        status: 'ok',
+        data: {
+          options: [
+            {
+              id: '77777777-7777-4777-8777-777777777777',
+              kind: 'global',
+              names: { en: 'Stale page result' },
+            },
+          ],
+          nextCursor: null,
+        },
+      });
+      await pendingNext;
+    });
+    expect(host.textContent).not.toContain('Stale page result');
+  });
+
   it('reuses the operation key when retrying the same unchanged failed save', async () => {
     actionMocks.save
       .mockResolvedValueOnce({ status: 'unavailable' })

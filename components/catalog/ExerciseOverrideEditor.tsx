@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
@@ -91,6 +97,16 @@ export function ExerciseOverrideEditor({
   );
   const [alternativeLoading, setAlternativeLoading] = useState(false);
   const operationKeys = useRef(new Map<string, string>());
+  const alternativeSearchKey = JSON.stringify([
+    workspaceId,
+    exerciseId,
+    alternativeQuery,
+    draft.alternativeExerciseIds,
+  ]);
+  const latestAlternativeSearchKey = useRef(alternativeSearchKey);
+  useLayoutEffect(() => {
+    latestAlternativeSearchKey.current = alternativeSearchKey;
+  }, [alternativeSearchKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -129,6 +145,7 @@ export function ExerciseOverrideEditor({
   async function loadNextAlternatives() {
     if (!alternativeCursor || alternativeLoading) return;
     const requestedQuery = alternativeQuery;
+    const requestedSearchKey = latestAlternativeSearchKey.current;
     setAlternativeLoading(true);
     try {
       const result = await searchAlternativeOptionsAction({
@@ -137,7 +154,7 @@ export function ExerciseOverrideEditor({
         cursor: alternativeCursor,
         selectedIds: draft.alternativeExerciseIds,
       });
-      if (requestedQuery !== alternativeQuery) return;
+      if (requestedSearchKey !== latestAlternativeSearchKey.current) return;
       if (result.status !== 'ok') {
         setFailed(true);
         return;
@@ -156,9 +173,11 @@ export function ExerciseOverrideEditor({
       });
       setAlternativeCursor(data.nextCursor);
     } catch {
-      setFailed(true);
+      if (requestedSearchKey === latestAlternativeSearchKey.current)
+        setFailed(true);
     } finally {
-      setAlternativeLoading(false);
+      if (requestedSearchKey === latestAlternativeSearchKey.current)
+        setAlternativeLoading(false);
     }
   }
 

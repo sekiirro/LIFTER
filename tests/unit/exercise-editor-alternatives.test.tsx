@@ -215,4 +215,103 @@ describe('exercise editor selected alternatives keys', () => {
     await act(async () => next.click());
     expect(isSelectedVisible()).toBe(true);
   });
+
+  it('drops an old page response after the query changes', async () => {
+    type SearchResult = {
+      status: 'ok';
+      data: {
+        options: {
+          id: string;
+          kind: 'global';
+          names: { en: string };
+        }[];
+        nextCursor: string | null;
+      };
+    };
+    let resolveNext!: (result: SearchResult) => void;
+    const pendingNext = new Promise<SearchResult>((resolve) => {
+      resolveNext = resolve;
+    });
+    const exercise = normalizeExerciseInput({
+      names: { en: 'Main Exercise' },
+      primaryMuscle: 'chest',
+      equipment: 'barbell',
+    });
+    searchAction
+      .mockResolvedValueOnce({
+        status: 'ok',
+        data: {
+          options: [
+            {
+              id: '22222222-2222-4222-8222-222222222222',
+              kind: 'global',
+              names: { en: 'Initial result' },
+            },
+          ],
+          nextCursor: 'g:33333333-3333-4333-8333-333333333333',
+        },
+      })
+      .mockReturnValueOnce(pendingNext)
+      .mockResolvedValueOnce({
+        status: 'ok',
+        data: {
+          options: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              kind: 'global',
+              names: { en: 'New query result' },
+            },
+          ],
+          nextCursor: null,
+        },
+      });
+
+    await act(async () =>
+      root.render(
+        createElement(ExerciseEditor, {
+          locale: 'en',
+          role: 'po',
+          exercise,
+          alternatives: [],
+        }),
+      ),
+    );
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 320)));
+    const next = [...host.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Next page',
+    )!;
+    await act(async () => next.click());
+
+    const search = host.querySelector<HTMLInputElement>(
+      'input[type="search"]',
+    )!;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value',
+      )!.set!;
+      setter.call(search, 'new query');
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 320)));
+    expect(host.textContent).toContain('New query result');
+
+    await act(async () => {
+      resolveNext({
+        status: 'ok',
+        data: {
+          options: [
+            {
+              id: '55555555-5555-4555-8555-555555555555',
+              kind: 'global',
+              names: { en: 'Stale page result' },
+            },
+          ],
+          nextCursor: null,
+        },
+      });
+      await pendingNext;
+    });
+    expect(host.textContent).not.toContain('Stale page result');
+  });
 });
