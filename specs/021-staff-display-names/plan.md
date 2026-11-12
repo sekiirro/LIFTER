@@ -1,10 +1,10 @@
 # Implementation Plan: F21 Staff Display Names
 
-**Spec**: [spec.md](spec.md) | **Status**: Proposed. NAME-1..NAME-8 resolved by S51-PO-4. NAME-9..NAME-13 are PO-DECISION-NEEDED and block the corresponding implementation parts. No implementation is authorized by this spec-only change.
+**Spec**: [spec.md](spec.md) | **Status**: Proposed. NAME-1..NAME-13 are resolved by S51-PO-4 and S51-PO-7. NAME-14..NAME-16 remain PO-DECISION-NEEDED and block final validation and mutation contracts. No implementation is authorized by this spec-only change.
 
 ## Summary
 
-Add a server-owned staff display-name source with authorized reads, then consume it in Client Notes bylines and any PO-selected existing surfaces. The first implementation should add a name column or equivalent server-owned source to `public.staff_profiles` or a closely related staff identity table, enforce 1-80 trimmed characters, require the name at provisioning, and expose it only through same-workspace/PO read paths. Name changes and lifecycle events are audited without old/new values.
+Add a server-owned staff display-name source with authorized reads, then consume it in the Client Notes author line only. Search or sort may use the name only if that behavior already exists within Client Notes. All other surfaces and their search, sorting, and exports are out of scope and require separate proposals. The first implementation should add a name column or equivalent server-owned source to `public.staff_profiles` or a closely related staff identity table, enforce the approved character set and 1-80 code-point limit, require a name for new provisioning, support owner-assigned backfill of existing accounts without blocking access, and expose it only through same-workspace/PO read paths. Name changes and lifecycle events are audited without old/new values.
 
 ## Technical context
 
@@ -21,11 +21,11 @@ Add a server-owned staff display-name source with authorized reads, then consume
 
 - Reuse `public.staff_profiles` as the staff identity anchor (`supabase/migrations/20261027120000_tenancy.sql:4-8`). A display name belongs to staff identity, not to `public.clients` or `auth.users` metadata.
 - Read access follows NAME-2 and FR-003/FR-004: active same-workspace staff or Platform Owner; never clients.
-- Write access follows NAME-1 and NAME-12: Workspace Owner or Platform Owner sets the name when provisioning; a Workspace Owner is limited to their own workspace unless the PO decides otherwise (NAME-12).
-- Validation follows NAME-3 and NAME-13: required, trimmed, 1-80 characters, any letters, not unique. Database CHECK and application validation must agree.
+- Write access follows NAME-1, NAME-11, and NAME-12: Workspace Owner or Platform Owner sets names at provisioning; Workspace Owners may set/backfill only within their own workspace, and Platform Owners handle platform/PO-owned accounts. Existing unnamed staff retain access while backfill is pending.
+- Validation follows NAME-3 and NAME-13: required, trimmed, 1-80 Unicode code points, and only Unicode letters, combining marks, spaces, hyphens, apostrophes, and periods; names need not be unique. Exact trim set and normalization remain NAME-14. Database CHECK and application validation must agree after that decision.
 - One field is used for both AR and EN (NAME-4; FR-012). No separate localized staff-name fields are defined.
 - Client Notes consumes the name only when an authorized server-owned source exists; otherwise it retains `clientNotes.unavailableAuthor` (`specs/020-client-notes/spec.md:90`; `components/client-notes/ClientNotes.tsx:645`).
-- For deactivated/closed authors, the retained name is shown with the approved deactivated marker (NAME-7; FR-007). Marker copy is PO-DECISION-NEEDED (NAME-9).
+- For deactivated/closed authors, the retained name is followed by the exact approved EN/AR parenthetical marker strings recorded under NAME-9 (FR-007).
 
 ### Audit and lifecycle
 
@@ -36,10 +36,10 @@ Add a server-owned staff display-name source with authorized reads, then consume
 
 ### UI
 
-- Client Notes byline is the first approved consumer (`components/client-notes/ClientNotes.tsx:645`; `lib/client-notes/service.ts:74`).
+- The Client Notes author line is the only in-scope consumer (`components/client-notes/ClientNotes.tsx:645`; `lib/client-notes/service.ts:74`). Other existing and future surfaces, including other display, search, sort, and export surfaces, are out of scope (NAME-10; FR-013).
 - No staff-name display surface exists today except Client Notes byline (search performed). Other potential surfaces are role-based and do not render staff names (`components/shell/ShellNavigation.tsx:39`; `components/registration-approval/PaymentHistory.tsx:59,234`; `components/registration-approval/ApprovalReview.tsx:75`; `components/catalog/FoodEditor.tsx:28`; `components/catalog/FoodCreateFlow.tsx:24`).
-- Which surfaces consume name search/sort/export is PO-DECISION-NEEDED (NAME-10), because NAME-5=B covers only surfaces that exist.
-- No copy is implemented without PO-approved strings. The deactivated marker copy is PO-DECISION-NEEDED (NAME-9).
+- NAME-10 resolves first implementation scope to the Client Notes author line only, including its search/sort only if those controls already exist there. No other surface is in scope.
+- The deactivated marker uses the exact PO-approved EN/AR strings recorded in spec.md; no other new UI copy is proposed.
 - Reuse existing Design System components and values; do not invent breakpoints, focus values, tokens, or colors (`specs/020-client-notes/spec.md:94`; `specs/020-client-notes/plan.md:40`).
 
 ### RLS read path
@@ -51,11 +51,11 @@ Add a server-owned staff display-name source with authorized reads, then consume
 
 ## Implementation phases (future, after MCQ decisions)
 
-1. Revalidate Analyze and resolve NAME-9..NAME-13 before implementation.
+1. Revalidate Analyze and resolve NAME-14..NAME-16 before implementation.
 2. Design the forward-only staff-name source and provisioning flow.
 3. Implement migration, constraints, RLS, read/write paths, and audit.
 4. Integrate Client Notes byline with fallback and deactivated marker.
-5. Integrate only PO-selected existing surfaces.
+5. Do not integrate any surface beyond the Client Notes author line; other surfaces require separate proposals.
 6. Add negative tests for tenant, role, length, metadata non-use, audit payload, and closure behavior.
 7. Run feature gates.
 
@@ -64,9 +64,9 @@ Add a server-owned staff display-name source with authorized reads, then consume
 - **PII exposure**: staff names are personal data and must follow least-privilege reads, no logs, and closure pseudonymization (`.specify/memory/constitution.md:90-100`).
 - **Tenant isolation**: composite workspace/staff integrity and deny-by-default RLS are required (`specs/020-client-notes/plan.md:58`).
 - **Auth metadata misuse**: no `user_metadata`/`raw_user_meta_data` value may be rendered or used to set a name (`specs/020-client-notes/spec.md:113`).
-- **Unapproved copy**: no marker or UI string is implemented before PO approval (NAME-9).
-- **Scope creep**: NAME-5=B covers only surfaces that exist; new surfaces require separate scope (NAME-10).
-- **Required-field migration**: existing staff accounts may need backfill before enforcement (NAME-11).
+- **Unicode parity**: resolve NAME-14 before implementing trim/normalization so database and application validation agree; resolve NAME-15/NAME-16 before implementing retry and concurrency behavior.
+- **Scope control**: only the Client Notes author line is in scope; other surfaces require separate proposals (NAME-10; FR-013).
+- **Backfill**: Workspace Owners handle staff in their own workspace and Platform Owners handle platform/PO-owned accounts; no access block while backfill is pending (NAME-11).
 
 ## Complexity tracking
 
@@ -77,6 +77,6 @@ Add a server-owned staff display-name source with authorized reads, then consume
 
 ## PO decisions
 
-- Resolved: NAME-1..NAME-8 by S51-PO-4 (see spec.md Clarifications).
-- PO-DECISION-NEEDED: NAME-9, NAME-10, NAME-11, NAME-12, NAME-13.
+- Resolved: NAME-1..NAME-13 by S51-PO-4 and S51-PO-7 (see spec.md Clarifications).
+- PO-DECISION-NEEDED: NAME-14, NAME-15, NAME-16.
 - No implementation is authorized by this spec-only change.

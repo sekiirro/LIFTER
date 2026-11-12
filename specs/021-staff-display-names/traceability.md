@@ -14,5 +14,6 @@
 | FR-010 | T002, T003, T004 | Not implemented | UNVERIFIED |
 | FR-011 | T006, T007       | Not implemented | UNVERIFIED |
 | FR-012 | T001             | Not implemented | UNVERIFIED |
+| FR-013 | T005, T010       | Not implemented | UNVERIFIED |
 
-No task is ticked. NAME-9..NAME-13 remain PO-DECISION-NEEDED.
+No task is ticked. NAME-1..NAME-13 are resolved by S51-PO-4/S51-PO-7; NAME-14..NAME-16 remain PO-DECISION-NEEDED. This spec-only commit is not implementation evidence.
