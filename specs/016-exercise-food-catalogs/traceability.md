@@ -274,3 +274,8 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 | Requirement | Task | Test | Evidence | Status |
 |---|---|---|---|---|
 | FR-025, FR-026 | T091 | `tests/unit/exercise-editor-alternatives.test.tsx::drops an old page response after the query changes`; `tests/unit/exercise-override-editor.test.tsx::drops an old override page response after the query changes` | RED reproduced stale results before the guard; GREEN on commit `0a2965765849fe417dfb2706b336b93e77467813`. Full committed-head checks: lint/typecheck pass, 2,448 unit tests and 103 Stack A integration tests pass. | VERIFIED |
+## S49 T091 detail authorization follow-up — 2026-11-12
+
+| Requirement | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-025, FR-026 | T091 | `tests/integration/catalog-exercise-effective-resolution.test.ts::denies a foreign trainer access to workspace detail` | Commit `710d44a7254f8e97d9ad23cba086c6a5b5b2558f`; focused Stack A T037/override-write/effective-resolution 104 passed, 1 expected failure; full unit suite 2,448 passed. | VERIFIED |
