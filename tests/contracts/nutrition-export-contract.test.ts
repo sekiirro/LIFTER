@@ -1276,12 +1276,22 @@ describe('AR structural payload labels (P6, S49-PO-5)', () => {
   });
 
   it('renders the approved AR prompt body byte-identical with the AR payload', () => {
+    const expectedPayload = `نوع اليوم Rest
+وجبة m-1 Breakfast
+ملاحظات الوجبة: =cmd meal note
+طريقة العمل: https://www.youtube.com/watch?v=abc
+صنف i-1 Chicken 37 g | السعرات 93 | البروتين 4.6 | الكربوهيدرات 19 | الدهون 4.6
+ملاحظات الأكل: @cmd food note
+بديل a-1 Chicken 150 g | السعرات 600 | البروتين 45 | الكربوهيدرات 15 | الدهون 7.5
+صنف i-2 Fish 1 g | السعرات 200 | البروتين 18 | الكربوهيدرات 0 | الدهون 5.0
+إجمالي الوجبة m-1 293 | 23 | 19 | 9.6
+الإجمالي 293 | 23 | 19 | 9.6`;
     const prompt = renderPrompt(NO_SELECTION, 'ar');
     const body = approvedPromptBody('ar');
     const tokenIndex = body.indexOf('{{PLAN_CONTENT}}');
     const expected =
       body.slice(0, tokenIndex) +
-      planContentText(NO_SELECTION, 'ar') +
+      expectedPayload +
       body.slice(tokenIndex + '{{PLAN_CONTENT}}'.length);
     expect(prompt).toBe(expected);
     // each approved structural label actually emitted in NO_SELECTION is present
