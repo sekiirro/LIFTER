@@ -1,8 +1,67 @@
 import { defineConfig, devices } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {
+  assertLocalStackTarget,
+  getStackConfig,
+  loadSelectedStackEnv,
+  selectStack,
+} from './scripts/local-stack.mjs';
+
+function loadPlaywrightStackEnvironment() {
+  if (!process.env.LIFTER_SUPABASE_STACK) return;
+  const stack = selectStack();
+  loadSelectedStackEnv();
+
+  const required = ['API_URL', 'ANON_KEY', 'SERVICE_ROLE_KEY', 'DB_URL'];
+  if (required.some((key) => !process.env[key])) {
+    const { workdir } = getStackConfig(stack);
+    const output = execFileSync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        `& npx supabase status --workdir '${workdir}' -o env`,
+      ],
+      {
+        encoding: 'utf8',
+        windowsHide: true,
+      },
+    );
+    for (const line of output.split(/\r?\n/)) {
+      const separator = line.indexOf('=');
+      if (separator < 1) continue;
+      const name = line.slice(0, separator).trim();
+      const value = line
+        .slice(separator + 1)
+        .trim()
+        .replace(/^['"]|['"]$/g, '');
+      if (process.env[name] === undefined) process.env[name] = value;
+    }
+  }
+
+  const aliases: [string, string][] = [
+    ['SUPABASE_URL', 'API_URL'],
+    ['SUPABASE_ANON_KEY', 'ANON_KEY'],
+    ['SUPABASE_SERVICE_ROLE_KEY', 'SERVICE_ROLE_KEY'],
+    ['SUPABASE_DB_URL', 'DB_URL'],
+  ];
+  for (const [target, source] of aliases) {
+    if (process.env[target] === undefined && process.env[source])
+      process.env[target] = process.env[source];
+  }
+  const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
+  const dbUrl = process.env.DB_URL || process.env.SUPABASE_DB_URL;
+  if (!apiUrl || !dbUrl || required.some((key) => !process.env[key]))
+    throw new Error('Selected local Supabase stack environment is incomplete.');
+  assertLocalStackTarget({ stack, apiUrl, dbUrl });
+}
+
+loadPlaywrightStackEnvironment();
 
 const isFirstEvaluation = !process.env.U8_SERVER_LOG_RUN_ID;
 const serverLogRunId =

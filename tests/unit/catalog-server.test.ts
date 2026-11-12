@@ -135,22 +135,13 @@ describe('catalog server authorization and RPC boundary', () => {
     expect(rpc).toHaveBeenCalledWith('catalog_write_exercise_override', {
       p_workspace_id: ws,
       p_exercise_id: input.id,
-      p_expected_version: 0,
+      p_expected_version: null,
       p_operation_key: key,
       p_request: input.request,
     });
   });
 
-  it('uses the actual override revision when a video-only caller has no variation row', async () => {
-    const maybeSingle = vi.fn().mockResolvedValue({
-      data: { current_version: 4 },
-      error: null,
-    });
-    from.mockReturnValue({
-      select: () => ({
-        eq: () => ({ eq: () => ({ maybeSingle }) }),
-      }),
-    });
+  it('keeps a null expected version stable for variation operation-key replays', async () => {
     currentActor = {
       userId: 'owner',
       role: 'platform_owner',
@@ -162,11 +153,10 @@ describe('catalog server authorization and RPC boundary', () => {
       id: '55555555-5555-4555-8555-555555555555',
       request: { video_url: 'https://youtu.be/abcdefghijk' },
     });
-    expect(from).toHaveBeenCalledWith('exercise_overrides');
-    expect(maybeSingle).toHaveBeenCalledOnce();
+    expect(from).not.toHaveBeenCalled();
     expect(rpc).toHaveBeenCalledWith(
       'catalog_write_exercise_override',
-      expect.objectContaining({ p_expected_version: 4 }),
+      expect.objectContaining({ p_expected_version: null }),
     );
   });
 
@@ -367,6 +357,39 @@ describe('catalog server authorization and RPC boundary', () => {
     expect(rpc).toHaveBeenCalledWith('catalog_exercise_detail', {
       p_exercise_id: targetId,
       p_workspace_id: ws,
+    });
+  });
+
+  it('excludes the edited exercise from refreshed Alternative options', async () => {
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    const selfId = '55555555-5555-4555-8555-555555555555';
+    const otherId = '66666666-6666-4666-8666-666666666666';
+    rpc
+      .mockResolvedValueOnce({
+        data: [
+          { result_id: selfId, result_payload: { name_en: 'Self' } },
+          { result_id: otherId, result_payload: { name_en: 'Other' } },
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: [], error: null });
+
+    const result = await catalog().alternativePickerOptions({
+      workspaceId: ws,
+      query: '',
+      selectedIds: [],
+      excludeId: selfId,
+    });
+
+    expect(result).toMatchObject({
+      status: 'ok',
+      data: {
+        options: [{ id: otherId, kind: 'global', names: { en: 'Other' } }],
+      },
     });
   });
 

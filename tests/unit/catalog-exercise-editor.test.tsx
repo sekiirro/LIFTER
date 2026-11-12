@@ -130,6 +130,20 @@ describe('exercise editor fixed-vs-range validation', () => {
     ).toBeNull();
   });
 
+  it('enforces the Video URL 2000-code-point cap with the approved URL error', () => {
+    const prefix = 'https://youtu.be/abcdefghijk?x=';
+    const atLimit = `${prefix}${'😀'.repeat(2000 - Array.from(prefix).length)}`;
+    const overLimit = `${atLimit}😀`;
+    expect(Array.from(atLimit)).toHaveLength(2000);
+    expect(Array.from(overLimit)).toHaveLength(2001);
+    expect(
+      validateExerciseEditorDraft(draft({ videoUrl: atLimit })).videoUrl,
+    ).toBeUndefined();
+    expect(
+      validateExerciseEditorDraft(draft({ videoUrl: overLimit })).videoUrl,
+    ).toBe('invalid_video_url');
+  });
+
   it('rejects a range whose minimum exceeds its maximum', () => {
     const errors = validateExerciseEditorDraft(
       draft({ repsMode: 'range', repsMin: '12', repsMax: '8' }),

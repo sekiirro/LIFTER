@@ -8,7 +8,9 @@
 --   node scripts/f16/t068-legacy-inventory.mjs --identity-json <path>
 -- and expose it to the migration session, for example:
 --   set app.cutover_verified_identities = '<json from --identity-json>';
--- JSON shape: {"exercises":[uuid...],"workspace_exercises":[[workspace,uuid],...]}
+-- JSON shape: {"exercises":[uuid...],"workspace_exercises":[[workspace,uuid],...],
+--   "exercise_versions":[[exercise,version],...],
+--   "workspace_exercise_versions":[[workspace,exercise,version],...]}
 -- A fresh database has no identities, so a replay needs no input.
 
 create or replace function app_private.cutover_identity_guard(p_verified text)
@@ -18,6 +20,8 @@ declare
   verified jsonb;
   live_exercises jsonb;
   live_workspace_exercises jsonb;
+  live_exercise_versions jsonb;
+  live_workspace_exercise_versions jsonb;
 begin
   select coalesce(jsonb_agg(id order by id), '[]'::jsonb)
     into live_exercises from public.exercises;
@@ -26,9 +30,24 @@ begin
     '[]'::jsonb
   ) into live_workspace_exercises
     from public.workspace_exercises;
+  select coalesce(
+    jsonb_agg(jsonb_build_array(exercise_id, version) order by exercise_id, version),
+    '[]'::jsonb
+  ) into live_exercise_versions
+    from public.exercise_versions;
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_array(workspace_id, workspace_exercise_id, version)
+      order by workspace_id, workspace_exercise_id, version
+    ),
+    '[]'::jsonb
+  ) into live_workspace_exercise_versions
+    from public.workspace_exercise_versions;
 
   -- Nothing to delete: the gate is trivially satisfied on a fresh/replayed DB.
-  if live_exercises = '[]'::jsonb and live_workspace_exercises = '[]'::jsonb then
+  if live_exercises = '[]'::jsonb and live_workspace_exercises = '[]'::jsonb
+    and live_exercise_versions = '[]'::jsonb
+    and live_workspace_exercise_versions = '[]'::jsonb then
     return;
   end if;
 
@@ -44,8 +63,12 @@ begin
   if jsonb_typeof(verified) <> 'object'
     or verified->'exercises' is null
     or verified->'workspace_exercises' is null
+    or verified->'exercise_versions' is null
+    or verified->'workspace_exercise_versions' is null
     or verified->'exercises' is distinct from live_exercises
-    or verified->'workspace_exercises' is distinct from live_workspace_exercises then
+    or verified->'workspace_exercises' is distinct from live_workspace_exercises
+    or verified->'exercise_versions' is distinct from live_exercise_versions
+    or verified->'workspace_exercise_versions' is distinct from live_workspace_exercise_versions then
     raise exception 'catalog_cutover_identity_set_changed' using errcode = 'P0001';
   end if;
 end;

@@ -95,4 +95,15 @@ describe('exercise row input mapping', () => {
     (row.payload as Record<string, unknown>).secondary_muscle_codes = [null];
     expect(exerciseInput(row)).toBeNull();
   });
+
+  it('preserves canonical Alternative UUID strings in the raw payload fallback', () => {
+    const row = validRow();
+    const alternativeId = '66666666-6666-4666-8666-666666666666';
+    delete (row.payload as Record<string, unknown>).effective_fields;
+    (row.payload as Record<string, unknown>).alternatives = [alternativeId];
+
+    expect(exerciseInput(row)?.defaults?.alternativeExerciseIds).toEqual([
+      `g:${alternativeId}`,
+    ]);
+  });
 });

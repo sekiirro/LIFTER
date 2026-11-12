@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { randomUUID } from 'node:crypto';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { assertLocalStackTarget } from '../../scripts/local-stack.mjs';
@@ -26,7 +26,7 @@ function isSelectedLocalStack(env: Record<string, string | undefined>) {
   }
 }
 
-const local = isSelectedLocalStack(process.env);
+let local = false;
 let fixture: Awaited<
   ReturnType<(typeof import('../integration/harness'))['twoWorkspaceFixture']>
 >;
@@ -34,6 +34,10 @@ let exerciseId: string;
 let orderGlobalName: string;
 let orderPrivateName: string;
 let orderPrefix: string;
+const axeResults: Array<{
+  violationCount: number;
+  violations: Array<{ id: string; impact: string | null; help: string }>;
+}> = [];
 
 async function authenticate(
   page: Page,
@@ -68,13 +72,34 @@ async function assertAxe(page: Page) {
       'wcag22aa',
     ])
     .analyze();
+  axeResults.push({
+    violationCount: result.violations.length,
+    violations: result.violations.map(({ id, impact, help }) => ({
+      id,
+      impact: impact ?? null,
+      help,
+    })),
+  });
+  await writeFile(
+    join(screenshotDir, 'axe-results.json'),
+    `${JSON.stringify(axeResults, null, 2)}\n`,
+    'utf8',
+  );
   expect(result.violations).toEqual([]);
 }
 
 test.beforeAll(async () => {
+  let harness: typeof import('../integration/harness');
+  try {
+    harness = await import('../integration/harness');
+    harness.loadEnv();
+  } catch {
+    test.skip(true, 'Requires the selected local Supabase stack.');
+    return;
+  }
+  local = isSelectedLocalStack(process.env);
   test.skip(!local, 'Requires the selected local Supabase stack.');
-  const { twoWorkspaceFixture } = await import('../integration/harness');
-  fixture = await twoWorkspaceFixture();
+  fixture = await harness.twoWorkspaceFixture();
   const created = await fixture.po.client.rpc('catalog_create_exercise', {
     p_operation_key: randomUUID(),
     p_request: {

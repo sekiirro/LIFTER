@@ -213,24 +213,6 @@ export function createCatalogServer(deps: CatalogDependencies) {
     if (!keyValid(input.operationKey)) return { status: 'invalid' } as const;
     if (!isUuidV4(input.workspaceId!) || !isUuidV4(input.id ?? ''))
       return { status: 'invalid' } as const;
-    let expectedVersion = input.expectedVersion;
-    if (expectedVersion == null) {
-      try {
-        const response = await ready
-          .client!.from('exercise_overrides')
-          .select('current_version')
-          .eq('workspace_id', input.workspaceId)
-          .eq('exercise_id', input.id)
-          .maybeSingle();
-        if (response.error)
-          return { status: mapError(response.error) } as const;
-        const current = response.data?.current_version;
-        expectedVersion =
-          Number.isInteger(current) && current >= 0 ? current : 0;
-      } catch {
-        return { status: 'unavailable' } as const;
-      }
-    }
     const request = {
       ...(variationOnly
         ? {
@@ -255,7 +237,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
     return rpc(ready.client!, operationNames.writeVariation, {
       p_workspace_id: input.workspaceId,
       p_exercise_id: input.id,
-      p_expected_version: expectedVersion,
+      p_expected_version: input.expectedVersion ?? null,
       p_operation_key: input.operationKey,
       p_request: request,
     });
@@ -478,6 +460,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
       query?: string;
       cursor?: string | null;
       selectedIds?: readonly string[];
+      excludeId?: string | null;
     }) {
       return (async (): Promise<
         CatalogResult<{
@@ -661,7 +644,9 @@ export function createCatalogServer(deps: CatalogDependencies) {
             ),
           );
         }
-        const options = [...selectedOptions, ...pageOptions];
+        const options = [...selectedOptions, ...pageOptions].filter(
+          (option) => option.id !== input.excludeId,
+        );
         const unique = new Map<string, CatalogExerciseOption>();
         for (const option of options)
           unique.set(`${option.kind}:${option.id}`, option);

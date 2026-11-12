@@ -112,10 +112,18 @@ describe('T090 canonical and workspace-private exercise version storage', () => 
         (exercise_id, version, position, global_exercise_id)
       values (${parent.exercise_id}, 1, 4, ${targets[3]!.exercise_id})
     `).rejects.toBeDefined();
+    const duplicateParent = await createGlobal(
+      'T090 Global duplicate target parent',
+    );
+    await db`
+      insert into public.exercise_version_alternatives
+        (exercise_id, version, position, global_exercise_id)
+      values (${duplicateParent.exercise_id}, 1, 1, ${targets[0]!.exercise_id})
+    `;
     await expect(db`
       insert into public.exercise_version_alternatives
         (exercise_id, version, position, global_exercise_id)
-      values (${parent.exercise_id}, 1, 2, ${targets[0]!.exercise_id})
+      values (${duplicateParent.exercise_id}, 1, 2, ${targets[0]!.exercise_id})
     `).rejects.toBeDefined();
   });
 
@@ -198,10 +206,20 @@ describe('T090 canonical and workspace-private exercise version storage', () => 
         (workspace_id, workspace_exercise_id, version, position, alternative_workspace_exercise_id)
       values (${workspaceA}, ${parent.exercise_id}, 1, 4, ${localTarget4.exercise_id})
     `).rejects.toBeDefined();
+    const duplicateParent = await createPrivate(
+      workspaceA,
+      trainerA,
+      'T090 private duplicate target parent',
+    );
+    await db`
+      insert into public.workspace_exercise_version_alternatives
+        (workspace_id, workspace_exercise_id, version, position, alternative_workspace_exercise_id)
+      values (${workspaceA}, ${duplicateParent.exercise_id}, 1, 1, ${localTarget.exercise_id})
+    `;
     await expect(db`
       insert into public.workspace_exercise_version_alternatives
         (workspace_id, workspace_exercise_id, version, position, alternative_workspace_exercise_id)
-      values (${workspaceA}, ${parent.exercise_id}, 1, 3, ${localTarget.exercise_id})
+      values (${workspaceA}, ${duplicateParent.exercise_id}, 1, 2, ${localTarget.exercise_id})
     `).rejects.toBeDefined();
   });
 

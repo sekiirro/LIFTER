@@ -136,6 +136,68 @@ describe('T037 Global and workspace-private write contracts', () => {
     }
   });
 
+  it('maps over-limit Notes and Video RPC payloads to the allow-listed invalid status', async () => {
+    const video2000 = 'https://youtu.be/abcdefghijk?x='.padEnd(2000, 'a');
+    const valid = { ...core, name_en: `T037 RPC cap ${randomUUID()}` };
+    await expect(
+      db`select app_private.validate_exercise_payload(${db.json({ ...valid, notes: 'n'.repeat(2000), video_url: video2000 })})`,
+    ).resolves.toBeDefined();
+
+    for (const payload of [
+      { ...valid, notes: 'n'.repeat(2001) },
+      { ...valid, video_url: `${video2000}a` },
+    ]) {
+      await expect(createGlobal(payload)).rejects.toMatchObject({
+        code: '22023',
+        message: 'catalog_exercise_invalid',
+      });
+    }
+  });
+
+  it.each([
+    ['notes', "char_length(p_request ->> 'notes') > 2000"],
+    ['video_url', "char_length(p_request ->> 'video_url') > 2000"],
+  ] as const)('kills the %s RPC cap-guard mutant', async (field, needle) => {
+    const signature = 'app_private.validate_exercise_payload(jsonb)';
+    const marker = `rollback_t037_rpc_${field}_cap_mutant`;
+    try {
+      await db.begin(async (tx) => {
+        const [current] = await tx`
+          select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition
+        `;
+        const original = current?.definition as string;
+        expect(original).toContain(needle);
+        await tx.unsafe(original.replace(needle, 'false'));
+
+        const invalid = {
+          ...core,
+          name_en: `T037 ${field} mutation`,
+          [field]:
+            field === 'notes'
+              ? 'x'.repeat(2001)
+              : 'https://youtu.be/abcdefghijk?x='.padEnd(2001, 'a'),
+        };
+        let assertionFailure: unknown;
+        try {
+          await expect(
+            tx`select app_private.validate_exercise_payload(${tx.json(invalid)})`,
+          ).rejects.toMatchObject({
+            code: '22023',
+            message: 'catalog_exercise_invalid',
+          });
+        } catch (error) {
+          assertionFailure = error;
+        }
+        expect(
+          assertionFailure,
+          `removing the ${field} cap must break its contract assertion`,
+        ).toBeDefined();
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(marker);
+    }
+  });
   it('rejects non-PO Global writes (T037)', async () => {
     await expect(
       createGlobal({ ...core, name_ar: 'تمرين اختبار' }, trainerId),
@@ -240,21 +302,7 @@ describe.each([
     'T074',
   ],
 ] as const)('%s field contract', (field, key, valid, invalid, task) => {
-  const contractIt =
-    field === 'Name' ||
-    field === 'Description' ||
-    task === 'T043' ||
-    task === 'T074'
-      ? it
-      : it.fails;
-  const privateContractIt =
-    field === 'Name' ||
-    field === 'Description' ||
-    task === 'T043' ||
-    task === 'T074'
-      ? it
-      : it.fails;
-  contractIt(`${field}: stores an allowed Global value (${task})`, async () => {
+  it(`${field}: stores an allowed Global value (${task})`, async () => {
     const result = await createGlobal({
       ...core,
       name_ar: 'تمرين',
@@ -335,24 +383,21 @@ describe.each([
     expect(audit[0]?.changed_fields).toContain('video');
   });
 
-  privateContractIt(
-    `${field}: stores an allowed private value (T075)`,
-    async () => {
-      const result = await createPrivate({
-        ...core,
-        name_ar: 'تمرين',
-        [key]: valid,
-      });
-      const exerciseId = (
-        result[0]?.catalog_write_workspace_exercise as { exercise_id: string }
-      ).exercise_id;
-      const [version] = await db`
+  it(`${field}: stores an allowed private value (T075)`, async () => {
+    const result = await createPrivate({
+      ...core,
+      name_ar: 'تمرين',
+      [key]: valid,
+    });
+    const exerciseId = (
+      result[0]?.catalog_write_workspace_exercise as { exercise_id: string }
+    ).exercise_id;
+    const [version] = await db`
       select payload from public.workspace_exercise_versions
       where workspace_id = ${workspaceId} and workspace_exercise_id = ${exerciseId} and version = 1
     `;
-      expect(version?.payload).toMatchObject({ [key]: valid });
-    },
-  );
+    expect(version?.payload).toMatchObject({ [key]: valid });
+  });
 
   it(`rejects a malformed or disallowed ${field} value on the private write path (${field === 'Video' ? 'T061' : 'T075'})`, async () => {
     await expect(
@@ -1266,7 +1311,7 @@ describe('T037 remaining workspace and identity contracts', () => {
     const migration = await readFile(
       join(
         process.cwd(),
-        'supabase/migrations/20261111012000_catalog_exercise_cutover.sql',
+        'supabase/migrations/20261111170909_catalog_exercise_cutover.sql',
       ),
       'utf8',
     );
@@ -1279,9 +1324,25 @@ describe('T037 remaining workspace and identity contracts', () => {
         '[]'::jsonb
       ) as value
       from public.workspace_exercises`;
+    const globalVersions = await db`
+      select exercise_id, version from public.exercise_versions
+      order by exercise_id, version`;
+    const workspaceVersions = await db`
+      select workspace_id, workspace_exercise_id, version
+      from public.workspace_exercise_versions
+      order by workspace_id, workspace_exercise_id, version`;
     const verifiedIdentities = JSON.stringify({
       exercises: globalIdentities!.value,
       workspace_exercises: workspaceIdentities!.value,
+      exercise_versions: globalVersions.map((row) => [
+        row.exercise_id,
+        row.version,
+      ]),
+      workspace_exercise_versions: workspaceVersions.map((row) => [
+        row.workspace_id,
+        row.workspace_exercise_id,
+        row.version,
+      ]),
     });
     const gatedMigration = migration
       .replace(
@@ -1334,7 +1395,7 @@ describe('T037 remaining workspace and identity contracts', () => {
     const securityFix = await readFile(
       join(
         process.cwd(),
-        'supabase/migrations/20261111015400_catalog_search_invoker_security.sql',
+        'supabase/migrations/20261111170910_catalog_search_invoker_security.sql',
       ),
       'utf8',
     );
@@ -1342,7 +1403,7 @@ describe('T037 remaining workspace and identity contracts', () => {
     const searchBehaviorFix = await readFile(
       join(
         process.cwd(),
-        'supabase/migrations/20261111205300_catalog_search_effective_names_and_variation_pagination.sql',
+        'supabase/migrations/20261112043000_catalog_exercise_payload_text_cap.sql',
       ),
       'utf8',
     );

@@ -265,7 +265,10 @@ export function validateExerciseEditorDraft(
     errors.description = 'description_too_long';
   if (Array.from(draft.notes.trim()).length > MAX_CATALOG_NOTE_LENGTH)
     errors.notes = 'notes_too_long';
-  if (draft.videoUrl.trim() && !isAllowedCatalogVideoUrl(draft.videoUrl))
+  if (
+    Array.from(draft.videoUrl.trim()).length > MAX_CATALOG_NOTE_LENGTH ||
+    (draft.videoUrl.trim() && !isAllowedCatalogVideoUrl(draft.videoUrl))
+  )
     errors.videoUrl = 'invalid_video_url';
 
   const primaryMuscle = draft.primaryMuscle.trim();

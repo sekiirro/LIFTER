@@ -77,6 +77,19 @@ describe('T049 staff effective exercise resolution', () => {
     };
     await writeOverride(exerciseId, local);
 
+    const [effectiveNameSearch] = await search(
+      trainerId,
+      workspaceId,
+      exerciseId,
+      'Workspace name',
+    );
+    expect(
+      effectiveNameSearch?.result_payload.effective_fields.name,
+    ).toMatchObject({
+      value: { name_en: 'Workspace name' },
+      source: 'override',
+    });
+
     const [workspace] = await search(
       trainerId,
       workspaceId,

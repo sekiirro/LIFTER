@@ -118,6 +118,7 @@ export function ExerciseOverrideEditor({
           query: alternativeQuery,
           cursor: null,
           selectedIds: draft.alternativeExerciseIds,
+          excludeId: exerciseId,
         });
         if (cancelled) return;
         if (result.status === 'ok') {
@@ -153,6 +154,7 @@ export function ExerciseOverrideEditor({
         query: requestedQuery,
         cursor: alternativeCursor,
         selectedIds: draft.alternativeExerciseIds,
+        excludeId: exerciseId,
       });
       if (requestedSearchKey !== latestAlternativeSearchKey.current) return;
       if (result.status !== 'ok') {

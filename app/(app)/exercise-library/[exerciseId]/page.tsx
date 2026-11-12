@@ -132,6 +132,7 @@ export default async function ExerciseDetailPage({
     const options = await alternativePickerOptions({
       workspaceId,
       selectedIds: overrideDraftFromExercise(exercise).alternativeExerciseIds,
+      excludeId: exerciseId,
     });
     if (options.status === 'ok') {
       overrideOptions = options.data.options.filter(
@@ -141,8 +142,9 @@ export default async function ExerciseDetailPage({
     }
   }
   const allOptions = await alternativePickerOptions({
-    workspaceId: scope === 'workspace' ? workspaceId : null,
+    workspaceId,
     selectedIds: draftFromExercise(exercise).alternativeExerciseIds,
+    excludeId: exerciseId,
   });
   if (allOptions.status === 'ok') {
     authoringOptions = allOptions.data.options;

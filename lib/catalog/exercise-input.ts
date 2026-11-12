@@ -1,4 +1,5 @@
 import type { ExerciseInput, ExerciseReps } from './schemas';
+import { isUuidV4 } from './uuid';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -54,6 +55,7 @@ function repsFromValue(value: unknown): ExerciseReps | undefined {
 function alternativeIds(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
+    if (typeof item === 'string') return isUuidV4(item) ? [`g:${item}`] : [];
     const target = record(item);
     if (!target) return [];
     if (typeof target.workspace_exercise_id === 'string')

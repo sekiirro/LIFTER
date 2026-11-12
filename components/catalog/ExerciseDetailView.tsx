@@ -34,6 +34,13 @@ export function ExerciseDetailView({
   alternatives?: readonly ExerciseAlternativeOption[];
 }) {
   const m = getMessages(locale);
+  const effectiveFields = row.payload.effective_fields as
+    Record<string, unknown> | undefined;
+  const effectiveVideo = effectiveFields?.video as
+    { value?: unknown } | undefined;
+  const resolvedVideoUrl = row.variation?.video_url ?? effectiveVideo?.value;
+  const videoUrl =
+    typeof resolvedVideoUrl === 'string' ? resolvedVideoUrl : null;
   const defaults = exercise.defaults;
   const reps = defaults?.reps;
   const repText = reps
@@ -198,14 +205,10 @@ export function ExerciseDetailView({
       </Card>
       <Card as="section" className={styles.card}>
         <h2>{m['catalog.detailWorkspace']}</h2>
-        {row.variation || typeof row.payload.video_url === 'string' ? (
+        {videoUrl ? (
           <div className={styles.variation}>
             <p>{m['catalog.detailVideo']}</p>
-            <a
-              href={row.variation?.video_url ?? String(row.payload.video_url)}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
+            <a href={videoUrl} rel="noopener noreferrer" target="_blank">
               {m['catalog.detailOpenVideo']}
             </a>
           </div>

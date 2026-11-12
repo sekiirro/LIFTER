@@ -13,14 +13,8 @@ export type ExerciseSnapshot = {
 export type ExerciseSnapshotV1 = ExerciseSnapshot;
 
 /** Frozen planner-entry values for an exercise at publication time. */
-export type ExerciseSnapshotV2 = {
+type ExerciseSnapshotV2Base = {
   schemaVersion: 2;
-  source: 'global' | 'workspace_private';
-  exerciseId?: string;
-  canonicalVersion?: number;
-  workspaceExerciseId?: string;
-  workspaceExerciseVersion?: number;
-  overrideVersion: number | null;
   name: { ar?: string; en: string };
   description?: string;
   notes?: string;
@@ -33,6 +27,24 @@ export type ExerciseSnapshotV2 = {
     reps?: ExerciseDefaults['reps'];
   };
 };
+
+export type ExerciseSnapshotV2 =
+  | (ExerciseSnapshotV2Base & {
+      source: 'global';
+      exerciseId: string;
+      canonicalVersion: number;
+      overrideVersion: number | null;
+      workspaceExerciseId?: never;
+      workspaceExerciseVersion?: never;
+    })
+  | (ExerciseSnapshotV2Base & {
+      source: 'workspace_private';
+      workspaceExerciseId: string;
+      workspaceExerciseVersion: number;
+      exerciseId?: never;
+      canonicalVersion?: never;
+      overrideVersion?: never;
+    });
 
 export type ExerciseSnapshotV2Input = {
   source: 'global' | 'workspace_private';
@@ -144,6 +156,12 @@ function asInt(value: unknown, label: string): number {
     throw new Error(`${label} must be an integer`);
   }
   return n;
+}
+
+function asPositiveInt(value: unknown, label: string): number {
+  const parsed = asInt(value, label);
+  if (parsed <= 0) throw new Error(`${label} must be positive`);
+  return parsed;
 }
 
 export function toExerciseSnapshot(
@@ -742,12 +760,12 @@ function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
   assertNoUnknownKeys(obj, keys, 'ExerciseSnapshotV2');
   if (obj.source === 'global') {
     asString(obj.exerciseId, 'exerciseId');
-    asInt(obj.canonicalVersion, 'canonicalVersion');
+    asPositiveInt(obj.canonicalVersion, 'canonicalVersion');
     if (obj.overrideVersion !== null)
-      asInt(obj.overrideVersion, 'overrideVersion');
+      asPositiveInt(obj.overrideVersion, 'overrideVersion');
   } else {
     asString(obj.workspaceExerciseId, 'workspaceExerciseId');
-    asInt(obj.workspaceExerciseVersion, 'workspaceExerciseVersion');
+    asPositiveInt(obj.workspaceExerciseVersion, 'workspaceExerciseVersion');
   }
   if (!obj.name || typeof obj.name !== 'object' || Array.isArray(obj.name))
     throw new Error('name must be an object');
@@ -860,20 +878,20 @@ export function toExerciseSnapshotV2(
   if (entry.notes !== undefined) snapshot.notes = entry.notes;
   if (input.source === 'global') {
     snapshot.exerciseId = asString(input.exerciseId, 'exerciseId');
-    snapshot.canonicalVersion = asInt(
+    snapshot.canonicalVersion = asPositiveInt(
       input.canonicalVersion,
       'canonicalVersion',
     );
     snapshot.overrideVersion =
       input.overrideVersion === undefined || input.overrideVersion === null
         ? null
-        : asInt(input.overrideVersion, 'overrideVersion');
+        : asPositiveInt(input.overrideVersion, 'overrideVersion');
   } else {
     snapshot.workspaceExerciseId = asString(
       input.workspaceExerciseId,
       'workspaceExerciseId',
     );
-    snapshot.workspaceExerciseVersion = asInt(
+    snapshot.workspaceExerciseVersion = asPositiveInt(
       input.workspaceExerciseVersion,
       'workspaceExerciseVersion',
     );
@@ -888,6 +906,6 @@ export function serializeExerciseSnapshotV2(
 }
 
 export function parseExerciseSnapshotV2(input: unknown): ExerciseSnapshotV2 {
-  const obj = typeof input === 'string' ? JSON.parse(input) : input;
+  const obj = typeof input === 'string' ? JSON.parse(input) : clone(input);
   return validateExerciseSnapshotV2Impl(obj);
 }

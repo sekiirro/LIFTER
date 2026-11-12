@@ -27,4 +27,14 @@ describe('F16 Stack C Playwright launcher', () => {
     expect(config).toMatch(/env:\s*\{\s*\.\.\.process\.env/);
     expect(config).toContain('APP_ORIGIN: process.env.APP_ORIGIN');
   });
+
+  it('loads and validates the selected local stack env before webServer setup', () => {
+    const config = readFileSync('playwright.config.ts', 'utf8');
+    expect(config).toContain('loadSelectedStackEnv');
+    expect(config).toContain('supabase status --workdir');
+    expect(config).toContain('assertLocalStackTarget');
+    expect(config.indexOf('loadPlaywrightStackEnvironment()')).toBeLessThan(
+      config.indexOf('webServer:'),
+    );
+  });
 });

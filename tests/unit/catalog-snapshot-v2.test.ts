@@ -143,6 +143,23 @@ describe('ExerciseSnapshotV2 (T056)', () => {
     expect(parsed.defaults.reps).toEqual(fixture.defaults.reps);
   });
 
+  it('copies nested values from the exact object passed to the parser', () => {
+    const input = structuredClone(fixture);
+    const parsed = parseExerciseSnapshotV2(input);
+    (input.defaults.reps as { kind: 'fixed'; value: number }).value = 999;
+    input.name.en = 'mutated after parse';
+    const firstAlternative = input.alternatives[0];
+    expect(firstAlternative && 'globalExerciseId' in firstAlternative).toBe(
+      true,
+    );
+    if (firstAlternative && 'globalExerciseId' in firstAlternative)
+      firstAlternative.globalExerciseId = 'mutated-id';
+
+    expect(parsed.defaults.reps).toEqual(fixture.defaults.reps);
+    expect(parsed.name.en).toBe(fixture.name.en);
+    expect(parsed.alternatives).toEqual(fixture.alternatives);
+  });
+
   it('preserves both allowed target kinds for workspace-private exercises', () => {
     const snapshot = toExerciseSnapshotV2({
       source: 'workspace_private',
@@ -197,6 +214,34 @@ describe('ExerciseSnapshotV2 (T056)', () => {
       }),
     ).toThrow();
   });
+
+  it.each([
+    ['canonicalVersion', 0],
+    ['canonicalVersion', -1],
+    ['overrideVersion', 0],
+    ['overrideVersion', -1],
+  ] as const)('rejects non-positive Global %s=%i references', (key, value) => {
+    expect(() =>
+      parseExerciseSnapshotV2({ ...(fixture as object), [key]: value }),
+    ).toThrow();
+  });
+
+  it.each([0, -1])(
+    'rejects non-positive workspace-private version %i',
+    (workspaceExerciseVersion) => {
+      expect(() =>
+        parseExerciseSnapshotV2({
+          schemaVersion: 2,
+          source: 'workspace_private',
+          workspaceExerciseId: 'wex-1',
+          workspaceExerciseVersion,
+          name: { en: 'Private exercise' },
+          alternatives: [],
+          defaults: {},
+        }),
+      ).toThrow();
+    },
+  );
 
   it('rejects duplicate alternatives and more than three targets', () => {
     expect(() =>

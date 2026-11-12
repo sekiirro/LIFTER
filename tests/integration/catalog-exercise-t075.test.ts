@@ -62,6 +62,17 @@ async function createGlobalTarget() {
 }
 
 describe('T075 workspace-private validation and version storage', () => {
+  it('takes a no-key-update lock for workspace exercise versions', async () => {
+    const [row] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'public.catalog_write_workspace_exercise(uuid,uuid,integer,uuid,jsonb)'::regprocedure
+      ) as definition
+    `;
+    expect(String(row?.definition).toLowerCase()).toMatch(
+      /for\s+no\s+key\s+update/,
+    );
+  });
+
   it('stores private Name, Description, Notes, Defaults, and normalized Alternatives', async () => {
     const globalTarget = await createGlobalTarget();
     const privateTargetResult = await writePrivate({
@@ -75,7 +86,7 @@ describe('T075 workspace-private validation and version storage', () => {
     ).exercise_id;
     const payload = {
       ...core,
-      name_ar: 'ØªÙ…Ø±ÙŠÙ†',
+      name_ar: '\u062A\u0645\u0631\u064A\u0646',
       description: 'x'.repeat(2000),
       notes: 'Private coaching note',
       default_rest_time: 90,
@@ -98,6 +109,7 @@ describe('T075 workspace-private validation and version storage', () => {
     expect(version).toMatchObject({
       payload: expect.objectContaining({
         name_en: core.name_en,
+        name_ar: '\u062A\u0645\u0631\u064A\u0646',
         description: 'x'.repeat(2000),
       }),
       notes: 'Private coaching note',

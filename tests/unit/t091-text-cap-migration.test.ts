@@ -9,6 +9,13 @@ const migration = readFileSync(
   ),
   'utf8',
 );
+const rpcMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    'supabase/migrations/20261112043000_catalog_exercise_payload_text_cap.sql',
+  ),
+  'utf8',
+);
 
 describe('T091 exercise Notes and Video text cap migration', () => {
   it('fails closed with an over-limit count before adding any constraints', () => {
@@ -37,5 +44,24 @@ describe('T091 exercise Notes and Video text cap migration', () => {
     expect(migration).toMatch(/notes, ''\)\) <= 2000/);
     expect(migration).toMatch(/payload->>'video_url', ''\)\) <= 2000/);
     expect(migration.toLowerCase()).not.toMatch(/\b(update|truncate)\b/);
+  });
+
+  it('keeps the cap guard private and returns the existing invalid status', () => {
+    expect(rpcMigration).toMatch(
+      /validate_exercise_payload\(p_request jsonb\)[\s\S]*security definer set search_path = ''/i,
+    );
+    expect(rpcMigration).toContain("char_length(p_request ->> 'notes') > 2000");
+    expect(rpcMigration).toContain(
+      "char_length(p_request ->> 'video_url') > 2000",
+    );
+    expect(rpcMigration).toContain(
+      "raise exception 'catalog_exercise_invalid' using errcode = '22023'",
+    );
+    expect(rpcMigration).toContain(
+      'alter function app_private.validate_exercise_payload(jsonb) owner to postgres',
+    );
+    expect(rpcMigration).toContain(
+      'revoke all on function app_private.validate_exercise_payload(jsonb) from public, anon, authenticated, service_role',
+    );
   });
 });

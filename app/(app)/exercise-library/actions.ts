@@ -52,6 +52,7 @@ export type SearchAlternativeOptionsInput = {
   query: string;
   cursor?: string | null;
   selectedIds: string[];
+  excludeId?: string | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -160,6 +161,9 @@ export async function searchAlternativeOptionsAction(
   if (
     !isRecord(input) ||
     (input.workspaceId !== null && !isUuidV4(input.workspaceId)) ||
+    (input.excludeId !== undefined &&
+      input.excludeId !== null &&
+      !isUuidV4(input.excludeId)) ||
     typeof input.query !== 'string' ||
     (input.cursor !== undefined &&
       input.cursor !== null &&
@@ -258,6 +262,8 @@ export async function saveExerciseAction(
     actor.role === 'workspace_owner' || actor.role === 'trainer';
   if (input.scope === 'global') {
     if (!isPlatformOwner) return { status: 'not_permitted' };
+    if (input.draft.alternativeExerciseIds.some((id) => id.startsWith('w:')))
+      return { status: 'invalid' };
     if (
       input.equipmentCodes?.some(
         (code) =>
@@ -303,7 +309,12 @@ export async function saveExerciseAction(
     )
   )
     return { status: 'invalid' };
-  const request = requestFor(input.draft, 'workspace', input.id);
+  const request = requestFor(
+    input.draft,
+    'workspace',
+    input.id,
+    input.id ? input.equipmentCodes : undefined,
+  );
   if (!request) return { status: 'invalid' };
   const result = await writeWorkspaceExercise({
     operationKey: input.operationKey,

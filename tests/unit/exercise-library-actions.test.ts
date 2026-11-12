@@ -93,6 +93,19 @@ describe('production exercise authoring actions', () => {
     expect(Object.keys(request)).not.toContain('instructions_en');
   });
 
+  it('rejects private Alternatives in a Global write before calling the RPC', async () => {
+    const result = await saveExerciseAction({
+      draft: {
+        ...draft,
+        alternativeExerciseIds: ['w:66666666-6666-4666-8666-666666666666'],
+      },
+      scope: 'global',
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+    });
+    expect(result).toEqual({ status: 'invalid' });
+    expect(mocks.createExercise).not.toHaveBeenCalled();
+  });
   it('accepts an English-only Global create without an Arabic name', async () => {
     await saveExerciseAction({
       draft: { ...draft, names: { ar: '', en: 'English only press' } },
@@ -240,6 +253,30 @@ describe('production exercise authoring actions', () => {
       expect.objectContaining({
         request: expect.objectContaining({
           equipment_codes: ['dumbbell'],
+        }),
+      }),
+    );
+  });
+
+  it('preserves existing equipment codes when versioning a workspace exercise', async () => {
+    mocks.actor.mockResolvedValue({
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [validWorkspaceId],
+    });
+    await saveExerciseAction({
+      draft,
+      scope: 'workspace',
+      workspaceId: validWorkspaceId,
+      id: validExerciseId,
+      expectedVersion: 2,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+      equipmentCodes: ['barbell', 'cable'],
+    });
+    expect(mocks.writeWorkspaceExercise).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          equipment_codes: ['barbell', 'cable'],
         }),
       }),
     );

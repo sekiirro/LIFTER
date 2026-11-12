@@ -51,6 +51,7 @@ export default async function EditExercisePage({
   const options = await alternativePickerOptions({
     workspaceId: null,
     selectedIds: draftFromExercise(exercise).alternativeExerciseIds,
+    excludeId: exerciseId,
   });
   const alternatives = (
     options.status === 'ok' ? options.data.options : []

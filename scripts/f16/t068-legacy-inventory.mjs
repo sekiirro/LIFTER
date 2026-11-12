@@ -36,12 +36,13 @@ function defaultsFor(payload) {
   const defaults = objectOrEmpty(payload?.defaults);
   return {
     rest:
+      payload?.default_rest_time ??
       defaults.default_rest_time ??
       defaults.rest_time_seconds ??
       defaults.rest_seconds ??
       defaults.rest,
-    rir: defaults.default_rir ?? defaults.rir,
-    reps: defaults.default_reps ?? defaults.reps,
+    rir: payload?.default_rir ?? defaults.default_rir ?? defaults.rir,
+    reps: payload?.default_reps ?? defaults.default_reps ?? defaults.reps,
   };
 }
 
@@ -383,6 +384,15 @@ export async function readInventory(db, { includeIdentitySet = false } = {}) {
         workspace_exercises: workspaceExercises.map((row) => [
           row.workspace_id,
           row.id,
+        ]),
+        exercise_versions: exerciseVersions.map((row) => [
+          row.exercise_id,
+          row.version,
+        ]),
+        workspace_exercise_versions: workspaceExerciseVersions.map((row) => [
+          row.workspace_id,
+          row.workspace_exercise_id,
+          row.version,
         ]),
       },
     };

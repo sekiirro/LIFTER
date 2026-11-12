@@ -54,6 +54,71 @@ async function write(
 }
 
 describe('T047 workspace exercise override writes', () => {
+  it('replays a null-version variation write with one stable operation hash', async () => {
+    const exercise = await createGlobal(`T047 null expected ${randomUUID()}`);
+    const operationKey = randomUUID();
+    const request = { video_url: 'https://youtu.be/abcdefghijk' };
+    const first = await write(
+      trainerId,
+      workspaceId,
+      exercise,
+      null,
+      operationKey,
+      request,
+    );
+    const replay = await write(
+      trainerId,
+      workspaceId,
+      exercise,
+      null,
+      operationKey,
+      request,
+    );
+    expect(replay[0]?.result).toEqual(first[0]?.result);
+    const versions = await db`
+      select version from public.exercise_override_versions
+      where workspace_id=${workspaceId} and exercise_id=${exercise}
+    `;
+    expect(versions.map((row) => row.version)).toEqual([1]);
+  });
+
+  it('kills a mutation that hashes the current revision for a null-version replay', async () => {
+    const exercise = await createGlobal(
+      `T047 null hash mutation ${randomUUID()}`,
+    );
+    const operationKey = randomUUID();
+    const marker = 'rollback_t047_null_expected_hash_mutant';
+    try {
+      await db.begin(async (tx) => {
+        const [row] = await tx`
+          select pg_catalog.pg_get_functiondef(
+            'public.catalog_write_exercise_override(uuid,uuid,integer,uuid,jsonb)'::regprocedure
+          ) as definition
+        `;
+        const original = row!.definition as string;
+        const mutant = original.replace(
+          'jsonb_build_array(p_workspace_id, p_exercise_id, p_expected_version, p_request)',
+          'jsonb_build_array(p_workspace_id, p_exercise_id, locked_override_version, p_request)',
+        );
+        expect(mutant).not.toBe(original);
+        await tx.unsafe(mutant);
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
+        await tx`select public.catalog_write_exercise_override(
+          ${workspaceId}, ${exercise}, null, ${operationKey},
+          ${tx.json({ video_url: 'https://youtu.be/abcdefghijk' })}
+        )`;
+        await expect(tx`select public.catalog_write_exercise_override(
+          ${workspaceId}, ${exercise}, null, ${operationKey},
+          ${tx.json({ video_url: 'https://youtu.be/abcdefghijk' })}
+        )`).rejects.toThrow(/operation_key_request_conflict/);
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(marker);
+    }
+  });
+
   it('accepts Notes and Video references at 2,000 characters and rejects 2,001', async () => {
     const acceptedExercise = await createGlobal(
       `T047 cap accepted ${randomUUID()}`,
@@ -272,6 +337,60 @@ describe('T047 workspace exercise override writes', () => {
         alternatives: [{ global_exercise_id: target }],
       }),
     ).rejects.toThrow(/catalog_exercise_alternatives_invalid/);
+  });
+
+  it('kills a mutation that removes the active-target check for re-selection', async () => {
+    const source = await createGlobal(
+      `T047 removed target mutant source ${randomUUID()}`,
+    );
+    const target = await createGlobal(
+      `T047 removed target mutant ${randomUUID()}`,
+    );
+    const request = { alternatives: [{ global_exercise_id: target }] };
+    await write(trainerId, workspaceId, source, 0, randomUUID(), request);
+    await asActor(
+      poId,
+      (tx) => tx`select public.catalog_transition_exercise(
+      ${target}, 0, 'remove', ${randomUUID()}
+    )`,
+    );
+
+    const marker = 'rollback_t047_inactive_target_guard_mutant';
+    try {
+      await db.begin(async (tx) => {
+        const [row] = await tx`
+          select pg_catalog.pg_get_functiondef(
+            'public.catalog_write_exercise_override(uuid,uuid,integer,uuid,jsonb)'::regprocedure
+          ) as definition
+        `;
+        const original = row!.definition as string;
+        const needle = "target.lifecycle_state = 'active'";
+        const mutant = original.replaceAll(
+          needle,
+          'target.lifecycle_state is not null',
+        );
+        expect(mutant).not.toBe(original);
+        await tx.unsafe(mutant);
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
+
+        let assertionFailure: unknown;
+        try {
+          await expect(tx`select public.catalog_write_exercise_override(
+            ${workspaceId}, ${source}, 1, ${randomUUID()}, ${tx.json(request as Json)}
+          )`).rejects.toThrow(/catalog_exercise_alternatives_invalid/);
+        } catch (error) {
+          assertionFailure = error;
+        }
+        expect(
+          assertionFailure,
+          'inactive-target mutation must break rejection',
+        ).toBeDefined();
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(marker);
+    }
   });
 
   it('enforces workspace authorization and permits the PO workspace override reach', async () => {

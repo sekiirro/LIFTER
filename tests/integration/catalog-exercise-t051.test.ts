@@ -32,10 +32,17 @@ async function asActor<T>(actorId: string, body: (tx: Tx) => Promise<T>) {
 
 async function createGlobal(videoUrl: string) {
   return asActor(poId, async (tx) => {
+    const name = `T051 ${randomUUID()}`;
     const [row] = await tx`select public.catalog_create_exercise(
-      ${randomUUID()}, ${tx.json({ name_en: `T051 ${randomUUID()}`, name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: videoUrl })}
+      ${randomUUID()}, ${tx.json({ name_en: name, name_ar: 'تمرين', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: videoUrl })}
     ) as result`;
-    return (row!.result as { exercise_id: string }).exercise_id;
+    const [selected] = await tx`select result_id from public.catalog_search(
+      'exercise', ${name}, '{"page_size":5}'::jsonb, null, ${workspaceAId}
+    ) where result_payload ->> 'name_en' = ${name}`;
+    expect(selected?.result_id).toBe(
+      (row!.result as { exercise_id: string }).exercise_id,
+    );
+    return selected!.result_id as string;
   });
 }
 
@@ -54,11 +61,18 @@ async function writeOverride(
 
 async function createPrivate(actorId: string, workspaceId: string) {
   return asActor(actorId, async (tx) => {
+    const name = `T051 private ${randomUUID()}`;
     const [row] = await tx`select public.catalog_write_workspace_exercise(
       ${workspaceId}, null, null, ${randomUUID()},
-      ${tx.json({ name_en: `T051 private ${randomUUID()}`, name_ar: 'تمرين خاص', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: 'https://youtu.be/abcdefghijk' })}
+      ${tx.json({ name_en: name, name_ar: 'تمرين خاص', primary_muscle_code: 'chest', equipment_codes: ['barbell'], video_url: 'https://youtu.be/abcdefghijk' })}
     ) as result`;
-    return (row!.result as { exercise_id: string }).exercise_id;
+    const [selected] = await tx`select result_id from public.catalog_search(
+      'workspace_exercise', ${name}, '{"page_size":5}'::jsonb, null, ${workspaceId}
+    ) where result_payload ->> 'name_en' = ${name}`;
+    expect(selected?.result_id).toBe(
+      (row!.result as { exercise_id: string }).exercise_id,
+    );
+    return selected!.result_id as string;
   });
 }
 

@@ -177,6 +177,7 @@ export function ExerciseEditor({
           query: alternativeQuery,
           cursor: null,
           selectedIds: draft.alternativeExerciseIds,
+          excludeId: exerciseId ?? null,
         });
         if (cancelled) return;
         if (result.status !== 'ok') {
@@ -199,7 +200,7 @@ export function ExerciseEditor({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [alternativeQuery, workspaceId, draft.alternativeExerciseIds]);
+  }, [alternativeQuery, workspaceId, exerciseId, draft.alternativeExerciseIds]);
 
   async function loadNextAlternatives() {
     if (!alternativeCursor || alternativeLoading) return;
@@ -213,6 +214,7 @@ export function ExerciseEditor({
         query: requestedQuery,
         cursor: alternativeCursor,
         selectedIds: draft.alternativeExerciseIds,
+        excludeId: exerciseId ?? null,
       });
       if (requestedSearchKey !== latestAlternativeSearchKey.current) return;
       if (result.status !== 'ok') {

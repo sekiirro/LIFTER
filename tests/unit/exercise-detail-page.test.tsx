@@ -158,7 +158,59 @@ describe('production exercise detail route', () => {
     expect(m.overrideVersion).not.toHaveBeenCalled();
   });
 
-  it('falls back to the canonical payload video when no workspace variation row exists', async () => {
+  it('resolves private Alternative names in the selected workspace context', async () => {
+    const privateAlternativeId = '77777777-7777-4777-8777-777777777777';
+    m.detail.mockResolvedValue({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          payload: {
+            ...row.payload,
+            effective_fields: {
+              ...row.payload.effective_fields,
+              alternatives: {
+                value: [{ workspace_exercise_id: privateAlternativeId }],
+                source: 'override',
+              },
+            },
+          },
+        },
+      ],
+    });
+    m.pickerOptions.mockImplementation(
+      async (input: { workspaceId: string | null }) => ({
+        status: 'ok',
+        data: {
+          options:
+            input.workspaceId === workspaceId
+              ? [
+                  {
+                    id: privateAlternativeId,
+                    kind: 'private',
+                    names: { en: 'Workspace private alternative' },
+                  },
+                ]
+              : [],
+          nextCursor: null,
+        },
+      }),
+    );
+
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+
+    expect(html).toContain('Workspace private alternative');
+    expect(m.pickerOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId, excludeId: id }),
+    );
+  });
+
+  it('uses the resolved canonical video when no workspace variation row exists', async () => {
     m.detail.mockResolvedValue({
       status: 'ok',
       data: [
@@ -168,6 +220,13 @@ describe('production exercise detail route', () => {
           payload: {
             ...row.payload,
             video_url: 'https://youtu.be/canonical01',
+            effective_fields: {
+              ...row.payload.effective_fields,
+              video: {
+                value: 'https://youtu.be/canonical01',
+                source: 'canonical',
+              },
+            },
           },
         },
       ],
@@ -179,6 +238,33 @@ describe('production exercise detail route', () => {
       }),
     );
     expect(html).toContain('href="https://youtu.be/canonical01"');
+  });
+
+  it('does not render an unresolved raw Video URL', async () => {
+    m.detail.mockResolvedValue({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          variation: null,
+          payload: {
+            ...row.payload,
+            video_url: 'https://disallowed.example/private',
+            effective_fields: {
+              ...row.payload.effective_fields,
+              video: { value: null, source: 'none' },
+            },
+          },
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+    expect(html).not.toContain('href="https://disallowed.example/private"');
   });
 
   it('shows the empty workspace choice only for platform-owner global detail', async () => {

@@ -38,6 +38,8 @@ vi.mock('../../app/(app)/exercise-library/ExerciseLibraryResults', () => ({
 }));
 
 const ws = '22222222-2222-4222-8222-222222222222';
+const workspaceCursor = (name: string, id: string) =>
+  Buffer.from(`${name.toLowerCase()}\u001f${id}`, 'utf8').toString('hex');
 const exercise = {
   result_id: '33333333-3333-4333-8333-333333333333',
   result_payload: {
@@ -125,7 +127,10 @@ describe('production exercise library route', () => {
       ...exercise,
       result_id: `33333333-3333-4333-8333-${String(index + 1).padStart(12, '0')}`,
       result_kind: index === 0 ? 'private' : 'global',
-      result_cursor: `cursor-${String(index + 1).padStart(2, '0')}`,
+      result_cursor: workspaceCursor(
+        exercise.result_payload.name_en,
+        `33333333-3333-4333-8333-${String(index + 1).padStart(12, '0')}`,
+      ),
     }));
     m.workspaceLibrary.mockResolvedValue({ status: 'ok', data: pageRows });
 
@@ -152,8 +157,16 @@ describe('production exercise library route', () => {
       limit: 21,
     });
     expect(html).toContain(`data-workspace-id="${ws}"`);
+    const cursor = workspaceCursor(
+      exercise.result_payload.name_en,
+      '33333333-3333-4333-8333-000000000020',
+    );
     expect(html).toContain(
-      `data-next-href="/exercise-library?q=press&amp;muscle=chest&amp;equipment=barbell&amp;workspace=${ws}&amp;cursor=cursor-20"`,
+      `data-next-href="/exercise-library?q=press&amp;muscle=chest&amp;equipment=barbell&amp;workspace=${ws}&amp;cursor=${cursor}"`,
+    );
+    await Page({ searchParams: Promise.resolve({ workspace: ws, cursor }) });
+    expect(m.workspaceLibrary).toHaveBeenLastCalledWith(
+      expect.objectContaining({ workspaceId: ws, cursor }),
     );
     expect(html).toContain(
       `href="/exercise-library/new?scope=workspace&amp;workspace=${ws}"`,

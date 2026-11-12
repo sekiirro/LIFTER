@@ -23,9 +23,25 @@ async function liveSet(tx: Tx) {
       '[]'::jsonb
     ) as value
     from public.workspace_exercises`;
+  const exerciseVersions = await tx`
+    select exercise_id, version from public.exercise_versions
+    order by exercise_id, version`;
+  const privateVersions = await tx`
+    select workspace_id, workspace_exercise_id, version
+    from public.workspace_exercise_versions
+    order by workspace_id, workspace_exercise_id, version`;
   return {
     exercises: exercises!.value,
     workspace_exercises: workspaces!.value,
+    exercise_versions: exerciseVersions.map((row) => [
+      row.exercise_id,
+      row.version,
+    ]),
+    workspace_exercise_versions: privateVersions.map((row) => [
+      row.workspace_id,
+      row.workspace_exercise_id,
+      row.version,
+    ]),
   };
 }
 
@@ -77,8 +93,33 @@ describe('T068 cutover identity guard (S48-PO-17)', () => {
     });
   });
 
+  it('refuses a new version added after verification with zero deletes', async () => {
+    await rollback(async (tx) => {
+      const exerciseId = await insertIdentity(tx);
+      const verified = await liveSet(tx);
+      await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
+        values (${exerciseId}, 2, ${tx.json({ name_en: `cutover v2 ${exerciseId}` })}, ${poId})`;
+      await tx`update public.exercises set current_version = 2 where id = ${exerciseId}`;
+
+      await expect(
+        tx.savepoint(
+          async (sp) =>
+            sp`select app_private.cutover_identity_guard(${JSON.stringify(verified)})`,
+        ),
+      ).rejects.toMatchObject({
+        code: 'P0001',
+        message: 'catalog_cutover_identity_set_changed',
+      });
+      const rows = await tx`
+        select version from public.exercise_versions
+        where exercise_id = ${exerciseId} order by version`;
+      expect(rows.map((row) => row.version)).toEqual([1, 2]);
+    });
+  });
+
   it('fails closed when the verified set is missing', async () => {
     await rollback(async (tx) => {
+      await insertIdentity(tx);
       await expect(
         tx.savepoint(
           async (sp) => sp`select app_private.cutover_identity_guard(null)`,
@@ -92,6 +133,7 @@ describe('T068 cutover identity guard (S48-PO-17)', () => {
 
   it('fails closed on an invalid verified set', async () => {
     await rollback(async (tx) => {
+      await insertIdentity(tx);
       await expect(
         tx.savepoint(
           async (sp) =>

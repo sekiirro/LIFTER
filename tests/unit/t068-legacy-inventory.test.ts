@@ -8,7 +8,7 @@ import {
 describe('T068 legacy inventory output', () => {
   it('reads inventory and cutover identities in one repeatable-read snapshot', async () => {
     const queries: string[] = [];
-    type FakeRow = Record<string, string>;
+    type FakeRow = Record<string, unknown>;
     type FakeQuery = (
       strings: TemplateStringsArray,
       ...values: unknown[]
@@ -18,8 +18,19 @@ describe('T068 legacy inventory output', () => {
       queries.push(query);
       if (query.includes('from public.exercises'))
         return [{ id: 'exercise-1', lifecycle_state: 'active' }];
+      if (query.includes('from public.exercise_versions'))
+        return [{ exercise_id: 'exercise-1', version: 2, payload: {} }];
       if (query.includes('from public.workspace_exercises'))
         return [{ workspace_id: 'workspace-1', id: 'private-1' }];
+      if (query.includes('from public.workspace_exercise_versions'))
+        return [
+          {
+            workspace_id: 'workspace-1',
+            workspace_exercise_id: 'private-1',
+            version: 3,
+            payload: {},
+          },
+        ];
       return [];
     };
     const db = {
@@ -40,6 +51,8 @@ describe('T068 legacy inventory output', () => {
     expect(result.identitySet).toEqual({
       exercises: ['exercise-1'],
       workspace_exercises: [['workspace-1', 'private-1']],
+      exercise_versions: [['exercise-1', 2]],
+      workspace_exercise_versions: [['workspace-1', 'private-1', 3]],
     });
   });
 
@@ -100,5 +113,38 @@ describe('T068 legacy inventory output', () => {
     expect(report.legacy.workspacesWithoutExplicitRow).toBe(1);
     expect(workspaceRow?.currentPayload.videoUrlByHost.youtube).toBe(1);
     expect(report.canonical.exerciseVersions.rowsWithInstructions).toBe(1);
+  });
+
+  it('counts top-level version defaults before nested compatibility aliases', () => {
+    const report = summarizeInventory({
+      workspaces: [],
+      variations: [],
+      variationVersions: [],
+      exercises: [],
+      workspaceExercises: [],
+      exerciseVersions: [
+        {
+          exercise_id: 'exercise-1',
+          version: 1,
+          payload: {
+            default_rest_time: 601,
+            default_rir: 6,
+            default_reps: 200,
+            defaults: {
+              default_rest_time: 90,
+              default_rir: 2,
+              default_reps: 8,
+            },
+          },
+        },
+      ],
+      workspaceExerciseVersions: [],
+    });
+
+    expect(report.canonical.exerciseVersions.defaultsOutsideBounds).toEqual({
+      restTimeOutOfBounds: 1,
+      rirOutOfBounds: 1,
+      repsOutOfBounds: 1,
+    });
   });
 });
