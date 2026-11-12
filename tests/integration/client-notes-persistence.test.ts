@@ -103,7 +103,7 @@ describe('F20 T003 client note persistence and constraints', () => {
           workspace_id, client_id, author_user_id, body, idempotency_key
         ) values (
           ${f.workspaceId}, ${f.clientId}, ${f.context.trainerA.userId},
-          'tombstone reuse', ${key}
+          'tombstoned key', ${key}
         )
       `,
     ).rejects.toBeDefined();

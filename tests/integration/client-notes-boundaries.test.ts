@@ -16,6 +16,36 @@ afterAll(async () => {
 });
 
 describe('F20 T004 client note mutation boundaries', () => {
+  it('rejects create keys outside the client-generated formats before writing', async () => {
+    const notesBefore = await f.countNotes();
+    const [keysBefore] = await f.db`
+      select count(*)::int as count from app_private.client_note_create_keys
+      where workspace_id = ${f.workspaceId} and client_id = ${f.clientId}
+    `;
+    const invalid = await f.context.trainerA.client.rpc('create_client_note', {
+      p_workspace_id: f.workspaceId,
+      p_client_id: f.clientId,
+      p_body: 'note body used as a key',
+      p_idempotency_key: 'note body used as a key',
+    });
+    expect(invalid.error?.code).toBe('22023');
+    expect(await f.countNotes()).toBe(notesBefore);
+    const [keysAfter] = await f.db`
+      select count(*)::int as count from app_private.client_note_create_keys
+      where workspace_id = ${f.workspaceId} and client_id = ${f.clientId}
+    `;
+    expect(keysAfter?.count).toBe(keysBefore?.count);
+
+    const fallback = await f.context.trainerA.client.rpc('create_client_note', {
+      p_workspace_id: f.workspaceId,
+      p_client_id: f.clientId,
+      p_body: 'fallback key is supported',
+      p_idempotency_key: 'cn-1790000000000-7abc123',
+    });
+    expect(fallback.error).toBeNull();
+    expect(fallback.data).toBeTruthy();
+  });
+
   it('resolves client context only for authorized workspace actors', async () => {
     const resolve = (actor: typeof f.context.trainerA) =>
       actor.client.rpc('client_notes_client_context', {
@@ -507,48 +537,89 @@ describe('F20 T004 client note mutation boundaries', () => {
 
   it('serializes overlapping author and Platform Owner saves under a row lock', async () => {
     const note = await f.createAsTrainer({ body: 'locked original' });
+    let releaseLock!: () => void;
+    let signalLock!: (backendPid: number) => void;
+    const lockGate = new Promise<void>((resolve) => (releaseLock = resolve));
+    const lockReady = new Promise<number>((resolve) => (signalLock = resolve));
     const lockHeld = f.db.begin(async (tx) => {
+      const [backend] = await tx`select pg_backend_pid() as pid`;
       await tx`select id from public.client_notes
         where id = ${String(note.id)} for update`;
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      signalLock(Number(backend?.pid));
+      await lockGate;
     });
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    const observer = sql();
+    try {
+      const blockerPid = await lockReady;
+      let authorSettled = false;
+      let platformOwnerSettled = false;
+      const authorSave = f.context.trainerA.client
+        .rpc('update_client_note', {
+          p_note_id: note.id,
+          p_body: 'author locked save',
+        })
+        .then((result) => {
+          authorSettled = true;
+          return result;
+        });
+      const platformOwnerSave = f.context.po.client
+        .rpc('update_client_note', {
+          p_note_id: note.id,
+          p_body: 'platform owner locked save',
+        })
+        .then((result) => {
+          platformOwnerSettled = true;
+          return result;
+        });
+      const deadline = Date.now() + 3000;
+      let blockedCount = 0;
+      let activity: readonly unknown[] = [];
+      while (Date.now() < deadline) {
+        activity = await observer`
+          select pid from pg_catalog.pg_stat_activity
+          where pid <> pg_backend_pid()
+            and ${blockerPid} = any(pg_catalog.pg_blocking_pids(pid))
+        `;
+        blockedCount = activity.length;
+        if (blockedCount >= 2) break;
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      expect(blockedCount, JSON.stringify(activity)).toBeGreaterThanOrEqual(1);
+      expect(authorSettled).toBe(false);
+      expect(platformOwnerSettled).toBe(false);
 
-    const authorSave = f.context.trainerA.client.rpc('update_client_note', {
-      p_note_id: note.id,
-      p_body: 'author locked save',
-    });
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    const platformOwnerSave = f.context.po.client.rpc('update_client_note', {
-      p_note_id: note.id,
-      p_body: 'platform owner locked save',
-    });
-
-    await lockHeld;
-    const [authorResult, platformOwnerResult] = await Promise.all([
-      authorSave,
-      platformOwnerSave,
-    ]);
-    expect(authorResult.error).toBeNull();
-    expect(platformOwnerResult.error).toBeNull();
-    const [row] = await f.db`
-      select body from public.client_notes where id = ${String(note.id)}
-    `;
-    const returnedNotes = [authorResult, platformOwnerResult].map((result) => {
-      const returned = Array.isArray(result.data)
-        ? result.data[0]
-        : result.data;
-      return returned as { body: string; edited_at: string };
-    });
-    const latestDatabaseWrite = returnedNotes.sort((a, b) =>
-      a.edited_at.localeCompare(b.edited_at),
-    )[1];
-    expect(row?.body).toBe(latestDatabaseWrite?.body);
-    const [events] = await f.db`
-      select count(*)::int as count from public.audit_events
-      where action = 'client_note.updated' and target_id = ${String(note.id)}
-    `;
-    expect(events?.count).toBe(2);
+      releaseLock();
+      await lockHeld;
+      const [authorResult, platformOwnerResult] = await Promise.all([
+        authorSave,
+        platformOwnerSave,
+      ]);
+      expect(authorResult.error).toBeNull();
+      expect(platformOwnerResult.error).toBeNull();
+      const [row] = await f.db`
+        select body from public.client_notes where id = ${String(note.id)}
+      `;
+      const [latestEvent] = await f.db`
+        select actor_user_id::text as actor_user_id
+        from public.audit_events
+        where action = 'client_note.updated' and target_id = ${String(note.id)}
+        order by id desc limit 1
+      `;
+      const latestCommittedBody =
+        latestEvent?.actor_user_id === f.context.trainerA.userId
+          ? 'author locked save'
+          : 'platform owner locked save';
+      expect(row?.body).toBe(latestCommittedBody);
+      const [events] = await f.db`
+        select count(*)::int as count from public.audit_events
+        where action = 'client_note.updated' and target_id = ${String(note.id)}
+      `;
+      expect(events?.count).toBe(2);
+    } finally {
+      releaseLock();
+      await lockHeld;
+      await observer.end();
+    }
   });
 
   it('denies unauthorized mutations without waiting for a note lock', async () => {

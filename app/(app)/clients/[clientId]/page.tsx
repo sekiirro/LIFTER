@@ -27,7 +27,7 @@ export default async function ClientDetailsPage({
   const contextResult = await session.rpc('client_notes_client_context', {
     p_client_id: clientId,
   });
-  if (contextResult.error) notFound();
+  if (contextResult.error) throw new Error('Client context unavailable');
   const clientContext = resolveStaffClientContext(
     actor,
     clientId,

@@ -784,6 +784,100 @@ describe('ClientNotes behaviour', () => {
     secondHost.remove();
   });
 
+  it.each(['unavailable', 'denied'] as const)(
+    'does not let a delayed %s from the original create replace same-key Retry recovery',
+    async (originalStatus) => {
+      let resolveOriginal: ((result: { status: string }) => void) | undefined;
+      let resolveRetry: ((result: { status: string }) => void) | undefined;
+      const originalCreate = vi.fn(
+        () =>
+          new Promise<{ status: string }>((resolve) => {
+            resolveOriginal = resolve;
+          }),
+      );
+      await render({
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [],
+        onCreate: originalCreate,
+        canCreate: true,
+        actorId: 'actor-1',
+        clientId: 'client-1',
+        workspaceId: 'workspace-1',
+      });
+      await act(async () =>
+        setValue(host!.querySelector('textarea')!, 'first'),
+      );
+      await act(async () => {
+        host!
+          .querySelector<HTMLButtonElement>('button[type="submit"]')!
+          .click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      const storageKey =
+        'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+      const originalRecord = JSON.parse(
+        dom!.window.sessionStorage.getItem(storageKey)!,
+      ) as { idempotencyKey: string };
+      const secondHost = dom!.window.document.createElement('div');
+      dom!.window.document.body.append(secondHost);
+      const { createRoot } = await import('react-dom/client');
+      const secondRoot = createRoot(secondHost);
+      await act(async () => {
+        secondRoot.render(
+          createElement(ClientNotes, {
+            locale: 'en',
+            messages: mEn,
+            status: 'ready',
+            notes: [],
+            onCreate: vi.fn(
+              () =>
+                new Promise<{ status: string }>((resolve) => {
+                  resolveRetry = resolve;
+                }),
+            ),
+            canCreate: true,
+            actorId: 'actor-1',
+            clientId: 'client-1',
+            workspaceId: 'workspace-1',
+          }),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      const retry = Array.from(secondHost.querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.retry'],
+      )!;
+      await act(async () => {
+        retry.click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      const latestRecord = JSON.parse(
+        dom!.window.sessionStorage.getItem(storageKey)!,
+      ) as { idempotencyKey: string; retrySent: boolean };
+      expect(latestRecord).toMatchObject({
+        idempotencyKey: originalRecord.idempotencyKey,
+        retrySent: true,
+      });
+
+      await act(async () => {
+        resolveOriginal?.({ status: originalStatus });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(dom!.window.sessionStorage.getItem(storageKey)).toBe(
+        JSON.stringify(latestRecord),
+      );
+
+      await act(async () => {
+        resolveRetry?.({ status: 'unavailable' });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      await act(async () => secondRoot.unmount());
+      secondHost.remove();
+    },
+  );
+
   it('keeps unresolved create recovery after the unknown-result exit discard', async () => {
     const onCreate = vi.fn(async () => ({ status: 'unavailable' }));
     await render({
@@ -1148,7 +1242,7 @@ describe('ClientNotes behaviour', () => {
       (b) => b.textContent === mEn['clientNotes.exitWarning.stay'],
     )!;
     await act(async () => stay.click());
-    expect(host!.querySelector('[role="dialog"]')).toBeNull();
+    expect(host!.querySelector('dialog')).toBeNull();
     expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
       'unsaved',
     );
@@ -1157,7 +1251,7 @@ describe('ClientNotes behaviour', () => {
       (b) => b.textContent === mEn['clientNotes.exitWarning.discard'],
     )!;
     await act(async () => discard.click());
-    expect(host!.querySelector('[role="dialog"]')).toBeNull();
+    expect(host!.querySelector('dialog')).toBeNull();
     expect(
       (host!.querySelector('textarea') as HTMLTextAreaElement)?.value ?? '',
     ).toBe('');
@@ -1282,7 +1376,7 @@ describe('ClientNotes behaviour', () => {
       (b) => b.textContent === mEn['clientNotes.exitWarning.discard'],
     )!;
     await act(async () => discard.click());
-    expect(host!.querySelector('[role="dialog"]')).toBeNull();
+    expect(host!.querySelector('dialog')).toBeNull();
     expect(onCreate).toHaveBeenCalledTimes(1);
     await act(async () => {
       resolveCreate?.({ status: 'error', error: 'boom' });
@@ -1335,6 +1429,286 @@ describe('ClientNotes behaviour', () => {
         (button) => button.textContent === mEn['clientNotes.create'],
       ),
     ).toBe(true);
+  });
+
+  it('confirms before switching away from a dirty note edit', async () => {
+    const notes = ['first', 'second'].map((body, index) => ({
+      id: `n${index + 1}`,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:1${index}:00Z`,
+      edited_at: null,
+    }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes,
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+    });
+    const editButton = (index: number) =>
+      host!.querySelectorAll('li')[index]!.querySelector('button')!;
+    const firstEdit = editButton(0);
+    await act(async () => firstEdit.click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'dirty first'),
+    );
+
+    await act(async () => editButton(1).click());
+    expect(host!.querySelector('dialog')?.textContent).toContain(
+      mEn['clientNotes.exitWarning.body'],
+    );
+    expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      'dirty first',
+    );
+    const stay = Array.from(
+      host!.querySelectorAll<HTMLButtonElement>('dialog button'),
+    ).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.stay'],
+    )!;
+    await act(async () => stay.click());
+    expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      'dirty first',
+    );
+
+    await act(async () => editButton(1).click());
+    const discard = Array.from(
+      host!.querySelectorAll<HTMLButtonElement>('dialog button'),
+    ).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
+    await act(async () => discard.click());
+    expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      'second',
+    );
+    expect(
+      host!.querySelectorAll('li')[0]!.querySelector('textarea'),
+    ).toBeNull();
+  });
+
+  it('retains the dirty edit if the requested switch target disappears', async () => {
+    const notes = ['first', 'second'].map((body, index) => ({
+      id: `n${index + 1}`,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:1${index}:00Z`,
+      edited_at: null,
+    }));
+    const props = {
+      locale: 'en' as const,
+      messages: mEn,
+      status: 'ready' as const,
+      notes,
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+    };
+    await render(props);
+    const editButton = (index: number) =>
+      host!.querySelectorAll('li')[index]!.querySelector('button')!;
+    await act(async () => editButton(0).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'keep this draft'),
+    );
+    await act(async () => editButton(1).click());
+    await act(async () =>
+      root!.render(
+        createElement(ClientNotes, { ...props, notes: [notes[0]!] }),
+      ),
+    );
+    const discard = Array.from(
+      host!.querySelectorAll<HTMLButtonElement>('dialog button'),
+    ).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
+    await act(async () => discard.click());
+    expect(host!.querySelector('dialog')).toBeNull();
+    expect(host!.querySelector('textarea')?.value).toBe('keep this draft');
+    expect(host!.querySelectorAll('li')).toHaveLength(1);
+  });
+
+  it('keeps the active edit warning ahead of pending-create recovery', async () => {
+    const storageKey =
+      'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    const record = {
+      tabId: 'tab-1',
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+      text: 'pending create',
+      body: 'pending create',
+      idempotencyKey: 'create-key',
+      retrySent: true,
+    };
+    await render(
+      {
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [
+          {
+            id: 'edit-note',
+            workspace_id: 'workspace-1',
+            client_id: 'client-1',
+            author_user_id: 'actor-1',
+            body: 'original edit',
+            created_at: '2026-11-08T10:15:00Z',
+            edited_at: null,
+          },
+        ],
+        onCreate: vi.fn(async () => ({ status: 'unavailable' })),
+        canCreate: true,
+        actorId: 'actor-1',
+        clientId: 'client-1',
+        workspaceId: 'workspace-1',
+        role: 'trainer',
+      },
+      {
+        windowName: 'lifter-client-notes-tab:v1:tab-1',
+        session: { [storageKey]: JSON.stringify(record) },
+      },
+    );
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    const edit = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.edit'],
+    )!;
+    await act(async () => edit.click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'dirty edit'),
+    );
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.cancel'],
+    )!;
+    await act(async () => cancel.click());
+    const dialog = host!.querySelector('dialog')!;
+    expect(dialog.textContent).toContain(mEn['clientNotes.exitWarning.body']);
+    expect(dialog.textContent).not.toContain(mEn['clientNotes.saveError']);
+    const discard = Array.from(dialog.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
+    await act(async () => discard.click());
+    expect(host!.querySelector('dialog')).toBeNull();
+    expect(host!.textContent).toContain(mEn['clientNotes.retry']);
+    expect(dom!.window.sessionStorage.getItem(storageKey)).toBe(
+      JSON.stringify(record),
+    );
+  });
+
+  it('preserves an unknown edit when pending-create recovery also exists', async () => {
+    const storageKey =
+      'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    const record = {
+      tabId: 'tab-1',
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+      text: 'pending create',
+      body: 'pending create',
+      idempotencyKey: 'create-key',
+      retrySent: true,
+    };
+    await render(
+      {
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [
+          {
+            id: 'edit-note',
+            workspace_id: 'workspace-1',
+            client_id: 'client-1',
+            author_user_id: 'actor-1',
+            body: 'original edit',
+            created_at: '2026-11-08T10:15:00Z',
+            edited_at: null,
+          },
+        ],
+        onCreate: vi.fn(async () => ({ status: 'unavailable' })),
+        onUpdate: vi.fn(async () => ({ status: 'unavailable' })),
+        canCreate: true,
+        actorId: 'actor-1',
+        clientId: 'client-1',
+        workspaceId: 'workspace-1',
+        role: 'trainer',
+      },
+      {
+        windowName: 'lifter-client-notes-tab:v1:tab-1',
+        session: { [storageKey]: JSON.stringify(record) },
+      },
+    );
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+    const edit = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.edit'],
+    )!;
+    await act(async () => edit.click());
+    await act(async () =>
+      setValue(host!.querySelector('li textarea')!, 'dirty edit'),
+    );
+    const save = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.saveChanges'],
+    )!;
+    await act(async () => {
+      save.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.cancel'],
+    )!;
+    await act(async () => cancel.click());
+    const discard = Array.from(
+      host!.querySelectorAll<HTMLButtonElement>('dialog button'),
+    ).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
+    await act(async () => discard.click());
+    expect(host!.querySelector('li textarea')).toBeNull();
+    expect(host!.textContent).toContain(mEn['clientNotes.retry']);
+    expect(dom!.window.sessionStorage.getItem(storageKey)).toBe(
+      JSON.stringify(record),
+    );
+  });
+
+  it('keeps delete failure visible without an open editor', async () => {
+    const note = {
+      id: 'n-delete',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'kept after denied delete',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'platform_owner',
+      actorId: 'owner',
+      canCreate: false,
+      onDelete: vi.fn(async () => ({ status: 'denied' })),
+    });
+    const deleteButton = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.delete'],
+    )!;
+    await act(async () => deleteButton.click());
+    const confirm = Array.from(
+      host!.querySelectorAll<HTMLButtonElement>('dialog button'),
+    ).find(
+      (button) => button.textContent === mEn['clientNotes.deleteDialogConfirm'],
+    )!;
+    await act(async () => {
+      confirm.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
+    expect(host!.querySelector('[role="alert"]')).not.toBeNull();
   });
 
   it('disables the closed-editor Retry while its request is in flight', async () => {
@@ -1536,13 +1910,13 @@ describe('ClientNotes behaviour', () => {
       (b) => b.textContent === mEn['clientNotes.exitWarning.stay'],
     )!;
     await act(async () => stay.click());
-    expect(host!.querySelector('[role="dialog"]')).toBeNull();
+    expect(host!.querySelector('dialog')).toBeNull();
     await act(async () => cancel.click());
     const discard = Array.from(host!.querySelectorAll('button')).find(
       (b) => b.textContent === mEn['clientNotes.exitWarning.discard'],
     )!;
     await act(async () => discard.click());
-    expect(host!.querySelector('[role="dialog"]')).toBeNull();
+    expect(host!.querySelector('dialog')).toBeNull();
   });
 
   it('edit editor: in-flight leaving shows row 34 and Discard does not cancel save', async () => {
@@ -1599,7 +1973,7 @@ describe('ClientNotes behaviour', () => {
       (b) => b.textContent === mEn['clientNotes.exitWarning.discard'],
     )!;
     await act(async () => discard.click());
-    expect(host!.querySelector('[role="dialog"]')).toBeNull();
+    expect(host!.querySelector('dialog')).toBeNull();
     expect(onUpdate).toHaveBeenCalledTimes(1);
     await act(async () => {
       resolveUpdate?.({ status: 'error', error: 'boom' });

@@ -78,6 +78,26 @@ type PendingCreate = {
   retrySent: boolean;
 };
 
+const createRequestSequences = new Map<string, number>();
+let nextCreateRequestSequence = 0;
+
+function pendingCreateIdentity(record: PendingCreate) {
+  return `${record.tabId}:${record.actorId}:${record.workspaceId}:${record.clientId}`;
+}
+
+function samePendingCreate(left: PendingCreate, right: PendingCreate) {
+  return (
+    left.tabId === right.tabId &&
+    left.actorId === right.actorId &&
+    left.clientId === right.clientId &&
+    left.workspaceId === right.workspaceId &&
+    left.text === right.text &&
+    left.body === right.body &&
+    left.idempotencyKey === right.idempotencyKey &&
+    left.retrySent === right.retrySent
+  );
+}
+
 function pendingStorageKey(workspaceId: string, clientId: string) {
   return `${PENDING_CREATE_PREFIX}${workspaceId}:${clientId}`;
 }
@@ -150,6 +170,8 @@ export function ClientNotes(props: ClientNotesProps) {
   const [editDraft, setEditDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const createRequestSequence = useRef(0);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [unknownCreate, setUnknownCreate] = useState(false);
   const [unknownEdit, setUnknownEdit] = useState(false);
@@ -173,6 +195,9 @@ export function ClientNotes(props: ClientNotesProps) {
   const [exitOpen, setExitOpen] = useState(false);
   const [exitMode, setExitMode] = useState<'unsaved' | 'inflight' | 'unknown'>(
     'unsaved',
+  );
+  const [switchEditTargetId, setSwitchEditTargetId] = useState<string | null>(
+    null,
   );
 
   const loadMore = async () => {
@@ -222,16 +247,13 @@ export function ClientNotes(props: ClientNotesProps) {
       : null;
 
   const removePendingCreate = useCallback(
-    (expectedKey: string) => {
+    (expected: PendingCreate) => {
       if (!storageKey || !storageAvailable.current) return;
       try {
         const raw = window.sessionStorage.getItem(storageKey);
-        if (
-          raw &&
-          (JSON.parse(raw) as Partial<PendingCreate>).idempotencyKey !==
-            expectedKey
-        )
-          return;
+        if (!raw) return;
+        const current = JSON.parse(raw) as PendingCreate;
+        if (!samePendingCreate(current, expected)) return;
         window.sessionStorage.removeItem(storageKey);
       } catch {
         storageAvailable.current = false;
@@ -400,15 +422,21 @@ export function ClientNotes(props: ClientNotesProps) {
         idempotencyKey: key,
         retrySent: retryingUnknown ? true : (pendingCreate?.retrySent ?? false),
       };
+      const requestIdentity = pendingCreateIdentity(record);
+      const requestSequence = ++nextCreateRequestSequence;
+      createRequestSequences.set(requestIdentity, requestSequence);
+      const localSequence = ++createRequestSequence.current;
       // Persist before dispatch so a same-tab reload can reconcile an unknown result.
       writePendingCreate(record);
       setSaving(true);
       setSaveError(null);
       try {
         const res = await props.onCreate?.(body, key);
+        if (createRequestSequences.get(requestIdentity) !== requestSequence)
+          return;
         if (res?.status === 'ok') {
           props.onSuccess?.('created');
-          removePendingCreate(key);
+          removePendingCreate(record);
           setDraft('');
           setIdempotencyKey(null);
           setPendingCreate(null);
@@ -420,7 +448,7 @@ export function ClientNotes(props: ClientNotesProps) {
               : m['clientNotes.saveError'],
           );
           if (res?.status === 'not_found' && retryingUnknown) {
-            removePendingCreate(key);
+            removePendingCreate(record);
             setIdempotencyKey(null);
             setPendingCreate(null);
             setUnknownCreate(false);
@@ -437,18 +465,22 @@ export function ClientNotes(props: ClientNotesProps) {
             if (!retryingUnknown) writePendingCreate(record);
           } else {
             // A definite refusal before any retry resolves this create attempt.
-            removePendingCreate(key);
+            removePendingCreate(record);
             setIdempotencyKey(null);
             setPendingCreate(null);
             setUnknownCreate(false);
           }
         }
       } catch {
-        setSaveError(m['clientNotes.saveError']);
-        setUnknownCreate(true);
-        setPendingCreate(record);
+        if (createRequestSequences.get(requestIdentity) === requestSequence) {
+          setSaveError(m['clientNotes.saveError']);
+          setUnknownCreate(true);
+          setPendingCreate(record);
+        }
       } finally {
-        setSaving(false);
+        if (createRequestSequence.current === localSequence) setSaving(false);
+        if (createRequestSequences.get(requestIdentity) === requestSequence)
+          createRequestSequences.delete(requestIdentity);
       }
     },
     [
@@ -514,25 +546,37 @@ export function ClientNotes(props: ClientNotesProps) {
   const handleDelete = useCallback(
     async (noteId: string) => {
       setDeleteTargetId(null);
+      setDeleteError(null);
       try {
         const res = await props.onDelete?.(noteId);
         if (res?.status === 'ok') {
           props.onSuccess?.('deleted');
         } else {
-          setSaveError(
+          setDeleteError(
             res?.status === 'denied'
               ? m['clientNotes.permissionRefused']
               : m['clientNotes.deleteError'],
           );
         }
       } catch {
-        setSaveError(m['clientNotes.deleteError']);
+        setDeleteError(m['clientNotes.deleteError']);
       }
     },
     [props, m],
   );
 
   const startEdit = (note: ClientNote) => {
+    if (
+      editingId &&
+      editingId !== note.id &&
+      (saving || unknownEdit || editDraft !== editedNote?.body)
+    ) {
+      setSwitchEditTargetId(note.id);
+      setExitMode(saving ? 'inflight' : unknownEdit ? 'unknown' : 'unsaved');
+      setExitOpen(true);
+      return;
+    }
+    setSwitchEditTargetId(null);
     setEditingId(note.id);
     setEditDraft(note.body);
     setSaveError(null);
@@ -557,7 +601,21 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const confirmDiscard = () => {
     setExitOpen(false);
-    if (exitMode === 'unknown' && pendingCreate) {
+    if (editingId && switchEditTargetId) {
+      const target = notes.find((note) => note.id === switchEditTargetId);
+      if (!target) {
+        setSwitchEditTargetId(null);
+        return;
+      }
+      if (unknownEdit) setPendingEdit({ noteId: editingId, body: editDraft });
+      setSwitchEditTargetId(null);
+      setEditingId(target.id);
+      setEditDraft(target.body);
+      setUnknownEdit(false);
+      setSaveError(null);
+      return;
+    }
+    if (exitMode === 'unknown' && !editingId && pendingCreate) {
       setCreateEditorClosed(true);
       return;
     }
@@ -579,7 +637,10 @@ export function ClientNotes(props: ClientNotesProps) {
     }
   };
 
-  const stay = () => setExitOpen(false);
+  const stay = () => {
+    setExitOpen(false);
+    setSwitchEditTargetId(null);
+  };
 
   const cancelCreate = () => {
     if (saving) {
@@ -630,6 +691,8 @@ export function ClientNotes(props: ClientNotesProps) {
           </Button>
         </Alert>
       )}
+
+      {deleteError && <Alert tone="error" title={deleteError} />}
 
       {status === 'ready' && (
         <>
