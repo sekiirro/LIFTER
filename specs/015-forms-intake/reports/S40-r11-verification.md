@@ -9,8 +9,8 @@ Date: 2026-11-09. Scope: PR #57, existing approved F15 behavior, PDN-S40-03=A. N
 
 ## Migration order and replay
 
-- Minimal below-main prefix from `C:/Users/NEW LAP/.lifter/runs/s40-luna-f15-r11/prefix-closure.md`: `20261104002000_f15_terms_consent.sql`, `20261104003000_f15_s14_forms.sql`, `20261104004000_f15_s14_privacy.sql`, `20261104005000_f15_auth_identity_collisions_and_reader_policies.sql`.
-- All other F15 migrations remain renamed above main in original relative order. One new forward migration: `20261108230111_f15_signup_main_reconciliation.sql`.
+- Minimal below-main prefix from `C:/Users/NEW LAP/.lifter/runs/s40-luna-f15-r11/prefix-closure.md`: `20261112020000_f15_terms_consent.sql`, `20261112020100_f15_s14_forms.sql`, `20261112020200_f15_s14_privacy.sql`, `20261112020300_f15_auth_identity_collisions_and_reader_policies.sql`.
+- All other F15 migrations remain renamed above main in original relative order. One new forward migration: `20261112031000_f15_signup_main_reconciliation.sql`.
 - Clean Stack D full reset passed. The authorized Stack D migration directory was restored byte-identically (87/87 files). StartedAt advanced from `2026-11-09T12:09:31.551905151Z` to `2026-11-09T12:23:41.514538489Z`; logs and manifests are in the run directory.
 - Pushed migration content is unchanged versus base `8fcb2e82170c739c2cbd69ca2c3df7c379b0cddf`: 70/70 blob hashes match the round-10 rename map.
 
@@ -20,7 +20,7 @@ Date: 2026-11-09. Scope: PR #57, existing approved F15 behavior, PDN-S40-03=A. N
 - Executed security mutation proof: the SECURITY DEFINER catalog invariant killed a SECURITY INVOKER mutant; the scoped audit RLS catalog invariant killed removal of `audit_events_select_scoped`; rollback restored the function MD5 and policy row; `RESTORE_DIFF_EXIT=0`. Evidence: `C:/Users/NEW LAP/.lifter/runs/s40-luna-f15-r11/security-mutation-proof.mjs`.
 - Local gates: `npm run typecheck`, `npm run lint`, `npm run format:check`, and `npm run test:unit` passed; unit result 203 files / 2,509 tests.
 - `npm run check:migration-timestamps` passed on 187 files with 11 documented exceptions.
-- Gate-check result is pending and must use `--allow-shared-below-main 20261104002000_f15_terms_consent.sql,20261104003000_f15_s14_forms.sql,20261104004000_f15_s14_privacy.sql,20261104005000_f15_auth_identity_collisions_and_reader_policies.sql`.
+- Gate-check result is pending and must use `--allow-shared-below-main 20261112020000_f15_terms_consent.sql,20261112020100_f15_s14_forms.sql,20261112020200_f15_s14_privacy.sql,20261112020300_f15_auth_identity_collisions_and_reader_policies.sql`.
 
 ## CI and review
 

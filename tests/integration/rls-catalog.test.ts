@@ -291,7 +291,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_client_alert_lifecycle_active',
           'archive_f15_selection_update',
           ...(existsSync(
-            'supabase/migrations/20261108230111_f15_signup_main_reconciliation.sql',
+            'supabase/migrations/20261112031000_f15_signup_main_reconciliation.sql',
           )
             ? ['f15_valid_slider_label']
             : []),
@@ -347,7 +347,7 @@ describe('tenancy security catalog (T007)', () => {
           'audit_events_immutable',
           'f15_answer_is_present',
           // FR-008's snapshot validator is intentionally pure, immutable, and invoker-mode.
-          // See 20261111024828_f15_direct_rpc_answer_validation.sql:3-108.
+          // See 20261112031600_f15_direct_rpc_answer_validation.sql:3-108.
           'f15_answer_values_valid',
           'f15_question_applies',
           'f15_submission_complete',
@@ -1182,7 +1182,7 @@ describe('registration security catalog', () => {
       'app_private.f15_cancel_client_alerts_after_relationship_end()',
       'app_private.f15_client_alert_lifecycle_active(uuid,uuid)',
       ...(existsSync(
-        'supabase/migrations/20261108230111_f15_signup_main_reconciliation.sql',
+        'supabase/migrations/20261112031000_f15_signup_main_reconciliation.sql',
       )
         ? ['app_private.f15_valid_slider_label(jsonb)']
         : []),

@@ -56,8 +56,8 @@
 
 ## Forward migrations
 
-- `20261108230050_f15_review_fixes.sql` — first-save, validator parity, recurrence checks and assignment reconciliation.
-- `20261108230051_f15_approval_assignment_facts_fix.sql` — forward correction for PL/pgSQL name ambiguity found by Stack D test.
+- `20261112024900_f15_review_fixes.sql` — first-save, validator parity, recurrence checks and assignment reconciliation.
+- `20261112025000_f15_approval_assignment_facts_fix.sql` — forward correction for PL/pgSQL name ambiguity found by Stack D test.
 - Remote scan: `git ls-remote --heads origin` enumerated 76 refs; highest existing remote version is `20261107005000`; both new versions are greater and absent on all origin refs. `git log --all -- supabase/migrations` reviewed. Migration timestamp checker: 163 migrations, 11 documented merged exceptions.
 - Both migrations applied to Stack D through the approved Node launcher. No pushed migration was edited.
 

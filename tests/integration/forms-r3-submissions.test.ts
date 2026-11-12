@@ -267,7 +267,7 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
         tx.savepoint(async (sp) => {
           await sp`reset role`;
           const [definitionRow] = await sp`
-            select pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as body
+            select pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)'::regprocedure) as body
           `;
           const mutatedDefinition = (definitionRow?.body as string).replace(
             '  return response;',

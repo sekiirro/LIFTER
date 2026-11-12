@@ -16,7 +16,7 @@ const CORE = 'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)';
 const IMMUTABLE = 'app_private.f15_alert_schedule_immutable()';
 const rollback = new Error('rollback F15 alert mutation fixture');
 const migrationPath = new URL(
-  '../../supabase/migrations/20261108230029_f15_alert_schedules.sql',
+  '../../supabase/migrations/20261112022800_f15_alert_schedules.sql',
   import.meta.url,
 );
 

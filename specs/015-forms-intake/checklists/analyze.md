@@ -113,7 +113,7 @@ This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `s
 
 ## S36 T136 CI remediation analysis - 2026-11-06
 
-The existing drift guard maps the localized starter-label migration on B first and falls back on A to `20261108230018_f15_default_provisioning_configuration.sql`, the latest migration on A that defines `app_private.ensure_default_onboarding_form`. The ordered mapping is test-harness-only within FR-024/025; no product behavior, policy, SQL migration, or security assertion changes. **CRITICAL: 0. HIGH: 0. No open ambiguities for this task.**
+The existing drift guard maps the localized starter-label migration on B first and falls back on A to `20261112021700_f15_default_provisioning_configuration.sql`, the latest migration on A that defines `app_private.ensure_default_onboarding_form`. The ordered mapping is test-harness-only within FR-024/025; no product behavior, policy, SQL migration, or security assertion changes. **CRITICAL: 0. HIGH: 0. No open ambiguities for this task.**
 
 ## S36 N11 and ALERTS clarification analysis - 2026-11-06
 
@@ -251,7 +251,7 @@ Revalidated T144's traceability after the final Stack A run: the direct correcti
 - Unknown result/retry: same intent and same canonical request returns stored response; changed request under same intent remains conflict per existing RPC behavior.
 - Delete/removal: only explicit remove IDs alter answers; absent ID is a no-op; present inapplicable values are removed; required applicable values reject the whole request before writes.
 - Shape/security: array/string/unique/count/ID/snapshot checks and full 262,144-byte canonical request cap happen in both TS and RPC before writes. Existing authorization, audit atomicity, function owner/grants and empty search_path remain required.
-- No-change: inspected existing migration `20261111061000_f15_correction_required_answer_guard.sql`; it appends a revision, correction, intent and audit for accepted no-value-change requests. Preserve that defined behavior.
+- No-change: inspected existing migration `20261112031700_f15_correction_required_answer_guard.sql`; it appends a revision, correction, intent and audit for accepted no-value-change requests. Preserve that defined behavior.
 - Data retention/deletion: explicit correction removal is revisioned and audited; it does not change D1 erasure scope or retention rules.
 - Cross references: FR-013 -> SC-029 -> T145-T150; T149 owns deferred UI/copy approval. Removal rules are also reflected in API, audit and correction matrix contracts.
 - Copy and permissions: no user-visible copy or new permission is introduced.
@@ -259,3 +259,9 @@ Revalidated T144's traceability after the final Stack A run: the direct correcti
 **CRITICAL findings: 0. HIGH findings: 0.**
 
 **Result: PASS for T145-T150.** Re-run Analyze after any later change to spec, plan, or tasks before acceptance.
+
+## S50 migration-order and final scope analysis refresh — 2026-11-12 08:35 Africa/Cairo
+
+The 78 added migrations are now renamed after `origin/main` in their previous relative order, with all repository references updated and timestamp validation passing. The S50 correction behavior remains fully specified and cross-referenced to FR-013/SC-029/T145-T150; no copy or permissions were introduced. A clean Stack A replay exposed an existing-main function collision before the new correction migration can run; the exact finding and required PO/architect decision are recorded as PDN-S50-MIG-REPLAY-1 in the lane report. This is an implementation/replay blocker, not an unresolved behavior in the removal specification. **CRITICAL findings: 0. HIGH findings: 0.**
+
+**Result: PASS for the specified behavior and migration ordering; implementation acceptance remains blocked by PDN-S50-MIG-REPLAY-1.**

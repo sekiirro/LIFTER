@@ -24,7 +24,7 @@ it('backfills retention facts from matching historical refund operations', async
 
   const migration = readFileSync(
     new URL(
-      '../../supabase/migrations/20261109220000_f15_review16_followup.sql',
+      '../../supabase/migrations/20261112031400_f15_review16_followup.sql',
       import.meta.url,
     ),
     'utf8',

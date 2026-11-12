@@ -44,7 +44,7 @@ it('T080 pins the SQL RPC normalization and allow-list against a synthetic mutat
   const migration = readFileSync(
     resolve(
       process.cwd(),
-      'supabase/migrations/20261108230100_f15_signup_username_character_policy.sql',
+      'supabase/migrations/20261112025900_f15_signup_username_character_policy.sql',
     ),
     'utf8',
   );

@@ -4,7 +4,7 @@ Scope: the four open PR #57 findings approved by S40-R17, tracked as T140. No UI
 
 ## Stack D
 
-- Clean reset and replay applied `20261109151500_f15_client_late_owner_notices.sql` and `20261109151501_f15_prewrite_answer_bounds.sql` successfully.
+- Clean reset and replay applied `20261112031100_f15_client_late_owner_notices.sql` and `20261112031200_f15_prewrite_answer_bounds.sql` successfully.
 - The four touched integration files passed on Stack D: `forms-alerts.test.ts`, `forms-alert-mutations.test.ts`, `forms-r3-corrections.test.ts`, and `forms-r3-drafts.test.ts` (14/14 tests).
 - The alert mutation test killed the delayed-owner-stage mutant. Correction and draft RPC tests changed each function to SECURITY INVOKER in a savepoint; the catalog `prosecdef` invariant killed each mutant, rollback restored the original `pg_get_functiondef`, and both functions remained SECURITY DEFINER.
 - Direct RPC tests reject over-charLimit and over-4-KiB answer writes before revision insertion, and reject invalid N08 budget/food combinations before draft writes. Existing D-03 Trainer-late tests passed in the same run.

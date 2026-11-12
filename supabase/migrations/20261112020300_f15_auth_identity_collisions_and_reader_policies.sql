@@ -2,7 +2,7 @@
 
 -- Recognize only unique indexes on Auth identity columns. Older GoTrue releases
 -- used a users_email_key constraint; newer releases use a partial email index.
-create function app_private.signup_auth_identity_column(p_schema text, p_table text, p_index_name text)
+create or replace function app_private.signup_auth_identity_column(p_schema text, p_table text, p_index_name text)
 returns text
 language sql stable security definer set search_path = '' as $$
   select coalesce(

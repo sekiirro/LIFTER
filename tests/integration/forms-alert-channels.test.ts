@@ -247,7 +247,7 @@ it('keeps the F15 alert scheduler disabled after migration replay', async () => 
   );
   expect(migrationFiles.length).toBeGreaterThan(0);
   expect(migrationFiles.map((path) => basename(path))).toContain(
-    '20261109151501_f15_prewrite_answer_bounds.sql',
+    '20261112031200_f15_prewrite_answer_bounds.sql',
   );
   const migrations = migrationFiles.map((path) => readFileSync(path, 'utf8'));
   const assertNoActivation = (sources: string[]) => {
