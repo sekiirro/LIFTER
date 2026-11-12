@@ -92,3 +92,5 @@ Tasks remain unchecked until tests and exact-head GitHub gate evidence are recor
 - [ ] T032 [FR-030] Run gate-check on final exact head; record expected gate e failure. Do not merge.
 
 > NOTE (s47 fix): the `T025 [FR-009]` reconciliation task above was renumbered to `T033 [FR-009]` (unused id) to resolve the duplicate with `T025 [FR-027, SC-016]`; the s46 verbatim-merge note above is retained as history.
+
+- [ ] T034 [FR-009] CI-1: pull Supabase images from GHCR (S50-PO-6 CI=A; S51-R9): add SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io to both Supabase-starting job env blocks; keep -x inbucket (mailpit runs; S51-R9 reversal). Evidence pending greens on PR #92.
