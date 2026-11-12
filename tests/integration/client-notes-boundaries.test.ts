@@ -50,6 +50,10 @@ describe('F20 T004 client note mutation boundaries', () => {
       body: 'existence must stay private',
     });
     const absentId = randomUUID();
+    const [eventsBefore] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where target_table = 'client_notes'
+    `;
 
     const updateErrors = await Promise.all(
       [note.id, absentId].map(async (noteId) => {
@@ -81,6 +85,99 @@ describe('F20 T004 client note mutation boundaries', () => {
     ]);
     expect(deleteErrors[0]?.message).toBe(deleteErrors[1]?.message);
     expect(deleteErrors[0]?.message).toBe('client note delete denied');
+    const [eventsAfter] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where target_table = 'client_notes'
+    `;
+    expect(eventsAfter?.count).toBe(eventsBefore?.count);
+  });
+
+  it('rolls back create, edit, and delete when the audit insert fails', async () => {
+    const note = await f.createAsTrainer({ body: 'before audit failure' });
+    const noteCountBefore = await f.countNotes();
+    const [eventCountBefore] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where target_table = 'client_notes'
+    `;
+    await f.db`
+      create or replace function app_private.client_note_test_reject_audit_insert()
+      returns trigger language plpgsql set search_path = '' as $$
+      begin
+        if new.target_table = 'client_notes' then
+          raise exception 'synthetic audit insert failure' using errcode = '23514';
+        end if;
+        return new;
+      end;
+      $$
+    `;
+    await f.db`
+      create trigger client_note_test_reject_audit_insert
+      before insert on public.audit_events
+      for each row execute function app_private.client_note_test_reject_audit_insert()
+    `;
+    try {
+      const rejectedCreate = await f.context.trainerA.client.rpc(
+        'create_client_note',
+        {
+          p_workspace_id: f.workspaceId,
+          p_client_id: f.clientId,
+          p_body: 'create rolls back',
+          p_idempotency_key: f.key(),
+        },
+      );
+      expect(rejectedCreate.error).not.toBeNull();
+
+      const rejectedEdit = await f.context.trainerA.client.rpc(
+        'update_client_note',
+        { p_note_id: note.id, p_body: 'edit rolls back' },
+      );
+      expect(rejectedEdit.error).not.toBeNull();
+
+      const rejectedDelete = await f.context.po.client.rpc(
+        'delete_client_note',
+        { p_note_id: note.id },
+      );
+      expect(rejectedDelete.error).not.toBeNull();
+    } finally {
+      await f.db`drop trigger if exists client_note_test_reject_audit_insert on public.audit_events`;
+      await f.db`drop function if exists app_private.client_note_test_reject_audit_insert()`;
+    }
+
+    const [row] = await f.db`
+      select body from public.client_notes where id = ${String(note.id)}
+    `;
+    expect(row?.body).toBe('before audit failure');
+    const [eventsAfter] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where target_table = 'client_notes'
+    `;
+    expect(eventsAfter?.count).toBe(eventCountBefore?.count);
+    expect(await f.countNotes()).toBe(noteCountBefore);
+  });
+
+  it('uses the existing immutable audit table without note retention objects', async () => {
+    const [objects] = await f.db`
+      select
+        to_regclass('public.audit_events')::text as audit_table,
+        exists (
+          select 1 from pg_catalog.pg_trigger
+          where tgrelid = 'public.audit_events'::regclass
+            and tgname = 'audit_events_immutable'
+            and not tgisinternal
+        ) as immutable,
+        exists (
+          select 1 from pg_catalog.pg_class c
+          join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+          where n.nspname in ('public', 'app_private')
+            and c.relkind in ('r', 'p')
+            and c.relname ~* 'client_note.*(retention|purge)|(retention|purge).*client_note'
+        ) as note_retention_object
+    `;
+    expect(objects).toMatchObject({
+      audit_table: 'audit_events',
+      immutable: true,
+      note_retention_object: false,
+    });
   });
 
   it('lets an authorized note author edit in place and writes metadata-only audit', async () => {
@@ -113,6 +210,11 @@ describe('F20 T004 client note mutation boundaries', () => {
     expect(normalizeTimestamp(String(creationTimestamp?.saved ?? ''))).toBe(
       normalizeTimestamp(String(creationTimestamp?.returned ?? '')),
     );
+    const [editEventCount] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where action = 'client_note.updated' and target_id = ${String(note.id)}
+    `;
+    expect(editEventCount?.count).toBe(1);
     const [event] = await f.db`
       select actor_user_id, action, target_table, target_id, workspace_id, details
       from public.audit_events
@@ -221,6 +323,11 @@ describe('F20 T004 client note mutation boundaries', () => {
       from public.audit_events
       where action = 'client_note.deleted' and target_id = ${String(note.id)}
     `;
+    const [deleteEventCount] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where action = 'client_note.deleted' and target_id = ${String(note.id)}
+    `;
+    expect(deleteEventCount?.count).toBe(1);
     expect(event).toMatchObject({
       actor_user_id: f.context.po.userId,
       action: 'client_note.deleted',
