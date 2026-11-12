@@ -981,7 +981,13 @@ A hostile pass found that a pending next-page response could append results afte
 ## S51-R35 continuation analysis — 2026-11-12 22:34 +02:00
 
 - Entry: PASS. spec.md FR-018 and its workspace-customization requirements remain applicable; plan.md covers the workspace override write/read path; PO decision register contains the prior approved clear-to-canonical behavior. T093 is assigned to FR-018.
-- ID sweep: T093 is unique and maps only to FR-018; the task inventory now contains 95 rows. Traceability will cite the final implementation commit and boundary/auth tests after final verification.
+- ID sweep: T093 is unique and maps only to FR-018; the task inventory contains 95 rows. Traceability cites implementation commit cf8126ea and the boundary/auth tests below.
 - Scope: preserve explicit blank Notes/Video resets through the variation action and load the existing workspace-authorized override version when the selected exercise is absent from the video/notes projection. This implements the S51-R35 review mapping and existing FR/PO decisions; it adds no new permission, copy, or product behavior.
 - Authorization: the fallback calls the existing scoped exerciseOverrideVersion server method; denial is propagated. It does not change the workspace check or SQL grants. The existing writer CAS continues to serialize concurrent first writes.
 - Ambiguities: none open for T093. No requirement text changed. Analyze has 0 open CRITICAL and 0 open HIGH findings.
+
+## S51-R35 final revalidation - 2026-11-12 22:55 +02:00
+
+- T093 is checked only after the 64-test focused unit suite and the full 36-file catalog integration batch passed on commit cf8126ea. Traceability maps FR-018 to T093 and names the RED/GREEN/mutation, authorized hidden-revision read, and concurrent-first-save regression tests.
+- Cross-reference sweep: T093 exists in tasks.md, maps to FR-018, and has a verified traceability row; spec/plan requirement text is unchanged. No new PO decision, user-visible copy, permission, or retention rule was introduced. No open ambiguities; 0 open CRITICAL and 0 open HIGH findings.
+- Format and full local gates will be re-run after final documentation formatting. The full repository integration attempt has an environment setup blocker for SIGNUP_* provisioning; all F16 catalog integration files passed separately.

@@ -175,7 +175,11 @@ describe('catalog server authorization and RPC boundary', () => {
   });
 
   it('reads only an authorized workspace override version', async () => {
-    currentActor = { userId: 'trainer', role: 'trainer', activeWorkspaceIds: [] };
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [],
+    };
     expect(
       await catalog().exerciseOverrideVersion({
         workspaceId: ws,

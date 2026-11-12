@@ -52,10 +52,14 @@ describe('catalog variation actions', () => {
 
   it.each([
     ['', 'Local note', { video_url: null, note: 'Local note' }],
-    ['https://youtu.be/abcdefghijk', '   ', {
-      video_url: 'https://youtu.be/abcdefghijk',
-      note: null,
-    }],
+    [
+      'https://youtu.be/abcdefghijk',
+      '   ',
+      {
+        video_url: 'https://youtu.be/abcdefghijk',
+        note: null,
+      },
+    ],
   ])(
     'sends an explicitly blank variation field as a reset at the action boundary',
     async (videoUrl, note, request) => {
