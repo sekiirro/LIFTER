@@ -18,6 +18,7 @@ const request = {
 };
 const receipt = {
   operation_id: key,
+  renewal_id: 'abcdefab-cdef-4abc-8def-abcdefabcdc8',
   workspace_id: ws,
   client_id: client,
   predecessor_subscription_id: predecessor,
@@ -161,6 +162,18 @@ describe('recordRenewal', () => {
   it('does not return a receipt that disagrees with the requested client, purchase or recording dates', async () => {
     const rpc = vi.fn(async () => ({
       data: { status: 'ok', receipt: { ...receipt, client_id: predecessor } },
+      error: null,
+    }));
+    const result = await recordRenewal(request, {
+      actor: { userId: 'po-1', role: 'platform_owner', activeWorkspaceIds: [] },
+      client: { rpc },
+    });
+    expect(result).toEqual({ status: 'unavailable' });
+  });
+
+  it('rejects a successful renewal receipt with a malformed renewal id', async () => {
+    const rpc = vi.fn(async () => ({
+      data: { status: 'ok', receipt: { ...receipt, renewal_id: 'invalid' } },
       error: null,
     }));
     const result = await recordRenewal(request, {

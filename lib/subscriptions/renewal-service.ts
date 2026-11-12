@@ -25,6 +25,7 @@ export type RenewalRpcClient = {
 
 export type RenewalReceipt = {
   operation_id: string;
+  renewal_id: string;
   workspace_id: string;
   client_id: string;
   predecessor_subscription_id: string;
@@ -54,6 +55,7 @@ const MINOR_UNITS = /^[1-9][0-9]{0,17}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RECEIPT_KEYS = [
   'operation_id',
+  'renewal_id',
   'workspace_id',
   'client_id',
   'predecessor_subscription_id',
@@ -111,6 +113,8 @@ function safeReceipt(value: unknown): RenewalReceipt | null {
   if (
     typeof value.operation_id !== 'string' ||
     !UUID.test(value.operation_id) ||
+    typeof value.renewal_id !== 'string' ||
+    !UUID.test(value.renewal_id) ||
     typeof value.workspace_id !== 'string' ||
     !UUID.test(value.workspace_id) ||
     typeof value.client_id !== 'string' ||
