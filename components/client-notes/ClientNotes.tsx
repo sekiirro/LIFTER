@@ -4,10 +4,12 @@ import { useCallback, useState, type FormEvent } from 'react';
 import { Alert } from '../ui/Alert';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { getMessages } from '../../lib/i18n';
 import type { Locale } from '../../lib/design/preferences';
 import { dirFor } from '../../lib/design/preferences';
 import { normalizeClientNoteBody } from '../../lib/client-notes/validation';
+import styles from './ClientNotes.module.css';
 
 export type ClientNote = {
   id: string;
@@ -39,14 +41,16 @@ export type ClientNotesProps = {
     noteId: string,
     body: string,
   ) => Promise<{ status: string; note?: ClientNote; error?: string }>;
-  onDelete?: (
-    noteId: string,
-  ) => Promise<{ status: string; error?: string }>;
+  onDelete?: (noteId: string) => Promise<{ status: string; error?: string }>;
 };
 
 const PLATFORM_OWNER = 'platform_owner';
 
-function canEditNote(note: ClientNote, actorId: string | null, role: string | null) {
+function canEditNote(
+  note: ClientNote,
+  actorId: string | null,
+  role: string | null,
+) {
   if (role === PLATFORM_OWNER) return true;
   return !!actorId && note.author_user_id === actorId;
 }
@@ -56,7 +60,10 @@ function canDeleteNote(_note: ClientNote, role: string | null) {
 }
 
 function newIdempotencyKey() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
     return crypto.randomUUID();
   }
   return `cn-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -78,6 +85,7 @@ export function ClientNotes(props: ClientNotesProps) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [exitOpen, setExitOpen] = useState(false);
   const [exitMode, setExitMode] = useState<'unsaved' | 'inflight' | 'unknown'>(
     'unsaved',
@@ -88,14 +96,17 @@ export function ClientNotes(props: ClientNotesProps) {
   const formatTimestamp = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString(locale === 'ar' ? 'ar-u-nu-latn' : 'en-u-nu-latn', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    return date.toLocaleString(
+      locale === 'ar' ? 'ar-u-nu-latn' : 'en-u-nu-latn',
+      {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      },
+    );
   };
 
   const handleCreate = useCallback(
@@ -103,7 +114,8 @@ export function ClientNotes(props: ClientNotesProps) {
       e?.preventDefault();
       const body = normalizeClientNoteBody(draft);
       if (body === null) {
-        if (draft.trim().length === 0) setSaveError(m['clientNotes.blankError']);
+        if (draft.trim().length === 0)
+          setSaveError(m['clientNotes.blankError']);
         else setSaveError(m['clientNotes.tooLongError']);
         return;
       }
@@ -132,7 +144,8 @@ export function ClientNotes(props: ClientNotesProps) {
     async (noteId: string) => {
       const body = normalizeClientNoteBody(editDraft);
       if (body === null) {
-        if (editDraft.trim().length === 0) setSaveError(m['clientNotes.blankError']);
+        if (editDraft.trim().length === 0)
+          setSaveError(m['clientNotes.blankError']);
         else setSaveError(m['clientNotes.tooLongError']);
         return;
       }
@@ -157,7 +170,7 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const handleDelete = useCallback(
     async (noteId: string) => {
-      if (!window.confirm(m['clientNotes.deleteDialogBody'])) return;
+      setDeleteTargetId(null);
       try {
         const res = await props.onDelete?.(noteId);
         if (res?.status !== 'ok') {
@@ -220,16 +233,19 @@ export function ClientNotes(props: ClientNotesProps) {
   };
 
   const counterText = (value: string) =>
-    m['clientNotes.charCounter'].replace('{count}', String(Array.from(value).length));
+    m['clientNotes.charCounter'].replace(
+      '{count}',
+      String(Array.from(value).length),
+    );
 
   return (
     <section
-      className={''}
+      className={styles.root}
       dir={dir}
       lang={locale === 'ar' ? 'ar' : 'en'}
       data-testid="client-notes"
     >
-      <h2 className={''}>{m['clientNotes.tab']}</h2>
+      <h2 className={styles.title}>{m['clientNotes.tab']}</h2>
 
       {status === 'loading' && (
         <p role="status" aria-live="polite">
@@ -248,23 +264,27 @@ export function ClientNotes(props: ClientNotesProps) {
       {status === 'ready' && (
         <>
           {notes.length === 0 && (
-            <p className={''}>{m['clientNotes.empty']}</p>
+            <p className={styles.empty}>{m['clientNotes.empty']}</p>
           )}
 
           {notes.length > 0 && (
-            <ul className={''}>
+            <ul className={styles.list}>
               {notes.map((note) => {
                 const editing = editingId === note.id;
                 const authorLabel = note.author_user_id
                   ? note.author_user_id
                   : m['clientNotes.unavailableAuthor'];
                 return (
-                  <li key={note.id} className={''}>
-                    <div className={''}>
-                      <Bidi>{m['clientNotes.byline'].replace('{author}', authorLabel).replace('{time}', formatTimestamp(note.created_at))}</Bidi>
+                  <li key={note.id} className={styles.note}>
+                    <div className={styles.metadata}>
+                      <Bidi>
+                        {m['clientNotes.byline']
+                          .replace('{author}', authorLabel)
+                          .replace('{time}', formatTimestamp(note.created_at))}
+                      </Bidi>
                     </div>
                     {note.edited_at && (
-                      <div className={''}>
+                      <div className={styles.metadata}>
                         {m['clientNotes.editedMarker'].replace(
                           '{time}',
                           formatTimestamp(note.edited_at as string),
@@ -272,22 +292,23 @@ export function ClientNotes(props: ClientNotesProps) {
                       </div>
                     )}
                     {editing ? (
-                      <div className={''}>
-                        <label className={''}>{m['clientNotes.noteLabel']}
+                      <div className={styles.editor}>
+                        <label className={styles.field}>
+                          {m['clientNotes.noteLabel']}
                           <textarea
+                            className={styles.textarea}
+                            rows={5}
                             value={editDraft}
                             onChange={(e) => setEditDraft(e.target.value)}
                             aria-label={m['clientNotes.noteLabel']}
                             readOnly={saving}
                           />
                         </label>
-                        <span className={''}>
+                        <span className={styles.counter}>
                           {counterText(editDraft)}
                         </span>
-                        {saveError && (
-                          <Alert tone="error" title={saveError} />
-                        )}
-                        <div className={''}>
+                        {saveError && <Alert tone="error" title={saveError} />}
+                        <div className={styles.actions}>
                           <Button
                             type="button"
                             onClick={() => handleUpdate(note.id)}
@@ -308,10 +329,10 @@ export function ClientNotes(props: ClientNotesProps) {
                       </div>
                     ) : (
                       <>
-                        <div className={''}>
+                        <div className={styles.body}>
                           <Bidi>{note.body}</Bidi>
                         </div>
-                        <div className={''}>
+                        <div className={styles.actions}>
                           {canEditNote(note, actorId, role) && (
                             <Button
                               type="button"
@@ -323,7 +344,8 @@ export function ClientNotes(props: ClientNotesProps) {
                           {canDeleteNote(note, role) && (
                             <Button
                               type="button"
-                              onClick={() => handleDelete(note.id)}
+                              variant="destructive"
+                              onClick={() => setDeleteTargetId(note.id)}
                             >
                               {m['clientNotes.delete']}
                             </Button>
@@ -338,25 +360,25 @@ export function ClientNotes(props: ClientNotesProps) {
           )}
 
           {canCreate && !editingId && (
-            <>
-              <Button type="button" className={''}>
-                {m['clientNotes.create']}
-              </Button>
-              <form className={''} onSubmit={handleCreate}>
-              <label className={''}>{m['clientNotes.noteLabel']}
+            <form className={styles.form} onSubmit={handleCreate}>
+              <h3 className={styles.createTitle}>{m['clientNotes.create']}</h3>
+              <label className={styles.field}>
+                {m['clientNotes.noteLabel']}
                 <textarea
+                  className={styles.textarea}
+                  rows={5}
                   value={draft}
                   onChange={(e) => {
-                      setDraft(e.target.value);
-                      setIdempotencyKey(null);
-                    }}
+                    setDraft(e.target.value);
+                    setIdempotencyKey(null);
+                  }}
                   aria-label={m['clientNotes.noteLabel']}
                   readOnly={saving}
                 />
               </label>
-              <span className={''}>{counterText(draft)}</span>
+              <span className={styles.counter}>{counterText(draft)}</span>
               {saveError && <Alert tone="error" title={saveError} />}
-              <div className={''}>
+              <div className={styles.actions}>
                 <Button type="submit" disabled={saving}>
                   {saving ? m['clientNotes.saving'] : m['clientNotes.saveNote']}
                 </Button>
@@ -369,28 +391,36 @@ export function ClientNotes(props: ClientNotesProps) {
                 </Button>
               </div>
             </form>
-            </>
           )}
 
           {exitOpen && (
-            <div role="dialog" aria-modal="true" className={''}>
-              <h3>{m['clientNotes.exitWarning.title']}</h3>
-              <p>
-                {exitMode === 'inflight'
+            <ConfirmDialog
+              open
+              title={m['clientNotes.exitWarning.title']}
+              description={
+                exitMode === 'inflight'
                   ? m['clientNotes.exitWarning.bodyInFlight']
                   : exitMode === 'unknown'
                     ? m['clientNotes.saveError']
-                    : m['clientNotes.exitWarning.body']}
-              </p>
-              <div className={''}>
-                <Button type="button" onClick={stay}>
-                  {m['clientNotes.exitWarning.stay']}
-                </Button>
-                <Button type="button" onClick={confirmDiscard}>
-                  {m['clientNotes.exitWarning.discard']}
-                </Button>
-              </div>
-            </div>
+                    : m['clientNotes.exitWarning.body']
+              }
+              confirmLabel={m['clientNotes.exitWarning.discard']}
+              cancelLabel={m['clientNotes.exitWarning.stay']}
+              onConfirm={confirmDiscard}
+              onCancel={stay}
+            />
+          )}
+          {deleteTargetId !== null && (
+            <ConfirmDialog
+              open
+              title={m['clientNotes.deleteDialogTitle']}
+              description={m['clientNotes.deleteDialogBody']}
+              confirmLabel={m['clientNotes.deleteDialogConfirm']}
+              cancelLabel={m['clientNotes.cancel']}
+              tone="destructive"
+              onConfirm={() => void handleDelete(deleteTargetId)}
+              onCancel={() => setDeleteTargetId(null)}
+            />
           )}
         </>
       )}

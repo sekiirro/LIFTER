@@ -9,7 +9,12 @@ describe('ClientNotes UI', () => {
   it('renders approved copy in EN', () => {
     const m = getMessages('en');
     const html = renderToStaticMarkup(
-      createElement(ClientNotes, { locale: 'en', messages: m, status: 'ready', notes: [] }),
+      createElement(ClientNotes, {
+        locale: 'en',
+        messages: m,
+        status: 'ready',
+        notes: [],
+      }),
     );
     expect(html).toContain(m['clientNotes.tab']);
     expect(html).toContain(m['clientNotes.empty']);
@@ -20,7 +25,12 @@ describe('ClientNotes UI', () => {
   it('renders approved copy in AR with rtl', () => {
     const m = getMessages('ar');
     const html = renderToStaticMarkup(
-      createElement(ClientNotes, { locale: 'ar', messages: m, status: 'ready', notes: [] }),
+      createElement(ClientNotes, {
+        locale: 'ar',
+        messages: m,
+        status: 'ready',
+        notes: [],
+      }),
     );
     expect(html).toContain('dir="rtl"');
     expect(html).toContain(m['clientNotes.tab']);
@@ -30,7 +40,11 @@ describe('ClientNotes UI', () => {
   it('renders loading state', () => {
     const m = getMessages('en');
     const html = renderToStaticMarkup(
-      createElement(ClientNotes, { locale: 'en', messages: m, status: 'loading' }),
+      createElement(ClientNotes, {
+        locale: 'en',
+        messages: m,
+        status: 'loading',
+      }),
     );
     expect(html).toContain(m['clientNotes.loading']);
   });
@@ -38,7 +52,11 @@ describe('ClientNotes UI', () => {
   it('renders error state with retry', () => {
     const m = getMessages('en');
     const html = renderToStaticMarkup(
-      createElement(ClientNotes, { locale: 'en', messages: m, status: 'error' }),
+      createElement(ClientNotes, {
+        locale: 'en',
+        messages: m,
+        status: 'error',
+      }),
     );
     expect(html).toContain(m['clientNotes.loadError']);
     expect(html).toContain(m['clientNotes.retry']);
@@ -142,7 +160,12 @@ describe('ClientNotes UI', () => {
   it('has no Save Draft control', () => {
     const m = getMessages('en');
     const html = renderToStaticMarkup(
-      createElement(ClientNotes, { locale: 'en', messages: m, status: 'ready', notes: [] }),
+      createElement(ClientNotes, {
+        locale: 'en',
+        messages: m,
+        status: 'ready',
+        notes: [],
+      }),
     );
     expect(html.toLowerCase()).not.toContain('save draft');
   });
@@ -161,11 +184,15 @@ describe('ClientNotes UI', () => {
 
 const mEn = getMessages('en');
 
-function setValue(element: HTMLTextAreaElement | HTMLInputElement, value: string) {
+function setValue(
+  element: HTMLTextAreaElement | HTMLInputElement,
+  value: string,
+) {
   const setter = Object.getOwnPropertyDescriptor(
     (element instanceof HTMLTextAreaElement
       ? window.HTMLTextAreaElement
-      : window.HTMLInputElement).prototype,
+      : window.HTMLInputElement
+    ).prototype,
     'value',
   )?.set;
   setter?.call(element, value);
@@ -175,7 +202,8 @@ function setValue(element: HTMLTextAreaElement | HTMLInputElement, value: string
 describe('ClientNotes behaviour', () => {
   let dom: JSDOM | undefined;
   let host: HTMLDivElement | undefined;
-  let root: { render: (node: ReactNode) => void; unmount: () => void } | undefined;
+  let root:
+    { render: (node: ReactNode) => void; unmount: () => void } | undefined;
   let previousGlobals: Map<string, PropertyDescriptor | undefined> | undefined;
 
   afterEach(async () => {
@@ -196,6 +224,12 @@ describe('ClientNotes behaviour', () => {
     dom = new JSDOM('<!doctype html><html><body></body></html>', {
       url: 'http://localhost/',
     });
+    dom.window.HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute('open', '');
+    };
+    dom.window.HTMLDialogElement.prototype.close = function close() {
+      this.removeAttribute('open');
+    };
     const globals = {
       window: dom.window,
       document: dom.window.document,
@@ -225,11 +259,22 @@ describe('ClientNotes behaviour', () => {
   }
 
   it('create: first submit generates a key', async () => {
-    const onCreate = vi.fn<(b: string, k: string) => Promise<{ status: string; }>>(async () => ({ status: 'ok' }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate, canCreate: true });
+    const onCreate = vi.fn<
+      (b: string, k: string) => Promise<{ status: string }>
+    >(async () => ({ status: 'ok' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+    });
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'hello'));
-    const submit = host!.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const submit = host!.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
     await act(async () => {
       submit.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -240,11 +285,22 @@ describe('ClientNotes behaviour', () => {
   });
 
   it('create: retry after failed result re-sends same key and body', async () => {
-    const onCreate = vi.fn<(b: string, k: string) => Promise<{ status: string; error?: string }>>(async () => ({ status: 'error', error: 'boom' }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate, canCreate: true });
+    const onCreate = vi.fn<
+      (b: string, k: string) => Promise<{ status: string; error?: string }>
+    >(async () => ({ status: 'error', error: 'boom' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+    });
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'hello'));
-    const submit = host!.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const submit = host!.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
     await act(async () => {
       submit.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -261,11 +317,22 @@ describe('ClientNotes behaviour', () => {
   });
 
   it('create: after success a new key is used', async () => {
-    const onCreate = vi.fn<(b: string, k: string) => Promise<{ status: string; }>>(async () => ({ status: 'ok' }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate, canCreate: true });
+    const onCreate = vi.fn<
+      (b: string, k: string) => Promise<{ status: string }>
+    >(async () => ({ status: 'ok' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+    });
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'first'));
-    const submit = host!.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const submit = host!.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
     await act(async () => {
       submit.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -281,11 +348,22 @@ describe('ClientNotes behaviour', () => {
   });
 
   it('create: after editing text a new key is used', async () => {
-    const onCreate = vi.fn<(b: string, k: string) => Promise<{ status: string; error?: string }>>(async () => ({ status: 'error', error: 'boom' }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate, canCreate: true });
+    const onCreate = vi.fn<
+      (b: string, k: string) => Promise<{ status: string; error?: string }>
+    >(async () => ({ status: 'error', error: 'boom' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+    });
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'hello'));
-    const submit = host!.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const submit = host!.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
     await act(async () => {
       submit.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -301,40 +379,80 @@ describe('ClientNotes behaviour', () => {
   });
 
   it('exit protection: unsaved text opens warning; Stay keeps text; Discard clears and closes', async () => {
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate: vi.fn(), canCreate: true });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate: vi.fn(),
+      canCreate: true,
+    });
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'unsaved'));
-    const cancel = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.cancel'])!;
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.cancel'],
+    )!;
     await act(async () => cancel.click());
     expect(host!.textContent).toContain(mEn['clientNotes.exitWarning.title']);
     expect(host!.textContent).toContain(mEn['clientNotes.exitWarning.body']);
-    const stay = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.exitWarning.stay'])!;
+    const stay = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.exitWarning.stay'],
+    )!;
     await act(async () => stay.click());
     expect(host!.querySelector('[role="dialog"]')).toBeNull();
-    expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe('unsaved');
+    expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      'unsaved',
+    );
     await act(async () => cancel.click());
-    const discard = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.exitWarning.discard'])!;
+    const discard = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
     await act(async () => discard.click());
     expect(host!.querySelector('[role="dialog"]')).toBeNull();
-    expect((host!.querySelector('textarea') as HTMLTextAreaElement)?.value ?? '').toBe('');
+    expect(
+      (host!.querySelector('textarea') as HTMLTextAreaElement)?.value ?? '',
+    ).toBe('');
     expect(host!.textContent?.toLowerCase()).not.toContain('save draft');
   });
 
   it('exit protection: in-flight leaving shows row 34 body; Discard leaves without cancelling save', async () => {
-    let resolveCreate: ((v: { status: string; error?: string }) => void) | undefined;
-    const onCreate = vi.fn<(b: string, k: string) => Promise<{ status: string; error?: string }>>(() => new Promise<{ status: string; error?: string }>((resolve) => { resolveCreate = resolve; }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate, canCreate: true });
+    let resolveCreate:
+      ((v: { status: string; error?: string }) => void) | undefined;
+    const onCreate = vi.fn<
+      (b: string, k: string) => Promise<{ status: string; error?: string }>
+    >(
+      () =>
+        new Promise<{ status: string; error?: string }>((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+    });
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'inflight'));
-    const submit = host!.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const submit = host!.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
     await act(async () => {
       submit.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    const cancel = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.cancel'])!;
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.cancel'],
+    )!;
     await act(async () => cancel.click());
-    expect(host!.textContent).toContain(mEn['clientNotes.exitWarning.bodyInFlight']);
-    const discard = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.exitWarning.discard'])!;
+    expect(host!.textContent).toContain(
+      mEn['clientNotes.exitWarning.bodyInFlight'],
+    );
+    const discard = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
     await act(async () => discard.click());
     expect(host!.querySelector('[role="dialog"]')).toBeNull();
     expect(onCreate).toHaveBeenCalledTimes(1);
@@ -348,11 +466,27 @@ describe('ClientNotes behaviour', () => {
 
   it('pending: submit disabled while saving', async () => {
     let resolveCreate: ((v: { status: string }) => void) | undefined;
-    const onCreate = vi.fn<(b: string, k: string) => Promise<{ status: string; }>>(() => new Promise<{ status: string }>((resolve) => { resolveCreate = resolve; }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate, canCreate: true });
+    const onCreate = vi.fn<
+      (b: string, k: string) => Promise<{ status: string }>
+    >(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+      canCreate: true,
+    });
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'pending'));
-    const submit = host!.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const submit = host!.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
     await act(async () => {
       submit.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -365,21 +499,48 @@ describe('ClientNotes behaviour', () => {
   });
 
   it('empty state renders empty message', async () => {
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate: vi.fn(), canCreate: true });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate: vi.fn(),
+      canCreate: true,
+    });
     expect(host!.textContent).toContain(mEn['clientNotes.empty']);
   });
 
   it('disabled create hides form when canCreate false', async () => {
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [], onCreate: vi.fn(), canCreate: false });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate: vi.fn(),
+      canCreate: false,
+    });
     expect(host!.querySelector('form')).toBeNull();
   });
 
   it('Bidi wraps mixed-direction text', async () => {
     const note = {
-      id: 'n1', workspace_id: 'w', client_id: 'c', author_user_id: 'u1',
-      body: 'Hello 123', created_at: '2026-11-08T10:15:00Z', edited_at: null,
+      id: 'n1',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'Hello 123',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
     };
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [note], role: 'trainer', actorId: 'u1', canCreate: true });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: true,
+    });
     expect(host!.innerHTML).toContain('<bdi');
     expect(host!.textContent).toContain('Hello 123');
   });
@@ -388,11 +549,24 @@ describe('ClientNotes behaviour', () => {
     const previousTimeZone = process.env.TZ;
     process.env.TZ = 'America/Los_Angeles';
     const note = {
-      id: 'n1', workspace_id: 'w', client_id: 'c', author_user_id: 'u1',
-      body: 'hello', created_at: '2026-11-08T10:15:00Z', edited_at: null,
+      id: 'n1',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'hello',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
     };
     try {
-      await render({ locale: 'en', messages: mEn, status: 'ready', notes: [note], role: 'trainer', actorId: 'u1', canCreate: true });
+      await render({
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [note],
+        role: 'trainer',
+        actorId: 'u1',
+        canCreate: true,
+      });
       expect(host!.innerHTML).not.toContain('2026-11-08T10:15:00Z');
       expect(host!.textContent).toContain('Nov 8, 2026, 2:15 AM');
     } finally {
@@ -403,46 +577,102 @@ describe('ClientNotes behaviour', () => {
 
   it('edit editor: unsaved exit protection keeps/clears text', async () => {
     const note = {
-      id: 'n1', workspace_id: 'w', client_id: 'c', author_user_id: 'u1',
-      body: 'hello', created_at: '2026-11-08T10:15:00Z', edited_at: null,
+      id: 'n1',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'hello',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
     };
-    const onUpdate = vi.fn<(i: string, b: string) => Promise<{ status: string; error?: string }>>(async () => ({ status: 'error', error: 'boom' }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [note], role: 'trainer', actorId: 'u1', canCreate: true, onUpdate });
-    const editBtn = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.edit'])!;
+    const onUpdate = vi.fn<
+      (i: string, b: string) => Promise<{ status: string; error?: string }>
+    >(async () => ({ status: 'error', error: 'boom' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: true,
+      onUpdate,
+    });
+    const editBtn = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.edit'],
+    )!;
     await act(async () => editBtn.click());
-    const cancel = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.cancel'])!;
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.cancel'],
+    )!;
     await act(async () => cancel.click());
     expect(host!.textContent).toContain(mEn['clientNotes.exitWarning.body']);
-    const stay = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.exitWarning.stay'])!;
+    const stay = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.exitWarning.stay'],
+    )!;
     await act(async () => stay.click());
     expect(host!.querySelector('[role="dialog"]')).toBeNull();
     await act(async () => cancel.click());
-    const discard = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.exitWarning.discard'])!;
+    const discard = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
     await act(async () => discard.click());
     expect(host!.querySelector('[role="dialog"]')).toBeNull();
   });
 
   it('edit editor: in-flight leaving shows row 34 and Discard does not cancel save', async () => {
     const note = {
-      id: 'n1', workspace_id: 'w', client_id: 'c', author_user_id: 'u1',
-      body: 'hello', created_at: '2026-11-08T10:15:00Z', edited_at: null,
+      id: 'n1',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'hello',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
     };
-    let resolveUpdate: ((v: { status: string; error?: string }) => void) | undefined;
-    const onUpdate = vi.fn<(i: string, b: string) => Promise<{ status: string; error?: string }>>(() => new Promise<{ status: string; error?: string }>((resolve) => { resolveUpdate = resolve; }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [note], role: 'trainer', actorId: 'u1', canCreate: true, onUpdate });
-    const editBtn = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.edit'])!;
+    let resolveUpdate:
+      ((v: { status: string; error?: string }) => void) | undefined;
+    const onUpdate = vi.fn<
+      (i: string, b: string) => Promise<{ status: string; error?: string }>
+    >(
+      () =>
+        new Promise<{ status: string; error?: string }>((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: true,
+      onUpdate,
+    });
+    const editBtn = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.edit'],
+    )!;
     await act(async () => editBtn.click());
     const textarea = host!.querySelector('textarea')!;
     await act(async () => setValue(textarea, 'changed'));
-    const save = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.saveChanges'])!;
+    const save = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.saveChanges'],
+    )!;
     await act(async () => {
       save.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    const cancel = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.cancel'])!;
+    const cancel = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.cancel'],
+    )!;
     await act(async () => cancel.click());
-    expect(host!.textContent).toContain(mEn['clientNotes.exitWarning.bodyInFlight']);
-    const discard = Array.from(host!.querySelectorAll('button')).find((b) => b.textContent === mEn['clientNotes.exitWarning.discard'])!;
+    expect(host!.textContent).toContain(
+      mEn['clientNotes.exitWarning.bodyInFlight'],
+    );
+    const discard = Array.from(host!.querySelectorAll('button')).find(
+      (b) => b.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
     await act(async () => discard.click());
     expect(host!.querySelector('[role="dialog"]')).toBeNull();
     expect(onUpdate).toHaveBeenCalledTimes(1);
@@ -456,15 +686,36 @@ describe('ClientNotes behaviour', () => {
 
   it('delete failures use approved generic copy only', async () => {
     const note = {
-      id: 'n1', workspace_id: 'w', client_id: 'c', author_user_id: 'u1',
-      body: 'hello', created_at: '2026-11-08T10:15:00Z', edited_at: null,
+      id: 'n1',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'hello',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
     };
-    const onDelete = vi.fn(async () => ({ status: 'error', error: 'database secret' }));
-    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [note], role: 'platform_owner', actorId: 'po', onDelete });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const deleteButton = Array.from(host!.querySelectorAll('button')).find((button) => button.textContent === mEn['clientNotes.delete'])!;
+    const onDelete = vi.fn(async () => ({
+      status: 'error',
+      error: 'database secret',
+    }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'platform_owner',
+      actorId: 'po',
+      onDelete,
+    });
+    const deleteButton = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.delete'],
+    )!;
+    await act(async () => deleteButton.click());
+    const confirmDelete = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.deleteDialogConfirm'],
+    )!;
     await act(async () => {
-      deleteButton.click();
+      confirmDelete.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(onDelete).toHaveBeenCalledWith('n1');
