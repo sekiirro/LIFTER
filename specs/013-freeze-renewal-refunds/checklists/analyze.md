@@ -266,3 +266,14 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Clarification/status review: S51-F13-MCQ-9/-10 remain the only open choices and block receipt-shape changes only. T044 remains P4/open; FR-041 PARTIAL. No stale T048 blocked/unverified status remains in current task or traceability rows.
 - Findings: 0 open CRITICAL; 0 open HIGH.
 - Verdict: PASS; T048 evidence is complete for its decided scope.
+
+## S51-PO-2 receipt decision analysis — 2026-11-12T15:41:36Z
+
+- Entry gate: PASS. `spec.md` retains numbered FRs, measurable SCs, Given/When/Then scenario 18 and a decision register; `plan.md`, `tasks.md`, and the lifecycle contract cover the receipt and replay behavior. This analysis follows the S51-PO-2 edits to those files.
+- Authority: verified byte-exact PO source `C:/Users/NEW LAP/.lifter/runs/s51-po/s51-po-2.verbatim.txt`, SHA-256 `cda1f389106feff2ca7a854efe102c1283e33208182b0f06dbd1e33838f61880`. MCQ-9=9A and MCQ-10=10B; commission remains stored on the upgrade row as set by S51-PO-1.
+- Contract check: new successful receipts must contain operation/upgrade IDs, package/version, full price difference, currency, and effective dates; commission fields are omitted. The existing-operation replay branch returns the persisted JSON receipt before constructing a new receipt, so pre-change rows are returned without modification. The forward migration redefines the writer only; no data rewrite is included.
+- Clarification sweep: existing `workspace_id`, `client_id`, `subscription_id`, `tier_rank`, `package_price_minor`, and `credit_minor` fields are not specified by 9A. S51-F13-MCQ-11 is recorded with options/implications/recommendation; only these fields’ disposition is blocked. Implementation must not silently remove or add a disposition for them.
+- Cross-reference sweep: FR-043, SC-036, scenario 18, T048, plan, contract, and traceability all reference S51-PO-2 and MCQ-11. T044 remains P4/open and is untouched. Older Analyze entries describing MCQ-9/-10 as open are historical and superseded by this entry.
+- Migration scan: candidate version `20261112152326` is after the maximum fetched origin-ref version `20261112133858` and earlier than observed UTC `2026-11-12 15:23:26` at creation time; local timestamp and 120-ref cross-reference scans pass. Stack C identity and API/DB ports were verified before reset.
+- Findings: 0 open CRITICAL, 0 open HIGH. No ambiguity remains for 9A required fields, 10B omission, or unchanged stored-receipt replay; MCQ-11 is the sole explicit open product question and blocks only those extra-field dispositions.
+- Verdict: PASS for the authorized commission omission and replay-preservation changes, with MCQ-11 explicitly held open.

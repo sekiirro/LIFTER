@@ -238,8 +238,6 @@ it('T042 prices the FR-038 EGP 750 to EGP 1400 upgrade as EGP 650 revenue with t
         credit_minor: '750',
         additional_payment_minor: '650',
         currency: 'EGP',
-        commission_rate_bp: 1000,
-        commission_minor: '65',
       },
     });
     const [ledger] = await tx`select count(*)::int as count,
@@ -370,9 +368,21 @@ it('T042 records additional-payment commission at the original subscription rate
         credit_minor: '1200',
         additional_payment_minor: '400',
         currency: 'XTS',
-        commission_rate_bp: original!.commission_rate_bp,
       },
     });
+    const receipt = result.receipt as Record<string, unknown>;
+    expect(receipt).toMatchObject({
+      operation_id: expect.any(String),
+      upgrade_id: expect.any(String),
+      package_offer_id: target,
+      package_version_id: expect.any(String),
+      additional_payment_minor: '400',
+      currency: 'XTS',
+      service_start_date: expect.any(String),
+      service_end_exclusive: expect.any(String),
+    });
+    expect(Object.hasOwn(receipt, 'commission_rate_bp')).toBe(false);
+    expect(Object.hasOwn(receipt, 'commission_minor')).toBe(false);
     const [counts] = await tx`
       select
         (select count(*)::int from public.subscriptions where workspace_id=${f.wsA.id} and client_id=${purchase.t.id}) as subscriptions,
@@ -1063,10 +1073,10 @@ it('T042 records zero commission for an equal-price longer upgrade without addit
       receipt: {
         credit_minor: '1200',
         additional_payment_minor: '0',
-        commission_rate_bp: 17,
-        commission_minor: '0',
       },
     });
+    expect(Object.hasOwn(result.receipt!, 'commission_rate_bp')).toBe(false);
+    expect(Object.hasOwn(result.receipt!, 'commission_minor')).toBe(false);
     const [snapshot] =
       await tx`select commission_rate_bp,additional_payment_minor::text,commission_minor::text
       from public.subscription_upgrades where subscription_id=${purchase.sid}`;
@@ -1140,13 +1150,46 @@ it('T042 replays an identical request once and refuses a stale distinct revision
     };
     const first = await upgrade(tx, f.trainerA.userId, request);
     expect(first.status).toBe('ok');
+    const [storedCommission] = await tx`
+      select commission_rate_bp,commission_minor::text from public.subscription_upgrades
+      where workspace_id=${f.wsA.id} and subscription_id=${purchase.sid}`;
     expect(await upgrade(tx, f.trainerA.userId, request)).toEqual(first);
+    const legacyRequest = { ...request, request_key: randomUUID() };
+    const legacyOperationId = randomUUID();
+    const legacyUpgradeId = randomUUID();
+    const legacyStoredReceipt = {
+      receipt: {
+        operation_id: legacyOperationId,
+        upgrade_id: legacyUpgradeId,
+        commission_rate_bp: storedCommission!.commission_rate_bp,
+        commission_minor: storedCommission!.commission_minor,
+      },
+      status: 'ok',
+    };
+    await tx`
+      insert into app_private.subscription_upgrade_operations(
+        id,workspace_id,client_id,subscription_id,actor_user_id,request_key,
+        expected_revision,canonical_args_hash,result_receipt,recorded_at,transaction_id
+      ) values (
+        ${legacyOperationId},${f.wsA.id},${purchase.t.id},${purchase.sid},${f.trainerA.userId},${legacyRequest.request_key},
+        ${legacyRequest.expected_revision},
+        extensions.digest(convert_to(jsonb_build_array(1,${f.wsA.id}::text,${purchase.t.id}::text,
+          ${purchase.sid}::text,${target}::text,${legacyRequest.expected_revision}::integer,true)::text,'UTF8'),'sha256'),
+        jsonb_build_object('status','ok','receipt',jsonb_build_object(
+          'operation_id',${legacyOperationId}::uuid,'upgrade_id',${legacyUpgradeId}::uuid,
+          'commission_rate_bp',${storedCommission!.commission_rate_bp}::integer,
+          'commission_minor',${storedCommission!.commission_minor}::text)),
+        clock_timestamp(),pg_current_xact_id()
+      )`;
+    expect(await upgrade(tx, f.trainerA.userId, legacyRequest)).toEqual(
+      legacyStoredReceipt,
+    );
     const [before] = await tx`select
       (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
       (select count(*)::int from app_private.subscription_upgrade_operations where subscription_id=${purchase.sid}) as operations,
       (select count(*)::int from public.audit_events where target_table='subscription_upgrades' and target_id in
         (select id from public.subscription_upgrades where subscription_id=${purchase.sid})) as audits`;
-    expect(before).toEqual({ upgrades: 1, operations: 1, audits: 1 });
+    expect(before).toEqual({ upgrades: 1, operations: 2, audits: 1 });
     const stale = await upgrade(tx, f.trainerA.userId, {
       ...request,
       request_key: randomUUID(),
@@ -1626,8 +1669,10 @@ it('T045 refunds the original package plus upgrade charge and leaves a paid rene
     });
     expect(upgraded).toMatchObject({
       status: 'ok',
-      receipt: { additional_payment_minor: '650', commission_minor: '65' },
+      receipt: { additional_payment_minor: '650' },
     });
+    expect(Object.hasOwn(upgraded.receipt!, 'commission_rate_bp')).toBe(false);
+    expect(Object.hasOwn(upgraded.receipt!, 'commission_minor')).toBe(false);
     const [upgradeFact] = await tx`
       select id from public.subscription_upgrades
       where workspace_id=${f.wsA.id} and subscription_id=${purchase.sid}`;

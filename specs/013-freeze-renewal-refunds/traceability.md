@@ -178,4 +178,12 @@ At the prior head, T041 and T042 had been ticked after a renewal-then-upgrade te
 
 | Requirement | Task | Test evidence | Evidence / status |
 | --- | --- | --- | --- |
-| FR-038, FR-043; SC-035/036 | T048 | `tests/integration/upgrade-operations.test.ts::T048 refuses an upgrade with an unsettled installment before any writes`; `::T048 revalidates after the shared locks and retains the pre-write over-balance guard`; `::T042 records additional-payment commission at the original subscription rate and keeps one subscription/activation` | Implementation commit `402b4e02913671be0aac0d6ed8708ff875b3207c`; Stack C focused upgrade 26/26; selected F12/F13 27 files / 285 tests; settled/lock/over-balance mutations killed; current receipt retained pending MCQ-9/-10 | VERIFIED |
+| FR-038, FR-043; SC-035/036 | T048 | `tests/integration/upgrade-operations.test.ts::T048 refuses an upgrade with an unsettled installment before any writes`; `::T048 revalidates after the shared locks and retains the pre-write over-balance guard`; `::T042 records additional-payment commission at the original subscription rate and keeps one subscription/activation` | Implementation commit `402b4e02913671be0aac0d6ed8708ff875b3207c`; prior scope passed. S51-PO-2 receipt follow-up is pending current Stack C verification; task checkbox temporarily reopened. | PARTIAL |
+
+## S51-PO-2 receipt decision follow-up (2026-11-12)
+
+PO source (verbatim): “Approve F13 receipt decisions: 9A 10B.” `C:/Users/NEW LAP/.lifter/runs/s51-po/s51-po-2.verbatim.txt`; SHA-256 `cda1f389106feff2ca7a854efe102c1283e33208182b0f06dbd1e33838f61880`. MCQ-9=9A and MCQ-10=10B are resolved. MCQ-11 remains open only for `workspace_id`, `client_id`, `subscription_id`, `tier_rank`, `package_price_minor`, and `credit_minor` in new receipts.
+
+| Requirement | Task | Test | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| FR-043; SC-036 | T048 | `tests/integration/upgrade-operations.test.ts::T042 records additional-payment commission at the original subscription rate and keeps one subscription/activation`; `::T042 records zero commission for an equal-price longer upgrade without additional revenue`; `::T042 replays an identical request once and refuses a stale distinct revision without writes`; `::T045 refunds the original package plus upgrade charge and leaves a paid renewal untouched` | RED pending; receipt migration/test verification will be added after green and mutation runs. | PENDING |
