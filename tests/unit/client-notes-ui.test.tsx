@@ -248,7 +248,11 @@ describe('ClientNotes behaviour', () => {
 
   async function render(
     props: Record<string, unknown>,
-    options: { windowName?: string; session?: Record<string, string> } = {},
+    options: {
+      windowName?: string;
+      session?: Record<string, string>;
+      storageUnavailable?: boolean;
+    } = {},
   ) {
     dom = new JSDOM('<!doctype html><html><body></body></html>', {
       url: 'http://localhost/',
@@ -256,6 +260,13 @@ describe('ClientNotes behaviour', () => {
     if (options.windowName) dom.window.name = options.windowName;
     for (const [key, value] of Object.entries(options.session ?? {}))
       dom.window.sessionStorage.setItem(key, value);
+    if (options.storageUnavailable)
+      Object.defineProperty(dom.window, 'sessionStorage', {
+        configurable: true,
+        get() {
+          throw new Error('session storage unavailable');
+        },
+      });
     dom.window.HTMLDialogElement.prototype.showModal = function showModal() {
       this.setAttribute('open', '');
     };
@@ -553,6 +564,38 @@ describe('ClientNotes behaviour', () => {
     expect(onCreate).toHaveBeenCalledTimes(1);
     expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
     storage.mockRestore();
+  });
+
+  it('keeps create recovery in page memory when sessionStorage is unavailable', async () => {
+    const onCreate = vi.fn(async () => ({ status: 'unavailable' }));
+    await render(
+      {
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [],
+        onCreate,
+        canCreate: true,
+        actorId: 'actor-1',
+        clientId: 'client-1',
+        workspaceId: 'workspace-1',
+      },
+      { storageUnavailable: true },
+    );
+    const textarea = host!.querySelector('textarea')!;
+    await act(async () => setValue(textarea, 'memory-only recovery'));
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect((host!.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      'memory-only recovery',
+    );
+    expect(
+      (host!.querySelector('textarea') as HTMLTextAreaElement).readOnly,
+    ).toBe(true);
+    expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
   });
 
   it('create: after success a new key is used', async () => {
@@ -951,6 +994,62 @@ describe('ClientNotes behaviour', () => {
     });
     expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
     expect(host!.textContent).not.toContain('boom');
+  });
+
+  it('does not restore an unresolved edit after navigation or reload', async () => {
+    const note = {
+      id: 'n1',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'last committed body',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const onUpdate = vi.fn(async () => ({ status: 'unavailable' }));
+    const props = {
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: true,
+      onUpdate,
+    };
+    await render(props);
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click();
+    });
+    const textarea = host!.querySelector('textarea')!;
+    await act(async () => setValue(textarea, 'unresolved edit text'));
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button'))
+        .find(
+          (button) => button.textContent === mEn['clientNotes.saveChanges'],
+        )!
+        .click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(
+      (host!.querySelector('textarea') as HTMLTextAreaElement).readOnly,
+    ).toBe(true);
+    expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
+
+    await act(async () => root?.unmount());
+    const { createRoot } = await import('react-dom/client');
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () =>
+      root?.render(createElement(ClientNotes, props as never)),
+    );
+    expect(host!.textContent).toContain('last committed body');
+    expect(host!.textContent).not.toContain('unresolved edit text');
+    expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
+    expect(host!.textContent).not.toContain(mEn['clientNotes.editedToast']);
   });
 
   it('delete failures use approved generic copy only', async () => {
