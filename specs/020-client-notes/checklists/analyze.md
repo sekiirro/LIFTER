@@ -181,3 +181,13 @@ PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIG
 - **Gate:** PASS. FR/SC/GWT and clarified behavior remain as revalidated in round 19. T002 and T003 are mapped to their FRs and their tests/evidence are recorded in `traceability.md`.
 - **Verification:** T002 app/database authorization parity checks and T003 Stack D persistence/RLS/audit/idempotency integration checks passed on the implementation head. T003 mutation evidence shows the note-side unique constraint is required.
 - **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. No PO decision was made.
+
+## Round 21 — S49 T004 acceptance
+
+**Analysis date:** 2026-11-12T01:36:32Z (after the T004 status update in `tasks.md`).
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, constitution 1.13.0, and T004 commit `0e1fcc5b006a82be162283b1b06c858fb8536044`.
+**Scope:** Verify T004 acceptance and current Spec Kit entry state; no requirement text or product behavior changed.
+
+- **Gate:** PASS. FR/SC/GWT and resolved clarifications remain as revalidated in Round 19. The T004 task remains mapped to FR-002, FR-003, FR-004, FR-008, FR-009, FR-010, and FR-011.
+- **Verification:** T004 boundary and normalization evidence is recorded in `traceability.md`; Stack D integration suites passed 11/11, unit suite passed 180 files / 2,398 tests, lint and typecheck passed, and migration timestamp/cross-ref scans passed.
+- **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. No PO decision was made.
