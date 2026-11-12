@@ -166,7 +166,6 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s51-po/s51-po-4.verbatim.txt`, sha256 `4b
 
 ### Resolved decisions
 
-
 - NAME-1..NAME-13 are resolved by S51-PO-4 and S51-PO-7 and are encoded in FR-001..FR-013 above.
 - F20's unavailable-author fallback remains valid until an authorized name source exists (`specs/020-client-notes/spec.md:90`; `specs/020-client-notes/spec.md:113`).
 - No product decision is made for NAME-14..NAME-16.
