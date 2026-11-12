@@ -33,7 +33,12 @@ export type ManualDateReceipt = {
 export type ManualDateResult =
   | { status: 'ok'; receipt: ManualDateReceipt }
   | {
-      status: 'not_permitted' | 'invalid_input' | 'conflict' | 'unavailable';
+      status:
+        | 'not_permitted'
+        | 'invalid_input'
+        | 'conflict'
+        | 'stale_state'
+        | 'unavailable';
     };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -146,6 +151,7 @@ export async function recordManualDateAdjustment(
     if (response.status === 'not_permitted') return { status: 'not_permitted' };
     if (response.status === 'invalid_input') return { status: 'invalid_input' };
     if (response.status === 'key_conflict') return { status: 'conflict' };
+    if (response.status === 'stale_state') return { status: 'stale_state' };
     if (response.status !== 'ok') return { status: 'unavailable' };
     const receipt = safeReceipt(response.receipt);
     if (

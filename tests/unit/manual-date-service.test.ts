@@ -86,6 +86,14 @@ describe('manual subscription date adjustment service', () => {
     );
   });
 
+  it('preserves stale_state when a frozen or deactivated subscription refuses an edit', async () => {
+    const client = rpc({ status: 'stale_state' });
+    await expect(
+      recordManualDateAdjustment(input, { actor: po, client }),
+    ).resolves.toEqual({ status: 'stale_state' });
+    expect(client.rpc).toHaveBeenCalledOnce();
+  });
+
   it.each([
     { role: 'workspace_owner', name: 'workspace owner' },
     { role: 'trainer', name: 'trainer' },

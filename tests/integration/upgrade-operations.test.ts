@@ -437,7 +437,7 @@ it('T041/T042 upgrade then renewal then upgrade credits only the original purcha
         predecessor_subscription_id: purchase.sid,
         package_offer_id: baseOffer,
         request_key: randomUUID(),
-        expected_revision: 0,
+        expected_revision: 1,
         renewal_confirmed: true,
         installments: null,
       } as JSONValue)}) as result`;
@@ -478,6 +478,59 @@ it('T041/T042 upgrade then renewal then upgrade credits only the original purcha
       renewal_installments: 1,
       upgrades: 2,
     });
+  });
+});
+
+it('T041/T042 rejects a renewal using the pre-upgrade shared revision without writes', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  const originalOffer = await packageOfferId(purchase.t.link);
+  const target = await targetOffer(f, { duration_days: 90 });
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    await fullyPayInitial(tx, f, purchase);
+    const upgraded = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: target,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+    expect(upgraded.status).toBe('ok');
+    const [before] = await tx`
+      select
+        (select count(*)::int from public.subscription_renewals where subscription_id=${purchase.sid}) as renewals,
+        (select count(*)::int from app_private.subscription_renewal_operations where subscription_id=${purchase.sid}) as operations,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audits`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let stale: Record<string, unknown>;
+    try {
+      const [row] = await tx`select public.record_renewal(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        predecessor_subscription_id: purchase.sid,
+        package_offer_id: originalOffer,
+        request_key: randomUUID(),
+        expected_revision: 0,
+        renewal_confirmed: true,
+        installments: null,
+      } as JSONValue)}) as result`;
+      stale = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(stale!).toMatchObject({ status: 'stale_state' });
+    const [after] = await tx`
+      select
+        (select count(*)::int from public.subscription_renewals where subscription_id=${purchase.sid}) as renewals,
+        (select count(*)::int from app_private.subscription_renewal_operations where subscription_id=${purchase.sid}) as operations,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audits`;
+    expect(after).toEqual(before);
   });
 });
 
@@ -545,6 +598,83 @@ it('T042 applies each FR-038 rank and duration date anchor', async () => {
   }
 });
 
+it('T042 reuses the original start after a higher-rank shorter upgrade', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  const firstTarget = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 30,
+  });
+  const secondTarget = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '2200',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    const historicalActivation = new Date(Date.now() - 10 * 86400000);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},${historicalActivation},${randomUUID()})`;
+    await fullyPayInitial(tx, f, purchase);
+    const first = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: firstTarget,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+    expect(first.status).toBe('ok');
+    const second = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: secondTarget,
+      request_key: randomUUID(),
+      expected_revision: 1,
+      upgrade_confirmed: true,
+    });
+    const [activation] =
+      await tx`select (activated_at at time zone 'Africa/Cairo')::date::text as start_on
+      from public.subscription_activations where subscription_id=${purchase.sid}`;
+    expect(second).toMatchObject({
+      status: 'ok',
+      receipt: { service_start_date: activation!.start_on },
+    });
+  });
+});
+
+it('T042 refuses a lower package price even when the original package is only partly collected', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  const lower = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1000',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const [before] = await tx`
+      select (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments`;
+    const result = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: lower,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+    expect(result).toMatchObject({ status: 'invalid_input' });
+    const [after] = await tx`
+      select (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments`;
+    expect(after).toEqual(before);
+  });
+});
+
 it('T042 preserves a paid renewal and uses the post-lapse renewal start for later upgrade credit and dates', async () => {
   const { f, purchase } = await egp750Purchase();
   const firstTarget = await targetOffer(f, {
@@ -599,7 +729,7 @@ it('T042 preserves a paid renewal and uses the post-lapse renewal start for late
         predecessor_subscription_id: purchase.sid,
         package_offer_id: firstTarget,
         request_key: randomUUID(),
-        expected_revision: 0,
+        expected_revision: 1,
         renewal_confirmed: true,
         installments: null,
       } as JSONValue)}) as result`;
@@ -938,6 +1068,144 @@ it('T042 applies the standard upgrade calculation to the latest PO-adjusted date
   });
 });
 
+it('T043 a manual date adjustment supersedes a previously recorded renewal term', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  const originalOffer = await packageOfferId(purchase.t.link);
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    await fullyPayInitial(tx, f, purchase);
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let renewal: Record<string, unknown>;
+    try {
+      const [row] = await tx`select public.record_renewal(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        predecessor_subscription_id: purchase.sid,
+        package_offer_id: originalOffer,
+        request_key: randomUUID(),
+        expected_revision: 0,
+        renewal_confirmed: true,
+        installments: null,
+      } as JSONValue)}) as result`;
+      renewal = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(renewal!.status).toBe('ok');
+    const [dates] = await tx`select
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date+20)::text as start_on,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date+50)::text as end_on`;
+    const adjusted = await adjustDates(tx, f.po.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      new_service_start_date: dates!.start_on,
+      new_service_end_exclusive: dates!.end_on,
+      request_key: randomUUID(),
+    });
+    expect(adjusted.status).toBe('ok');
+    const [projection] = await tx`select app_private.f13_project_entitlement(
+      ${f.wsA.id},${purchase.sid},${dates!.start_on}::date+1) as value`;
+    expect(projection!.value).toMatchObject({
+      status: 'active',
+      effective_end_exclusive: dates!.end_on,
+    });
+  });
+});
+
+it('F13 counts successive nonoverlapping freezes in the growing coverage window', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  await probe(async (tx) => {
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    const [dates] = await tx`select
+      (((clock_timestamp()-interval '100 days') at time zone 'Africa/Cairo')::date+61)::text as base_end`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    const firstId = randomUUID();
+    const secondId = randomUUID();
+    await tx`insert into public.subscription_freezes(id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+      values(${firstId},${f.wsA.id},${purchase.sid},${dates!.base_end}::date-3,5,${f.trainerA.userId},clock_timestamp())`;
+    await tx`insert into public.subscription_freezes(id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+      values(${secondId},${f.wsA.id},${purchase.sid},${dates!.base_end}::date+2,3,${f.trainerA.userId},clock_timestamp())`;
+    const [projection] = await tx`select app_private.f13_project_entitlement(
+      ${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as value`;
+    const [expected] =
+      await tx`select (${dates!.base_end}::date+8)::text as end_on`;
+    expect(projection!.value).toMatchObject({
+      effective_end_exclusive: expected!.end_on,
+    });
+  });
+});
+
+it('T042 freeze reflows an unstarted renewal from the effective upgraded term', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  const originalOffer = await packageOfferId(purchase.t.link);
+  const shortHigher = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 30,
+  });
+  await probe(async (tx) => {
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '10 days',${randomUUID()})`;
+    await fullyPayInitial(tx, f, purchase);
+    const upgraded = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: shortHigher,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+    expect(upgraded.status).toBe('ok');
+    const upgradedEnd = (upgraded.receipt as Record<string, unknown>)
+      .service_end_exclusive as string;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let renewed: Record<string, unknown>;
+    try {
+      const [row] = await tx`select public.record_renewal(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        predecessor_subscription_id: purchase.sid,
+        package_offer_id: originalOffer,
+        request_key: randomUUID(),
+        expected_revision: 1,
+        renewal_confirmed: true,
+        installments: null,
+      } as JSONValue)}) as result`;
+      renewed = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(renewed!.status).toBe('ok');
+    const renewalId = (renewed!.receipt as Record<string, unknown>)
+      .renewal_id as string;
+    const applied = await freeze(tx, f.trainerA.userId, {
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      duration_days: 3,
+    });
+    expect(applied.status).toBe('applied');
+    const [reflowed] = await tx`select service_start_date::text as start_on
+      from public.subscription_renewal_date_revisions
+      where subscription_id=${purchase.sid} and renewal_id=${renewalId}
+      order by revision desc limit 1`;
+    const [expected] =
+      await tx`select (${upgradedEnd}::date+3)::text as start_on`;
+    expect(reflowed!.start_on).toBe(expected!.start_on);
+  });
+});
+
 it('T045 keeps the upgrade refund source guard and SECURITY DEFINER boundary intact', async () => {
   const [security] = await db`
     select p.prosecdef as security_definer,p.proconfig as config,
@@ -983,9 +1251,71 @@ it('T045 keeps the upgrade refund source guard and SECURITY DEFINER boundary int
   expect(sourceGuard).toEqual({ count: 2 });
 });
 
+it('F13 forward replacements keep SECURITY DEFINER, search_path, and execute grants pinned', async () => {
+  const routines = await db`
+    select n.nspname as schema_name,p.proname,p.prosecdef as security_definer,
+      p.proconfig as config,r.rolname as owner,
+      has_function_privilege('authenticated',p.oid,'execute') as authenticated,
+      has_function_privilege('anon',p.oid,'execute') as anon,
+      has_function_privilege('public',p.oid,'execute') as public,
+      has_function_privilege('service_role',p.oid,'execute') as service_role
+    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      join pg_roles r on r.oid=p.proowner
+    where p.oid in (
+      'public.record_renewal(jsonb)'::regprocedure,
+      'app_private.f13_project_entitlement(uuid,uuid,date)'::regprocedure,
+      'app_private.f13_reflow_unstarted_renewal()'::regprocedure,
+      'public.record_subscription_upgrade(jsonb)'::regprocedure,
+      'public.subscription_commission(uuid,uuid)'::regprocedure
+    )`;
+  expect(routines).toHaveLength(5);
+  for (const routine of routines) {
+    expect(routine.security_definer).toBe(true);
+    expect(routine.owner).toBe('postgres');
+    expect(routine.config).toContain('search_path=""');
+    expect(routine.anon).toBe(false);
+    expect(routine.public).toBe(false);
+  }
+  const privileges = new Map(
+    routines.map((routine) => [
+      `${routine.schema_name}.${routine.proname}`,
+      {
+        authenticated: routine.authenticated,
+        service_role: routine.service_role,
+      },
+    ]),
+  );
+  expect(privileges.get('public.record_renewal')).toEqual({
+    authenticated: true,
+    service_role: false,
+  });
+  expect(privileges.get('app_private.f13_project_entitlement')).toEqual({
+    authenticated: false,
+    service_role: true,
+  });
+  expect(privileges.get('app_private.f13_reflow_unstarted_renewal')).toEqual({
+    authenticated: false,
+    service_role: false,
+  });
+  expect(privileges.get('public.record_subscription_upgrade')).toEqual({
+    authenticated: true,
+    service_role: false,
+  });
+  expect(privileges.get('public.subscription_commission')).toEqual({
+    authenticated: true,
+    service_role: false,
+  });
+});
+
 it('T045 refunds the original package plus upgrade charge and leaves a paid renewal untouched', async () => {
   const { f, purchase } = await egp750Purchase();
-  const originalOffer = await packageOfferId(purchase.t.link);
+  const renewalOffer = await targetOffer(f, {
+    tier_rank: 1,
+    price_minor: '750',
+    currency: 'EGP',
+    duration_days: 90,
+    commission_rate_bp: 5000,
+  });
   const target = await targetOffer(f, {
     tier_rank: 2,
     price_minor: '1400',
@@ -1005,7 +1335,7 @@ it('T045 refunds the original package plus upgrade charge and leaves a paid rene
         workspace_id: f.wsA.id,
         client_id: purchase.t.id,
         predecessor_subscription_id: purchase.sid,
-        package_offer_id: originalOffer,
+        package_offer_id: renewalOffer,
         request_key: randomUUID(),
         expected_revision: 0,
         renewal_confirmed: true,
@@ -1107,5 +1437,50 @@ it('T045 refunds the original package plus upgrade charge and leaves a paid rene
       from public.payment_events where subscription_id=${purchase.sid}
         and obligation_id=${renewalObligation!.id} and kind='collection'`;
     expect(renewalBalance).toEqual({ collections: 1, refunds: 0 });
+    const [renewalCollectionEvent] =
+      await tx`select id from public.payment_events
+      where subscription_id=${purchase.sid} and obligation_id=${renewalObligation!.id} and kind='collection'`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let commissionHistory: Record<string, unknown>;
+    try {
+      const [row] =
+        await tx`select public.subscription_commission(${f.wsA.id},${purchase.sid}) as result`;
+      commissionHistory = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(commissionHistory!.status).toBe('ok');
+    const commissionEvents = commissionHistory!.events as Record<
+      string,
+      unknown
+    >[];
+    const upgradeCommission = commissionEvents.find(
+      (event) => event.kind === 'upgrade_purchase',
+    );
+    expect(upgradeCommission).toMatchObject({
+      event_id: upgradeFact!.id,
+      rate_bp: 2000,
+      commission_minor: '130',
+      source_upgrade_id: upgradeFact!.id,
+    });
+    const upgradeRefundCommission = commissionEvents.find(
+      (event) =>
+        event.kind === 'refund_allocation' &&
+        event.source_upgrade_id === upgradeFact!.id,
+    );
+    expect(upgradeRefundCommission).toMatchObject({
+      rate_bp: 2000,
+      commission_minor: '-130',
+    });
+    const renewalCommission = commissionEvents.find(
+      (event) => event.event_id === renewalCollectionEvent!.id,
+    );
+    expect(renewalCommission).toMatchObject({ rate_bp: 5000 });
+    const originalCommission = commissionEvents.find(
+      (event) => event.event_id === purchase.approved.receipt!.event_id,
+    );
+    expect(originalCommission).toMatchObject({ rate_bp: 1000 });
+    expect(Object.hasOwn(originalCommission!, 'source_upgrade_id')).toBe(false);
   });
 });

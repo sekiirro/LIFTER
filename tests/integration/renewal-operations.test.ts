@@ -296,7 +296,9 @@ it('accepts uppercase renewal UUIDs and replays without recording a second renew
       expected_revision: 1,
     });
     expect(retryWithNewKey.status).toBe('ok');
-    expect((retryWithNewKey.receipt as Record<string, unknown>).subscription_id).toBe(purchase.sid);
+    expect(
+      (retryWithNewKey.receipt as Record<string, unknown>).subscription_id,
+    ).toBe(purchase.sid);
     const [counts] = await tx`
       select count(*)::int as renewals,
         (select count(*)::int from public.subscription_activations a
@@ -746,8 +748,13 @@ it('refuses renewal while the continuous subscription is frozen without extra wr
     });
     expect(renewed.status).toBe('ok');
     const applied = await freeze(tx, f.trainerA.userId, {
-      action: 'apply', workspace_id: f.wsA.id, client_id: purchase.t.id,
-      subscription_id: purchase.sid, request_key: randomUUID(), expected_revision: 0, duration_days: 3,
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      duration_days: 3,
     });
     expect(applied.status).toBe('applied');
     const [before] = await tx`
@@ -757,9 +764,14 @@ it('refuses renewal while the continuous subscription is frozen without extra wr
         (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payments,
         (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events`;
     const denied = await renewal(tx, f.trainerA.userId, {
-      workspace_id: f.wsA.id, client_id: purchase.t.id, predecessor_subscription_id: purchase.sid,
-      package_offer_id: offerId, request_key: randomUUID(), expected_revision: 1,
-      renewal_confirmed: true, installments: null,
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 1,
+      renewal_confirmed: true,
+      installments: null,
     });
     expect(denied).toMatchObject({ status: 'stale_state' });
     const [after] = await tx`
@@ -936,7 +948,8 @@ it('freezing a started continuous renewal keeps its start and due dates immutabl
       select service_start_date::text,
         (app_private.f13_project_entitlement(${f.wsA.id},${renewalId},(clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as projected_end
       from public.subscription_renewals where id=${renewalPurchaseId}`;
-    const [dueBefore] = await tx`select due_on::text from public.subscription_installments where subscription_id=${renewalId} and renewal_id=${renewalPurchaseId}`;
+    const [dueBefore] =
+      await tx`select due_on::text from public.subscription_installments where subscription_id=${renewalId} and renewal_id=${renewalPurchaseId}`;
     const [today] =
       await tx`select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as date`;
     expect(before!.service_start_date).toBe(today!.date);
@@ -959,7 +972,8 @@ it('freezing a started continuous renewal keeps its start and due dates immutabl
         on i.workspace_id=r.workspace_id and i.subscription_id=r.subscription_id and i.renewal_id=r.id
       where r.id=${renewalPurchaseId}`;
     expect(after!.service_start_date).toBe(before!.service_start_date);
-    const [expectedEnd] = await tx`select (${before!.projected_end}::date+2)::text as date`;
+    const [expectedEnd] =
+      await tx`select (${before!.projected_end}::date+2)::text as date`;
     expect(after!.projected_end).toBe(expectedEnd!.date);
     expect(after!.due_on).toBe(dueBefore!.due_on);
   });
