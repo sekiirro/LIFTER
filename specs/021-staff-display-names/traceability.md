@@ -19,4 +19,4 @@
 | FR-015 | T012, T013             | Not implemented | UNVERIFIED |
 | FR-016 | T012                   | Not implemented | UNVERIFIED |
 
-No task is ticked. NAME-1..NAME-16 are resolved by S51-PO-4/S51-PO-7/S51-PO-8 and NAME-17..NAME-20 by S52-PO-2; no product decision remains open in this feature. This spec-only commit is not implementation evidence.
+No task is ticked. NAME-1..NAME-16 are resolved by S51-PO-4/S51-PO-7/S51-PO-8 and NAME-17..NAME-20 by S52-PO-2; no product decision remains open in this feature. Architect ruling S52-R10 fixes the post-purge retry path and is encoded in FR-014, FR-015, FR-016, SC-013, Story 4 scenario 7 and T012; it is an architect ruling derived from NAME-16=B, NAME-18=B and NAME-19=A, not a PO decision. SC-013 (late retry after the request-key purge) maps to FR-014/FR-015/FR-016 and T012 and has no evidence yet. This spec-only commit is not implementation evidence.
