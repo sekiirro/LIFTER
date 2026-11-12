@@ -132,6 +132,19 @@ describe('F20 T003 client note persistence and constraints', () => {
         ),
       ).rejects.toMatchObject({ code: '23514' });
     }
+    const [row] = await f.db`
+      select id, workspace_id, client_id, author_user_id, body,
+             created_at, idempotency_key
+      from public.client_notes where id = ${String(note.id)}
+    `;
+    expect(row).toMatchObject({
+      id: note.id,
+      workspace_id: f.workspaceId,
+      client_id: f.clientId,
+      author_user_id: f.context.trainerA.userId,
+      body: 'immutable fields',
+      idempotency_key: note.idempotency_key,
+    });
   });
 
   it('permits workspace Trainer access and denies Sales, foreign workspace, and anonymous reads', async () => {
@@ -175,7 +188,8 @@ describe('F20 T003 client note persistence and constraints', () => {
     `;
     expect(eventCount?.count).toBe(1);
     const [event] = await f.db`
-      select actor_user_id, action, target_table, target_id, workspace_id, details
+      select actor_user_id, action, target_table, target_id, workspace_id,
+             details, occurred_at
       from public.audit_events
       where action = 'client_note.created' and target_id = ${String(note.id)}
     `;
@@ -187,6 +201,10 @@ describe('F20 T003 client note persistence and constraints', () => {
       workspace_id: f.workspaceId,
       details: { client_id: f.clientId },
     });
+    expect(Object.keys((event?.details ?? {}) as object).sort()).toEqual([
+      'client_id',
+    ]);
+    expect(event?.occurred_at).toBeTruthy();
     expect(JSON.stringify(event?.details)).not.toContain('private note text');
   });
 });

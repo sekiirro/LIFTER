@@ -4,6 +4,8 @@ import {
   clientNotesFixture,
   type ClientNotesFixture,
 } from './client-notes-fixture';
+import { admin, anonClient } from './harness';
+import { issue } from './registration-links-fixture';
 
 let f: ClientNotesFixture;
 beforeAll(async () => {
@@ -139,6 +141,12 @@ describe('F20 T004 client note mutation boundaries', () => {
       `;
     }
 
+    const [eventsAfterDenials] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where target_table = 'client_notes'
+    `;
+    expect(eventsAfterDenials?.count).toBe(eventsBefore?.count);
+
     const restoredRetry = await f.context.trainerA.client.rpc(
       'create_client_note',
       {
@@ -153,6 +161,28 @@ describe('F20 T004 client note mutation boundaries', () => {
       ? restoredRetry.data[0]
       : restoredRetry.data;
     expect(restoredRow).toMatchObject({ id: note.id, outcome: 'existing' });
+    const restoredEdit = await f.context.trainerA.client.rpc(
+      'update_client_note',
+      { p_note_id: note.id, p_body: 'membership restored' },
+    );
+    expect(restoredEdit.error).toBeNull();
+
+    await f.db`
+      update public.staff_profiles set role = 'sales'
+      where user_id = ${f.context.trainerA.userId}
+    `;
+    try {
+      const roleRevokedEdit = await f.context.trainerA.client.rpc(
+        'update_client_note',
+        { p_note_id: note.id, p_body: 'role revoked' },
+      );
+      expect(roleRevokedEdit.error).not.toBeNull();
+    } finally {
+      await f.db`
+        update public.staff_profiles set role = 'trainer'
+        where user_id = ${f.context.trainerA.userId}
+      `;
+    }
 
     const forgedScope = await f.context.trainerA.client.rpc(
       'create_client_note',
@@ -168,7 +198,7 @@ describe('F20 T004 client note mutation boundaries', () => {
       select count(*)::int as count from public.audit_events
       where target_table = 'client_notes'
     `;
-    expect(eventsAfter?.count).toBe(eventsBefore?.count);
+    expect(eventsAfter?.count).toBe((eventsBefore?.count ?? 0) + 1);
   });
 
   it('rolls back create, edit, and delete when the audit insert fails', async () => {
@@ -278,6 +308,10 @@ describe('F20 T004 client note mutation boundaries', () => {
       author_user_id: f.context.trainerA.userId,
       body: 'after edit',
     });
+    const [versionTable] = await f.db`
+      select to_regclass('public.client_note_versions')::text as name
+    `;
+    expect(versionTable?.name).toBeNull();
     expect(row?.edited_at).not.toBeNull();
     const [creationTimestamp] = await f.db`
       select created_at::text as saved,
@@ -295,7 +329,8 @@ describe('F20 T004 client note mutation boundaries', () => {
     `;
     expect(editEventCount?.count).toBe(1);
     const [event] = await f.db`
-      select actor_user_id, action, target_table, target_id, workspace_id, details
+      select actor_user_id, action, target_table, target_id, workspace_id,
+             details, occurred_at
       from public.audit_events
       where action = 'client_note.updated' and target_id = ${String(note.id)}
     `;
@@ -307,6 +342,10 @@ describe('F20 T004 client note mutation boundaries', () => {
       workspace_id: f.workspaceId,
       details: { client_id: f.clientId },
     });
+    expect(Object.keys((event?.details ?? {}) as object).sort()).toEqual([
+      'client_id',
+    ]);
+    expect(event?.occurred_at).toBeTruthy();
     expect(JSON.stringify(event?.details)).not.toContain('after edit');
   });
 
@@ -332,6 +371,180 @@ describe('F20 T004 client note mutation boundaries', () => {
       body: 'platform edit',
       author_user_id: f.context.trainerA.userId,
     });
+  });
+
+  it('denies client-role access and all non-PO hard deletes, including the author', async () => {
+    const note = await f.createAsTrainer({ body: 'delete access matrix' });
+    for (const actor of [
+      f.context.trainerA,
+      f.context.woA,
+      f.context.trainerB,
+      f.context.salesA,
+    ]) {
+      const result = await actor.client.rpc('delete_client_note', {
+        p_note_id: note.id,
+      });
+      expect(result.error).not.toBeNull();
+    }
+
+    const email = `client-note-role-${randomUUID()}@example.test`;
+    const password = `F20-${randomUUID()}-aA1!`;
+    const createdUser = await admin().auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    expect(createdUser.error).toBeNull();
+    const issuedLink = await issue(f.context);
+    expect(issuedLink.error).toBeNull();
+    const registrationLinkId = Array.isArray(issuedLink.data)
+      ? issuedLink.data[0]
+      : issuedLink.data;
+    const clientId = randomUUID();
+    const phone =
+      '+201' +
+      BigInt('0x' + randomUUID().replaceAll('-', '').slice(0, 10))
+        .toString()
+        .padStart(10, '0')
+        .slice(-10);
+    await f.db.begin(async (tx) => {
+      await tx`alter table public.clients disable trigger signup_client_insert_guard`;
+      await tx`alter table public.clients disable trigger signup_client_integrity`;
+      await tx`alter table public.clients disable trigger audit_client_signup`;
+      try {
+        await tx`insert into public.clients (
+          id, workspace_id, auth_user_id, registration_link_id,
+          package_version_id, email_normalized, phone_e164, name
+        ) values (
+          ${clientId}, ${f.workspaceId}, ${createdUser.data.user?.id},
+          ${registrationLinkId}, ${f.context.p.versionId}, ${email},
+          ${phone}, 'Client Notes role fixture'
+        )`;
+      } finally {
+        await tx`alter table public.clients enable trigger signup_client_insert_guard`;
+        await tx`alter table public.clients enable trigger signup_client_integrity`;
+        await tx`alter table public.clients enable trigger audit_client_signup`;
+      }
+    });
+    const clientActor = anonClient();
+    const signedIn = await clientActor.auth.signInWithPassword({
+      email,
+      password,
+    });
+    expect(signedIn.error).toBeNull();
+    const created = await f.context.trainerA.client.rpc(
+      'create_client_note',
+      {
+        p_workspace_id: f.workspaceId,
+        p_client_id: clientId,
+        p_body: 'client-role denial probe',
+        p_idempotency_key: f.key(),
+      },
+    );
+    expect(created.error).toBeNull();
+    const clientRead = await clientActor
+      .from('client_notes')
+      .select('id')
+      .eq('id', note.id);
+    expect(clientRead.data).toEqual([]);
+    const clientUpdate = await clientActor.rpc('update_client_note', {
+      p_note_id: note.id,
+      p_body: 'client update',
+    });
+    expect(clientUpdate.error).not.toBeNull();
+    const clientDelete = await clientActor.rpc('delete_client_note', {
+      p_note_id: note.id,
+    });
+    expect(clientDelete.error).not.toBeNull();
+
+    const [row] = await f.db`
+      select count(*)::int as count from public.client_notes
+      where id = ${String(note.id)}
+    `;
+    expect(row?.count).toBe(1);
+  });
+
+  it('treats a lost-response edit retry as a new last-committed save', async () => {
+    const note = await f.createAsTrainer({ body: 'original' });
+    const first = await f.context.trainerA.client.rpc('update_client_note', {
+      p_note_id: note.id,
+      p_body: 'author first save',
+    });
+    expect(first.error).toBeNull();
+    const later = await f.context.po.client.rpc('update_client_note', {
+      p_note_id: note.id,
+      p_body: 'platform owner later save',
+    });
+    expect(later.error).toBeNull();
+    const retry = await f.context.trainerA.client.rpc('update_client_note', {
+      p_note_id: note.id,
+      p_body: 'author first save',
+    });
+    expect(retry.error).toBeNull();
+
+    const [row] = await f.db`
+      select body from public.client_notes where id = ${String(note.id)}
+    `;
+    expect(row?.body).toBe('author first save');
+    const [events] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where action = 'client_note.updated' and target_id = ${String(note.id)}
+    `;
+    expect(events?.count).toBe(3);
+  });
+
+  it('serializes overlapping author and Platform Owner saves under a row lock', async () => {
+    const note = await f.createAsTrainer({ body: 'locked original' });
+    const lockHeld = f.db.begin(async (tx) => {
+      await tx`select id from public.client_notes
+        where id = ${String(note.id)} for update`;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    const completed: string[] = [];
+    const authorSave = f.context.trainerA.client
+      .rpc('update_client_note', {
+        p_note_id: note.id,
+        p_body: 'author locked save',
+      })
+      .then((result) => {
+        completed.push('author');
+        return result;
+      });
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    const platformOwnerSave = f.context.po.client
+      .rpc('update_client_note', {
+        p_note_id: note.id,
+        p_body: 'platform owner locked save',
+      })
+      .then((result) => {
+        completed.push('platform_owner');
+        return result;
+      });
+
+    await lockHeld;
+    const [authorResult, platformOwnerResult] = await Promise.all([
+      authorSave,
+      platformOwnerSave,
+    ]);
+    expect(authorResult.error).toBeNull();
+    expect(platformOwnerResult.error).toBeNull();
+    expect(completed).toHaveLength(2);
+
+    const [row] = await f.db`
+      select body from public.client_notes where id = ${String(note.id)}
+    `;
+    expect(row?.body).toBe(
+      completed.at(-1) === 'author'
+        ? 'author locked save'
+        : 'platform owner locked save',
+    );
+    const [events] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where action = 'client_note.updated' and target_id = ${String(note.id)}
+    `;
+    expect(events?.count).toBe(2);
   });
 
   it('rolls back key state, note deletion, and audit on key-state failure', async () => {
@@ -398,7 +611,8 @@ describe('F20 T004 client note mutation boundaries', () => {
     });
     expect(retry.error).not.toBeNull();
     const [event] = await f.db`
-      select actor_user_id, action, target_table, target_id, workspace_id, details
+      select actor_user_id, action, target_table, target_id, workspace_id,
+             details, occurred_at
       from public.audit_events
       where action = 'client_note.deleted' and target_id = ${String(note.id)}
     `;
@@ -415,6 +629,10 @@ describe('F20 T004 client note mutation boundaries', () => {
       workspace_id: f.workspaceId,
       details: { client_id: f.clientId },
     });
+    expect(Object.keys((event?.details ?? {}) as object).sort()).toEqual([
+      'client_id',
+    ]);
+    expect(event?.occurred_at).toBeTruthy();
     expect(JSON.stringify(event?.details)).not.toContain('delete atomically');
   });
 });
