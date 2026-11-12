@@ -276,8 +276,6 @@ Re-read `spec.md`, `plan.md`, `tasks.md`, API/audit contracts and traceability a
 
 ## S51 T151 final analysis - 2026-11-12
 
-
-
 T151 addresses verified authorization races within FR-013 correction and FR-004/030 Builder writes, plus the adapter's existing retirement result contract. No requirement, permission, UX, copy, retention rule, or RPC contract changed. The rechecks run after each blocking lock and before cache return or writes.
 
 Verification on exact head `9f9bbdf330c017b40116e20ea7e5bfa01309676f`: adapter unit 9/9; correction and Builder integration files 28/28; concurrent revocation mutation killed and function restored byte-for-byte; normalized OLD/NEW schema dumps differ only by the 49 intended guard lines in eight hunks, with owner/ACL declarations unchanged.
