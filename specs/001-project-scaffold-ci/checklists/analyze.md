@@ -252,3 +252,10 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T012, T015 and T033 all resolve to tasks in `tasks.md`; no task status changed and no verification status was upgraded.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
 - Verdict: PASS for this documentation-only correction.
+
+## S51 CI-1 GHCR analyze - 2026-11-12T14:00:00Z
+
+- Scope: CI-1 workflow change (FR-009) per S50-PO-6 CI=A and S51-R9: GHCR override env in both jobs; -x inbucket restored. T034 added to tasks.md; traceability row added.
+- Entry gate: PASS - numbered FRs/SCs/GWT present; Clarifications recorded; plan covers CI workflow; T034 tagged FR-009; analyze dated after this edit.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguities remain. Static documentation review only; no workflow behavior changed beyond the approved env additions.
+- Verdict: PASS.
