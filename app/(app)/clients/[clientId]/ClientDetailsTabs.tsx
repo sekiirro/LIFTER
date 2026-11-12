@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { ToastProvider, useToast } from '../../../../components/ui/Toast';
 import {
   ClientNotes,
   type ClientNote,
@@ -17,16 +18,7 @@ import styles from './ClientDetailsTabs.module.css';
 
 type Messages = ReturnType<typeof getMessages>;
 
-export function ClientDetailsTabs({
-  clientId,
-  workspaceId,
-  actorId,
-  role,
-  locale,
-  messages,
-  notes,
-  status,
-}: {
+type ClientDetailsTabsProps = {
   clientId: string;
   workspaceId: string;
   actorId: string;
@@ -35,8 +27,28 @@ export function ClientDetailsTabs({
   messages: Messages;
   notes: readonly ClientNote[];
   status: ClientNotesStatus;
-}) {
+};
+
+export function ClientDetailsTabs(props: ClientDetailsTabsProps) {
+  return (
+    <ToastProvider dismissLabel={props.messages['toast.dismiss']}>
+      <ClientDetailsTabsContent {...props} />
+    </ToastProvider>
+  );
+}
+
+function ClientDetailsTabsContent({
+  clientId,
+  workspaceId,
+  actorId,
+  role,
+  locale,
+  messages,
+  notes,
+  status,
+}: ClientDetailsTabsProps) {
   const router = useRouter();
+  const toast = useToast();
 
   return (
     <main className={styles.page} dir={dirFor(locale)} lang={locale}>
@@ -74,6 +86,15 @@ export function ClientDetailsTabs({
           actorId={actorId}
           role={role}
           canCreate
+          onSuccess={(action) =>
+            toast.success(
+              action === 'created'
+                ? messages['clientNotes.createdToast']
+                : action === 'edited'
+                  ? messages['clientNotes.editedToast']
+                  : messages['clientNotes.deletedToast'],
+            )
+          }
           onRetryLoad={() => router.refresh()}
           onCreate={(body, idempotencyKey) =>
             createClientNoteAction({

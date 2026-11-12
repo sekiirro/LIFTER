@@ -352,12 +352,14 @@ describe('ClientNotes behaviour', () => {
       Node: dom.window.Node,
       IS_REACT_ACT_ENVIRONMENT: true,
     };
-    previousGlobals = new Map(
-      Object.keys(globals).map((key) => [
-        key,
-        Object.getOwnPropertyDescriptor(globalThis, key),
-      ]),
-    );
+    if (!previousGlobals) {
+      previousGlobals = new Map(
+        Object.keys(globals).map((key) => [
+          key,
+          Object.getOwnPropertyDescriptor(globalThis, key),
+        ]),
+      );
+    }
     for (const [key, value] of Object.entries(globals))
       Object.defineProperty(globalThis, key, { configurable: true, value });
     const { createRoot } = await import('react-dom/client');
@@ -372,6 +374,7 @@ describe('ClientNotes behaviour', () => {
   }
 
   it('create: first submit generates a key', async () => {
+    const onSuccess = vi.fn();
     const onCreate = vi.fn<
       (b: string, k: string) => Promise<{ status: string }>
     >(async () => ({ status: 'ok' }));
@@ -381,6 +384,7 @@ describe('ClientNotes behaviour', () => {
       status: 'ready',
       notes: [],
       onCreate,
+      onSuccess,
       canCreate: true,
     });
     const textarea = host!.querySelector('textarea')!;
@@ -395,6 +399,7 @@ describe('ClientNotes behaviour', () => {
     expect(onCreate).toHaveBeenCalledTimes(1);
     expect(onCreate.mock.calls[0]![0]).toBe('hello');
     expect(typeof onCreate.mock.calls[0]![1]).toBe('string');
+    expect(onSuccess).toHaveBeenCalledWith('created');
   });
 
   it('create: retry after failed result re-sends same key and body', async () => {
@@ -604,6 +609,8 @@ describe('ClientNotes behaviour', () => {
     )!;
     await act(async () => discard.click());
     expect(host!.querySelector('dialog')).toBeNull();
+    expect(host!.querySelector('form')).toBeNull();
+    expect(host!.textContent).toContain(mEn['clientNotes.retry']);
     expect(dom!.window.sessionStorage.getItem(recoveryKey)).toBe(
       originalRecord,
     );
@@ -747,6 +754,38 @@ describe('ClientNotes behaviour', () => {
     );
     expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
     expect(dom!.window.sessionStorage.getItem(key)).toBeNull();
+  });
+
+  it('clears a prior actor recovery record when the signed-in actor changes', async () => {
+    const storageKey =
+      'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    await render(
+      {
+        locale: 'en',
+        messages: mEn,
+        status: 'ready',
+        notes: [],
+        actorId: 'actor-2',
+        clientId: 'client-1',
+        workspaceId: 'workspace-1',
+      },
+      {
+        session: {
+          [storageKey]: JSON.stringify({
+            tabId: 'different-tab',
+            actorId: 'actor-1',
+            clientId: 'client-1',
+            workspaceId: 'workspace-1',
+            text: 'private note text',
+            body: 'private note text',
+            idempotencyKey: 'old-key',
+            retrySent: false,
+          }),
+        },
+      },
+    );
+    expect(dom!.window.sessionStorage.getItem(storageKey)).toBeNull();
+    expect(host!.textContent).not.toContain('private note text');
   });
 
   it('create: proceeds when writing the pre-dispatch recovery record fails', async () => {
@@ -909,6 +948,49 @@ describe('ClientNotes behaviour', () => {
     ).toBe('');
     expect(onCreate).not.toHaveBeenCalled();
     expect(host!.textContent?.toLowerCase()).not.toContain('save draft');
+  });
+
+  it('uses the browser beforeunload warning only for unresolved text', async () => {
+    await render({ locale: 'en', messages: mEn, status: 'ready', notes: [] });
+    const textarea = host!.querySelector('textarea')!;
+    await act(async () => setValue(textarea, 'unsaved note'));
+    const event = new dom!.window.Event('beforeunload', {
+      cancelable: true,
+    });
+    dom!.window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('does not warn when cancelling an unchanged edit', async () => {
+    const note = {
+      id: 'n1',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'unchanged',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+    });
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click();
+    });
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.cancel'])!
+        .click();
+    });
+    expect(host!.querySelector('dialog')).toBeNull();
+    expect(host!.querySelectorAll('textarea')).toHaveLength(1);
   });
 
   it('renders the approved unsaved-exit copy in Arabic', async () => {
@@ -1092,7 +1174,7 @@ describe('ClientNotes behaviour', () => {
         canCreate: true,
       });
       expect(host!.innerHTML).not.toContain('2026-11-08T10:15:00Z');
-      expect(host!.textContent).toContain('Nov 8, 2026, 2:15 AM');
+      expect(host!.textContent).toContain('8 Nov 2026, 2:15 AM');
     } finally {
       if (previousTimeZone === undefined) delete process.env.TZ;
       else process.env.TZ = previousTimeZone;
@@ -1126,6 +1208,9 @@ describe('ClientNotes behaviour', () => {
       (b) => b.textContent === mEn['clientNotes.edit'],
     )!;
     await act(async () => editBtn.click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'changed note'),
+    );
     const cancel = Array.from(host!.querySelectorAll('button')).find(
       (b) => b.textContent === mEn['clientNotes.cancel'],
     )!;

@@ -54,4 +54,14 @@ describe('Client Details route authorization context', () => {
       ),
     ).toBe(deniedContext);
   });
+
+  it('normalizes a valid mixed-case client UUID before returning route context', () => {
+    const mixedCase = clientId.toUpperCase();
+    expect(
+      resolveStaffClientContext(actor('trainer', [workspaceA]), mixedCase, {
+        client_id: clientId.toUpperCase(),
+        workspace_id: workspaceA,
+      }),
+    ).toEqual({ clientId, workspaceId: workspaceA });
+  });
 });

@@ -15,11 +15,13 @@ export function resolveStaffClientContext(
   const first = Array.isArray(result) ? result[0] : result;
   if (!first || typeof first !== 'object') return null;
   const row = first as Record<string, unknown>;
+  const normalizedClientId = requestedClientId.toLowerCase();
   if (
-    row.client_id !== requestedClientId ||
+    typeof row.client_id !== 'string' ||
+    row.client_id.toLowerCase() !== normalizedClientId ||
     typeof row.workspace_id !== 'string' ||
     !authorize(actor, 'coaching_work', row.workspace_id)
   )
     return null;
-  return { clientId: requestedClientId, workspaceId: row.workspace_id };
+  return { clientId: normalizedClientId, workspaceId: row.workspace_id };
 }

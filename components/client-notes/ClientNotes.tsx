@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type FormEvent,
 } from 'react';
 import { Alert } from '../ui/Alert';
@@ -40,6 +41,7 @@ export type ClientNotesProps = {
   actorId?: string | null;
   role?: string | null;
   canCreate?: boolean;
+  onSuccess?: (action: 'created' | 'edited' | 'deleted') => void;
   onRetryLoad?: () => void;
   onCreate?: (
     body: string,
@@ -113,6 +115,12 @@ export function ClientNotes(props: ClientNotesProps) {
   const canCreate = props.canCreate ?? true;
 
   const [draft, setDraft] = useState('');
+  const [createEditorClosed, setCreateEditorClosed] = useState(false);
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [saving, setSaving] = useState(false);
@@ -190,6 +198,22 @@ export function ClientNotes(props: ClientNotesProps) {
     try {
       const currentId = currentTabId();
       tabId.current = currentId;
+      const sessionKeys = Array.from(
+        { length: window.sessionStorage.length },
+        (_, index) => window.sessionStorage.key(index),
+      );
+      for (const key of sessionKeys) {
+        if (!key?.startsWith(PENDING_CREATE_PREFIX)) continue;
+        const stored = window.sessionStorage.getItem(key);
+        if (!stored) continue;
+        try {
+          const record = JSON.parse(stored) as Partial<PendingCreate>;
+          if (record.actorId !== props.actorId)
+            window.sessionStorage.removeItem(key);
+        } catch {
+          window.sessionStorage.removeItem(key);
+        }
+      }
       const raw = window.sessionStorage.getItem(storageKey);
       if (raw) {
         const stored = JSON.parse(raw) as Partial<PendingCreate>;
@@ -236,12 +260,29 @@ export function ClientNotes(props: ClientNotesProps) {
     storageKey,
   ]);
 
-  // dirty tracking handled by draft length
+  const editedNote = editingId
+    ? notes.find((note) => note.id === editingId)
+    : undefined;
+  const hasUnsavedChanges =
+    draft.length > 0 ||
+    (!!editedNote && editDraft !== editedNote.body) ||
+    unknownCreate ||
+    unknownEdit;
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const formatTimestamp = (value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString(
+    const parts = new Intl.DateTimeFormat(
       locale === 'ar' ? 'ar-u-nu-latn' : 'en-u-nu-latn',
       {
         day: 'numeric',
@@ -250,8 +291,16 @@ export function ClientNotes(props: ClientNotesProps) {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
+        ...(hydrated ? {} : { timeZone: 'UTC' }),
       },
-    );
+    ).formatToParts(date);
+    const part = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((item) => item.type === type)?.value ?? '';
+    const dateText = `${part('day')} ${part('month')} ${part('year')}`;
+    const timeText = `${part('hour')}:${part('minute')} ${part('dayPeriod')}`;
+    return locale === 'ar'
+      ? `${dateText}، ${timeText}`
+      : `${dateText}, ${timeText}`;
   };
 
   const handleCreate = useCallback(
@@ -288,6 +337,8 @@ export function ClientNotes(props: ClientNotesProps) {
       try {
         const res = await props.onCreate?.(body, key);
         if (res?.status === 'ok') {
+          props.onSuccess?.('created');
+          setCreateEditorClosed(false);
           removePendingCreate(key);
           setDraft('');
           setIdempotencyKey(null);
@@ -345,6 +396,7 @@ export function ClientNotes(props: ClientNotesProps) {
       try {
         const res = await props.onUpdate?.(noteId, body);
         if (res?.status === 'ok') {
+          props.onSuccess?.('edited');
           setEditingId(null);
           setEditDraft('');
           setUnknownEdit(false);
@@ -371,7 +423,9 @@ export function ClientNotes(props: ClientNotesProps) {
       setDeleteTargetId(null);
       try {
         const res = await props.onDelete?.(noteId);
-        if (res?.status !== 'ok') {
+        if (res?.status === 'ok') {
+          props.onSuccess?.('deleted');
+        } else {
           setSaveError(m['clientNotes.deleteError']);
         }
       } catch {
@@ -394,7 +448,7 @@ export function ClientNotes(props: ClientNotesProps) {
       setExitOpen(true);
       return;
     }
-    if (editDraft.trim().length > 0) {
+    if (editedNote && editDraft !== editedNote.body) {
       setExitMode('unsaved');
       setExitOpen(true);
       return;
@@ -406,7 +460,11 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const confirmDiscard = () => {
     setExitOpen(false);
-    if (exitMode === 'unknown' && (pendingCreate || unknownEdit)) return;
+    if (exitMode === 'unknown' && pendingCreate) {
+      setCreateEditorClosed(true);
+      return;
+    }
+    if (exitMode === 'unknown' && unknownEdit) return;
     if (editingId) {
       setEditingId(null);
       setEditDraft('');
@@ -568,7 +626,7 @@ export function ClientNotes(props: ClientNotesProps) {
             </ul>
           )}
 
-          {canCreate && !editingId && (
+          {canCreate && !editingId && !createEditorClosed && (
             <form className={styles.form} onSubmit={handleCreate}>
               <h3 className={styles.createTitle}>{m['clientNotes.create']}</h3>
               <label className={styles.field}>
@@ -604,6 +662,14 @@ export function ClientNotes(props: ClientNotesProps) {
                 </Button>
               </div>
             </form>
+          )}
+
+          {canCreate && !editingId && createEditorClosed && unknownCreate && (
+            <Alert tone="error" title={m['clientNotes.saveError']}>
+              <Button type="button" onClick={() => void handleCreate()}>
+                {m['clientNotes.retry']}
+              </Button>
+            </Alert>
           )}
 
           {exitOpen && (
