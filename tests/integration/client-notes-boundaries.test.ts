@@ -111,6 +111,16 @@ describe('F20 T004 client note mutation boundaries', () => {
     try {
       const read = await f.readNote(f.context.trainerA, String(note.id));
       expect(read.data).toEqual([]);
+      const revokedRetry = await f.context.trainerA.client.rpc(
+        'create_client_note',
+        {
+          p_workspace_id: f.workspaceId,
+          p_client_id: f.clientId,
+          p_body: 'membership boundary',
+          p_idempotency_key: key,
+        },
+      );
+      expect(revokedRetry.error).not.toBeNull();
       const create = await f.context.trainerA.client.rpc('create_client_note', {
         p_workspace_id: f.workspaceId,
         p_client_id: f.clientId,

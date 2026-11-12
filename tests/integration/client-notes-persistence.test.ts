@@ -80,11 +80,21 @@ describe('F20 T003 client note persistence and constraints', () => {
     const before = await f.countNotes();
     const key = f.key();
     const first = await f.createAsTrainer({ body: '  same body  ', key });
+    const [createEventsBeforeRetry] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where action = 'client_note.created' and target_id = ${String(first.id)}
+    `;
+    expect(createEventsBeforeRetry?.count).toBe(1);
     const retry = await f.createAsTrainer({ body: 'same body', key });
     expect(retry).toMatchObject({ id: first.id, outcome: 'existing' });
     const mismatch = await f.createAs(f.context.trainerA, 'different', key);
     expect(mismatch.error).not.toBeNull();
     expect(await f.countNotes()).toBe(before + 1);
+    const [eventsAfterRetry] = await f.db`
+      select count(*)::int as count from public.audit_events
+      where action = 'client_note.created' and target_id = ${String(first.id)}
+    `;
+    expect(eventsAfterRetry?.count).toBe(1);
   });
 
   it('checks retries against the original body fingerprint and preserves edits', async () => {
@@ -114,6 +124,12 @@ describe('F20 T003 client note persistence and constraints', () => {
       key,
     );
     expect(editedBodyRetry.error).not.toBeNull();
+    const unauthorizedSameKey = await f.createAs(
+      f.context.salesA,
+      'original submission',
+      key,
+    );
+    expect(unauthorizedSameKey.error).not.toBeNull();
     const [row] = await f.db`
       select body from public.client_notes where id = ${String(note.id)}
     `;
@@ -136,6 +152,25 @@ describe('F20 T003 client note persistence and constraints', () => {
     const second = await f.createAsTrainer({ body: 'second independent note' });
     expect(second.id).not.toBe(first.id);
     expect(await f.countNotes()).toBe(before + 2);
+  });
+
+  it('allows the same idempotency key in a different workspace/client scope', async () => {
+    const other = await clientNotesFixture();
+    const key = f.key();
+    try {
+      const primary = await f.createAsTrainer({ body: 'scoped key A', key });
+      const secondary = await other.createAsTrainer({
+        body: 'scoped key B',
+        key,
+      });
+      expect(secondary.id).not.toBe(primary.id);
+      expect(secondary).toMatchObject({
+        workspace_id: other.workspaceId,
+        client_id: other.clientId,
+      });
+    } finally {
+      await other.close();
+    }
   });
 
   it('serializes concurrent same-key creates and refuses direct duplicate note rows', async () => {
