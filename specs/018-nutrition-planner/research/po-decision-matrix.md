@@ -85,6 +85,7 @@ Resolved S43-MCQ-A: exact approved EN/AR bodies in contracts/copy-ai-prompt.md (
   Predecessor for context, source `runs/s49-po/s49-po-1.verbatim.txt` (SHA-256 `51afe4f6c57eca52c42422eb76b92a17c76dc237f6bc0106da866a34fe2b1faf`), line 1, verified byte-equal:
 
   > F18 MCQ-1 = 3. Draft AR/EN labels for my approval; non-blocking if copy-only.
+
 - **Approved table (frozen, byte-exact):** `runs/s49-arch/f18-label-table-approved.md` (SHA-256 `972df3d75cb24bc3f9af2c8647b9d07c8db38a77964e8d05501e6d69d4648888`, verified). The 18 rows are encoded verbatim in `specs/018-nutrition-planner/contracts/copy-ai-prompt.md` section `P6` and asserted byte-exact in `tests/contracts/nutrition-export-contract.test.ts` (`labels` fixture, `expect(labelEN)`/`expect(labelAR)` rows, AR renderer payload).
 - **Blocking:** copy-only. Phase 0 has no production prompt renderer; labels live in the contract test only -> #85 not blocked.
 

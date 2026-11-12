@@ -49,6 +49,7 @@ Plan:
 
 Structural labels emitted by the reference renderers (`tests/contracts/nutrition-export-contract.test.ts`) and asserted byte-exact against the approved table (Ruling S49-R12; approved file `runs/s49-arch/f18-label-table-approved.md`, SHA-256 `972df3d75cb24bc3f9af2c8647b9d07c8db38a77964e8d05501e6d69d4648888; Node byte compare). Numbers, units, food names, coach notes and URLs in the plan payload are not labels and stay verbatim.
 
+```
 | # | Key | EN (current) | AR (draft) | Source |
 |---|-----|--------------|------------|--------|
 | 1 | day | day {n} | اليوم {n} | new |
@@ -69,3 +70,5 @@ Structural labels emitted by the reference renderers (`tests/contracts/nutrition
 | 16 | carbs | carbs | الكربوهيدرات | reuse catalog.carbs |
 | 17 | fat | fat | الدهون | reuse catalog.fat |
 | 18 | side note | Coach's original | الأصلي من الكابتن | already approved (P5) |
+
+```
