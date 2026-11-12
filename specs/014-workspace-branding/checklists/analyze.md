@@ -8,34 +8,34 @@
 
 ## Entry check (T052 scope)
 
-| Check | Status | Evidence |
-|---|---|---|
-| Numbered FRs, measurable SCs, Given/When/Then scenarios | PASS | `specs/014-workspace-branding/spec.md` — FR-026..FR-030, SC-018..SC-022, "Hero acceptance scenarios (S20-S29 PO decisions)" items 1-5. |
-| Clarifications recorded and explicit "no open ambiguities" | PASS | `specs/014-workspace-branding/spec.md` — `## Clarifications`: "No open product ambiguities remain for this Hero scope", plus the S30-PO-2 / S30-PO-6 verbatim citations for the dense-form surface and the 90% tint. |
-| Plan covers the touched scope | PASS | `specs/014-workspace-branding/plan.md` — "Hero scope mapping (S20-S29 PO decisions; S29-PO-3 Q7)" and the S30-PO-2/S30-PO-6 sentence; `specs/014-workspace-branding/hero-implementation-plan.md` — "Spec and PO traceability" plus the S30 dense-form paragraph. |
-| Task ID with FR tags | PASS | `specs/014-workspace-branding/tasks.md` — `T052 [FR-026, FR-027, FR-029]` (S30 branch scope: FR-027, FR-029). T055/T056 remain the separate evidence/reconciliation tasks. |
-| Analyze dated after the last spec/plan/tasks change, 0 open CRITICAL/HIGH | PASS | This file is dated 2026-11-03, after the 2026-11-03 edits to `spec.md`, `plan.md`, `hero-implementation-plan.md` and `tasks.md`; findings below contain no CRITICAL or HIGH entry. |
-| Traceability register | PASS | `specs/014-workspace-branding/traceability.md` — FR -> Task -> Test -> Evidence rows for this scope. |
+| Check                                                                     | Status | Evidence                                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Numbered FRs, measurable SCs, Given/When/Then scenarios                   | PASS   | `specs/014-workspace-branding/spec.md` — FR-026..FR-030, SC-018..SC-022, "Hero acceptance scenarios (S20-S29 PO decisions)" items 1-5.                                                                                                                           |
+| Clarifications recorded and explicit "no open ambiguities"                | PASS   | `specs/014-workspace-branding/spec.md` — `## Clarifications`: "No open product ambiguities remain for this Hero scope", plus the S30-PO-2 / S30-PO-6 verbatim citations for the dense-form surface and the 90% tint.                                             |
+| Plan covers the touched scope                                             | PASS   | `specs/014-workspace-branding/plan.md` — "Hero scope mapping (S20-S29 PO decisions; S29-PO-3 Q7)" and the S30-PO-2/S30-PO-6 sentence; `specs/014-workspace-branding/hero-implementation-plan.md` — "Spec and PO traceability" plus the S30 dense-form paragraph. |
+| Task ID with FR tags                                                      | PASS   | `specs/014-workspace-branding/tasks.md` — `T052 [FR-026, FR-027, FR-029]` (S30 branch scope: FR-027, FR-029). T055/T056 remain the separate evidence/reconciliation tasks.                                                                                       |
+| Analyze dated after the last spec/plan/tasks change, 0 open CRITICAL/HIGH | PASS   | This file is dated 2026-11-03, after the 2026-11-03 edits to `spec.md`, `plan.md`, `hero-implementation-plan.md` and `tasks.md`; findings below contain no CRITICAL or HIGH entry.                                                                               |
+| Traceability register                                                     | PASS   | `specs/014-workspace-branding/traceability.md` — FR -> Task -> Test -> Evidence rows for this scope.                                                                                                                                                             |
 
 ## Revalidation of running work (S29-PO-3 Q5)
 
 The S30 implementation started before this Analyze (previous 1a session; uncommitted CSS and unit-test changes). It is revalidated against this Analyze before acceptance:
 
-| Check | Status | Evidence |
-|---|---|---|
-| Scope confined to the approved S30 option 1a | PASS | Working tree touches only `components/branding/registration-hero.module.css` and `tests/unit/registration-hero.test.ts`; no shared glass recipe, `components/ui/glass`, `vendor/glisse`, `lib/design/*`, token file or `DESIGN.md` edit. |
-| No new token, no hard-coded colour | PASS | `tests/unit/registration-hero.test.ts::introduces no new custom property` and `::tints the dense form region with the existing card token`. |
-| No threshold weakened | PASS | The 3:1 focus-ring / button-boundary thresholds in `tests/e2e/registration-hero-glisse.spec.ts` are unchanged; the tint strength was raised to the PO-approved value instead of lowering any check. |
-| Product decisions cited, not invented | PASS | Dark-field surface = S30-PO-2 option 1a; tint strength = S30-PO-6 (90% of `--color-card`). No behavior, copy, breakpoint or token was decided here. |
-| Reduced-capability and print behavior preserved | PASS | `tests/unit/registration-hero.test.ts::keeps the reduced-capability fallbacks on the existing surfaces`; `::keeps the print reset for the Glisse blur`. |
+| Check                                           | Status | Evidence                                                                                                                                                                                                                                 |
+| ----------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope confined to the approved S30 option 1a    | PASS   | Working tree touches only `components/branding/registration-hero.module.css` and `tests/unit/registration-hero.test.ts`; no shared glass recipe, `components/ui/glass`, `vendor/glisse`, `lib/design/*`, token file or `DESIGN.md` edit. |
+| No new token, no hard-coded colour              | PASS   | `tests/unit/registration-hero.test.ts::introduces no new custom property` and `::tints the dense form region with the existing card token`.                                                                                              |
+| No threshold weakened                           | PASS   | The 3:1 focus-ring / button-boundary thresholds in `tests/e2e/registration-hero-glisse.spec.ts` are unchanged; the tint strength was raised to the PO-approved value instead of lowering any check.                                      |
+| Product decisions cited, not invented           | PASS   | Dark-field surface = S30-PO-2 option 1a; tint strength = S30-PO-6 (90% of `--color-card`). No behavior, copy, breakpoint or token was decided here.                                                                                      |
+| Reduced-capability and print behavior preserved | PASS   | `tests/unit/registration-hero.test.ts::keeps the reduced-capability fallbacks on the existing surfaces`; `::keeps the print reset for the Glisse blur`.                                                                                  |
 
 ## Findings
 
-| ID | Category | Severity | Location | Finding | Recommendation |
-|---|---|---|---|---|---|
-| A1 | Acceptance evidence | MEDIUM | FR-029 / SC-021; `tasks.md` T055 | T055 still requires the hosted CI, CodeRabbit and performance evidence for the actual implementation head; this lane produces local contrast/axe/screenshot evidence only. | Keep T055 open; do not infer its evidence from this lane. |
-| A2 | Scope boundary | MEDIUM | FR-028 / SC-020; `tasks.md` T053, T056 | The signup-field restoration (FR-028) and the final FR-to-test reconciliation (T056) belong to other tasks/lanes and are not part of the T052 dense-form change. | Keep T053/T056 open with their owning lane; T052 must not close them. |
-| A3 | Acceptance evidence | LOW | FR-026 / SC-018; prototype `97debaf` | No pixel-level comparison against the approved prototype is executed in this lane; the recorded assertions are token, contrast, theme, layout and axe checks. | Keep the prototype as the visual reference for the PO review of the regenerated screenshots. |
+| ID  | Category            | Severity | Location                               | Finding                                                                                                                                                                    | Recommendation                                                                               |
+| --- | ------------------- | -------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| A1  | Acceptance evidence | MEDIUM   | FR-029 / SC-021; `tasks.md` T055       | T055 still requires the hosted CI, CodeRabbit and performance evidence for the actual implementation head; this lane produces local contrast/axe/screenshot evidence only. | Keep T055 open; do not infer its evidence from this lane.                                    |
+| A2  | Scope boundary      | MEDIUM   | FR-028 / SC-020; `tasks.md` T053, T056 | The signup-field restoration (FR-028) and the final FR-to-test reconciliation (T056) belong to other tasks/lanes and are not part of the T052 dense-form change.           | Keep T053/T056 open with their owning lane; T052 must not close them.                        |
+| A3  | Acceptance evidence | LOW      | FR-026 / SC-018; prototype `97debaf`   | No pixel-level comparison against the approved prototype is executed in this lane; the recorded assertions are token, contrast, theme, layout and axe checks.              | Keep the prototype as the visual reference for the PO review of the regenerated screenshots. |
 
 ## Coverage and constitution
 
@@ -62,24 +62,24 @@ T052 implementation and assertions are complete on code head `1ba2374`: unit 32/
 
 #### Entry gate revalidation
 
-| Check | Status | Evidence |
-|---|---|---|
-| Numbered requirements, measurable success criteria and Given/When/Then scenarios | PASS | `spec.md` FR-008, FR-028, SC-023/024 and Hero scenarios 6–8. |
-| Clarifications and explicit ambiguity status | PASS | `spec.md` `## Clarifications` cites all three PO sources and explicitly says no behavior or validation ambiguity remains; exact EN/AR strings remain pending PO copy approval. |
-| Plan and task IDs tagged with FRs | PASS | `plan.md` S32 signup/banner section; `tasks.md` T057–T060 tagged FR-028 / FR-008. |
-| Fresh Analyze after spec/plan/tasks changes; 0 open CRITICAL/HIGH | PASS | This Round 7 is dated 2026-11-04 and follows the r20 artifact edits; findings below contain 0 CRITICAL and 0 HIGH. |
+| Check                                                                            | Status | Evidence                                                                                                                                                                       |
+| -------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Numbered requirements, measurable success criteria and Given/When/Then scenarios | PASS   | `spec.md` FR-008, FR-028, SC-023/024 and Hero scenarios 6–8.                                                                                                                   |
+| Clarifications and explicit ambiguity status                                     | PASS   | `spec.md` `## Clarifications` cites all three PO sources and explicitly says no behavior or validation ambiguity remains; exact EN/AR strings remain pending PO copy approval. |
+| Plan and task IDs tagged with FRs                                                | PASS   | `plan.md` S32 signup/banner section; `tasks.md` T057–T060 tagged FR-028 / FR-008.                                                                                              |
+| Fresh Analyze after spec/plan/tasks changes; 0 open CRITICAL/HIGH                | PASS   | This Round 7 is dated 2026-11-04 and follows the r20 artifact edits; findings below contain 0 CRITICAL and 0 HIGH.                                                             |
 
 The initial entry check was recorded as FAIL in the r20 report because the prior documents did not cover this scope. After updating artifacts and this Analyze, the entry gate is revalidated PASS. No implementation started before this revalidation.
 
 #### Findings
 
-| ID | Category | Severity | Location | Finding | Recommendation |
-|---|---|---|---|---|---|
-| R20-A1 | Copy approval | MEDIUM | `spec.md` FR-028; `lib/i18n/messages/en.ts`, `lib/i18n/messages/ar.ts` | The required username-specific unavailable message and format-error message need exact EN/AR wording; PO has not approved the example. | Draft strings in the run report only. Do not add localization keys or render the new copy until approved; continue validation and server work that does not depend on wording. |
-| R20-A2 | Existing data prerequisite | MEDIUM | `public.clients.username_normalized`; migration T058 | A check constraint can reject existing usernames outside the new format. | Before migration work, run the required Stack B count-only query. A nonzero count blocks the constraint and requires a PO decision. |
-| R20-A3 | Signup transaction mapping | MEDIUM | `lib/client-accounts/service.ts`; `public.client_signup` | The app currently forwards `duplicate` without field attribution; the RPC collapses reserved names to `invalid` and unique username collisions to `duplicate`. | Preserve generic failure and audit behavior while introducing one username-only internal status for both taken/reserved; map it to public `invalid_input` with only `username`. Add regression and Stack B integration tests. |
-| R20-A4 | Username normalization | LOW | `lib/forms/signup-policy.ts`; `app/register/[token]/schema.ts`; `lib/client-accounts/validation.ts`; migration `20261104001000_f15_signup_profile.sql` | Current NFKC normalization can accept non-ASCII compatibility characters, and current validation only checks non-empty/reserved. The existing pushed migration has a broader NFKC/lower check and is immutable. | Validate the authored input against the PO's ASCII rule in new code and a new forward migration; leave `20261104001000` untouched. Keep database storage lowercase normalization consistent with case-insensitive matching. |
-| R20-A5 | Protected artifacts | LOW | `AGENTS.md`; `app/(dev)/showcase/rest/` | User-owned untracked paths are present. | Exclude both from staging and commit. |
+| ID     | Category                   | Severity | Location                                                                                                                                               | Finding                                                                                                                                                                                                         | Recommendation                                                                                                                                                                                                                |
+| ------ | -------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R20-A1 | Copy approval              | MEDIUM   | `spec.md` FR-028; `lib/i18n/messages/en.ts`, `lib/i18n/messages/ar.ts`                                                                                 | The required username-specific unavailable message and format-error message need exact EN/AR wording; PO has not approved the example.                                                                          | Draft strings in the run report only. Do not add localization keys or render the new copy until approved; continue validation and server work that does not depend on wording.                                                |
+| R20-A2 | Existing data prerequisite | MEDIUM   | `public.clients.username_normalized`; migration T058                                                                                                   | A check constraint can reject existing usernames outside the new format.                                                                                                                                        | Before migration work, run the required Stack B count-only query. A nonzero count blocks the constraint and requires a PO decision.                                                                                           |
+| R20-A3 | Signup transaction mapping | MEDIUM   | `lib/client-accounts/service.ts`; `public.client_signup`                                                                                               | The app currently forwards `duplicate` without field attribution; the RPC collapses reserved names to `invalid` and unique username collisions to `duplicate`.                                                  | Preserve generic failure and audit behavior while introducing one username-only internal status for both taken/reserved; map it to public `invalid_input` with only `username`. Add regression and Stack B integration tests. |
+| R20-A4 | Username normalization     | LOW      | `lib/forms/signup-policy.ts`; `app/register/[token]/schema.ts`; `lib/client-accounts/validation.ts`; migration `20261104001000_f15_signup_profile.sql` | Current NFKC normalization can accept non-ASCII compatibility characters, and current validation only checks non-empty/reserved. The existing pushed migration has a broader NFKC/lower check and is immutable. | Validate the authored input against the PO's ASCII rule in new code and a new forward migration; leave `20261104001000` untouched. Keep database storage lowercase normalization consistent with case-insensitive matching.   |
+| R20-A5 | Protected artifacts        | LOW      | `AGENTS.md`; `app/(dev)/showcase/rest/`                                                                                                                | User-owned untracked paths are present.                                                                                                                                                                         | Exclude both from staging and commit.                                                                                                                                                                                         |
 
 #### Decision and coverage review
 
@@ -112,22 +112,22 @@ The task checkbox update records S32-PO-1 approval of the r18 visual review and 
 
 **Scope reviewed:** task completion evidence and final verification for the S32-PO-2 Q2/Q3 and S32-PO-8 Q7 implementation. No requirement wording changed in this round.
 
-| Check | Result | Evidence |
-|---|---|---|
-| Numbered FRs, measurable SCs, and Given/When/Then scenarios | PASS | `spec.md` FR-008/FR-028, SC-023/SC-024 and scenarios 6–8. |
-| Clarifications and explicit ambiguity status | PASS | `spec.md` cites the three PO decisions; behavior/rule scope is explicit; exact EN/AR strings remain explicitly pending PO copy approval. |
-| Plan and FR-tagged task IDs | PASS | `plan.md`; `tasks.md` T057–T060. T057/T060 are checked with r20 evidence; T058/T059 remain open where gated work is incomplete. |
-| Analyze after the latest spec/plan/tasks edit; open CRITICAL/HIGH findings | PASS | Round 8 timestamp follows the task status update; 0 open CRITICAL/HIGH findings. |
+| Check                                                                      | Result | Evidence                                                                                                                                 |
+| -------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Numbered FRs, measurable SCs, and Given/When/Then scenarios                | PASS   | `spec.md` FR-008/FR-028, SC-023/SC-024 and scenarios 6–8.                                                                                |
+| Clarifications and explicit ambiguity status                               | PASS   | `spec.md` cites the three PO decisions; behavior/rule scope is explicit; exact EN/AR strings remain explicitly pending PO copy approval. |
+| Plan and FR-tagged task IDs                                                | PASS   | `plan.md`; `tasks.md` T057–T060. T057/T060 are checked with r20 evidence; T058/T059 remain open where gated work is incomplete.          |
+| Analyze after the latest spec/plan/tasks edit; open CRITICAL/HIGH findings | PASS   | Round 8 timestamp follows the task status update; 0 open CRITICAL/HIGH findings.                                                         |
 
 #### Findings
 
-| ID | Severity | Finding | Status |
-|---|---|---|---|
-| R20-R8-A1 | MEDIUM | Stack B has 21 existing username values outside the approved rule; a check constraint would reject them. | PO decision required; constraint blocked. |
-| R20-R8-A2 | MEDIUM | Exact username-unavailable and format-error EN/AR copy is not approved. | Copy approval required; no draft is rendered. |
-| R20-R8-A3 | MEDIUM | Stack B migration history requires an unrelated missing version and then 22 earlier migrations with `--include-all`. | Integration blocked; do not repair or apply. |
-| R20-R8-A4 | LOW | Existing DOB keyboard-order E2E assertion fails identically on pre-r20 `d5efa39` and r20; r20 does not change the name→DOB DOM order or DOB behavior. | Pre-existing, outside the approved username change; threshold/test retained. |
-| R20-R8-A5 | LOW | Protected untracked `AGENTS.md` and `app/(dev)/showcase/rest/` remain in the worktree. | Excluded from staging. |
+| ID        | Severity | Finding                                                                                                                                               | Status                                                                       |
+| --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| R20-R8-A1 | MEDIUM   | Stack B has 21 existing username values outside the approved rule; a check constraint would reject them.                                              | PO decision required; constraint blocked.                                    |
+| R20-R8-A2 | MEDIUM   | Exact username-unavailable and format-error EN/AR copy is not approved.                                                                               | Copy approval required; no draft is rendered.                                |
+| R20-R8-A3 | MEDIUM   | Stack B migration history requires an unrelated missing version and then 22 earlier migrations with `--include-all`.                                  | Integration blocked; do not repair or apply.                                 |
+| R20-R8-A4 | LOW      | Existing DOB keyboard-order E2E assertion fails identically on pre-r20 `d5efa39` and r20; r20 does not change the name→DOB DOM order or DOB behavior. | Pre-existing, outside the approved username change; threshold/test retained. |
+| R20-R8-A5 | LOW      | Protected untracked `AGENTS.md` and `app/(dev)/showcase/rest/` remain in the worktree.                                                                | Excluded from staging.                                                       |
 
 **Verdict:** PASS for Spec Kit entry and revalidation. No open CRITICAL/HIGH findings. T057 and T060 are verified; T058 and T059 are intentionally open pending their recorded data/copy gates. The exact PO-approved T052 wording remains unchanged.
 
@@ -137,20 +137,20 @@ The task checkbox update records S32-PO-1 approval of the r18 visual review and 
 
 Revalidated after the S33 edits to `spec.md`, `plan.md`, and `tasks.md`. Scope: the approved Q9 constraint deferral and synthetic Stack-B audit (T058), Q10 EN copy / pending AR draft and Q11 clear-on-edit behavior (T059), plus refreshed username error-state UI evidence (T060). FR-028 and SC-023 cover the validation, server status, field association, focus, and constraint scope; Hero Given/When/Then scenarios 7–9 now cite the PO decisions. Tasks remain FR-tagged T058–T060. No open behavior ambiguity remains; Q9 remediation and Egyptian-colloquial AR copy are explicitly open approval gates.
 
-| Gate item | Result | Evidence |
-|---|---|---|
-| Numbered FRs, measurable SCs, Given/When/Then | PASS | `spec.md` FR-028, SC-023, scenarios 7–9. |
-| Clarifications / decision register; explicit ambiguity state | PASS | `spec.md` Clarifications cite S32-PO-9 Q9–Q11; no behavior ambiguity; AR copy and Q9 remediation approval remain open. |
-| Plan and task IDs tagged to FRs | PASS | `plan.md` S32 signup clarification records Q9–Q11; `tasks.md` T058–T060 [FR-028 / FR-008]. |
-| Analyze newer than spec/plan/tasks | PASS | This Round 9 is dated 2026-11-04 after those edits. |
+| Gate item                                                    | Result | Evidence                                                                                                               |
+| ------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Numbered FRs, measurable SCs, Given/When/Then                | PASS   | `spec.md` FR-028, SC-023, scenarios 7–9.                                                                               |
+| Clarifications / decision register; explicit ambiguity state | PASS   | `spec.md` Clarifications cite S32-PO-9 Q9–Q11; no behavior ambiguity; AR copy and Q9 remediation approval remain open. |
+| Plan and task IDs tagged to FRs                              | PASS   | `plan.md` S32 signup clarification records Q9–Q11; `tasks.md` T058–T060 [FR-028 / FR-008].                             |
+| Analyze newer than spec/plan/tasks                           | PASS   | This Round 9 is dated 2026-11-04 after those edits.                                                                    |
 
 ### Findings
 
-| ID | Severity | Finding | Disposition |
-|---|---|---|---|
-| R9-A1 | MEDIUM | Stack B has 21 synthetic existing usernames outside the allowed ASCII set; constraint rollout must await PO-approved remediation under Q9. | Keep T058 open. This run audits counts/pattern classes only; no data changes or constraint migration. |
-| R9-A2 | MEDIUM | Egyptian-colloquial AR unavailable and format-error strings await PO approval under Q10. | Keep generic AR field error. Do not ship the draft. |
-| R9-A3 | MEDIUM | Stack B history is 64 rows vs 113 branch migrations, with a remote-only version and 50 versions absent from history. | No repair; this is not the same-blob rename repair accepted on Stack D. Keep history sync outside the Hero run pending the separate decision. |
+| ID    | Severity | Finding                                                                                                                                    | Disposition                                                                                                                                   |
+| ----- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| R9-A1 | MEDIUM   | Stack B has 21 synthetic existing usernames outside the allowed ASCII set; constraint rollout must await PO-approved remediation under Q9. | Keep T058 open. This run audits counts/pattern classes only; no data changes or constraint migration.                                         |
+| R9-A2 | MEDIUM   | Egyptian-colloquial AR unavailable and format-error strings await PO approval under Q10.                                                   | Keep generic AR field error. Do not ship the draft.                                                                                           |
+| R9-A3 | MEDIUM   | Stack B history is 64 rows vs 113 branch migrations, with a remote-only version and 50 versions absent from history.                       | No repair; this is not the same-blob rename repair accepted on Stack D. Keep history sync outside the Hero run pending the separate decision. |
 
 **Coverage:** FR-028 / SC-023 map to T057–T059; screenshot evidence for signup rendering maps to T060/FR-008 and FR-028. No new schema or permission change is included. EN copy and username edit behavior are already decided in the PO register. The availability check remains submit-only.
 
@@ -169,7 +169,6 @@ This addendum follows the last `spec.md` edit, which replaced the stale copy-pen
 - Findings count: 0 CRITICAL, 0 HIGH, 3 MEDIUM (the Q9 remediation/data gate, pending AR copy, and Stack B migration-history mismatch from Round 9 remain open).
 
 **Verdict:** PASS for the current in-scope review/copy edits; all three medium gates remain as previously recorded. No migration or Stack B history change is authorized.
-
 
 ## Round 11 — S33 r21 evidence revalidation (2026-11-04)
 
@@ -193,14 +192,15 @@ This round follows the final r21 task-status and traceability edits. It records 
 
 ### Findings
 
-| ID | Severity | Finding | Disposition |
-|---|---|---|---|
-| R12-A1 | MEDIUM | Stack B has 21 invalid-character synthetic usernames and migration-history drift (64/113); signup E2E that requires unapplied `20261107032001` is environment-drift blocked. | Keep T058 open under H2=A; no data/schema/history changes. Provide a read-only convergence proposal. |
-| R12-A2 | MEDIUM | Existing review thread `zuDS8` reports a stale local invalid-input alert after identity errors clear. | RED-first fix in this authorized existing PR scope. |
-| R12-A3 | MEDIUM | Existing review thread `zuDTL` reports an extra FR-008 traceability cell. | Fix the table row to five cells; preserve existing status. |
-| R12-A4 | MEDIUM | Existing review thread `zuVlm` reports dark error token leakage to light-OS Follow Device. | RED-first fix and rendered theme checks; no new tokens. |
+| ID     | Severity | Finding                                                                                                                                                                      | Disposition                                                                                          |
+| ------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| R12-A1 | MEDIUM   | Stack B has 21 invalid-character synthetic usernames and migration-history drift (64/113); signup E2E that requires unapplied `20261107032001` is environment-drift blocked. | Keep T058 open under H2=A; no data/schema/history changes. Provide a read-only convergence proposal. |
+| R12-A2 | MEDIUM   | Existing review thread `zuDS8` reports a stale local invalid-input alert after identity errors clear.                                                                        | RED-first fix in this authorized existing PR scope.                                                  |
+| R12-A3 | MEDIUM   | Existing review thread `zuDTL` reports an extra FR-008 traceability cell.                                                                                                    | Fix the table row to five cells; preserve existing status.                                           |
+| R12-A4 | MEDIUM   | Existing review thread `zuVlm` reports dark error token leakage to light-OS Follow Device.                                                                                   | RED-first fix and rendered theme checks; no new tokens.                                              |
 
 **Coverage:** S34-PO-1 H1/A specifies exact bilingual strings; H2/A defers existing-account enforcement without changing new-signup validation. All touched FRs remain mapped to T058/T059. No product decision or design gap is introduced. **Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM. **Verdict:** PASS for the in-scope existing-PR work and the required H1/H2 spec clarification.
+
 ## Round 13 — S34 r22 implementation revalidation (2026-11-05)
 
 This round follows the final copy, H2 deferral, and FR-008 traceability edits. It revalidates the in-scope CodeRabbit fixes before acceptance.
@@ -212,6 +212,7 @@ This round follows the final copy, H2 deferral, and FR-008 traceability edits. I
 - Design: no new token, color, spacing, font, component, motion, effect or dependency. No design gap in the changed behavior.
 
 **Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM (Stack B drift/H2 remediation and the three open review threads until pushed/replied). **Verdict:** PASS for the in-scope existing-PR fixes. T058 remains open; T059/T060 close only after tests pass on the committed head with evidence.
+
 ## Round 14 — S34 r22 committed evidence (2026-11-05)
 
 This round follows the T059/T060 checkbox and traceability evidence updates.
@@ -222,6 +223,7 @@ This round follows the T059/T060 checkbox and traceability evidence updates.
 - Stack B baseline and final StartedAt check remain read-only; migration drift keeps `20261107032001` dependent E2E classified as ENV-DRIFT. No assertions are changed.
 
 **Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM (Stack B migration drift, H2 remediation deferral, and the remaining open `zeI67` thread pending architect/reviewer agreement). **Verdict:** PASS for committed in-scope fixes. T058 remains open; no database constraint is introduced.
+
 ## Round 15 — S34 r23 docs and signup-test review fixes (2026-11-05)
 
 This round follows the S34-PO-1 H1=A/H2=A clarification and planning/task additions for the authorized existing-PR review fixes T061/T062.
@@ -235,14 +237,15 @@ This round follows the S34-PO-1 H1=A/H2=A clarification and planning/task additi
 
 ### Findings and disposition
 
-| ID | Severity | Finding | Disposition |
-|---|---|---|---|
-| R15-A1 | MEDIUM | Plan.md retained a database-constraint requirement and migration step that conflict with S34-PO-1 H2=A. | Corrected; no constraint or migration is planned in this round; T058 stays open. |
-| R15-A2 | MEDIUM | Spec.md retained the pre-H1 Arabic-copy-pending status. | Corrected to cite H1=A and the exact approved/shipped strings. |
-| R15-A3 | MEDIUM | Signup tests had stale fixed DOB values and/or omitted newly required identity values, so assertions did not isolate their intended fields. | T062 RED-first test fixture repair; preserve the intended invalid DOB/password assertions and use relative dates. |
-| R15-A4 | MEDIUM | `z3iuY` requests a light error-border contrast treatment not decided by the approved design system. | Leave the CSS unchanged, reply that a PO design decision is required, and keep the thread open. |
+| ID     | Severity | Finding                                                                                                                                     | Disposition                                                                                                       |
+| ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| R15-A1 | MEDIUM   | Plan.md retained a database-constraint requirement and migration step that conflict with S34-PO-1 H2=A.                                     | Corrected; no constraint or migration is planned in this round; T058 stays open.                                  |
+| R15-A2 | MEDIUM   | Spec.md retained the pre-H1 Arabic-copy-pending status.                                                                                     | Corrected to cite H1=A and the exact approved/shipped strings.                                                    |
+| R15-A3 | MEDIUM   | Signup tests had stale fixed DOB values and/or omitted newly required identity values, so assertions did not isolate their intended fields. | T062 RED-first test fixture repair; preserve the intended invalid DOB/password assertions and use relative dates. |
+| R15-A4 | MEDIUM   | `z3iuY` requests a light error-border contrast treatment not decided by the approved design system.                                         | Leave the CSS unchanged, reply that a PO design decision is required, and keep the thread open.                   |
 
 **Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM. **Verdict:** PASS to continue the authorized docs and test fixes. No schema, database, user-facing copy, visual style, or new signup behavior changes are authorized by this round.
+
 ## Round 16 — S34 r23 task evidence and verification boundary (2026-11-05)
 
 This round follows the T061 completion evidence and T062 partial evidence recorded in `tasks.md` and the FR-028 row update in `traceability.md`.
@@ -256,11 +259,11 @@ This round follows the T061 completion evidence and T062 partial evidence record
 
 ### Findings and disposition
 
-| ID | Severity | Finding | Disposition |
-|---|---|---|---|
-| R16-A1 | MEDIUM | r23 corrected contradictory H1/H2 documentation. | T061 verified and checked. |
-| R16-A2 | MEDIUM | Signup E2E fixtures were corrected to isolate intended invalid fields and use relative dates. | Unit evidence passed 24/24. Stack B Playwright is not executed because the test harness `registrationFixture` / `packagesFixture` writes persistent synthetic rows and issues links; this conflicts with the explicit no-DB-mutation rule. Keep T062 open. |
-| R16-A3 | MEDIUM | Light error-border contrast treatment has no approved PO choice (`z3iuY`). | Reply that PO design decision is required; leave thread open and do not edit the border. |
+| ID     | Severity | Finding                                                                                       | Disposition                                                                                                                                                                                                                                                |
+| ------ | -------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R16-A1 | MEDIUM   | r23 corrected contradictory H1/H2 documentation.                                              | T061 verified and checked.                                                                                                                                                                                                                                 |
+| R16-A2 | MEDIUM   | Signup E2E fixtures were corrected to isolate intended invalid fields and use relative dates. | Unit evidence passed 24/24. Stack B Playwright is not executed because the test harness `registrationFixture` / `packagesFixture` writes persistent synthetic rows and issues links; this conflicts with the explicit no-DB-mutation rule. Keep T062 open. |
+| R16-A3 | MEDIUM   | Light error-border contrast treatment has no approved PO choice (`z3iuY`).                    | Reply that PO design decision is required; leave thread open and do not edit the border.                                                                                                                                                                   |
 
 **Findings count:** 0 CRITICAL, 0 HIGH, 3 MEDIUM. **Verdict:** PASS for the documentation fix and unit-verified test changes. Stack B remained read-only; E2E verification stays open under T062.
 
@@ -290,12 +293,12 @@ T900 has been marked complete only after the GC integration tests passed on the 
 
 ### Findings and dispositions
 
-| ID | Severity | Finding | Disposition |
-|---|---|---|---|
-| R17-A1 | MEDIUM | The light Hero field error edge previously used the blended `error.bg` / `error.border` recipe, which is low contrast against the light input. | S35-PO-1 selects the existing `error.fg` token for light mode. T063 requires computed contrast evidence; do not add a color or token. |
-| R17-A2 | MEDIUM | T062 signup/Hero Playwright verification was deferred in r23 because its approved fixture setup writes persistent synthetic records. | S35 authorizes those writes on Stack B through the unmodified harness. The attempted suite stopped before fixtures because the selected local environment lacks `JWT_SECRET`; this is ENV-BLOCKED, not schema drift. Preserve Stack B and do not converge it. |
-| R17-A3 | LOW | F14 tasks contained two mojibake arrows; the FR-028 traceability row lacked its Gap cell; the screenshot test generated a stale STOP note contradicting its referenced matrix evidence. | Corrected in this round: `TS↔SQL` on both task lines, six-cell FR-028 row, and generated index now points readers to final dev/prod matrix evidence. |
-| R17-A4 | MEDIUM | T055 final-head release evidence, and T058's approved existing-account remediation work, remain separate open scope. | Keep both tasks open; neither blocks the scoped Hero CSS change, and neither is inferred complete. |
+| ID     | Severity | Finding                                                                                                                                                                                 | Disposition                                                                                                                                                                                                                                                   |
+| ------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R17-A1 | MEDIUM   | The light Hero field error edge previously used the blended `error.bg` / `error.border` recipe, which is low contrast against the light input.                                          | S35-PO-1 selects the existing `error.fg` token for light mode. T063 requires computed contrast evidence; do not add a color or token.                                                                                                                         |
+| R17-A2 | MEDIUM   | T062 signup/Hero Playwright verification was deferred in r23 because its approved fixture setup writes persistent synthetic records.                                                    | S35 authorizes those writes on Stack B through the unmodified harness. The attempted suite stopped before fixtures because the selected local environment lacks `JWT_SECRET`; this is ENV-BLOCKED, not schema drift. Preserve Stack B and do not converge it. |
+| R17-A3 | LOW      | F14 tasks contained two mojibake arrows; the FR-028 traceability row lacked its Gap cell; the screenshot test generated a stale STOP note contradicting its referenced matrix evidence. | Corrected in this round: `TS↔SQL` on both task lines, six-cell FR-028 row, and generated index now points readers to final dev/prod matrix evidence.                                                                                                          |
+| R17-A4 | MEDIUM   | T055 final-head release evidence, and T058's approved existing-account remediation work, remain separate open scope.                                                                    | Keep both tasks open; neither blocks the scoped Hero CSS change, and neither is inferred complete.                                                                                                                                                            |
 
 ### Design and implementation constraints
 
@@ -378,3 +381,88 @@ The change is docs-only. No SQL, test, code, schema, data, or shared-migration c
 - Not in scope: F3 (registration-link reuse mapped to `duplicate`). Verified NOT CONFIRMED at `5102877f`: the migration returns `invalid` for that constraint, so no fix is made.
 - Coverage: FR-015 (accessible UI, focus) and FR-028 (identity field error and focus rules). No requirement text changed, no product or copy decision is needed, no visual change, no migration change.
 - Findings count: 0 CRITICAL, 0 HIGH. Verdict: PASS for T066 entry.
+
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing branding approvals and separately recorded implementation/acceptance gates remain unchanged; no new visual behavior is specified.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## Restored historical core analysis (S31 record)
+
+The core F14 analysis and S31 refresh are restored here as historical evidence; later rounds remain below and current traceability status is stated in the S41 re-analysis.
+
+| ID      | Severity | Finding                                                                                                                                                                          | Disposition                                                                                                                                          |
+| ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F14-A01 | MEDIUM   | FR-009 owner-facing upload controls and alt-text editor UI were approved DEFERRED to F14b.                                                                                       | Preserve DEFERRED for the FR-009 owner-editor row; FR-009 as a whole remains PARTIAL. Do not change the deferral or include F14b work in core scope. |
+| F14-A02 | MEDIUM   | Capacity, backup/restore, complete Q-M coverage and hosted release evidence remain open production gates.                                                                        | Keep tasks unchecked; do not claim hosted verification or a PO deferral.                                                                             |
+| F14-A03 | MEDIUM   | Proxy helper tests cover private/no-store. Invalid registration responses assert no-store and referrer-policy headers, but the full private, no-store matrix is not established. | Keep FR-011 and SC-007 PARTIAL until the registration response matrix is asserted.                                                                   |
+
+**S31 refresh (historical):** FR-011 remains PARTIAL because invalid registration responses assert no-store and referrer-policy, but complete private, no-store coverage across the registration response matrix is not demonstrated. Coverage mapping remains 18/18 FR and 11/11 SC; no CRITICAL/HIGH. Static review only.
+
+## S41 current traceability re-analysis
+
+- Date: 2026-11-09 19:56:44 UTC, after the FR-011 and SC-007 statuses were corrected to PARTIAL and the historical core record restored.
+- Scope: current spec/traceability evidence; proxy success and error cache headers are asserted. Invalid registration responses assert no-store and referrer-policy, but the full private, no-store registration matrix is not established. Preserve F14-A01..A03 and all later recorded findings/gates.
+- Current core matrix: 15 VERIFIED, 14 PARTIAL (10 VERIFIED / 8 PARTIAL requirements plus 5 VERIFIED / 6 PARTIAL success criteria; the FR-009 owner-editor row is DEFERRED and counted separately; SC-004 moved to PARTIAL in the S49 round recorded below); FR-011, SC-004 and SC-007 remain PARTIAL.
+- Findings: 0 open CRITICAL, 0 open HIGH; the existing medium production/evidence gaps remain. No tests or tasks were changed.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after correcting the current core total; no later spec/plan/tasks edits follow this analysis.
+- Scope: rechecked every traceability row and current Analyze total. Core matrix is 15 VERIFIED / 14 PARTIAL (current; SC-004 moved to PARTIAL in the S49 round recorded below); FR-011, SC-004 and SC-007 remain PARTIAL. Other historical/current feature rows, decision references, links and task evidence were checked without changing status.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the feature.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S41 CodeRabbit round-3 registration-header re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after correcting the historical deferral and registration-header descriptions.
+- Scope: preserve DEFERRED for the FR-009 owner-editor row; core FR-009 remains PARTIAL. Invalid registration responses assert no-store and referrer-policy, but the full private, no-store response matrix is not demonstrated. FR-011 and SC-007 remain PARTIAL.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or tasks changed.
+- Verdict: PASS for these documentation-only corrections.
+
+## S42 CodeRabbit full-review requirement-link re-analysis
+
+- Date: 2026-11-10 03:04 UTC, after the round-4 T041 tag correction and the FR-011/SC-007 traceability references.
+- Scope: T041 runs the Q-M01..Q-M30 matrix, whose Q-M16 inspects registration response headers for `private, no-store`; T041 now carries FR-011 and SC-007, and both traceability rows name T041 as the pending matrix check. Both requirements remain PARTIAL because the full registration-route response matrix is still not demonstrated.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or tasks were executed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
+
+## S46 CodeRabbit round-5 finding re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F6 quickstart Q-M16 clarification.
+- Scope: F6 — Q-M16 now explicitly requires registration-route valid and invalid responses to assert private, no-store, so a proxy-only check cannot satisfy T041's pending matrix item. FR-011 and SC-007 remain PARTIAL; traceability rows already name T041 (Q-M16) as the pending check. No status changed and no new requirement added (FR-011/SC-007 already demand this coverage).
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F19–F21 (redirect header check, Worker benchmarks, preview-response gap). Q-M16 now asserts valid, invalid AND redirect registration responses carry private and no-store with T041 staying open until the redirect sets private; FR-009 core pipeline is PARTIAL until Worker CPU/memory benchmarks (T039) are recorded; the FR-011 preview-response header gap is recorded.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread findings on this head. (a) The current core matrix total is corrected to 16 VERIFIED / 13 PARTIAL, counted from the core traceability table: 10 VERIFIED and 8 PARTIAL requirements plus 6 VERIFIED and 5 PARTIAL success criteria, with the FR-009 owner-editor row counted as DEFERRED and kept separate (SC-004 moved to PARTIAL in the S49 round recorded below, making the current total 15 VERIFIED / 14 PARTIAL). The repeated total in the S41-R12 record above now matches. (b) Q-M16 in `quickstart.md` now requires the branding preview success and preview error responses to assert both `private` and `no-store`, in addition to the registration-route valid, invalid and redirect responses, so T041 cannot close on the registration-route checks alone. FR-011 and SC-007 remain PARTIAL and T041 stays unchecked.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope. T041 resolves in `tasks.md`; no task status changed and no verification status was upgraded.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-8 review-fix analysis - 2026-11-11T18:15:00Z
+
+- Scope: CodeRabbit inline-thread finding on the Q-M16 acceptance criterion. Q-M16 now records the T041 implementation prerequisite explicitly: the draft handler and middleware.ts must set the private cache directive alongside no-store on the registration responses (verified: app/api/branding/draft/route.ts line 32 and middleware.ts line 77 set no-store only, while lib/branding/proxy-response.ts line 24 already sets private, no-store), and the preview success and preview error responses must assert both directives. T041 stays open until that implementation is complete and the preview checks exist. The existing registration-response requirements are preserved.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T041 resolves in tasks.md and remains unchecked.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
+
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
+
+- Scope: CodeRabbit inline-thread findings on three traceability rows. (a) SC-004 is now PARTIAL: the cited tests cover the malformed and unsupported image rejection and the bounded GC cleanup (now also citing `keeps validated bytes referenced by a draft out of stale-upload cleanup` for the referenced-object clause), while the previous asset remaining unchanged after a rejected upload and the absence of a client-visible signed URL on the upload path have no automated assertion. (b) SC-020 is now PARTIAL: the signup-profile, validation and focus clauses remain evidenced, but no cited test or artifact verifies that Intake reads the persisted `public.clients` fields, so the F15 Intake boundary clause is unevidenced. (c) SC-021 is now PARTIAL: the Glisse contrast matrix and screenshot evidence is the r18/r19 set at code heads `1fd528d` and `ad32eb21`, and the current Hero contrast gate (T063 rendered screenshot matrix and computed browser contrast) has not run at this head. The core matrix total therefore moves to 15 VERIFIED / 14 PARTIAL (10 VERIFIED / 8 PARTIAL requirements plus 5 VERIFIED / 6 PARTIAL success criteria; the FR-009 owner-editor row stays DEFERRED and counted separately). No task status changed and no requirement text changed.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T041 and T063 remain unchecked.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

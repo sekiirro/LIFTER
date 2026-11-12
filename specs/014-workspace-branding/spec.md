@@ -127,6 +127,7 @@ Decision text is recorded from the PO source: S32-PO-2 Q2, "Card may overlay art
 ## Requirements
 
 ### Functional Requirements
+
 ### Hero Functional Requirements (F14 scope)
 
 - **FR-026**: The production Registration Hero MUST implement the PO-approved `97debaf` design, preserving Emerald `#059669`, approved layout, Apple Liquid Glass treatment, mobile behavior and design tokens. Source: S20 PO final decisions, HERO (verbatim): "Preserve Emerald #059669, approved layout, Apple Liquid Glass treatment, mobile behavior and design tokens."
@@ -204,9 +205,18 @@ The focused critique and architect response are recorded in [spec debate r2](res
 - **Branding upload**: A durably tracked asset transfer through private staging, authoritative validation, validated-object storage and revision-checked attachment; interrupted or unattached states are reconcilable.
 - **Current published reference**: The workspace-scoped reference to the latest published version; it does not grant public access by itself.
 
+## Clarifications
+
+### Session 2026-11-03 — core-scope compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-24 records final decisions for ND-F14-1..7 and DG-F14-1..3. **S19-PO-2 (2026-10-31), verbatim:** “Approved: Defer upload and alt-text editor UI to F14b. Update the spec and track FR-009 as partially complete, not finished. Start F14b immediately after F14 merges, in parallel with F13/F15. Preserve all quality gates and explicit PO merge approval. Prioritize fast delivery without sacrificing completeness.”
+- **Result:** Zero open product ambiguities in the merged F14 core scope. FR-009 remains PARTIAL per S19; this review excludes the separate F14b UI tasks. T039-T041 and T043 remain open production/readiness evidence tasks; none is marked deferred because no cited PO decision explicitly defers those tasks. D-24 says hosted verification remains a production blocker.
+- **Evidence limit:** Static source/test inspection only; no tests, Storage stack, hosted verification, or CI were run in this lane.
+
 ## Success Criteria
 
 ### Measurable Outcomes
+
 ### Hero Measurable Outcomes
 
 - **SC-018**: Across the approved registration layouts, 100% of exercised banner/no-banner and mobile/desktop combinations retain the approved Hero layout, Emerald branding and design tokens. (FR-026)
@@ -216,7 +226,6 @@ The focused critique and architect response are recorded in [spec debate r2](res
 - **SC-022**: At 390px in the no-banner layout, the language/theme pill overlaps the card heading in zero tested cases and the card remains near-centered. (FR-030)
 - **SC-023**: In all username validation layers, 100% of tested values within 3–30 ASCII `[A-Za-z0-9_.]` characters are accepted and 100% of tested values outside that rule are rejected; both taken and reserved synthetic usernames return the same `invalid_input` status mapped to Username and focus. (FR-028)
 - **SC-024**: Across the banner Hero cases, the glass card remains a separate presentation layer that may overlap artwork, and the text restriction is applied to text baked into artwork. (FR-008)
-
 
 - **SC-001**: In authorization scenarios, all authorized actors can act only within approved workspace scope; unauthorized roles and foreign-workspace attempts disclose zero foreign branding fields.
 - **SC-002**: In concurrency scenarios, no stale draft overwrites a newer revision; each successful changed publication has one current version and one publication audit event; failed audit leaves zero partial publication.
@@ -285,6 +294,7 @@ Earlier ND-F14-1..6 wording is historical and superseded by the final decision r
 - **DG-F14-3 — Decided (PO, 2026-10-28)**: Show inline original-versus-adjusted brand color comparison with an accessibility explanation.
 
 **Plan gate:** The PO-approved focused Sol Medium critique was completed against `c575cfa35b8a22b2f1870692f91846558f332e5e`; all 8 findings were accepted and the architect response is recorded in [spec debate r2](research/spec-debate-r2-scope.md). Final PO decisions are recorded above; r1/r2 debate records remain historical, with retention superseded by PO 2026-10-29 F14-5.
+
 ### S34 PO decisions — H1/A and H2/A
 
 - **S34-PO-1 H1=A (verbatim):** “Approve exact Arabic copy: «اسم المستخدم ده غير متاح. اختار اسم تاني.» / «استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.»” The first string maps to the English unavailable message; the second maps to the English format message. Use these exact bytes, including Western digits `3` and `30`. Taken and reserved usernames share the unavailable message.

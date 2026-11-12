@@ -74,3 +74,27 @@ Resolved S43-MCQ-A: exact approved EN/AR bodies in contracts/copy-ai-prompt.md (
 - **Superseded:** prior F18 draft assumptions that meal visibility/totals depend on training or rest day type, and the S44-MCQ-F18-1 blocked-validation question. Historical question text remains in `spec.md` with superseded status.
 - **Scope retained:** day types and carb-cycling behavior unrelated to meal visibility remain unchanged. Meal Notes and Food Notes remain separate, independently editable fields (F18-FR-023).
 - **Authority sweep:** this decision matrix has no earlier PO decision or architect mapping introducing conditional meals; those rules were draft assumptions in F18 artifacts and are explicitly marked superseded by S44-PO-7.
+
+## S49-PO-5 — F18 structural label table approved (AR/EN)
+
+- **Status:** CURRENT (2026-11-12, lane s49-hy4-f18-labels). Implements ruling S49-R12.
+- **PO words, byte-exact** (source `runs/s49-po/s49-po-5.verbatim.txt`, SHA-256 `b3c947e63f9ec41a911934804b67b5a8d96e601ae29362979d2154ddca3d1367`, verified via Node byte compare):
+
+  > F18 MCQ-1 = APPROVED
+
+  Predecessor for context, source `runs/s49-po/s49-po-1.verbatim.txt` (SHA-256 `51afe4f6c57eca52c42422eb76b92a17c76dc237f6bc0106da866a34fe2b1faf`), line 1, verified byte-equal:
+
+  > F18 MCQ-1 = 3. Draft AR/EN labels for my approval; non-blocking if copy-only.
+
+- **Approved table (frozen, byte-exact):** `runs/s49-arch/f18-label-table-approved.md` (SHA-256 `972df3d75cb24bc3f9af2c8647b9d07c8db38a77964e8d05501e6d69d4648888`, verified). The 18 rows are encoded verbatim in `specs/018-nutrition-planner/contracts/copy-ai-prompt.md` section `P6` and asserted byte-exact in `tests/contracts/nutrition-export-contract.test.ts` (`labels` fixture, `expect(labelEN)`/`expect(labelAR)` rows, AR renderer payload).
+- **Blocking:** copy-only. Phase 0 has no production prompt renderer; labels live in the contract test only -> #85 not blocked.
+
+## S48-PO-11 — F18 macro display at the 10 g threshold
+
+- **Status:** CURRENT (2026-11-12). Resolves the review question F18-PO-D1 (review `runs/s48-beam-f18-review/review.md`); architect ruling S48-R13 is RETRACTED and S48-R14 (`runs/s48-arch/s48-architect-rulings.md`) implements this PO decision.
+- **PO words, byte-exact** (source `runs/s48-po/s48-po-11.verbatim.txt`, SHA-256 `5e873a43fcd6111de30a0305378c0cdb06fe16bc3b4a7f0139f8bec95aec8b36`):
+
+> Q: F18 display of 9.96 g (FR-003 wording implies '10.0'; merged data-model + S43-R9 say '10') -> A: "Show 10 (Recommended)" = anything that rounds to 10 shows as an integer, matching the merged data-model, S43-R9 and the S27 evidence. FR-003 wording gets clarified to match.
+
+- **Encoded in:** F18-FR-003 (clarified sentence), F18-SC-011 display goldens (`tests/golden/nutrition-macros.ts`: 9.94 → `9.9`; 9.95, 9.96, 10.00, 10.04 → `10`; 0 → `0`), `lib/plans/nutrition/macros.ts` `displayMacroGrams`.
+- **Superseded:** the S48-R13 exact-value-threshold behavior (commit `d8e48ea4`, reverted by `dc605d3d`) and any reading of F18-FR-003 that renders a below-10 g value rounding to 10.0 as `10.0`.

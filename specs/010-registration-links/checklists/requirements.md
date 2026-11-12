@@ -6,7 +6,7 @@
 
 **Feature**: [spec.md](../spec.md)
 
-**Validation**: Artifact author's pass only. Checked means documentation criterion reviewed, not application completion or Claude approval. Implementation tasks remain unchecked.
+**Validation**: Artifact author's pass only. Checked means documentation criterion reviewed, not application completion or Claude approval. Implementation tasks remain unchecked. (Original checklist snapshot: that was the state when this checklist was written; `tasks.md` now records T001-T033 complete and T034 audited.)
 
 ## Content Quality
 
@@ -23,8 +23,8 @@
 - [x] Hash encoding, show-once clearing, no-referrer/no-store/no-path-logging and commission secrecy specified.
 - [x] Exact issued/opened audit fields/count/timing and rollback/legacy preservation specified.
 - [x] Concurrent issuance/open, hash uniqueness, marker immutability, schedule and timestamp boundaries included.
-- [x] Five F10 decisions remain OPEN with explicit interim behavior; rate placeholders single-function/local-only and production-blocking.
-- [x] ND-F9-1..5 carried; actual catalog remains NEEDS SOURCE CONFIRMATION, no seeds/policy invention.
+- [x] Two F10 decisions (ND-F10-4/5) remain OPEN with explicit interim behavior; ND-F10-1..3 are decided per spec.md. Rate placeholders single-function/local-only and production-blocking.
+- [x] ND-F9-1 decided by S31-PO-4 SK-009-01 and S31-PO-5 (carried as settled; see specs/009-packages/spec.md); ND-F9-2/3/5 carried open, ND-F9-4 carried denied; actual catalog remains NEEDS SOURCE CONFIRMATION, no seeds/policy invention.
 - [x] Six measurable success criteria map to implementation verification.
 
 ## Feature Readiness
@@ -39,4 +39,4 @@
 
 ## Notes
 
-Artifact traceability result: PASS. R10-1 is binding and recorded in research R3; displayed-version rejection and translated reload are required. Owner policy NDs remain unresolved. Independent implementation audit remains pending.
+Artifact traceability result: PASS. R10-1 is binding and recorded in research R3; displayed-version rejection and translated reload are required. Owner policy NDs remain unresolved. Independent implementation audit remains pending. (Original checklist snapshot: the independent audit is now recorded as done under T034 in `tasks.md`; this line describes the checklist as written.)

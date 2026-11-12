@@ -1,4 +1,4 @@
-# LIFTER — Decision Register (FINAL, PO 2026-10-27; amended 2026-10-28 (D-22..D-26) and 2026-10-29 (D-27))
+# LIFTER — Decision Register (FINAL, PO 2026-10-27; amended 2026-10-28 (D-22..D-26), 2026-10-29 (D-27), 2026-11-04 (S31), 2026-11-06 (S35), and 2026-11-08 (D-29..D-31))
 
 Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede earlier ones (DR-03). Binding together with BRD DR-01.
 
@@ -26,8 +26,8 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-20 | Hosting region (B4, part) (2026-10-27)                                                                       | Supabase region **eu-central-1 (Frankfurt, EU)** for LIFTER is **APPROVED by the PO, including the legal question**. PO statement: YBS previously operated using German hosting without issues. Hosting: one dedicated LIFTER Free organization with **one** cloud project (production); development and testing use local Docker, with no cloud staging project. Never touch YBS. **B4 retention values remain OPEN** (client closure retention period, audit retention ND-F5-1) and still block production with real client data.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | D-21 | Cloudflare account (2026-10-27)                                                                              | The Cloudflare **LIFTER** account (`c3a2ab30d3888eda7071b02916732b69`) is the only target; **Free**, confirmed by the PO on 2026-10-27, with no paid subscription. Both Wrangler configs pin this account id. The personal account is never used for LIFTER.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | D-22 | Workflow governance (2026-10-28)                                                                             | Constitution 1.2.0 establishes PO-approved spec debate, agent/model routing, controlled parallel development, frontend design and main merge gates; see [docs/08-agent-workflow.md](08-agent-workflow.md) and [docs/09-frontend-design-gate.md](09-frontend-design-gate.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| D-23 | F12 PO decisions (2026-10-28)                                                                                | ND-F12-1..7 and DG-F12-1..4 are decided; F12 records approval, installments, commission, audit, rejection and in-scope PO-only correction reversal, and hands post-approval form assignment to P2 via REQ-P2-01 in the [F12 specification on branch 012-registration-approval](https://github.com/sekiirro/LIFTER/blob/7cc81d52a9ad8bc1d4aa8797122d1bb8162708f7/specs/012-registration-approval/spec.md) (update to a repository-relative link when the spec merges).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| D-24 | F14 PO decisions (2026-10-28)                                                                                | ND-F14-1..7 and DG-F14-1..3 are decided; F14 records roles, registration branding, locale fallback, three surfaces, history and Supabase Storage; local/CI Storage enablement is approved implementation work, hosted verification remains a production blocker, and the focused Sol Medium r2 critique was completed (8/8 accepted) in the [F14 specification on branch 014-workspace-branding](https://github.com/sekiirro/LIFTER/blob/21aa70bc88e6d18b66eeebc0b9c76fd33dcf625b/specs/014-workspace-branding/spec.md) (update to a repository-relative link when the spec merges).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| D-23 | F12 PO decisions (2026-10-28)                                                                                | ND-F12-1..7 and DG-F12-1..4 are decided; F12 records approval, installments, commission, audit, rejection and in-scope PO-only correction reversal, and hands post-approval form assignment to P2 via REQ-P2-01 in the [F12 specification](../specs/012-registration-approval/spec.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| D-24 | F14 PO decisions (2026-10-28)                                                                                | ND-F14-1..7 and DG-F14-1..3 are decided; F14 records roles, registration branding, locale fallback, three surfaces, history and Supabase Storage; local/CI Storage enablement is approved implementation work, hosted verification remains a production blocker, and the focused Sol Medium r2 critique was completed (8/8 accepted) in the [F14 specification](../specs/014-workspace-branding/spec.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | D-25 | Workflow approvals (2026-10-28)                                                                              | Independent features may proceed out of roadmap order with a maintained tracker; prepare second local Supabase stack configuration and verification only (provisioning/starting requires PO approval); Sol Medium is the absolute maximum including spec debates; one-time Terra Light skills refresh is not a routing change.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | D-26 | Intermediate sub-branch merges (2026-10-28)                                                                  | Intermediate merges of parallel sub-branches into their parent feature branch (e.g. 011-docs-drift into 011-client-accounts) are not merges into main: they require Claude independent review of the actual diff and green relevant CI on the exact head, and no separate CodeRabbit gate. Their content then passes the complete main merge gate (docs/08) in the parent feature PR before any merge into main.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | D-27 | Adaptive Model Routing (PO, 2026-10-29; sessions 10 + 11)                                                    | Constitution amended to 1.3.0: cheapest capable reliable model by risk/sensitivity; GLM 5.3 Flash free for simple low-risk non-sensitive work, Luna High standard/moderate, Sol Medium complex/security/high-risk and spec-debate critique; escalation GLM -> Luna -> Sol; Sol High/xhigh prohibited; performance logging; at most six concurrent delegated agents (the orchestrating architect is not counted); each writer has an isolated worktree and branch; one DB user per stack. The stack lock covers service operations and database migrations, seeding, and shared-state writes. Sync impact: docs/08 mirrors routing and concurrency. Tests-first, exact-head push + pull_request CI, final-head CodeRabbit APPROVED, resolved threads, and explicit PO merge approval remain unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -37,6 +37,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-31 | Eight concurrent slots, five PR writers (PO S37-PO-15 = approve, 2026-11-08)                                 | PO approval of the architect's amendment proposal (2): constitution 1.9.0 (MINOR) allows at most eight concurrent delegated agents (the orchestrating architect not counted), of which at most five may write to pull requests at the same time; on-demand slots include the PO-approved Sol Medium critique (S37-PO-12 and S37-PO-13 folded into this amendment; no broader Sol use). Worktree isolation, disjoint files, one stack-lock writer, all gates, the Absolute PO Decision Rule, the free-model guardrail and per-invocation Sol approval are unchanged. The model allocation table is operational and is not in the constitution. Sync: docs/08.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | D-32 | Parallel CI evidence and standing approval (PO S38-PO-6 mapping (b),(d),(e), S38-PO-7, S38-PO-8; 2026-11-09) | Constitution 1.10.0 (MINOR) accepts three executed full CI attempts as either sequential `pull_request` attempts or one PR plus two concurrent `workflow_dispatch` runs of the same exact PR head, with `validate`, all three `integration-shard` jobs, the `integration` aggregator, and `storage` executed successfully. The matrix job id is `integration-shard` (display names remain `integration shard k/3`); the aggregator is named exactly `integration`, always runs, and fails unless the shard matrix succeeds. It compares the PR/head/merge revision tuples exported by all three shards and logs their shared tuple; it does not compare revisions from `validate` or `storage`. On main pushes the aggregator allows empty PR/head fields and validates the common merge SHA. Gate-check d enforces exact-head provenance and identical logged revisions across every required job in executed `pull_request` attempts. Dispatch runs use the PR base branch's trusted workflow ref, its `ci.yml` blob must match the tested merge result, and every required job must log identical revisions. Secret-bearing jobs reject fork dispatches before installing dependencies or executing untrusted PR code. Code failures void the head; infrastructure failures are recorded and never count. The PO's approval stands for normal PRs only after all eight live gates and independent architect review pass on the exact SHA; the merge lane records `po_approved_head`, rechecks immediately before `--match-head-commit`, and reports after merge. Any head change voids approval and requires fresh gates/review; constitution PRs always require explicit PO approval of the exact SHA. Existing gates, security checks, no-writes-to-main window, no-admin/bypass rule, CodeRabbit, threads, mutation evidence, and product-decision rule remain. Sync: constitution, docs/08, CI workflow, gate-check. |
 | D-33 | Constitution 1.13.0 amendment (S47-PO-14; 2026-11-11)                                                        | PO decision, verbatim: "Amend constitution (Rec.)". Applied in PR #82 to Principle I; see the [amendment note](../.specify/memory/constitution.md#sync-impact-report-and-amendment-note---2026-11-11-s47-po-14) for scope. Source: `C:/Users/NEW LAP/.lifter/runs/s47-po/s47-po-14.verbatim.txt`; SHA-256: `945c9c68387d0ceb7e03a8ba4ea089b567e89bd8a9bb086a58645cd39a20d56e`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| D-34 | Nine concurrent slots, five PR writers (PO S48-PO-22; S48-R28; 2026-11-12)                                   | PO decision, verbatim: "Permanently allow 3 concurrent Luna slots, adjusting the total cap." Source: `C:/Users/NEW LAP/.lifter/runs/s48-po/s48-po-22.verbatim.txt`; SHA-256: `ea229789b02a9b05bd22e2e7f6a6bc3a07a8b9e72e5ddd216b32e72dcb70d548`. Architect mapping (S48-R28; not PO words): Luna slots 2 to 3; total delegated-agent cap 8 to 9 (adds the third Luna slot); PR writers <= 5 unchanged. Worktree isolation, disjoint files, one stack-lock writer, Sol per-invocation approval, and all merge gates remain unchanged. Sync: constitution and docs/08.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | —    | Architecture                                                                                                 | [02-architecture.md](02-architecture.md) v3 APPROVED (R1, R2, R4, R5, R6, R7 adopted)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ## Superseded
@@ -112,3 +113,315 @@ These numbered entries record PO Messages A/B, the final S20 handoff, and the S2
 ### Open items for PO
 
 No S20 decision above remains open. The PO-supplied D16-4 dataset is a future input, not an unresolved decision: audit it and obtain PO import approval when supplied. The S21-PO-1/2 Glisse-based selective Liquid Glass implementation is authorized and in progress on its separate branch; merging that work still needs explicit PO approval.
+
+## S27 PO decisions — recorded 2026-11-02
+
+These PO decisions are recorded here byte-exact. Each block is the raw text of the recorded PO session, embedded unchanged; the source file, byte count and SHA-256 are given under each entry so the text can be verified against its source. Architect interpretation notes that appear in the source files are not PO words and are not quoted here; they remain in the cited source files. Each block carries a `<!-- prettier-ignore -->` marker so the formatter never alters the recorded text.
+
+### S27-PO-2 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/briefs/s27-po-decisions-verbatim.md` (section `## S27-PO-2 — Product decisions`); 1136 bytes; SHA-256 `9cd156822d7efe40383ce259cb3124d0b8d22784c9d6793625a5f6cf064f53f5`.
+
+<!-- prettier-ignore -->
+```text
+- All **546 bilingual DRAFT copy strings are APPROVED AS WRITTEN** across F14b/F15/F16/F17/F18. Mark them approved. New additions outside this batch remain separate.
+- F15: Rename the five invalid migrations safely. Claude can handle this directly without spending agent credits. Preserve SQL and verify migration history.
+- F15: Keep two separate actions:
+  - **Refund:** Deactivation + Financial Reversal, including revenue/commission corrections.
+  - **Closure:** Deactivation WITHOUT Financial Reversal.
+  - Both result in `Deactivated`, with distinct reason codes, immediate access removal, and the approved 30-day retention policy. Preserve required financial/audit records.
+- F16: Build the complete Exercise Library and manual Add Exercise workflow. Do not seed exercises. I will populate the library manually.
+- F18: Approved one-decimal display below 10 g, retaining full calculation precision.
+- F17: Fix Arabic-Indic digit consistency and clarify the rest label to "مدة الراحة (بالثواني)" / "Rest (seconds)".
+- Production deployment/readiness planning is DEFERRED until features are substantially complete.
+```
+
+## S31 PO decisions — recorded 2026-11-04
+
+S31 outcomes cite the PO decision IDs. These rows now link to committed owning-document records: [F4 S31 clarifications](../specs/004-auth/spec.md#clarifications-1) (S31-PO-2/3), [F8 clarifications](../specs/008-free-tier-validation/spec.md#clarifications) (S31-PO-4 / SK-008-01), [F10 clarifications](../specs/010-registration-links/spec.md#clarifications) (S31-PO-3/4), [Design System User Story 4](../specs/002-design-system/spec.md#user-story-4---responsive-app-shell-with-role-navigation-priority-p2) (S31-PO-7 Q5, including the 1024px breakpoint), [constitution](../.specify/memory/constitution.md) and [agent workflow](08-agent-workflow.md) (S31-PO-7 Q6 / S31-PO-8 synthetic-data and production-AI records). The two S31 rows below now reflect that their owning records landed.
+
+| ID                         | Decision                                                                                                                                                                                                                                                                                                                                                            | Source / effect                                                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S31-PO-2 / SK-004-01       | “Confirm D-19 approved” — “D-19 becomes the scope authority; T030 closes; #52's D-19 item can be resolved.” D-19 is approved; T030 task status remains subject to the current-head evidence gate.                                                                                                                                                                   | S31-PO-2; `specs/004-auth/spec.md`; #52                                                                                                                                                                              |
+| S31-PO-2 / SK-004-02       | All Trainers in a workspace may issue recovery links for any client in that workspace; implementation requires a new spec cycle, RLS, tests, and security review.                                                                                                                                                                                                   | S31-PO-2; recorded, unimplemented                                                                                                                                                                                    |
+| S31-PO-2 / SK-004-03,05,06 | Copy-only; keep as built/F4 owns recovery/client lookup from P1; clients only.                                                                                                                                                                                                                                                                                      | S31-PO-2; `specs/004-auth/spec.md`                                                                                                                                                                                   |
+| S31-PO-3 / SK-004-04       | 10 per issuing staff account per rolling hour; 3 per client per rolling 24 hours across issuers.                                                                                                                                                                                                                                                                    | S31-PO-3; recorded, implementation/configuration verification pending                                                                                                                                                |
+| S31-PO-3 / SK-010-01,03    | No revocation. Registration-link limit: 50 per authorized issuing account per rolling 24 hours, including Trainer/WO/PO, no exceptions or per-workspace reset.                                                                                                                                                                                                      | S31-PO-3; recorded, new behavior unimplemented; `specs/010-registration-links`                                                                                                                                       |
+| S31-PO-4 / SK-010-02       | No business maximum.                                                                                                                                                                                                                                                                                                                                                | S31-PO-4; `specs/010-registration-links`                                                                                                                                                                             |
+| S31-PO-4 / SK-009-04       | Keep Sales/Trainer commission visibility denied. No edit to `specs/009`; separate F9 lane owns that specification.                                                                                                                                                                                                                                                  | S31-PO-4; carried decision                                                                                                                                                                                           |
+| S31-PO-4 / SK-008-01       | Illustrative pilot input: 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. Verify schema and units before measurement.                                                                                                                                                                                 | S31-PO-4; `specs/008-free-tier-validation`, T012                                                                                                                                                                     |
+| S31-PO-7 Q5                | Desktop navigation from 1024px; content clearance at 1024–1199px; screenshots at 1024 and 1440; phones/tablets retain bottom bar.                                                                                                                                                                                                                                   | S31-PO-7 Q5 (S31 PO session 2026-11-04); mirrored in [Design System Q5 decision](../specs/002-design-system/spec.md#user-story-6---selective-floating-liquid-glass-surfaces-priority-p2), FR-021, and SC-010/SC-011. |
+| S31-PO-7 Q6 / S31-PO-8     | Development AI agents use synthetic data only. Future production Ask LIFTER AI/Telegram Bot may use minimum authorized workspace-scoped data through authenticated services, with verified identity, strict authorization, minimization, privacy safeguards, explicitly approved provider, and access disabled until separate security/privacy review and approval. | S31-PO-7 Q6; S31-PO-8 (S31 PO session 2026-11-04); mirrored in the [constitution](../.specify/memory/constitution.md) and [agent workflow](08-agent-workflow.md).                                                    |
+
+Existing production-readiness items remain open where already tracked: F8 hosting/staging and authenticated-route approval (ND-F8-2/3); F11 retention (B4); F13 retention (T019, FR-029, DP-01/DP-02) and hosted-hook readiness (T020 blocked by D-20 — no cloud staging; Go-Live gate F13-PB-03 remains open); F10 public content and price visibility (ND-F10-4/5). They are existing gates, not new PO questions. No PO deferral exists for T020.
+
+## S42 PO decisions — recorded 2026-11-09
+
+These PO decisions are recorded here byte-exact. Each block is the raw text of the recorded PO session, embedded unchanged; the source file, byte count and SHA-256 are given under each entry so the text can be verified against its source. Architect interpretation notes that appear in the source files are not PO words and are not quoted here; they remain in the cited source files. Each block carries a `<!-- prettier-ignore -->` marker so the formatter never alters the recorded text.
+
+### S42-PO-1 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-po-1.verbatim.txt` (from the `S42-PO-1` header up to, but excluding, the `(Architect mapping` line); 292 bytes; SHA-256 `b6a3c506918c473623fc6738fa01b36fdb72b476515af142a6177f30a54af075`.
+
+<!-- prettier-ignore -->
+```text
+S42-PO-1 (2026-11-09 ~23:28Z, PO free-text message in the architect session, verbatim):
+Approve A for #45: audit missing e2e fixes, preserve them separately, then close the PR and keep its branch. Complete S42 startup first, then F19 gap sweep. Respect all governance gates and agent limits.
+```
+
+### S42-PO-2 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-po-1.verbatim.txt` (from the `S42-PO-2` header up to, but excluding, the `(Architect mapping` line); 663 bytes; SHA-256 `f9a9302e6ed7b758c1d7d8aaa7446584c7669d81ef0d51e4b2172263fccac855`.
+
+<!-- prettier-ignore -->
+```text
+S42-PO-2 (2026-11-09 ~23:55Z, PO pasted message in the architect session, verbatim):
+PO decisions F19: Approve single `plan_deliveries` table, activation sources (`plan_deliveries`, `po_override`, `renewal`), atomic delivery/activation/productivity transaction (no outbox), and existing renewal activation behavior.
+
+Q1–Q8: **A, A, A, A, A, B, A, A**.
+
+Merge PR #68 at exact SHA `70420d57` only after all mandatory gates pass. Authorized to stop relay PID `26400` for PR #57 after verifying its identity.
+
+Record decisions, reconcile conflicts with existing specs, and proceed with the approved F19 spec-only workflow. No implementation without required gates.
+```
+
+### S42-PO-3 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-po-1.verbatim.txt` (from the `S42-PO-3` header up to, but excluding, the `(Architect mapping` line); 703 bytes; SHA-256 `2e1478d2f3fa1ac395487507323fdaddb3d4cae80859016a76a3b00e6bd1cf4d`.
+
+<!-- prettier-ignore -->
+```text
+S42-PO-3 (2026-11-10 ~00:05Z, PO pasted message in the architect session, verbatim):
+F19 PO decisions:
+
+Q9=No: No Override for cancelled/refunded subscriptions or deactivated clients.
+
+Q10=No: Override trainer selection affects productivity credit only, NOT assignment. Manual assignment via Clients dropdown remains available after approval.
+
+Q11=Approved:
+AR: اشتراكك خلص، بس رحلتنا لسه مكملة! تواصل مع كابتنك وجدّد اشتراكك عشان تكمل تقدمك.
+EN: Your subscription has ended, but your journey isn't over! Contact your coach to renew and keep making progress.
+
+Record decisions, reconcile conflicts, continue spec-only. No implementation.
+```
+
+### S42-PO-4 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-po-1.verbatim.txt` (from the `S42-PO-4` header up to, but excluding, the `(Architect mapping` line); 240 bytes; SHA-256 `aaa7bf1c6b4a812674f74e39caa964ce0676a5e70b03b975c378b02e3aaa73b6`.
+
+<!-- prettier-ignore -->
+```text
+S42-PO-4 (2026-11-10 ~00:30Z, PO answers via the question tool, selected option labels verbatim):
+Disk floor: Remove salvage + more
+F19-MCQ-12: C: Block publishing
+F19-MCQ-13: A: Keep ID reference (Rec.)
+F19-MCQ-14: C: Credit the publisher
+```
+
+### S42-PO-5 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-po-1.verbatim.txt` (from the `S42-PO-5` header up to, but excluding, the `(Architect mapping` line); 133 bytes; SHA-256 `2d44fdd9743767c1901e84f09af4438f0f7b6b3ea34f0b6a9f048024217183c0`.
+
+<!-- prettier-ignore -->
+```text
+S42-PO-5 (2026-11-10 ~00:50Z, PO answer via the question tool, selected option label verbatim):
+Cleanup: Approve groups 1 + 2 (Rec.)
+```
+
+### S42-PO-6 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-po-1.verbatim.txt` (from the `S42-PO-6` header up to, but excluding, the `(Architect mapping` line); 480 bytes; SHA-256 `880068c54462b77c6c7b19b26b820dce491663a1de01260b3c86ca6ee955ed78`.
+
+<!-- prettier-ignore -->
+```text
+S42-PO-6 (2026-11-10 ~01:50Z, PO pasted message in the architect session, verbatim):
+F19-MCQ-11: Approved. Make the subscription expiry page informational only.
+- Title: "Subscription Expired" / "اشتراكك انتهي".
+- Display the previously approved EN/AR expiry message verbatim.
+- No buttons, CTAs, renewal actions, or contact actions.
+- The page only explains the subscription status.
+- Update the F19 spec accordingly. Preserve all existing approvals and constraints.
+```
+
+### S42-PO-7 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-po-1.verbatim.txt` (from the `S42-PO-7` header up to, but excluding, the `(Architect mapping` line); 415 bytes; SHA-256 `13e0d267b2a1d1d551321a9f8cba32bfcf1e81bed37fa0af0d8b40aca4bb4f4a`.
+
+<!-- prettier-ignore -->
+```text
+S42-PO-7 (2026-11-10 ~01:55Z, PO message in the architect session, verbatim):
+read "C:\Users\NEW LAP\Downloads\LIFTER_F17_F18_PO_Decisions_and_Spec_Rebuild.md"
+ Follow its instructions, verify against the live repo, and prepare updated F17/F18 spec-only drafts. Independently challenge GPT recommendations, report conflicts and batched PO MCQs. Coordinate with F19. No implementation or unapproved Sol medium runs.
+```
+
+### S42-PO-8 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-po-1.verbatim.txt` (from the `S42-PO-8` header up to, but excluding, the `(Architect mapping` line); 1801 bytes; SHA-256 `c51f1725c7ffe0597faa515c64292eb656353c14945cb385b9ab3bdf11e61741`.
+
+<!-- prettier-ignore -->
+```text
+S42-PO-8 (2026-11-10 ~02:45Z, PO pasted message in the architect session, verbatim):
+Consolidate ALL F17/F18/F19 PO decisions (S42 + prior) into one authoritative matrix. Latest decisions win; mark superseded rules and unresolved MCQs.
+
+Preserve all approved rules, especially:
+- PO configures exercises AFTER launch; F16 defaults only Rest/RIR/Reps. New exercises start with zero working/warm-up sets; copy editable Notes/Alternatives.
+- Preserve workspace-private exercises. Allow Global template promotion; flag unresolved exercises RED and block plan loading until fixed.
+- Manual template Assign only; new workspaces empty. All Workspaces skips previously assigned workspaces (even partial); Specific Workspaces permits additions. No auto-sync, duplicates or overwrites; reject zero-copy Assign.
+- Copy Prompt: PO/WO/Trainer; full AR/EN drafts require PO approval; language follows UI.
+- Exports: UI-language labels, original text preserved, exercise names English; nutrition exports reflect client selections/totals.
+- Workout volume counts training days only, excluding rest days.
+- F19 expiry page: exact approved AR/EN text, no buttons/actions. Preserve all F19 delivery, activation, renewal and assignment decisions.
+
+Update delegation: 2 Luna, 1 DeepSeek V4.1 Flash, 1 GLM 5.3 Flash, 1 Muse Spark 1.3, 1 Beam, 1 Big Pickle; Sol Medium on-demand with explicit PO approval per run. Max 8 agents/5 PR writers. DeepSeek may handle limited tests/bug fixes. Preserve running lanes and all gates.
+
+Await F18 gaps. No implementation, push or Sol without approval.
+
+Delegate handoff update to an available agent. Preserve complete status, decisions, SHA/PRs, pending work and blockers. Verify the handoff, send me a concise new-session startup prompt, then STOP this session. Start no further work.
+```
+
+## S43 PO decisions — recorded 2026-11-10
+
+These PO decisions are recorded here byte-exact. Each block is the raw text of the recorded PO session, embedded unchanged; the source file, byte count and SHA-256 are given under each entry so the text can be verified against its source. Architect interpretation notes that appear in the source files are not PO words and are not quoted here; they remain in the cited source files. Each block carries a `<!-- prettier-ignore -->` marker so the formatter never alters the recorded text.
+
+### S43-PO-1 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-1.verbatim.txt` (between the `----- BEGIN S43-PO-1 -----` and `----- END S43-PO-1 -----` markers); 847 bytes; SHA-256 `fdf094c643856b5007061178c52ec75df08422483be95d06dc096f66840f15a7`.
+
+<!-- prettier-ignore -->
+```text
+Start S43. Read and follow C:/Users/NEW LAP/.lifter/briefs/s43-startup-prompt.lean.md.
+Also : Record my S43 decisions:
+- MCQ-1: Skip existing global templates; no duplicates or overwrites. Report skipped items.
+- MCQ-2: "Copy AI Prompt" / "Copied." — "نسخ برومبت الذكاء الاصطناعي" / "تم النسخ."
+- MCQ-3: Show client's selection; coach's original in a side note.
+- MCQ-4: Half-up rounding; preserve full internal precision.
+- MCQ-5: Consecutive 7-calendar-day weeks from program start, including rest days.
+- F19 MCQ-15: Reject Override Activate for already-active subscriptions; no changes or extra production units.
+- F19 MCQ-16: Only one eligible subscription per client; bind delivery automatically. No manual selection.
+Update decision matrix, specs, and S43 handoff. Preserve all gates. No commits or pushes.
+```
+
+### S43-PO-2 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-2.verbatim.txt` (between the `----- BEGIN S43-PO-2 -----` and `----- END S43-PO-2 -----` markers); 424 bytes; SHA-256 `1a264434ed863382f6c5d23fa597404da9feea9fa278c287ec6e0709562b0680`.
+
+<!-- prettier-ignore -->
+```text
+Verify Muse Spark 1.3 specifically through OpenCode Go 
+
+Draft the complete Copy AI Prompt text in English and Arabic for my exact approval.
+
+Coach’s original notes must appear per item and in the copied AI prompt, but NOT in totals rows
+
+Finalize the specs, complete a Sol Medium debate with my approval, and settle the final version. Then commit and push normally. No session-wide freeze. Preserve all governance gates.
+```
+
+### S43-PO-3 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-3.verbatim.txt` (between the `----- BEGIN S43-PO-3 -----` and `----- END S43-PO-3 -----` markers); 506 bytes; SHA-256 `c0eccee24cc324b88bc62f7e7a2f305d0f9cfcc57c134912c7285162cf7cc808`.
+
+<!-- prettier-ignore -->
+```text
+PO decisions:
+
+Upgrade uses FULL previously paid credit, not prorated. Example: 1 month EGP 750 → 3 months EGP 1,400; charge only EGP 650. Total subscription becomes 3 months from original start; record only EGP 650 as new revenue.
+
+Muse Spark 1.3 Contributor via OpenCode Go is approved for use, including the required training-data setting.
+
+Show me both complete AI prompts (Workout + Nutrition), in EN/AR, for approval. Do not finalize them yet.
+
+Update relevant specs and preserve governance gates.
+```
+
+### S43-PO-4 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-4.verbatim.txt` (between the `----- BEGIN S43-PO-4 -----` and `----- END S43-PO-4 -----` markers); 1988 bytes; SHA-256 `0bf7e3fa1402e0b8e7b16659cff6678a3f2e8531924ec5c1d1481e9f16ccd7aa`.
+
+<!-- prettier-ignore -->
+```text
+PO final clarification — update F13/F19 and related specs:
+
+1. One continuous subscription per client. Upgrade/Renewal modify the existing subscription, never create overlapping subscriptions.
+2. Upgrade: Client can switch to any higher package/tier in their workspace. Credit the FULL amount previously paid, NOT remaining-day proration. Example: Basic 1 month (EGP 750) → Basic 3 months (EGP 1,400). Charge EGP 650 only. Total duration becomes 3 months from the ORIGINAL start date, preserving elapsed days. Revenue records only the additional EGP 650, never double-counting the original EGP 750.
+3. Renewal: Add the FULL purchased duration to the CURRENT expiry, preserving remaining days. Example: 10 days remaining + 3-month renewal = 3 months + 10 days remaining. Charge and record the FULL renewal price as revenue.
+4. Manual edits/extensions: Platform Owner ONLY. Can manually adjust subscription dates, including after expiry. No revenue generated by these manual adjustments.
+5. Trainer points: Award production points for NEW clients only, once per client. Upgrades, renewals, and additional published plans NEVER generate extra points.
+6. Plans: Both new and existing eligible clients can receive unlimited plan revisions/publications, subject to normal permissions. Upgrade/Renewal never require new plans. Do NOT tie publishing to additional trainer points.
+7. Muse Spark 1.3 Contributor: I approve enabling “train on request data” in OpenCode Go and using the model fully during development. Never send secrets or real client data.
+8. Show me the COMPLETE Workout and Nutrition AI prompts, each in English and Arabic, for approval. Include coach-original notes per item and in copied prompts, never totals rows. Do not finalize prompt wording without approval.
+
+Reconcile conflicting specs and tests. Flag genuine ambiguities instead of inventing rules. Complete the approved Sol Medium debate, settle final specs, then commit/push normally under governance gates.
+```
+
+### S43-PO-5 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-5.verbatim.txt` (between the `----- BEGIN S43-PO-5 -----` and `----- END S43-PO-5 -----` markers); 1612 bytes; SHA-256 `baf991118edb6843565afe7fe92172de6e6e498738d3f94c73bc032053a5d3e0`.
+
+<!-- prettier-ignore -->
+```text
+Final PO decisions — update F13/F17/F18/F19:
+
+1. One continuous subscription per client.
+2. Upgrade: higher tier (even shorter duration) or same tier with longer duration. Credit FULL previously paid amount, never prorate. Equal price = free; lower price = not an upgrade. Example: EGP 750 → 1,400; charge 650.
+3. Renewal: extend current expiry by full purchased duration; expired renewals start today. Record full renewal revenue.
+4. Frozen subscriptions must be unfrozen before upgrade/renewal. Freezing extends expiry by frozen days.
+5. Pre-activation upgrades allowed.
+6. Refund covers the full package, not just upgrade difference.
+7. Returning clients never count as new clients. Trainer points awarded once per new client, never per plan, upgrade, or renewal. Unlimited plan publishing.
+8. Renewal then Upgrade: upgrade the original package while preserving separately paid renewal duration.
+9. Higher-tier, shorter-duration upgrade starts on upgrade date, using full previously paid credit.
+10. Expired subscriptions cannot upgrade; renew into the desired package instead.
+11. Manual subscription edits: Platform Owner only, no revenue.
+
+Approve all four EN/AR AI prompt drafts, removing “certified coach” and using “كابتن” consistently in Arabic. Coach-original notes appear per item and in copied prompts, never totals.
+
+F17: Week 1 = program days 1–7, including rest days; no calendar start required.
+
+Reconcile conflicts without inventing rules; flag any remaining ambiguity. Complete the approved Sol Medium debate, then finalize, commit and push under existing governance gates.
+```
+
+### S43-PO-6 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-6.verbatim.txt` (between the `----- BEGIN S43-PO-6 -----` and `----- END S43-PO-6 -----` markers); 689 bytes; SHA-256 `64485f57c5a38be92b11b9f0073e80e6435e0b5034bc4d1a05c35f5b1621ac2e`.
+
+<!-- prettier-ignore -->
+```text
+Fixed tier hierarchy: Silver < Gold < Platinum. Workspaces can rename tiers, but their underlying rank never changes.
+* Higher-tier upgrades with equal/longer duration count from the original subscription start. Shorter-duration upgrades start on the upgrade date.
+* Pre-activation upgrades are allowed; duration starts upon activation.
+* Refunds cover the full selected package payment, including upgrade charges, but don’t automatically refund separate renewals.
+* After renewal then upgrade, credit only the original package’s full payment. Preserve separately purchased renewal duration and payments.
+* Never prorate upgrade credit. Record only additional payments as new revenue.
+```
+
+### S43-PO-7 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-7.verbatim.txt` (between the `----- BEGIN S43-PO-7 -----` and `----- END S43-PO-7 -----` markers); 66 bytes; SHA-256 `2f9c133965e9e2a6561767edf22ee39b19bae893ddb64a3b3563e08737a7c2d2`.
+
+<!-- prettier-ignore -->
+```text
+Arabic tier names are سيلفر، جولد، بلاتينيوم.
+```
+
+### S43-PO-8 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-8.verbatim.txt` (between the `----- BEGIN S43-PO-8 -----` and `----- END S43-PO-8 -----` markers); 430 bytes; SHA-256 `38be769fcd0649ce226a4e106444686a76eb73532aea868597665c8c92862a74`.
+
+<!-- prettier-ignore -->
+```text
+Every package category supports all 3 tiers: Silver, Gold, Platinum.
+2. Platform Owner can rename tiers globally; Workspace Owners within their workspace only. Fixed ranks remain unchanged.
+3. Older nutrition exports show the client’s last valid selection for that specific revision.
+4. After expired renewal, upgrade calculations use the renewal start date.
+5. Upgrades require the same currency; no cross-currency conversion.
+```
+
+### S43-PO-9 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s43-po/s43-po-9.verbatim.txt` (whole file; the source carries no BEGIN/END markers); 209 bytes; SHA-256 `502bed6f4233af8a3274aa2eb2381c597c2f9e80dda071037a0b9f06347e9025`.
+
+<!-- prettier-ignore -->
+```text
+merge #75 at c1e099962dd614a4ba8930f26f2e27106d47d13c
+then Delegate one agent to update and verify the LIFTER handoff, generate the next-session startup prompt, report both paths, then STOP. No other actions.
+```
