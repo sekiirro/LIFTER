@@ -286,3 +286,10 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Clarifications: S51-F13-MCQ-11 remains open for the six existing extra receipt fields outside 9A; no field disposition was encoded. It does not block the commission omission, 9A required fields, or exact old-receipt replay verified here. T044 remains P4/open and FR-041 PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity is assumed; MCQ-11 explicitly records the only unresolved receipt-field question.
 - Verdict: PASS; T048 is ticked with current commit and test evidence. Stop for PO direction on MCQ-11 before changing the six extra fields.
+
+## S51 self-review status correction — 2026-11-12T16:10:00Z
+
+- Cross-reference sweep found and corrected a stale tasks.md sentence that described T048 as unticked despite its verified receipt evidence. tasks.md now records the implementation and evidence commit SHAs and the current 26/26 focused and 27-file/273-test Stack C results.
+- No requirement or implementation behavior changed. FR-043, SC-036, T048, traceability, and the prior Analyze findings remain aligned; T044 stays P4/open.
+- Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-11 remains the only PO-decision question; no field disposition is encoded.
+- Verdict: PASS; documentation status matches verified task evidence.
