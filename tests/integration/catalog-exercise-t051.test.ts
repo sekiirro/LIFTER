@@ -214,11 +214,15 @@ describe('T051 internal resolver boundary and current Video reads', () => {
   });
 
   it('denies the next staff view after workspace membership is revoked', async () => {
-    const exerciseId = await createGlobal('https://youtu.be/FFFFFFFFFFF');
+    const exerciseName = `T051 revoked membership ${randomUUID()}`;
+    const exerciseId = await createGlobal(
+      'https://youtu.be/FFFFFFFFFFF',
+      exerciseName,
+    );
     const [warm] = await asActor(
       trainerAId,
       (tx) => tx`select result_payload
-      from public.catalog_search('exercise', null, '{}'::jsonb, null, ${workspaceAId})
+      from public.catalog_search('exercise', ${exerciseName}, '{"page_size":5}'::jsonb, null, ${workspaceAId})
       where result_id = ${exerciseId}`,
     );
     expect(warm).toBeDefined();
