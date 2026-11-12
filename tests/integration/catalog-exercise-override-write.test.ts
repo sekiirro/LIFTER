@@ -82,6 +82,44 @@ describe('T047 workspace exercise override writes', () => {
     expect(versions.map((row) => row.version)).toEqual([1]);
   });
 
+  it('clears blank Notes and Video to canonical on a variation-only override write', async () => {
+    const exercise = await asActor(poId, async (tx) => {
+      const [row] =
+        await tx`select public.catalog_create_exercise(${randomUUID()}, ${tx.json(
+          {
+            name_en: `T047 variation-only reset ${randomUUID()}`,
+            primary_muscle_code: 'chest',
+            equipment_codes: ['barbell'],
+            notes: 'Canonical notes',
+            video_url: 'https://youtu.be/canonical01',
+          },
+        )}) as result`;
+      return row!.result.exercise_id as string;
+    });
+    await write(trainerId, workspaceId, exercise, 0, randomUUID(), {
+      notes: 'Workspace notes',
+      video_url: 'https://youtu.be/workspace01',
+      alternatives: [],
+    });
+
+    await write(trainerId, workspaceId, exercise, 1, randomUUID(), {
+      notes: null,
+      video_url: null,
+      alternatives: [],
+    });
+
+    const [detail] = await asActor(
+      trainerId,
+      (tx) => tx`select payload, override_version
+        from public.catalog_exercise_detail(${exercise}, ${workspaceId})`,
+    );
+    expect(detail?.override_version).toBe(2);
+    expect(detail?.payload.effective_fields).toMatchObject({
+      notes: { value: 'Canonical notes', source: 'global' },
+      video: { value: 'https://youtu.be/canonical01', source: 'global' },
+    });
+  });
+
   it('kills a mutation that hashes the current revision for a null-version replay', async () => {
     const exercise = await createGlobal(
       `T047 null hash mutation ${randomUUID()}`,

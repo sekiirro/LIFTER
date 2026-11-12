@@ -216,10 +216,12 @@ export function createCatalogServer(deps: CatalogDependencies) {
     const request = {
       ...(variationOnly
         ? {
-            ...(typeof input.request?.video_url === 'string'
+            ...(typeof input.request?.video_url === 'string' ||
+            input.request?.video_url === null
               ? { video_url: input.request.video_url }
               : {}),
-            ...(typeof input.request?.note === 'string'
+            ...(typeof input.request?.note === 'string' ||
+            input.request?.note === null
               ? { notes: input.request.note }
               : {}),
           }

@@ -141,6 +141,39 @@ describe('catalog server authorization and RPC boundary', () => {
     });
   });
 
+  it('preserves blank Notes and Video resets without clearing omitted fields on variation-only writes', async () => {
+    currentActor = {
+      userId: 'owner',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    await catalog().writeVariation({
+      operationKey: key,
+      workspaceId: ws,
+      id: '55555555-5555-4555-8555-555555555555',
+      request: { note: null, video_url: null },
+    });
+    expect(rpc).toHaveBeenCalledWith('catalog_write_exercise_override', {
+      p_workspace_id: ws,
+      p_exercise_id: '55555555-5555-4555-8555-555555555555',
+      p_expected_version: null,
+      p_operation_key: key,
+      p_request: { video_url: null, notes: null },
+    });
+
+    rpc.mockClear();
+    await catalog().writeVariation({
+      operationKey: key,
+      workspaceId: ws,
+      id: '55555555-5555-4555-8555-555555555555',
+      request: { note: '   ' },
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      'catalog_write_exercise_override',
+      expect.objectContaining({ p_request: { notes: null } }),
+    );
+  });
+
   it('keeps a null expected version stable for variation operation-key replays', async () => {
     currentActor = {
       userId: 'owner',

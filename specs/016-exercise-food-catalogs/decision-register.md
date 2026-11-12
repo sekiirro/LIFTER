@@ -365,3 +365,11 @@ Use server-side search, pagination, debouncing, and preserve selected alternativ
 Enforce 2,000 characters consistently for Notes and stored Video text references only, not actual video files. Audit existing data and never silently truncate.
 Commit the CodeRabbit fixes and rerun all required gates on the new exact SHA.
 Implementation mapping: architect ruling S49-R9 (not PO words). S49-R11 governs merge sequencing and greens.
+
+## Clarification — S50-PO-6 / PDN-S50-FIX2-1 (2026-11-12)
+
+Verbatim PO decision: `F16=A`.
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-6.verbatim.txt`; SHA256 `c62cd198a022efb057517b6d99d258dab7743bb7a9ea259de4e672e364689888`. The exact decision is recorded in the source as “F16=A”.
+
+Implementation meaning from separate architect mapping S50-R32: on a variation-only write, an explicitly blank Notes or Video value clears that workspace override to the canonical value. An omitted field remains unchanged. No open ambiguity remains for this decision.

@@ -930,3 +930,10 @@ A hostile pass found that a pending next-page response could append results afte
 - Entry check: PASS. spec.md retains numbered FRs, measurable SCs and GWT scenarios; PO clarification and explicit scoped no-ambiguity statement remain; plan.md covers the cutover and migration sequence; T068 remains tagged FR-031/FR-003. This analysis follows the T068 wording update in 	asks.md and migration-reference update in plan.md.
 - Concurrency coverage: an identity addition and a committed version tuple added after verification are both rejected by the guard before deletion; cutover locks cover identity and version tables. Stack A full-chain replay plus T037/T068 integration tests execute this contract.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open product ambiguity in this guard scope. Separate PDN-S50-FIX2-1 remains open for Major 2 blank-field semantics; that behavior is excluded from this re-analysis and remains unimplemented.
+
+## S51 FIX2-1 follow-up re-analysis (2026-11-12 14:28:08 +02:00)
+
+- Entry: PASS. No spec, plan, or task requirement text changed; the new PO decision is recorded in decision-register.md with its exact source and SHA256. S50-R32 is cited separately as architect mapping.
+- Decided behavior: the compatibility adapter forwards explicit null Notes/Video fields as null to the existing F16 override RPC; absent fields remain omitted. The RPC's existing version/CAS and workspace authorization boundary remains in force, and null effective values resolve to canonical fields.
+- Verification plan: unit contract for explicit-null mapping with pre-fix RED and guard-removal mutation; Stack A integration verifies Notes/Video resolve to canonical on a variation-only version write. Integration is blocked until Stack A identity matches this worktree.
+- Scope review: no visible copy, permissions, retention behavior, schema contract, or UI change; no new ambiguity. 0 open CRITICAL and 0 open HIGH findings.
