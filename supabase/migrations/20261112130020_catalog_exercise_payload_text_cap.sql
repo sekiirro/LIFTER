@@ -583,6 +583,8 @@ begin
       and ov.exercise_id=o.exercise_id and ov.version=o.current_version
     where e.lifecycle_state='active'
       and (normalized_query is null
+        or v.name_norm_ar_v1 like '%'||normalized_query||'%'
+        or v.name_norm_en_v1 like '%'||normalized_query||'%'
         or app_private.normalize_ar_en_v1(coalesce(nullif(ov.payload->>'name_en',''),v.payload->>'name_en','')) like '%'||normalized_query||'%'
         or app_private.normalize_ar_en_v1(coalesce(nullif(ov.payload->>'name_ar',''),v.payload->>'name_ar','')) like '%'||normalized_query||'%'
         or (v.name_norm_ar_v1='' and v.name_norm_en_v1='' and v.payload::text ilike '%'||p_query||'%'))
@@ -675,8 +677,8 @@ begin
   end if;
   if replay is not null then return replay; end if;
 
-  if (locked_override_version is null and p_expected_version <> 0)
-    or (locked_override_version is not null and locked_override_version <> p_expected_version) then
+  if (locked_override_version is null and p_expected_version is not null and p_expected_version <> 0)
+    or (locked_override_version is not null and p_expected_version is distinct from locked_override_version) then
     raise exception 'catalog_exercise_override_version_conflict' using errcode = '40001';
   end if;
   if exists (select 1 from jsonb_object_keys(p_request) k(key)
@@ -744,6 +746,9 @@ begin
       end if;
       target_global := nullif(item->>'global_exercise_id','')::uuid;
       target_private := nullif(item->>'workspace_exercise_id','')::uuid;
+      if target_global = p_exercise_id then
+        raise exception 'catalog_exercise_alternatives_invalid' using errcode = '22023';
+      end if;
       if target_global is not null and not exists (
         select 1 from public.exercises target
         where target.id = target_global and target.lifecycle_state = 'active'

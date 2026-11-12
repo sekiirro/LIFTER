@@ -38,7 +38,11 @@ export function ExerciseDetailView({
     Record<string, unknown> | undefined;
   const effectiveVideo = effectiveFields?.video as
     { value?: unknown } | undefined;
-  const resolvedVideoUrl = row.variation?.video_url ?? effectiveVideo?.value;
+  const privateVideoUrl = row.origin_workspace_id
+    ? row.payload.video_url
+    : undefined;
+  const resolvedVideoUrl =
+    row.variation?.video_url ?? effectiveVideo?.value ?? privateVideoUrl;
   const videoUrl =
     typeof resolvedVideoUrl === 'string' ? resolvedVideoUrl : null;
   const defaults = exercise.defaults;

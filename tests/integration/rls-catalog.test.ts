@@ -231,6 +231,7 @@ describe('tenancy security catalog (T007)', () => {
         'catalog_effective_workspace_exercise_fields',
         'catalog_food_duplicate_exists',
         'catalog_food_writer_authorized',
+        'guard_exercise_version_retired_fields',
         'catalog_resolve_exercise_video',
         'catalog_resolve_workspace_exercise_video',
         'catalog_search_pre_cutover',
@@ -314,6 +315,7 @@ describe('tenancy security catalog (T007)', () => {
         [
           'signup_auth_identity_column',
           'catalog_assert_exercise_text_limits',
+          'guard_exercise_version_retired_fields',
         ].includes(row.proname)
       ) {
         // These internal helpers revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -352,6 +354,7 @@ describe('tenancy security catalog (T007)', () => {
               'enqueue_job',
               'f13_audit_client_deactivation',
               'forbid_delete',
+              'guard_exercise_version_retired_fields',
               'guard_package_offer_update',
               'guard_package_version_insert',
               'jobs_updated_at',

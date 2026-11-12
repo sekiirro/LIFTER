@@ -330,7 +330,7 @@ Severity follows the speckit-analyze heuristic. "Open" means it still blocks som
 ## Coverage (split as required by D9)
 
 - Requirements inventory: FR-001 to FR-038 (including FR-016a), 39 keys; SC-001 to SC-016, 16 keys.
-- Tasks: T001 to T075 (the redesign and its historical rows), T900 and T901 (historical), and T076 to T086 (the PR #43 lane's completed tasks, renumbered from T037 to T047 during the S38 round 7 merge; see the ID note in `tasks.md`), T087 (the main-side S38-R3 catalog-hardening task, renumbered from T048), T088 (the S39 round-8 timed SC-003 check), T089 (the S39 round-8 CodeRabbit spec-only follow-up), and T090 (the S39 round-8 storage prerequisite split from T074 and T075), 92 in total.
+- Tasks: T001 to T075 (the redesign and its historical rows), T900 and T901 (historical), and T076 to T086 (the PR #43 lane's completed tasks, renumbered from T037 to T047 during the S38 round 7 merge; see the ID note in `tasks.md`), T087 (the main-side S38-R3 catalog-hardening task, renumbered from T048), T088 (the S39 round-8 timed SC-003 check), T089 (the S39 round-8 CodeRabbit spec-only follow-up), and T090 (the S39 round-8 storage prerequisite split from T074 and T075), T091 (the S49 implementation follow-up), T092 (the S51-R16 implementation follow-up), 94 in total.
 - **Historical evidence (T001–T036, T900, T901 and T076–T086; closed rows):** these cover the S25/S26 food, catalog and security work. FR-005 to FR-011, FR-019 and FR-021 have no new redesign API test. Their evidence is historical (T024 to T028 and the S25 release gate), and the food scope has not changed since S25. This is recorded as accepted historical-evidence coverage, pending architect confirmation. These rows are not described as dedicated S36 tests.
 - **Planned redesign tests (T037–T075, T088–T090):** each row names its FR IDs. Coverage for FR-001 to FR-004, FR-014, FR-018, FR-022 to FR-038 is planned, not evidenced. Per-field positive and negative cells are in the `data-model.md` coverage table.
 - **Implementation coverage (T043–T075):** Global and private storage, validators and allowlists for the eight fields are allocated to T043, T044, T045, T046, T047, T048, T074 and T075. None is implemented; evidence is blank in `traceability.md`.
@@ -949,3 +949,22 @@ A hostile pass found that a pending next-page response could append results afte
 - Scope: rename the 21 PR-added F16 migration filenames, preserving their order, because gate-check found two timestamp collisions with different F13 migration blobs on origin/013-impl-s47. Migration contents and requirements are unchanged; all in-repo references were updated.
 - Check: candidate versions 20261112130000–20261112130020 are valid, not in the future, and have no matches in fetched origin migration trees. Migration timestamp validation passed; Stack A reset replayed the full chain through 20261112130020; the 22-file F16 integration batch passed (265 passed, 1 expected failure).
 - Open findings: 0 CRITICAL, 0 HIGH.
+
+## 2026-11-12 S51-R16 follow-up analysis — T092
+
+- Entry: PASS. F16 `spec.md` contains numbered FRs, measurable success criteria and Given/When/Then scenarios for FR-016, FR-024, FR-025, FR-031 and FR-035; the PO clarifications and explicit no-open-ambiguity statement remain in the decision register/spec; `plan.md` covers authorization, version CAS, alternative validation, search, cutover and checked workspace video projection. T092 records the assigned work and FR links in `tasks.md`.
+- Authority/scope: implements five valid Greptile P1 findings as precisely mapped by S51-R16. Existing FRs already define stale expected-version conflicts, self-target rejection, both-name search, cutover deletion/legacy-path retirement, and authorized workspace video values. No requirement, product behavior, permission, copy or data-retention decision is added.
+- Technical analysis: final replacement bodies through migration 20261112130020 must retain all relevant guards introduced by their predecessors; cutover insert protection must be installed under the cutover transaction/locks; exact operation-key retries remain handled before new-save CAS. UI fix must read only the checked private detail payload under existing workspace authorization.
+- Validation plan: RED/GREEN and guard mutation for DB guards; Stack A reset/replay and touched integration suite; RED/GREEN private-video unit/component test. Stack A is currently bound to `LFTR-f15a`; no DB work runs until its lease is free and busy/identity checks pass.
+- Clarifications: no new PO question. S51-R16 resolves implementation mapping; existing spec is authoritative for the behavior. No new copy or rendered layout/styling is planned.
+- Findings: no additional open CRITICAL/HIGH analysis finding beyond the five assigned T092 corrections.
+
+
+## S51-R23 task-ID collision recheck (2026-11-12 18:51 +02:00)
+- T088 remains assigned to the existing SC-003 timing evidence task. The newly assigned S51-R16 implementation work is uniquely T092 and is tagged FR-016, FR-024, FR-025, FR-031 and FR-035.
+- This is an identifier correction only; no requirement or plan behavior changed. No open PO ambiguity; 0 open CRITICAL and 0 open HIGH analysis findings.
+
+## S51-R23 duplicate-ID sweep (2026-11-12)
+- Rechecked after updating `tasks.md`: T088 is the existing SC-003 timing task, T089 the existing S39 spec-only follow-up, T090 the existing storage prerequisite, and T091 the existing S49 task. T092 is unique for this S51-R16 implementation and maps to FR-016, FR-024, FR-025, FR-031 and FR-035.
+- Updated the task inventory to include T091 and T092; it now records 94 task rows. Their FR links and T092's implementation tests are audited in the final traceability sweep.
+- No requirement text changed. This re-analysis follows the task ID correction; 0 open CRITICAL and 0 open HIGH findings, with no open product ambiguity for T092.

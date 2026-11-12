@@ -98,6 +98,31 @@ begin
 end;
 $$;
 
+-- These table locks serialize with writers that began before cutover. Install
+-- the retired-field guard while the locks are held, before the tables reopen.
+create or replace function app_private.guard_exercise_version_retired_fields()
+returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.payload ? 'instructions_en' or new.payload ? 'instructions_ar' then
+    raise exception 'catalog_exercise_invalid' using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+alter function app_private.guard_exercise_version_retired_fields() owner to postgres;
+revoke all on function app_private.guard_exercise_version_retired_fields()
+  from public, anon, authenticated, service_role;
+
+drop trigger if exists exercise_version_retired_fields_guard on public.exercise_versions;
+create trigger exercise_version_retired_fields_guard
+  before insert on public.exercise_versions
+  for each row execute function app_private.guard_exercise_version_retired_fields();
+drop trigger if exists exercise_version_retired_fields_guard on public.workspace_exercise_versions;
+create trigger exercise_version_retired_fields_guard
+  before insert on public.workspace_exercise_versions
+  for each row execute function app_private.guard_exercise_version_retired_fields();
+
 -- These deferred pointer constraints form the reverse half of each identity /
 -- version pair. Drop and recreate them inside this one transactional cutover.
 alter table public.exercises drop constraint if exists exercises_current_version_fk;

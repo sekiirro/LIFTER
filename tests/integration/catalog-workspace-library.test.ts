@@ -200,6 +200,18 @@ describe('T040 workspace library merged read', () => {
     expect(rows.map((row) => row.result_id)).toEqual([exerciseId]);
   });
 
+  it('T092 FR-035 matches the canonical Global name after a workspace rename', async () => {
+    const canonicalName = `T092 canonical search ${randomUUID()}`;
+    const exerciseId = await createGlobal(canonicalName);
+    await overrideName(exerciseId, `T092 customized ${randomUUID()}`);
+
+    const rows = await library(trainerA.userId, wsA, {
+      query: canonicalName,
+    });
+
+    expect(rows.map((row) => row.result_id)).toEqual([exerciseId]);
+  });
+
   it('breaks equal names by id ascending', async () => {
     const prefix = `T040 tie ${randomUUID().slice(0, 8)}`;
     const first = await createGlobal(`${prefix} same`);

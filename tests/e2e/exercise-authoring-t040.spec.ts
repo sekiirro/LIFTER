@@ -31,6 +31,7 @@ let fixture: Awaited<
   ReturnType<(typeof import('../integration/harness'))['twoWorkspaceFixture']>
 >;
 let exerciseId: string;
+let privateExerciseId: string;
 let orderGlobalName: string;
 let orderPrivateName: string;
 let orderPrefix: string;
@@ -43,6 +44,7 @@ async function authenticate(
   page: Page,
   locale: 'ar' | 'en',
   theme: 'light' | 'dark',
+  actor = fixture.po,
 ) {
   await page.context().addCookies([
     { name: LOCALE_COOKIE, value: locale, url: origin },
@@ -50,9 +52,7 @@ async function authenticate(
     {
       name: 'sb-127-auth-token',
       value: `base64-${Buffer.from(
-        JSON.stringify(
-          (await fixture.po.client.auth.getSession()).data.session,
-        ),
+        JSON.stringify((await actor.client.auth.getSession()).data.session),
       ).toString('base64url')}`,
       url: origin,
       httpOnly: true,
@@ -100,6 +100,23 @@ test.beforeAll(async () => {
   local = isSelectedLocalStack(process.env);
   test.skip(!local, 'Requires the selected local Supabase stack.');
   fixture = await harness.twoWorkspaceFixture();
+  const brandDraft = await fixture.woA.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: {
+      name: { ar: '', en: 'Published Club' },
+      bannerAlt: { ar: '', en: '' },
+      color: '#2563EB',
+      logo: null,
+      banner: null,
+    },
+  });
+  if (brandDraft.error) throw new Error(brandDraft.error.message);
+  const brandPublish = await fixture.woA.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  if (brandPublish.error) throw new Error(brandPublish.error.message);
   const created = await fixture.po.client.rpc('catalog_create_exercise', {
     p_operation_key: randomUUID(),
     p_request: {
@@ -142,10 +159,12 @@ test.beforeAll(async () => {
         name_en: orderPrivateName,
         primary_muscle_code: 'lats',
         equipment_codes: ['cable'],
+        video_url: 'https://youtu.be/abcdefghijk',
       },
     },
   );
   if (workspaceOnly.error) throw new Error(workspaceOnly.error.message);
+  privateExerciseId = workspaceOnly.data.exercise_id as string;
 
   await mkdir(screenshotDir, { recursive: true });
 });
@@ -163,7 +182,7 @@ for (const locale of ['ar', 'en'] as const) {
       { name: '390', width: 390, height: 844 },
       { name: '1440', width: 1440, height: 900 },
     ]) {
-      test(`${locale} ${theme} ${viewport.name}: library, add and edit screens`, async ({
+      test(`${locale} ${theme} ${viewport.name}: library, add, edit and private video detail (T092 FR-024)`, async ({
         page,
       }) => {
         test.skip(!local, 'Requires the selected local Supabase stack.');
@@ -293,6 +312,42 @@ for (const locale of ['ar', 'en'] as const) {
           path: join(
             screenshotDir,
             `${locale}-${theme}-${viewport.name}-override.png`,
+          ),
+          fullPage: true,
+        });
+
+        await authenticate(page, locale, theme, fixture.trainerA);
+        await page.goto(
+          `/exercise-library/${privateExerciseId}?workspace=${fixture.wsA.id}&scope=workspace`,
+        );
+        await expect(
+          page.locator(`[data-staff-brand-workspace="${fixture.wsA.id}"]`),
+        ).toBeVisible();
+        await expect(page.getByTestId('exercise-detail')).toBeVisible();
+        const privateVideo = page.getByRole('link', {
+          name: m['catalog.detailOpenVideo'],
+        });
+        await expect(privateVideo).toHaveAttribute(
+          'href',
+          'https://youtu.be/abcdefghijk',
+        );
+        for (let tabCount = 0; tabCount < 40; tabCount += 1) {
+          await page.keyboard.press('Tab');
+          if (
+            await privateVideo.evaluate(
+              (element) => element === document.activeElement,
+            )
+          ) {
+            break;
+          }
+        }
+        await expect(privateVideo).toBeFocused();
+        await expect(privateVideo).toHaveCSS('outline-style', 'solid');
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-private-video-detail.png`,
           ),
           fullPage: true,
         });

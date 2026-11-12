@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type postgres from 'postgres';
+import postgres from 'postgres';
 import { sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
+const concurrentDb = postgres(process.env.DB_URL!, { max: 2 });
 type Tx = postgres.TransactionSql;
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 let poId: string;
@@ -20,7 +21,7 @@ beforeAll(async () => {
   workspaceId = f.wsA.id;
   foreignWorkspaceId = f.wsB.id;
 });
-afterAll(async () => db.end());
+afterAll(async () => Promise.all([db.end(), concurrentDb.end()]));
 
 async function asActor<T>(actorId: string, body: (tx: Tx) => Promise<T>) {
   return db.begin(async (tx) => {
@@ -53,6 +54,21 @@ async function write(
   );
 }
 
+async function writeConcurrently(
+  actorId: string,
+  workspace: string,
+  exercise: string,
+  expected: number | null,
+  key: string,
+  request: object,
+) {
+  return concurrentDb.begin(async (tx) => {
+    await tx`select set_config('role', 'authenticated', true)`;
+    await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: actorId, role: 'authenticated' })}, true)`;
+    return tx`select public.catalog_write_exercise_override(${workspace}, ${exercise}, ${expected}, ${key}, ${tx.json(request as Json)}) as result`;
+  });
+}
+
 describe('T047 workspace exercise override writes', () => {
   it('replays a null-version variation write with one stable operation hash', async () => {
     const exercise = await createGlobal(`T047 null expected ${randomUUID()}`);
@@ -80,6 +96,43 @@ describe('T047 workspace exercise override writes', () => {
       where workspace_id=${workspaceId} and exercise_id=${exercise}
     `;
     expect(versions.map((row) => row.version)).toEqual([1]);
+  });
+
+  it('T092 FR-016 conflicts the second concurrent first save when no override existed', async () => {
+    const exercise = await createGlobal(`T092 concurrent first save ${randomUUID()}`);
+    const results = await Promise.allSettled([
+      writeConcurrently(trainerId, workspaceId, exercise, null, randomUUID(), {
+        notes: 'first concurrent save',
+      }),
+      writeConcurrently(trainerId, workspaceId, exercise, null, randomUUID(), {
+        notes: 'second concurrent save',
+      }),
+    ]);
+
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    const rejected = results.find((result) => result.status === 'rejected');
+    expect(rejected).toMatchObject({
+      status: 'rejected',
+      reason: expect.objectContaining({
+        code: '40001',
+        message: 'catalog_exercise_override_version_conflict',
+      }),
+    });
+    const versions = await db`
+      select version from public.exercise_override_versions
+      where workspace_id=${workspaceId} and exercise_id=${exercise}
+    `;
+    expect(versions.map((row) => row.version)).toEqual([1]);
+  });
+
+  it('T092 FR-025 rejects a direct workspace override that targets its own exercise', async () => {
+    const exercise = await createGlobal(`T092 self alternative ${randomUUID()}`);
+
+    await expect(
+      write(trainerId, workspaceId, exercise, 0, randomUUID(), {
+        alternatives: [{ global_exercise_id: exercise }],
+      }),
+    ).rejects.toThrow(/catalog_exercise_alternatives_invalid/);
   });
 
   it('clears blank Notes and Video to canonical on a variation-only override write', async () => {

@@ -240,6 +240,33 @@ describe('production exercise detail route', () => {
     expect(html).toContain('href="https://youtu.be/canonical01"');
   });
 
+  it('T092 FR-024 shows the checked private video from a workspace-private detail payload', async () => {
+    m.detail.mockResolvedValue({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          origin_workspace_id: workspaceId,
+          variation: null,
+          payload: {
+            ...row.payload,
+            video_url: 'https://youtu.be/private01',
+            effective_fields: undefined,
+          },
+        },
+      ],
+    });
+
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+
+    expect(html).toContain('href="https://youtu.be/private01"');
+  });
+
   it('does not render an unresolved raw Video URL', async () => {
     m.detail.mockResolvedValue({
       status: 'ok',
