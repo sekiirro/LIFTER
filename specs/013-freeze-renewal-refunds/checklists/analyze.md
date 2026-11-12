@@ -73,6 +73,7 @@
 - Specified (implement): pure `requireUnfrozenForOperation` gate (upgrade/renewal refused while frozen; mirrors existing `requireFreezeRole` style) + `isFrozenOn` window predicate derived from the specified Apply-counts/Stop-excluded day semantics + exact 10-counted-days Ã¢â€ â€™ +10-expiry unit fixture + integration fixtures in freeze-lifecycle.test.ts (frozen renewal refusal with zero writes via existing `record_renewal`, DB-level 10-day extension via `f13_project_entitlement`, concurrent-apply race serialization, apply/stop/remove audit counts with replay silence).
 - NOT in scope: DB-level frozen upgrade refusal has no upgrade writer until T042 (forbidden to this lane); covered by the pure gate plus a T042 handoff note. No migration is required (freeze guards exist); no catalog changes.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open.
+
 ## 2026-11-11 Analyze Ã¢â‚¬â€ S48-PO-14/15 clarification and T043/T044 untick (19:37 UTC)
 
 - Entry check for T043: PASS. `spec.md` contains numbered FR-040, measurable SC-018, and GWT scenario 11; the new Clarifications entries preserve S48-PO-14 words and separately label S48-R22 mapping; no open product ambiguity remains for T043. `plan.md` slice (5) covers PO date edits; `tasks.md` T043 is tagged FR-040/SC-018 and is now unchecked pending current-head verification.
@@ -149,10 +150,9 @@
 - Regression: full established F12/F13 Stack C set plus `upgrade-operations.test.ts` passed 27 files / 646 tests; baseline 26 files / 630; no new failure IDs. Unit 181 files / 2,425; lint; typecheck; local timestamp validation (124 migrations, 11 documented exceptions); remote cross-ref scan (116 refs); focused Prettier and git diff checks passed. Migration version `20261112010200` is above the all-origin maximum `20261111233600` and uses a valid current Cairo timestamp.
 - T045 traceability is updated to VERIFIED; T041/T042 stay ticked, T044 remains P4-deferred and unticked. CRITICAL: 0 open; HIGH: 0 open.
 
-
 ## 2026-11-12 Analyze - T045 exact-head Spec Kit date correction (01:44 UTC+02; 23:44 UTC)
 
-- CI's Check feature spec consistency reported that the prior T045 Analyze heading preceded the latest 	asks.md commit timestamp. This entry is appended after that task/traceability edit and records the CI-detected consistency correction.
+- CI's Check feature spec consistency reported that the prior T045 Analyze heading preceded the latest asks.md commit timestamp. This entry is appended after that task/traceability edit and records the CI-detected consistency correction.
 - No spec, plan, task, or behavior requirements changed. T045 remains limited to FR-042 refund composition and its stated SC-025/SC-031 scenarios; the follow-up test asserts the existing validator's SECURITY DEFINER, owner, empty search_path, and revoked execute boundary.
 - Spec Kit cross-reference remains PASS: FR-042, SC-025/SC-031, T045, and the S48-PO-21/R26 decision are present in their relevant records. T044 remains P4-deferred/unticked; no new ambiguity or product choice was identified.
 - CI consistency check will be rerun on this exact candidate. CRITICAL: 0 open; HIGH: 0 open.
@@ -164,3 +164,28 @@
 - T041/T042 renewal-then-upgrade test passed; T045 renewal purchase remains excluded from refund selection. T043 frozen/deactivated refusal client status is preserved as `stale_state`. Guard-removal mutations for continuity/upgrade/refund plus SECURITY DEFINER, empty search_path, execute grant, and TS stale-state mapping were killed and restored; logs are in the S49 run directory. New forward migration `20261112015500_f13_review_continuity_commission_fixes.sql` is above the observed all-ref migration maximum `20261112012100` and was applied by clean replay.
 - T044 remains unticked/P4-deferred per S48-PO-19 / S48-R24; FR-041 remains PARTIAL. `S48-F13-MCQ-4` (unpaid earlier installment obligations after upgrade) remains open and is not implemented or tested as a selected rule.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-12 Analyze - changed Markdown CI formatting correction (02:59Z)
+
+- The exact-head CI changed-Markdown check identified Prettier differences in the F13 Analyze, task, and traceability files; formatting was normalized using the repository Prettier configuration. `spec.md` had no formatting diff. This is formatting-only; no FR, SC, acceptance scenario, PO decision, or task scope changed.
+- Spec Kit re-entry: PASS. Numbered FR-037..042, measurable SCs, GWT scenarios, recorded clarifications, plan coverage, and task tags remain intact. T041/T042/T043/T045 evidence and T044 P4/FR-041 PARTIAL status are unchanged. No new product ambiguity was introduced.
+- Exact changed-Markdown formatter now passes for all four F13 markdown paths; CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-12 Analyze - T041 receipt review fix and date-arithmetic MCQ (03:26Z)
+
+- Spec Kit re-entry remains PASS: numbered FRs/SCs/GWT scenarios and Clarifications are present; T041 remains tagged FR-037/039 and tasks/traceability now cite current test evidence. No requirement, acceptance scenario, or plan scope changed in this follow-up.
+- T041 receipt change accepts the SQL-emitted UUID field only after exact-key-set and UUID validation; RED/GREEN and validation-guard mutation are recorded in the S49 run report. F12/F13 Stack C regression remains 27/653 with no new failures against the 26/630 baseline.
+- Greptile's upgrade re-anchoring finding exposes an unspecified date calculation for pre-upgrade renewal/freeze extensions. `S49-F13-MCQ-1` is recorded in the run report and PR body; no implementation or expected-date test chooses a policy. Existing `S48-F13-MCQ-4` remains open.
+- T044 remains unticked/P4-deferred; FR-041 remains PARTIAL. CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-12 Analyze - superseding T041/T042 tick assessment (03:28Z)
+
+- Revalidation against Greptile 5868270359 shows the current renewal-then-upgrade test retains renewal payment facts but does not assert that the paid renewal duration survives upgrade recalculation. The SQL projection anchors after the upgrade and excludes earlier renewal/freeze events. Therefore T041 and T042 are unticked and their current-head traceability rows are PARTIAL pending `S49-F13-MCQ-1`; the narrower receipt validation follow-up remains verified independently.
+- This records a coverage/status correction only; no FR, SC, GWT scenario, plan step, or behavior text changed. No guessed date arithmetic or test expectation was added. Existing unresolved `S48-F13-MCQ-4` remains open.
+- T044 stays open/P4-deferred and FR-041 PARTIAL. T043 and T045 remain verified. CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-12 Analyze - T041/T042 current verification status correction (03:29Z)
+
+- Final Spec Kit re-entry: PASS. Task requirements are unchanged; task notes now accurately require the renewal-then-upgrade test to assert duration/payment preservation before T041/T042 can be ticked together. Their checkboxes and current traceability status are PARTIAL/unticked because the existing test did not assert the renewed term's resulting end date.
+- No new date policy or implementation default was introduced. `S49-F13-MCQ-1` remains the blocking PO question for carrying pre-upgrade renewal/freeze extension through date re-anchoring. The independent T041 renewal-receipt change remains verified at commit `3df9928b`.
+- T043/T045 remain verified; T044 remains unticked/P4 with FR-041 PARTIAL. CRITICAL: 0 open; HIGH: 0 open.
