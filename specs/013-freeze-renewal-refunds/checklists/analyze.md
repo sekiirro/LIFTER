@@ -164,4 +164,3 @@
 - T041/T042 renewal-then-upgrade test passed; T045 renewal purchase remains excluded from refund selection. T043 frozen/deactivated refusal client status is preserved as `stale_state`. Guard-removal mutations for continuity/upgrade/refund plus SECURITY DEFINER, empty search_path, execute grant, and TS stale-state mapping were killed and restored; logs are in the S49 run directory. New forward migration `20261112015500_f13_review_continuity_commission_fixes.sql` is above the observed all-ref migration maximum `20261112012100` and was applied by clean replay.
 - T044 remains unticked/P4-deferred per S48-PO-19 / S48-R24; FR-041 remains PARTIAL. `S48-F13-MCQ-4` (unpaid earlier installment obligations after upgrade) remains open and is not implemented or tested as a selected rule.
 - CRITICAL: 0 open; HIGH: 0 open.
-
