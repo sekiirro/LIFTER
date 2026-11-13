@@ -171,4 +171,4 @@ Migration-control audit: CI pins Supabase CLI 2.122.0. Its migration runner dete
 
 ## S53-R22 local Playwright stack portability — T095
 
-- [ ] **T095 [FR-018] - Select the local Supabase status command by platform.** Keep the existing Windows PowerShell invocation; use direct `npx supabase status` arguments on Linux/macOS when the selected stack environment is incomplete. Unit-test command selection for all supported platforms. Do not change CI behavior.
+- [x] **T095 [FR-018] - Select the local Supabase status command by platform.** Keep the existing Windows PowerShell invocation; use direct `npx supabase status` arguments on Linux/macOS when the selected stack environment is incomplete. Unit-test command selection for all supported platforms. Do not change CI behavior. Evidence: commit `843e9404`; `tests/unit/f16-playwright-launcher.test.ts::selects a local Supabase status command for the current platform` passed 3/3 in the focused file.

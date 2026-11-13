@@ -1006,3 +1006,11 @@ A hostile pass found that a pending next-page response could append results afte
 ## S53-R19 T094 revalidation — 2026-11-13
 
 - Revalidated T094 under FR-018 after the Stack A full-chain replay and focused atomic editor-state tests. The returned editable fields and CAS revision share one authorized snapshot; removed exercises and foreign workspace access fail closed. No new product behavior, permission, or UI copy was introduced. No open ambiguities remain for this scoped fix. Open CRITICAL/HIGH findings: 0.
+
+## S53-R22 T095 revalidation - 2026-11-13
+
+- Scope: test-harness portability for the existing selected-local-stack environment fallback. Windows keeps its existing PowerShell command; Linux/macOS invoke `npx` with direct argument boundaries. CI still supplies its environment and does not enter this fallback. No F16 product requirement text changed.
+- Traceability: T095 is unique and tagged FR-018; `traceability.md` maps the command-selection unit test and Playwright config evaluation tests to implementation commit `843e9404`.
+- Validation: RED failed before the selector existed; GREEN passed 4/4 focused tests; mutation forcing the Windows command for every platform failed the Linux/macOS selection assertion. The restored implementation passed 4/4.
+- UI scope: no rendered UI changed. `S53-86K-UI-1` remains a PO decision for the separate P1 detail-view rendering request; that P1 is blocked and excluded from T095.
+- Analysis result: no new CRITICAL or HIGH technical findings for T095. No open ambiguity remains in the platform command selection behavior.
