@@ -58,6 +58,9 @@ const registrationPrivate = [
   'f13_audit_renewal',
   'f13_audit_renewal_date_revision',
   'f13_audit_refund_ledger',
+  'f13_audit_subscription_upgrade',
+  'f13_audit_manual_date',
+  'f13_audit_productivity_point',
   'f13_check_freeze',
   'f13_check_refund_ledger',
   'f13_freeze_contribution',
@@ -65,7 +68,10 @@ const registrationPrivate = [
   'f13_freeze_guard',
   'f13_reflow_unstarted_renewal',
   'f13_guard_terminal_payment',
+  'f13_guard_subscription_upgrade',
   'f13_validate_freeze',
+  'f13_validate_renewal',
+  // T041 adds a (uuid,uuid,uuid) overload; pg_proc carries both rows.
   'f13_validate_renewal',
   'f13_validate_refund_ledger',
   'f15_alert_occurrence_authorize_insert',
@@ -230,6 +236,9 @@ describe('tenancy security catalog (T007)', () => {
           ...registrationPrivate,
           ...approvalFunctions.map((signature) => signature.split('(')[0]!),
           'client_has_access',
+          'client_note_trim_whitespace',
+          'guard_client_note_update',
+          'require_client_note_create_key',
           ...signupPrivate,
           ...brandingPrivate,
           'apply_food_default_alternatives',
@@ -266,6 +275,8 @@ describe('tenancy security catalog (T007)', () => {
           'f13_create_refund_lockout_alert',
           'f13_materialize_entitlement',
           'f13_project_entitlement',
+          // Created by 20261112175511_f13_review_integrity_corrections.sql.
+          'f13_validate_productivity_point',
           'f15_alert_schedule_activate',
           'f15_alert_schedule_deactivate',
           'f15_alert_schedule_immutable',
@@ -352,7 +363,7 @@ describe('tenancy security catalog (T007)', () => {
     );
     for (const row of rows) {
       const expectedDefiner = ![
-        // Union of F15's intentionally invoker-mode validators and F16 helper expectations.
+        // Union of F15/F16 and client-notes intentionally invoker-mode functions.
         'audit_events_immutable',
         'branding_actor_id',
         'catalog_assert_exercise_text_limits',
@@ -375,6 +386,7 @@ describe('tenancy security catalog (T007)', () => {
         'forbid_delete',
         'guard_form_answer_revision_immutable',
         'guard_form_correction_immutable',
+        'guard_client_note_update',
         'jobs_updated_at',
         'normalize_ar_en_v1',
         'normalize_catalog_food_identity_v1',
@@ -385,6 +397,8 @@ describe('tenancy security catalog (T007)', () => {
         'recovery_link_limits',
         'register_f15_trainer_alert_schedule',
         'registration_link_limits',
+        'require_client_note_create_key',
+        'client_note_trim_whitespace',
         'reject_catalog_provenance_change',
         'reject_catalog_version_mutation',
         'validate_food_request',
@@ -409,6 +423,9 @@ describe('tenancy security catalog (T007)', () => {
         expect(row.service_role_execute, row.proname).toBe(false);
       }
       if (row.proname === 'archive_f15_selection_update') {
+        expect(row.service_role_execute, row.proname).toBe(false);
+      }
+      if (row.proname === 'f13_validate_productivity_point') {
         expect(row.service_role_execute, row.proname).toBe(false);
       }
       expect(row.authenticated_execute, row.proname).toBe(
@@ -440,6 +457,7 @@ describe('tenancy security catalog (T007)', () => {
               'catalog_write_audit',
               'claim_catalog_operation',
               'client_has_access',
+              'client_note_trim_whitespace',
               'copy_workspace_form',
               'cutover_identity_guard',
               'enqueue_job',
@@ -459,6 +477,7 @@ describe('tenancy security catalog (T007)', () => {
               'guard_form_erasure_control',
               'guard_form_legal_hold',
               'guard_form_retention_window',
+              'guard_client_note_update',
               'prevent_consent_receipt_mutation',
               'signup_reserved_usernames',
               'f15_current_terms_policy',
@@ -516,6 +535,7 @@ describe('tenancy security catalog (T007)', () => {
               'reject_catalog_version_mutation',
               'release_catalog_food_keys',
               'require_food_version_serving',
+              'require_client_note_create_key',
               'reserve_catalog_food_keys',
               'set_catalog_operation_result',
               'sync_catalog_addition_limits',
@@ -781,6 +801,13 @@ describe('audit security catalog (T005)', () => {
       },
       {
         tgname: 'f13_no_update',
+        relname: 'subscription_manual_date_adjustments',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
         relname: 'subscription_obligation_cancellations',
         type: 19,
         tgenabled: 'O',
@@ -796,6 +823,13 @@ describe('audit security catalog (T005)', () => {
       {
         tgname: 'f13_no_update',
         relname: 'subscription_renewals',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'trainer_productivity_points',
         type: 19,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
@@ -1217,6 +1251,8 @@ describe('registration security catalog', () => {
       'app_private.f13_audit_renewal()',
       'app_private.f13_audit_renewal_date_revision()',
       'app_private.f13_audit_refund_ledger()',
+      'app_private.f13_audit_manual_date()',
+      'app_private.f13_audit_productivity_point()',
       'app_private.f13_check_freeze()',
       'app_private.f13_check_refund_ledger()',
       'app_private.f13_freeze_contribution(uuid,uuid,uuid)',
@@ -1248,6 +1284,7 @@ describe('registration security catalog', () => {
       'public.consume_f15_telegram_start(bigint,text,text)',
       'public.finish_f15_telegram_delivery(uuid,text)',
       'public.record_renewal(jsonb)',
+      'public.record_subscription_date_adjustment(jsonb)',
     ];
     for (const name of signatures) {
       const [r] =

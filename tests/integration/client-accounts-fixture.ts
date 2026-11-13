@@ -82,12 +82,15 @@ export async function pending(
   patch: Record<string, unknown> = {},
   userId?: string,
 ) {
+  const registrationLinkId = patch.registration_link_id ?? f.link;
+  if (typeof registrationLinkId !== 'string')
+    throw new Error('Pending fixture registration link id must be a string');
   const user = userId ? { id: userId } : await identity(tx);
   await tx`select set_config('request.jwt.claims','{}',true)`;
   const [row] = await tx`insert into public.clients ${tx({
     workspace_id: f.wsA.id,
     auth_user_id: user.id,
-    registration_link_id: f.link,
+    registration_link_id: registrationLinkId,
     package_version_id: f.p.versionId,
     email_normalized: 'IGNORED@example.test',
     phone_e164:
@@ -99,7 +102,7 @@ export async function pending(
     name: 'U2 synthetic',
     ...patch,
   })} returning *`;
-  await tx`update public.registration_links set consumed_at=now() where id=${f.link}`;
+  await tx`update public.registration_links set consumed_at=now() where id=${registrationLinkId}`;
   return row!;
 }
 
@@ -446,6 +449,16 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
+          ([
+            'record_refund',
+            'record_renewal',
+            'record_subscription_upgrade',
+            'record_subscription_date_adjustment',
+            'close_client',
+          ].includes(fn.proname)
+            ? result.data?.status === 'not_permitted'
+            : ['subscription_freeze_operation'].includes(fn.proname) &&
+              result.data?.status === 'invalid_input') ||
           (fn.proname === 'read_client_form_draft' &&
             result.data?.status === 'not_found') ||
           ([
@@ -454,13 +467,7 @@ export async function pendingHttpAccess(
             'configure_intake_assignment_policy',
             'materialize_intake_assignment_occurrence',
           ].includes(fn.proname) &&
-            result.data?.status === 'not_found') ||
-          (['record_refund', 'record_renewal', 'close_client'].includes(
-            fn.proname,
-          )
-            ? result.data?.status === 'not_permitted'
-            : ['subscription_freeze_operation'].includes(fn.proname) &&
-              result.data?.status === 'invalid_input'),
+            result.data?.status === 'not_found'),
         fn.proname,
       );
     });

@@ -16,7 +16,7 @@ export type EntitlementProjectionInput = {
   serviceStartDate: string | null;
   durationDays: number;
   freezes: readonly FreezeApplication[];
-  successorCoverage: readonly CoverageInterval[];
+  renewalCoverage: readonly CoverageInterval[];
   terminalRefund: boolean;
 };
 
@@ -78,7 +78,7 @@ export function projectEntitlement(
       serviceStartDate: input.serviceStartDate,
       serviceEndExclusive: effectiveEndExclusive,
     },
-    ...input.successorCoverage,
+    ...input.renewalCoverage,
   ]);
   const current = intervals.find(
     (interval) =>
