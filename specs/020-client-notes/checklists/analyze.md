@@ -1,19 +1,41 @@
 # Spec Kit Analyze — F20 Client Notes
 
+## S53-R37 pagination refresh and retry re-analysis
+
+- **Analysis date:** 2026-11-13T09:23:07Z, after edits to `spec.md`, `plan.md`, and `tasks.md` for S53-R37.
+- **Scope:** first-page refresh after continuation loading, editor snapshot visibility, standalone edit Retry denial, and pagination client scoping.
+- **Requirements:** FR-001/SC-009/T017 now explicitly reset continuation rows and cursor to the changed first-page source; edited active or successfully saved older notes remain separately visible through editor snapshots and never own the cursor. Existing approved `clientNotes.permissionRefused` is used for a denied standalone Retry while retaining the body; other pending edit failures keep the approved save-error title.
+- **Test coverage:** the 200-row UI refresh regression verifies reset, refreshed cursor and no duplicate/missing resumed row; existing dirty-editor, saved-older-note, delete/in-flight-page and unknown-edit tests verify separate snapshots and pending state; the real-query pagination integration test verifies a readable same-workspace sibling-client row is excluded from the requested client's pages. Retry-denial UI test asserts the retained body/action and approved refusal copy, then verifies other failure and success transitions.
+- **Cross-reference review:** FR-001, FR-007, FR-008, SC-009, T017, GWT scenario 6 and the T017 traceability row are aligned. No behavior outside S53-R37 is changed. No new copy, data retention, permission, or authorization rule is introduced.
+- **Ambiguities:** none. The loaded-page retention behavior was implementation wording from commit `b53aed6f`, not a PO decision; S53-R20's visibility requirement is preserved through separate edited-note snapshots.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. Retry state transitions and first-page refresh/active-edit interaction have explicit tested outcomes; no further PO decision is required.
+
+## S53-R28 concurrency re-analysis
+
+- **Analysis date:** 2026-11-13T08:09:00Z, after edits to `spec.md`, `plan.md`, and `tasks.md` for S53-R28.
+- **Scope:** create idempotency replay and delete key-row waits; authorization changes while those locks are held; save-in-flight exit protection after Discard; duplicate per-note delete requests and synchronous repeated save/load-more activation.
+- **Requirements:** FR-005 now requires a current authorization/scope check after each waited-on note or key lock and before note/key outcome is inspected, returned, or mutated. Story 2 scenario 9 and Story 3 scenario 10 specify revocation/downgrade lock races and unchanged note/key/audit state. FR-007 and Story 3 scenario 9 keep exit guards armed through an in-flight save after Discard. Story 3 scenario 11 disables only the deleting note's Delete control until the request settles.
+- **Authorization boundary review:** create checks the current actor, coaching-work access, and workspace/client scope after both fresh-key acquisition and duplicate-key lock acquisition; delete re-checks Platform Owner, workspace access, and client scope after the note-row and create-key-row locks; update already re-checks workspace and author/owner authorization after the note-row lock. The read-only client-context RPC has no lock or mutation path. No list RPC is implemented as a SECURITY DEFINER function; list reads remain under RLS and workspace access.
+- **Synchronous activation review:** repeated same-turn activations of create, update, or load-more reached the handler twice before React rendered the disabled state. A synchronous in-flight ref now closes that race; the same-turn tests failed before and passed after the guard.
+- **Failure and recovery states:** lock-wait denials use the existing generic `42501` authorization denial; the delete transaction rolls back key state and note/audit effects on denial. Existing UI warning and refusal strings remain unchanged; no new product copy is introduced. Per-note delete state clears on both success and refusal/error.
+- **Cross-reference review:** T004/T011 map database hardening and race coverage to FR-005 and scenarios 9/10; T005/T013 map pending-save guards and duplicate-delete UI behavior to FR-007 and scenarios 9/11. Executed evidence is recorded in `traceability.md` after final-head verification.
+- **Ambiguities:** none open for this scope; the S53-R28 architect ruling determines the lock re-check and pending-action behavior. No additional product decision or copy change is needed.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. No requirement conflicts, data-retention changes, new user states without an outcome, or changes outside F20 were identified.
+
 **Analysis date**: 2026-11-09T22:18Z (round 17, re-run after fixing the one round-16 CodeRabbit finding in review 5833166638 and the follow-up Major in review 5833569785 before the second review request: a failed pre-dispatch `sessionStorage` write now falls back to page memory without blocking the create and without a same-tab reload guarantee; every spec, plan, tasks, contracts, data-model, research and analyze edit precedes this analysis)
 **Inputs**: spec.md, plan.md, tasks.md, data-model.md, research.md, contracts/client-notes-api.md, contracts/client-notes-rls.md
 **Scope**: Spec-only. No code, SQL, migrations, or runtime work.
 
 ## Verdict
 
-**0 open CRITICAL/HIGH findings. No PO decision is open: CN-MCQ-24 and CN-MCQ-25 are RESOLVED by S40-PO-12, options A, and encoded (round 14). Every F20 PO question is resolved and the one architect ruling is encoded.** CN-MCQ-01..14 are RESOLVED by the PO. CN-MCQ-16 (exit-protection copy and Save Draft) is RESOLVED by S38-PO-10 ("CN-MCQ-16 approved: unsaved-changes warning, no Save Draft. Approve proposed copy.") and S38-PO-11 ("Approved", confirming the draft strings in `runs/s38-po/cn-mcq-16-proposed-copy.md` rows 30-33). CN-MCQ-17 (Discard with an in-flight save) is RESOLVED by S39-PO-8, option A. CN-MCQ-18 (idempotent save/retry with DB-level duplicate prevention) is RESOLVED by S39-PO-9, option A. CN-MCQ-19 (in-flight exit-warning copy) is RESOLVED by S40-PO-3, option Variant 1 (Recommended); its exact EN and Egyptian Arabic strings are encoded byte-exact as spec.md row 34, key `clientNotes.exitWarning.bodyInFlight`. CN-MCQ-20 (retry after a hard delete) and CN-MCQ-21 (note field read-only while a save is in flight) are RESOLVED by S40-PO-6, options A: the PO selected “CN-MCQ-20: A: Never recreate (Rec.)” and “CN-MCQ-21: A: Read-only (Rec.)”; the parenthesised mapping in that section is architect words, not PO words, and is labelled as such. CN-MCQ-22 (same-key retry with a different body) is RULED by architect ruling S40-R9, option A (not a PO question): a same-key create with a different body is rejected as a key/body mismatch. CN-MCQ-15 was removed by architect ruling S38-R9 under S38-PO-3 and its ID is not reused. CN-MCQ-23 (exit-warning copy and Stay/Discard behavior while a save outcome is unknown) is RESOLVED by S40-PO-10, option A: the PO selected “CN-MCQ-23: A: Existing error copy (Rec.)”; the parenthesised mapping in that section is architect words, not PO words, and is labelled as such. Encoded: the unknown-result exit warning uses the approved title, Stay and Discard rows 30, 32 and 33 with the approved generic save-error body CN-MCQ-08 row 18; rows 31 and 34 are not reused; leaving cancels nothing; the unresolved create keeps its key for Retry; no new copy. CN-MCQ-24 (unresolved-create recovery state) is RESOLVED by S40-PO-12, option A: the PO selected “CN-MCQ-24: A: Browser session (Rec.)”; the parenthesised mapping is architect words: the text, key and original body are kept in that tab's browser `sessionStorage` until the server result is known, then cleared; same-tab reload only; no server-side pending body; no new copy; Principle VII device-local privacy. Round 14 also encodes that opener-copied records are ignored and removed, and that an unresolved edit is current-page only; round 15 refines the original-refusal rule so the key is reconciled with the server before the record clears when a retry of that create could have committed (a refused Retry does not clear it). CN-MCQ-25 (Platform Owner access versus Principle I) is RESOLVED by S40-PO-12, option A: the PO selected “CN-MCQ-25: A: Existing PO rule (Rec.)”; the parenthesised mapping is architect words: follows the existing merged F3 platform-wide `app_private.has_workspace_access` rule, recorded in plan.md Complexity tracking; no constitution change.
+**Historical rounds 1-37 are time-stamped snapshots; current analysis is Round 38. Current findings: 0 open CRITICAL/HIGH. CN-MCQ-26..30 are resolved; future staff display-name modeling is assigned to separate feature 021-staff-display-names.** CN-MCQ-01..14 are RESOLVED by the PO. CN-MCQ-16 (exit-protection copy and Save Draft) is RESOLVED by S38-PO-10 ("CN-MCQ-16 approved: unsaved-changes warning, no Save Draft. Approve proposed copy.") and S38-PO-11 ("Approved", confirming the draft strings in `runs/s38-po/cn-mcq-16-proposed-copy.md` rows 30-33). CN-MCQ-17 (Discard with an in-flight save) is RESOLVED by S39-PO-8, option A. CN-MCQ-18 (idempotent save/retry with DB-level duplicate prevention) is RESOLVED by S39-PO-9, option A. CN-MCQ-19 (in-flight exit-warning copy) is RESOLVED by S40-PO-3, option Variant 1 (Recommended); its exact EN and Egyptian Arabic strings are encoded byte-exact as spec.md row 34, key `clientNotes.exitWarning.bodyInFlight`. CN-MCQ-20 (retry after a hard delete) and CN-MCQ-21 (note field read-only while a save is in flight) are RESOLVED by S40-PO-6, options A: the PO selected “CN-MCQ-20: A: Never recreate (Rec.)” and “CN-MCQ-21: A: Read-only (Rec.)”; the parenthesised mapping in that section is architect words, not PO words, and is labelled as such. CN-MCQ-22 (same-key retry with a different body) is RULED by architect ruling S40-R9, option A (not a PO question): a same-key create with a different body is rejected as a key/body mismatch. CN-MCQ-15 was removed by architect ruling S38-R9 under S38-PO-3 and its ID is not reused. CN-MCQ-23 (exit-warning copy and Stay/Discard behavior while a save outcome is unknown) is RESOLVED by S40-PO-10, option A: the PO selected “CN-MCQ-23: A: Existing error copy (Rec.)”; the parenthesised mapping in that section is architect words, not PO words, and is labelled as such. Encoded: the unknown-result exit warning uses the approved title, Stay and Discard rows 30, 32 and 33 with the approved generic save-error body CN-MCQ-08 row 18; rows 31 and 34 are not reused; leaving cancels nothing; the unresolved create keeps its key for Retry; no new copy. CN-MCQ-24 (unresolved-create recovery state) is RESOLVED by S40-PO-12, option A: the PO selected “CN-MCQ-24: A: Browser session (Rec.)”; the parenthesised mapping is architect words: the text, key and original body are kept in that tab's browser `sessionStorage` until the server result is known, then cleared; same-tab reload only; no server-side pending body; no new copy; Principle VII device-local privacy. Round 14 also encodes that opener-copied records are ignored and removed, and that an unresolved edit is current-page only; round 15 refines the original-refusal rule so the key is reconciled with the server before the record clears when a retry of that create could have committed (a refused Retry does not clear it). CN-MCQ-25 (Platform Owner access versus Principle I) is RESOLVED by S40-PO-12, option A: the PO selected “CN-MCQ-25: A: Existing PO rule (Rec.)”; the parenthesised mapping is architect words: follows the existing merged F3 platform-wide `app_private.has_workspace_access` rule, recorded in plan.md Complexity tracking; no constitution change.
 
 Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / ND-F5-1 / B4, `docs/13-production-readiness.md`) is an open pre-production decision. CN-MCQ-13 makes Client Notes follow the existing `public.audit_events` retention unchanged, so F20 does not depend on it and does not decide it. It is tracked outside this feature.
 
 ## Counts verified against the artifacts
 
 - CN-MCQ IDs in the register: 24 defined (01-14, 16-25; CN-MCQ-15 removed, ID not reused). PO-resolved: 23 (01-14, 16, 17, 18, 19, 20, 21, 23, 24 and 25). Architect-ruled: 1 (22). Open PO decisions: 0.
-- Functional requirements: 11 (FR-001..FR-011). Success criteria: 7 (SC-001..SC-007). Tasks: 15 (T001..T015; T008..T015 are test tasks). Acceptance scenarios: Story 1 = 3, Story 2 = 8, Story 3 = 8.
+- Functional requirements: 11 (FR-001..FR-011). Success criteria: 8 (SC-001..SC-008). Tasks: 16 (T001..T016; T008..T015 are test tasks). Acceptance scenarios: Story 1 = 4, Story 2 = 8, Story 3 = 8.
 - Task ticks: 0 (`grep "\[x\]"` on tasks.md returns no match). All tasks remain unticked (spec-only; S38-R8).
 - Approved copy: CN-MCQ-08 rows 1–29 (S38-PO-2), CN-MCQ-16 rows 30–33 (S38-PO-11) and CN-MCQ-19 row 34 (S40-PO-3). All 34 copy-table rows were re-verified byte-exact against the PO sources in round 16 (34/34 identical, including row 34 EN 60 / AR 48 code points); no copy row changed in rounds 15–16.
 - Authority byte verification: the S40-PO-12 two PO lines “CN-MCQ-24: A: Browser session (Rec.)” and “CN-MCQ-25: A: Existing PO rule (Rec.)” and its parenthesised architect-mapping sentence are present byte-exact in spec.md; the earlier S40-PO-10, S40-PO-6, S40-PO-3 and S40-R9 quotations remain byte-exact. Script: `runs/s40-ds-cn-r12/verify-authority.cjs` (ALL PASS).
@@ -31,12 +53,12 @@ Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / 
 
 ## Findings
 
-| Severity | Open count | Findings |
-| --- | ---: | --- |
-| CRITICAL | 0 | None. Authorization, tenant isolation and deny-by-default are explicit in FR-004/FR-005, the RLS contract and T006/T011. Create idempotency is not an authorization path (FR-011). |
-| HIGH | 0 | None. |
-| MEDIUM | 0 | None. CN-MCQ-16..CN-MCQ-25 are resolved (24 and 25 by S40-PO-12) or ruled and encoded; no open PO question remains. |
-| LOW | 1 | FR-006/FR-007 name the reusable components by family (textarea, button, dialog, toast, States). The repository has `components/ui/` with Button, ConfirmDialog, Field, Toast, States and Bidi; the textarea mapping is not verified in this spec-only round. **Not an ambiguity**: it is a check for the implementation task that uses the component (T005), under the existing design gate. |
+| Severity | Open count | Findings                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ---------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL |          0 | None. Authorization, tenant isolation and deny-by-default are explicit in FR-004/FR-005, the RLS contract and T006/T011. Create idempotency is not an authorization path (FR-011).                                                                                                                                                                                                           |
+| HIGH     |          0 | None.                                                                                                                                                                                                                                                                                                                                                                                        |
+| MEDIUM   |          0 | None. CN-MCQ-16..CN-MCQ-25 are resolved (24 and 25 by S40-PO-12) or ruled and encoded; no open PO question remains.                                                                                                                                                                                                                                                                          |
+| LOW      |          1 | FR-006/FR-007 name the reusable components by family (textarea, button, dialog, toast, States). The repository has `components/ui/` with Button, ConfirmDialog, Field, Toast, States and Bidi; the textarea mapping is not verified in this spec-only round. **Not an ambiguity**: it is a check for the implementation task that uses the component (T005), under the existing design gate. |
 
 ### Inconsistency check (round 14 edits)
 
@@ -126,27 +148,27 @@ The lifter Spec Kit gate applies as well: zero open CRITICAL/HIGH before impleme
 
 ## Coverage map (FR / SC → tasks)
 
-| Requirement | Tasks |
-| --- | --- |
-| FR-001 tab placement | T005, T013 |
-| FR-002 body rule, unavailable-author label | T003, T004, T009, T013, T014 |
-| FR-003 edit, no history | T003, T004, T010 |
-| FR-004 role × action | T002, T006, T011 |
-| FR-005 isolation, RLS | T003, T006, T011, T014 |
-| FR-006 PO decisions, reuse rule | T001, T007 |
-| FR-007 states, copy rows 1–34, Bidi, no icon, exit protection, no Save Draft, field read-only while in flight, unknown-result recovery with existing Retry/save-error rows, unknown-result exit warning rows 30/32/33 + body row 18, unresolved-create storage recovery with page-memory fallback on unavailable storage or a failed pre-dispatch write (CN-MCQ-21; CN-MCQ-23; CN-MCQ-24; S40-PO-6; S40-PO-10; S40-PO-12; DESIGN.md Q51) | T005, T013 |
-| FR-008 ordering | T008 |
-| FR-009 last write wins, local time | T004, T010, T013 |
-| FR-010 audit | T004, T012 |
-| FR-011 create idempotency, duplicate returns existing note, trimmed body equality, note-side uniqueness and hardened boundary, mismatch refusal, retry-after-delete deleted/not-found, retry-after-edit fingerprint (CN-MCQ-20, CN-MCQ-22) | T003, T004, T015 |
-| SC-001..SC-007 | mapped in tasks.md coverage table |
+| Requirement                                                                                                                                                                                                                                                                                                                                                                                                                              | Tasks                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| FR-001 tab placement                                                                                                                                                                                                                                                                                                                                                                                                                     | T005, T013                        |
+| FR-002 body rule, unavailable-author label                                                                                                                                                                                                                                                                                                                                                                                               | T003, T004, T009, T013, T014      |
+| FR-003 edit, no history                                                                                                                                                                                                                                                                                                                                                                                                                  | T003, T004, T010                  |
+| FR-004 role × action                                                                                                                                                                                                                                                                                                                                                                                                                     | T002, T006, T011                  |
+| FR-005 isolation, RLS                                                                                                                                                                                                                                                                                                                                                                                                                    | T003, T006, T011, T014            |
+| FR-006 PO decisions, reuse rule                                                                                                                                                                                                                                                                                                                                                                                                          | T001, T007                        |
+| FR-007 states, copy rows 1–34, Bidi, no icon, exit protection, no Save Draft, field read-only while in flight, unknown-result recovery with existing Retry/save-error rows, unknown-result exit warning rows 30/32/33 + body row 18, unresolved-create storage recovery with page-memory fallback on unavailable storage or a failed pre-dispatch write (CN-MCQ-21; CN-MCQ-23; CN-MCQ-24; S40-PO-6; S40-PO-10; S40-PO-12; DESIGN.md Q51) | T005, T013, T015                  |
+| FR-008 ordering                                                                                                                                                                                                                                                                                                                                                                                                                          | T008                              |
+| FR-009 last write wins, local time                                                                                                                                                                                                                                                                                                                                                                                                       | T004, T010, T013                  |
+| FR-010 audit                                                                                                                                                                                                                                                                                                                                                                                                                             | T004, T012                        |
+| FR-011 create idempotency, duplicate returns existing note, trimmed body equality, note-side uniqueness and hardened boundary, mismatch refusal, retry-after-delete deleted/not-found, retry-after-edit fingerprint (CN-MCQ-20, CN-MCQ-22)                                                                                                                                                                                               | T003, T004, T015                  |
+| SC-001..SC-008                                                                                                                                                                                                                                                                                                                                                                                                                           | mapped in tasks.md coverage table |
 
 Every FR and SC has at least one task. No task lacks a requirement mapping.
 
 ## Gate checklist (Spec Kit entry check, spec-only PR)
 
 - [x] FRs have stable IDs and traceable tasks (FR-001..FR-011 each appear in tasks.md and in the coverage map).
-- [x] Success criteria are measurable (SC-001..SC-007), each mapped to tasks in the coverage map.
+- [x] Success criteria are measurable (SC-001..SC-008), each mapped to tasks in the coverage map.
 - [x] Given/When/Then scenarios cover read, create (trim, boundary and idempotent retry), edit (including overlapping saves and immutable columns), delete, tenancy, role denial, Trainer cross-client access, restored membership, last save wins and exit protection (unsubmitted discard and in-flight saves, with the in-flight warning key named and the field read-only while in flight).
 - [x] Current role/membership model and backend/RLS enforcement are described; create idempotency is explicitly not an authorization factor.
 - [x] No SQL/migration version is invented; the migration scan is not relied upon; no migration file is added by this PR.
@@ -160,3 +182,327 @@ Every FR and SC has at least one task. No task lacks a requirement mapping.
 ## Result
 
 PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIGH and 0 open MEDIUM. All F20 PO questions are resolved (CN-MCQ-20 and CN-MCQ-21 by S40-PO-6; CN-MCQ-23 by S40-PO-10; CN-MCQ-24 and CN-MCQ-25 by S40-PO-12) and the one architect ruling (CN-MCQ-22 by S40-R9) is encoded. No open ambiguities remain. The five CodeRabbit review 5826069631 findings are fixed within decided scope, all four CodeRabbit review 5826336129 findings are fixed (the fourth was CN-MCQ-23, resolved by S40-PO-10), both CodeRabbit review 5827032656 findings are fixed, the one unverified additional comment in CodeRabbit review 5827278025 is addressed, and the two round-13 findings are closed by S40-PO-12 (CN-MCQ-24, CN-MCQ-25). The round-14 addendum C gap sweep found no new product question; it closed the technical gaps for the tab-local `sessionStorage` recovery state (scope, reconciled clearing, refused Retry, tab close, new tab, opener-copied records, actor binding, storage-unavailable fallback, no server-side pending body and the non-resolving refusal), for the current-page-only edit recovery state, and for the existing platform-wide Platform Owner rule. The two follow-up CodeRabbit findings (U+0000 body rule and actor binding of the recovery record) are fixed as technical requirements without a product decision. The four round-15 CodeRabbit findings are fixed: Story 2 scenario 1 and SC-002 exclude U+0000 bodies, the API contract includes approved row 34, the Principle I deviation is recorded OPEN in Complexity tracking for implementation approval, and FR-007 reconciles the key before clearing recovery state on an original refusal. The three round-16 CodeRabbit findings are fixed: the checked Analyze gate cites the round-16 analysis, same-body returns and mismatch refusals are limited to live notes with deleted/not-found regardless of retry body after a hard delete, and reconciliation now includes the no-key-record case that follows the normal create path and creates the first note with its one audit event while an existing key record is never used to create a new note. The follow-up round-16 finding is fixed: the `sessionStorage` recovery record is written before the create request is dispatched when storage is available, so a same-tab reload during the in-flight request retains the key and body and a later create cannot duplicate the note. The round-17 finding is fixed: a failed pre-dispatch `sessionStorage` write (for example `QuotaExceededError`) is treated as unavailable storage, so the create request still proceeds, the recovery state is held in page memory only and the same-tab reload guarantee does not apply; the duplicate-prevention guarantee does not apply across that reload and a later create can duplicate the note, with no new user-visible copy. The follow-up Major repeats this scenario and asks for durable recovery or a new warning; both are outside the decided scope (S41-R17 requires the create to proceed; CN-MCQ-24/S40-PO-12 approves no new copy), and the spec now states the reduced guarantee explicitly. The Principle I deviation is a governance precondition recorded for implementation approval, not an open spec ambiguity, and does not block this spec-only PR. One LOW implementation-time check (textarea component mapping) remains. This result does not approve product decisions and does not authorize implementation.
+
+## Round 19 — S49 implementation entry revalidation
+
+**Analysis date:** 2026-11-12T01:18:47Z (after the 2026-11-11 plan.md reconciliation at lines 69–71).
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `.specify/memory/constitution.md` 1.13.0, and S47-PO-14.
+**Scope:** Revalidate F20's Spec Kit implementation entry gate after S47-PO-14 and the current plan reconciliation; no behavior or scope changes.
+
+- **Entry gate: PASS.** `spec.md` has numbered FR-001..FR-011, measurable SC-001..SC-008, and Given/When/Then scenarios for the user stories. The Clarifications register (spec.md:111–139) records all PO resolutions, the S40-R9 ruling, and explicitly states that no open behavioural ambiguities remain.
+- **Plan/task mapping: PASS.** `plan.md` covers the Client Notes persistence, authorization, and UI scope. Its Complexity tracking row at lines 69–71 resolves the former Principle I deviation against constitution 1.13.0 and cites S47-PO-14. `tasks.md` maps T002 [FR-004, FR-005] and T003 [FR-002, FR-003, FR-005, FR-010, FR-011], followed by the remaining ordered tasks.
+- **Constitution check: PASS.** Constitution 1.13.0 Principle I explicitly permits verified Platform Owner access without a workspace-membership row, citing the merged F3 rule; this matches CN-MCQ-25 and the resolved plan row. S47-PO-13 authorizes F20 implementation; S47-PO-14 resolves the former deviation.
+- **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. This round supersedes the historical round-17 analysis for current implementation-entry status. No product decision was made.
+
+## Round 20 — S49 verified task evidence
+
+**Analysis date:** 2026-11-12T01:18:47Z (after T002/T003 task-status updates in `tasks.md`).
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, constitution 1.13.0, and the T002/T003 evidence on commit `f891fcca7e3fd6e56d543d7d23f7d079bbee2e59`.
+**Scope:** Acceptance evidence for completed T002/T003 only; no product requirement or behavior text changed.
+
+- **Gate:** PASS. FR/SC/GWT and clarified behavior remain as revalidated in round 19. T002 and T003 are mapped to their FRs and their tests/evidence are recorded in `traceability.md`.
+- **Verification:** T002 app/database authorization parity checks and T003 Stack D persistence/RLS/audit/idempotency integration checks passed on the implementation head. T003 mutation evidence shows the note-side unique constraint is required.
+- **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. No PO decision was made.
+
+## Round 21 — S49 T004 acceptance
+
+**Analysis date:** 2026-11-12T01:36:32Z (after the T004 status update in `tasks.md`).
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, constitution 1.13.0, and T004 commit `0e1fcc5b006a82be162283b1b06c858fb8536044`.
+**Scope:** Verify T004 acceptance and current Spec Kit entry state; no requirement text or product behavior changed.
+
+- **Gate:** PASS. FR/SC/GWT and resolved clarifications remain as revalidated in Round 19. The T004 task remains mapped to FR-002, FR-003, FR-004, FR-008, FR-009, FR-010, and FR-011.
+- **Verification:** T004 boundary and normalization evidence is recorded in `traceability.md`; Stack D integration suites passed 11/11, unit suite passed 180 files / 2,398 tests, lint and typecheck passed, and migration timestamp/cross-ref scans passed.
+- **Findings:** 0 open CRITICAL, 0 open HIGH, and 0 open behavioral ambiguities. No PO decision was made.
+
+## Round 18 — S49-PO-7 route scope, S49-R18 and S49-R22 revalidation (2026-11-12)
+
+- Scope: S49-PO-7 is recorded verbatim in spec.md with its source path and byte hash. S49-R21 maps the approved outcome to FR-001/SC-008 and task T016: staff Client Details route, one functional Notes tab, no placeholder or unrelated panels, existing app authorization plus database second wall, indistinguishable denial/404 for unknown and unauthorized clients.
+- Cross-reference sweep: FR-001..FR-011 and SC-001..SC-008 each map to task IDs; T016 is tagged FR-001/003/004/005; plan step 7 and task dependency order include route work; decision register has no unresolved product question.
+- Entry gate: numbered FRs, measurable SCs and GWT route scenarios present; PO clarification is cited; route plan and task are present; this Analyze is dated after spec/plan/tasks edits.
+- Constitution Principle I: the existing Platform Owner access rule remains recorded as the resolved S40-PO-12 decision and implementation-time governance note; no constitution text is changed.
+- S49-R18: migration work is forward-only and will preserve function security/search_path/grants; tests must prove an unauthorized actor sees the same generic denial code/message for existing and absent note IDs, with not-found available only after access is proven.
+- S49-R22: candidate behavior tests require no raw server error rendering and a local-time assertion under a fixed TZ with exact expected output.
+- PO decision sweep: no unresolved product behavior or new UI copy is needed for the approved route shape; use existing approved Notes strings and the existing staff route denial behavior. Any additional user-visible copy or design-system gap remains blocked for MCQ escalation.
+
+### Result
+
+PASS for implementation entry: 0 open CRITICAL, 0 open HIGH. No open ambiguities for the authorized S49-PO-7 route slice.
+
+### Round 18 addendum — numbering and final cross-reference check (2026-11-12)
+
+After the final spec numbering edit, rechecked GWT scenario numbering (1–4), FR/SC/task mappings, plan step 7, T016 placement after T006 and before T007, and task tags. Result: no open CRITICAL or HIGH finding; no ambiguity.
+
+## Round 22 - route refinement and implementation traceability (2026-11-12)
+
+- Re-analyzed the T016 plan refinement: the session-bound database resolver exposes only client/workspace identifiers after the coaching_work access check; the route separately checks the verified actor and active membership, then reads notes through the RLS/RPC boundary. Unknown, foreign, revoked and unauthorized IDs use the same notFound behavior. No user-visible copy or product behavior was added.
+- Marked T005 and T016 complete only after exact-head unit, route, Stack D integration, E2E, lint, typecheck, format and migration evidence was recorded in traceability.md. Rechecked FR/SC/task references and resolved decision statuses.
+- Focused F20 Stack D evidence is green (5/5); the repository-wide integration suite remains an operational blocker with unrelated fixture/schema failures (26/95 files, 238/1,500 tests failed), recorded in the run report. Analyze findings: 0 open CRITICAL/HIGH; no PO ambiguity.
+
+## Round 23 - final documentation formatting review (2026-11-12)
+
+- The required changed-document Prettier gate found all five F20 Markdown artifacts needed canonical formatting. Applied Prettier; the only non-whitespace change is the ordered-list index for S49-F20-MCQ-1 changing from 20 to 25 to follow the preceding 24 clarification entries. The stable MCQ ID, PO source, requirement text, task tags and all FR/SC IDs are unchanged. The S49-PO-7 source hash and exact quoted substring still match.
+- Rechecked cross-references and no-open-ambiguities status after formatting. Result: 0 open CRITICAL/HIGH, no PO decision needed.
+
+## Round 24 - refreshed Spec Kit cross-reference counts (2026-11-12)
+
+- Refreshed the Analyze counts after the approved S49-PO-7 route scenario and SC-008: FRs 11, SCs 8, tasks 16, Story 1 scenarios 4, Story 2 scenarios 8, Story 3 scenarios 8. Verified each FR and SC is mapped in tasks.md and the coverage table.
+- Updated the implementation-scope line to include T016 in its specified position before T007. No behavior, PO wording or copy changed. Result: 0 open CRITICAL/HIGH; no ambiguity.
+
+## Round 25 - implementation scope cross-reference (2026-11-12)
+
+- Rechecked the updated task-gate scope line against T002-T006, T016, T007 and test tasks T008-T015. Task order, completion status, FR/SC coverage and the Round 24 scenario counts agree.
+- No requirement or PO decision changed. Result: 0 open CRITICAL/HIGH; no open ambiguities.
+
+## Round 26 - S50 test acceptance evidence (2026-11-12)
+
+**Analysis date:** 2026-11-12T08:33:42Z, after T006/T008-T012/T014 status and `traceability.md` evidence updates.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, current exact-head test evidence in the S50 Luna run report.
+**Scope:** Test acceptance and cross-reference review only; no behavior, requirement, permission, retention, or copy decisions changed.
+
+- Independent review: S50-R23 accepts implementation and identifies the unticked test tasks as its blocker. S50-R24 clause map is candidate-only; this lane verified the cases against actual test sources.
+- T006, T008, T009, T010, T011, T012, and T014 are marked complete with passing unit/Stack D integration evidence in `traceability.md`.
+- T013 and T015 remain unchecked because their full clause-by-clause acceptance is not yet demonstrated; the run report names remaining gaps. T007 remains unchecked pending the complete PR gate sequence and architect handoff.
+- Rechecked FR-to-task mappings, task tags, traceability test names and references. PO decision register remains resolved; no open behavior/copy ambiguity was found.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH. No open ambiguities for already authorized behavior. This Analyze does not mark incomplete test tasks accepted.
+
+## Round 27 - T013 UI acceptance (2026-11-12)
+
+**Analysis date:** 2026-11-12T08:37:51Z, after the T013 checkbox/traceability update.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, final-head E2E and unit evidence in the S50 Luna run report.
+**Scope:** Confirm the existing approved UI and its tests; no rendered UI, copy, token, or behavior change.
+
+- T013 clauses verified: the UI test compares spec rows 1–34 against EN/AR message values byte-for-byte; the E2E checks the text-only horizontal tab, names/roles, keyboard focus visibility, reduced motion, RTL/LTR, 390/1440 viewports, and axe across light/dark; screenshot matrix is stored and reviewed. Existing `branding-contrast-matrix.test.ts` covers sample brand colors in light/dark.
+- T006, T008-T014 verified task states and their test evidence remain consistent. T015 remains unchecked for its delayed-original-response reconciliation clause, as noted in the report. T007 remains unchecked pending remaining PR gates.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. No open ambiguities. This analysis does not infer a product decision or resolve T015's test gap.
+
+## Round 28 - T015 stale-response reconciliation (2026-11-12)
+
+**Analysis date:** 2026-11-12T08:46:47Z, after T015 task/traceability update.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, delayed-response unit regression and implementation diff.
+**Scope:** Complete the specified idempotency recovery edge case; no product requirement, user-visible copy, role, or retention rule changed.
+
+- The delayed definite refusal now compares the persisted attempt's idempotency key to the request it is resolving before removal. A stale response cannot remove a newer unresolved record. The test exercises original pending request, same-key retry resolution, a new attempt, then the original refusal.
+- T015 RED reproduced the bug (`sessionStorage` became null where the newer record was expected); GREEN passed after the key-scoped clear. Mutation with the key comparison removed reproduced the same failure. Restored implementation passes.
+- Rechecked FR-007/FR-011 mappings and traceability. No open behavioral ambiguity or copy question.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH.
+
+## Round 29 - T015 FR cross-reference (2026-11-12)
+
+**Analysis date:** 2026-11-12T08:55:06Z, after the T015 task and traceability tags were aligned.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, T015 final-head tests.
+**Scope:** Cross-reference consistency only. T015's delayed refusal/recovery-state clauses span FR-007 and FR-011; task and traceability tags now name both. No behavior, copy, or scope changed.
+
+- T015 tests cover delayed definite refusal preserving a newer tab recovery record, same-key idempotency, and resolution flows. Evidence is recorded with the implementation and test commit.
+- FR-007 and FR-011 map to T015 in task and traceability records; no stale unchecked status for T015.
+- S50-R23 is the independent architect review; remaining T007 PR-gate checks are still pending and T007 remains unticked.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH. No open ambiguities.
+
+## Round 30 - T015 trace evidence update (2026-11-12)
+
+**Analysis date:** 2026-11-12T08:55:47Z, after the T015 traceability evidence and FR tags were updated.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, final-head test results.
+**Scope:** Trace evidence precision only; no requirement, behavior, copy, or scope changed.
+
+- T015's FR-007, FR-011 tags agree between task and traceability rows. Traceability names the delayed-response test and fix commit 9bea24d9; the Stack D suites passed after the fix.
+- Analyze confirms T015 clauses are verified and ticked. T007 remains unticked until the required PR gates are completed.
+- S50-R23 is cited as the independent architect review; no open ambiguity remains.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH.
+
+## Round 31 — S50-R24 findings revalidation (2026-11-12)
+
+**Analysis date:** 2026-11-12T10:06:45Z, after the current spec/plan cross-reference corrections and before implementation acceptance.
+**Inputs:** `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, S50-R23/S50-R24, current implementation findings.
+**Scope:** Review-driven revalidation. No requirement or PO decision is encoded by this analysis. The prior Round 30 status is historical; this section is current.
+
+- The stale Principle I deviation, spec-only authorization claim, and no-migration claim in `plan.md` are corrected against constitution 1.13.0, S47-PO-14, S47-PO-13 and S49-PO-7.
+- FR-007 task coverage includes T015; S50-R23 is the independent architect review for T007.
+- Three product questions are escalated in the run report as PDN-01..03: pagination beyond the effective 1,000-row service cap, author display-name source, and reachable retry behavior after discarding an unknown-result edit. No defaults or copy are inferred.
+- Technical gaps in this review batch are within already approved scope. The product-dependent portions above remain blocked pending PO direction.
+
+**Findings:** 0 open CRITICAL, 0 open HIGH. 3 PO decisions remain open; T007 remains unticked until decision-dependent coverage and final gates are resolved.
+
+## Round 32 — 2026-11-12 (after S50-PO-6 amendment)
+
+**Analysis date:** 2026-11-12T12:32Z (round 32; after the S50-PO-6 decision register, FR-001/FR-002 amendment, plan.md and tasks.md T017–T019 edits)
+**Scope:** Revalidation of the new decisions and contracts only; no code or SQL changed.
+**Findings:** 0 open CRITICAL; 0 open HIGH. Existing approved behavior decisions are explicit: pagination beyond 1,000; author label sourced from existing staff profile; unknown-result edit Discard closes editor with Retry elsewhere in the tab. Existing Retry key can be reused unchanged.
+**PO-decision gate:** OPEN for CN-MCQ-26–29. This does not represent a CRITICAL/HIGH technical finding; it blocks only dependent new/changed copy and author-label implementation until PO selection. `staff_profiles` schema has no display/name field, so the selected source's exact label semantics remain unanswered. No new string is in runtime bundles. No implementation started in this round.
+**Spec Kit entry result for implementation:** FAIL for T017/T018 pending the open PO decisions; independent work may resume after PO answers and Analyze is rerun. T019's copy can reuse the existing approved key, but no T019 implementation was started in this round.
+
+## Round 33 - S51-PO-1 implementation revalidation (2026-11-12)
+
+**Analysis date:** 2026-11-12T13:29:38Z. After the S51 decision register, FR-001/FR-002, SC-009/SC-010, copy-table, plan.md and tasks.md updates.
+**Inputs:** S51-PO-1 exact source/hash; approved copy source/hash; S50-PO-6 behavior decisions with S50-R32 mapping; schema/RLS audit for staff profile/auth metadata; current route/service/UI plan.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Ambiguity status:** No open ambiguities remain for T017-T019. CN-MCQ-30 was resolved by S51-PO-3: future staff display-name modeling belongs to separate feature 021-staff-display-names; F20 keeps the approved unavailable-author fallback until that feature ships.
+**Security/design:** No migration or user-metadata name read is authorized. Load-more uses bounded keyset pagination under existing session and RLS boundaries. New UI copy is limited to byte-approved CN-MCQ-26/28 strings; 27A remains unchanged. Existing Design System tokens/components only.
+
+## Round 34 - T017-T019 final evidence review (2026-11-12)
+
+**Analysis date:** 2026-11-12T13:57:47Z. After final task state and traceability updates.
+**Scope:** T017-T019 implementation and verification; S51-PO-1 copy/behavior resolution and S50-PO-6 behavior mapping.
+**Independent review context:** Architect S50-R23 is recorded as the independent review context; final PR review remains pending.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Ambiguity status:** No open ambiguity within T017-T019. CN-MCQ-30 is resolved by S51-PO-3; future staff display-name modeling belongs to separate feature 021-staff-display-names. F20 uses the approved unavailable-author fallback and adds no schema.
+
+## Round 35 - post-review spec consistency correction (2026-11-12)
+
+**Analysis date:** 2026-11-12T14:07:43Z. After correcting the S50-PO-6 author-label acceptance scenario to match S51-PO-1 29B, updating current decision status, and clarifying the copy-table label.
+**Cross-reference sweep:** T017-T019, FR-001/002/007/008/009, SC-005/009/010, and CN-MCQ-26..30 align across spec, plan, tasks and traceability. Historical S50/S51 analysis entries remain dated snapshots; current status is recorded in this round.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Ambiguity status:** No ambiguity remains in T017-T019. CN-MCQ-30 is resolved by S51-PO-3 for separate feature 021-staff-display-names; current author fallback behavior remains unchanged in F20.
+
+## Round 36 - final requirement consistency (2026-11-12)
+
+**Analysis date:** 2026-11-12T14:13:47Z. After the author-source wording was aligned in FR-002 and the S50 plan status was normalized to reflect S51-PO-1.
+**Cross-reference sweep:** FR-002, SC-010, Story 3 author scenario, S51-PO-1 decision register, T018 and CN-MCQ-30 is resolved and the requirements consistently require an authorized trustworthy source or the approved unavailable-author fallback.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Ambiguity status:** No in-scope ambiguity remains. CN-MCQ-30 is resolved by S51-PO-3; future display-name modeling is assigned to 021-staff-display-names and the F20 fallback is implementable.
+
+## Round 37 - S51-R14 CodeRabbit fix-batch analysis (2026-11-12)
+
+**Analysis date:** 2026-11-12T16:00:19Z. After the S51-PO-1 FR/SC and plan/task reconciliation and the current review-fix implementation plan.
+**Inputs:** S51-R14; review 5876694890 (all inline and body findings); current FR-001/002/007/008/009, SC-005/009/010, plan and T017-T019; current SQL lock ordering and actor/session recovery behavior.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** T017-T019 remain tagged to FR-001/008, FR-002/008, and FR-007/009 respectively. Pagination stays ordered and bounded; author label uses the approved unavailable fallback; unknown edit retry remains actor/tab scoped with unchanged approved Retry copy. T005 behavior-test coverage remains applicable. No spec or user-visible copy is introduced by this fix batch.
+**Authorization and data integrity:** Update/delete denial remains generic until workspace and author/platform-owner access are proven. Update must check authorization before row-lock acquisition and recheck after the lock; delete checks platform-owner status before lock and checks scope after it. Existing SECURITY DEFINER, empty search path, ownership, grants, and revokes remain required. Create-key inserts remain content-free and tied to the exact note scope/body fingerprint.
+**Failure and retry states:** Sign-out failure preserves session-local note recovery; successful sign-out clears it only after the server action succeeds. Actor changes remount the panel. A deleted create outcome clears its unresolved key before exposing a fresh editor; discard closes the create editor and the approved existing create action reopens it. Retry remains reachable for an unknown edit after closing its editor. Server errors remain mapped to approved generic copy.
+**Ambiguity status:** No new in-scope ambiguity found. CN-MCQ-30 is resolved by S51-PO-3; future display-name modeling is assigned to 021-staff-display-names, and the F20 fallback requires no schema change.
+**Verification:** Implementation and integration test evidence is recorded below in the report and will be attached to traceability after the final fix-batch commit. The baseline full-suite failure-ID delta remains inconclusive because the one authorized main baseline run lacked local signup provisioning and its exact failure IDs were not retained; no unrelated-failure claim is made.
+
+## Round 38 - S51-PO-3 decision closure (2026-11-12)
+
+**Analysis date:** 2026-11-12T20:07:43Z, after the S51-PO-3 decision was recorded and CN-MCQ-30 references were reconciled in spec.md, plan.md, and tasks.md.
+**Decision evidence:** S51-PO-3 verbatim `#90 question 30: A`; source SHA-256 `f6390b7ed9c0a3a9aadcef7282c5fa2bdfb645979dfcb43e3f1adcde0b15acf3`.
+**Mapping:** CN-MCQ-30 is resolved. Future staff display-name data-model work belongs to separate feature 021-staff-display-names. F20 retains the approved unavailable-author fallback until 021 ships; no migration or behavior change is in scope here.
+**Cross-reference sweep:** spec.md, plan.md, tasks.md and the current analysis all identify CN-MCQ-30 as resolved and the 021 follow-up consistently. Existing tests and implementation are unchanged.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Ambiguity status:** No open ambiguities remain for the current F20 scope.
+
+## Round 39 - S52-R17 fix-batch reanalysis (2026-11-13)
+
+**Analysis date:** 2026-11-13T00:34:36Z, after the T013 row 26 byte-copy correction and S52-R17 implementation/test changes.
+**Inputs:** S52-R17; review 5883729698; FR-001/002/007/009 and T013/T015; current page refresh, editor-generation and idempotency-key boundaries.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Ambiguity status:** No new in-scope ambiguity. CN-MCQ-30 remains answered by S51-PO-3; display-name modeling remains a separate 021 feature. No new user-visible copy is introduced.
+**Cross-reference and copy:** T013 row 26 Arabic cell is copied from spec.md row 26 and verified byte-for-byte (41 UTF-8 bytes; SHA-256 160d2eff2f546de00d8fa7150f5bfb65d07fc6770182c157bbda9664e059dca2). S52-R17 findings map to existing FR-001/007/009 requirements and tests; no task scope change.
+
+## Round 40 - S53-R2 pagination and navigation fix-batch analysis (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:24:24Z, after FR-001, SC-009, plan.md and T017 were amended for concurrent list mutations and cursor ownership.
+**Inputs:** S53-R2; Greptile review 5885002200; existing FR-007 exit protection; updated FR-001/SC-009, plan, T017 and route/UI contracts.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** FR-001/FR-008 and SC-009 map to T017; acceptance coverage now includes insertion/deletion between page requests and excludes editor-only retained snapshots from the keyset cursor. FR-007 already covers navigating away from an unsaved editor and approved Stay/Discard copy, so no new copy or behavior decision is required.
+**Ambiguity status:** No open in-scope ambiguity. The existing approved exit warning covers in-app navigation; list ordering uses immutable server-created `created_at` plus unique `id`, and the cursor remains the last row in the prior server page.
+
+## Round 41 - S53-R2 post-format cross-reference reanalysis (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:38:27Z, after the final formatting pass over spec.md, plan.md, and tasks.md.
+**Inputs:** S53-R2; Greptile 5885002200; FR-001/FR-007/FR-008; SC-009; Story 1 pagination and Story 2/3 exit scenarios; plan, T017 and traceability links.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** FR-001/FR-008 → SC-009 → T017 is consistent in spec, plan and tasks. Existing FR-007 and Story 2/3 GWT scenarios cover navigation-away exit warning with resolved approved copy; no copy amendment. Decision register contains no open issue for this fix batch. Traceability will receive final current-head test evidence before T017 is re-ticked.
+**Ambiguity status:** No open ambiguity in the amended pagination/exit behavior.
+
+## Round 42 - S53-R2 Stack D plan-evidence cross-reference (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:40:04Z, after T017 and plan.md were updated to record the evidence-gated list-order index.
+**Inputs:** Stack D `EXPLAIN (ANALYZE, BUFFERS)` on 20,012 realistic matching rows; S53-R2; FR-001/FR-008, SC-009, T017 and the new forward migration.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** The server-page keyset cursor and mutation guarantees are consistent across FR-001, SC-009, GWT scenario, plan.md and T017. The index condition is tied directly to observed sequential scan and explicit `(created_at DESC, id DESC)` sort evidence; migration remains forward-only and does not alter any applied migration.
+**Ambiguity status:** No open ambiguity; no PO-decision or new copy is required.
+
+## Round 43 - S53-R2 in-app navigation task traceability (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:41:19Z, after T005 was reopened for same-origin in-app navigation and T017 was expanded for the evidence-gated index.
+**Inputs:** S53-R2; Greptile 5885002200; existing FR-007 GWT exit protection; FR-001/FR-008/SC-009 keyset behavior; tasks and plan.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** T005 covers the FR-007 warning on in-app navigation and preserves modified/external/download/new-tab handling; T017 covers FR-001/FR-008/SC-009 and evidence-based indexing. Both remain unticked until final-head focused tests (including Stack D UI verification) pass.
+**Ambiguity status:** Existing approved Stay/Discard copy and navigation behavior apply; no PO decision or new string is needed.
+
+## Round 44 - S53-R2 migration-context reconciliation (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:46:33Z, after plan.md replaced the stale “migration described only” statement with the evidence-gated forward-index decision.
+**Inputs:** Stack D 20,012-row list EXPLAIN showing sequential scan and explicit sort; S53-R2; migration `20261113023322_client_notes_list_order_index.sql`; FR-001/FR-008/SC-009/T017.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** Plan, T017 and the new forward migration now agree that only an index matching `(workspace_id, client_id, created_at DESC, id DESC)` is authorized by the observed plan. No applied migration, new behavior, PO decision, or copy changed.
+**Ambiguity status:** No open ambiguity.
+
+## Round 45 - S53-R2 final test evidence and task tick (2026-11-13)
+
+**Analysis date:** 2026-11-13T05:08:00Z, after T005/T017 were ticked and traceability.md recorded their evidence.
+**Inputs:** implementation commit b53aed6f; focused UI/service unit tests, full unit suite, Stack D Client Notes integration, route e2e/axe matrix, Stack D query plan.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** T005 maps FR-001/FR-007 and existing approved warning copy; T017 maps FR-001/FR-008/SC-009 and the stable keyset cursor plus evidence-gated index. Traceability rows cite asserting tests, commit and final verification evidence. Broader integration failures are recorded separately and are outside this Client Notes scope.
+**Ambiguity status:** No open in-scope ambiguity; no new user-visible copy or PO decision was introduced.
+
+## Round 46 - S53-R2 task status reconciliation (2026-11-13)
+
+**Analysis date:** 2026-11-13T03:25:04Z, after the task summary was aligned with the completed T005/T017 checkboxes and traceability evidence.
+**Inputs:** S53-R2; implementation commit b53aed6f; traceability rows for FR-001/FR-007/FR-008/SC-009 and tasks T005/T017.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** The tasks.md summary now identifies T005/T017 as complete and T007/PR gates as remaining; detailed task rows and traceability agree. No FR, SC, task tag, copy, behavior or product decision changed.
+**Ambiguity status:** No open in-scope ambiguity.
+
+## Round 47 - S53-R20 loaded-page edit retention and NUL copy classification (2026-11-13)
+
+**Analysis date:** 2026-11-13T05:06:32Z, after the final spec, plan, and task edits; no requirement text changed in this batch.
+**Inputs:** S53-R20; Greptile review PRR_kwDOVYgYQ88AAAABXtmUfA; existing FR-001/FR-002, SC-009, T005/T013; approved clientNotes.saveError and clientNotes.tooLongError bundle entries.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** FR-001's existing stable ordering and server-page cursor remain unchanged; the saved loaded-page note is merged by ID into its prior position and the refresh cursor stays tied to the refreshed server page. FR-002 already rejects NUL and uses the approved generic save-error state; create and update now share that classification while length guidance remains limited to real length violations. T005/T013 tests and traceability rows cover the behavior. No spec/plan/task requirement, copy, schema, or product decision changed.
+**Ambiguity status:** No open in-scope ambiguity.
+
+## Round 49 - S53-R23 unknown-edit exit guard, deletion/page race, and register reconciliation (2026-11-13)
+
+**Analysis date:** 2026-11-13T06:35:06.358Z. After the FR-001/FR-004, SC-001/SC-009, Story 1 pagination scenario, T005/T017 and traceability updates for S53-R23.
+
+**Inputs:** S53-R23; CodeRabbit review PRR_kwDOVYgYQ88AAAABXuI_wQ; S53-R2 pagination edits; constitution 1.13.0 and S47-PO-14; T005/T017; current ClientNotes state transitions and targeted UI regressions.
+
+**Severity:** 0 open CRITICAL, 0 open HIGH. No open ambiguity remains in this fix batch.
+
+**Findings and disposition:** (1) pendingEdits holds unknown-result edit bodies after Discard closes the active editor. It is now part of hasUnsavedChanges, and the existing approved unknown-result warning remains selected for in-app navigation and beforeunload; no copy changed. (2) A successful delete removes the matching row from the current page scope loaded extra rows while preserving the server cursor. A scope-local deleted-ID set filters any already-running page response so it cannot resurrect that row; new scope loads discard the prior scope set. (3) SC-009 newer-row wording was S53-R2 implementation wording introduced in b53aed6f, not a PO decision; it now promises complete traversal only for the original set surviving rows, with later inserts appearing on refresh or a new first-page load. Deletion retains stable ordering/cursor and cannot restore a deleted row from a late response. FR-001, SC-009, GWT, T017 and traceability align. (4) CN-MCQ-25 and FR-004 now cite the already-merged constitution 1.13.0 Principle I amendment, S47-PO-14 and PR #82 (de7df3b7); no new policy wording was added.
+
+**Test-first evidence:** the two new tests were RED on the entry code, then GREEN in the focused Client Notes UI run (63/63). Mutation A removed pendingEdits from the guard and the navigation/beforeunload regression failed. Mutation B removed deleted-ID filtering and the late response reintroduced the deleted row, failing the delete regression.
+
+**Cross-reference sweep:** FR-001/FR-008/SC-009 -> T017; FR-007 and exit warning/navigation behavior -> T005. Task tags unchanged; approved warning strings unchanged. CN-MCQ-25 and FR-004/SC-001 agree with plan.md:72 and constitution 1.13.0. Traceability lists both new asserting test names. No migration, schema change, or new UI string.
+
+## Round 50 - Final cross-reference and task wording revalidation (2026-11-13)
+
+**Analysis date:** 2026-11-13T06:36:50.338Z, after the final FR/SC/GWT, T005/T017 and decision-register wording edits for S53-R23.
+
+**Severity:** 0 open CRITICAL, 0 open HIGH.
+
+**Cross-reference sweep:** FR-001/FR-008/SC-009 -> T017; FR-007 exit protection -> T005. T005 records that unknown-result edit Retry remains protected by the existing approved warning; T017 records original-set traversal, later-insert refresh behavior, stable cursor and deleted-row filtering. CN-MCQ-25, FR-004 and SC-001 point to constitution 1.13.0 / S47-PO-14 and the plan.md:72 reconciliation. No stale open status or new product decision. Both new tests map to those existing tasks and the tested implementation.
+
+## Round 51 - S53-R41 warning target and deleted recovery revalidation (2026-11-13)
+
+**Analysis date:** 2026-11-13T10:56:07Z, after the S53-R41 source changes and after confirming no additional spec, plan, or task requirement edits were needed.
+
+**Inputs:** S53-R41; CodeRabbit review 5889306205; FR-007/T019; ClientNotes state × event table and dialog/async interleaving table; current unit tests.
+
+**Findings:** 0 open CRITICAL; 0 open HIGH. No open in-scope ambiguity.
+
+**Review:** Discard now acts only on the captured editor/draft identity and generation. If the captured editor has already resolved, the warning closes without clearing another draft or replaying stale navigation. Successful deletion clears only that note's retained pending edit. Save/delete overlap is serialized per note and rendered controls reflect pending work. Existing approved copy is reused; no behavior or copy requiring PO input was added.
+
+**Coverage and traceability:** T019 remains tagged FR-007/FR-009/SC-005 and is already complete. `traceability.md` maps the S53-R41 state transitions to asserting unit tests and implementation commit `1af09730`. The expanded state table covers delete cleanup and warning/async interleavings. No FR, SC, GWT, plan requirement, task tag, permission, data-retention rule, schema, or product decision changed.
+
+**Ambiguity status:** No open ambiguity; no PO decision or new user-visible string is required.
+
+## Round 52 - S53-R45 recovery reducer and lifecycle fencing (2026-11-13)
+
+**Analysis date:** 2026-11-13T14:15:41Z, after the S53-R45 plan and task status changes.
+
+**Inputs:** S53-R45; CodeRabbit review 5890217767; FR-001/FR-007/FR-008; T020; framework-free recovery reducer; seeded event-sequence test; component regression tests; Stack D Playwright/axe run.
+
+**Findings:** 0 open CRITICAL; 0 open HIGH. No open in-scope ambiguity.
+
+**Review:** Session/mount generations prevent asynchronous create, update/retry, delete, and load-more continuations from writing recovery or state after sign-out/unmount. Request sequence ownership is cleared on account change and unmount. Complete refreshes prune absent completed-edit snapshots while active editor snapshots remain separate. Pending-only navigation records a captured Discard target. The existing generic save/permission copy, role matrix, data-retention rules, and schema remain unchanged; no migration or dependency was added.
+
+**Coverage and traceability:** T020 is tagged FR-001/FR-007/FR-008 and is complete after implementation commit `b84c213eed7a4a15f0bde0440b244eef91d2a635` passed the focused 78-test Client Notes suite, including 1,000 seeded × 48 events, the Client Notes E2E/axe suite, format checks, typecheck, ESLint, and size. `traceability.md` records the asserting test names and mutation evidence.
+
+**Cross-reference sweep:** FR-001/SC-009 and refresh GWT remain consistent with cursor ownership and complete/incomplete refresh behavior; FR-007 covers pending exit protection and session state; FR-008 remains aligned with pagination. T020's tags match these FRs. No permission, copy, retention, schema, migration, or product-decision artifact changed. No stale pending/absent status remains for T020.
+
+**Ambiguity status:** No open ambiguity; no PO decision is required.

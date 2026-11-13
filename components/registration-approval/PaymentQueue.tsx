@@ -1,25 +1,17 @@
 import type { Messages } from '../../lib/i18n';
+import type { WorkspacePaymentQueueItem } from '../../lib/registration-approval/read';
 import { Bidi } from '../ui/Bidi';
 import { EmptyState } from '../ui/States';
 import { StatusBadge } from './StatusBadge';
 import styles from './registration-approval.module.css';
-
-type Item = {
-  client_id: string;
-  subscription_id: string;
-  name: string;
-  approval_state: string;
-  price_minor: string;
-  currency: string;
-  unpaid_minor: string;
-};
+import { formatMinorUnits } from '../../lib/registration-approval/money';
 
 export function PaymentQueue({
   items,
   workspaceId,
   messages,
 }: {
-  items: Item[];
+  items: WorkspacePaymentQueueItem[];
   workspaceId: string;
   messages: Messages;
 }) {
@@ -55,9 +47,13 @@ export function PaymentQueue({
                 </Bidi>
               </td>
               <td>
-                <Bidi>
-                  {item.unpaid_minor} {item.currency}
-                </Bidi>
+                {item.unpaid_by_currency.map((amount) => (
+                  <div key={amount.currency}>
+                    <Bidi>
+                      {formatMinorUnits(amount.unpaid_minor)} {amount.currency}
+                    </Bidi>
+                  </div>
+                ))}
               </td>
             </tr>
           ))}

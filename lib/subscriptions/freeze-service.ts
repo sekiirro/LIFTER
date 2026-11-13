@@ -184,6 +184,54 @@ export function calculateFreezeContribution(
   return application.durationDays;
 }
 
+export type FrozenStateOperation = 'upgrade' | 'renewal';
+
+/**
+ * Refuses upgrade/renewal mutations while the subscription is frozen
+ * (FR-038/039: each is refused without writes until unfrozen). Pure gate;
+ * frozen-state determination is the caller's `isFrozenOn` result.
+ */
+export function requireUnfrozenForOperation(input: {
+  operation: string;
+  frozen: boolean;
+}): void {
+  if (input.operation !== 'upgrade' && input.operation !== 'renewal') {
+    throw new RangeError('Unknown subscription operation');
+  }
+  if (input.frozen) {
+    throw new RangeError(
+      'Subscription is frozen; unfreeze before upgrade or renewal',
+    );
+  }
+}
+
+/**
+ * Reports whether any freeze fact covers the Cairo date. The Apply day
+ * counts, the Stop day does not, and a Removed freeze covers nothing,
+ * matching the counted-day contribution semantics above.
+ */
+export function isFrozenOn(
+  applications: readonly FreezeApplication[],
+  date: string,
+): boolean {
+  compareCairoDates(date, date);
+  for (const application of applications) {
+    validateApplication(application);
+    if (application.removed) continue;
+    const coveredUntilExclusive = addCairoDays(
+      application.applyDate,
+      calculateFreezeContribution(application),
+    );
+    if (
+      compareCairoDates(date, application.applyDate) >= 0 &&
+      compareCairoDates(date, coveredUntilExclusive) < 0
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Derives the exclusive effective end from the base term and freeze facts. */
 export function projectFreezeEnd(
   baseEndExclusive: string,

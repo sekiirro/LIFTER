@@ -5,6 +5,27 @@ import { createSessionClient } from '../supabase/server';
 
 type ReadFailure = { status: 'not_permitted' | 'unavailable' };
 type SafeResult = Record<string, unknown>;
+export type WorkspacePaymentQueueAmount = {
+  currency: string;
+  unpaid_minor: string;
+};
+export type WorkspacePaymentQueueItem = {
+  client_id: string;
+  subscription_id: string;
+  name: string;
+  approval_state: string;
+  price_minor: string;
+  currency: string;
+  unpaid_by_currency: WorkspacePaymentQueueAmount[];
+};
+export type WorkspacePaymentQueueResult =
+  | ReadFailure
+  | {
+      status: 'ok';
+      items: WorkspacePaymentQueueItem[];
+      totals: WorkspacePaymentQueueAmount[];
+      next_cursor: string | null;
+    };
 type Session = {
   client: NonNullable<Awaited<ReturnType<typeof createSessionClient>>>;
   actor: NonNullable<Awaited<ReturnType<typeof loadActorRows>>>;
@@ -26,7 +47,7 @@ const PAYMENT_QUEUE_FIELDS = [
   'approval_state',
   'price_minor',
   'currency',
-  'unpaid_minor',
+  'unpaid_by_currency',
 ] as const;
 const OBLIGATION_FIELDS = [
   'obligation_id',
@@ -62,6 +83,26 @@ function pick(value: unknown, fields: readonly string[]): SafeResult {
   for (const field of fields)
     if (Object.hasOwn(value, field)) result[field] = value[field];
   return result;
+}
+
+function currencyAmounts(value: unknown): WorkspacePaymentQueueAmount[] | null {
+  if (!Array.isArray(value)) return null;
+  const amounts: WorkspacePaymentQueueAmount[] = [];
+  for (const entry of value) {
+    if (
+      !object(entry) ||
+      typeof entry.currency !== 'string' ||
+      !/^[A-Z]{3}$/.test(entry.currency) ||
+      typeof entry.unpaid_minor !== 'string' ||
+      !/^[0-9]+$/.test(entry.unpaid_minor)
+    )
+      return null;
+    amounts.push({
+      currency: entry.currency,
+      unpaid_minor: entry.unpaid_minor,
+    });
+  }
+  return amounts;
 }
 
 function uuid(value: unknown): value is string {
@@ -162,6 +203,7 @@ function pagination(
 function okQueue(
   data: unknown,
   fields: readonly string[],
+  includePaymentTotals = false,
 ): SafeResult | ReadFailure {
   const failure = safeStatus(data);
   if (failure)
@@ -170,10 +212,29 @@ function okQueue(
     };
   if (!object(data) || data.status !== 'ok' || !Array.isArray(data.items))
     return { status: 'unavailable' };
-  const items = data.items.map((item) => pick(item, fields));
+  const items: SafeResult[] = [];
+  for (const item of data.items) {
+    const projected = pick(item, fields);
+    if (fields.includes('unpaid_by_currency')) {
+      const amounts = object(item)
+        ? currencyAmounts(item.unpaid_by_currency)
+        : null;
+      if (amounts === null) return { status: 'unavailable' };
+      projected.unpaid_by_currency = amounts;
+    }
+    items.push(projected);
+  }
+  if (includePaymentTotals && !Array.isArray(data.totals))
+    return { status: 'unavailable' };
   const cursor = data.next_cursor ?? null;
   if (!(cursor === null || uuid(cursor))) return { status: 'unavailable' };
-  return { status: 'ok', items, next_cursor: cursor };
+  const result: SafeResult = { status: 'ok', items };
+  if (includePaymentTotals)
+    result.totals = (data.totals as unknown[]).map((item) =>
+      pick(item, ['currency', 'unpaid_minor']),
+    );
+  result.next_cursor = cursor;
+  return result;
 }
 
 export async function readRegistrationApprovalQueue(
@@ -312,7 +373,7 @@ export async function readRegistrationApprovalCorrection(
 
 export async function readWorkspacePaymentQueue(
   input: unknown,
-): Promise<SafeResult | ReadFailure> {
+): Promise<WorkspacePaymentQueueResult> {
   const page = pagination(input);
   if (!page) return { status: 'not_permitted' };
   const data = await callReader(
@@ -330,7 +391,21 @@ export async function readWorkspacePaymentQueue(
     return {
       status: data.status === 'not_permitted' ? 'not_permitted' : 'unavailable',
     };
-  return okQueue(data, PAYMENT_QUEUE_FIELDS);
+  const result = okQueue(data, PAYMENT_QUEUE_FIELDS, true);
+  const safeResult = result as SafeResult;
+  if (
+    safeResult.status !== 'ok' ||
+    !Array.isArray(safeResult.items) ||
+    !Array.isArray(safeResult.totals) ||
+    !(safeResult.next_cursor === null || uuid(safeResult.next_cursor))
+  )
+    return { status: 'unavailable' };
+  return {
+    status: 'ok',
+    items: safeResult.items as WorkspacePaymentQueueItem[],
+    totals: safeResult.totals as WorkspacePaymentQueueAmount[],
+    next_cursor: safeResult.next_cursor,
+  };
 }
 
 export async function readSubscriptionPaymentStatus(
