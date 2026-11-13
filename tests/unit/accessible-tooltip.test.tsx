@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import Link from 'next/link';
 import { act } from 'react';
 import { JSDOM } from 'jsdom';
 import { renderToStaticMarkup, renderToString } from 'react-dom/server';
@@ -71,9 +72,9 @@ describe('AccessibleTooltip behavior', () => {
 
     const html = renderToStaticMarkup(
       <AccessibleTooltip label="Clients" tooltipTestId="tooltip-clients">
-        <a href="/clients">
+        <Link href="/clients">
           <svg aria-hidden="true" />
-        </a>
+        </Link>
       </AccessibleTooltip>,
     );
     expect(html).toContain('aria-label="Clients"');

@@ -1,0 +1,50 @@
+.page {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+  inline-size: min(100% - 2 * var(--space-4), 64rem);
+  margin-inline: auto;
+  padding-block: var(--space-6);
+  color: var(--color-text);
+}
+
+.tabList {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.tab {
+  flex: 0 0 auto;
+  min-block-size: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-block-end: 2px solid transparent;
+  margin-block-end: -1px;
+  background: transparent;
+  color: var(--brand-text);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tab[aria-selected='true'] {
+  border-block-end-color: var(--brand-text);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: -2px;
+}
+
+.panel {
+  min-inline-size: 0;
+  padding-block: var(--space-5);
+}
+
+.panel:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
+}

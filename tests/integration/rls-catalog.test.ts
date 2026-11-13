@@ -236,6 +236,9 @@ describe('tenancy security catalog (T007)', () => {
           ...registrationPrivate,
           ...approvalFunctions.map((signature) => signature.split('(')[0]!),
           'client_has_access',
+          'client_note_trim_whitespace',
+          'guard_client_note_update',
+          'require_client_note_create_key',
           ...signupPrivate,
           ...brandingPrivate,
           'apply_food_default_alternatives',
@@ -360,7 +363,7 @@ describe('tenancy security catalog (T007)', () => {
     );
     for (const row of rows) {
       const expectedDefiner = ![
-        // Union of F15's intentionally invoker-mode validators and F16 helper expectations.
+        // Union of F15/F16 and client-notes intentionally invoker-mode functions.
         'audit_events_immutable',
         'branding_actor_id',
         'catalog_assert_exercise_text_limits',
@@ -383,6 +386,7 @@ describe('tenancy security catalog (T007)', () => {
         'forbid_delete',
         'guard_form_answer_revision_immutable',
         'guard_form_correction_immutable',
+        'guard_client_note_update',
         'jobs_updated_at',
         'normalize_ar_en_v1',
         'normalize_catalog_food_identity_v1',
@@ -393,6 +397,8 @@ describe('tenancy security catalog (T007)', () => {
         'recovery_link_limits',
         'register_f15_trainer_alert_schedule',
         'registration_link_limits',
+        'require_client_note_create_key',
+        'client_note_trim_whitespace',
         'reject_catalog_provenance_change',
         'reject_catalog_version_mutation',
         'validate_food_request',
@@ -451,6 +457,7 @@ describe('tenancy security catalog (T007)', () => {
               'catalog_write_audit',
               'claim_catalog_operation',
               'client_has_access',
+              'client_note_trim_whitespace',
               'copy_workspace_form',
               'cutover_identity_guard',
               'enqueue_job',
@@ -470,6 +477,7 @@ describe('tenancy security catalog (T007)', () => {
               'guard_form_erasure_control',
               'guard_form_legal_hold',
               'guard_form_retention_window',
+              'guard_client_note_update',
               'prevent_consent_receipt_mutation',
               'signup_reserved_usernames',
               'f15_current_terms_policy',
@@ -527,6 +535,7 @@ describe('tenancy security catalog (T007)', () => {
               'reject_catalog_version_mutation',
               'release_catalog_food_keys',
               'require_food_version_serving',
+              'require_client_note_create_key',
               'reserve_catalog_food_keys',
               'set_catalog_operation_result',
               'sync_catalog_addition_limits',
