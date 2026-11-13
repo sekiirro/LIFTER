@@ -223,3 +223,5 @@ Requirements: FR-003/005; success criterion SC-018. Before every new assignment 
 ## S53 Greptile retirement-result compatibility (T154)
 
 Requirements: FR-004/030; success criterion SC-030. Keep `FormsStaffAdapter.retire` assignable to the established `FormsStaffResult` so stacked callers can safely access `result.form.id`. The retirement RPC contract is unchanged and its success payload has no definition. After an exact successful acknowledgement, read `get_staff_forms` through the existing authorized adapter path and return only the matching form whose status and revision match the acknowledgement. A failed/missing/mismatched read must not be represented as bare success; map it to the existing `invalid` adapter result. Cover RED/GREEN and a mutation that drops the form from the success arm with the unit/contract suite. No database access, migration, UI, copy, or change to retirement/assignment semantics is in scope. Record the exact #58 restack caller updates separately; never edit #58.
+
+This S53 contract supersedes the interim T151 adapter mapping that accepted the RPC acknowledgement as bare success; the RPC response itself remains unchanged.
