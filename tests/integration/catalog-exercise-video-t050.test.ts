@@ -60,6 +60,107 @@ async function writeVideoOverride(
 }
 
 describe('T050 current authorized exercise Video resolution', () => {
+  it('T097 retains owner, empty search_path, and authenticated-only detail execution', async () => {
+    const [fn] = await db`
+      select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_catalog.pg_proc p
+      where p.oid = 'public.catalog_workspace_exercise_detail(uuid,uuid)'::regprocedure`;
+    expect(fn).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(fn?.proconfig).toContain('search_path=""');
+  });
+
+  it('filters removed and merged Alternatives from private exercise detail without substituting a merged target', async () => {
+    const removedTarget = await createGlobal(null);
+    const mergedTarget = await createGlobal(null);
+    const survivorTarget = await createGlobal(null);
+    const [created] = await asActor(
+      trainerId,
+      (tx) =>
+        tx`select public.catalog_write_workspace_exercise(
+        ${workspaceId}, null, null, ${randomUUID()}, ${tx.json({
+          name_en: `T050 alternatives ${randomUUID()}`,
+          name_ar: '\u062A\u0645\u0631\u064A\u0646 \u062E\u0627\u0635',
+          primary_muscle_code: 'chest',
+          equipment_codes: ['barbell'],
+          alternatives: [
+            { global_exercise_id: removedTarget },
+            { global_exercise_id: mergedTarget },
+            { global_exercise_id: survivorTarget },
+          ],
+        })}
+      ) as result`,
+    );
+    await asActor(
+      poId,
+      (tx) =>
+        tx`select public.catalog_transition_exercise(
+        ${removedTarget}, 0, 'remove', ${randomUUID()}
+      )`,
+    );
+    await asActor(
+      poId,
+      (tx) =>
+        tx`select public.catalog_merge_exercise(
+        ${mergedTarget}, ${survivorTarget}, 0, ${randomUUID()}
+      )`,
+    );
+    const privateExerciseId = (created!.result as { exercise_id: string })
+      .exercise_id;
+    const [detail] = await asActor(
+      trainerId,
+      (tx) =>
+        tx`select payload
+        from public.catalog_workspace_exercise_detail(
+          ${workspaceId}, ${privateExerciseId}
+        )`,
+    );
+
+    expect(detail?.payload.alternatives).toEqual([
+      { global_exercise_id: survivorTarget },
+    ]);
+
+    const rollback = 'rollback_t097_active_alternative_mutation';
+    try {
+      await db.begin(async (tx) => {
+        const [routine] = await tx`
+          select pg_catalog.pg_get_functiondef(
+            'public.catalog_workspace_exercise_detail(uuid,uuid)'::regprocedure
+          ) as definition`;
+        const definition = String(routine!.definition);
+        const mutant = definition.replaceAll(
+          "and target.lifecycle_state = 'active'",
+          'and true',
+        );
+        expect(mutant).not.toBe(definition);
+        await tx.unsafe(mutant);
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerId, role: 'authenticated' })}, true)`;
+        const [mutatedDetail] = await tx`
+          select payload from public.catalog_workspace_exercise_detail(
+            ${workspaceId}, ${privateExerciseId}
+          )`;
+        expect(mutatedDetail?.payload.alternatives).toEqual([
+          { global_exercise_id: removedTarget },
+          { global_exercise_id: mergedTarget },
+          { global_exercise_id: survivorTarget },
+        ]);
+        throw new Error(rollback);
+      });
+    } catch (error) {
+      if ((error as Error).message !== rollback) throw error;
+    }
+  });
+
   it('uses a non-null workspace Video override ahead of conflicting legacy and canonical values', async () => {
     const canonical = 'https://youtu.be/canonical123';
     const override = 'https://youtu.be/override123';

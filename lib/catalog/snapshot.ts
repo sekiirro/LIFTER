@@ -792,7 +792,11 @@ function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
       ? 'globalExerciseId'
       : 'workspaceExerciseId';
     assertNoUnknownKeys(target, [allowedTargetKey], 'alternative');
-    if (obj.source === 'global' && hasWorkspaceTarget)
+    if (
+      obj.source === 'global' &&
+      obj.overrideVersion === null &&
+      hasWorkspaceTarget
+    )
       throw new Error('Global snapshots require Global alternatives');
     const targetId = asString(target[allowedTargetKey], allowedTargetKey);
     const uniqueKey = `${allowedTargetKey}:${targetId}`;

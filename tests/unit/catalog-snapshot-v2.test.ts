@@ -183,9 +183,30 @@ describe('ExerciseSnapshotV2 (T056)', () => {
     expect(() =>
       parseExerciseSnapshotV2({
         ...(fixture as object),
+        overrideVersion: null,
         alternatives: [{ workspaceExerciseId: 'wex-2' }],
       }),
     ).toThrow();
+  });
+
+  it('round-trips a private Alternative when a Global snapshot pins a workspace override', () => {
+    const snapshot = toExerciseSnapshotV2({
+      source: 'global',
+      exerciseId: 'ex-1',
+      canonicalVersion: 3,
+      overrideVersion: 5,
+      plannerEntry: {
+        ...plannerEntry,
+        alternatives: [{ workspaceExerciseId: 'wex-2' }],
+      },
+    });
+
+    expect(snapshot.alternatives).toEqual([{ workspaceExerciseId: 'wex-2' }]);
+    expect(
+      parseExerciseSnapshotV2(
+        JSON.parse(serializeExerciseSnapshotV2(snapshot)),
+      ),
+    ).toEqual(snapshot);
   });
 
   it('rejects alternative objects with both or neither target key', () => {

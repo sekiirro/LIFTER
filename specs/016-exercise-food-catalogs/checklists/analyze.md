@@ -1036,3 +1036,19 @@ A hostile pass found that a pending next-page response could append results afte
 - RED/GREEN/mutation evidence is recorded in `traceability.md`; the temporary UI mutant was restored before final matrix screenshots.
 - No authorization, effective-value resolution, or UI copy changed beyond displaying the existing effective Description/Notes fields and using existing localized labels/empty convention.
 - Findings: 0 open CRITICAL, 0 open HIGH.
+
+## S53-R44 T097 re-analysis - 2026-11-13
+
+- Scope stays within existing FR-018, FR-025, and FR-027 contracts; no new product behavior, permission, copy, or retention rule is added.
+- FR-025 permits private exercise targets in workspace Alternatives and requires active targets at write; its detail/read contract filters removed or merged targets and never substitutes a merge survivor. The data model records the same behavior at `data-model.md:24`.
+- FR-027/data model `data-model.md:47` permits Global `ExerciseSnapshotV2` records to carry a workspace override version. Because workspace Alternatives are persisted by override child rows and can target private exercises (FR-025; `data-model.md:24`), V2 parsing accepts private targets only when a Global override version is pinned. Canonical-only Global snapshots retain the private-target rejection.
+- Read authorization remains first in `catalog_workspace_exercise_detail`; the new projection filters alternatives within the explicitly authorized workspace. It does not add read permissions or substitute a merge survivor.
+- Tests include the required workspace-private snapshot round-trip, canonical-only rejection, filtered detail projection, and a transactional mutation proving removed/merged targets leak when the active-target predicates are removed.
+- No new ambiguity remains; 0 open CRITICAL and 0 open HIGH findings.
+
+## S53-R44 T097 final analysis - 2026-11-13
+
+- T097 is verified against FR-018, FR-025, and FR-027. The task is checked only after its focused unit and Stack A integration tests passed, including guard-removal mutations.
+- Cross-reference check: task IDs and FR tags match; traceability includes the exact test names. Spec/plan text is unchanged; the data-model contract at lines 24 and 47 resolves the interaction. No open ambiguity remains.
+- Security review: the detail read preserves authorization-before-lookup, same-workspace target scope, SECURITY DEFINER, empty search_path, postgres ownership, revocations, and authenticated-only execute. The RLS test suite continues to cover the helper/function hardening contracts.
+- Result: 0 open CRITICAL findings, 0 open HIGH findings. Analyze is dated after the last tasks/spec/plan edit.
