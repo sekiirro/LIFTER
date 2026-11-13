@@ -77,20 +77,11 @@ describe('F15 staff preview policy', () => {
     ).toThrow();
   });
 
-  it('keeps client-late escalation independent of Trainer-late delivery rules', () => {
-    const assigned = getClientReminderSchedule(
-      '2026-11-03T20:59:59.999Z',
-      true,
-    );
-    const unassigned = getClientReminderSchedule(
-      '2026-11-03T20:59:59.999Z',
-      false,
-    );
-    expect(assigned.firstAt).toBe('2026-11-04T20:59:59.999Z');
-    expect(assigned.firstAudience).toBe('trainer');
-    expect(assigned.escalationAt).toBe('2026-11-05T20:59:59.999Z');
-    expect(unassigned.firstAudience).toBe('owners');
-    expect(assigned.trainerLatePolicy).toBe('d03');
+  it('notifies authorized owners immediately for client-late schedules', () => {
+    const schedule = getClientReminderSchedule('2026-11-03T20:59:59.999Z');
+    expect(schedule.firstAt).toBe('2026-11-03T20:59:59.999Z');
+    expect(schedule.firstAudience).toBe('owners');
+    expect(schedule.trainerLatePolicy).toBe('d03');
   });
 });
 

@@ -19,9 +19,9 @@ function formatCairoDate(value: string, locale: Locale): string {
 
 function trainerPolicyMessage(template: string, locale: Locale): ReactNode[] {
   const values: Record<string, ReactNode> = {
-    workflow: <Bidi dir="ltr">D-{localizeUiDigits('03', locale)}</Bidi>,
-    recoveryDays: <Bidi>{formatUiNumber(7, locale)}</Bidi>,
-    escalationHours: <Bidi>{formatUiNumber(24, locale)}</Bidi>,
+    '{workflow}': <Bidi dir="ltr">D-{localizeUiDigits('03', locale)}</Bidi>,
+    '{recoveryDays}': <Bidi>{formatUiNumber(7, locale)}</Bidi>,
+    '{escalationHours}': <Bidi>{formatUiNumber(24, locale)}</Bidi>,
   };
   return template
     .split(/(\{workflow\}|\{recoveryDays\}|\{escalationHours\})/g)
@@ -74,54 +74,24 @@ export function StaffSlaAlerts({
           {messages['forms.staffDefault']}{' '}
           <Bidi>{formatUiNumber(3, locale)}</Bidi>
         </p>
-        <ol className={styles.timeline}>
-          <li>
-            <strong>
-              <Bidi>+{formatUiNumber(24, locale)}</Bidi>{' '}
-              {messages['forms.staffHours']}
-            </strong>
-            <span>{messages['forms.staffClientFirstAlert']}</span>
-          </li>
-          <li>
-            <strong>
-              <Bidi>+{formatUiNumber(48, locale)}</Bidi>{' '}
-              {messages['forms.staffHours']}
-            </strong>
-            <span>{messages['forms.staffClientEscalation']}</span>
-          </li>
-        </ol>
         <ul className={styles.scheduleList}>
           {clientCases.map((assignment) => {
-            const schedule = getClientReminderSchedule(
-              assignment.deadlineAt,
-              assignment.trainerAssigned,
-            );
+            const schedule = getClientReminderSchedule(assignment.deadlineAt);
             return (
               <li key={assignment.id}>
                 <strong>
                   <Bidi>{assignment.id}</Bidi>
                 </strong>
                 <span>
-                  {schedule.firstAudience === 'trainer'
-                    ? messages['forms.staffTrainerAt']
-                    : messages['forms.staffOwnersAt']}{' '}
-                  <Bidi dir="auto">
-                    {formatCairoDate(schedule.firstAt, locale)}
-                  </Bidi>
-                </span>
-                <span>
                   {messages['forms.staffOwnersAt']}{' '}
                   <Bidi dir="auto">
-                    {formatCairoDate(schedule.escalationAt, locale)}
+                    {formatCairoDate(schedule.firstAt, locale)}
                   </Bidi>
                 </span>
               </li>
             );
           })}
         </ul>
-        <p className={styles.hint}>
-          {messages['forms.staffAuthorizedOwnersOnly']}
-        </p>
       </section>
 
       <section

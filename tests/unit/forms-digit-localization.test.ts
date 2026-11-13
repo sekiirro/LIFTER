@@ -75,7 +75,7 @@ describe('F15 Arabic numeral rendering', () => {
       .replace(/\s+/g, ' ')
       .trim();
     expect(visibleText).toContain('مهلة تسليم D-٠٣');
-    expect(visibleText).toContain('+٢٤');
+    expect(visibleText).toContain('٢٤');
     expect(visibleText).not.toMatch(/[0-9]/u);
   });
 });
