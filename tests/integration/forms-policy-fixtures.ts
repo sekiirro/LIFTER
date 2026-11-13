@@ -43,16 +43,19 @@ async function renewal(
   purchase: Purchase,
   offerId: string,
   activationDate?: string,
+  expectedRevision = 0,
 ) {
-  if (activationDate) {
-    await tx`insert into public.subscription_activations(
-      workspace_id,subscription_id,activated_at,delivery_event_id
-    ) values(
-      ${f.wsA.id},${purchase.sid},
-      (${activationDate}::date::timestamp at time zone 'Africa/Cairo'),${randomUUID()}
-    )`;
-  } else {
-    await activate(tx, f, purchase);
+  if (expectedRevision === 0) {
+    if (activationDate) {
+      await tx`insert into public.subscription_activations(
+        workspace_id,subscription_id,activated_at,delivery_event_id
+      ) values(
+        ${f.wsA.id},${purchase.sid},
+        (${activationDate}::date::timestamp at time zone 'Africa/Cairo'),${randomUUID()}
+      )`;
+    } else {
+      await activate(tx, f, purchase);
+    }
   }
   await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
   await tx`set local role authenticated`;
@@ -64,7 +67,7 @@ async function renewal(
         predecessor_subscription_id: purchase.sid,
         package_offer_id: offerId,
         request_key: randomUUID(),
-        expected_revision: 0,
+        expected_revision: expectedRevision,
         renewal_confirmed: true,
         installments: [{ amount_minor: '1200', due_offset_days: 0 }],
       } as JSONValue)}) as value
@@ -73,9 +76,16 @@ async function renewal(
       status: string;
       receipt?: Record<string, unknown>;
     };
-    if (value.status !== 'ok' || !value.receipt?.subscription_id)
+    if (
+      value.status !== 'ok' ||
+      !value.receipt?.subscription_id ||
+      !value.receipt.renewal_id
+    )
       throw new Error(`F13 renewal fixture failed: ${value.status}`);
-    return value.receipt.subscription_id as string;
+    return {
+      subscriptionId: value.receipt.subscription_id as string,
+      renewalId: value.receipt.renewal_id as string,
+    };
   } finally {
     await tx`reset role`;
   }
@@ -127,6 +137,14 @@ export async function withFormsPolicyF13Fixtures(
       earlyPaidRenewal: Scenario;
       missedRenewal: Scenario;
       reflowedRenewal: Scenario;
+      twoRenewals: {
+        clientId: string;
+        subscriptionId: string;
+        firstRenewalId: string;
+        firstServiceStart: string;
+        secondRenewalId: string;
+        secondServiceStart: string;
+      };
       frozenThenUnfrozen: Scenario;
       expiredSubscription: Scenario;
       recurringActive: Scenario;
@@ -147,6 +165,7 @@ export async function withFormsPolicyF13Fixtures(
     bought(f),
     bought(f),
     bought(f),
+    bought(f),
   ]);
   const offers = await Promise.all(
     purchases.map((purchase) => packageOfferId(f, purchase)),
@@ -159,7 +178,7 @@ export async function withFormsPolicyF13Fixtures(
     const [calendar] = await tx`
       select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as today
     `;
-    const earlyRenewalId = await renewal(tx, f, purchases[0]!, offers[0]!);
+    const earlyRenewal = await renewal(tx, f, purchases[0]!, offers[0]!);
     const [early] = await tx`
       select r.service_start_date::text,
         app_private.f13_project_entitlement(${f.wsA.id},r.subscription_id,${calendar!.today}::date)->>'status' as status,
@@ -168,13 +187,13 @@ export async function withFormsPolicyF13Fixtures(
       join public.subscriptions s on s.workspace_id=r.workspace_id and s.id=r.subscription_id
       join public.subscription_installments i on i.workspace_id=s.workspace_id and i.subscription_id=s.id
         and i.renewal_id=r.id
-      where r.subscription_id=${earlyRenewalId}
+      where r.id=${earlyRenewal.renewalId}
     `;
     const payment = await sqlPay(tx, f.trainerA.userId, 'collect', {
       workspace_id: f.wsA.id,
       client_id: purchases[0]!.t.id,
       request_key: randomUUID(),
-      subscription_id: earlyRenewalId,
+      subscription_id: earlyRenewal.subscriptionId,
       obligation_id: early!.installment_id,
       expected_installment_seq: early!.seq,
       expected_revision: 0,
@@ -193,16 +212,16 @@ export async function withFormsPolicyF13Fixtures(
     )
       throw new Error('Early-paid renewal fixture must remain F13 future');
 
-    const missedRenewalId = await renewal(tx, f, purchases[4]!, offers[4]!);
+    const missedRenewalResult = await renewal(tx, f, purchases[4]!, offers[4]!);
     const [missedRenewal] = await tx`
       select service_start_date::text from public.subscription_renewals
-      where subscription_id=${missedRenewalId}
+      where id=${missedRenewalResult.renewalId}
     `;
 
     const [durationRow] = await tx`
       select duration_days from public.subscriptions where id=${purchases[1]!.sid}
     `;
-    const startN = await renewal(
+    const reflowedRenewal = await renewal(
       tx,
       f,
       purchases[1]!,
@@ -212,7 +231,7 @@ export async function withFormsPolicyF13Fixtures(
       )[0]!.date as string,
     );
     const [beforeReflow] = await tx`
-      select service_start_date::text from public.subscription_renewals where subscription_id=${startN}
+      select service_start_date::text from public.subscription_renewals where id=${reflowedRenewal.renewalId}
     `;
     const [shift] = await tx`
       select (${calendar!.today}::date+10)::text as day10,(${calendar!.today}::date+15)::text as day15
@@ -222,12 +241,36 @@ export async function withFormsPolicyF13Fixtures(
     await freeze(tx, f, purchases[1]!.t.id, purchases[1]!.sid, 'apply', 0);
     const [afterReflow] = await tx`
       select d.service_start_date::text from public.subscription_renewal_date_revisions d
-      where d.subscription_id=${startN} order by d.revision desc limit 1
+      where d.subscription_id=${reflowedRenewal.subscriptionId} and d.renewal_id=${reflowedRenewal.renewalId}
+      order by d.revision desc limit 1
     `;
     if (afterReflow!.service_start_date !== shift!.day15)
       throw new Error(
         'Freeze fixture did not reflow renewal from day 10 to day 15',
       );
+
+    const firstForSharedSubscription = await renewal(
+      tx,
+      f,
+      purchases[8]!,
+      offers[8]!,
+    );
+    const secondForSharedSubscription = await renewal(
+      tx,
+      f,
+      purchases[8]!,
+      offers[8]!,
+      undefined,
+      1,
+    );
+    const [firstSharedRenewal] = await tx`
+      select service_start_date::text from public.subscription_renewals
+      where id=${firstForSharedSubscription.renewalId}
+    `;
+    const [secondSharedRenewal] = await tx`
+      select service_start_date::text from public.subscription_renewals
+      where id=${secondForSharedSubscription.renewalId}
+    `;
 
     await activate(tx, f, purchases[2]!);
     const [frozenRow] = await tx`
@@ -287,23 +330,31 @@ export async function withFormsPolicyF13Fixtures(
       earlyPaidRenewal: {
         clientId: purchases[0]!.t.id,
         subscriptionId: purchases[0]!.sid,
-        renewalId: earlyRenewalId,
-        occurrenceKey: `renewal:${earlyRenewalId}`,
+        renewalId: earlyRenewal.renewalId,
+        occurrenceKey: `renewal:${earlyRenewal.renewalId}`,
         serviceStart: early!.service_start_date,
       },
       missedRenewal: {
         clientId: purchases[4]!.t.id,
         subscriptionId: purchases[4]!.sid,
-        renewalId: missedRenewalId,
-        occurrenceKey: `renewal:${missedRenewalId}`,
+        renewalId: missedRenewalResult.renewalId,
+        occurrenceKey: `renewal:${missedRenewalResult.renewalId}`,
         serviceStart: missedRenewal!.service_start_date,
       },
       reflowedRenewal: {
         clientId: purchases[1]!.t.id,
-        subscriptionId: purchases[1]!.sid,
-        renewalId: startN,
-        occurrenceKey: `renewal:${startN}`,
+        subscriptionId: reflowedRenewal.subscriptionId,
+        renewalId: reflowedRenewal.renewalId,
+        occurrenceKey: `renewal:${reflowedRenewal.renewalId}`,
         serviceStart: afterReflow!.service_start_date,
+      },
+      twoRenewals: {
+        clientId: purchases[8]!.t.id,
+        subscriptionId: purchases[8]!.sid,
+        firstRenewalId: firstForSharedSubscription.renewalId,
+        firstServiceStart: firstSharedRenewal!.service_start_date,
+        secondRenewalId: secondForSharedSubscription.renewalId,
+        secondServiceStart: secondSharedRenewal!.service_start_date,
       },
       frozenThenUnfrozen: {
         clientId: purchases[2]!.t.id,

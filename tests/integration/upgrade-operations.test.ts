@@ -21,9 +21,20 @@ import {
   waitForLock,
   worker,
 } from './registration-approval-operations-fixture';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
+
+async function expectInvariantFailure(body: () => Promise<void>) {
+  let failed = false;
+  try {
+    await body();
+  } catch {
+    failed = true;
+  }
+  expect(failed).toBe(true);
+}
 
 async function packageOfferId(linkId: string) {
   const [row] = await db`
@@ -1684,8 +1695,7 @@ async function seedFreezeRemovalRenewalTimeline(
   await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
     values(${f.wsA.id},${purchase.sid},clock_timestamp(),${randomUUID()})`;
   const [dates] = await tx`select
-    ((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::date as day_zero,
-    (((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::timestamp at time zone 'Africa/Cairo') as upgrade_at`;
+    ((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::date as day_zero`;
   const dayZero = dates!.day_zero as string;
   const upgradeId = randomUUID();
   const operationId = randomUUID();
@@ -1693,20 +1703,22 @@ async function seedFreezeRemovalRenewalTimeline(
   await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
   await tx`insert into public.subscription_freezes(
       id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
-    values(${freezeId},${f.wsA.id},${purchase.sid},${dayZero}::date+50,30,${f.trainerA.userId},clock_timestamp())`;
+    values(${freezeId},${f.wsA.id},${purchase.sid},${dayZero}::date+50,30,${f.trainerA.userId},statement_timestamp())`;
   await tx`insert into app_private.subscription_upgrade_operations(
       id,workspace_id,client_id,subscription_id,actor_user_id,request_key,expected_revision,
       canonical_args_hash,result_receipt,recorded_at,transaction_id)
     values(${operationId},${f.wsA.id},${purchase.t.id},${purchase.sid},${f.trainerA.userId},${randomUUID()},0,
       extensions.digest(convert_to('historical projection fixture','UTF8'),'sha256'),'{}'::jsonb,
-      ${dates!.upgrade_at}::timestamptz,pg_current_xact_id())`;
+      (select recorded_at from public.subscription_freezes where workspace_id=${f.wsA.id} and id=${freezeId}),
+      pg_current_xact_id())`;
   await tx`insert into public.subscription_upgrades(
       id,workspace_id,client_id,subscription_id,operation_id,package_offer_id,package_version_id,tier_rank,
       package_price_minor,currency,commission_rate_bp,duration_days,credit_minor,additional_payment_minor,
       commission_minor,service_start_date,service_end_exclusive,expected_revision,recorded_by,recorded_at)
     select ${upgradeId},${f.wsA.id},${purchase.t.id},${purchase.sid},${operationId},o.id,v.id,o.tier_rank,
       v.price_minor,v.currency,v.commission_rate_bp,90,0,v.price_minor,0,${dayZero}::date,${dayZero}::date+120,
-      0,${f.trainerA.userId},${dates!.upgrade_at}::timestamptz
+      0,${f.trainerA.userId},
+      (select recorded_at from public.subscription_freezes where workspace_id=${f.wsA.id} and id=${freezeId})
     from public.package_offers o join public.package_versions v on v.workspace_id=o.workspace_id and v.id=o.current_version_id
     where o.workspace_id=${f.wsA.id} and o.id=${target}`;
   await tx`insert into public.subscription_freeze_events(
@@ -1782,6 +1794,27 @@ it('T049 shifts a renewal recorded before removal when its term still includes r
       79,
       120,
     );
+    const [seedFacts] = await tx`
+      select f.recorded_at::text as freeze_recorded_at,
+        u.recorded_at::text as upgrade_recorded_at,
+        f.recorded_at<=u.recorded_at as freeze_is_pre_upgrade,
+        removal.recorded_at>u.recorded_at as removal_is_post_upgrade,
+        f.duration_days,u.service_end_exclusive::text as upgrade_end,
+        r.recorded_at as renewal_recorded_at,removal.recorded_at as removal_recorded_at
+      from public.subscription_upgrades u
+      join public.subscription_freezes f on f.workspace_id=u.workspace_id and f.subscription_id=u.subscription_id
+      join public.subscription_freeze_events removal on removal.workspace_id=f.workspace_id
+        and removal.subscription_id=f.subscription_id and removal.freeze_id=f.id and removal.kind='remove'
+      join public.subscription_renewals r on r.workspace_id=u.workspace_id and r.subscription_id=u.subscription_id
+      where u.workspace_id=${timeline.workspaceId} and u.subscription_id=${timeline.subscriptionId}
+        and r.id=${timeline.renewalId}
+    `;
+    expect(seedFacts!.freeze_recorded_at).toBe(seedFacts!.upgrade_recorded_at);
+    expect(seedFacts).toMatchObject({
+      freeze_is_pre_upgrade: true,
+      removal_is_post_upgrade: true,
+      duration_days: 30,
+    });
     const [renewal] =
       await tx`select recording_date::text,service_start_date::text,service_end_exclusive::text
       from public.subscription_renewals where id=${timeline.renewalId}`;
@@ -1800,6 +1833,127 @@ it('T049 shifts a renewal recorded before removal when its term still includes r
       await tx`select (${timeline.dayZero}::date+150)::text as effective_end`;
     expect(projection!.effective_end).toBe(expected!.effective_end);
   });
+});
+
+async function addLaterRenewalFreezeRemoval(
+  tx: TransactionSql,
+  f: Awaited<ReturnType<typeof clientContext>>,
+  timeline: Awaited<ReturnType<typeof seedFreezeRemovalRenewalTimeline>>,
+) {
+  const [originalRemoval] = await tx`
+      select id from public.subscription_freeze_events
+      where workspace_id=${timeline.workspaceId} and subscription_id=${timeline.subscriptionId}
+        and kind='remove' and freeze_id=(
+          select id from public.subscription_freezes where workspace_id=${timeline.workspaceId}
+            and subscription_id=${timeline.subscriptionId} order by recorded_at limit 1
+        )
+    `;
+  await tx`insert into public.subscription_renewal_date_revisions(
+        workspace_id,subscription_id,renewal_id,revision,service_start_date,service_end_exclusive,
+        cause_table,cause_id,recorded_by,recorded_at)
+      values(${timeline.workspaceId},${timeline.subscriptionId},${timeline.renewalId},1,
+        ${timeline.dayZero}::date+90,${timeline.dayZero}::date+150,
+        'subscription_freeze_events',${originalRemoval!.id},${f.trainerA.userId},
+        (((${timeline.dayZero}::date+80)::timestamp+interval '13 hours') at time zone 'Africa/Cairo'))`;
+  const [seededRevision] = await tx`
+      select service_start_date::text,service_end_exclusive::text
+      from public.subscription_renewal_date_revisions
+      where workspace_id=${timeline.workspaceId} and subscription_id=${timeline.subscriptionId}
+        and renewal_id=${timeline.renewalId} and revision=1
+    `;
+  expect(seededRevision).toEqual({
+    service_start_date: (
+      await tx`select (${timeline.dayZero}::date+90)::text as value`
+    )[0]!.value,
+    service_end_exclusive: (
+      await tx`select (${timeline.dayZero}::date+150)::text as value`
+    )[0]!.value,
+  });
+  const [projectionDefinition] = await tx`
+      select position('for carried_freeze' in pg_catalog.pg_get_functiondef(
+        'app_private.f13_project_entitlement(uuid,uuid,date)'::regprocedure
+      )) > 0 as per_freeze_removal_logic
+    `;
+  expect(projectionDefinition!.per_freeze_removal_logic).toBe(true);
+  const [beforeLaterRemoval] = await tx`select
+      (app_private.f13_project_entitlement(${timeline.workspaceId},${timeline.subscriptionId},
+        ${timeline.dayZero}::date+140)->>'effective_end_exclusive') as effective_end`;
+  const [beforeExpected] =
+    await tx`select (${timeline.dayZero}::date+150)::text as effective_end`;
+  expect(beforeLaterRemoval!.effective_end).toBe(beforeExpected!.effective_end);
+  const laterFreeze = randomUUID();
+  await tx`insert into public.subscription_freezes(
+        id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+      values(${laterFreeze},${timeline.workspaceId},${timeline.subscriptionId},
+        ${timeline.dayZero}::date+92,10,${f.trainerA.userId},clock_timestamp())`;
+  await tx`insert into public.subscription_freeze_events(
+        workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id,recorded_at)
+      values(${timeline.workspaceId},${timeline.subscriptionId},${laterFreeze},'remove',
+        ${timeline.dayZero}::date+95,${f.trainerA.userId},
+        (((${timeline.dayZero}::date+95)::timestamp+interval '13 hours') at time zone 'Africa/Cairo'))`;
+}
+
+async function expectLaterRemovalProjection(
+  tx: TransactionSql,
+  timeline: Awaited<ReturnType<typeof seedFreezeRemovalRenewalTimeline>>,
+) {
+  const [projection] = await tx`select
+      (app_private.f13_project_entitlement(${timeline.workspaceId},${timeline.subscriptionId},
+        ${timeline.dayZero}::date+140)->>'effective_end_exclusive') as effective_end`;
+  const [expected] =
+    await tx`select (${timeline.dayZero}::date+150)::text as effective_end`;
+  expect(projection!.effective_end).toBe(expected!.effective_end);
+}
+
+it('T051 keeps each carried-freeze removal fixed when a later renewal freeze is removed', async () => {
+  const f = await clientContext();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    const timeline = await seedFreezeRemovalRenewalTimeline(
+      tx,
+      f,
+      target,
+      79,
+      120,
+    );
+    await addLaterRenewalFreezeRemoval(tx, f, timeline);
+    await expectLaterRemovalProjection(tx, timeline);
+  });
+});
+
+it('T051 kills a later-removal floor that leaks into the prior renewal term', async () => {
+  const f = await clientContext();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 90,
+  });
+  await withCrashSafeFunctionMutant(
+    'app_private.f13_project_entitlement(uuid,uuid,date)',
+    (definition) =>
+      definition.replace(
+        'and (f.applied_on>=term_start and f.applied_on<term_end or not exists(',
+        'and (true or not exists(',
+      ),
+    async () =>
+      await expectInvariantFailure(async () => {
+        await probe(async (tx) => {
+          const timeline = await seedFreezeRemovalRenewalTimeline(
+            tx,
+            f,
+            target,
+            79,
+            120,
+          );
+          await addLaterRenewalFreezeRemoval(tx, f, timeline);
+          await expectLaterRemovalProjection(tx, timeline);
+        });
+      }),
+  );
 });
 
 it('T049 preserves a newer manual date when a freeze is removed after upgrade', async () => {

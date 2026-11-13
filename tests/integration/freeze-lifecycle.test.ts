@@ -15,6 +15,7 @@ import {
   type FreezeApplyFact,
   type FreezeEventFact,
 } from '../../lib/subscriptions/freeze-service';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
@@ -267,6 +268,63 @@ it('T008 Remove preserves the Cairo day on which its fact is recorded', async ()
       effective_end_exclusive: projection!.floor,
     });
   });
+});
+
+it('mutation: removing the standalone removal floor is caught', async () => {
+  const f = await clientContext();
+  await withCrashSafeFunctionMutant(
+    'app_private.f13_project_entitlement(uuid,uuid,date)',
+    (definition) =>
+      definition.replace(
+        'and (f.applied_on>=term_start and f.applied_on<term_end or not exists(',
+        'and (f.applied_on>=term_start and f.applied_on<term_end or false and not exists(',
+      ),
+    async () => {
+      let failed = false;
+      try {
+        await probe(async (tx) => {
+          const ids = await graph(tx, f);
+          await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+            values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+          const apply = tx.json({
+            action: 'apply',
+            workspace_id: f.wsA.id,
+            client_id: ids.client,
+            subscription_id: ids.subscription,
+            duration_days: 3,
+            expected_revision: 0,
+            request_key: randomUUID(),
+          });
+          const [applied] =
+            await tx`select public.subscription_freeze_operation(${apply}::jsonb) as receipt`;
+          const freezeId = (applied!.receipt as { freeze_id: string })
+            .freeze_id;
+          const remove = tx.json({
+            action: 'remove',
+            workspace_id: f.wsA.id,
+            client_id: ids.client,
+            subscription_id: ids.subscription,
+            freeze_id: freezeId,
+            expected_revision: 1,
+            request_key: randomUUID(),
+          });
+          await tx`select public.subscription_freeze_operation(${remove}::jsonb)`;
+          const [projection] = await tx`
+            select app_private.f13_project_entitlement(
+              ${f.wsA.id},${ids.subscription},(clock_timestamp() at time zone 'Africa/Cairo')::date
+            ) as value,
+            ((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::text as floor`;
+          expect(projection!.value).toMatchObject({
+            status: 'active',
+            effective_end_exclusive: projection!.floor,
+          });
+        });
+      } catch {
+        failed = true;
+      }
+      expect(failed).toBe(true);
+    },
+  );
 });
 
 it('T008 rejects Stop after a freeze has been Removed', async () => {

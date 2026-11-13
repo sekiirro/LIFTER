@@ -67,7 +67,7 @@ export const guardedFunctions = [
   {
     identity:
       'app_private.materialize_intake_assignment_occurrence_core(uuid,uuid,text,date)',
-    migration: '20261112025600_f15_active_client_initial_occurrences.sql',
+    migration: '20261113130100_f15_renewal_assignment_ids.sql',
     name: 'app_private.materialize_intake_assignment_occurrence_core',
   },
   {
