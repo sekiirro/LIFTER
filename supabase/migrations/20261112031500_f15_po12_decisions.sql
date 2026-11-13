@@ -43,7 +43,7 @@ create trigger form_assignment_selection_history_immutable before update or dele
 create or replace function app_private.reconcile_f15_form_assignment(
   p_workspace_id uuid,p_client_id uuid
 ) returns text language plpgsql security definer set search_path='' as $$
-declare selection app_private.form_assignment_selections%rowtype; approved_subscription uuid; assignment uuid; assignment_policy_id uuid; current_version integer; current_terms text; snapshot_at timestamptz:=transaction_timestamp();
+declare selection app_private.form_assignment_selections%rowtype; approved_subscription uuid; assignment uuid; assignment_policy_id uuid; current_version integer; current_terms text; latest_form_status text; snapshot_at timestamptz:=transaction_timestamp();
 begin
   if p_workspace_id is null or p_client_id is null then return 'invalid'; end if;
   perform pg_catalog.pg_advisory_xact_lock(
@@ -51,6 +51,12 @@ begin
   select s.* into selection from app_private.form_assignment_selections s
     where s.workspace_id=p_workspace_id and s.client_id=p_client_id;
   if not found then return 'waiting_for_selection'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+    'f15-form:'||p_workspace_id::text||':'||selection.form_id::text,0));
+  select v.status into latest_form_status from public.form_versions v
+    where v.workspace_id=p_workspace_id and v.form_id=selection.form_id
+    order by v.version_number desc limit 1;
+  if latest_form_status='retired' then return 'stale_selection'; end if;
   select a.subscription_id into approved_subscription from app_private.registration_approval_events a
     where a.workspace_id=p_workspace_id and a.client_id=p_client_id order by a.approved_at,a.id limit 1;
   if not found then return 'waiting_for_approval'; end if;

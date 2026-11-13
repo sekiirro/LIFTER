@@ -195,6 +195,142 @@ it('T008 reconciles real F12 approval and F15 selection facts in either order, o
   expect(triggerMutationWouldBeCaught).toBe(true);
 });
 
+it('does not create an approval-derived assignment after its form is retired', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  const fixture = await db.begin(async (tx) =>
+    createSelectionFixture(tx, context.wsA.id),
+  );
+  await db`
+    insert into app_private.form_assignment_selections(
+      workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by
+    ) values(${context.wsA.id},${target.id},${fixture.formId},1,${fixture.policy},${context.po.userId})
+  `;
+  const retired = await context.po.client.rpc('retire_workspace_form', {
+    p_workspace_id: context.wsA.id,
+    p_form_id: fixture.formId,
+    p_request_id: randomUUID(),
+  });
+  expect(retired.data).toMatchObject({ status: 'ok', formStatus: 'retired' });
+  const approval = await context.po.client.rpc('registration_approve', {
+    request: request(context, target),
+  });
+  expect((approval.data as { status: string }).status).toBe('ok');
+  const assignments = await db`
+    select id from public.form_assignments
+    where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${fixture.formId}`;
+  const occurrences = await db`
+    select o.occurrence_key from app_private.form_assignment_occurrences o
+    join app_private.form_assignment_policies p on p.workspace_id=o.workspace_id and p.id=o.policy_id
+    where o.workspace_id=${context.wsA.id} and p.form_id=${fixture.formId}`;
+  expect(assignments).toHaveLength(0);
+  expect(occurrences).toHaveLength(0);
+});
+
+it('serializes approval reconciliation behind concurrent retirement', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  const fixture = await db.begin(async (tx) =>
+    createSelectionFixture(tx, context.wsA.id),
+  );
+  await db`
+    insert into app_private.form_assignment_selections(
+      workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by
+    ) values(${context.wsA.id},${target.id},${fixture.formId},1,${fixture.policy},${context.po.userId})
+  `;
+
+  let releaseRetirement!: () => void;
+  let signalRetirement!: () => void;
+  const retirementLockHeld = new Promise<void>((resolve) => {
+    releaseRetirement = resolve;
+  });
+  const retirementAcquired = new Promise<void>((resolve) => {
+    signalRetirement = resolve;
+  });
+  const retirement = db.begin(async (tx) => {
+    const [result] = await tx`
+      select app_private.retire_workspace_form(
+        ${context.wsA.id},${fixture.formId},${randomUUID()},${context.po.userId}
+      ) as result`;
+    expect(result?.result).toMatchObject({
+      status: 'ok',
+      formStatus: 'retired',
+    });
+    signalRetirement();
+    await retirementLockHeld;
+  });
+  await retirementAcquired;
+
+  let approval: ReturnType<typeof context.po.client.rpc>;
+  try {
+    approval = context.po.client.rpc('registration_approve', {
+      request: request(context, target),
+    });
+    const returnedBeforeRetirementCommit = await Promise.race([
+      approval.then(() => true),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 150)),
+    ]);
+    expect(returnedBeforeRetirementCommit).toBe(false);
+  } finally {
+    releaseRetirement();
+  }
+  await retirement;
+  expect((await approval!).data as { status: string }).toMatchObject({
+    status: 'ok',
+  });
+  const assignments = await db`
+    select id from public.form_assignments
+    where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${fixture.formId}`;
+  const occurrences = await db`
+    select o.occurrence_key from app_private.form_assignment_occurrences o
+    join app_private.form_assignment_policies p on p.workspace_id=o.workspace_id and p.id=o.policy_id
+    where o.workspace_id=${context.wsA.id} and p.form_id=${fixture.formId}`;
+  expect(assignments).toHaveLength(0);
+  expect(occurrences).toHaveLength(0);
+});
+
+it('kills the retired-form guard in approval reconciliation', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  await withCrashSafeFunctionMutant(
+    'app_private.reconcile_f15_form_assignment(uuid,uuid)',
+    (definition) =>
+      definition.replace(
+        "if latest_form_status='retired' then",
+        'if false then',
+      ),
+    async () => {
+      await expectInvariantFailure(async () => {
+        const fixture = await db.begin(async (tx) =>
+          createSelectionFixture(tx, context.wsA.id),
+        );
+        await db`
+          insert into app_private.form_assignment_selections(
+            workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by
+          ) values(${context.wsA.id},${target.id},${fixture.formId},1,${fixture.policy},${context.po.userId})
+        `;
+        const retired = await context.po.client.rpc('retire_workspace_form', {
+          p_workspace_id: context.wsA.id,
+          p_form_id: fixture.formId,
+          p_request_id: randomUUID(),
+        });
+        expect(retired.data).toMatchObject({
+          status: 'ok',
+          formStatus: 'retired',
+        });
+        const approval = await context.po.client.rpc('registration_approve', {
+          request: request(context, target),
+        });
+        expect((approval.data as { status: string }).status).toBe('ok');
+        const assignments = await db`
+          select id from public.form_assignments
+          where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${fixture.formId}`;
+        expect(assignments).toHaveLength(0);
+      });
+    },
+  );
+});
+
 it('kills an approval assignment deadline-fact mutant', async () => {
   const context = await clientContext();
   const target = await registered(context);

@@ -1,16 +1,20 @@
 -- S33 T072: respect active-client audience and isolate each client initial occurrence.
 create or replace function app_private.materialize_intake_assignment_occurrence_core(p_workspace_id uuid,p_form_id uuid,p_occurrence_key text,p_evaluation_date date)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare actor uuid:=auth.uid(); role public.staff_role; policy app_private.form_assignment_policies%rowtype;
+declare actor uuid:=auth.uid(); role public.staff_role; policy app_private.form_assignment_policies%rowtype; latest_form_status text;
   snapshot_at timestamptz:=transaction_timestamp(); today date:=p_evaluation_date; service_start date; inserted integer:=0; deadline_days integer;
   client_ids uuid[]; assigned record; expected_key text; sub_id uuid;
 begin
   if actor is null or p_workspace_id is null or p_form_id is null or p_occurrence_key is null or char_length(p_occurrence_key) not between 1 and 160 or p_evaluation_date is null or not isfinite(p_evaluation_date) then return '{"status":"not_found"}'::jsonb; end if;
   role:=app_private.current_staff_role();
   if role is null or not app_private.role_has_capability(role,'assign_intake_form') or not app_private.has_workspace_access(p_workspace_id,'assign_intake_form') then return '{"status":"not_found"}'::jsonb; end if;
-  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_workspace_id::text||':'||p_form_id::text,0));
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('f15-form:'||p_workspace_id::text||':'||p_form_id::text,0));
   role:=app_private.current_staff_role();
   if role is null or not app_private.role_has_capability(role,'assign_intake_form') or not app_private.has_workspace_access(p_workspace_id,'assign_intake_form') then raise exception 'assignment authorization changed while waiting'; end if;
+  select v.status into latest_form_status from public.form_versions v
+    where v.workspace_id=p_workspace_id and v.form_id=p_form_id
+    order by v.version_number desc limit 1;
+  if latest_form_status='retired' then return '{"status":"not_found"}'::jsonb; end if;
   select * into policy from app_private.form_assignment_policies p where p.workspace_id=p_workspace_id and p.form_id=p_form_id for update;
   if not found or not exists(select 1 from public.form_versions v where v.workspace_id=p_workspace_id and v.form_id=p_form_id and v.version_number=policy.version_number and v.status='published' and app_private.f15_current_terms_policy(v.terms_policy_version)) then return '{"status":"not_found"}'::jsonb; end if;
   if policy.trigger_kind='recurring' then

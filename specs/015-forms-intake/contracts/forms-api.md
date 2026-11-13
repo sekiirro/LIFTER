@@ -68,6 +68,11 @@ its key and foreign keys. Published form versions and assignment snapshots are
 immutable. A version and its assignment bind the latest published row in
 `app_private.terms_policy_versions`; the migration seeds no published T&C
 copy. Tests publish synthetic policy rows inside rollback-scoped fixtures.
+Before creating any new assignment, every manual, initial, audience, renewal,
+backfill, reconciliation, and recurring path checks the source form's current
+retirement status after serializing on the per-form retirement lock. Retired
+forms create no new assignments or recurring occurrences; existing assignment
+snapshots and their contents are unchanged.
 
 Direct table grants remain revoked. Forced RLS policies call the shared
 capability and workspace helpers; the `author_forms`, `assign_intake_form`,
