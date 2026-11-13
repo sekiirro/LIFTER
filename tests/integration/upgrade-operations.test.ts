@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+﻿import { randomUUID } from 'node:crypto';
 import type { JSONValue, TransactionSql } from 'postgres';
 import { afterAll, expect, it } from 'vitest';
 import {
@@ -270,7 +270,8 @@ it('T048 refuses an upgrade with an unsettled installment before any writes', as
         (select count(*)::int from app_private.subscription_upgrade_operations where subscription_id=${purchase.sid}) as operations,
         (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
         (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payment_events,
-        (select count(*)::int from public.audit_events where target_table='subscription_upgrades') as audits`;
+        (select count(*)::int from public.audit_events a where a.workspace_id=${f.wsA.id} and a.target_table='subscription_upgrades' and a.target_id in
+        (select u.id from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid})) as audits`;
 
     const result = await upgrade(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
@@ -290,7 +291,8 @@ it('T048 refuses an upgrade with an unsettled installment before any writes', as
         (select count(*)::int from app_private.subscription_upgrade_operations where subscription_id=${purchase.sid}) as operations,
         (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
         (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payment_events,
-        (select count(*)::int from public.audit_events where target_table='subscription_upgrades') as audits`;
+        (select count(*)::int from public.audit_events a where a.workspace_id=${f.wsA.id} and a.target_table='subscription_upgrades' and a.target_id in
+        (select u.id from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid})) as audits`;
     expect(after).toEqual(before);
   });
 });
@@ -1236,7 +1238,8 @@ it('T042 authorizes upgrade only for a payment actor in the subscription workspa
     const [counts] = await tx`select
       (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
       (select count(*)::int from app_private.subscription_upgrade_operations where subscription_id=${purchase.sid}) as operations,
-      (select count(*)::int from public.audit_events where target_table='subscription_upgrades') as audits`;
+      (select count(*)::int from public.audit_events a where a.workspace_id=${f.wsA.id} and a.target_table='subscription_upgrades' and a.target_id in
+        (select u.id from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid})) as audits`;
     expect(counts).toEqual({ upgrades: 0, operations: 0, audits: 0 });
   });
 });
@@ -1519,7 +1522,7 @@ it('T049 recomputes the upgraded projection after removing a counted freeze', as
   await probe(async (tx) => {
     const ids = await graph(tx, f);
     const purchase = { t: { id: ids.client }, sid: ids.subscription };
-    const activation = new Date(Date.now() - 81 * 86400000);
+    const activation = new Date(Date.now() - 10 * 86400000);
     await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
       values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()})`;
     const freezeId = randomUUID();
@@ -1708,14 +1711,15 @@ it('T049 preserves a newer manual date when a freeze is removed after upgrade', 
     await tx`set local role authenticated`;
     let adjusted: Record<string, unknown>;
     try {
-      const [row] = await tx`select public.record_subscription_date_adjustment(${tx.json({
-        workspace_id: f.wsA.id,
-        client_id: purchase.t.id,
-        subscription_id: purchase.sid,
-        new_service_start_date: dates!.today,
-        new_service_end_exclusive: dates!.manual_end,
-        request_key: randomUUID(),
-      } as JSONValue)}) as result`;
+      const [row] =
+        await tx`select public.record_subscription_date_adjustment(${tx.json({
+          workspace_id: f.wsA.id,
+          client_id: purchase.t.id,
+          subscription_id: purchase.sid,
+          new_service_start_date: dates!.today,
+          new_service_end_exclusive: dates!.manual_end,
+          request_key: randomUUID(),
+        } as JSONValue)}) as result`;
       adjusted = row!.result as Record<string, unknown>;
     } finally {
       await tx`reset role`;

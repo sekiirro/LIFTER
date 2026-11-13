@@ -399,7 +399,11 @@ it('replays an exact renewal stored with the legacy canonical hash unchanged', a
       )::text,'UTF8'),'sha256') as binding`;
     const stored = {
       status: 'ok',
-      receipt: { operation_id: randomUUID(), renewal_id: randomUUID(), legacy: true },
+      receipt: {
+        operation_id: randomUUID(),
+        renewal_id: randomUUID(),
+        legacy: true,
+      },
     };
     await tx`insert into app_private.subscription_renewal_operations(
       workspace_id,client_id,actor_user_id,request_key,predecessor_subscription_id,

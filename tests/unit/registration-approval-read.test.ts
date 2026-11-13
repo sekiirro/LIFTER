@@ -152,11 +152,26 @@ describe('registration approval safe readers', () => {
     );
   });
 
-  it('returns only currency and unpaid amount from payment queue totals', async () => {
+  it('returns allow-listed per-currency payment queue item balances and totals', async () => {
     setActor('sales');
     setBackend({
       status: 'ok',
-      items: [],
+      items: [
+        {
+          client_id: clientId,
+          subscription_id: subscriptionId,
+          name: 'Client',
+          approval_state: 'approved',
+          price_minor: '5000',
+          currency: 'EGP',
+          unpaid_minor: '9999',
+          commission_minor: '999',
+          unpaid_by_currency: [
+            { currency: 'EGP', unpaid_minor: '300', commission_minor: '99' },
+            { currency: 'USD', unpaid_minor: '200', private_value: true },
+          ],
+        },
+      ],
       totals: [
         {
           currency: 'EGP',
@@ -169,11 +184,24 @@ describe('registration approval safe readers', () => {
     const result = await readWorkspacePaymentQueue({ workspaceId: ws });
     expect(result).toEqual({
       status: 'ok',
-      items: [],
+      items: [
+        {
+          client_id: clientId,
+          subscription_id: subscriptionId,
+          name: 'Client',
+          approval_state: 'approved',
+          price_minor: '5000',
+          currency: 'EGP',
+          unpaid_by_currency: [
+            { currency: 'EGP', unpaid_minor: '300' },
+            { currency: 'USD', unpaid_minor: '200' },
+          ],
+        },
+      ],
       totals: [{ currency: 'EGP', unpaid_minor: '500' }],
       next_cursor: null,
     });
-    expect(JSON.stringify(result)).not.toContain('commission');
+    expect(JSON.stringify(result)).not.toMatch(/commission|private_value/);
   });
 
   it('keeps payment status safe and maps only the U5 obligation columns', async () => {

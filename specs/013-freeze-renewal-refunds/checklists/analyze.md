@@ -391,3 +391,23 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Security review: the three replaced functions retain SECURITY DEFINER, empty search_path, postgres ownership, and the prior explicit revoke/grant lists. No new private function was added; the private-function inventory is unchanged.
 - Verification: focused Stack C tests passed for legacy replay, newer-manual-date freeze removal, and mixed-currency totals. Mutations rejecting legacy binding, applying freeze subtraction when upgrade is not the anchor, and grouping by subscription currency each failed the corresponding assertion. Existing T049 unconsumed and later-renewal mutation evidence remains in the S52 run report.
 - PO-DECISION-NEEDED: S53-F13-MCQ-1 remains open only for mixed-currency queue-item detail representation. No undecided choice is implemented. Findings: 0 open CRITICAL, 0 open HIGH for the decided scope.
+
+## S53-R30 queue item detail analysis (2026-11-13T08:20:31Z)
+
+- Entry gate: PASS. FR-044, SC-038, Given/When/Then scenario 20, plan/T050, tasks/T050, payment-queue contract, and traceability cover per-subscription currency-separated unpaid details and workspace totals. S53-PO-3 is recorded byte-exact in the spec decision register with its SHA-256; S53-R30 is identified as architect mapping, not PO wording.
+- Decision: one item per subscription carries unpaid_by_currency, sorted by currency, entries {currency, unpaid_minor} using decimal-string money encoding. Existing subscription cursor/page behavior stays unchanged; no cross-currency sum. No new user-visible copy or labels are needed: the existing “Unpaid” label can display the per-currency values using the existing registration approval minor-unit formatter.
+- Implementation scope: forward replacement of public.workspace_payment_queue plus strict allow-listed read projection, item type, existing payment queue UI. Authorization, filter, totals, and cursor logic stay intact; function owner/security/search_path/grants are preserved. No new private function or inventory row.
+- Gap sweep: considered zero-unpaid subscriptions, empty queues, mixed-currency installment rows, amount encoding/order, cursor/page-size invariance, role filtering, and arithmetic overflow. No additional behavior is specified beyond the PO decision and existing queue contract. No new MCQ required.
+- Findings: **0 open CRITICAL, 0 open HIGH**. **No open ambiguities** for this queue behavior. T044 remains P4/open; T048 remains unticked.
+
+## S53-R30 resolved queue detail analysis (2026-11-13T08:28:03Z)
+
+- PO decision S53-PO-3 S53-F13-MCQ-1=A is copied byte-for-byte from the source answer line and SHA recorded in spec.md and traceability.md. Architect S53-R30 is distinguished from PO wording.
+- FR-044, SC-038, scenario 20, contract, plan/T050, tasks/T050, and traceability agree: one item per subscription; sorted unpaid_by_currency entries keyed to installment currency; exact decimal-string minor amounts; unchanged subscription cursor; no currencies summed.
+- No new labels/copy or policy are introduced. Existing Unpaid label renders each currency amount with the existing registration approval minor-unit formatter.
+- Gap sweep considered pagination, mixed currencies per subscription, multiple obligations of one currency, zero-unpaid rows, empty arrays, amount shape/order, unauthorized access, filter consistency, and client allow-list projection. No remaining PO decision is needed for this behavior.
+- Findings: **0 open CRITICAL, 0 open HIGH**. **No open ambiguities** for FR-044 queue details/totals. T044 remains P4/open; T048 remains unticked.
+
+## S53 queue decision source precision (2026-11-13T08:35:32Z)
+
+The F13 decision register quotes only the PO answer bytes applicable to F13 (S53-F13-MCQ-1=A) and records the full source path/SHA; adjacent PO answers for other features are not copied into F13. S53-R30 remains clearly labeled architect mapping. No open CRITICAL/HIGH findings; no open ambiguities for FR-044.

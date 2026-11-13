@@ -101,7 +101,8 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
         and s.registration_link_id=${egp.linkId}
         and not exists(select 1 from public.subscription_activations a
           where a.workspace_id=s.workspace_id and a.subscription_id=s.id)`;
-    const [egpSubscription] = await tx`select id,client_id from public.subscriptions
+    const [egpSubscription] =
+      await tx`select id,client_id from public.subscriptions
       where workspace_id=${f.wsA.id} and registration_link_id=${egp.linkId}`;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
     await tx`set local role authenticated`;
@@ -128,7 +129,12 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
       const [first] = await tx`
         select public.workspace_payment_queue(${f.wsA.id},null,1) as result`;
       const firstData = first!.result as {
-        items: { currency: string }[];
+        items: {
+          client_id: string;
+          subscription_id: string;
+          currency: string;
+          unpaid_by_currency?: { currency: string; unpaid_minor: string }[];
+        }[];
         totals?: { currency: string; unpaid_minor: string }[];
         next_cursor: string | null;
       };
@@ -150,6 +156,14 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
       expect((differentPageSize!.result as typeof firstData).totals).toEqual(
         firstData.totals,
       );
+      const allItems = [firstData.items[0]!, secondData.items[0]!];
+      const egpItem = allItems.find(
+        (item) => item.subscription_id === egpSubscription!.id,
+      );
+      expect(egpItem?.unpaid_by_currency).toEqual([
+        { currency: 'EGP', unpaid_minor: '900' },
+        { currency: 'USD', unpaid_minor: '1200' },
+      ]);
     } finally {
       await tx`reset role`;
     }
