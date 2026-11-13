@@ -2,7 +2,7 @@
 
 **Feature Branch**: `023-client-progress-coaching`
 **Spec directory**: `specs/023-client-progress-coaching`
-**Status**: Draft — Specify + Clarify. Spec-only. Open PO questions remain (see `## Open questions for the PO`): S54-023-Q1 and S54-023-Q2 resolved by S55-PO-3; new MCQ S55-023-Q3 (adherence answer scale) open.
+**Status**: Draft — Specify + Clarify. Spec-only. All PO questions resolved (S54-023-Q1, S54-023-Q2 and S55-023-Q3 resolved by S55-PO-3/S55-PO-5). No open PO questions remain.
 **Created**: 2026-11-13
 **Scope**: P5 Progress coaching loop: weekly check-ins, measurements, food replacement requests, client timeline. Trainer notes reuse F20 (no new notes FRs). Client leaderboard is a SEPARATE spec (024) and is NOT included here.
 
@@ -25,15 +25,15 @@ A client with an active subscription receives a weekly check-in form 7 days afte
 
 ### Story 2 — Measurements (P1)
 
-Measurements are auto-extracted from weekly check-in form answers into a dedicated Progress store, preserving question mappings, units and history. A client cannot create a duplicate manual entry for the same day/type. Any authorized trainer may correct a measurement with history.
+Measurements are auto-extracted from weekly check-in form answers into a dedicated Progress store, preserving question mappings, units and history. A client cannot create a duplicate manual entry for the same day/type. Any authorized trainer may correct a measurement directly; the change is recorded in the background audit log only (actor, timestamp, previous and new values), with no user-facing correction-history UI.
 
-**Independent test**: Submit a weekly form containing mapped measurement answers, assert a Progress record exists with source reference and original units; attempt a same-day duplicate, assert rejection; correct as a second trainer, assert history entry.
+**Independent test**: Submit a weekly form containing mapped measurement answers, assert a Progress record exists with source reference and original units; attempt a same-day duplicate, assert rejection; correct as a second trainer, assert the correction persists and is recorded in the background audit log (actor, timestamp, previous/new values) with no user-facing correction-history entry.
 
 **Acceptance scenarios**
 
 1. **Given** a weekly form submission with measurement-mapped answers, **When** it is processed, **Then** corresponding Progress measurements are created with source reference and original units (FR-010).
 2. **Given** an existing measurement for client/type/day, **When** a second entry is attempted (manual or auto), **Then** it is rejected and the user is directed to edit the existing record (FR-012).
-3. **Given** an authorized trainer, **When** they correct a measurement, **Then** the correction persists with an edit-history entry recording actor, timestamp and previous/new values (FR-013).
+3. **Given** an authorized trainer, **When** they correct a measurement, **Then** the correction persists by directly updating the measurement and the change is recorded in the background audit log (actor, timestamp, previous and new values); no user-facing correction-history entry is created (FR-013).
 
 ### Story 3 — Food replacement request (P2)
 
@@ -65,7 +65,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 
 - What happens when a freeze starts and ends within the same 7-day window? The anchor shifts by frozen days; no catch-up.
 - What happens when an auto-extracted measurement conflicts with an existing same-day record? It directly updates the existing record in place and records the change in the background audit log; no user-visible correction-history entry is created (S55-PO-3 Q2=A).
-- What answer scale do the two adherence questions use? Pending MCQ S55-023-Q3; until resolved no scale is assumed.
+- The two adherence questions use a 0–10 integer scale (same as the F15 N11 hunger score), so existing form handling and copy patterns can be reused (S55-PO-5 Q3=A).
 - What happens when a weekly form question mapping changes between revisions? Historical measurements preserve their original mapping and units (Assumptions).
 - What happens when a food replacement request is open and the client's subscription expires? Follows F13 plan-access restrictions; request state retained.
 
@@ -88,7 +88,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - **FR-010**: The system MUST maintain a dedicated Progress measurement store with a source reference to the weekly form submission when a measurement is captured via a form. (Source: S54-PO-11 Q4=A; p5-audit S54-P5-Q4)
 - **FR-011**: The system MUST auto-extract measurements from F15 weekly form answers into the Progress store, preserving question mappings, units and history. (Source: S54-PO-11 Q5 written)
 - **FR-012**: The system MUST reject a second manual measurement entry for the same client/day/type and direct the user to edit the existing record. When an auto-extracted measurement conflicts with an existing same-day record, the system MUST directly update that record's value and original units in place and record the change in the background audit log; no user-visible correction-history entry is created for such an auto-update. (Source: S54-PO-11 Q6=A; p5-audit S54-P5-Q6; S55-PO-3 Q2=A, PO wording "directly update measurement, no complicated history UI; keep background audit"; S54-023-Q2 resolved.)
-- **FR-013**: Any authorized trainer in the workspace MAY correct a measurement; corrections MUST be recorded in edit history with actor, timestamp, previous and new values. (Source: S54-PO-11 Q7=A; BRD-09)
+- **FR-013**: Any authorized trainer in the workspace MAY correct a measurement; the correction MUST directly update the measurement in place, and the change MUST be recorded in the background audit log with actor, timestamp, previous and new values. No user-facing correction-history UI is provided. (Source: S54-PO-11 Q7=A; BRD-09; S55-PO-3 Q2=A, PO wording "directly update measurement, no complicated history UI; keep background audit"; S54-023-Q2 resolved.)
 - **FR-014**: Measurement types and units MUST be derived from the F15 weekly form question mappings; P5 MUST NOT define a separate measurement catalog. (Source: S54-PO-11 Q5 written)
 - **FR-015**: The system MUST NOT create duplicate manual measurement entries that duplicate an auto-extracted measurement for the same client/day/type. (Source: S54-PO-11 Q5 written)
 - **FR-016**: Measurements MUST be visible to the client during an active subscription and subject to F13 plan-access restrictions on expiry/overdue. (Source: BRD-04.8; F13)
@@ -127,13 +127,13 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 
 ### Weekly check-in adherence self-report (P5-A → spec 024 input)
 
-- **FR-037**: The weekly check-in form MUST include two self-reported adherence questions — one for workout adherence and one for diet adherence — captured as form answers using F15 forms machinery (typed answers, validation, immutable snapshots, retention). Each answer MUST be stored as part of the weekly form submission and exposed to spec 024 (client leaderboard) by the agreed field names `workoutAdherence` and `dietAdherence` (values only). The leaderboard adherence input is the arithmetic mean of the two values. These questions are a temporary proxy until mobile tracking exists. The exact answer scale (numeric range and labels) is pending PO approval (MCQ S55-023-Q3); until resolved, no scale may be assumed and no rating labels may be invented. (Source: S55-PO-3 cross-spec spec 024 Q2; spec 024 FR-017/FR-033; F15 reuse.)
+- **FR-037**: The weekly check-in form MUST include two self-reported adherence questions — one for workout adherence and one for diet adherence — captured as form answers using F15 forms machinery (typed answers, validation, immutable snapshots, retention). Each answer MUST be stored as part of the weekly form submission and exposed to spec 024 (client leaderboard) by the agreed field names `workoutAdherence` and `dietAdherence` (values only). Each answer MUST use a 0–10 integer scale (same as the existing F15 N11 hunger score), reusing F15's existing numeric handling and copy patterns. The leaderboard adherence input is the arithmetic mean of the two values. These questions are a temporary proxy until mobile tracking exists. (Source: S55-PO-3 cross-spec spec 024 Q2; S55-PO-5 Q3=A, PO wording "0–10 integer (Recommended)" — same scale as the existing F15 hunger score (0–10), so the same form handling and copy patterns can be reused; spec 024 FR-017/FR-018/FR-033; F15 reuse.)
 - **FR-038**: The system MUST NOT display or expose leaderboard scoring mechanics, ranks, score formulas, or any "you may appear on the leaderboard" scoring rationale to clients through the weekly check-in or any client-facing surface; the adherence questions are presented as neutral self-report items only. (Source: S55-PO-3 cross-spec; spec 024 FR-023 data minimization.)
 
 ## Key Entities
 
-- **WeeklyCheckIn**: occurrence with client, subscription, scheduled date, form reference, status (assigned/submitted/expired), freeze-adjusted anchor; includes self-reported `workoutAdherence` and `dietAdherence` answers (scale per MCQ S55-023-Q3).
-- **ProgressMeasurement**: client, type, value, unit, recorded date, source form submission reference, correction history.
+- **WeeklyCheckIn**: occurrence with client, subscription, scheduled date, form reference, status (assigned/submitted/expired), freeze-adjusted anchor; includes self-reported `workoutAdherence` and `dietAdherence` answers on a 0–10 integer scale (same as F15 N11 hunger score).
+- **ProgressMeasurement**: client, type, value, unit, recorded date, source form submission reference, and a background audit log of corrections (actor, timestamp, previous/new value); no user-facing correction-history UI.
 - **MeasurementCorrection**: measurement reference, actor, timestamp, previous value, new value.
 - **FoodReplacementRequest**: client, food item, plan revision reference, free-text, status (open/rejected/approved-via-published-revision/stale-closed), created/closed timestamps.
 - **ClientTimelineEntry**: client, event type (fixed set), occurred at, actor label, optional reference id.
@@ -145,12 +145,12 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - **SC-003**: 100% of unanswered check-ins receive a reminder on the due day and a second reminder 24 hours later.
 - **SC-004**: 100% of measurements auto-extracted from form submissions appear in the Progress store with a source reference and original units.
 - **SC-005**: Zero duplicate measurement records for the same client/day/type.
-- **SC-006**: 100% of corrections by authorized trainers persist with an edit-history entry.
+- **SC-006**: 100% of corrections by authorized trainers directly update the measurement and are recorded in the background audit log (actor, timestamp, previous and new values); no user-facing correction-history entry is required.
 - **SC-007**: Clients can select existing approved alternatives without a request or revision; a new alternative requires a request and trainer manual publish.
 - **SC-008**: 100% of food replacement requests obey one-open-per-food and the F15 text limits with no attachments.
 - **SC-009**: 100% of timeline views show only the fixed meaningful set, to authorized actors only.
 - **SC-010**: No new notes FRs or duplicate F20 functionality is introduced by P5.
-- **SC-011**: 100% of weekly check-ins include the two self-reported adherence questions; their values are exposed to spec 024 by the agreed field names `workoutAdherence` and `dietAdherence`; no leaderboard scoring mechanics are shown to clients.
+- **SC-011**: 100% of weekly check-ins include the two self-reported adherence questions on a 0–10 integer scale; their values are exposed to spec 024 by the agreed field names `workoutAdherence` and `dietAdherence`; no leaderboard scoring mechanics are shown to clients.
 
 ## Assumptions
 
@@ -159,7 +159,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - Timeline ordering is chronological (newest or oldest per UI convention) with a deterministic tie-break; pagination is a UI concern outside this spec.
 - Food replacement notification recipients follow p5-audit Q8 option A (authorized trainer/workspace owner on open; client on resolution).
 - KPI "handled check-ins received" is consumed by P7 reporting; no payroll consequence is added by P5.
-- The two self-reported adherence questions (workout/diet) are a temporary proxy for mobile tracking; their answer scale is pending PO approval (MCQ S55-023-Q3). They are presented as neutral self-report items and never expose leaderboard scoring mechanics.
+- The two self-reported adherence questions (workout/diet) are a temporary proxy for mobile tracking; each uses a 0–10 integer scale (same as the F15 N11 hunger score). They are presented as neutral self-report items and never expose leaderboard scoring mechanics.
 - Existing audit retention (F11/F20) applies to all P5 tables; no new retention rule.
 
 ## Dependencies
@@ -201,34 +201,18 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 9. **F19 plan core** (spec 019): Ready & Publish is an explicit action; P5-C approval prepares draft.
 10. **F20 client notes** (spec 020): notes governed by F20; P5 adds no notes spec.
 11. **BRD-04.6/04.8, BRD-05, BRD-06, BRD-09** master: check-in recurrence, measurement entry/correction, food replacement, timeline events, client visibility.
-12. **Resolved MCQs**: S54-P5-Q1=A, Q3=A, Q4=A, Q6=A, Q7=A, Q8-10 (written), Q11=A, Q12=A, Q13=A, Q14=A, Q15=A. Q2 behavior resolved (reminder day + 24h); time-of-day resolved (S54-023-Q1 = 10:00 AM workspace time, S55-PO-3 Q1=A). Same-day measurement conflict resolved (S54-023-Q2 = direct update + background audit, S55-PO-3 Q2=A). Q5 resolved as auto-extract (written).
-13. **S55-PO-3** (2026-11-13): For spec 023: Q1=A (reminder send time 10 AM workspace time), Q2=A (directly update measurement, no complicated history UI; keep background audit). Cross-spec spec 024 Q2: custom — weekly check-in gains two self-reported adherence questions (workout adherence, diet adherence) whose average is the leaderboard adherence input, temporary until mobile tracking exists; never reveal scoring mechanics. Answer scale for the two questions is NOT specified and is raised as MCQ S55-023-Q3. (Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-3.verbatim.txt`.)
+12. **Resolved MCQs**: S54-P5-Q1=A, Q3=A, Q4=A, Q6=A, Q7=A, Q8-10 (written), Q11=A, Q12=A, Q13=A, Q14=A, Q15=A. Q2 behavior resolved (reminder day + 24h); time-of-day resolved (S54-023-Q1 = 10:00 AM workspace time, S55-PO-3 Q1=A). Same-day measurement conflict resolved (S54-023-Q2 = direct update + background audit, S55-PO-3 Q2=A). Q5 resolved as auto-extract (written). Adherence answer scale resolved (S55-023-Q3 = 0–10 integer, S55-PO-5 Q3=A).
+13. **S55-PO-3** (2026-11-13): For spec 023: Q1=A (reminder send time 10 AM workspace time), Q2=A (directly update measurement, no complicated history UI; keep background audit). Cross-spec spec 024 Q2: custom — weekly check-in gains two self-reported adherence questions (workout adherence, diet adherence) whose average is the leaderboard adherence input, temporary until mobile tracking exists; never reveal scoring mechanics. Answer scale for the two questions was NOT specified by S55-PO-3 and was raised as MCQ S55-023-Q3, resolved by S55-PO-5 to a 0–10 integer scale. (Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-3.verbatim.txt`.)
+14. **S55-PO-5** (2026-11-13): S55-023-Q3 = A — 0–10 integer scale for `workoutAdherence` and `dietAdherence` (same as the existing F15 N11 hunger score), so the same form handling and copy patterns can be reused. Verbatim: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-5.verbatim.txt`, SHA-256 8bc5d5621bfd6e231fad6f6c25904a17bee4472fa7e6de8c0447ddac93be8cf6. Rewrites FR-037, SC-011, Key Entities (WeeklyCheckIn), Assumptions and Edge cases; S55-023-Q3 removed from Open questions.
 
 ### Open questions for the PO
 
-#### S55-023-Q3 — Answer scale for the two self-reported adherence questions
-
-**Question**: What answer scale should the two weekly check-in adherence questions (workout adherence, diet adherence) use?
-
-**Why it matters**: Determines storage type, validation, copy labels and how the values are consumed by spec 024 for adherence scoring. The questions, field names (`workoutAdherence`, `dietAdherence`) and exposure to spec 024 are already fixed by S55-PO-3; only the scale is open.
-
-**Options**:
-
-| Option | Description                                                                                                                                |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| A      | 0–10 numeric scale (integer), consistent with the existing F15 N11 hunger score (0–10). (Recommended for consistency with existing forms.) |
-| B      | 1–5 star/numeric scale.                                                                                                                    |
-| C      | Percentage 0–100.                                                                                                                          |
-| D      | PO-specified scale (PO states the range and labels).                                                                                       |
-
-**Recommendation**: A, to reuse F15's existing 0–10 numeric handling and copy patterns; otherwise D with explicit values.
-
-**Blocks**: FR-037 storage/validation/copy; spec 024 adherence scoring (FR-017/FR-018); copy-proposal rating labels.
+None. All PO questions for this spec are resolved (S54-023-Q1, S54-023-Q2 by S55-PO-3; S55-023-Q3 by S55-PO-5).
 
 ## Out of scope
 
 - Client leaderboard (spec 024).
-- Plan PDF/Excel exports (deferred per S54-PO-5).
+- Plan PDF/Excel exports (owned by spec 022 / F17 / F18, not this spec).
 - Finance reporting (deferred per S54-PO-5).
 - Trainer notes implementation (F20, separate spec).
 - Any implementation, migrations, tests, merges or deployment (spec-only lane).
