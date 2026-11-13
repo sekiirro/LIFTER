@@ -754,13 +754,6 @@ describe('audit security catalog (T005)', () => {
       },
       {
         tgname: 'f13_no_update',
-        relname: 'subscription_manual_date_adjustments',
-        type: 19,
-        tgenabled: 'O',
-        proname: 'audit_events_immutable',
-      },
-      {
-        tgname: 'f13_no_update',
         relname: 'subscription_freeze_events',
         type: 19,
         tgenabled: 'O',
@@ -769,6 +762,13 @@ describe('audit security catalog (T005)', () => {
       {
         tgname: 'f13_no_update',
         relname: 'subscription_freezes',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_manual_date_adjustments',
         type: 19,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
