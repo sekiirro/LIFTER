@@ -2,7 +2,10 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Button } from '../../../../components/ui/Button';
 import { requireActor } from '../../../../lib/auth/actor';
-import { authoringWorkspaces } from '../../../../lib/catalog/server';
+import {
+  alternativePickerOptions,
+  authoringWorkspaces,
+} from '../../../../lib/catalog/server';
 import {
   LOCALE_COOKIE,
   dirFor,
@@ -68,6 +71,13 @@ export default async function NewExercisePage({ searchParams }: Props) {
           ) ?? null);
     if (!workspaceId) notFound();
   }
+  const options = await alternativePickerOptions({
+    workspaceId,
+    selectedIds: [],
+  });
+  const alternatives = options.status === 'ok' ? options.data.options : [];
+  const alternativesNextCursor =
+    options.status === 'ok' ? options.data.nextCursor : null;
   return (
     <main className={styles.main} dir={dirFor(locale)} lang={locale}>
       <header className={styles.header}>
@@ -115,6 +125,8 @@ export default async function NewExercisePage({ searchParams }: Props) {
         role={actor.role === 'platform_owner' ? 'po' : actor.role}
         scope={scope}
         workspaceId={workspaceId}
+        alternatives={alternatives}
+        alternativesNextCursor={alternativesNextCursor}
       />
     </main>
   );

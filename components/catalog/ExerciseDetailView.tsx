@@ -9,6 +9,10 @@ import { formatNumber } from '../../lib/i18n/format';
 import { getMessages } from '../../lib/i18n';
 import styles from './ExerciseDetailView.module.css';
 import { ExerciseDetailRemove } from './ExerciseDetailRemove';
+import {
+  alternativeName,
+  type ExerciseAlternativeOption,
+} from '../../lib/catalog/exercise-editor';
 
 export function ExerciseDetailView({
   locale,
@@ -18,6 +22,7 @@ export function ExerciseDetailView({
   canRemove,
   scope,
   workspaceId,
+  alternatives = [],
 }: {
   locale: Locale;
   row: CatalogExerciseDetailRow;
@@ -26,8 +31,18 @@ export function ExerciseDetailView({
   canRemove: boolean;
   scope: 'global' | 'workspace';
   workspaceId: string | null;
+  alternatives?: readonly ExerciseAlternativeOption[];
 }) {
   const m = getMessages(locale);
+  const effectiveFields = row.payload.effective_fields as
+    Record<string, unknown> | undefined;
+  const effectiveVideo = effectiveFields?.video as
+    { value?: unknown } | undefined;
+  const resolvedVideoUrl =
+    row.variation?.video_url ??
+    (effectiveVideo ? effectiveVideo.value : row.payload.video_url);
+  const videoUrl =
+    typeof resolvedVideoUrl === 'string' ? resolvedVideoUrl : null;
   const defaults = exercise.defaults;
   const reps = defaults?.reps;
   const repText = reps
@@ -88,6 +103,22 @@ export function ExerciseDetailView({
           <Bidi dir="auto">{exercise.names[locale] || exercise.names.en}</Bidi>
         </h3>
         <dl className={styles.details}>
+          <div className={styles.wide}>
+            <dt>{m['catalog.editorDescription']}</dt>
+            <dd className={styles.textValue}>
+              <Bidi dir="auto">
+                {exercise.description ?? m['catalog.editorNone']}
+              </Bidi>
+            </dd>
+          </div>
+          <div className={styles.wide}>
+            <dt>{m['catalog.editorNotes']}</dt>
+            <dd className={styles.textValue}>
+              <Bidi dir="auto">
+                {exercise.notes ?? m['catalog.editorNone']}
+              </Bidi>
+            </dd>
+          </div>
           <div>
             <dt>{m['catalog.detailVersion']}</dt>
             <dd>
@@ -138,26 +169,6 @@ export function ExerciseDetailView({
         <h2>{m['catalog.editorDefaultsTitle']}</h2>
         <dl className={styles.details}>
           <div>
-            <dt>{m['catalog.editorWarmupSets']}</dt>
-            <dd>
-              <Bidi dir="ltr">
-                {defaults?.warmupSets === undefined
-                  ? m['catalog.editorNone']
-                  : formatNumber(defaults.warmupSets, locale)}
-              </Bidi>
-            </dd>
-          </div>
-          <div>
-            <dt>{m['catalog.editorWorkingSets']}</dt>
-            <dd>
-              <Bidi dir="ltr">
-                {defaults?.workingSets === undefined
-                  ? m['catalog.editorNone']
-                  : formatNumber(defaults.workingSets, locale)}
-              </Bidi>
-            </dd>
-          </div>
-          <div>
             <dt>{m['catalog.editorReps']}</dt>
             <dd>
               <Bidi dir="ltr">{repText}</Bidi>
@@ -187,11 +198,24 @@ export function ExerciseDetailView({
             <dt>{m['catalog.editorAlternatives']}</dt>
             <dd>
               {defaults?.alternativeExerciseIds?.length
-                ? defaults.alternativeExerciseIds.map((alternativeId) => (
-                    <span className={styles.inlineValue} key={alternativeId}>
-                      <Bidi dir="ltr">{alternativeId}</Bidi>
-                    </span>
-                  ))
+                ? defaults.alternativeExerciseIds.map((alternativeId) => {
+                    const option = alternatives.find((item) =>
+                      alternativeId.startsWith('w:')
+                        ? item.kind === 'private' &&
+                          item.id === alternativeId.slice(2)
+                        : item.kind !== 'private' &&
+                          item.id === alternativeId.replace(/^g:/, ''),
+                    );
+                    return (
+                      <span className={styles.inlineValue} key={alternativeId}>
+                        <Bidi dir="auto">
+                          {option
+                            ? alternativeName(option, locale)
+                            : alternativeId.replace(/^[gw]:/, '')}
+                        </Bidi>
+                      </span>
+                    );
+                  })
                 : m['catalog.editorNone']}
             </dd>
           </div>
@@ -199,14 +223,10 @@ export function ExerciseDetailView({
       </Card>
       <Card as="section" className={styles.card}>
         <h2>{m['catalog.detailWorkspace']}</h2>
-        {row.variation ? (
+        {videoUrl ? (
           <div className={styles.variation}>
             <p>{m['catalog.detailVideo']}</p>
-            <a
-              href={row.variation.video_url}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
+            <a href={videoUrl} rel="noopener noreferrer" target="_blank">
               {m['catalog.detailOpenVideo']}
             </a>
           </div>

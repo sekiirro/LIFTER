@@ -50,10 +50,14 @@ afterAll(async () => {
 const request = {
   name_ar: 'تمرين اختبار',
   name_en: 'Catalog test exercise',
+  description: 'Canonical description',
+  notes: 'Canonical coaching note',
   primary_muscle_code: 'chest',
   secondary_muscle_codes: ['triceps'],
   equipment_codes: ['barbell'],
-  defaults: { working_sets: 3, reps: { min: 8, max: 12 }, rest_seconds: 90 },
+  default_rest_time: 90,
+  default_rir: 2,
+  default_reps: { min: 8, max: 12 },
 };
 
 describe('global exercise create and version RPCs', () => {
@@ -99,13 +103,33 @@ describe('global exercise create and version RPCs', () => {
       ),
     ).rejects.toMatchObject({ code: '40001' });
     const rows = await db`
-      select e.current_version, v.version, v.payload ->> 'name_en' as name_en
+      select e.current_version, v.version, v.payload ->> 'name_en' as name_en,
+        v.payload ->> 'description' as description, v.notes,
+        v.default_rest_time, v.default_rir, v.default_reps
       from public.exercises e join public.exercise_versions v on v.exercise_id = e.id
       where e.id = ${result.exercise_id} order by v.version
     `;
     expect(rows).toEqual([
-      { current_version: 2, version: 1, name_en: request.name_en },
-      { current_version: 2, version: 2, name_en: versionRequest.name_en },
+      {
+        current_version: 2,
+        version: 1,
+        name_en: request.name_en,
+        description: request.description,
+        notes: request.notes,
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: { min: 8, max: 12 },
+      },
+      {
+        current_version: 2,
+        version: 2,
+        name_en: versionRequest.name_en,
+        description: request.description,
+        notes: request.notes,
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: { min: 8, max: 12 },
+      },
     ]);
   });
 

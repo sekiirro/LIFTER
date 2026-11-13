@@ -17,6 +17,27 @@ describe('approved F16 copy', () => {
     }
   });
 
+  it('ships the nine S48 T040 copy rows byte-exact', () => {
+    const s48Keys = [
+      'catalog.editorDescription',
+      'catalog.editorNotes',
+      'catalog.editorVideo',
+      'catalog.editorErrorDescriptionTooLong',
+      'catalog.editorErrorSelfAlternative',
+      'catalog.editorErrorDuplicateAlternative',
+      'catalog.overrideInherited',
+      'catalog.overrideCustomized',
+      'catalog.overrideReset',
+    ];
+    const rows = approvedF16Copy as { key: string; ar: string; en: string }[];
+    for (const key of s48Keys) {
+      expect(
+        rows.some((row) => row.key === key),
+        `${key} fixture row`,
+      ).toBe(true);
+    }
+  });
+
   it('marks all 18 S27 post-batch library/detail keys as DRAFT in both message catalogs', () => {
     const evidence = readFileSync(
       'specs/016-exercise-food-catalogs/S27-library-evidence.md',
