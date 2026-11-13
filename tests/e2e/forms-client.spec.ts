@@ -72,6 +72,7 @@ test('client flow supports draft save and blocks incomplete submission accessibl
   await page
     .getByRole('textbox', { name: 'What would you like to work toward?' })
     .fill('Build strength');
+  await page.getByRole('button', { name: 'Next question' }).click();
   await expect(
     page.getByRole('heading', { name: 'Do you have an injury?' }),
   ).toBeVisible();
@@ -95,6 +96,7 @@ test('removing a branch answer erases and hides the now-inapplicable answer', as
   await page
     .getByRole('textbox', { name: 'What would you like to work toward?' })
     .fill('Build strength');
+  await page.getByRole('button', { name: 'Next question' }).click();
   await page.getByRole('radio', { name: 'Yes' }).click();
   const detail = page.getByRole('textbox', {
     name: 'Tell us about the injury',
@@ -129,6 +131,7 @@ test('keyboard users can advance into a conditional question', async ({
   await page
     .getByRole('textbox', { name: 'What would you like to work toward?' })
     .fill('Build strength');
+  await page.getByRole('button', { name: 'Next question' }).click();
   const yes = page.getByRole('radio', { name: 'Yes' });
   await yes.focus();
   await page.keyboard.press('Space');

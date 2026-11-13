@@ -646,7 +646,7 @@ export function QuestionFlow({
               <Button
                 type="submit"
                 loading={state === 'submitting'}
-                disabled={locked && state !== 'submitting'}
+                disabled={state === 'conflict' || state === 'submitting'}
               >
                 {
                   messages[

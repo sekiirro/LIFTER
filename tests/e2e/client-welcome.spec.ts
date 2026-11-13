@@ -1,10 +1,29 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
+import {
+  clientContext,
+  registered,
+} from '../integration/registration-approval-operations-fixture';
 
 const origin = new URL(
   process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
 ).origin;
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+
+let clientCredentials: { email: string; password: string };
+
+test.beforeAll(async () => {
+  const fixture = await clientContext();
+  clientCredentials = await registered(fixture);
+});
+
+async function signIn(page: Page) {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(clientCredentials.email);
+  await page.getByLabel('Password').fill(clientCredentials.password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(/\/$/u);
+}
 
 test('Welcome preview remains directly renderable after reload', async ({
   page,
@@ -35,6 +54,7 @@ test('client Welcome route renders its Terms card through a client wrapper', asy
     { name: LOCALE_COOKIE, value: 'en', url: origin },
     { name: THEME_COOKIE, value: 'light', url: origin },
   ]);
+  await signIn(page);
   await page.goto('/welcome');
   await expect(
     page.getByRole('heading', { name: messages['forms.termsCardTitle'] }),
