@@ -334,3 +334,26 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - The changed-file formatter passes for all six changed Markdown files. The S51-R36 inventory test passed within Stack C shard 1 (53 suites, 299 passed, 1 skipped); authenticated-EXECUTE mutation caused T007 to fail and the restored catalog passed 34/34. Unit 381 suites / 2,526 tests pass; lint and typecheck pass.
 - Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-12 remains with the PO and refund-selection behavior is unchanged.
 - Verdict: PASS for the authorized review correction.
+
+## S52-88 projection and queue clarification analysis — 2026-11-12T22:06:34Z
+
+- Entry gate revalidated: `spec.md` has numbered FR-039/042/044, measurable SC-037/038, and GWT scenarios 19/20; `plan.md` and `tasks.md` carry T049/T050 with matching FR/SC tags; lifecycle, refund-ledger and payment-queue contracts match those references; the S51 MCQ-12 status is updated in the register and historical task record.
+- Authority: verified S51-PO-9 SHA-256 `a6487ac2162898d360463c6c0a7a9c27ede015cd42e97d6e4f22a4436400ade2` and S52-PO-3 SHA-256 `0f36cf167250663114dbc56c35d40a244c6c33c4a22bf073ad8f5e5fc9951183`; S51-R3/S52-R3 map MCQ-12=B; S52-R5 maps MCQ-13=A and MCQ-14=A. Architect mappings are labeled separately from PO wording.
+- Product gap sweep: MCQ-15 asks for the aggregate currency-totals JSON shape; MCQ-16 asks which removed freeze contribution is eligible when coverage is already consumed or followed by a renewal. Both are recorded with options, implications, recommendation, and blocked scope. Queue implementation is blocked by MCQ-15; projection cases beyond the no-consumption/no-later-renewal fixture are blocked by MCQ-16. No guessed behavior is specified.
+- Reviewed retry/replay, in-flight payment, concurrency, deletion, history/audit preservation, cross-currency arithmetic, task/FR/SC references, and conflicts with S51-PO-1. T044 remains P4/open; T048 status is unchanged.
+- Findings: **0 open CRITICAL, 0 open HIGH**. Two PO questions remain explicitly open as S52-F13-MCQ-15 and S52-F13-MCQ-16; they block only the scope stated above.
+
+## S52-88b ruling reconciliation analysis — 2026-11-12T23:49:57Z
+
+- Revalidated S52-PO-4 verbatim `MCQ16B` and its SHA-256 in the decision register. S52-R9 maps the answer to subtract only freeze contribution still unconsumed at removal time, keep elapsed coverage consumed, recompute later renewal boundaries on the continuous subscription, and preserve history/audit. FR-039, SC-037, scenario 19, the lifecycle contract, T049, and traceability now agree.
+- S52-R8 resolves MCQ-15 as a technical contract, not a PO decision: sorted `{currency, unpaid_minor}` entries using the existing decimal-string convention. FR-044, SC-038, scenario 20, payment-queue contract, T050, and traceability agree on that item shape.
+- Gap sweep identifies S52-F13-MCQ-17: totals may cover returned-page obligations, all workspace obligations, or the cursor and later pages. It is recorded with options, implications, recommendation, and blocked scope; no queue aggregate scope is implemented or assumed. T050 remains blocked pending this product decision.
+- Retry/replay, lock ordering, append-only freeze/upgrade/payment facts, currency separation, obligation currency tags, and later-renewal projection are cross-checked against current FR/contracts. T044 stays P4/open; T048 remains unticked; no receipt or refund-selection behavior changed.
+- Findings: **0 open CRITICAL, 0 open HIGH**. Verdict: PASS for requirement coherence; implementation remains subject to T049/T050 RED/GREEN/mutation and final Stack C validation.
+
+## S52-88b implementation and completion analysis — 2026-11-13T00:12:27Z
+
+- T049 is implemented and verified by commit `aedb9d7185fcba62c411ac47d8966f874282e568`. The simple removal, consumed-coverage, and later-renewal projection cases pass on Stack C; both T049 cases fail when the unconsumed-days subtraction is removed. Task and traceability evidence cite the migration, tests, and run report.
+- T050 remains unticked. S52-F13-MCQ-17 leaves the aggregation pagination scope undecided; no queue totals implementation or test expectation was added. Queue behavior is blocked until that product decision is supplied.
+- Current-scope ambiguities: none for T049. MCQ-17 is explicitly open for T050. T044 remains P4/open and T048 remains unticked, outside this implementation scope.
+- Findings: **0 open CRITICAL, 0 open HIGH**. Verdict: PASS for T049; T050 blocked solely by S52-F13-MCQ-17.
