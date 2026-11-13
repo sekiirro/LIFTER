@@ -11,16 +11,16 @@
 
 ## Mutation table
 
-| Mutant | Failing assertion / evidence |
-|---|---|
-| Remove submission assignment/draft row locks | `forms-r3-submissions.test.ts` removes both lock clauses in the named mutant and verifies the required-lock assertion rejects it; the concurrent two-session case requires identical success and one persisted fact of each kind. |
-| Remove the original-submission uniqueness key | The named integration assertion checks the `form_submissions` primary key is `(workspace_id, assignment_id)`; deleting it violates the catalog assertion. |
-| Bypass submission route validation | The HTTP test receives `{status:"answer_too_long"}` and verifies the submission RPC was never called; the named source mutant removes the validator marker and is rejected. |
-| Bypass correction route validation | Invalid correction metadata and oversized values return `{status:"invalid"}` / `{status:"answer_too_long"}` before `correct_form_answer`. |
-| Accept unknown submission/correction envelope keys | Both route requests containing `debug` return only `{status:"invalid"}` and do not invoke a write RPC. |
-| Reflect raw provider error | Both routes return `{status:"unavailable"}`; the named `error.message` source mutant fails the safe-error contract assertion. |
-| Alter the original D-03 deadline on correction | Existing rollback-scoped SQL mutant changes the deadline; the frozen-deadline assertion fails. |
-| Erase prior answer history | The integration assertion requires the original and corrected answer revisions in history. |
-| Fail submission audit | The injected audit trigger raises and the test confirms zero submission, SLA, and revision facts remain. |
+| Mutant                                             | Failing assertion / evidence                                                                                                                                                                                                      |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Remove submission assignment/draft row locks       | `forms-r3-submissions.test.ts` removes both lock clauses in the named mutant and verifies the required-lock assertion rejects it; the concurrent two-session case requires identical success and one persisted fact of each kind. |
+| Remove the original-submission uniqueness key      | The named integration assertion checks the `form_submissions` primary key is `(workspace_id, assignment_id)`; deleting it violates the catalog assertion.                                                                         |
+| Bypass submission route validation                 | The HTTP test receives `{status:"answer_too_long"}` and verifies the submission RPC was never called; the named source mutant removes the validator marker and is rejected.                                                       |
+| Bypass correction route validation                 | Invalid correction metadata and oversized values return `{status:"invalid"}` / `{status:"answer_too_long"}` before `correct_form_answer`.                                                                                         |
+| Accept unknown submission/correction envelope keys | Both route requests containing `debug` return only `{status:"invalid"}` and do not invoke a write RPC.                                                                                                                            |
+| Reflect raw provider error                         | Both routes return `{status:"unavailable"}`; the named `error.message` source mutant fails the safe-error contract assertion.                                                                                                     |
+| Alter the original D-03 deadline on correction     | Existing rollback-scoped SQL mutant changes the deadline; the frozen-deadline assertion fails.                                                                                                                                    |
+| Erase prior answer history                         | The integration assertion requires the original and corrected answer revisions in history.                                                                                                                                        |
+| Fail submission audit                              | The injected audit trigger raises and the test confirms zero submission, SLA, and revision facts remain.                                                                                                                          |
 
-All SQL probes are synthetic and rollback-scoped. No migration was edited after it had been pushed; no production database or scheduler was used.
+All SQL probes are synthetic. The rollback-scoped probes roll back their writes; the concurrent test in `forms-r3-submissions` commits its synthetic fixtures and submission and does not delete them when connections close, so it is not rollback-scoped. No migration was edited after it had been pushed; no production database or scheduler was used.

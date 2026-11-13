@@ -8,9 +8,11 @@ import type { Actor } from '../../lib/auth/authorize';
 vi.mock('server-only', () => ({}));
 const key = '11111111-1111-4111-8111-111111111111';
 const ws = '22222222-2222-4222-8222-222222222222';
+const targetId = '44444444-4444-4444-8444-444444444444';
 const rpc = vi.fn();
+const from = vi.fn();
 let currentActor: Actor | null;
-const client = { rpc, auth: {}, from: vi.fn() } as never;
+const client = { rpc, auth: {}, from } as never;
 const deps: CatalogDependencies = {
   session: async () => client,
   actor: async () => currentActor,
@@ -28,6 +30,131 @@ beforeEach(() => {
 });
 
 describe('catalog server authorization and RPC boundary', () => {
+  it('authorizes duplicate candidate lookups through the catalog wall and forwards only identity inputs', async () => {
+    const input = {
+      name: 'Rice',
+      language: 'en' as const,
+      basis: 'g' as const,
+      productIdentity: 'rice',
+      preparationIdentity: 'boiled',
+      weighingState: 'cooked' as const,
+      kcal: 130,
+    };
+    currentActor = {
+      userId: 'actor',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    expect(await catalog().foodDuplicateCandidates(input)).toEqual({
+      status: 'ok',
+      data: { ok: true },
+    });
+    expect(rpc).toHaveBeenCalledWith('catalog_food_duplicate_candidates', {
+      p_name: 'Rice',
+      p_language: 'en',
+      p_basis: 'g',
+      p_product_identity: 'rice',
+      p_preparation_identity: 'boiled',
+      p_weighing_state: 'cooked',
+      p_kcal: 130,
+    });
+    currentActor = { userId: 'actor', role: 'sales', activeWorkspaceIds: [ws] };
+    rpc.mockClear();
+    expect(await catalog().foodDuplicateCandidates(input)).toEqual({
+      status: 'not_permitted',
+    });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('lists only coaching-authorized workspaces for staff and all visible workspaces for PO', async () => {
+    const otherWorkspace = '44444444-4444-4444-8444-444444444444';
+    const order = vi.fn().mockResolvedValue({
+      data: [
+        { id: ws, name: 'Authorized' },
+        { id: otherWorkspace, name: 'Foreign' },
+      ],
+      error: null,
+    });
+    const select = vi.fn(() => ({ order }));
+    from.mockReturnValue({ select });
+    currentActor = {
+      userId: 'actor',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    expect(await catalog().authoringWorkspaces()).toEqual({
+      status: 'ok',
+      data: [{ id: ws, name: 'Authorized' }],
+    });
+    expect(select).toHaveBeenCalledWith('id,name');
+    expect(order).toHaveBeenCalledWith('name');
+    currentActor = {
+      userId: 'actor',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    expect(await catalog().authoringWorkspaces()).toEqual({
+      status: 'ok',
+      data: [
+        { id: ws, name: 'Authorized' },
+        { id: otherWorkspace, name: 'Foreign' },
+      ],
+    });
+  });
+
+  it('binds variation writes to current staff membership and permits PO selection', async () => {
+    const input = {
+      operationKey: key,
+      workspaceId: ws,
+      id: '55555555-5555-4555-8555-555555555555',
+      request: { video_url: 'https://youtu.be/abcdefghijk' },
+    };
+    currentActor = { userId: 'actor', role: 'trainer', activeWorkspaceIds: [] };
+    rpc.mockClear();
+    expect(await catalog().writeVariation(input)).toEqual({
+      status: 'not_permitted',
+    });
+    expect(rpc).not.toHaveBeenCalled();
+    currentActor = {
+      userId: 'owner',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    expect(await catalog().writeVariation(input)).toMatchObject({
+      status: 'ok',
+    });
+    expect(rpc).toHaveBeenCalledWith('catalog_write_variation', {
+      p_workspace_id: ws,
+      p_exercise_id: input.id,
+      p_expected_version: null,
+      p_operation_key: key,
+      p_request: input.request,
+    });
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['empty', ''],
+    ['whitespace-only', '   '],
+  ])(
+    'requires an explicit non-empty workspace for PO variation writes (%s)',
+    async (_kind, workspaceId) => {
+      currentActor = {
+        userId: 'owner',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      };
+      const result = await catalog().writeVariation({
+        operationKey: key,
+        workspaceId,
+        id: ws,
+        request: { video_url: 'https://youtu.be/abcdefghijk' },
+      });
+      expect(result).toEqual({ status: 'not_permitted' });
+      expect(rpc).not.toHaveBeenCalled();
+    },
+  );
+
   it('forwards canonical exercise filter keys and value shapes to the session RPC', async () => {
     const filters = {
       primary_muscle_code: 'chest',
@@ -153,7 +280,7 @@ describe('catalog server authorization and RPC boundary', () => {
         actions.mergeExercise({
           operationKey: key,
           id: ws,
-          targetId: 'target',
+          targetId: targetId,
           expectedVersion: 0,
         }),
         actions.transitionFood({
@@ -165,7 +292,7 @@ describe('catalog server authorization and RPC boundary', () => {
         actions.mergeFood({
           operationKey: key,
           id: ws,
-          targetId: 'target',
+          targetId: targetId,
           expectedVersion: 0,
         }),
       ]);
@@ -174,6 +301,84 @@ describe('catalog server authorization and RPC boundary', () => {
       );
       expect(rpc).not.toHaveBeenCalled();
     }
+  });
+
+  it('authorizes and explicitly scopes workspace exercise detail and removal', async () => {
+    const exerciseId = '55555555-5555-4555-8555-555555555555';
+    currentActor = {
+      userId: 'po',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    await catalog().exerciseDetail({
+      exerciseId,
+      scope: 'workspace',
+      workspaceId: ws,
+    });
+    expect(rpc).toHaveBeenLastCalledWith('catalog_workspace_exercise_detail', {
+      p_exercise_id: exerciseId,
+      p_workspace_id: ws,
+    });
+    await catalog().removeWorkspaceExercise({
+      operationKey: key,
+      workspaceId: ws,
+      id: exerciseId,
+      expectedVersion: 3,
+    });
+    expect(rpc).toHaveBeenLastCalledWith('catalog_remove_workspace_exercise', {
+      p_workspace_id: ws,
+      p_exercise_id: exerciseId,
+      p_expected_revision: 3,
+      p_operation_key: key,
+    });
+
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    await catalog().exerciseDetail({
+      exerciseId,
+      scope: 'workspace',
+      workspaceId: ws,
+    });
+    await catalog().removeWorkspaceExercise({
+      operationKey: key,
+      workspaceId: ws,
+      id: exerciseId,
+      expectedVersion: 0,
+    });
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    rpc.mockClear();
+    expect(
+      await catalog().exerciseDetail({
+        exerciseId,
+        scope: 'workspace',
+        workspaceId: 'foreign',
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(
+      await catalog().removeWorkspaceExercise({
+        operationKey: key,
+        workspaceId: 'foreign',
+        id: exerciseId,
+        expectedVersion: 0,
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    currentActor = { userId: 'sales', role: 'sales', activeWorkspaceIds: [ws] };
+    expect(
+      await catalog().removeWorkspaceExercise({
+        operationKey: key,
+        workspaceId: ws,
+        id: exerciseId,
+        expectedVersion: 0,
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it('blocks an unassigned workspace and a revoked membership before RPC', async () => {
@@ -196,6 +401,21 @@ describe('catalog server authorization and RPC boundary', () => {
     });
     expect(rpc).not.toHaveBeenCalled();
   });
+
+  it.each([undefined, '', '   '])(
+    'requires an explicit non-empty workspace for PO workspace exercise removal (%s)',
+    async (workspaceId) => {
+      rpc.mockClear();
+      const result = await catalog().removeWorkspaceExercise({
+        operationKey: key,
+        workspaceId,
+        id: '55555555-5555-4555-8555-555555555555',
+        expectedVersion: 0,
+      });
+      expect(result).toEqual({ status: 'not_permitted' });
+      expect(rpc).not.toHaveBeenCalled();
+    },
+  );
 
   it('checks food creator authorization through a boolean, non-disclosing session RPC', async () => {
     currentActor = {
@@ -253,7 +473,7 @@ describe('catalog server authorization and RPC boundary', () => {
       catalog().mergeExercise({
         operationKey: key,
         id: ws,
-        targetId: 'target',
+        targetId: targetId,
         expectedVersion: 0,
       }),
       catalog().writeWorkspaceExercise({
@@ -290,7 +510,7 @@ describe('catalog server authorization and RPC boundary', () => {
       catalog().mergeFood({
         operationKey: key,
         id: ws,
-        targetId: 'target',
+        targetId: targetId,
         expectedVersion: 0,
       }),
     ];
@@ -308,25 +528,62 @@ describe('catalog server authorization and RPC boundary', () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it('returns invalid for malformed id, targetId or workspaceId in mutate without calling RPC', async () => {
+    currentActor = {
+      userId: 'po',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    const cases = [
+      catalog().versionExercise({
+        operationKey: key,
+        id: 'not-a-uuid',
+        expectedVersion: 1,
+        request: {},
+      }),
+      catalog().mergeExercise({
+        operationKey: key,
+        id: ws,
+        targetId: 'not-a-uuid',
+        expectedVersion: 0,
+      }),
+      catalog().writeWorkspaceExercise({
+        operationKey: key,
+        workspaceId: 'not-a-uuid',
+        request: {},
+      }),
+      catalog().createFood({
+        operationKey: key,
+        workspaceId: 'not-a-uuid',
+        request: {},
+      }),
+    ];
+    const results = await Promise.all(cases);
+    expect(results).toEqual(
+      Array.from({ length: cases.length }, () => ({ status: 'invalid' })),
+    );
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it('forwards merge revision names and returns a successful PO merge', async () => {
     rpc.mockResolvedValueOnce({
-      data: { exercise_id: ws, superseded_by: 'target' },
+      data: { exercise_id: ws, superseded_by: targetId },
       error: null,
     });
     await expect(
       catalog().mergeExercise({
         operationKey: key,
         id: ws,
-        targetId: 'target',
+        targetId: targetId,
         expectedVersion: 2,
       }),
     ).resolves.toEqual({
       status: 'ok',
-      data: { exercise_id: ws, superseded_by: 'target' },
+      data: { exercise_id: ws, superseded_by: targetId },
     });
     expect(rpc).toHaveBeenCalledWith('catalog_merge_exercise', {
       p_source_id: ws,
-      p_target_id: 'target',
+      p_target_id: targetId,
       p_expected_source_revision: 2,
       p_operation_key: key,
     });

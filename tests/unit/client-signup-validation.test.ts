@@ -3,121 +3,84 @@ import {
   calculateSignupAge,
   validateSignupIdentity,
 } from '../../app/register/[token]/schema';
-import {
-  isReservedSignupUsername,
-  isValidTelegramUsername,
-  normalizeSignupUsername,
-  validateSignupName,
-} from '../../lib/forms/signup-policy';
 
-const beforeCairoBirthday = new Date('2026-10-30T00:00:00.000Z');
+const now = new Date('2026-06-16T12:00:00.000Z');
+const valid = {
+  name: 'Heba Sami Nabil',
+  dateOfBirth: '1990-04-12',
+  username: 'Heba.Sami',
+  telegramUsername: '',
+};
 
-describe('T037 signup identity validation', () => {
-  it.each([
-    ['  Heba   Sami  Nabil ', true],
-    ['Heba Sami', false],
-    ['Heba  \t \n Nabil', false],
-    ['   ', false],
-  ])('requires three non-empty name parts: %j', (name, valid) => {
-    expect(validateSignupName(name)).toBe(valid);
-  });
-
-  it('rejects impossible dates and today/future dates in the Cairo calendar', () => {
-    for (const dateOfBirth of ['2024-02-30', '2026-10-30', '2099-01-01', '']) {
-      expect(
-        validateSignupIdentity(
-          {
-            name: 'Heba Sami Nabil',
-            dateOfBirth,
-            username: 'heba',
-            telegramUsername: '',
-          },
-          { now: beforeCairoBirthday },
-        ).invalidFields,
-      ).toContain('dateOfBirth');
-    }
-  });
-
-  it('computes age from Cairo-local date boundaries, including birthday tomorrow', () => {
-    expect(calculateSignupAge('2000-10-31', beforeCairoBirthday)).toBe(25);
-    expect(calculateSignupAge('2000-10-30', beforeCairoBirthday)).toBe(26);
-    expect(
-      calculateSignupAge('2000-10-30', new Date('2026-10-30T22:30:00.000Z')),
-    ).toBe(26);
-  });
-
-  it('normalizes usernames with NFKC followed by lowercase', () => {
-    expect(normalizeSignupUsername('  ＡＢＣ  ')).toBe('  abc  ');
-    expect(normalizeSignupUsername('Straße')).toBe('straße');
-  });
-
-  it('rejects usernames with surrounding whitespace instead of trimming them', () => {
-    const result = validateSignupIdentity(
-      {
-        name: 'Heba Sami Nabil',
-        dateOfBirth: '2000-10-29',
-        username: '  heba  ',
-        telegramUsername: '',
+describe('approved signup profile contract', () => {
+  it('accepts a three-part name, past DOB, username and optional Telegram', () => {
+    expect(validateSignupIdentity(valid, { now })).toEqual({
+      value: {
+        name: valid.name,
+        dateOfBirth: valid.dateOfBirth,
+        username: 'heba.sami',
       },
-      { now: beforeCairoBirthday },
-    );
-
-    expect(result.invalidFields).toContain('username');
-    expect(result.value).toBeNull();
-  });
-
-  it.each([
-    'platform',
-    'system',
-    'trainer',
-    'sales',
-    'client',
-    'platform_owner',
-    'workspace-owner',
-  ])('reserves platform, system and role identifier %s', (username) => {
-    expect(isReservedSignupUsername(username)).toBe(true);
-  });
-
-  it('reserves workspace identifiers supplied by the trusted caller after normalization', () => {
-    expect(
-      isReservedSignupUsername('  ＡCME  ', ['acme-workspace', 'acme']),
-    ).toBe(true);
-    expect(isReservedSignupUsername('acme-client', ['acme-workspace'])).toBe(
-      false,
-    );
-  });
-
-  it.each([
-    ['', true],
-    ['@heba_123', true],
-    ['heba', false],
-    ['@ab!cd', false],
-    ['@12345', false],
-    ['@' + 'a'.repeat(33), false],
-  ])('accepts optional Telegram syntax only when valid: %j', (value, valid) => {
-    expect(isValidTelegramUsername(value)).toBe(valid);
-  });
-
-  it('accepts a valid identity without signup consent, health or sex fields', () => {
-    const result = validateSignupIdentity(
-      {
-        name: 'Heba Sami Nabil',
-        dateOfBirth: '2000-10-29',
-        username: 'Ｈｅｂａ',
-        telegramUsername: '',
-      },
-      { now: beforeCairoBirthday },
-    );
-
-    expect(result.invalidFields).toEqual([]);
-    expect(result.value).toEqual({
-      name: 'Heba Sami Nabil',
-      dateOfBirth: '2000-10-29',
-      username: 'heba',
-      telegramUsername: undefined,
+      invalidFields: [],
     });
-    expect(JSON.stringify(result.value)).not.toMatch(
-      /terms|consent|health|sex/i,
-    );
+  });
+
+  it('rejects a two-part name and a future DOB', () => {
+    expect(
+      validateSignupIdentity({ ...valid, name: 'Heba Nabil' }, { now })
+        .invalidFields,
+    ).toContain('name');
+    expect(
+      validateSignupIdentity({ ...valid, dateOfBirth: '2026-06-17' }, { now })
+        .invalidFields,
+    ).toContain('dateOfBirth');
+  });
+
+  it('calculates age on both sides of the birthday in Cairo time', () => {
+    expect(calculateSignupAge('2000-06-16', now)).toBe(26);
+    expect(calculateSignupAge('2000-06-17', now)).toBe(25);
+  });
+
+  it('uses the Cairo calendar date across the UTC midnight boundary', () => {
+    const justAfterCairoMidnight = new Date('2026-06-15T22:30:00.000Z');
+    expect(calculateSignupAge('2000-06-16', justAfterCairoMidnight)).toBe(26);
+    expect(calculateSignupAge('2000-06-17', justAfterCairoMidnight)).toBe(25);
+  });
+
+  it('passes syntactically valid names to server reserved-name feedback', () => {
+    expect(
+      validateSignupIdentity({ ...valid, username: 'workspace_owner' }, { now })
+        .invalidFields,
+    ).not.toContain('username');
+  });
+
+  it('accepts only normalized 3–30 ASCII letters, digits, underscores, and periods', () => {
+    for (const username of ['Ab_', 'a'.repeat(29) + '.', 'A_b.9']) {
+      expect(
+        validateSignupIdentity({ ...valid, username }, { now }).invalidFields,
+      ).not.toContain('username');
+    }
+
+    for (const username of ['ab', 'a'.repeat(31), 'abc-def', 'café', 'ábc']) {
+      expect(
+        validateSignupIdentity({ ...valid, username }, { now }).invalidFields,
+      ).toContain('username');
+    }
+
+    expect(
+      validateSignupIdentity({ ...valid, username: 'MiX.ed_9' }, { now }).value
+        ?.username,
+    ).toBe('mix.ed_9');
+    expect(
+      validateSignupIdentity({ ...valid, username: 'Ａbc' }, { now }).value
+        ?.username,
+    ).toBe('abc');
+  });
+
+  it('keeps Telegram optional and validates its format when supplied', () => {
+    expect(validateSignupIdentity(valid, { now }).invalidFields).toEqual([]);
+    expect(
+      validateSignupIdentity({ ...valid, telegramUsername: 'ab' }, { now })
+        .invalidFields,
+    ).toContain('telegramUsername');
   });
 });

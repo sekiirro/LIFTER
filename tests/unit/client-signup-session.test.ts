@@ -36,9 +36,9 @@ const requestSecret = 'B'.repeat(43);
 function signupForm() {
   const form = new FormData();
   form.set('request_secret', requestSecret);
-  form.set('name', 'Example Middle Person');
+  form.set('name', 'Example Sami Person');
   form.set('dateOfBirth', '1990-04-12');
-  form.set('username', 'example_client');
+  form.set('username', 'example.person');
   form.set('telegramUsername', '');
   form.set('email', 'client@example.test');
   form.set(

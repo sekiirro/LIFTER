@@ -14,6 +14,22 @@ const coreName =
   'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)';
 const writeName = 'app_private.write_f15_in_app_alert(uuid)';
 const readName = 'public.read_form_alert_inbox(integer,timestamptz)';
+class MutationInvariantFailure extends Error {
+  constructor(
+    readonly mutationLabel: string,
+    cause: unknown,
+  ) {
+    super(`${mutationLabel} mutant failed its named assertion`, { cause });
+  }
+}
+
+function expectMutantInvariant(label: string, assertion: () => void) {
+  try {
+    assertion();
+  } catch (error) {
+    throw new MutationInvariantFailure(label, error);
+  }
+}
 
 async function definition(tx: TransactionSql, identity: string) {
   const [row] = await tx`
@@ -68,15 +84,14 @@ async function fixture(tx: TransactionSql) {
   const [schedule] = await tx`select id from app_private.form_alert_schedules
     where workspace_id=${f.wsA.id} and source_assignment_id=${assignmentId}
       and alert_kind='client_late'`;
-  await tx`update app_private.form_alert_schedules set trainer_user_id=${f.trainerA.userId}
-    where id=${schedule!.id}`;
   const [evaluation] = await tx`select app_private.evaluate_forms_alerts_core(
     '2026-06-02T10:00:00.000Z'::timestamptz,${f.wsA.id}::uuid,250
   ) as result`;
-  expect(evaluation!.result).toEqual({ status: 'ok', enqueued: 1 });
+  expect(evaluation!.result).toEqual({ status: 'ok', enqueued: 2 });
   const [occurrence] =
     await tx`select id,job_id from app_private.form_alert_occurrences
-    where workspace_id=${f.wsA.id} and schedule_id=${schedule!.id}`;
+    where workspace_id=${f.wsA.id} and schedule_id=${schedule!.id}
+      and recipient_user_id=${f.woA.userId} and stage='client_owners_immediate'`;
   return {
     f,
     scheduleId: schedule!.id as string,
@@ -85,14 +100,35 @@ async function fixture(tx: TransactionSql) {
 }
 
 async function expectMutation(label: string, run: () => Promise<void>) {
-  let failed: unknown;
+  let namedFailure: MutationInvariantFailure | undefined;
   try {
     await run();
   } catch (error) {
-    failed = error;
+    if (error instanceof MutationInvariantFailure) {
+      if (error.mutationLabel !== label) throw error;
+      namedFailure = error;
+    } else if (error !== rollback) {
+      throw error;
+    }
   }
-  expect(failed, `${label} mutant must fail the named assertion`).toBeDefined();
+  expect(
+    namedFailure,
+    `${label} mutant must fail the named assertion`,
+  ).toBeDefined();
 }
+
+it('does not count setup failures or rollback as a killed mutation', async () => {
+  await expect(
+    expectMutation('setup failure', async () => {
+      throw new Error('fixture setup failed');
+    }),
+  ).rejects.toThrow('fixture setup failed');
+  await expect(
+    expectMutation('rollback only', async () => {
+      throw rollback;
+    }),
+  ).rejects.toThrow('rollback only mutant must fail the named assertion');
+});
 
 it('writes one IDs-only in-app delivery per queued occurrence and audits recipient reads/mark-read', async () => {
   await expect(
@@ -113,9 +149,9 @@ it('writes one IDs-only in-app delivery per queued occurrence and audits recipie
       expect(deliveries[0]).toMatchObject({
         channel: 'in_app',
         status: 'delivered',
-        recipient_user_id: f.trainerA.userId,
+        recipient_user_id: f.woA.userId,
         source_assignment_id: expect.any(String),
-        stage: 'client_trainer_24h',
+        stage: 'client_owners_immediate',
         read_at: null,
       });
       const [job] = await tx`select payload from public.jobs
@@ -140,7 +176,7 @@ it('writes one IDs-only in-app delivery per queued occurrence and audits recipie
       expect(otherRecipient).toEqual([]);
       await tx`reset role`;
       await tx`select set_config('request.jwt.claims',${JSON.stringify({
-        sub: f.trainerA.userId,
+        sub: f.woA.userId,
         role: 'authenticated',
       })},true)`;
       await tx`set local role authenticated`;
@@ -185,10 +221,10 @@ it('recovers a stale Telegram delivery claim and dead-letters it when its job is
     db.begin(async (tx) => {
       const { f, occurrenceId } = await fixture(tx);
       await tx`insert into app_private.f15_telegram_links(user_id,chat_id)
-        values(${f.trainerA.userId},'2026110412346')`;
+        values(${f.woA.userId},'2026110412346')`;
       const [prepared] = await tx`
         select public.prepare_f15_telegram_delivery(
-          ${occurrenceId},${f.trainerA.userId}
+          ${occurrenceId},${f.woA.userId}
         ) as result`;
       const ready = prepared!.result as Record<string, unknown>;
       expect(ready.status).toBe('ready');
@@ -198,7 +234,7 @@ it('recovers a stale Telegram delivery claim and dead-letters it when its job is
       expect(chat!.chat).toBe('2026110412346');
       const [activeRetry] = await tx`
         select public.prepare_f15_telegram_delivery(
-          ${occurrenceId},${f.trainerA.userId}
+          ${occurrenceId},${f.woA.userId}
         ) as result`;
       expect((activeRetry!.result as Record<string, unknown>).status).toBe(
         'already_processing',
@@ -209,7 +245,7 @@ it('recovers a stale Telegram delivery claim and dead-letters it when its job is
         where id=${deliveryId}`;
       const [staleRetry] = await tx`
         select public.prepare_f15_telegram_delivery(
-          ${occurrenceId},${f.trainerA.userId}
+          ${occurrenceId},${f.woA.userId}
         ) as result`;
       expect(staleRetry!.result).toMatchObject({
         status: 'ready',
@@ -240,36 +276,36 @@ it('requires a current staff link for Telegram and claims a channel delivery onc
     db.begin(async (tx) => {
       const { f, occurrenceId } = await fixture(tx);
       const [unlinked] = await tx`select public.prepare_f15_telegram_delivery(
-      ${occurrenceId},${f.trainerA.userId}) as result`;
+      ${occurrenceId},${f.woA.userId}) as result`;
       expect(unlinked!.result).toEqual({ status: 'unlinked' });
       const token = randomUUID()
         .replaceAll('-', '')
         .padEnd(64, 'c')
         .slice(0, 64);
       await tx`insert into app_private.f15_telegram_link_tokens(token_hash,user_id,expires_at)
-      values(extensions.digest(${token},'sha256'),${f.trainerA.userId},clock_timestamp()+interval '10 minutes')`;
+      values(extensions.digest(${token},'sha256'),${f.woA.userId},clock_timestamp()+interval '10 minutes')`;
       const [linked] =
         await tx`select app_private.consume_f15_telegram_link_token(${token},'12345') as result`;
       expect(linked!.result).toBe(true);
       const [ready] = await tx`select public.prepare_f15_telegram_delivery(
-      ${occurrenceId},${f.trainerA.userId}) as result`;
+      ${occurrenceId},${f.woA.userId}) as result`;
       const context = ready!.result as { status: string; delivery_id: string };
       expect(context.status).toBe('ready');
       const [chat] =
         await tx`select public.claim_f15_telegram_delivery(${context.delivery_id}) as result`;
       expect(chat!.result).toBe('12345');
       const [replay] = await tx`select public.prepare_f15_telegram_delivery(
-      ${occurrenceId},${f.trainerA.userId}) as result`;
+      ${occurrenceId},${f.woA.userId}) as result`;
       expect(replay!.result).toEqual({ status: 'already_processing' });
       const [finished] = await tx`select public.finish_f15_telegram_delivery(
         ${context.delivery_id},'delivered') as result`;
       expect(finished!.result).toBe(true);
       const [deliveredReplay] =
         await tx`select public.prepare_f15_telegram_delivery(
-        ${occurrenceId},${f.trainerA.userId}) as result`;
+        ${occurrenceId},${f.woA.userId}) as result`;
       expect(deliveredReplay!.result).toEqual({ status: 'already_delivered' });
       await tx`select set_config('request.jwt.claims',${JSON.stringify({
-        sub: f.trainerA.userId,
+        sub: f.woA.userId,
         role: 'authenticated',
       })},true)`;
       await tx`set local role authenticated`;
@@ -279,7 +315,7 @@ it('requires a current staff link for Telegram and claims a channel delivery onc
       await tx`reset role`;
       const [afterUnlink] =
         await tx`select public.prepare_f15_telegram_delivery(
-      ${occurrenceId},${f.trainerA.userId}) as result`;
+      ${occurrenceId},${f.woA.userId}) as result`;
       expect(afterUnlink!.result).toEqual({ status: 'unlinked' });
       await tx`select set_config('request.jwt.claims',${JSON.stringify({
         sub: f.po.userId,
@@ -287,11 +323,11 @@ it('requires a current staff link for Telegram and claims a channel delivery onc
       })},true)`;
       const [membership] =
         await tx`select workspace_id from public.workspace_memberships
-      where user_id=${f.trainerA.userId} and revoked_at is null limit 1`;
+      where user_id=${f.woA.userId} and revoked_at is null limit 1`;
       await tx`update public.workspace_memberships set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
-      where workspace_id=${membership!.workspace_id} and user_id=${f.trainerA.userId}`;
+      where workspace_id=${membership!.workspace_id} and user_id=${f.woA.userId}`;
       const [revoked] = await tx`select public.prepare_f15_telegram_delivery(
-      ${occurrenceId},${f.trainerA.userId}) as result`;
+      ${occurrenceId},${f.woA.userId}) as result`;
       expect(revoked!.result).toEqual({ status: 'unavailable' });
       throw rollback;
     }),
@@ -351,6 +387,8 @@ it('kills a cross-recipient inbox-read mutant', async () => {
       );
       expect(mutant).not.toBe(source);
       await tx.unsafe(mutant);
+      await tx`update public.staff_profiles set role='workspace_owner'::public.staff_role
+        where user_id=${f.trainerB.userId}`;
       await tx`select set_config('request.jwt.claims',${JSON.stringify({
         sub: f.trainerB.userId,
         role: 'authenticated',
@@ -358,7 +396,9 @@ it('kills a cross-recipient inbox-read mutant', async () => {
       await tx`set local role authenticated`;
       const rows =
         await tx`select * from public.read_form_alert_inbox(20,null)`;
-      expect(rows).toEqual([]);
+      expectMutantInvariant('recipient-only read', () =>
+        expect(rows).toEqual([]),
+      );
       throw rollback;
     }),
   );
@@ -386,7 +426,9 @@ it('kills a duplicate in-app delivery mutant', async () => {
       await tx`select app_private.write_f15_in_app_alert(${occurrenceId})`;
       const rows = await tx`select id from app_private.form_alert_deliveries
         where alert_occurrence_id=${occurrenceId} and channel='in_app'`;
-      expect(rows).toHaveLength(1);
+      expectMutantInvariant('per-channel delivery uniqueness', () =>
+        expect(rows).toHaveLength(1),
+      );
       throw rollback;
     }),
   );
@@ -406,11 +448,13 @@ it('kills an answer-text-in-jobs payload mutant', async () => {
       const [job] = await tx`select j.payload from public.jobs j
         join app_private.form_alert_occurrences o on o.job_id=j.id
         where o.id=${occurrenceId}`;
-      expect(Object.keys(job!.payload as object).sort()).toEqual([
-        'alert_id',
-        'recipient_id',
-        'stage',
-      ]);
+      expectMutantInvariant('IDs-only enqueue payload', () =>
+        expect(Object.keys(job!.payload as object).sort()).toEqual([
+          'alert_id',
+          'recipient_id',
+          'stage',
+        ]),
+      );
       void f;
       throw rollback;
     }),

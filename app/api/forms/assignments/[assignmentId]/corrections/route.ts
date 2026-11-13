@@ -68,6 +68,7 @@ export async function POST(
       p_expected_revision: valid.expectedRevision,
       p_intent_key: valid.intentKey,
       p_answer_values: valid.answerValues,
+      p_remove: valid.remove,
       p_correction_note: valid.correctionNote,
     });
     if (error) return response({ status: 'unavailable' }, 503);

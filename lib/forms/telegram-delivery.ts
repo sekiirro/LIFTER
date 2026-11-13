@@ -1,18 +1,21 @@
 export type TelegramMessage = { chatId: string; text: string };
 
+function httpsAppUrl(appUrl: string): URL | null {
+  try {
+    const url = new URL(appUrl);
+    return url.protocol === 'https:' ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 export function buildTelegramMessage(input: {
   chatId: string;
   alertId: string;
   appUrl: string;
 }): TelegramMessage | null {
-  let url: URL;
-  try {
-    url = new URL(input.appUrl);
-  } catch {
-    return null;
-  }
-  if (url.protocol !== 'https:' || !/^[0-9a-f-]{36}$/i.test(input.alertId))
-    return null;
+  const url = httpsAppUrl(input.appUrl);
+  if (!url || !/^[0-9a-f-]{36}$/i.test(input.alertId)) return null;
   return {
     chatId: input.chatId,
     text: `You have a new form alert. Open your in-app inbox: ${new URL('/forms/alerts', url).toString()}`,
@@ -49,6 +52,7 @@ export async function runTelegramJobs(input: {
   transport: TelegramTransport;
   appUrl: string;
 }) {
+  if (!httpsAppUrl(input.appUrl)) return { completed: 0, failed: 0 };
   const claimed = await input.client.rpc('claim_f15_form_alert_jobs', {
     p_batch: 25,
     p_lease_seconds: 300,

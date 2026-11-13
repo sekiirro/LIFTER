@@ -90,7 +90,7 @@ Lock ordering: actor advisory key → offer row → new link/children. F9 never 
 
 ### Single rate-values function
 
-`app_private.registration_link_limits() RETURNS TABLE(per_actor integer, win interval)`, immutable private function. Sole numeric policy placeholder location: `20`, `interval '1 hour'`, each explicitly commented `ND-F10-3: LOCAL/DEV PLACEHOLDER, NOT PO-APPROVED; PRODUCTION BLOCKER`. These reuse F4's technical actor placeholder only; do not inherit target/IP limits. Tests override/restore this function only in disposable DB to prove boundaries without prescribing a policy. Future PO decision changes it through a new forward migration.
+`app_private.registration_link_limits() RETURNS TABLE(per_actor integer, win interval)`, immutable private function. Existing implementation placeholder is 20 per actor per rolling hour and does not conform to S31-PO-3. Approved policy is 50 per authorized issuing account per rolling 24 hours, including Trainer/WO/PO with no exceptions or per-workspace resets. T035 tracks future implementation and verification; this docs-only update does not change the function or its schema.
 
 ## Open and shared time contract
 

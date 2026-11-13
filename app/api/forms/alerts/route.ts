@@ -29,14 +29,16 @@ export async function GET(request: NextRequest) {
   if (!client) return response({ status: 'not_found' }, 404);
   const limitParam = request.nextUrl.searchParams.get('limit');
   const limit = limitParam === null ? 50 : Number(limitParam);
-  const before = request.nextUrl.searchParams.get('before');
+  const beforeParam = request.nextUrl.searchParams.get('before');
+  const beforeMs = beforeParam === null ? null : Date.parse(beforeParam);
   if (
     !Number.isInteger(limit) ||
     limit < 1 ||
     limit > 100 ||
-    (before !== null && !Number.isFinite(Date.parse(before)))
+    (beforeMs !== null && !Number.isFinite(beforeMs))
   )
     return response({ status: 'invalid' }, 400);
+  const before = beforeMs === null ? null : new Date(beforeMs).toISOString();
 
   try {
     const result = await readAlertInbox(client, limit, before);

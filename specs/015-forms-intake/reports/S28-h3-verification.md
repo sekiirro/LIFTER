@@ -27,20 +27,20 @@ S28-PO-2 approved all new DRAFT strings in F15, F17, and F18 as written. The `fo
 
 ## Gates
 
-| Gate | Result |
-| --- | --- |
-| Full default Stack D integration | 120 files passed; 1,595 passed, 2 expected skips; 813.51 s |
-| Clean unit suite | 185 files; 2,296 passed |
-| Lint | Passed |
-| Typecheck | Passed |
-| Format check | Passed |
-| Build | Passed |
-| Edge build | Passed |
-| Secrets check | Passed |
-| Size | Passed: web 8,711.13 KiB (13.29%); cron 11.76 KiB (0.02%) |
-| Migration timestamps | Passed: 155 validated, 11 documented merged exceptions |
-| `git diff --check` | Passed |
-| Full Playwright | Not accepted: package/registration failures remain; current-main baseline unavailable on matching port |
+| Gate                             | Result                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Full default Stack D integration | 120 files passed; 1,595 passed, 2 expected skips; 813.51 s                                             |
+| Clean unit suite                 | 185 files; 2,296 passed                                                                                |
+| Lint                             | Passed                                                                                                 |
+| Typecheck                        | Passed                                                                                                 |
+| Format check                     | Passed                                                                                                 |
+| Build                            | Passed                                                                                                 |
+| Edge build                       | Passed                                                                                                 |
+| Secrets check                    | Passed                                                                                                 |
+| Size                             | Passed: web 8,711.13 KiB (13.29%); cron 11.76 KiB (0.02%)                                              |
+| Migration timestamps             | Passed: 155 validated, 11 documented merged exceptions                                                 |
+| `git diff --check`               | Passed                                                                                                 |
+| Full Playwright                  | Not accepted: package/registration failures remain; current-main baseline unavailable on matching port |
 
 ## Task and review state
 

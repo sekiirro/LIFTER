@@ -27,6 +27,10 @@ const analyze = readFileSync(
   resolve(root, 'specs/015-forms-intake/checklists/analyze.md'),
   'utf8',
 );
+const traceability = readFileSync(
+  resolve(root, 'specs/015-forms-intake/traceability.md'),
+  'utf8',
+);
 
 describe('S14 PO decision fixture', () => {
   it('keeps draft copy and only unapproved EN intake rows pending PO review', () => {
@@ -44,6 +48,10 @@ describe('S14 PO decision fixture', () => {
     expect(spec).toMatch(
       /(?:S34-PO-6.*approve all 68|All 68 pending English intake rows are approved)/s,
     );
+    expect(spec).toContain('S41-PO-3');
+    expect(spec).toContain(
+      '| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread |',
+    );
     expect(spec).toContain('| B01 | Full name (three parts) |');
     expect(spec).toContain('| B06 | Gender |');
     expect(spec).toContain('| T08 | Training split |');
@@ -58,7 +66,11 @@ describe('S14 PO decision fixture', () => {
     expect(cases.pendingCopy).toEqual(['P2_health_notice']);
     expect(cases.approvedENRows).toEqual([
       'B01',
+      'B02',
       'B06',
+      'N01',
+      'N07',
+      'N07.2',
       'T03.2',
       'T03.3',
       'T03.4',
@@ -67,9 +79,27 @@ describe('S14 PO decision fixture', () => {
       'T08',
       'N07.training_timing',
       'N08',
+      'N08.low.foods',
+      'N12',
+      'N11.feedback.0_2',
     ]);
-    expect(cases.pendingENRows).toContain('N08.low.foods');
-    expect(cases.pendingENRows).toContain('N11.feedback.0_2');
+    expect(cases.approvedENCopy['N08.low.foods']).toBe(
+      'Cottage cheese / plant protein / eggs / baladi bread',
+    );
+    expect(cases.pendingENRows).toEqual(['N08.medium.foods', 'N08.high.foods']);
+    expect(cases.pendingENRows).not.toContain('N11.feedback.0_2');
+  });
+
+  it('matches the S41-PO-3 low-budget food copy byte-for-byte in the spec and fixture', () => {
+    const expected = 'Cottage cheese / plant protein / eggs / baladi bread';
+    const specValue = spec.match(/^\| N08\.low\.foods \| (.*?) \|$/m)?.[1];
+    const fixtureValue = cases.approvedENCopy['N08.low.foods'];
+    expect(Buffer.from(specValue ?? '', 'utf8')).toEqual(
+      Buffer.from(expected, 'utf8'),
+    );
+    expect(Buffer.from(fixtureValue, 'utf8')).toEqual(
+      Buffer.from(expected, 'utf8'),
+    );
   });
 
   it('keeps historical S14 health-notice fixture separate from S17 product UI', () => {
@@ -105,13 +135,15 @@ describe('S14 PO decision fixture', () => {
 
   it('keeps plan PO citations portable and catches absolute-path regressions', () => {
     const hasMachineLocalPath = (value: string) =>
-      /(?:[A-Za-z]:[\\/]|\\\\[^\\]+\\[^\\]+)/u.test(value);
+      /(?<![\p{L}\p{N}])(?:[A-Za-z]:[\\/]|\\\\[^\\]+\\[^\\]+)/u.test(value);
     const hasLifterBriefPath = (value: string) =>
       /[A-Za-z]:[\\/]Users[\\/]NEW LAP[\\/]\.lifter[\\/]briefs[\\/]/u.test(
         value,
       );
     expect(hasLifterBriefPath(plan)).toBe(false);
     expect(hasLifterBriefPath(analyze)).toBe(false);
+    expect(hasMachineLocalPath(traceability)).toBe(false);
+    expect(traceability).toContain('reports/S40-r11-verification.md');
     expect(hasMachineLocalPath('C:/Users/Example/.lifter/source.md')).toBe(
       true,
     );

@@ -28,6 +28,7 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
     basic: 'basic',
     training: 'training',
     nutrition: 'nutrition',
+    score: 5,
   };
   const definition = {
     questions: [
@@ -43,6 +44,13 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
         sectionId: 'context',
         type: 'shortText',
         required: true,
+      },
+      {
+        id: 'score',
+        sectionId: 'context',
+        type: 'number',
+        required: false,
+        validation: { min: 0, max: 10 },
       },
     ],
   };
@@ -75,7 +83,10 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
       `;
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
       await tx`set local role authenticated`;
-      const save = (revision: number, values: Record<string, string>) =>
+      const save = (
+        revision: number,
+        values: Record<string, string | number>,
+      ) =>
         tx`select public.save_form_draft(${context.wsA.id},${assignmentId},${revision},${randomUUID()},${tx.json(values)}) as result`;
       expect((await save(0, {}))[0]?.result).toMatchObject({
         status: 'saved',
@@ -127,6 +138,29 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
         status: 'saved',
         revision: 2,
       });
+      const invalidAnswerRollback = new Error(
+        'rollback T013 direct submit validation probe',
+      );
+      let invalidSubmit: unknown;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          await sp`
+            update public.form_answer_drafts
+            set answer_values=${sp.json({ ...answers, score: '5' })}
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}
+          `;
+          await sp`set local role authenticated`;
+          const [attempt] = await sp`
+            select public.submit_form_assignment(
+              ${context.wsA.id},${assignmentId},2,${randomUUID()}
+            ) as result
+          `;
+          invalidSubmit = attempt?.result;
+          throw invalidAnswerRollback;
+        }),
+      ).rejects.toBe(invalidAnswerRollback);
+      expect(invalidSubmit).toEqual({ status: 'invalid' });
       const nonstandardRollback = new Error(
         'rollback nonstandard sections probe',
       );
@@ -233,7 +267,7 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
         tx.savepoint(async (sp) => {
           await sp`reset role`;
           const [definitionRow] = await sp`
-            select pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as body
+            select pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)'::regprocedure) as body
           `;
           const mutatedDefinition = (definitionRow?.body as string).replace(
             '  return response;',

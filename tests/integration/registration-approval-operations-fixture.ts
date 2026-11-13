@@ -58,13 +58,33 @@ export async function registered(
     admission_ticket?: string;
     ticket?: string;
   };
-  if (admission.status !== 'admitted')
-    throw new Error('U3 real admission fixture failed');
+  if (admission.status !== 'admitted') {
+    const db = sql();
+    try {
+      const [state] = await db`
+        select
+          auth.uid() is null as anonymous_request,
+          ${new Date(p.ms).toISOString()}::timestamptz <= clock_timestamp() + interval '5 seconds' as within_future_skew,
+          clock_timestamp() - ${new Date(p.ms).toISOString()}::timestamptz <= interval '60 seconds' as within_max_age,
+          octet_length(${p.ip}) = 32 as valid_ip_key_length,
+          octet_length(${p.link}) = 32 as valid_link_key_length,
+          octet_length(${p.attestation}) = 32 as valid_attestation_length,
+          exists(select 1 from app_private.signup_admission_nonces where nonce=${p.nonce}) as nonce_accepted,
+          exists(select 1 from app_private.signup_rate_counters where key=${p.link}) as rate_counted,
+          exists(select 1 from app_private.client_signup_attempts where link_id=${link}) as attempt_recorded
+      `;
+      throw new Error(
+        `U3 real admission fixture failed: ${admission.status} (${JSON.stringify(state)})`,
+      );
+    } finally {
+      await db.end();
+    }
+  }
   const fields = {
-    name: 'U3 synthetic test',
+    name: 'U3 synthetic client',
     email: `u3-${randomUUID()}@example.test`,
     date_of_birth: '1990-04-12',
-    username: `u3_${randomUUID().replaceAll('-', '').slice(0, 24)}`,
+    username: `u3_${randomUUID().replaceAll('-', '').slice(0, 27)}`,
     telegram_username: '',
     phone:
       '+201' +

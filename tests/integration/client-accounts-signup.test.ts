@@ -250,14 +250,6 @@ it('D-08 collisions are duplicate while link-class failures remain invalid', asy
     { ...s.fields, email: first.fields.email },
     { ...s.fields, phone: first.fields.phone },
     { ...s.fields, email: first.fields.email, phone: first.fields.phone },
-    {
-      ...s.fields,
-      username: first.fields.username
-        .toUpperCase()
-        .replace(/[A-Z0-9-]/g, (character) =>
-          String.fromCodePoint(character.charCodeAt(0) + 0xfee0),
-        ),
-    },
   ];
   const collisionPii = collisions.flatMap((fields) =>
     [
@@ -283,9 +275,22 @@ it('D-08 collisions are duplicate while link-class failures remain invalid', asy
   }
   for (const result of responses)
     expect(JSON.stringify(result)).toBe('{"status":"duplicate"}');
+  const usernameCollision = await signupFixture(f);
+  expect(
+    await signup(db, usernameCollision, {
+      ...usernameCollision.fields,
+      username: first.fields.username.toUpperCase(),
+    }),
+  ).toEqual({ status: 'username_unavailable' });
+  expect(
+    await db`select 1 from public.clients where registration_link_id=${usernameCollision.link}`,
+  ).toHaveLength(0);
+  expect(
+    await db`select 1 from public.registration_links where id=${usernameCollision.link} and consumed_at is not null`,
+  ).toHaveLength(0);
   const actionResults = [];
   const actionPii: string[] = [];
-  for (const index of [0, 1, 3]) {
+  for (const index of [0, 1]) {
     const fields = collisions[index]!;
     const fresh = await signupFixture(f);
     const localPhone =
@@ -325,8 +330,7 @@ it('D-08 collisions are duplicate while link-class failures remain invalid', asy
     actionResults.push(result);
     expect(result).toEqual({
       status: 'duplicate',
-      message:
-        'We could not complete this registration with these details. Contact your coach or support.',
+      message: 'This email is already registered. Contact support.',
     });
     expect(result).not.toHaveProperty('invalidFields');
     expect(

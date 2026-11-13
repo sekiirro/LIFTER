@@ -187,31 +187,27 @@ function isFeedbackBands(
 function isSliderLabels(
   value: unknown,
 ): value is NonNullable<FormQuestion['labels']> {
-  const isLabel = (label: unknown) => {
-    if (typeof label === 'string')
-      return (
-        label.length > 0 &&
+  const isValidLabel = (label: unknown): boolean =>
+    typeof label === 'string'
+      ? label.trim().length > 0 &&
         utf8ByteLength(label) <= APPROVED_FORM_BOUNDS.maxTextBytes
-      );
-    return (
-      isPlainRecord(label) &&
-      hasOnlyDataProperties(label) &&
-      Object.keys(label).every((key) => key === 'en' || key === 'ar') &&
-      typeof label.en === 'string' &&
-      label.en.length > 0 &&
-      utf8ByteLength(label.en) <= APPROVED_FORM_BOUNDS.maxTextBytes &&
-      typeof label.ar === 'string' &&
-      label.ar.length > 0 &&
-      utf8ByteLength(label.ar) <= APPROVED_FORM_BOUNDS.maxTextBytes
-    );
-  };
+      : isPlainRecord(label) &&
+        hasOnlyDataProperties(label) &&
+        Object.keys(label).length === 2 &&
+        typeof label.en === 'string' &&
+        typeof label.ar === 'string' &&
+        label.en.trim().length > 0 &&
+        label.ar.trim().length > 0 &&
+        utf8ByteLength(label.en) <= APPROVED_FORM_BOUNDS.maxTextBytes &&
+        utf8ByteLength(label.ar) <= APPROVED_FORM_BOUNDS.maxTextBytes;
+
   return (
     isPlainRecord(value) &&
     hasOnlyDataProperties(value) &&
     Object.keys(value).every((key) =>
       ['minimum', 'middle', 'maximum'].includes(key),
     ) &&
-    ['minimum', 'middle', 'maximum'].every((key) => isLabel(value[key]))
+    ['minimum', 'middle', 'maximum'].every((key) => isValidLabel(value[key]))
   );
 }
 
@@ -931,9 +927,9 @@ export function calculateAgeInCairo(
     .split('-')
     .map(Number) as [number, number, number];
   if (birthYear > year) return null;
-  return (
+  const age =
     year -
     birthYear -
-    (month < birthMonth || (month === birthMonth && day < birthDay) ? 1 : 0)
-  );
+    (month < birthMonth || (month === birthMonth && day < birthDay) ? 1 : 0);
+  return age < 0 ? null : age;
 }

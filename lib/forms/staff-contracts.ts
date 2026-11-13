@@ -50,6 +50,8 @@ export type FormsStaffResult =
         'invalid' | 'conflict' | 'forbidden' | 'missing' | 'default_selected';
     };
 
+export type FormsStaffRetireResult = FormsStaffResult;
+
 export type FormsStaffSelectionResult = {
   status: 'ok' | 'forbidden' | 'missing' | 'unavailable';
 };

@@ -6,7 +6,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = 'http://localhost:3000';
 const local = Boolean(process.env.DB_URL || process.env.SUPABASE_DB_URL);
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'];
 
@@ -278,8 +278,24 @@ test.describe('local public registration states (required for review)', () => {
     await expect(
       page.getByLabel(m['clientSignup.name'], { exact: true }),
     ).toBeVisible();
-    await expect(page.getByLabel(m['clientSignup.email'])).toBeVisible();
-    await expect(page.getByLabel(m['clientSignup.password'])).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.dateOfBirth'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.username'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(
+        `${m['clientSignup.telegramUsername']} (${m['clientSignup.optional']})`,
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.email'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.password'], { exact: true }),
+    ).toBeVisible();
     expect(await violations(page)).toEqual([]);
     const raw = await page.request.get(`${link}/`, { maxRedirects: 0 });
     expect(raw.status()).toBe(308);
@@ -609,7 +625,7 @@ test.describe('required local authenticated registration acceptance', () => {
     await page.getByRole('button', { name: 'Issue link', exact: true }).click();
     const { publish, checked } =
       await import('../integration/registration-links-fixture');
-    checked(await publish(f, f.p.id, { price_minor: '1300' }));
+    checked(await publish(f, f.p.id, { tier_rank: 1, price_minor: '1300' }));
     await page.getByTestId('dialog-confirm').click();
     await expect(
       page.getByText('These package terms changed. Refresh and try again.'),

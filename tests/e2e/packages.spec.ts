@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
+import { tierLabel } from '../../lib/packages/tier-label';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 const origin = new URL(
@@ -162,6 +163,7 @@ test.describe('local-stack authenticated package acceptance (required for review
         await page
           .locator('select[name="packageId"]')
           .selectOption({ label: code });
+        await page.getByRole('radio', { name: tierLabel(1, locale) }).check();
         await page.locator('input[name="nameAr"]').fill('test-authored-ar');
         await page.locator('input[name="nameEn"]').fill('test-authored-en');
         await page.locator('input[name="priceMinor"]').fill('9007199254740993');
@@ -179,6 +181,7 @@ test.describe('local-stack authenticated package acceptance (required for review
         .getByRole('row')
         .filter({ has: page.getByRole('rowheader').filter({ hasText: code }) });
       await expect(row).toHaveCount(1);
+      await expect(row).toContainText(tierLabel(1, locale));
       await expect(row).toContainText(`${m['packages.days']}: 90`);
       await row
         .getByRole('button', { name: m['packages.enable'], exact: true })

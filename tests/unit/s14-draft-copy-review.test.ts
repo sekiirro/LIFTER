@@ -35,7 +35,11 @@ describe('S14 draft-copy PO review package', () => {
   });
 
   it('keeps remaining approval-required copy visibly draft and records approved Terms/sex copy', () => {
-    expect(report).toContain('DRAFT — pending PO approval');
+    expect(report).toContain('S41-PO-3 approves N08.low.foods byte-exact');
+    expect(report).toContain(
+      'N08.medium.foods and N08.high.foods remain pending PO approval',
+    );
+    expect(report).toContain('S34-PO-4, S34-PO-6, and PD-S34-NEW-01');
     expect(decisions.P1_sex.copy_status).toContain(
       'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
     );
@@ -48,9 +52,8 @@ describe('S14 draft-copy PO review package', () => {
     expect(spec).toMatch(
       /(?:S34-PO-6.*approve all 68|All 68 pending English intake rows are approved)/s,
     );
-    expect(report).toContain('PO-approved intake English is limited to B01');
     expect(report).toContain(
-      'all remaining authored translations are pending PO review before publication.',
+      'The low-budget English label is recorded in the spec and decision fixture.',
     );
   });
 

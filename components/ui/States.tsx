@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import type { ReactNode } from 'react';
 import { Icon, type IconName } from '../icons/Icon';
 import { Button } from './Button';
 import styles from './States.module.css';
@@ -52,7 +53,7 @@ function State({
     </div>
   );
 }
-export function EmptyState(props: StateProps) {
+export function EmptyState(props: StateProps & { children?: ReactNode }) {
   return <State {...props} icon="inbox" />;
 }
 export function NoResults(props: StateProps) {

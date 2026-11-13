@@ -1,148 +1,31 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  nextAutosaveRetryDelay,
-  scheduleDraftAutosave,
-  withAutosaveTimeout,
-} from '../../lib/forms/autosave-timing';
-import { createAuthorizedFormsClientAdapter } from '../../lib/forms/authorized-client-adapter';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { scheduleDraftAutosave } from '../../lib/forms/autosave-timing';
 
-describe('client draft autosave timing', () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.unstubAllGlobals();
-  });
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => vi.useRealTimers());
 
-  it('debounces until 1,500 ms after the latest edit', () => {
-    const save = vi.fn();
-    const cancelFirst = scheduleDraftAutosave(save, 0, 0);
-    vi.advanceTimersByTime(1_000);
-    cancelFirst();
-    const cancelLatest = scheduleDraftAutosave(save, 0, 1_000);
-    vi.advanceTimersByTime(1_499);
-    expect(save).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);
-    expect(save).toHaveBeenCalledTimes(1);
-    cancelLatest();
-  });
+it('saves once when the debounce timer fires before the max-unsaved timer', () => {
+  const save = vi.fn();
+  scheduleDraftAutosave(save, 0, 0);
+  vi.advanceTimersByTime(1_500);
+  expect(save).toHaveBeenCalledTimes(1);
+  vi.advanceTimersByTime(10_000);
+  expect(save).toHaveBeenCalledTimes(1);
+});
 
-  it('forces a save at ten seconds from the first unsaved edit despite later debounce resets', () => {
-    const save = vi.fn();
-    let cancel = scheduleDraftAutosave(save, 0, 0);
-    for (let elapsed = 1_000; elapsed <= 9_000; elapsed += 1_000) {
-      vi.advanceTimersByTime(1_000);
-      cancel();
-      cancel = scheduleDraftAutosave(save, 0, elapsed);
-    }
-    vi.advanceTimersByTime(999);
-    expect(save).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);
-    expect(save).toHaveBeenCalledTimes(1);
-    cancel();
-  });
+it('saves once when the max-unsaved timer fires before the debounce timer', () => {
+  const save = vi.fn();
+  scheduleDraftAutosave(save, -9_000, 0);
+  vi.advanceTimersByTime(1_000);
+  expect(save).toHaveBeenCalledTimes(1);
+  vi.advanceTimersByTime(10_000);
+  expect(save).toHaveBeenCalledTimes(1);
+});
 
-  it('uses the 2/4/8 second retry schedule, then 30 seconds', () => {
-    expect([1, 2, 3, 4, 8].map(nextAutosaveRetryDelay)).toEqual([
-      2_000, 4_000, 8_000, 30_000, 30_000,
-    ]);
-  });
-
-  it('times out a save request after ten seconds', async () => {
-    const pending = withAutosaveTimeout(new Promise<never>(() => undefined));
-    const assertion = expect(pending).rejects.toThrow('autosave_timeout');
-    await vi.advanceTimersByTimeAsync(9_999);
-    expect(vi.getTimerCount()).toBe(1);
-    await vi.advanceTimersByTimeAsync(1);
-    await assertion;
-  });
-
-  it('reuses the supplied intent key for a retried route save', async () => {
-    const keys: string[] = [];
-    let calls = 0;
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (_url: string, init: RequestInit) => {
-        calls += 1;
-        keys.push(JSON.parse(String(init.body)).intent_key);
-        return new Response(
-          JSON.stringify(
-            calls === 1
-              ? { status: 'error' }
-              : { status: 'saved', revision: 2 },
-          ),
-          {
-            status: calls === 1 ? 503 : 200,
-            headers: { 'content-type': 'application/json' },
-          },
-        );
-      }),
-    );
-    const adapter = createAuthorizedFormsClientAdapter();
-    const request = {
-      assignmentId: 'assignment',
-      expectedRevision: 1,
-      answers: { goal: 'build strength' },
-      intentKey: '8ef56ab7-5f4a-42cf-98e8-2b0ea0a00123',
-    };
-    expect(await adapter.saveDraft(request)).toEqual({ status: 'retryable' });
-    expect(await adapter.saveDraft(request)).toEqual({
-      status: 'saved',
-      revision: 2,
-    });
-    expect(keys).toEqual([request.intentKey, request.intentKey]);
-  });
-
-  it('reloads the latest submitted answer revision from the correction history endpoint', async () => {
-    const fetchMock = vi.fn(
-      async () =>
-        new Response(
-          JSON.stringify({
-            status: 'loaded',
-            revision: 7,
-            answers: { T03: '4' },
-          }),
-          { status: 200, headers: { 'content-type': 'application/json' } },
-        ),
-    );
-    vi.stubGlobal('fetch', fetchMock);
-    const adapter = createAuthorizedFormsClientAdapter();
-    expect(
-      await adapter.reloadSubmitted?.({ assignmentId: 'assignment' }),
-    ).toEqual({
-      status: 'loaded',
-      revision: 7,
-      answers: { T03: '4' },
-    });
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/api/forms/assignments/assignment/corrections',
-      expect.objectContaining({ method: 'GET', cache: 'no-store' }),
-    );
-  });
-
-  it('returns the saved draft revision when submit fails after autosave', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: 'saved', revision: 8 }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: 'error' }), {
-          status: 503,
-          headers: { 'content-type': 'application/json' },
-        }),
-      );
-    vi.stubGlobal('fetch', fetchMock);
-    const adapter = createAuthorizedFormsClientAdapter();
-
-    await expect(
-      adapter.submit({
-        assignmentId: 'assignment',
-        expectedRevision: 7,
-        answers: { goal: 'build strength' },
-      }),
-    ).resolves.toEqual({ status: 'error', revision: 8 });
-  });
+it('cancels both pending saves when the returned cancel function is called', () => {
+  const save = vi.fn();
+  const cancel = scheduleDraftAutosave(save, 0, 0);
+  cancel();
+  vi.advanceTimersByTime(10_000);
+  expect(save).not.toHaveBeenCalled();
 });

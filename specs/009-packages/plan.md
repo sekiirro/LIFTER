@@ -1,46 +1,121 @@
 # Implementation Plan: Packages & Package Versions (P1-F9)
 
-**Branch**: `009-packages` | **Date**: 2026-10-27 | **Spec**: [spec.md](spec.md)
-**Input**: Binding architect/reviewer design supplied by Claude; BRD 30/40–41/53–54/102/196/317, D-09/D-10/D-11/D-13/D-17, Constitution v1.1.0. This run produces artifacts only; implementation and independent review remain pending.
+**Branch**: `speckit-009-markets` | **Created**: 2026-10-27 | **S31 Update**: 2026-11-04 | **S36 Update**: 2026-11-08 | **Spec**: [spec.md](spec.md)
+**Input**: Binding architect/reviewer design supplied by Claude; BRD 30/40–41/53–54/102/196/317, D-09/D-10/D-11/D-13/D-17, Constitution v1.4.0, and S31-PO-4/S31-PO-5. This run produces artifacts only; implementation and independent review remain pending.
 
 ## Summary
 
-F9 gives PO a canonical package catalog and workspace-specific duration offers with immutable numbered terms. One forward migration adds three tables, hardened mutation RPCs, a safe staff projection, a narrow PO/WO commission reader and audit extensions. Shared pure validation/money formatting and JWT-backed actions support a PO-only `/packages` page linked from the signed-in landing. All catalog/financial values are explicitly authored data; no seed/default catalog is approved. F10 tokens and F12 subscriptions will reference version ids and snapshot terms; their implementation is excluded.
+F9 gives PO a canonical package catalog, four immutable market/type category identities per workspace, and workspace-specific duration offers with immutable numbered commercial terms. The shipped implementation is PR #9 merge `b565d4c` (implementation tip `b359985`): three tables, hardened mutation RPCs, a safe staff projection, a narrow PO/WO commission reader, audit extensions, shared pure validation/money formatting, JWT-backed actions and a PO-only `/packages` page.
+
+The S31 amendment adds an explicit workspace-package market (`Egypt | International`), type
+(`Year-round | Promotional`), a market-conditional currency set (Egypt = EGP only; International =
+EGP/USD/SAR), no package-price conversion/cross-currency totals, and four fixed category identities per workspace.
+Platform Owner remains the only package creator/pricer; WO/Sales/Trainer remain denied,
+and Sales/Trainer commission remains denied. The implementation delta is additive: a new forward
+migration plus versioned application/read/UI contracts. The shipped F9 migration and every existing
+package-version term remain immutable. S33-PO-6 and S34-PO-1 settle classification, conversion,
+promotional behavior, dashboard semantics and downstream currency interpretation. S34-PO-2 approves
+only Egypt, International, Promotional and Year-Round as English market/type labels. Category persistence
+identity is settled by S34-PO-6 (PD-S34-NEW-01=A, the package row is the category); the canonical market literal is `Egypt`/`International` per S35-PO-1 F9=A. S36-PO-2/S36-PO-3 settle reporting FX rounding, ECB/TARGET/latest-prior-publication selection, currency-coverage verification and optional promotion bounds. All other dashboard/Installments/empty/error/help copy remains
+BLOCKED-COPY.
 
 ## Technical Context
 
 - **Language/Version**: TypeScript 6.0.3, Node 24, Next.js 16.4.3 App Router, React 19.3.1, as pinned in `package.json`.
 - **Primary Dependencies**: Existing supabase-js 2.118.0, supabase/ssr 0.12.7, server-only 0.0.1, Design System/i18n. No new dependencies or lockfile changes.
-- **Storage**: Local Supabase Postgres 17, CLI 2.122.0; one additive forward migration `20261029120000_packages.sql`; user JWT for app calls.
-- **Testing**: Vitest 5.0.5 unit/local integration; existing postgres harness; Playwright 1.64.1 and axe 4.14.0; extend existing RLS-catalog/matrix parity.
+- **Storage**: Existing Supabase Postgres 17, CLI 2.122.0. The S31 delta adds one new forward migration, provisionally `supabase/migrations/20261106125000_f9_package_markets_types_currency.sql`; it never edits shipped `20261029120000_packages.sql`. User JWT for app calls.
+- **Testing**: Existing Vitest 5.0.5 unit/local integration, postgres harness, Playwright 1.64.1 and axe 4.14.0, RLS-catalog/matrix parity and mutation checks. New work is RED-first unit/integration/e2e and permission/RLS mutation coverage.
 - **Target Platform / Project Type**: Existing Next web app on Cloudflare Workers/OpenNext; local builds/dry runs only. No new service or public API server.
-- **Performance Goals**: Serialize conflicting offer publications using indexed natural keys; unrelated offers have no intentional shared lock. No invented latency/capacity SLA; pilot volumes remain ND-F8-1.
-- **Constraints**: Exact bigint money transport, no console, deny by default, immutable versions for all DML roles, no browser Supabase/admin imports, $0 hosting direction unchanged.
-- **Scale/Scope**: Three tables, one invoker-safe view, three mutation RPCs and one narrow commission reader, one PO management screen and landing link. Only synthetic local fixtures.
+- **Performance Goals**: Preserve indexed offer serialization and current-version replay. Exactly four category identities; no invented latency/capacity SLA; pilot volumes remain ND-F8-1.
+- **Constraints**: Exact bigint money transport; market-conditional currency; package prices remain in own currency; reporting-only FX conversion under FR-026/FR-031 with ECB/TARGET business-day selection, exact per-line conversion and aggregate-only half-up rounding to EGP minor units; verified Frankfurter coverage for every supported currency; existing payment rules unchanged; no cross-currency totals; no console; deny by default; immutable versions for all DML roles; no browser Supabase/admin imports; no unreviewed copy; $0 hosting direction unchanged.
+- **Scale/Scope**: Existing package schema and PO screen. S34 specifies four immutable category pairs per workspace, reporting/installment requirements, and safe removal of synthetic mocks. Only synthetic local fixtures.
 
 ## Constitution Check
 
-Gate before research, rechecked after design against v1.1.0:
+Gate before research, rechecked after design against Constitution v1.4.0 and the S31 PO decisions:
 
-| Principle / gate      | Status and evidence                                                                                                                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| I — Isolation         | PASS in design: workspace-composite relations plus same-offer pointer FK; server actor/capability and DB authorization; every RPC/read path has own/foreign negatives. Canonical packages are platform-owned. |
-| II — Financial truth  | PASS: positive bigint minor units + currency, explicit basis points, duration snapshots and exact string transport. D-13/D-17 remain F10/F12 contracts.                                                       |
-| III — PO governance   | PASS: reuse PO-only set_package_pricing; WO rates in scope; Sales/Trainer rates denied. No unapproved capability change.                                                                                      |
-| IV — Scope            | PASS: BRD catalog/availability/terms only; no YBS values, seed catalog, gateway or other finance flow; ND-F9-3 remains NEEDS SOURCE CONFIRMATION.                                                             |
-| V — Versioning        | PASS: UPDATE/DELETE/TRUNCATE guards even for service_role/postgres DML; restrictive references; changes append.                                                                                               |
-| VI — Human governance | PASS: explicit PO actions only; no automated people/payroll decisions.                                                                                                                                        |
-| VII — Privacy/audit   | PASS: business-field allow-lists, exactly one event per actual change, no PII/labels/provider logging; existing audit RLS retained.                                                                           |
-| VIII — UI             | PASS: Design System, Arabic-first RTL/EN LTR, dark/light, responsive keyboard controls, confirmation and required states. Authored content preserved.                                                         |
-| IX — Reliability      | PASS: advisory lock before first offer, row lock, exact current-payload replay; older-term revert appends N+1, atomic pointer/audit and 30-day presets. Fixed-signature replay limitation explicit.                                                  |
-| Platform/delivery     | PASS: forward-only migration, local Docker under D-20, existing backup/production gates unchanged; no deployment/cloud migration/YBS access.                                                                  |
-| Workflow              | PASS for artifact scope: supplied Claude decisions transcribed through Spec → Plan → Tasks → Analyze; future Codex implementation and independent Claude review are separate.                                 |
+| Principle / gate      | Status and evidence                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| I — Isolation         | PASS in design: workspace-composite relations plus same-offer pointer FK; server actor/capability and DB authorization; every RPC/read path has own/foreign negatives. Canonical packages are platform-owned.                                                                                                                                                                              |
+| II — Financial truth  | PASS in design: positive bigint minor units + own currency, explicit basis points, duration snapshots and exact string transport. S31 adds a market-conditional currency matrix and forbids conversion/cross-currency totals. D-13/D-17 remain F10/F12 contracts.                                                                                                                          |
+| III — PO governance   | PASS: reuse PO-only set_package_pricing; WO rates in scope; Sales/Trainer rates denied. S31-PO-5 explicitly keeps package creation/naming/pricing PO-only. No unapproved capability change.                                                                                                                                                                                                |
+| IV — Scope            | PASS: BRD catalog/availability/terms only; no YBS values, seed catalog, gateway or other finance flow; ND-F9-3 remains NEEDS SOURCE CONFIRMATION.                                                                                                                                                                                                                                          |
+| V — Versioning        | PASS: UPDATE/DELETE/TRUNCATE guards even for service_role/postgres DML; restrictive references; changes append. S31 is a new forward migration and cannot rewrite existing package versions.                                                                                                                                                                                               |
+| VI — Human governance | PASS: explicit PO actions only; no automated people/payroll decisions.                                                                                                                                                                                                                                                                                                                     |
+| VII — Privacy/audit   | PASS: business-field allow-lists, exactly one event per actual change, no PII/labels/provider logging; existing audit RLS retained.                                                                                                                                                                                                                                                        |
+| VIII — UI             | PASS in design: Design System, Arabic-first RTL/EN LTR, dark/light, responsive keyboard controls, confirmation and required states. Authored content preserved; the four English/Arabic market/type labels are approved (S34-PO-2) and other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY pending PO approval; the Frontend Design Gate (T049/T069) remains required. |
+| IX — Reliability      | PASS: advisory lock before first offer, row lock, exact current-payload replay; older-term revert appends N+1, atomic pointer/audit and 30-day presets. Fixed-signature replay limitation explicit.                                                                                                                                                                                        |
+| Platform/delivery     | PASS: forward-only migration, local Docker under D-20, existing backup/production gates unchanged; no deployment/cloud migration/YBS access.                                                                                                                                                                                                                                               |
+| Workflow              | PASS for artifact scope: S31 decisions transcribed through Specify → Clarify → Plan → Tasks → Analyze; future delegated implementation and independent architect review are separate. Implementation is blocked by the listed PO gates.                                                                                                                                                    |
 
-**Post-design re-check**: no constitutional exception. Document validation does not approve implementation or production. Five policy NDs remain open; technical interpretations in research R4/R5/R9 remain visible for review.
+**Post-design re-check**: no constitutional exception. Document validation does not approve
+implementation or production. S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorded product choices and four label pairs. S34-PO-6 settles category persistence identity (package row is the category). S35-PO-1 F9=A settles the canonical market literal (`Egypt`/`International` as the wire and stored value); its former dependent parts of T042/T043/T044/T055/T065/T066 are unblocked (text only). S36-PO-2/S36-PO-3 settle the former FX-rounding, FX publication-calendar and optional promotion-bound blockers; T058/T059/T060/T068/T072/T073 are not blocked by rounding, while provider/security verification and T075 currency-coverage verification remain required. Other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY. Technical implementation and production gates remain mandatory.
+
+## S31 shipped-baseline delta (2026-11-04)
+
+### Evidence read from current `main`
+
+| Surface                             | Shipped behavior                                                                                                        | S31 delta                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `public.packages`                   | Global immutable canonical code                                                                                         | Keep identity historically recoverable; commercial edits follow FR-021/FR-029 and S33-11.                                                                                                                                                                                                                                |
+| `public.package_offers`             | Shipped baseline: workspace/package/duration offer; no tier_rank column                                                 | Planned delta adds immutable tier ranks to offer identity and publication input; exactly four immutable category pairs per workspace, each supporting Silver, Gold, and Platinum ranks; market/type snapshots follow S33-11.                                                                                             |
+| `public.package_versions`           | Immutable AR/EN terms, `price_minor`, `currency`, commission and duration                                               | Keep every existing version's identifier and stored price/currency/commission/duration terms unchanged (SC-011). Currency remains version-owned. Add no historical backfill.                                                                                                                                             |
+| `publish_package_version(...)`      | Shipped baseline: PO-only; no tier-rank parameter; accepts any format-valid three-letter currency; no market/type input | Planned delta requires immutable `tier_rank`; publication takes `package_id`, accepts no market/type input and derives market from the package row. Enforce the market/currency matrix in both validation walls. Preserve replay/concurrency semantics. The market literal is `Egypt`/`International` per S35-PO-1 F9=A. |
+| `package_versions_safe` / app reads | Returns each version's own price and currency                                                                           | Add approved market/type projections if they belong to an existing immutable/read surface; never calculate or join a converted amount.                                                                                                                                                                                   |
+| `/packages`                         | PO-only publish form and one price per offer row                                                                        | Add approved market/type controls and own-currency display; labels come only from the PO-approved copy record.                                                                                                                                                                                                           |
+| F10/F12                             | Registration links copy package price/currency; subscriptions/installments/payments/refunds preserve snapshots          | S33-PO-6 governs reporting-only FX and settlement remains separate; no package price conversion.                                                                                                                                                                                                                         |
+
+### Forward-only design boundary
+
+1. **New migration only.** Create
+   `supabase/migrations/20261106125000_f9_package_markets_types_currency.sql`; never edit
+   `20261029120000_packages.sql` or any later shipped migration. Add schema/constraints/RPC
+   replacements in that new file.
+2. **C5 mock disposition.** Verify synthetic-only status and enumerate all target-stack dependencies
+   (FKs, registration links, subscriptions, payments, audit rows and all other refs). Any
+   non-synthetic row, required financial/audit dependency or unknown state refuses/escalates with
+   zero writes. After a clean preflight, obsolete mocks may be deleted and four empty categories
+   initialized. Preserve required client, financial and audit history; assign no inferred values.
+3. **PO-only mutation wall.** Market/type/currency publication remains behind the existing PO
+   `set_package_pricing` capability in the app and signed-identity DB checks. WO/Sales/Trainer cannot
+   create, name, price or control packages in any workspace.
+4. **Market/currency invariant.** Egypt accepts only EGP; International accepts EGP/USD/SAR. Every
+   other currency is invalid even when it matches the former three-letter format check. Currency is
+   never inferred from market or market inferred from currency.
+5. **Reporting conversion exception.** Package prices remain in own currency; transaction-date FX
+   to EGP is limited to approved collection/commission reporting. No package-price conversion or
+   cross-currency total is added.
+6. **Fixed categories.** Exactly four immutable market/type pairs exist per workspace; both markets
+   may operate simultaneously. This supersedes the S31 unlimited-package interpretation.
+7. **Arabic/UI gate.** Use exactly «مصر» / «دولي» / «وقت العـروض» / «طول السنـة» for market/type.
+   The four mapped English/Arabic market/type labels are approved; other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY. The future UI must pass the Frontend Design Gate (AR-RTL/EN-LTR × light/dark ×
+   mobile/desktop, required states and accessibility).
+
+### Historical S32 PO gates and current disposition
+
+| Historical gate                 | Current decision/status                                                                                                                                                                                                                                                                              | Work that remains open or may proceed                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| SK-009-05 legacy classification | C5 supersedes mapping for existing mocks; no legacy classification/default is applied.                                                                                                                                                                                                               | T064/T064a verify synthetic-only status and all dependencies before deletion; no writes on unsafe/unknown state. |
+| SK-009-06 owner/mutability      | C1 fixes market/type immutability; category identity is the package row (S34-PO-6, PD-S34-NEW-01=A), unique on (workspace_id, market, type); the market literal is `Egypt`/`International` per S35-PO-1 F9=A.                                                                                        | Currency/no-conversion/role test design and evidence can proceed independently.                                  |
+| SK-009-07 promotional behavior  | S33-PO-6 settles Africa/Cairo half-open periods, expiry blocks new links only, and issued links retain snapshots. S36-PO-3 defines a missing start as availability from creation and a missing end as indefinite.                                                                                    | Implementation tests remain future RED-first work.                                                               |
+| SK-009-08 bilingual copy        | LABELS and S34-PO-2 approve the four exact English/Arabic market/type label pairs.                                                                                                                                                                                                                   | Other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY.                                         |
+| SK-009-09 downstream currency   | S33-PO-6/C4 settle reporting and separate settlement/accounting records; S36-PO-2/S36-PO-3 settle exact line conversion, aggregate-only half-up rounding, ECB/TARGET/latest-prior-publication selection, coverage verification and unchanged payment rules. This F9 delta changes no F10/F12 schema. | Any later downstream currency change needs its applicable PO decision and feature contract.                      |
+
+**Implementation readiness**: S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorded product choices and four English/Arabic label pairs. S34-PO-6 settles category persistence identity. S35-PO-1 F9=A settles the canonical market literal (`Egypt`/`International` as the wire and stored value). S36-PO-2/S36-PO-3 settle F9 reporting FX rounding/calendar/publication, currency-coverage verification and optional promotion bounds; the former rounding blocker is closed (text only; nothing is ticked by this cycle). Other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY. Future implementation must pass the C5 preflight, RED-first tests, fresh Analyze, design and security reviews.
+
+## S34-PO-1 / S33-PO-6 plan delta (specification only)
+
+- Each workspace has exactly four immutable market × type category identities: Egypt × Year-Round, Egypt × Promotional, International × Year-Round, International × Promotional. Both markets may operate concurrently.
+- Only the PO configures workspace-specific names, prices, and package-specific commissions. Commercial edits append immutable versions; client/assignment snapshots remain unchanged. Market/type cannot be changed; WOs cannot configure terms.
+- Promotional categories are available only within their approved availability interval. A missing start means available from creation; a missing end means indefinite. Any supplied Africa/Cairo bounds remain start-inclusive/end-exclusive. Expiry stops new links; already-issued links retain snapshots.
+- C5 starts with a read-only target-stack preflight verifying synthetic-only status and enumerating FKs, registration links, subscriptions, payments, audit rows and every other package dependency. Non-synthetic data, required financial/audit dependencies or unknown state refuse/escalate before writes. After a complete clean preflight, safely delete obsolete mock packages while preserving required client, financial and audit history; do not accept partial completion. Four-category initialization creates workspace-scoped package rows unique on (workspace_id, market, type) (S34-PO-6) and its market literal is `Egypt`/`International` per S35-PO-1 F9=A; the teardown mechanism for protected immutable rows is not specified and needs separate security design and review (no guard exception); initialize without names, prices or commissions, and PO configures real packages manually.
+- Dashboard reporting means actual monthly collections and package-specific commission with installment detail; settlement/accounting events stay separate. FX follows settled S33-PO-6/S36-PO-2/S36-PO-3 semantics: ECB/TARGET business days, latest prior valid Frankfurter publication, verified coverage for every supported currency, exact per-line conversion and aggregate-only half-up rounding to EGP minor units; commission is PO/WO-only and payment rules are unchanged.
+- Installments requires due date, paid amount and remaining amount. The four English/Arabic market/type label pairs are approved by LABELS and S34-PO-2; all other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY.
+- Future tasks are RED-first, preserve S32-R1 all-origin-reference uniqueness, create forward migrations only, never edit pushed migrations, and include Frontend Design Gate plus independent security review of mock deletion.
 
 ## Design
 
-Normative details: [data-model.md](data-model.md), [contract](contracts/packages-surface.md). Rationale: [research.md](research.md) R1–R10. Verification: [quickstart.md](quickstart.md).
+Normative details: [data-model.md](data-model.md), [contract](contracts/packages-surface.md). Rationale: [research.md](research.md) R1–R14. Verification: [quickstart.md](quickstart.md).
 
 ### Database transactions and reads
 
@@ -52,23 +127,52 @@ All three tables force RLS. Column grants plus a security-invoker safe view excl
 
 ### Application and UI
 
-Pure validation mirrors database constraints. Money stays decimal integer strings/bigints; currency-aware display uses exact arithmetic and raw-minor-unit fallback when metadata is unknown. Actions re-derive actor, check `authorize(actor,'set_package_pricing',ws)`, call session RPCs, map generic results and revalidate only on success. Read helpers check registration-link capability and role-gate rates.
+Pure validation mirrors database constraints. Money stays decimal integer strings/bigints; under S31
+only EGP/USD/SAR can enter a package version and currency-aware display uses exact arithmetic in the
+amount's own currency. Actions re-derive actor, check `authorize(actor,'set_package_pricing',ws)`,
+call session RPCs, map generic results and revalidate only on success. Read helpers check
+registration-link capability and role-gate rates.
 
 `/packages` checks PO before data reads. Workspace selector, code creation, offers table, publication form and ConfirmDialog toggles reuse existing primitives/translations. Page loading/error states reveal no protected data before authorization. Login/public-state markup receives AR/EN axe checks; full authenticated states run with local fixtures. Final PO navigation stays undecided: PO landing link only.
 
+### Reporting FX and optional promotion bounds
+
+Map the transaction timestamp to its Africa/Cairo calendar date. ECB/TARGET defines business days; select the latest prior valid Frankfurter publication strictly before that date, continuing to an earlier valid publication when the preceding business day has none. If no valid publication exists, retain the idempotent pending/retry state and exclude the item from converted totals. Verify provider coverage for every supported currency; an uncovered currency is a recorded blocker, never an assumed rate or fallback.
+
+Keep each line's converted value exact, sum exact lines and round each reported EGP aggregate half-up once to EGP minor units. This preserves original transaction/settlement values and existing payment rules. For Promotional categories, absent start means available from creation and absent end means indefinite; supplied bounds remain Africa/Cairo start-inclusive/end-exclusive.
+
 ### Validation phases
 
-Foundation establishes schema/grants/guards. US1 tests canonical identity, publication, concurrency and history; US2 availability; US3 scoped reads/rate secrecy; US4 management access/UI. Catalog/parity/log gates and independent reviewer mutation checks finish the work. Every FR/SC is mapped in [tasks.md](tasks.md#analyze).
+Foundation establishes schema/grants/guards. US1 tests canonical identity, publication, concurrency and history; US2 availability; US3 scoped reads/rate secrecy; US4 management access/UI. S31 US5 adds independent market/type packages; US6 adds market-conditional currency, exact own-currency display and no conversion. Catalog/parity/log gates and independent reviewer mutation checks finish the work. Every FR/SC is mapped in [tasks.md](tasks.md#analyze).
 
-## NEEDS DECISION
+## PO decision status
 
-- ND-F9-1: allowed currencies; format-only validation meanwhile.
-- ND-F9-2: custom-duration policy bounds; ≥1 day only meanwhile.
-- ND-F9-3: actual tier/duration catalog, names/prices/rates — NEEDS SOURCE CONFIRMATION; entered by PO.
-- ND-F9-4: Sales/Trainer commission access; denied meanwhile.
-- ND-F9-5: final PO navigation/F2 ND-5; landing link only meanwhile.
+### Closed by S31
 
-These do not block local work. Existing [production readiness](../../docs/07-production-readiness.md) gates remain open. Fixtures do not settle policy.
+- **ND-F9-1 / allowed currencies**: closed by S31-PO-4 SK-009-01 and S31-PO-5 — Egypt = EGP only;
+  International = EGP/USD/SAR; no assumed conversion.
+- **ND-F9-4 / Sales-Trainer commission**: closed by S31-PO-4 SK-009-04 — both denied.
+- **Authorship and category count**: S31-PO-5 establishes PO-only control; S34-PO-1 supersedes the unlimited package model with four fixed category identities per workspace.
+
+### Closed by S36
+
+- **S36-PO-2 FX reporting**: exact per-line conversion; one half-up rounding of each reported aggregate to EGP minor units; existing payment rules unchanged.
+- **S36-PO-3 F9**: ECB/TARGET business-day calendar; latest prior valid Frankfurter publication; existing pending/retry when unavailable; coverage verification for every supported currency; missing Promotional start means availability from creation and missing end means indefinite.
+
+### Historical implementation blockers (superseded where covered by S33-PO-6 / S34-PO-1)
+
+- **SK-009-05 / SK-009-07 / SK-009-09**: resolved by S33-PO-6 and S34-PO-1 for this scope. **SK-009-06**: C1 resolves market/type mutability, and S34-PO-6 settles category persistence identity (package row is the category).
+- **SK-009-08**: Arabic category labels resolved by LABELS; the four mapped English labels are resolved by S34-PO-2; all other UI copy remains BLOCKED-COPY.
+
+### Retained open items
+
+- **ND-F9-2**: custom-duration policy bounds; ≥1 day only meanwhile.
+- **ND-F9-3**: actual tier/duration catalog, names/prices/rates — NEEDS SOURCE CONFIRMATION; entered by PO.
+- **ND-F9-5**: final PO navigation/F2 ND-5; landing link only meanwhile.
+
+The retained ND-F9 items and BLOCKED-COPY scope remain explicit; S33-PO-6/S34-PO-1/S34-PO-2 decisions are settled. S34-PO-6 settles category persistence identity; S35-PO-1 F9=A settles the canonical market literal (`Egypt`/`International`). Existing
+[production readiness](../../docs/07-production-readiness.md) gates remain open. Fixtures do not
+settle policy.
 
 ## Project Structure
 
@@ -78,18 +182,21 @@ These do not block local work. Existing [production readiness](../../docs/07-pro
 specs/009-packages/
 ├── spec.md
 ├── checklists/requirements.md
+├── checklists/analyze.md
 ├── research.md
 ├── data-model.md
 ├── contracts/packages-surface.md
 ├── quickstart.md
+├── traceability.md
 ├── plan.md
 └── tasks.md
 ```
 
-### Source code (future implementation)
+### Source code (shipped baseline plus future S31 implementation)
 
 ```text
-supabase/migrations/20261029120000_packages.sql
+supabase/migrations/20261029120000_packages.sql              # shipped; immutable
+supabase/migrations/20261106125000_f9_package_markets_types_currency.sql  # new forward delta
 lib/packages/{validation,money,results,service,read}.ts
 app/(app)/page.tsx
 app/(app)/packages/
@@ -102,11 +209,13 @@ app/(app)/packages/
 lib/i18n/messages/{ar,en}.ts
 eslint.config.mjs
 tests/unit/packages-{validation,money,actions,read,page}.test.ts
+tests/unit/packages-market-type.test.ts                       # future RED-first unit coverage
 tests/integration/
 ├── packages-fixture.ts
 ├── packages-publish.test.ts
 ├── packages-availability.test.ts
 ├── packages-reads.test.ts
+├── packages-markets-types.test.ts                           # future RED-first DB coverage
 ├── rls-catalog.test.ts
 └── matrix-parity.test.ts
 tests/e2e/packages.spec.ts
@@ -118,6 +227,33 @@ tests/e2e/packages.spec.ts
 
 No Constitution violation or exemption. Safe view plus narrow commission RPC is required by shared SQL-role grants; a full-table grant leaks rates. Same-offer composite FK prevents a pointer bug the workspace pair alone permits. Replay identity, initial unavailability and duration representation are explicit technical interpretations, not policy resolutions.
 
+## S32-PO-4 design delta (conditional on Clarifications MCQs)
+
+S33-PO-6, S34-PO-1 and S34-PO-2 settle the product details below, and S34-PO-6 settles category persistence identity (PD-S34-NEW-01=A); the canonical market literal is settled by S35-PO-1 F9=A (`Egypt`/`International` as the wire and stored value). C1 and S33-11 fix immutable market/type; no S33 product MCQ remains open. The four English/Arabic label pairs are approved; other interface copy remains BLOCKED-COPY.
+
+- **Legacy mock disposition:** C5 supersedes S32 row mapping for existing mock packages; target-stack dependency preflight and fail-closed behavior are required before safe deletion and empty-category initialization.
+- **Versioned management:** PO-only commercial name/price/commission edits append versions; market/type are immutable; previous client/assignment snapshots are preserved. S33-02 retirement applies to future real packages.
+- **Promotional lifecycle:** optional Africa/Cairo start-inclusive/end-exclusive bounds; missing start means available from creation and missing end means indefinite; expiry stops new links only and issued links retain snapshots.
+- **Historical FX:** immutable transaction-date snapshots; ECB/TARGET business days; latest prior valid Frankfurter publication; verified coverage for every supported currency; exact per-line conversion; aggregate-only half-up rounding to EGP minor units; exact EGP identity rate; rate-pending/idempotent retry excluded until fetched. Never recompute snapshots or change existing payment rules.
+- **Security:** outbound provider request is server-only, least-data, no client/workspace/transaction payload; add security review of egress, response validation, secret handling, retention and provider provenance. Constitution S31-PO-8 constrains development AI data only and does not prohibit the runtime FX API; no real client data is used in development fixtures.
+- **Reporting:** actual monthly collections and package-specific commission with installment details; preserve original transaction/settlement currency and separate settlement records. PO/WO commission access only. The four English/Arabic market/type label pairs are approved; all other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY.
+
+No migration file, SQL, application implementation, test, build or stack operation is part of this artifact-only cycle.
+
 ## S33-PO-4 test hygiene
 
 The S33 package acceptance adjustment verifies that the synthetic workspace begins without offers and reports route status/rendered content when an expected empty state is absent. No product behavior or UI changes are in scope.
+
+## S43-PO-6/7 and S43-PO-8 package-tier design delta (specification only)
+
+PO wording is byte-exact in specs/009-packages/spec.md; interpretation is separately labelled **architect mapping (S43-R10)**. Each of the four categories has Silver, Gold, and Platinum tier offers with immutable rank on each offer. PO renames are global per locale; Workspace Owner overrides are scoped to that workspace. Renaming changes neither rank nor terms. Rank eligibility and authorization design are specified; implementation remains unstarted. No migration is authored here.
+
+### S43-PO-8 scope now specified
+
+The four market/type categories each contain Silver, Gold, and Platinum tier offers; rank belongs to the tier offer within its category. PO renames are global per locale, Workspace Owner overrides are workspace-local, and neither changes rank or terms. T077 and T078 are unblocked for implementation planning. **architect mapping (S43-R10).**
+
+### S48-PO-10 migration and legacy cleanup
+
+**PO words (byte-exact):** “Choose B. Verify all existing offers are mock/test data, delete them safely, then apply T077 with mandatory immutable tier ranks. Preserve required audit/payment test records. No arbitrary Silver defaults.”
+
+**architect mapping (S48-R10):** T077 adds `tier_rank` with no default in a forward migration and raises before setting it NOT NULL if any legacy row remains unranked. The old workspace/package/duration unique key is replaced with workspace/category/duration/rank uniqueness; publication requires rank and serializes by that full identity. A separate reviewed cleanup script deletes only verified local test offers with no referencing payment, audit, subscription, registration-link, or restrictive version rows; no cascades are permitted and retained offers are reported. Inventory local Stacks A–D and CI's fresh database before applying migrations. Any hosted/non-local database halts migration work. All rank-bearing fixtures must pass an explicit rank.

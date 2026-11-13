@@ -180,6 +180,109 @@ describe('persisted Forms staff adapter', () => {
     });
   });
 
+  it('returns the authoritative retired form for success without a definition', async () => {
+    const retiredForm = {
+      id: 'form-1',
+      title: { en: 'Your First Step', ar: '' },
+      sections: [],
+      questions: [],
+      deadlineDays: 3,
+      status: 'retired' as const,
+      revision: 4,
+    };
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          status: 'ok',
+          formId: 'form-1',
+          revision: 4,
+          formStatus: 'retired',
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { status: 'ok', forms: [retiredForm] },
+        error: null,
+      });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+
+    await expect(adapter.retire('wo', 'form-1', 'retire-key')).resolves.toEqual(
+      { status: 'ok', form: retiredForm },
+    );
+    expect(rpc).toHaveBeenNthCalledWith(2, 'get_staff_forms', {
+      p_workspace_id: 'workspace-1',
+    });
+  });
+
+  it('does not claim retirement success when the hydrated form mismatches', async () => {
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          status: 'ok',
+          formId: 'form-1',
+          revision: 4,
+          formStatus: 'retired',
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          status: 'ok',
+          forms: [
+            {
+              id: 'form-1',
+              title: { en: 'Your First Step', ar: '' },
+              sections: [],
+              questions: [],
+              deadlineDays: 3,
+              status: 'retired',
+              revision: 3,
+            },
+          ],
+        },
+        error: null,
+      });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+
+    await expect(adapter.retire('wo', 'form-1', 'retire-key')).resolves.toEqual(
+      { status: 'invalid' },
+    );
+  });
+
+  it('does not claim retirement success when the form is missing', async () => {
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          status: 'ok',
+          formId: 'form-1',
+          revision: 4,
+          formStatus: 'retired',
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { status: 'ok', forms: [] },
+        error: null,
+      });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+
+    await expect(adapter.retire('wo', 'form-1', 'retire-key')).resolves.toEqual(
+      { status: 'invalid' },
+    );
+  });
+
   it('maps a reused request key with a different payload to conflict', async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: { status: 'idempotency_conflict' },

@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   runValidatedSignupAction,
   SignupForm,
-  shouldValidateSignupBlur,
 } from '../../app/register/[token]/SignupForm';
+import { parseSignupIdentity } from '../../app/register/[token]/schema';
 import {
   initialSignupResult,
   runSignupActionSafely,
@@ -28,12 +28,6 @@ function renderSignup(locale: 'ar' | 'en' = 'en') {
 }
 
 describe('T038 signup form', () => {
-  it('skips identity blur validation during pending submission', () => {
-    expect(shouldValidateSignupBlur(false, false)).toBe(true);
-    expect(shouldValidateSignupBlur(true, false)).toBe(false);
-    expect(shouldValidateSignupBlur(false, true)).toBe(false);
-  });
-
   it('renders identity fields and does not collect terms, health or sex at signup', () => {
     const html = renderSignup();
     for (const name of [
@@ -78,10 +72,22 @@ describe('T038 signup form', () => {
 
   it('stops invalid identity before calling the signup transaction', async () => {
     const formData = new FormData();
-    formData.set('name', 'Heba');
-    formData.set('dateOfBirth', '2099-01-01');
-    formData.set('username', 'system');
+    formData.set('name', 'Heba Sami Nabil');
+    const now = new Date();
+    const futureDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 2,
+    );
+    const month = String(futureDate.getMonth() + 1).padStart(2, '0');
+    const day = String(futureDate.getDate()).padStart(2, '0');
+    formData.set('dateOfBirth', `${futureDate.getFullYear()}-${month}-${day}`);
+    formData.set('username', 'testclientr23');
     const action = vi.fn(async () => signupResult('complete', 'en'));
+
+    expect(parseSignupIdentity(formData, { now }).invalidFields).toEqual([
+      'dateOfBirth',
+    ]);
 
     const result = await runValidatedSignupAction(
       action,

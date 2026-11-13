@@ -2,7 +2,6 @@ const CAIRO_TIME_ZONE = 'Africa/Cairo';
 const RULE_ID = 'cairo-d03-v1';
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
 
 export type CairoD03Deadline = {
   ruleId: typeof RULE_ID;
@@ -19,9 +18,7 @@ export type CairoClientSubmissionDeadline = {
 };
 
 export type ClientLateAlertSchedule = {
-  trainerAt: string;
   ownersAt: string;
-  noTrainerAt: string;
   reassignmentResetsClock: false;
 };
 
@@ -84,29 +81,20 @@ function nextWorkingDate(date: string): string {
 function firstValidInstantOfDate(date: string): number {
   const [year, month, day] = dateParts(date);
   const utcMidnight = Date.UTC(year, month - 1, day);
-  const from = utcMidnight - 36 * 60 * MINUTE_MS;
-  const until = utcMidnight + 36 * 60 * MINUTE_MS;
-
-  let previous = from;
-  for (let candidate = from; candidate <= until; candidate += MINUTE_MS) {
-    if (dateAt(candidate) !== date) {
-      previous = candidate;
-      continue;
-    }
-
-    let low = previous;
-    let high = candidate;
-    while (high - low > 1) {
-      const middle = low + Math.floor((high - low) / 2);
-      if (dateAt(middle) === date) high = middle;
-      else low = middle;
-    }
-    return high;
+  // Cairo offsets are +2/+3: low is always the previous local date and high
+  // is always the target date. The local date is monotone in the instant.
+  let low = utcMidnight - 14 * HOUR_MS;
+  let high = utcMidnight + 12 * HOUR_MS;
+  if (dateAt(low) >= date || dateAt(high) !== date)
+    throw new RangeError(
+      `No valid ${CAIRO_TIME_ZONE} instant exists for ${date}`,
+    );
+  while (high - low > 1) {
+    const middle = low + Math.floor((high - low) / 2);
+    if (dateAt(middle) >= date) high = middle;
+    else low = middle;
   }
-
-  throw new RangeError(
-    `No valid ${CAIRO_TIME_ZONE} instant exists for ${date}`,
-  );
+  return high;
 }
 
 /**
@@ -142,18 +130,15 @@ export function calculateCairoClientSubmissionDeadline(
   };
 }
 
-/** Schedules client-late alerts from the original deadline instant. */
+/** Client-late alerts notify authorized owners immediately at the deadline. */
 export function calculateClientLateAlertSchedule(
   deadlineAt: string,
 ): ClientLateAlertSchedule {
   const deadlineInstant = Date.parse(deadlineAt);
   if (!Number.isFinite(deadlineInstant))
     throw new TypeError('deadlineAt must be a valid instant');
-
   return {
-    trainerAt: new Date(deadlineInstant + DAY_MS).toISOString(),
-    ownersAt: new Date(deadlineInstant + 2 * DAY_MS).toISOString(),
-    noTrainerAt: new Date(deadlineInstant + DAY_MS).toISOString(),
+    ownersAt: new Date(deadlineInstant).toISOString(),
     reassignmentResetsClock: false,
   };
 }

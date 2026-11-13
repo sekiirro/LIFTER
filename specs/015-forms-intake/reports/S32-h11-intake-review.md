@@ -6,6 +6,7 @@ This is orchestration/review evidence for S32-PO-5. No Part B application code, 
 
 ## Verification table
 
+<!-- prettier-ignore-start -->
 | Item | PO text | Arabic source | Implementation before | Action | Test | Screenshot |
 |---|---|---|---|---|---|---|
 | B01 | “Full name (three parts)” | `fixtures/mandatory-intake-copy-ar.md:5-6` (three-part Arabic name; profile prefill); `fixtures/s14-po-decisions.json` signup policy | `lib/forms/s14-starter-content.json:31-38` uses English “Full name”; profile-bound `profileText`. Three-part validation exists in signup, but starter label is stale. | PO copy recorded in spec; implementation mismatch awaits agent | `tests/unit/forms-profile-prefill.test.ts` (existing; not run as a targeted Part B test) | Pending; S32 AR/EN × light/dark × 360/390/1024 matrix not captured |
@@ -16,6 +17,7 @@ This is orchestration/review evidence for S32-PO-5. No Part B application code, 
 | N08 | “What’s your food budget?”; three budget cards with budget-specific chips as one question, no separate foods question | `fixtures/mandatory-intake-copy-ar.md:138-151` has three budget cards and derived editable food chips in the same question | `lib/forms/s14-starter-content.json:271-279` is optional `shortText`; no budget cards/food child are present. `spec.md` currently retains an N08.foods EN row, marked pending, which must not render as a separate question. | PO copy recorded in spec. Cards/chips and same-question composition need agent implementation. No extra question added. | `tests/unit/forms-s14-validation.test.ts` (existing; no complete N08 budget-card assertion located) | Pending |
 | N11 | 0–10 slider | `fixtures/mandatory-intake-copy-ar.md:167-181` gives 0–10, step 1, labels and five feedback bands | `lib/forms/s14-starter-content.json:304-313` is optional `shortText`; slider implementation is exercised in `tests/e2e/forms-authorized-route.spec.ts:89-110` with min 0/max 10/step 1 and fixture labels. | Existing control path verifies range; starter content remains mismatched. Preserve canonical labels/feedback; agent should wire approved content. | `tests/unit/forms-s14-validation.test.ts` (existing); rendered axe/matrix not run in this review | Pending |
 | N12 | Body-fat image cards | `fixtures/mandatory-intake-copy-ar.md:184-189` requires image cards, estimate labels, disclaimer and final Nutrition position | `lib/forms/s14-starter-content.json:315-324` is optional `shortText`; assets exist in `public/images/body-fat/` and manifest order is checked by `tests/unit/forms-body-fat-assets.test.ts`. `QuestionFlow.tsx:783-821` filters selected series, renders `alt` from localized option label, and preserves definition order. No imageChoice N12 definition exists in starter content. | Asset catalog/component path verified by source inspection; N12 question wiring and per-image AR/EN labels/alt remain unverified and need agent implementation/evidence. | `tests/unit/forms-body-fat-assets.test.ts` (existing; not run as targeted Part B test) | Pending |
+<!-- prettier-ignore-end -->
 
 ## Conditional flow and ordering
 

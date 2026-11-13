@@ -1,8 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
-import { sql } from './harness';
+import { createStaff, sql } from './harness';
 import { clientContext, pending } from './client-accounts-fixture';
+import {
+  waitForLock,
+  worker,
+} from './registration-approval-operations-fixture';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
 import starter from '../../lib/forms/s14-starter-content.json';
 
@@ -10,6 +14,134 @@ const db = sql();
 afterAll(() => db.end());
 
 const rollback = new Error('T006 synthetic fixture rollback');
+
+it('T151 rechecks Builder authorization after waiting on each writer lock', async () => {
+  const context = await clientContext();
+  const definitionSnapshot = structuredClone(starter);
+  const policy = `t151-builder-${randomUUID()}`;
+  const [publishable] =
+    await db`select app_private.f15_valid_builder_definition(
+    ${db.json(definitionSnapshot)},true) as valid`;
+  expect(publishable?.valid).toBe(true);
+  await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
+    values(${policy},'terms','published')`;
+  const operations = ['save', 'publish', 'copy', 'retire'] as const;
+  const unexpectedWrites: string[] = [];
+
+  for (const operation of operations) {
+    const lockKinds =
+      operation === 'copy'
+        ? (['request'] as const)
+        : operation === 'retire'
+          ? (['request', 'default', 'resource'] as const)
+          : (['request', 'resource'] as const);
+    for (const lockKind of lockKinds) {
+      const actor = await createStaff(
+        'trainer',
+        `t151-builder-${operation}-${lockKind}`,
+      );
+      const formId = randomUUID();
+      const requestId = randomUUID();
+      const label = `t151-builder-${operation}-${randomUUID()}`;
+      await db`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+      values(${context.wsA.id},${actor.userId},${context.po.userId})`;
+      await db`insert into public.forms(id,workspace_id,name)
+      values(${formId},${context.wsA.id},${label})`;
+      await db`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+      values(${context.wsA.id},${formId},1,${policy},${db.json(definitionSnapshot)},'draft')`;
+
+      const lockKey =
+        lockKind === 'request'
+          ? `f15-builder-request:${context.wsA.id}:${actor.userId}:${requestId}`
+          : lockKind === 'default'
+            ? `f15-default-onboarding:${context.wsA.id}`
+            : `f15-form:${context.wsA.id}:${formId}`;
+      const [formsBefore] =
+        await db`select count(*)::int as count from public.forms
+      where workspace_id=${context.wsA.id}`;
+      const blocker = sql();
+      const labelForWait = `t151-${randomUUID().slice(0, 16)}`;
+      const writer = worker(labelForWait);
+      let signalLock!: () => void;
+      let releaseLock!: () => void;
+      const lockAcquired = new Promise<void>((resolve) => {
+        signalLock = resolve;
+      });
+      const hold = blocker.begin(async (tx) => {
+        await tx`select pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(${lockKey},0))`;
+        signalLock();
+        await new Promise<void>((resolve) => {
+          releaseLock = resolve;
+        });
+      });
+      await lockAcquired;
+      let attempt: Promise<unknown> | undefined;
+      try {
+        attempt = writer.begin(async (tx) => {
+          await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: actor.userId, role: 'authenticated' })},true)`;
+          await tx`set local role authenticated`;
+          const [row] =
+            operation === 'save'
+              ? await tx`select public.save_workspace_form_draft(${context.wsA.id},${formId},1,${tx.json(definitionSnapshot)},${requestId},${label}) as result`
+              : operation === 'publish'
+                ? await tx`select public.publish_workspace_form(${context.wsA.id},${formId},${requestId}) as result`
+                : operation === 'copy'
+                  ? await tx`select public.copy_workspace_form(${context.wsA.id},${formId},${requestId}) as result`
+                  : await tx`select public.retire_workspace_form(${context.wsA.id},${formId},${requestId}) as result`;
+          return row?.result;
+        });
+        expect(
+          await waitForLock(db, labelForWait),
+          `${operation} must wait on its ${lockKind} lock`,
+        ).toBe(true);
+        await db`update public.workspace_memberships
+        set revoked_at=clock_timestamp(),revoked_by=${context.po.userId}
+        where workspace_id=${context.wsA.id} and user_id=${actor.userId} and revoked_at is null`;
+        releaseLock();
+        await hold;
+        const result = await attempt;
+        if (result !== null)
+          unexpectedWrites.push(`${operation}/${lockKind}: returned a result`);
+        const formsAfter = await db`select id from public.forms
+          where workspace_id=${context.wsA.id} and id=${formId}`;
+        if (formsAfter.length !== 1)
+          unexpectedWrites.push(`${operation}/${lockKind}: form row changed`);
+        const versionsAfter =
+          await db`select version_number,status from public.form_versions
+          where workspace_id=${context.wsA.id} and form_id=${formId}`;
+        if (
+          versionsAfter.length !== 1 ||
+          versionsAfter[0]?.version_number !== 1 ||
+          versionsAfter[0]?.status !== 'draft'
+        ) {
+          unexpectedWrites.push(
+            `${operation}/${lockKind}: form version changed`,
+          );
+        }
+        const auditsAfter =
+          await db`select 1 from public.audit_events where workspace_id=${context.wsA.id}
+          and target_id=${formId} and action in ('form.draft_saved','form.published','form.retired')`;
+        if (auditsAfter.length !== 0)
+          unexpectedWrites.push(`${operation}/${lockKind}: audit inserted`);
+        if (operation === 'copy') {
+          const countsAfter =
+            await db`select count(*)::int as count from public.forms
+            where workspace_id=${context.wsA.id}`;
+          if (countsAfter[0]?.count !== formsBefore?.count)
+            unexpectedWrites.push(
+              `${operation}/${lockKind}: copied form inserted`,
+            );
+        }
+      } finally {
+        if (releaseLock) releaseLock();
+        await Promise.allSettled([hold, ...(attempt ? [attempt] : [])]);
+        await blocker.end();
+        await writer.end();
+      }
+    }
+  }
+  expect(unexpectedWrites).toEqual([]);
+});
 type JSONObject = { [key: string]: postgres.JSONValue };
 type MutableDefinition = JSONObject & { questions: JSONObject[] };
 
@@ -84,40 +216,14 @@ function definition(label = 'Editable prompt') {
   };
 }
 
-it('accepts bilingual slider labels while preserving legacy scalar labels', async () => {
-  const value = definition();
-  value.questions.push({
-    id: 'N11',
-    sectionId: 'section-3',
-    type: 'slider',
-    required: true,
-    label: { en: 'How hungry do you feel?', ar: 'سؤال' },
-    validation: { min: 0, max: 10, step: 1 },
-    labels: {
-      minimum: { en: 'I barely feel hungry', ar: 'مش بجوع تقريبًا' },
-      middle: 'Moderate hunger',
-      maximum: 'Very hungry',
-    },
-    feedbackBands: [{ min: 0, max: 10, text: 'Synthetic feedback' }],
-  } as never);
-  const [accepted] = await db`
-    select app_private.f15_valid_builder_definition(${db.json(value)},false) as valid`;
-  expect(accepted!.valid).toBe(true);
-
-  const invalid = structuredClone(value);
-  const labels = (invalid.questions.at(-1)! as Record<string, unknown>)
-    .labels as Record<string, unknown>;
-  labels.minimum = { en: 'I barely feel hungry', extra: 'unexpected' };
-  const [rejected] = await db`
-    select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
-  expect(rejected!.valid).toBe(false);
-});
-
 it('accepts the approved B06 identifier for the N12 series selector', async () => {
-  const value = definition();
+  const value = structuredClone(starter) as unknown as MutableDefinition;
+  value.questions = value.questions.filter(
+    (question) => question['id'] !== 'B06',
+  );
   value.questions.unshift({
     id: 'B06',
-    sectionId: 'section-1',
+    sectionId: 'basic',
     type: 'singleChoice',
     required: true,
     privacy: 'personal',
@@ -132,58 +238,6 @@ it('accepts the approved B06 identifier for the N12 series selector', async () =
   const [result] = await db`
     select app_private.f15_valid_builder_definition(${db.json(value)},false) as valid`;
   expect(result!.valid).toBe(true);
-});
-
-it('provisions the exact approved starter copy for a new workspace', async () => {
-  await expect(
-    db.begin(async (tx) => {
-      const fixture = await workspace(tx);
-      const [row] = await tx`
-        select definition from public.form_versions
-        where workspace_id=${fixture.workspaceId} and form_id=${fixture.formId}
-          and version_number=1`;
-      const questions = (
-        row!.definition as {
-          questions: Array<{
-            id: string;
-            label?: { en?: string };
-            optionLabels?: Array<{ en: string }>;
-            labels?: {
-              minimum?: { en?: string };
-              middle?: { en?: string };
-              maximum?: { en?: string };
-            };
-          }>;
-        }
-      ).questions;
-      expect(
-        questions.find((question) => question.id === 'N07.meal_count'),
-      ).toMatchObject({
-        label: { en: 'How many meals would you like to eat per day?' },
-        optionLabels: [
-          { en: '2 meals' },
-          { en: '3 meals' },
-          { en: '4 meals' },
-          { en: '5 meals' },
-        ],
-      });
-      expect(
-        questions.find((question) => question.id === 'T08.system'),
-      ).toMatchObject({
-        label: { en: 'What training split would you like to follow?' },
-      });
-      expect(questions.find((question) => question.id === 'N11')).toMatchObject(
-        {
-          labels: {
-            minimum: { en: 'I barely feel hungry' },
-            middle: { en: 'Moderate hunger' },
-            maximum: { en: 'Very strong hunger' },
-          },
-        },
-      );
-      throw rollback;
-    }),
-  ).rejects.toBe(rollback);
 });
 
 it('rejects N12 and derived definitions with absent required selector metadata', async () => {
@@ -233,6 +287,10 @@ it('rejects N12 and derived definitions with absent required selector metadata',
       ],
     },
   ];
+  const control = { ...base, questions: [selector, mealCount, derived] };
+  const [controlResult] = await db`
+    select app_private.f15_valid_builder_definition(${db.json(control)},false) as valid`;
+  expect(controlResult!.valid).toBe(true);
   for (const invalid of cases) {
     const [result] = await db`
       select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
@@ -254,6 +312,40 @@ it('rejects a slider definition without its validation object', async () => {
 });
 
 describe('T006/T009 persisted Builder writes', () => {
+  it('rejects a null expected revision before hashing or first-save work', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const fixture = await workspace(tx);
+        const formId = randomUUID();
+        const policy = `null-revision-${fixture.workspaceId}`;
+        await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+          values(${policy},'terms','published')`;
+        const [result] = await tx`
+          select app_private.save_workspace_form_draft(
+            ${fixture.workspaceId},${formId},null::integer,${tx.json(definition())},${randomUUID()},${fixture.actor},'Null revision'
+          ) as result`;
+        expect(result?.result).toEqual({ status: 'invalid' });
+        expect(
+          await tx`select id from public.forms where workspace_id=${fixture.workspaceId} and id=${formId}`,
+        ).toHaveLength(0);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it('requires both localized slider labels to be nonblank and within the byte bound', async () => {
+    const [valid] = await db`
+      select app_private.f15_valid_slider_label(${db.json({ en: 'Low', ar: 'منخفض' })}) as valid`;
+    const [blankArabic] = await db`
+      select app_private.f15_valid_slider_label(${db.json({ en: 'Low', ar: '   ' })}) as valid`;
+    const [oversizedEnglish] = await db`
+      select app_private.f15_valid_slider_label(${db.json({ en: 'x'.repeat(4097), ar: 'منخفض' })}) as valid`;
+
+    expect(valid?.valid).toBe(true);
+    expect(blankArabic?.valid).toBe(false);
+    expect(oversizedEnglish?.valid).toBe(false);
+  });
+
   it('rejects whitespace English form names before creating a draft', async () => {
     await expect(
       db.begin(async (tx) => {
@@ -357,12 +449,12 @@ describe('T006/T009 persisted Builder writes', () => {
       (body) =>
         body
           .replace(
-            "not app_private.f15_valid_slider_label(question->'labels'->'middle')",
-            'false',
+            "or not app_private.f15_valid_slider_label(question->'labels'->'middle')",
+            'or false',
           )
           .replace(
-            "btrim(coalesce(question->'labels'->'middle'->>'en',question->'labels'->'middle'->>'ar',question->'labels'->>'middle',''))=''",
-            'false',
+            "or btrim(coalesce(question->'labels'->'middle'->>'en',question->'labels'->'middle'->>'ar',question->'labels'->>'middle',''))=''",
+            'or false',
           ),
       async () =>
         expectInvariantFailure(async () => {

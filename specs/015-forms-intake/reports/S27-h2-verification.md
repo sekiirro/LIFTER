@@ -18,28 +18,28 @@ Stack D only was reset once, then the local Vault provisioner completed. After r
 
 ## Gates
 
-| Gate | Result |
-| --- | --- |
+| Gate                                           | Result                                                     |
+| ---------------------------------------------- | ---------------------------------------------------------- |
 | Full default Stack D integration at final head | 120 files passed, 1,595 passed, 2 expected skips; 641.10 s |
-| Clean-environment unit at final code | 179 files passed, 2,258 passed |
-| Lint | Passed |
-| Typecheck | Passed |
-| Format check | Passed after formatting merged locale files |
-| Build | Passed |
-| Edge build | Passed |
-| Secrets check | Passed |
-| Size | Passed: web 8,645.86 KiB (13.19%); cron 11.76 KiB (0.02%) |
-| Migration timestamp check | Passed: 155 validated; 11 documented merged exceptions |
-| `git diff --check` | Passed |
+| Clean-environment unit at final code           | 179 files passed, 2,258 passed                             |
+| Lint                                           | Passed                                                     |
+| Typecheck                                      | Passed                                                     |
+| Format check                                   | Passed after formatting merged locale files                |
+| Build                                          | Passed                                                     |
+| Edge build                                     | Passed                                                     |
+| Secrets check                                  | Passed                                                     |
+| Size                                           | Passed: web 8,645.86 KiB (13.19%); cron 11.76 KiB (0.02%)  |
+| Migration timestamp check                      | Passed: 155 validated; 11 documented merged exceptions     |
+| `git diff --check`                             | Passed                                                     |
 
 ## Playwright reconciliation
 
 Both full suites ran on Stack D with local-only API-key aliases and `LIFTER_E2E_ALLOW_HTTP=true`; no test assertion was weakened.
 
-| Snapshot | Passed | Failed | Skipped | Failure classification |
-| --- | ---: | ---: | ---: | --- |
-| `origin/main` (`24694ff`) | 180 | 15 | 9 | 15 client-account/storage cases; all pass in the F15 run. |
-| F15 merged head | 261 | 22 | 9 | 22 F15 Forms-only cases absent from main: 8 default-starter cases (starter question input not found), 13 builder cases (second question field not found after adding a health notice), and 1 production-route sign-in case (Email input not found). These remain unresolved for T024 final acceptance. |
+| Snapshot                  | Passed | Failed | Skipped | Failure classification                                                                                                                                                                                                                                                                                 |
+| ------------------------- | -----: | -----: | ------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `origin/main` (`24694ff`) |    180 |     15 |       9 | 15 client-account/storage cases; all pass in the F15 run.                                                                                                                                                                                                                                              |
+| F15 merged head           |    261 |     22 |       9 | 22 F15 Forms-only cases absent from main: 8 default-starter cases (starter question input not found), 13 builder cases (second question field not found after adding a health notice), and 1 production-route sign-in case (Email input not found). These remain unresolved for T024 final acceptance. |
 
 Issue #41's seven historical PO/staff failures were not in either current failure list. The F15 run did not reproduce those exact failures. The baseline run's 15 failures did not overlap the 22 F15 Forms failures; no tests were changed to mask either set.
 
@@ -51,6 +51,7 @@ Issue #41's seven historical PO/staff failures were not in either current failur
 - Executed T018 mutation evidence is in [S27-T018-mutation-evidence.md](S27-T018-mutation-evidence.md). All eight mutants were detected in rollback-scoped transactions.
 
 The binding S27-R1 design is recorded in the architect ruling: Closure and Refund share the immutable deactivation timestamp and 30-day retention boundary, with reason derived from the authoritative operation. Closure uses the refund authority and idempotency/locking pattern, writes immediate auth lockout, and creates no financial rows. Refund remains the existing financial-reversal path. Retention uses deactivation time plus the operation row ID; purge preserves templates, financial ledger and audit events.
+
 ## Post-review-window main-tree correction
 
 The initial origin/main comparison was incorrect: the merge tree omitted 29 main-tracked files. After the 40-minute review window, these files were restored verbatim from `origin/main` in commit `ebc0099` and pushed. The final comparison now reports no main-tracked deletions. The restored set is the main Glisse UI/vendor/perf additions and their unit/E2E coverage, including `components/shell/AccessibleTooltip*`, `components/shell/ShellNavigation.tsx`, `components/ui/glass/*`, `scripts/perf/*`, `tests/e2e/{egyptian-mobile.ts,glass.spec.ts,tooltip-geometry.ts}`, the six corresponding shell/glass unit tests, and `vendor/glisse/*` (29 paths total).

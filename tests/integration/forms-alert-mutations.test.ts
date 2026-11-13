@@ -16,7 +16,7 @@ const CORE = 'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)';
 const IMMUTABLE = 'app_private.f15_alert_schedule_immutable()';
 const rollback = new Error('rollback F15 alert mutation fixture');
 const migrationPath = new URL(
-  '../../supabase/migrations/20261104030800_f15_alert_schedules.sql',
+  '../../supabase/migrations/20261112022800_f15_alert_schedules.sql',
   import.meta.url,
 );
 
@@ -114,15 +114,75 @@ async function setupClient() {
   return { f, client };
 }
 
-it('kills combined clocks, reassignment deadline reset, and omitted-owner mutants', async () => {
+async function trainerBatchProbe(
+  f: Awaited<ReturnType<typeof clientContext>>,
+  client: Awaited<ReturnType<typeof registered>>,
+) {
+  let expectedAssertionFailed = false;
+  await rollbackProbe(async (tx) => {
+    const trainerAssignment = await makeAssignment(tx, f, client.id, null);
+    const [trainerSchedule] = await tx`
+      insert into app_private.form_alert_schedules(
+        workspace_id,source_assignment_id,alert_kind,deadline_at,trainer_user_id
+      ) values(
+        ${f.wsA.id},${trainerAssignment},'trainer_late','2026-05-01T00:00:00Z',${f.trainerA.userId}
+      ) returning id`;
+    await tx`insert into app_private.form_alert_occurrences(
+      workspace_id,schedule_id,stage,recipient_user_id,job_id,enqueued_at
+    ) values
+      (${f.wsA.id},${trainerSchedule!.id},'trainer_initial',${f.trainerA.userId},null,'2026-05-01T00:00:00Z'),
+      (${f.wsA.id},${trainerSchedule!.id},'trainer_owners_24h',${f.po.userId},null,'2026-05-02T00:00:00Z'),
+      (${f.wsA.id},${trainerSchedule!.id},'trainer_owners_24h',${f.woA.userId},null,'2026-05-02T00:00:00Z')`;
+    const clientAssignment = await makeAssignment(
+      tx,
+      f,
+      client.id,
+      '2026-05-03T00:00:00Z',
+    );
+    const [row] = await tx`
+      select app_private.evaluate_forms_alerts_core(
+        '2026-05-03T00:00:00Z'::timestamptz,${f.wsA.id}::uuid,1
+      ) as result`;
+    try {
+      expect(row!.result).toEqual({ status: 'ok', enqueued: 2 });
+    } catch {
+      expectedAssertionFailed = true;
+    }
+    if (!expectedAssertionFailed) {
+      const [clientOccurrences] = await tx`
+        select count(*)::int as count from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and schedule_id=(
+          select id from app_private.form_alert_schedules
+          where workspace_id=${f.wsA.id} and source_assignment_id=${clientAssignment}
+            and alert_kind='client_late'
+        )`;
+      expect(clientOccurrences?.count).toBe(2);
+    }
+  });
+  return expectedAssertionFailed;
+}
+
+it('kills a trainer batch-starvation mutant and restores the evaluator', async () => {
+  const { f, client } = await setupClient();
+  await withCrashSafeFunctionMutant(
+    CORE,
+    (source) => source.replace("s.alert_kind <> 'trainer_late'", 'true'),
+    async () => {
+      expect(await trainerBatchProbe(f, client)).toBe(true);
+    },
+  );
+  expect(await trainerBatchProbe(f, client)).toBe(false);
+});
+
+it('kills delayed client-late stages, reassignment deadline reset, and omitted-owner mutants', async () => {
   {
     const { f, client } = await setupClient();
     await withCrashSafeFunctionMutant(
       CORE,
       (source) =>
         source.replace(
-          "schedule_row.deadline_at + interval '24 hours' as stage_at\n        where schedule_row.alert_kind='client_late'",
           "schedule_row.deadline_at as stage_at\n        where schedule_row.alert_kind='client_late'",
+          "schedule_row.deadline_at + interval '24 hours' as stage_at\n        where schedule_row.alert_kind='client_late'",
         ),
       async () =>
         expectInvariantFailure(
@@ -142,7 +202,7 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
                 await evaluate(tx, f.wsA.id, '2026-05-01T10:00:00.000Z'),
               ).toEqual({
                 status: 'ok',
-                enqueued: 0,
+                enqueued: 2,
               });
             }),
         ),
@@ -197,7 +257,7 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
             await evaluate(tx, f.wsA.id, '2026-05-06T10:00:00.000Z');
             const recipients = await tx`select recipient_user_id
               from app_private.form_alert_occurrences
-              where workspace_id=${f.wsA.id} and stage='client_owners_48h'`;
+              where workspace_id=${f.wsA.id} and stage='client_owners_immediate'`;
             expect(
               recipients.map((row) => row.recipient_user_id).sort(),
             ).toEqual([f.po.userId, f.woA.userId].sort());
@@ -207,15 +267,19 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
   }
 });
 
-it('kills revoked-recipient, duplicate-stage, and answer-text mutants', async () => {
+it('kills delayed-owner-stage, duplicate-stage, and answer-text mutants', async () => {
   {
     const { f, client } = await setupClient();
     await withCrashSafeFunctionMutant(
       CORE,
-      (source) => source.replaceAll('and wm.revoked_at is null', ''),
+      (source) =>
+        source.replace(
+          "schedule_row.deadline_at as stage_at\n        where schedule_row.alert_kind='client_late'",
+          "schedule_row.deadline_at + interval '24 hours' as stage_at\n        where schedule_row.alert_kind='client_late'",
+        ),
       async () =>
         expectInvariantFailure(
-          'revoked Trainer must not receive a queued alert',
+          'immediate owner stage must enqueue the platform owner',
           () =>
             rollbackProbe(async (tx) => {
               const assignment = await makeAssignment(
@@ -229,14 +293,14 @@ it('kills revoked-recipient, duplicate-stage, and answer-text mutants', async ()
               where workspace_id=${f.wsA.id} and source_assignment_id=${assignment}`;
               await tx`update public.workspace_memberships
               set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
-              where workspace_id=${f.wsA.id} and user_id=${f.trainerA.userId} and revoked_at is null`;
-              await evaluate(tx, f.wsA.id, '2026-05-08T10:00:00.000Z');
+              where workspace_id=${f.wsA.id} and user_id=${f.woA.userId} and revoked_at is null`;
+              await evaluate(tx, f.wsA.id, '2026-05-07T10:00:00.000Z');
               const recipients =
                 await tx`select recipient_user_id from app_private.form_alert_occurrences
               where workspace_id=${f.wsA.id}`;
               expect(
                 recipients.map((row) => row.recipient_user_id).sort(),
-              ).toEqual([f.po.userId, f.woA.userId].sort());
+              ).toEqual([f.po.userId].sort());
             }),
         ),
     );
@@ -529,22 +593,42 @@ it('kills migration activation, non-owner activation, missing scheduler lock, an
           async () => {
             const lockConnection = sql();
             const scheduler = sql();
-            await lockConnection`begin`;
-            await lockConnection`select pg_catalog.pg_advisory_xact_lock(11011,317)`;
+            let pending: Promise<unknown> | undefined;
             let finished = false;
-            const pending =
-              scheduler`select app_private.f15_alert_schedule_deactivate()`.finally(
-                () => {
-                  finished = true;
-                },
-              );
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            const blocked = finished === false;
-            await lockConnection`commit`;
-            await pending;
-            await lockConnection.end();
-            await scheduler.end();
-            expect(blocked).toBe(true);
+            try {
+              await lockConnection`begin`;
+              await lockConnection`select pg_catalog.pg_advisory_xact_lock(11011,317)`;
+              const [session] = await scheduler`select pg_backend_pid() as pid`;
+              expect(session).toBeDefined();
+              const pid = session!.pid;
+              pending =
+                scheduler`select app_private.f15_alert_schedule_deactivate()`
+                  .execute()
+                  .finally(() => {
+                    finished = true;
+                  });
+              await expect
+                .poll(
+                  async () => {
+                    const [activity] = await lockConnection`
+                      select wait_event_type,wait_event
+                      from pg_catalog.pg_stat_activity where pid=${pid}
+                    `;
+                    if (activity?.wait_event_type === 'Lock')
+                      return activity.wait_event;
+                    return finished ? 'finished' : null;
+                  },
+                  { timeout: 5000 },
+                )
+                .toBe('advisory');
+              await lockConnection`commit`;
+              await pending;
+            } finally {
+              await lockConnection`rollback`.catch(() => undefined);
+              await pending?.catch(() => undefined);
+              await lockConnection.end();
+              await scheduler.end();
+            }
           },
         ),
     );

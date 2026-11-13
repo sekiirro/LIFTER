@@ -1,21 +1,38 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { randomInt, randomUUID } from 'node:crypto';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { expectHeroAxeClean } from './registration-hero-evidence';
 
-const origin = new URL(
+const origin =
   process.env.PLAYWRIGHT_BASE_URL ??
-    process.env.APP_ORIGIN ??
-    'http://localhost:3000',
-).origin;
-const screenshotDirectory = join(tmpdir(), 'lifter-f15-signup');
+  process.env.APP_ORIGIN ??
+  'http://localhost:3000';
+const s31ScreenshotDirectory =
+  process.env.HERO_R17_SCREENSHOT_DIR ??
+  join(tmpdir(), 'lifter-s31-hero-r18', 'signup-states');
+const screenshotDirectory = s31ScreenshotDirectory;
+type SignupTestMessages = ReturnType<typeof getMessages> & {
+  'clientSignup.dateOfBirth': string;
+  'clientSignup.username': string;
+  'clientSignup.telegramUsername': string;
+  'clientSignup.optional': string;
+};
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
 let token: string;
+
+function dateInputOffsetFromToday(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
 
 test.describe.serial('T038 invitation signup UI', () => {
   test.beforeAll(async () => {
@@ -37,7 +54,6 @@ test.describe.serial('T038 invitation signup UI', () => {
   }) => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     for (const locale of ['ar', 'en'] as const) {
-      const messages = getMessages(locale);
       for (const theme of ['light', 'dark'] as const) {
         for (const viewport of [
           { name: 'mobile', width: 390, height: 844 },
@@ -52,6 +68,9 @@ test.describe.serial('T038 invitation signup UI', () => {
             { name: THEME_COOKIE, value: theme, url: origin },
           ]);
           await page.goto(`/register/${token}`);
+          await page.addStyleTag({
+            content: 'nextjs-portal { display: none !important; }',
+          });
           await expect(page.locator('html')).toHaveAttribute(
             'dir',
             locale === 'ar' ? 'rtl' : 'ltr',
@@ -62,24 +81,22 @@ test.describe.serial('T038 invitation signup UI', () => {
             'username',
             'telegramUsername',
             'email',
+            'phone',
             'password',
-          ])
-            await expect(page.locator(`form [name="${field}"]`)).toBeVisible();
+          ]) {
+            const selector =
+              field === 'phone'
+                ? 'form input[type="tel"]'
+                : `form [name="${field}"]`;
+            await expect(page.locator(selector)).toBeVisible();
+          }
           await expect(page.locator('form input[type="checkbox"]')).toHaveCount(
             0,
           );
           await expect(page.locator('form [name="sex"]')).toHaveCount(0);
           await expect(page.locator('form [name="health"]')).toHaveCount(0);
-          await expect(
-            page.getByText(messages['forms.termsCardTitle'], { exact: true }),
-          ).toHaveCount(0);
-          const serious = (
-            await new AxeBuilder({ page }).analyze()
-          ).violations.filter(
-            (violation) =>
-              violation.impact === 'serious' || violation.impact === 'critical',
-          );
-          expect(serious).toEqual([]);
+          await expect(page.locator('form [name="terms"]')).toHaveCount(0);
+          await expectHeroAxeClean(page);
           await page.screenshot({
             path: join(
               screenshotDirectory,
@@ -87,7 +104,72 @@ test.describe.serial('T038 invitation signup UI', () => {
             ),
             fullPage: true,
           });
+          if (viewport.name === 'desktop') {
+            await page
+              .locator('form button[type="submit"]')
+              .scrollIntoViewIfNeeded();
+            await page.screenshot({
+              path: join(
+                screenshotDirectory,
+                `${locale}-${theme}-desktop-cta.png`,
+              ),
+              fullPage: true,
+            });
+          }
         }
+      }
+    }
+  });
+
+  test('renders the restored profile in AR/EN and light/dark without captures', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    for (const locale of ['ar', 'en'] as const) {
+      const messages = getMessages(locale) as SignupTestMessages;
+      for (const theme of ['light', 'dark'] as const) {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: locale, url: origin },
+          { name: THEME_COOKIE, value: theme, url: origin },
+        ]);
+        await page.goto(`/register/${token}`);
+        await expect(page.locator('html')).toHaveAttribute(
+          'dir',
+          locale === 'ar' ? 'rtl' : 'ltr',
+        );
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        for (const field of [
+          'name',
+          'dateOfBirth',
+          'username',
+          'telegramUsername',
+          'email',
+          'phone',
+          'password',
+        ]) {
+          const selector =
+            field === 'phone'
+              ? 'form input[type="tel"]'
+              : `form [name="${field}"]`;
+          await expect(page.locator(selector)).toBeVisible();
+        }
+        await expect(page.locator('form[data-hydrated]')).toHaveAttribute(
+          'data-hydrated',
+          'true',
+        );
+        const nameField = page.getByLabel(messages['clientSignup.name'], {
+          exact: true,
+        });
+        await nameField.focus();
+        await nameField.press('Tab');
+        await expect(
+          page.getByLabel(messages['clientSignup.dateOfBirth'], {
+            exact: true,
+          }),
+        ).toBeFocused();
+        await expectHeroAxeClean(page);
       }
     }
   });
@@ -97,7 +179,50 @@ test.describe.serial('T038 invitation signup UI', () => {
     context,
   }) => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
-    const messages = getMessages('en');
+    const messages = getMessages('en') as SignupTestMessages;
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/register/${token}`);
+    await expect(page.locator('form[data-hydrated]')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
+    const nameField = page.getByLabel(messages['clientSignup.name'], {
+      exact: true,
+    });
+    const dateOfBirthField = page.getByLabel(
+      messages['clientSignup.dateOfBirth'],
+      { exact: true },
+    );
+    await nameField.focus();
+    await nameField.press('Tab');
+    await expect(dateOfBirthField).toBeFocused();
+    await nameField.fill('Heba Sami Nabil');
+    await dateOfBirthField.fill(dateInputOffsetFromToday(2));
+    await page
+      .getByLabel(messages['clientSignup.username'], { exact: true })
+      .fill('testclientr23');
+    await page
+      .getByRole('button', { name: messages['clientSignup.submit'] })
+      .click();
+    await expect(
+      page.getByLabel(messages['clientSignup.dateOfBirth'], { exact: true }),
+    ).toHaveAttribute('aria-invalid', 'true');
+    await expect(
+      page.getByText(messages['clientSignup.fieldError']).first(),
+    ).toBeVisible();
+    expect(page.url()).toContain('/register/');
+  });
+
+  test('focuses the first invalid field after its ARIA error renders', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en') as SignupTestMessages;
+    await page.setViewportSize({ width: 390, height: 844 });
     await context.addCookies([
       { name: LOCALE_COOKIE, value: 'en', url: origin },
       { name: THEME_COOKIE, value: 'light', url: origin },
@@ -106,17 +231,26 @@ test.describe.serial('T038 invitation signup UI', () => {
     const nameField = page.getByLabel(messages['clientSignup.name'], {
       exact: true,
     });
-    const dateOfBirthField = page.getByLabel(
-      messages['clientSignup.dateOfBirth'],
-      { exact: true },
-    );
-    await dateOfBirthField.fill('2099-01-01');
+    await nameField.fill('Heba');
+    await page
+      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+      .fill(dateInputOffsetFromToday(2));
     const usernameField = page.getByLabel(messages['clientSignup.username'], {
       exact: true,
     });
     await usernameField.fill('system');
+
+    await mkdir(s31ScreenshotDirectory, { recursive: true });
+    await page.addStyleTag({
+      content: 'nextjs-portal { display: none !important; }',
+    });
     await nameField.focus();
-    await nameField.blur();
+    await page.screenshot({
+      path: join(s31ScreenshotDirectory, 'signup-focus-ring-en-light-390.png'),
+      fullPage: true,
+    });
+    await expectHeroAxeClean(page);
+
     let focusedAfterErrorState = false;
     await page.exposeFunction(
       'captureSignupFocusState',
@@ -144,97 +278,15 @@ test.describe.serial('T038 invitation signup UI', () => {
     await usernameField.press('Enter');
     await expect(nameField).toBeFocused();
     await expect.poll(() => focusedAfterErrorState).toBe(true);
-    await expect(
-      page.getByLabel(messages['clientSignup.name'], { exact: true }),
-    ).toHaveAttribute('aria-invalid', 'true');
-    await expect(
-      page.getByText(messages['clientSignup.fieldError']).first(),
-    ).toBeVisible();
     await expect(nameField).toHaveAttribute(
       'aria-describedby',
       'signup-name-error',
     );
-    await dateOfBirthField.focus();
-    await dateOfBirthField.fill('2000-01-01');
-    await expect(dateOfBirthField).toBeFocused();
-    await usernameField.focus();
-    await usernameField.press('Enter');
-    await expect(nameField).toBeFocused();
-    await nameField.fill('Heba Sami Nabil');
-    await expect(nameField).not.toHaveAttribute('aria-invalid');
-    await expect(nameField).not.toHaveAttribute('aria-describedby');
-    await usernameField.fill('valid_user_23');
-    await expect(usernameField).toBeFocused();
-    expect(page.url()).toContain('/register/');
-  });
-
-  test('does not show blur errors while signup submission is pending', async ({
-    page,
-    context,
-  }) => {
-    test.skip(!local, 'Requires the disposable local Supabase stack.');
-    const messages = getMessages('en');
-    await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
-      { name: THEME_COOKIE, value: 'light', url: origin },
-    ]);
-    await page.goto(`/register/${token}`);
-    await page
-      .getByLabel(messages['clientSignup.name'], { exact: true })
-      .fill('Heba Sami Nabil');
-    await page
-      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
-      .fill('2000-10-29');
-    await page
-      .getByLabel(messages['clientSignup.username'], { exact: true })
-      .fill('valid_user_23');
-    await page
-      .getByLabel(messages['clientSignup.email'], { exact: true })
-      .fill('pending@example.test');
-    await page
-      .getByLabel(messages['clientSignup.phone'], { exact: true })
-      .fill('1012345678');
-    await page
-      .getByLabel(messages['clientSignup.password'], { exact: true })
-      .fill('Complex!2345');
-
-    let signalPost!: () => void;
-    let releasePost!: () => void;
-    const postSeen = new Promise<void>((resolve) => {
-      signalPost = resolve;
+    await page.screenshot({
+      path: join(s31ScreenshotDirectory, 'signup-invalid-en-light-390.png'),
+      fullPage: true,
     });
-    const postGate = new Promise<void>((resolve) => {
-      releasePost = resolve;
-    });
-    await page.route('**/register/**', async (route) => {
-      if (route.request().method() !== 'POST') {
-        await route.continue();
-        return;
-      }
-      signalPost();
-      await postGate;
-      await route.continue();
-    });
-
-    const nameField = page.getByLabel(messages['clientSignup.name'], {
-      exact: true,
-    });
-    try {
-      await page
-        .getByRole('button', { name: messages['clientSignup.submit'] })
-        .click();
-      await postSeen;
-      await expect(nameField).toBeDisabled();
-      await nameField.evaluate((element) =>
-        element.dispatchEvent(new FocusEvent('blur')),
-      );
-      await expect(nameField).not.toHaveAttribute('aria-invalid', 'true');
-      await expect(
-        page.getByText(messages['clientSignup.fieldError']),
-      ).toHaveCount(0);
-    } finally {
-      releasePost();
-    }
+    await expectHeroAxeClean(page);
   });
 
   test('rejects unexpected signup fields generically without a browser session', async ({
@@ -242,7 +294,7 @@ test.describe.serial('T038 invitation signup UI', () => {
     context,
   }) => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
-    const messages = getMessages('en');
+    const messages = getMessages('en') as SignupTestMessages;
     await context.addCookies([
       { name: LOCALE_COOKIE, value: 'en', url: origin },
       { name: THEME_COOKIE, value: 'light', url: origin },
@@ -284,5 +336,56 @@ test.describe.serial('T038 invitation signup UI', () => {
       ),
     ).toBe(false);
     await expect(page.locator('form input[type="checkbox"]')).toHaveCount(0);
+  });
+
+  test('submits a complete profile with Telegram left empty', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en') as SignupTestMessages;
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.17' });
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/register/${token}`);
+    await page
+      .getByLabel(messages['clientSignup.name'], { exact: true })
+      .fill('Heba Sami Nabil');
+    await page
+      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+      .fill('1990-04-12');
+    await page
+      .getByLabel(messages['clientSignup.username'], { exact: true })
+      .fill(`heba${randomUUID().replaceAll('-', '').slice(0, 24)}`);
+    await page
+      .getByLabel(messages['clientSignup.email'], { exact: true })
+      .fill(`signup-${randomUUID()}@example.test`);
+    await page
+      .getByRole('textbox', { name: messages['clientSignup.phone'] })
+      .fill(`010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`);
+    await page
+      .getByLabel(messages['clientSignup.password'], { exact: true })
+      .fill('Complex!2345');
+    await page
+      .getByRole('button', { name: messages['clientSignup.submit'] })
+      .click();
+    await expect(page.getByRole('status')).toHaveText(
+      messages['clientSignup.complete'],
+    );
+    await expect(page.locator('form [name="telegramUsername"]')).toHaveValue(
+      '',
+    );
+    await mkdir(s31ScreenshotDirectory, { recursive: true });
+    await page.addStyleTag({
+      content: 'nextjs-portal { display: none !important; }',
+    });
+    await page.screenshot({
+      path: join(s31ScreenshotDirectory, 'signup-success-en-light-390.png'),
+      fullPage: true,
+    });
+    await expectHeroAxeClean(page);
   });
 });

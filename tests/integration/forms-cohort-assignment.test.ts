@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
+import type { TransactionSql } from 'postgres';
 import {
   clientContext,
   registered,
@@ -19,17 +20,26 @@ async function expectInvariantFailure(body: () => Promise<void>) {
   }
   expect(failure, 'the named invariant must kill the mutant').toBeDefined();
 }
-async function createForm(workspaceId: string, termsVersion?: string) {
-  const policy = termsVersion ?? `t010-${randomUUID()}`;
+async function insertForm(
+  tx: TransactionSql,
+  workspaceId: string,
+  policy: string,
+) {
   const formId = randomUUID();
-  if (!termsVersion) {
-    await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
-      values(${policy},'terms','published')`;
-  }
-  await db`insert into public.forms(id,workspace_id,name) values(${formId},${workspaceId},'T010 policy')`;
-  await db`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
-    values(${workspaceId},${formId},1,${policy},${db.json({ questions: [] })},'published')`;
+  await tx`insert into public.forms(id,workspace_id,name) values(${formId},${workspaceId},'T010 policy')`;
+  await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+    values(${workspaceId},${formId},1,${policy},${tx.json({ questions: [] })},'published')`;
   return formId;
+}
+
+async function createForm(workspaceId: string) {
+  return db.begin(async (tx) => {
+    await tx`lock table app_private.terms_policy_versions in share row exclusive mode`;
+    const policy = `t010-${randomUUID()}`;
+    await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+      values(${policy},'terms','published')`;
+    return insertForm(tx, workspaceId, policy);
+  });
 }
 
 function policyArgs(
@@ -79,6 +89,258 @@ async function setCurrentActivation(
 }
 
 describe('T010/T023 per-form assignment policy', () => {
+  it('does not create manual assignments after retirement and preserves existing snapshots', async () => {
+    const { context, client } = await futureApprovedClient();
+    const formId = await createForm(context.wsA.id);
+    const configured = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      policyArgs(context.wsA.id, formId, 'all_active_clients', 'manual'),
+    );
+    expect(configured.data).toEqual({ status: 'configured' });
+    const approval = await context.po.client.rpc('registration_approve', {
+      request: request(context, client),
+    });
+    expect((approval.data as { status: string }).status).toBe('ok');
+    const subscriptionId = (
+      approval.data as { receipt: { subscription_id: string } }
+    ).receipt.subscription_id;
+    await setCurrentActivation(context.wsA.id, subscriptionId);
+
+    const initial = await context.po.client.rpc(
+      'materialize_intake_assignment_occurrence',
+      {
+        p_workspace_id: context.wsA.id,
+        p_form_id: formId,
+        p_occurrence_key: `manual-before-retire-${randomUUID()}`,
+      },
+    );
+    expect(initial.data).toMatchObject({ status: 'materialized', count: 1 });
+    const before = await db`
+      select client_id,version_number,terms_policy_version,version_snapshot::text as snapshot_bytes
+      from public.form_assignments where workspace_id=${context.wsA.id} and form_id=${formId}`;
+    expect(before).toHaveLength(1);
+    const beforeOccurrences = await db`
+      select o.occurrence_key from app_private.form_assignment_occurrences o
+      join app_private.form_assignment_policies p on p.workspace_id=o.workspace_id and p.id=o.policy_id
+      where o.workspace_id=${context.wsA.id} and p.form_id=${formId}`;
+
+    const retired = await context.po.client.rpc('retire_workspace_form', {
+      p_workspace_id: context.wsA.id,
+      p_form_id: formId,
+      p_request_id: randomUUID(),
+    });
+    expect(retired.data).toMatchObject({ status: 'ok', formStatus: 'retired' });
+    await context.po.client.rpc('materialize_intake_assignment_occurrence', {
+      p_workspace_id: context.wsA.id,
+      p_form_id: formId,
+      p_occurrence_key: `manual-after-retire-${randomUUID()}`,
+    });
+    const after = await db`
+      select client_id,version_number,terms_policy_version,version_snapshot::text as snapshot_bytes
+      from public.form_assignments where workspace_id=${context.wsA.id} and form_id=${formId}`;
+    expect(after).toEqual(before);
+    const afterOccurrences = await db`
+      select o.occurrence_key from app_private.form_assignment_occurrences o
+      join app_private.form_assignment_policies p on p.workspace_id=o.workspace_id and p.id=o.policy_id
+      where o.workspace_id=${context.wsA.id} and p.form_id=${formId}`;
+    expect(afterOccurrences).toEqual(beforeOccurrences);
+  });
+
+  it('serializes a manual assignment attempt behind concurrent retirement', async () => {
+    const { context, client } = await futureApprovedClient();
+    const formId = await createForm(context.wsA.id);
+    const configured = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      policyArgs(context.wsA.id, formId, 'all_active_clients', 'manual'),
+    );
+    expect(configured.data).toEqual({ status: 'configured' });
+    const approval = await context.po.client.rpc('registration_approve', {
+      request: request(context, client),
+    });
+    const subscriptionId = (
+      approval.data as { receipt: { subscription_id: string } }
+    ).receipt.subscription_id;
+    await setCurrentActivation(context.wsA.id, subscriptionId);
+
+    let releaseRetirement!: () => void;
+    let signalRetirement!: () => void;
+    const retirementLockHeld = new Promise<void>((resolve) => {
+      releaseRetirement = resolve;
+    });
+    const retirementAcquired = new Promise<void>((resolve) => {
+      signalRetirement = resolve;
+    });
+    const retirement = db.begin(async (tx) => {
+      const [result] = await tx`
+        select app_private.retire_workspace_form(
+          ${context.wsA.id},${formId},${randomUUID()},${context.po.userId}
+        ) as result`;
+      expect(result?.result).toMatchObject({
+        status: 'ok',
+        formStatus: 'retired',
+      });
+      signalRetirement();
+      await retirementLockHeld;
+    });
+    await retirementAcquired;
+
+    let attempt: ReturnType<typeof context.po.client.rpc>;
+    try {
+      attempt = context.po.client.rpc(
+        'materialize_intake_assignment_occurrence',
+        {
+          p_workspace_id: context.wsA.id,
+          p_form_id: formId,
+          p_occurrence_key: `manual-race-${randomUUID()}`,
+        },
+      );
+      const returnedBeforeRetirementCommit = await Promise.race([
+        attempt.then(() => true),
+        new Promise<boolean>((resolve) =>
+          setTimeout(() => resolve(false), 150),
+        ),
+      ]);
+      expect(returnedBeforeRetirementCommit).toBe(false);
+    } finally {
+      releaseRetirement();
+    }
+    await retirement;
+    await attempt!;
+    const assignments = await db`
+      select id from public.form_assignments
+      where workspace_id=${context.wsA.id} and form_id=${formId}`;
+    expect(assignments).toHaveLength(0);
+    const occurrences = await db`
+      select o.occurrence_key from app_private.form_assignment_occurrences o
+      join app_private.form_assignment_policies p on p.workspace_id=o.workspace_id and p.id=o.policy_id
+      where o.workspace_id=${context.wsA.id} and p.form_id=${formId}`;
+    expect(occurrences).toHaveLength(0);
+  });
+
+  it('does not materialize a recurring occurrence after retirement', async () => {
+    const { context, client } = await futureApprovedClient();
+    const formId = await createForm(context.wsA.id);
+    const cairoToday = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    const configured = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      {
+        ...policyArgs(
+          context.wsA.id,
+          formId,
+          'all_active_clients',
+          'recurring',
+        ),
+        p_timing: {
+          client_deadline_days: 3,
+          recurrence_interval_days: 7,
+          recurrence_starts_on: cairoToday,
+        },
+      },
+    );
+    expect(configured.data).toEqual({ status: 'configured' });
+    const approval = await context.po.client.rpc('registration_approve', {
+      request: request(context, client),
+    });
+    expect((approval.data as { status: string }).status).toBe('ok');
+    const subscriptionId = (
+      approval.data as { receipt: { subscription_id: string } }
+    ).receipt.subscription_id;
+    await setCurrentActivation(context.wsA.id, subscriptionId);
+
+    const retired = await context.po.client.rpc('retire_workspace_form', {
+      p_workspace_id: context.wsA.id,
+      p_form_id: formId,
+      p_request_id: randomUUID(),
+    });
+    expect(retired.data).toMatchObject({ status: 'ok', formStatus: 'retired' });
+    await context.po.client.rpc('materialize_intake_assignment_occurrence', {
+      p_workspace_id: context.wsA.id,
+      p_form_id: formId,
+      p_occurrence_key: `recurring:${cairoToday}`,
+    });
+    const [rows] = await db`
+      select count(distinct a.id)::integer as assignments,
+        count(distinct o.occurrence_key)::integer as occurrences
+      from app_private.form_assignment_policies p
+      left join public.form_assignments a on a.workspace_id=p.workspace_id and a.policy_id=p.id
+      left join app_private.form_assignment_occurrences o on o.workspace_id=p.workspace_id and o.policy_id=p.id
+      where p.workspace_id=${context.wsA.id} and p.form_id=${formId}`;
+    expect(rows).toEqual({ assignments: 0, occurrences: 0 });
+  });
+
+  it('kills the retired-form guard mutant in occurrence materialization', async () => {
+    await withCrashSafeFunctionMutant(
+      'app_private.materialize_intake_assignment_occurrence_core(uuid,uuid,text,date)',
+      (definition) =>
+        definition.replace(
+          "if latest_form_status='retired' then",
+          'if false then',
+        ),
+      async () =>
+        await expectInvariantFailure(async () => {
+          const { context, client } = await futureApprovedClient();
+          const formId = await createForm(context.wsA.id);
+          const cairoToday = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Africa/Cairo',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          }).format(new Date());
+          const configured = await context.po.client.rpc(
+            'configure_intake_assignment_policy',
+            {
+              ...policyArgs(
+                context.wsA.id,
+                formId,
+                'all_active_clients',
+                'recurring',
+              ),
+              p_timing: {
+                client_deadline_days: 3,
+                recurrence_interval_days: 7,
+                recurrence_starts_on: cairoToday,
+              },
+            },
+          );
+          expect(configured.data).toEqual({ status: 'configured' });
+          const approval = await context.po.client.rpc('registration_approve', {
+            request: request(context, client),
+          });
+          const subscriptionId = (
+            approval.data as { receipt: { subscription_id: string } }
+          ).receipt.subscription_id;
+          await setCurrentActivation(context.wsA.id, subscriptionId);
+          const retired = await context.po.client.rpc('retire_workspace_form', {
+            p_workspace_id: context.wsA.id,
+            p_form_id: formId,
+            p_request_id: randomUUID(),
+          });
+          expect(retired.data).toMatchObject({ status: 'ok' });
+          await context.po.client.rpc(
+            'materialize_intake_assignment_occurrence',
+            {
+              p_workspace_id: context.wsA.id,
+              p_form_id: formId,
+              p_occurrence_key: `recurring:${cairoToday}`,
+            },
+          );
+          const [rows] = await db`
+            select count(distinct a.id)::integer as assignments,
+              count(distinct o.occurrence_key)::integer as occurrences
+            from app_private.form_assignment_policies p
+            left join public.form_assignments a on a.workspace_id=p.workspace_id and a.policy_id=p.id
+            left join app_private.form_assignment_occurrences o on o.workspace_id=p.workspace_id and o.policy_id=p.id
+            where p.workspace_id=${context.wsA.id} and p.form_id=${formId}`;
+          expect(rows).toEqual({ assignments: 0, occurrences: 0 });
+        }),
+    );
+  });
+
   it('excludes a deactivated client from an all-active audience snapshot', async () => {
     const { context, client } = await futureApprovedClient();
     const formId = await createForm(context.wsA.id);
@@ -327,14 +589,17 @@ describe('T010/T023 per-form assignment policy', () => {
 
   it('S25-R2 allows future onboarding/manual delivery and excludes future all-active recurring delivery', async () => {
     const { context, client } = await futureApprovedClient();
-    const sharedTerms = `t010-${randomUUID()}`;
-    await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
-      values(${sharedTerms},'terms','published')`;
-    const formIds = {
-      onboarding: await createForm(context.wsA.id, sharedTerms),
-      manual: await createForm(context.wsA.id, sharedTerms),
-      active: await createForm(context.wsA.id, sharedTerms),
-    };
+    const formIds = await db.begin(async (tx) => {
+      await tx`lock table app_private.terms_policy_versions in share row exclusive mode`;
+      const sharedTerms = `t010-${randomUUID()}`;
+      await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values(${sharedTerms},'terms','published')`;
+      return {
+        onboarding: await insertForm(tx, context.wsA.id, sharedTerms),
+        manual: await insertForm(tx, context.wsA.id, sharedTerms),
+        active: await insertForm(tx, context.wsA.id, sharedTerms),
+      };
+    });
     const onboardingPolicy = await context.po.client.rpc(
       'configure_intake_assignment_policy',
       policyArgs(

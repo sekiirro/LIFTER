@@ -58,7 +58,7 @@ Use a single privileged function; no direct table grants or generic purge API. V
 
 > 1=A: Approve narrowly scoped Privacy Erasure exception. 2=B: Delete related answer-change AND access-view audit records. 3=B: Deletion log retains counts only, no IDs. 4=A: Automatic server-validated deletion only. 5=A: Respect Legal Holds; defer deletion and alert. 6=A: Approve security review and DB change plan. Strictly limit deletion to inapplicable answers and authorized related records. Preserve all Financial, Security and Unrelated Audit Records. Update constitution, specs and tests. Independently review security implications. Escalate genuine conflicts without inventing policy. Design approval only — NOT merge approval. Preserve all CI, CodeRabbit and PO merge gates.
 
-Reference: `C:/Users/NEW LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md`, § “F15 D1 Constitutional Amendment — PO APPROVED”. The exact future migration remains subject to F12/F14 merge, verified Stack C, exact-head testing and review; this is not merge approval.
+Reference: F15 D1 PO approval in `specs/015-forms-intake/spec.md` (session 13); decision-register entry D-29. The exact future migration remains subject to F12/F14 merge, verified Stack C, exact-head testing and review; this is not merge approval.
 
 ### S14 environment update (2026-10-30)
 

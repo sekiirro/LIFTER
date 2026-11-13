@@ -4,6 +4,16 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to verify
+        required: true
+        type: number
+      head_sha:
+        description: Exact PR head SHA to verify
+        required: true
+        type: string
 
 concurrency:
   group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || format('{0}-{1}', github.ref, github.run_id) }}
@@ -13,12 +23,78 @@ permissions:
   contents: read
 
 jobs:
+  docs-only:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Classify changed paths (fail closed)
+        id: classify
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set +e
+          git diff --no-renames --name-only -z "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/changed-paths"
+          result=$?
+          if [[ $result -ne 0 || ! -s "$RUNNER_TEMP/changed-paths" ]]; then
+            echo "Could not enumerate a non-empty PR diff; running full CI" >&2
+            echo 'docs_only=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          value=$(node scripts/spec-consistency.mjs --classify-paths "$RUNNER_TEMP/changed-paths")
+          result=$?
+          if [[ $result -eq 0 && ( "$value" == 'docs_only=true' || "$value" == 'docs_only=false' ) ]]; then
+            echo "$value" >> "$GITHUB_OUTPUT"
+          else
+            echo 'Classifier failed; running full CI' >&2
+            echo 'docs_only=false' >> "$GITHUB_OUTPUT"
+          fi
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
+      - name: Verify and record CI revision
+        shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          merge_sha=$(git rev-parse HEAD)
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
+            second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
+              exit 1
+            fi
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -31,6 +107,8 @@ jobs:
           ffmpeg -hide_banner -encoders 2>&1 | grep -q '\blibwebp\b'
           ffmpeg -hide_banner -encoders 2>&1 | grep -q '\blibaom-av1\b'
           ffmpeg -hide_banner -muxers 2>&1 | grep -q '\bavif\b'
+      - name: Check feature spec consistency
+        run: node scripts/spec-consistency.mjs
       - name: Validate migration timestamps
         run: npm run check:migration-timestamps
       - name: Assert runtime Unicode pin
@@ -47,13 +125,35 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
+      - name: Check formatting of changed Markdown, YAML, and JSON
+        env:
+          FORMAT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: node scripts/format-check-changed.mjs
       - run: npm test
       - run: npm run build:edge
       - run: npm run check:secrets
       - run: npm run build:cron
       - run: npm run size
 
-  integration:
+  integration-shard:
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true') }}
+    needs: [docs-only]
+    name: integration shard ${{ matrix.shard }}/3
+    outputs:
+      pr_1: ${{ matrix.shard == 1 && steps.revision.outputs.pr || '' }}
+      head_sha_1: ${{ matrix.shard == 1 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_1: ${{ matrix.shard == 1 && steps.revision.outputs.merge_sha || '' }}
+      pr_2: ${{ matrix.shard == 2 && steps.revision.outputs.pr || '' }}
+      head_sha_2: ${{ matrix.shard == 2 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_2: ${{ matrix.shard == 2 && steps.revision.outputs.merge_sha || '' }}
+      pr_3: ${{ matrix.shard == 3 && steps.revision.outputs.pr || '' }}
+      head_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.merge_sha || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -61,10 +161,48 @@ jobs:
       LIFTER_SUPABASE_STACK: a
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
+      - name: Verify and record CI revision
+        id: revision
+        shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          merge_sha=$(git rev-parse HEAD)
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          echo "pr=$CI_PR" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$CI_HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "merge_sha=$merge_sha" >> "$GITHUB_OUTPUT"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
+            second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
+              exit 1
+            fi
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -95,19 +233,343 @@ jobs:
           echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
-      - name: Assert shared password policy DB parity
-        run: npm run test:integration -- tests/integration/password-policy-parity.test.ts
-      - run: npm run test:integration
+      - name: Wait for Storage readiness
+        run: node scripts/wait-storage-ready.mjs
+      - name: Verify Docker CLI for the provider-fault spec
+        run: docker version --format '{{.Client.Version}}' > /dev/null && docker info > /dev/null
+      - name: Record shard ${{ matrix.shard }} suite inventories
+        run: |
+          npx playwright test --list --reporter=json > "$RUNNER_TEMP/playwright-list-full.json"
+          npx playwright test --list --shard=${{ matrix.shard }}/3 --reporter=json > "$RUNNER_TEMP/playwright-list-shard.json"
+          node --input-type=module <<'NODE' > "$RUNNER_TEMP/vitest-files.json"
+          import { readdirSync } from 'node:fs';
+          const files = readdirSync('tests/integration', { recursive: true })
+            .filter((file) => typeof file === 'string' && file.endsWith('.test.ts'))
+            .map((file) => ['tests/integration', ...String(file).split(/[\\/]/)].join('/'));
+          if (!files.length) throw new Error('Vitest integration file list is empty');
+          console.log(JSON.stringify(files));
+          NODE
+          node -e "const fs=require('fs');const report=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));let count=0;const walk=(suite)=>{for(const child of suite.suites||[])walk(child);for(const spec of suite.specs||[])count+=(spec.tests||[]).length};for(const suite of report.suites||[])walk(suite);if(!count||(report.errors||[]).length)throw new Error('Playwright shard ${{ matrix.shard }}/3 list is empty or reports errors');console.log('Playwright shard ${{ matrix.shard }}/3 list: '+count+' tests');" "$RUNNER_TEMP/playwright-list-shard.json"
+      - name: Run integration shard ${{ matrix.shard }} of 3
+        run: npm run test:integration -- --shard=${{ matrix.shard }}/3 --reporter=json --outputFile="$RUNNER_TEMP/vitest-report.json"
       - run: npx playwright install --with-deps chromium
-      - name: Run full Playwright suite against the local stack
-        run: npm run e2e -- --workers=1
+      - name: Run Playwright suite shard ${{ matrix.shard }} of 3 against the local stack
+        run: npm run e2e -- --shard=${{ matrix.shard }}/3 --workers=1 --reporter=json
         env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-report.json
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
+      - name: Upload shard ${{ matrix.shard }} test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-shard-${{ matrix.shard }}-reports
+          path: |
+            ${{ runner.temp }}/playwright-list-full.json
+            ${{ runner.temp }}/playwright-list-shard.json
+            ${{ runner.temp }}/playwright-report.json
+            ${{ runner.temp }}/vitest-files.json
+            ${{ runner.temp }}/vitest-report.json
+          if-no-files-found: warn
+          retention-days: 7
       - run: supabase stop --no-backup
         if: always()
 
+  integration:
+    name: integration
+    needs: [docs-only, integration-shard]
+    if: always() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require successful integration shards
+        env:
+          PR_1: ${{ needs.integration-shard.outputs.pr_1 }}
+          HEAD_SHA_1: ${{ needs.integration-shard.outputs.head_sha_1 }}
+          MERGE_SHA_1: ${{ needs.integration-shard.outputs.merge_sha_1 }}
+          PR_2: ${{ needs.integration-shard.outputs.pr_2 }}
+          HEAD_SHA_2: ${{ needs.integration-shard.outputs.head_sha_2 }}
+          MERGE_SHA_2: ${{ needs.integration-shard.outputs.merge_sha_2 }}
+          PR_3: ${{ needs.integration-shard.outputs.pr_3 }}
+          HEAD_SHA_3: ${{ needs.integration-shard.outputs.head_sha_3 }}
+          MERGE_SHA_3: ${{ needs.integration-shard.outputs.merge_sha_3 }}
+          CI_EVENT_NAME: ${{ github.event_name }}
+          SHARD_RESULT: ${{ needs.integration-shard.result }}
+        run: |
+          if [[ "$SHARD_RESULT" != "success" ]]; then
+            echo "Integration shard matrix concluded: $SHARD_RESULT" >&2
+            exit 1
+          fi
+          if [[ "$PR_1" != "$PR_2" || "$PR_1" != "$PR_3" || "$HEAD_SHA_1" != "$HEAD_SHA_2" || "$HEAD_SHA_1" != "$HEAD_SHA_3" || "$MERGE_SHA_1" != "$MERGE_SHA_2" || "$MERGE_SHA_1" != "$MERGE_SHA_3" ]]; then
+            echo "Integration shard revisions disagree" >&2
+            exit 1
+          fi
+          if [[ "$CI_EVENT_NAME" == "push" ]]; then
+            if [[ ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "Integration shard matrix did not export a valid merge SHA" >&2
+              exit 1
+            fi
+          else
+            if [[ ! "$PR_1" =~ ^[0-9]+$ || ! "$HEAD_SHA_1" =~ ^[0-9a-fA-F]{40}$ || ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "Integration shard matrix did not export valid CI revisions" >&2
+              exit 1
+            fi
+          fi
+          echo "PR=$PR_1 head_sha=$HEAD_SHA_1 merge_sha=$MERGE_SHA_1"
+      - name: Download shard test reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: integration-shard-*-reports
+          path: ${{ runner.temp }}/reports
+      - name: Verify sharded suite coverage
+        env:
+          REPORTS_DIR: ${{ runner.temp }}/reports
+        run: |
+          node --input-type=module <<'NODE'
+          import { readdirSync, readFileSync } from 'node:fs';
+          import { basename, join } from 'node:path';
+
+          const root = process.env.REPORTS_DIR;
+          if (!root) throw new Error('REPORTS_DIR is required');
+          const dirs = readdirSync(root)
+            .filter((name) => /^integration-shard-[1-3]-reports$/.test(name))
+            .sort();
+          if (dirs.length !== 3)
+            throw new Error(
+              'Expected 3 shard report directories, found ' + dirs.length,
+            );
+
+          const read = (dir, name) => {
+            try {
+              return JSON.parse(readFileSync(join(root, dir, name), 'utf8'));
+            } catch (error) {
+              throw new Error(
+                'Unreadable ' + dir + '/' + name + ': ' + error.message,
+              );
+            }
+          };
+
+          function normalize(file) {
+            const normalized = String(file || '').replaceAll('\\', '/');
+            const index = normalized.indexOf('/tests/integration/');
+            if (index >= 0) return normalized.slice(index + 1);
+            return normalized.replace(/^.*?tests\/integration\//, 'tests/integration/');
+          }
+
+          function collectPlaywright(report) {
+            const tests = [];
+            const walk = (suite, chain, file, isRoot) => {
+              const suiteFile = suite.file || file;
+              const nextChain =
+                isRoot || !suite.title ? chain : [...chain, suite.title];
+              for (const spec of suite.specs || []) {
+                for (const test of spec.tests || []) {
+                  const specFile = spec.file || suiteFile || '';
+                  tests.push({
+                    id: [
+                      basename(specFile),
+                      test.projectName || '',
+                      [...nextChain, spec.title].join(' > '),
+                    ].join('::'),
+                    file: basename(specFile),
+                    status: String(test.status || ''),
+                  });
+                }
+              }
+              for (const child of suite.suites || [])
+                walk(child, nextChain, suiteFile, false);
+            };
+            for (const suite of report.suites || [])
+              walk(suite, [], '', true);
+            if ((report.errors || []).length)
+              throw new Error(
+                'Playwright report errors: ' + report.errors.length,
+              );
+            const stats = report.stats || {};
+            if (Number(stats.unexpected || 0) || Number(stats.flaky || 0))
+              throw new Error(
+                'Playwright failure: unexpected=' +
+                  (stats.unexpected || 0) +
+                  ' flaky=' +
+                  (stats.flaky || 0),
+              );
+            return tests;
+          }
+
+          const baselineShellSkips = new Set([
+            'shell.spec.ts::mobile-chromium::client-side shell navigation > keeps the document and enhanced GlassSurface mounted between destinations',
+            'shell.spec.ts::chromium::ar > mobile trainer bottom bar has ordered visible labels and 44px targets',
+            'shell.spec.ts::chromium::ar > mobile client bottom bar has ordered visible labels and 44px targets',
+            'shell.spec.ts::mobile-chromium::ar > desktop navigation preserves the content lane across responsive widths',
+            'shell.spec.ts::mobile-chromium::ar > desktop keyboard tooltip is described and does not move the dock',
+            'shell.spec.ts::mobile-chromium::ar > Arabic RTL portal tooltip stays content-sized beside its trigger in both themes',
+            'shell.spec.ts::mobile-chromium::ar > showcase previews roles and links to all full-size demos',
+            'shell.spec.ts::chromium::en > Arabic RTL portal tooltip stays content-sized beside its trigger in both themes',
+            'shell.spec.ts::chromium::en > mobile trainer bottom bar has ordered visible labels and 44px targets',
+            'shell.spec.ts::chromium::en > mobile client bottom bar has ordered visible labels and 44px targets',
+            'shell.spec.ts::mobile-chromium::en > desktop navigation preserves the content lane across responsive widths',
+            'shell.spec.ts::mobile-chromium::en > desktop keyboard tooltip is described and does not move the dock',
+            'shell.spec.ts::mobile-chromium::en > Arabic RTL portal tooltip stays content-sized beside its trigger in both themes',
+            'shell.spec.ts::mobile-chromium::en > showcase previews roles and links to all full-size demos',
+          ]);
+
+          const fullSets = [];
+          const shardListSets = [];
+          const reported = new Map();
+          const skipped = [];
+          for (const dir of dirs) {
+            const fullList = collectPlaywright(
+              read(dir, 'playwright-list-full.json'),
+            );
+            fullSets.push(new Set(fullList.map((test) => test.id)));
+            const shardList = collectPlaywright(
+              read(dir, 'playwright-list-shard.json'),
+            );
+            shardListSets.push(new Set(shardList.map((test) => test.id)));
+            const reportTests = collectPlaywright(
+              read(dir, 'playwright-report.json'),
+            );
+            for (const test of reportTests) {
+              if (reported.has(test.id))
+                throw new Error(
+                  'Duplicate Playwright test across shards or within a shard: ' +
+                    test.id,
+                );
+              reported.set(test.id, test);
+            }
+            skipped.push(
+              ...reportTests.filter((test) => test.status === 'skipped'),
+            );
+          }
+
+          const full = fullSets[0];
+          for (const set of fullSets)
+            if (
+              set.size !== full.size ||
+              [...set].some((id) => !full.has(id))
+            )
+              throw new Error('Shards disagree on the full Playwright list');
+          const listed = new Set(shardListSets.flatMap((set) => [...set]));
+          if (
+            listed.size !== shardListSets.reduce((sum, set) => sum + set.size, 0)
+          )
+            throw new Error('Duplicate Playwright test across shard lists');
+          if (listed.size !== full.size)
+            throw new Error(
+              'Playwright shard lists do not partition the full list: ' +
+                listed.size +
+                ' vs ' +
+                full.size,
+            );
+
+          const missing = [...full].filter((id) => !reported.has(id));
+          if (reported.size !== full.size || missing.length)
+            throw new Error(
+              'Playwright coverage mismatch: listed=' +
+                full.size +
+                ' reported=' +
+                reported.size +
+                ' missing=' +
+                missing.length +
+                (missing.length ? ' first=' + missing[0] : ''),
+            );
+
+          const skippedIds = new Set(skipped.map((test) => test.id));
+          for (const test of skipped) {
+            if (test.file === 'exercise-library-production.spec.ts') continue;
+            if (baselineShellSkips.has(test.id)) continue;
+            throw new Error(
+              'New skip outside the documented baseline: ' + test.id,
+            );
+          }
+          const exerciseIds = [...full].filter((id) =>
+            id.startsWith('exercise-library-production.spec.ts::'),
+          );
+          for (const id of exerciseIds)
+            if (!skippedIds.has(id))
+              throw new Error(
+                'Documented Stack-C exercise skip did not occur: ' + id,
+              );
+          if (skipped.length > 38)
+            throw new Error(
+              'Skipped tests exceed the documented ceiling of 38: ' +
+                skipped.length,
+            );
+
+          const vitestLists = dirs.map((dir) => read(dir, 'vitest-files.json'));
+          if (!Array.isArray(vitestLists[0]) || !vitestLists[0].length)
+            throw new Error('Vitest integration file list is empty');
+          const vitestFull = new Set(vitestLists[0].map((file) => normalize(file)));
+          for (const list of vitestLists) {
+            const set = new Set(list.map((file) => normalize(file)));
+            if (
+              set.size !== vitestFull.size ||
+              [...set].some((file) => !vitestFull.has(file))
+            )
+              throw new Error(
+                'Shards disagree on the full Vitest integration file list',
+              );
+          }
+          if (!vitestFull.size)
+            throw new Error('Vitest integration file list is empty');
+          const vitestReported = new Set();
+          for (const dir of dirs) {
+            const report = read(dir, 'vitest-report.json');
+            const results = Array.isArray(report.testResults)
+              ? report.testResults
+              : [];
+            if (
+              report.success === false ||
+              results.some((result) => result.status === 'failed') ||
+              results.some((result) =>
+                (result.assertionResults || []).some(
+                  (assertion) => assertion.status === 'failed',
+                ),
+              )
+            )
+              throw new Error('Vitest failure reported by ' + dir);
+            for (const result of results) {
+              const file = normalize(result.name);
+              if (vitestReported.has(file))
+                throw new Error(
+                  'Duplicate Vitest integration file across shards: ' + file,
+                );
+              vitestReported.add(file);
+            }
+          }
+          const missingVitest = [...vitestFull].filter(
+            (file) => !vitestReported.has(file),
+          );
+          if (vitestReported.size !== vitestFull.size || missingVitest.length)
+            throw new Error(
+              'Vitest coverage mismatch: listed=' +
+                vitestFull.size +
+                ' reported=' +
+                vitestReported.size +
+                ' missing=' +
+                missingVitest.length +
+                (missingVitest.length ? ' first=' + missingVitest[0] : ''),
+            );
+
+          console.log(
+            JSON.stringify({
+              acceptable: true,
+              playwright: {
+                listed: full.size,
+                reported: reported.size,
+                skipped: skipped.length,
+                passed: reported.size - skipped.length,
+              },
+              vitest: { files: vitestReported.size },
+              shards: dirs.length,
+            }),
+          );
+          NODE
+
   storage:
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true') }}
+    needs: [docs-only]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -115,10 +577,44 @@ jobs:
       LIFTER_SUPABASE_STACK: a
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
+      - name: Verify and record CI revision
+        shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          merge_sha=$(git rev-parse HEAD)
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
+            second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
+              exit 1
+            fi
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc

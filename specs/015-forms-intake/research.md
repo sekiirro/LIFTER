@@ -19,19 +19,19 @@
 - Renewal occurrences use the opaque key `renewal:<subscription-id>`. Payment or confirmation time is not a delivery clock. Evaluation is eligible once the current F13 service window has started in Cairo: the latest `subscription_renewal_date_revisions.service_start_date`, falling back to the immutable `subscription_renewals.service_start_date`, is on or before today, and `f13_project_entitlement(..., today)` is `active`.
 - The check is level-triggered and idempotent. A later evaluation can materialize a missed renewal occurrence exactly once; replay is suppressed by the occurrence ledger. This does not replay recurring dates skipped while the entitlement was frozen or inactive: each recurring date has its own key and is evaluated only for that date.
 - Worked freeze example: if a renewal was initially scheduled for day 10 and an F13 freeze reflows its actual start to day 15, day 10 remains ineligible even if payment was recorded earlier. Day 15 is the first eligible date when F13 projects `active`; a later repeated evaluation sees the same `renewal:<subscription-id>` key and creates no duplicate.
-- Stack D has the forward migrations `20261104030600_f15_renewal_service_start_idempotency.sql` and `20261104030700_f15_assignment_evaluation_date_core.sql`. Renewal, recurring, approval-cutoff, future-eligibility, and the 12 requested rollback-only mutation probes passed on Stack D. The date-taking core is private to the owner; the public three-argument RPC retains its grants and evaluates using the current Cairo date. The full Stack D integration run passed 87 files / 1,456 tests with 1 existing skip. The full unit gate passed outside the safe wrapper in a clean PowerShell process after unsetting API_URL, DB_URL, ANON_KEY, SERVICE_ROLE_KEY, LIFTER_SUPABASE_STACK, SUPABASE_SAFE_CLI, and all `SUPABASE_*` variables: 156 files / 2,056 tests, no skips or errors. T010/T023 B4 acceptance is complete; unrelated task gaps remain tracked in the S25 audit.
+- Stack D has the forward migrations `20261112022600_f15_renewal_service_start_idempotency.sql` and `20261112022700_f15_assignment_evaluation_date_core.sql`. Renewal, recurring, approval-cutoff, future-eligibility, and the 12 requested rollback-only mutation probes passed on Stack D. The date-taking core is private to the owner; the public three-argument RPC retains its grants and evaluates using the current Cairo date. The full Stack D integration run passed 87 files / 1,456 tests with 1 existing skip. The full unit gate passed outside the safe wrapper in a clean PowerShell process after unsetting API_URL, DB_URL, ANON_KEY, SERVICE_ROLE_KEY, LIFTER_SUPABASE_STACK, SUPABASE_SAFE_CLI, and all `SUPABASE_*` variables: 156 files / 2,056 tests, no skips or errors. T010/T023 B4 acceptance is complete; unrelated task gaps remain tracked in the S25 audit.
 
-| Topic | Planning decision | Basis |
-| --- | --- | --- |
-| Storage | PostgreSQL only for MVP Forms data; no attachment feature/storage | FR-032 and Final PO APPROVAL: permission covers attachments wherever they exist, not creation of storage |
-| Authorization | Client self-only; staff current workspace; PO explicit existing workspace; Sales denied | FR-020/021, approved correction matrix |
-| Audited reads | All sensitive answer and history reads append IDs-only audit before returning content; audit failure returns no answers | FR-024 and approved matrix |
-| Versioning | Published versions, assignment snapshots and answer corrections are append-only/immutable | FR-004/005/013 |
-| Assignment sequencing | First one-time per-client; cohorts/recurrence only after eligibility semantics are clarified | FR-003/031 and OPEN items |
-| Calendar | Pure `Africa/Cairo` D-03 calculation with `cairo-d03-v1`, Friday excluded, first valid instant after day five | FR-015/016 |
-| Retention | 30 days from authoritative Closure/Refund/Deactivation, including recoverable backups; legal/technical review blocks real data | FR-012/033, RET-1..3 |
-| Alerts | Synthetic implementation allowed; real data requires complete P4 facts and resolution of catch-up/recipient OPEN cases | FR-017–019 |
-| UI | Existing DESIGN.md system, separately authored Arabic/English, mandatory appended Frontend Design Gate per UI brief | FR-026/029 and repository gate |
+| Topic                 | Planning decision                                                                                                              | Basis                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Storage               | PostgreSQL only for MVP Forms data; no attachment feature/storage                                                              | FR-032 and Final PO APPROVAL: permission covers attachments wherever they exist, not creation of storage |
+| Authorization         | Client self-only; staff current workspace; PO explicit existing workspace; Sales denied                                        | FR-020/021, approved correction matrix                                                                   |
+| Audited reads         | All sensitive answer and history reads append IDs-only audit before returning content; audit failure returns no answers        | FR-024 and approved matrix                                                                               |
+| Versioning            | Published versions, assignment snapshots and answer corrections are append-only/immutable                                      | FR-004/005/013                                                                                           |
+| Assignment sequencing | First one-time per-client; cohorts/recurrence only after eligibility semantics are clarified                                   | FR-003/031 and OPEN items                                                                                |
+| Calendar              | Pure `Africa/Cairo` D-03 calculation with `cairo-d03-v1`, Friday excluded, first valid instant after day five                  | FR-015/016                                                                                               |
+| Retention             | 30 days from authoritative Closure/Refund/Deactivation, including recoverable backups; legal/technical review blocks real data | FR-012/033, RET-1..3                                                                                     |
+| Alerts                | Synthetic implementation allowed; real data requires complete P4 facts and resolution of catch-up/recipient OPEN cases         | FR-017–019                                                                                               |
+| UI                    | Existing DESIGN.md system, separately authored Arabic/English, mandatory appended Frontend Design Gate per UI brief            | FR-026/029 and repository gate                                                                           |
 
 ## Engineering questions resolved by planning
 
@@ -46,6 +46,7 @@
 - F12/F14 merge state, final latest migrations, isolated F15 database availability, current hosted backup/PITR capabilities, provider at-rest encryption, real P4 fact coverage and hosted scheduler readiness are unverified by this DB-free lane.
 - Before implementation, re-open latest merged source branches and inspect their actual function bodies and migration timestamps. The handoff timestamps are lower-bound planning evidence, not an upper bound.
 - No DB, Docker, Supabase CLI, `psql`, integration tests, hosted project or live data was used for this research.
+
 # S25 CHUNK B — assignment policy details and S25-R2 rulings
 
 - An occurrence's audience snapshot instant is the start of the materializing
@@ -55,7 +56,7 @@
   cannot add clients who joined later.
 - **S25-R2 architect ruling (a):** “New clients on joining/onboarding” means
   clients whose authoritative F12 approval fact has `approved_at >=
-  form_assignment_policies.configured_at`. The source is
+form_assignment_policies.configured_at`. The source is
   `app_private.registration_approval_events.approved_at`; client creation time
   is not used. This includes a client created before the policy and approved
   afterward.
@@ -101,15 +102,13 @@
   channels: in-app is always on; Telegram is optional for explicitly linked
   staff; email is out of scope. The scheduler remains disabled pending separate
   PO approval.
-- Client-late clocks are independent from D-03 Trainer-late clocks: a client
-  alert is due to the assigned, currently authorized Trainer at deadline+24h;
-  if no eligible Trainer exists then PO+WO receive the +24h stage, and PO+WO
-  receive the +48h stage in either case. Reassignment changes the recipient
-  without changing the original deadline. D-03 Trainer-late retains its existing
-  Q4 initial and owner-escalation timing/catch-up rules. T017's pg_cron schedule
-  uses the owner-only F11 activation/deactivation pattern and is not activated
-  by the migration; explicit-time integration tests call the private evaluator
-  core directly.
+- Client-late evaluation uses the configured submission deadline and immediately notifies authorized owners when it passes without an accepted submission.
+  Client-to-Trainer assignment/routing and the client-late Trainer alert are deferred
+  to F11/F12 under PDN-S39-F15-01. S36-01=A remains the future authoritative
+  source rule. D-03 Trainer-late retains its separate Q4 initial and owner-
+  escalation timing/catch-up rules. T017's pg_cron schedule uses the owner-only
+  F11 activation/deactivation pattern and is not activated by the migration;
+  explicit-time integration tests call the private evaluator core directly.
 
 ## S25-PO-8 / S25-R4 channel boundary
 

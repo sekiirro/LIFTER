@@ -31,7 +31,7 @@ const jobsMigration = readFileSync(
 const jobsAllowlistMigration = readFileSync(
   join(
     root,
-    'supabase/migrations/20261107032600_f15_allowlisted_job_error_codes.sql',
+    'supabase/migrations/20261112025800_f15_allowlisted_job_error_codes.sql',
   ),
   'utf8',
 );

@@ -119,12 +119,12 @@ it('request secrets have at least 32 random bytes and are fresh', () => {
 
 it('independent app wall denies before an accepting RPC; allowed requests need fresh admission', async () => {
   const fields = {
-    name: 'Synthetic Client Example',
+    name: 'Synthetic Example Client',
     email: 'USER@example.test',
     phone: '+201234567890',
     password: 'Synthetic9!',
     dateOfBirth: '1990-04-12',
-    username: 'synthetic_user',
+    username: 'synthetic.client',
     telegramUsername: '',
   };
   const base = {

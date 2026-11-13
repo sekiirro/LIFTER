@@ -155,6 +155,9 @@ describe('S14 form definition types and privacy metadata', () => {
     expect(
       calculateAgeInCairo('2027-01-01', new Date('2026-10-30T12:00:00.000Z')),
     ).toBeNull();
+    expect(
+      calculateAgeInCairo('2026-12-01', new Date('2026-10-30T12:00:00.000Z')),
+    ).toBeNull();
   });
 
   it('requires minimum, middle, and maximum slider labels', () => {
@@ -182,6 +185,46 @@ describe('S14 form definition types and privacy metadata', () => {
         questionId: 'hunger',
       }),
     );
+  });
+
+  it('accepts bilingual slider labels and rejects blank or oversized localized values', () => {
+    const slider: FormQuestion = {
+      id: 'localized-slider',
+      sectionId: 'basic',
+      type: 'slider',
+      required: false,
+      validation: { min: 0, max: 10, step: 1 },
+      labels: {
+        minimum: { en: 'Low', ar: 'منخفض' },
+        middle: { en: 'Medium', ar: 'متوسط' },
+        maximum: { en: 'High', ar: 'مرتفع' },
+      },
+      feedbackBands: [{ min: 0, max: 10, text: 'Feedback' }],
+    };
+
+    expect(validateFormDefinition([slider])).toEqual([]);
+    expect(
+      validateFormDefinition([
+        {
+          ...slider,
+          labels: {
+            ...slider.labels!,
+            middle: { en: 'Medium', ar: '   ' },
+          },
+        },
+      ]).map(({ code }) => code),
+    ).toContain('invalid_slider_configuration');
+    expect(
+      validateFormDefinition([
+        {
+          ...slider,
+          labels: {
+            ...slider.labels!,
+            maximum: { en: 'x'.repeat(4097), ar: 'مرتفع' },
+          },
+        },
+      ]).map(({ code }) => code),
+    ).toContain('invalid_slider_configuration');
   });
 
   it('supports bounded slider and image choice schemas', () => {

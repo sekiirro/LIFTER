@@ -195,6 +195,142 @@ it('T008 reconciles real F12 approval and F15 selection facts in either order, o
   expect(triggerMutationWouldBeCaught).toBe(true);
 });
 
+it('does not create an approval-derived assignment after its form is retired', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  const fixture = await db.begin(async (tx) =>
+    createSelectionFixture(tx, context.wsA.id),
+  );
+  await db`
+    insert into app_private.form_assignment_selections(
+      workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by
+    ) values(${context.wsA.id},${target.id},${fixture.formId},1,${fixture.policy},${context.po.userId})
+  `;
+  const retired = await context.po.client.rpc('retire_workspace_form', {
+    p_workspace_id: context.wsA.id,
+    p_form_id: fixture.formId,
+    p_request_id: randomUUID(),
+  });
+  expect(retired.data).toMatchObject({ status: 'ok', formStatus: 'retired' });
+  const approval = await context.po.client.rpc('registration_approve', {
+    request: request(context, target),
+  });
+  expect((approval.data as { status: string }).status).toBe('ok');
+  const assignments = await db`
+    select id from public.form_assignments
+    where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${fixture.formId}`;
+  const occurrences = await db`
+    select o.occurrence_key from app_private.form_assignment_occurrences o
+    join app_private.form_assignment_policies p on p.workspace_id=o.workspace_id and p.id=o.policy_id
+    where o.workspace_id=${context.wsA.id} and p.form_id=${fixture.formId}`;
+  expect(assignments).toHaveLength(0);
+  expect(occurrences).toHaveLength(0);
+});
+
+it('serializes approval reconciliation behind concurrent retirement', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  const fixture = await db.begin(async (tx) =>
+    createSelectionFixture(tx, context.wsA.id),
+  );
+  await db`
+    insert into app_private.form_assignment_selections(
+      workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by
+    ) values(${context.wsA.id},${target.id},${fixture.formId},1,${fixture.policy},${context.po.userId})
+  `;
+
+  let releaseRetirement!: () => void;
+  let signalRetirement!: () => void;
+  const retirementLockHeld = new Promise<void>((resolve) => {
+    releaseRetirement = resolve;
+  });
+  const retirementAcquired = new Promise<void>((resolve) => {
+    signalRetirement = resolve;
+  });
+  const retirement = db.begin(async (tx) => {
+    const [result] = await tx`
+      select app_private.retire_workspace_form(
+        ${context.wsA.id},${fixture.formId},${randomUUID()},${context.po.userId}
+      ) as result`;
+    expect(result?.result).toMatchObject({
+      status: 'ok',
+      formStatus: 'retired',
+    });
+    signalRetirement();
+    await retirementLockHeld;
+  });
+  await retirementAcquired;
+
+  let approval: ReturnType<typeof context.po.client.rpc>;
+  try {
+    approval = context.po.client.rpc('registration_approve', {
+      request: request(context, target),
+    });
+    const returnedBeforeRetirementCommit = await Promise.race([
+      approval.then(() => true),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 150)),
+    ]);
+    expect(returnedBeforeRetirementCommit).toBe(false);
+  } finally {
+    releaseRetirement();
+  }
+  await retirement;
+  expect((await approval!).data as { status: string }).toMatchObject({
+    status: 'ok',
+  });
+  const assignments = await db`
+    select id from public.form_assignments
+    where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${fixture.formId}`;
+  const occurrences = await db`
+    select o.occurrence_key from app_private.form_assignment_occurrences o
+    join app_private.form_assignment_policies p on p.workspace_id=o.workspace_id and p.id=o.policy_id
+    where o.workspace_id=${context.wsA.id} and p.form_id=${fixture.formId}`;
+  expect(assignments).toHaveLength(0);
+  expect(occurrences).toHaveLength(0);
+});
+
+it('kills the retired-form guard in approval reconciliation', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  await withCrashSafeFunctionMutant(
+    'app_private.reconcile_f15_form_assignment(uuid,uuid)',
+    (definition) =>
+      definition.replace(
+        "if latest_form_status='retired' then",
+        'if false then',
+      ),
+    async () => {
+      await expectInvariantFailure(async () => {
+        const fixture = await db.begin(async (tx) =>
+          createSelectionFixture(tx, context.wsA.id),
+        );
+        await db`
+          insert into app_private.form_assignment_selections(
+            workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by
+          ) values(${context.wsA.id},${target.id},${fixture.formId},1,${fixture.policy},${context.po.userId})
+        `;
+        const retired = await context.po.client.rpc('retire_workspace_form', {
+          p_workspace_id: context.wsA.id,
+          p_form_id: fixture.formId,
+          p_request_id: randomUUID(),
+        });
+        expect(retired.data).toMatchObject({
+          status: 'ok',
+          formStatus: 'retired',
+        });
+        const approval = await context.po.client.rpc('registration_approve', {
+          request: request(context, target),
+        });
+        expect((approval.data as { status: string }).status).toBe('ok');
+        const assignments = await db`
+          select id from public.form_assignments
+          where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${fixture.formId}`;
+        expect(assignments).toHaveLength(0);
+      });
+    },
+  );
+});
+
 it('kills an approval assignment deadline-fact mutant', async () => {
   const context = await clientContext();
   const target = await registered(context);
@@ -237,4 +373,231 @@ it('kills an approval assignment deadline-fact mutant', async () => {
       );
     },
   );
+});
+
+it('S41-PO-12 replaces a stale unconsumed selection and preserves its history', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  await expect(
+    db.begin(async (tx) => {
+      const old = await createSelectionFixture(tx, context.wsA.id);
+      const currentPolicy = `t143-current-${randomUUID()}`;
+      await tx`insert into app_private.terms_policy_versions(version,policy_kind,status) values(${currentPolicy},'terms','published')`;
+      await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status) values(${context.wsA.id},${old.formId},2,${currentPolicy},${tx.json(old.definition)},'published')`;
+      await tx`insert into app_private.form_assignment_selections(workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by) values(${context.wsA.id},${target.id},${old.formId},1,${old.policy},${context.po.userId})`;
+      const result = await sqlCall(
+        tx,
+        context.po.userId,
+        'approve',
+        request(context, target),
+      );
+      expect(result.status).toBe('ok');
+      const [retry] =
+        await tx`select app_private.reconcile_f15_form_assignment(${context.wsA.id},${target.id}) as result`;
+      expect(retry?.result).toBe('already_assigned');
+      const [selection] =
+        await tx`select version_number,terms_policy_version from app_private.form_assignment_selections where workspace_id=${context.wsA.id} and client_id=${target.id}`;
+      expect(selection).toEqual({
+        version_number: 2,
+        terms_policy_version: currentPolicy,
+      });
+      const history =
+        await tx`select version_number,terms_policy_version from app_private.form_assignment_selection_history where workspace_id=${context.wsA.id} and client_id=${target.id}`;
+      expect(history).toEqual([
+        { version_number: 1, terms_policy_version: old.policy },
+      ]);
+      const assignment =
+        await tx`select version_number,terms_policy_version from public.form_assignments where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${old.formId}`;
+      expect(assignment).toEqual([
+        { version_number: 2, terms_policy_version: currentPolicy },
+      ]);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('mutation: skipping stale selection refresh is caught', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  await withCrashSafeFunctionMutant(
+    'app_private.reconcile_f15_form_assignment(uuid,uuid)',
+    (definition) =>
+      definition.replace(
+        'if not app_private.f15_current_terms_policy(selection.terms_policy_version)',
+        'if false',
+      ),
+    async () => {
+      await expectInvariantFailure(async () =>
+        db.begin(async (tx) => {
+          const old = await createSelectionFixture(tx, context.wsA.id);
+          const current = `t143-mutant-${randomUUID()}`;
+          await tx`insert into app_private.terms_policy_versions(version,policy_kind,status) values(${current},'terms','published')`;
+          await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status) values(${context.wsA.id},${old.formId},2,${current},${tx.json(old.definition)},'published')`;
+          await tx`insert into app_private.form_assignment_selections(workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by) values(${context.wsA.id},${target.id},${old.formId},1,${old.policy},${context.po.userId})`;
+          await sqlCall(
+            tx,
+            context.po.userId,
+            'approve',
+            request(context, target),
+          );
+          const [assignment] =
+            await tx`select version_number from public.form_assignments where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${old.formId}`;
+          expect(assignment?.version_number).toBe(2);
+          throw rollback;
+        }),
+      );
+    },
+  );
+});
+
+it('mutation: selection history archival is caught', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  await withCrashSafeFunctionMutant(
+    'app_private.archive_f15_selection_update()',
+    (definition) =>
+      definition.replace("'stale_terms_replacement'", "'bad_reason'"),
+    async () => {
+      await expectInvariantFailure(async () =>
+        db.begin(async (tx) => {
+          const old = await createSelectionFixture(tx, context.wsA.id);
+          const current = `t143-history-mutant-${randomUUID()}`;
+          await tx`insert into app_private.terms_policy_versions(version,policy_kind,status) values(${current},'terms','published')`;
+          await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status) values(${context.wsA.id},${old.formId},2,${current},${tx.json(old.definition)},'published')`;
+          await tx`insert into app_private.form_assignment_selections(workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by) values(${context.wsA.id},${target.id},${old.formId},1,${old.policy},${context.po.userId})`;
+          await sqlCall(
+            tx,
+            context.po.userId,
+            'approve',
+            request(context, target),
+          );
+          const history =
+            await tx`select 1 from app_private.form_assignment_selection_history where workspace_id=${context.wsA.id} and client_id=${target.id}`;
+          expect(history).toHaveLength(1);
+          throw rollback;
+        }),
+      );
+    },
+  );
+});
+
+it('mutation: disabling selection history RLS is caught and rolled back', async () => {
+  let caught = false;
+  await expect(
+    db.begin(async (tx) => {
+      await tx`alter table app_private.form_assignment_selection_history disable row level security`;
+      const [table] = await tx`
+        select c.relrowsecurity as enabled,c.relforcerowsecurity as forced,
+          has_table_privilege('anon','app_private.form_assignment_selection_history','select') as anon_select,
+          has_table_privilege('authenticated','app_private.form_assignment_selection_history','select') as authenticated_select,
+          has_table_privilege('service_role','app_private.form_assignment_selection_history','select') as service_select
+        from pg_class c where c.oid='app_private.form_assignment_selection_history'::regclass
+      `;
+      try {
+        expect(table).toEqual({
+          enabled: true,
+          forced: true,
+          anon_select: false,
+          authenticated_select: false,
+          service_select: false,
+        });
+      } catch {
+        caught = true;
+      }
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+  expect(caught).toBe(true);
+});
+
+it('S41-PO-12 leaves a consumed stale selection unchanged', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  await expect(
+    db.begin(async (tx) => {
+      const old = await createSelectionFixture(tx, context.wsA.id);
+      await tx`insert into app_private.form_assignment_selections(workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by) values(${context.wsA.id},${target.id},${old.formId},1,${old.policy},${context.po.userId})`;
+      await sqlCall(tx, context.po.userId, 'approve', request(context, target));
+      const current = `t143-consumed-${randomUUID()}`;
+      await tx`insert into app_private.terms_policy_versions(version,policy_kind,status) values(${current},'terms','published')`;
+      await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status) values(${context.wsA.id},${old.formId},2,${current},${tx.json(old.definition)},'published')`;
+      const [result] =
+        await tx`select app_private.reconcile_f15_form_assignment(${context.wsA.id},${target.id}) as result`;
+      expect(result?.result).toBe('already_assigned');
+      const [selection] =
+        await tx`select version_number,terms_policy_version from app_private.form_assignment_selections where workspace_id=${context.wsA.id} and client_id=${target.id}`;
+      expect(selection).toEqual({
+        version_number: 1,
+        terms_policy_version: old.policy,
+      });
+      expect(
+        await tx`select 1 from app_private.form_assignment_selection_history where workspace_id=${context.wsA.id} and client_id=${target.id}`,
+      ).toHaveLength(0);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('S41-PO-12 fails closed when no current Terms-bound version exists', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  await expect(
+    db.begin(async (tx) => {
+      const old = await createSelectionFixture(tx, context.wsA.id);
+      const latestPolicy = `t143-unmapped-${randomUUID()}`;
+      await tx`insert into app_private.terms_policy_versions(version,policy_kind,status) values(${latestPolicy},'terms','published')`;
+      await tx`insert into app_private.form_assignment_selections(workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by) values(${context.wsA.id},${target.id},${old.formId},1,${old.policy},${context.po.userId})`;
+      await sqlCall(tx, context.po.userId, 'approve', request(context, target));
+      const [selection] =
+        await tx`select version_number,terms_policy_version from app_private.form_assignment_selections where workspace_id=${context.wsA.id} and client_id=${target.id}`;
+      expect(selection).toEqual({
+        version_number: 1,
+        terms_policy_version: old.policy,
+      });
+      expect(
+        await tx`select 1 from public.form_assignments where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${old.formId}`,
+      ).toHaveLength(0);
+      expect(
+        await tx`select 1 from app_private.form_assignment_selection_history where workspace_id=${context.wsA.id} and client_id=${target.id}`,
+      ).toHaveLength(0);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('S41-PO-12 replaces an approved stale selection once under concurrent retries', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  const old = await db.begin(async (tx) => {
+    const fixture = await createSelectionFixture(tx, context.wsA.id);
+    const currentPolicy = `t143-race-${randomUUID()}`;
+    await tx`insert into app_private.terms_policy_versions(version,policy_kind,status) values(${currentPolicy},'terms','published')`;
+    await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status) values(${context.wsA.id},${fixture.formId},2,${currentPolicy},${tx.json(fixture.definition)},'published')`;
+    await tx`insert into app_private.form_assignment_selections(workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by) values(${context.wsA.id},${target.id},${fixture.formId},1,${fixture.policy},${context.po.userId})`;
+    return { ...fixture, currentPolicy };
+  });
+
+  await Promise.all([
+    db.begin((tx) =>
+      sqlCall(tx, context.po.userId, 'approve', request(context, target)),
+    ),
+    db.begin((tx) =>
+      sqlCall(tx, context.po.userId, 'approve', request(context, target)),
+    ),
+  ]);
+
+  const [selection] =
+    await db`select version_number,terms_policy_version from app_private.form_assignment_selections where workspace_id=${context.wsA.id} and client_id=${target.id}`;
+  expect(selection).toEqual({
+    version_number: 2,
+    terms_policy_version: old.currentPolicy,
+  });
+  const history =
+    await db`select version_number,terms_policy_version from app_private.form_assignment_selection_history where workspace_id=${context.wsA.id} and client_id=${target.id}`;
+  expect(history).toEqual([
+    { version_number: 1, terms_policy_version: old.policy },
+  ]);
+  expect(
+    await db`select 1 from public.form_assignments where workspace_id=${context.wsA.id} and client_id=${target.id} and form_id=${old.formId}`,
+  ).toHaveLength(1);
 });

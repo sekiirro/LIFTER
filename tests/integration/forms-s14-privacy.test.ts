@@ -231,6 +231,8 @@ describe('T048 personal-data authorization and erasure', () => {
           { answer_values: { sex: 'female', marker: 'synthetic draft' } },
         ]);
 
+        let killed = false;
+        const purgeKilled = new Error('cross-tenant purge mutant killed');
         await expect(
           tx.savepoint(async (sp) => {
             await sp.unsafe(`create or replace function app_private.purge_ended_form_answers(p_workspace_id uuid,p_client_id uuid)
@@ -239,7 +241,22 @@ describe('T048 personal-data authorization and erasure', () => {
               begin
                 for target in select distinct workspace_id,client_id from public.form_assignments loop
                   perform pg_catalog.set_config('app_private.f15_retention_purge',target.workspace_id::text||':'||target.client_id::text,true);
+                  delete from app_private.form_correction_intents i where i.workspace_id=target.workspace_id and i.assignment_id in (
+                    select a.id from public.form_assignments a where a.workspace_id=target.workspace_id and a.client_id=target.client_id
+                  );
+                  delete from app_private.form_corrections c where c.workspace_id=target.workspace_id and c.assignment_id in (
+                    select a.id from public.form_assignments a where a.workspace_id=target.workspace_id and a.client_id=target.client_id
+                  );
+                  delete from app_private.form_submission_intents i where i.workspace_id=target.workspace_id and i.assignment_id in (
+                    select a.id from public.form_assignments a where a.workspace_id=target.workspace_id and a.client_id=target.client_id
+                  );
+                  delete from app_private.form_submission_slas s where s.workspace_id=target.workspace_id and s.assignment_id in (
+                    select a.id from public.form_assignments a where a.workspace_id=target.workspace_id and a.client_id=target.client_id
+                  );
                   delete from public.form_answer_drafts d where d.workspace_id=target.workspace_id and d.assignment_id in (
+                    select a.id from public.form_assignments a where a.workspace_id=target.workspace_id and a.client_id=target.client_id
+                  );
+                  delete from app_private.form_submissions s where s.workspace_id=target.workspace_id and s.assignment_id in (
                     select a.id from public.form_assignments a where a.workspace_id=target.workspace_id and a.client_id=target.client_id
                   );
                   delete from public.form_answer_revisions r where r.workspace_id=target.workspace_id and r.assignment_id in (
@@ -252,11 +269,17 @@ describe('T048 personal-data authorization and erasure', () => {
             await sp`
               select app_private.purge_ended_form_answers(${targetContext.wsA.id},${targetClient.id})
             `;
-            expect(
-              await sp`select answer_values from public.form_answer_revisions where assignment_id=${otherAssignment}`,
-            ).toHaveLength(1);
+            const surviving =
+              await sp`select answer_values from public.form_answer_revisions where assignment_id=${otherAssignment}`;
+            try {
+              expect(surviving).toHaveLength(1);
+            } catch {
+              killed = true;
+              throw purgeKilled;
+            }
           }),
-        ).rejects.toThrow();
+        ).rejects.toBe(purgeKilled);
+        expect(killed).toBe(true);
         throw rollback;
       }),
     ).rejects.toBe(rollback);

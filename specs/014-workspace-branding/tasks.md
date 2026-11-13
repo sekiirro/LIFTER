@@ -114,14 +114,14 @@
 ### Implementation and release evidence — GREEN
 
 - [x] T038 [U09] Configure required Storage-enabled CI lane with readiness gate, direct API bucket/path tests, isolated fixtures, zero allowed skips, and F11 denial coverage. **Owner files**: `.github/workflows/ci.yml`, agreed runner/config paths. **DB: local root profile; Storage: enabled; CI stack: root.** Evidence: CI uses the root profile, gates Storage readiness, runs F11's pending-client test and enforces zero skips; local forced-skip mutation fails the guard. Local end-to-end verification ran against Stack B. Hosted CI is unavailable while the repo is private.
-- [ ] T039 [U09] Run capacity model for up to two current assets/workspace, draft/staging, workspace count and no-store egress against verified Storage allowances and 70% exit trigger; benchmark worst-case CPU/memory and record source/evidence. **Owner files**: `specs/014-workspace-branding/quickstart.md`, approved evidence artifact path. **DB: none; Storage: estimates; Stack: none.**
-- [ ] T040 [U09] Demonstrate Storage backup/restore and independently verify audit retention; retain results as production-blocker evidence. **Owner files**: approved recovery evidence artifact only. **DB: B for linked metadata/audit checks; Storage: enabled and restored; Stack: B.**
-- [ ] T041 [U09] Run the complete Q-M01..Q-M30 matrix from quickstart on isolated stack B, confirm zero skipped Storage checks, state restoration, and collect CI run IDs/evidence. **Owner files**: `tests/integration/branding-storage-verification.md`, test result artifacts. **DB: B; Storage: enabled; Stack: B.**
+- [ ] T039 [U09] Run capacity model for up to two current assets/workspace, draft/staging, workspace count and no-store egress against verified Storage allowances and 70% exit trigger; benchmark worst-case CPU/memory and record source/evidence. **Owner files**: `specs/014-workspace-branding/quickstart.md`, approved evidence artifact path. **DB: none; Storage: estimates; Stack: none.** FR-009, FR-017; SC-010.
+- [ ] T040 [U09] Demonstrate Storage backup/restore and independently verify audit retention; retain results as production-blocker evidence. **Owner files**: approved recovery evidence artifact only. **DB: B for linked metadata/audit checks; Storage: enabled and restored; Stack: B.** FR-014, FR-017, FR-018; SC-010.
+- [ ] T041 [U09] Run the complete Q-M01..Q-M30 matrix from quickstart on isolated stack B, confirm zero skipped Storage checks, state restoration, and collect CI run IDs/evidence. **Owner files**: `tests/integration/branding-storage-verification.md`, test result artifacts. **DB: B; Storage: enabled; Stack: B.** FR-011, FR-017, FR-018; SC-007, SC-009, SC-010.
 
 ## Phase 8: Conditional P4 contract and final integration
 
 - [x] T042 [U10] Add the brand data/token contract test first (RED), then implement only the contract definition and nonfunctional Client Portal preview placeholder. Do not implement or modify P4/Client Portal behavior even if P4 exists. **Owner files**: `lib/branding/portal-contract.ts`, associated contract tests and placeholder component only. **DB: none beyond authorized projection contract; Storage: none; Stack: none.** Evidence: contract/placeholder tests RED before component existed, then GREEN; preview is static, published-only, no Client Portal behavior. Design gate evidence in report.
-- [ ] T043 [U00/U09] Reconcile final F11 changes and migration order; rerun required stack-B Storage lane with no skips, UI gate, format/lint and `git diff --check`; collect run IDs and evidence before production approval. **Owner files**: feature-owned integration and evidence files. **DB: B; Storage: enabled; Stack: B.**
+- [ ] T043 [U00/U09] Reconcile final F11 changes and migration order; rerun required stack-B Storage lane with no skips, UI gate, format/lint and `git diff --check`; collect run IDs and evidence before production approval. **Owner files**: feature-owned integration and evidence files. **DB: B; Storage: enabled; Stack: B.** FR-001..FR-018; SC-001..SC-011.
 
 ## Phase 9: Restricted Storage identities and proxy acceptance gates
 
@@ -155,24 +155,24 @@
 
 ### Remaining open tasks and blockers
 
-| Task | Blocker / remaining work |
-| --- | --- |
-| T004 | Complete: F14-owned CI contract tests cover required F11 denial runner/report; no F11-owned files changed. |
-| T019 | Complete: publication RED/GREEN and six required reversible mutations are recorded in s17-r3 evidence. |
-| T020 | Complete: current F11 audit mapping compatibility RED/GREEN and mapping-drop mutation are recorded in s17-r3 evidence. |
-| T021 | Complete: permanent detached audit retention and privacy tests pass on fresh Stack B. |
-| T022 | Complete: extension migration `20261102139000` is after main's final migration and preserves F11 mappings. |
-| T023 | Complete: serialized, CAS-checked atomic publish/no-op/rollback behavior and mutations pass on fresh Stack B. |
-| T027 | Green published-only implementation evidence is recorded. RED evidence is unit-level, not Stack-B integration; see report. Function-body mutation was denied by function ownership and was not attempted with elevated grants. |
+| Task | Blocker / remaining work                                                                                                                                                                                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T004 | Complete: F14-owned CI contract tests cover required F11 denial runner/report; no F11-owned files changed.                                                                                                                                                                               |
+| T019 | Complete: publication RED/GREEN and six required reversible mutations are recorded in s17-r3 evidence.                                                                                                                                                                                   |
+| T020 | Complete: current F11 audit mapping compatibility RED/GREEN and mapping-drop mutation are recorded in s17-r3 evidence.                                                                                                                                                                   |
+| T021 | Complete: permanent detached audit retention and privacy tests pass on fresh Stack B.                                                                                                                                                                                                    |
+| T022 | Complete: extension migration `20261102139000` is after main's final migration and preserves F11 mappings.                                                                                                                                                                               |
+| T023 | Complete: serialized, CAS-checked atomic publish/no-op/rollback behavior and mutations pass on fresh Stack B.                                                                                                                                                                            |
+| T027 | Green published-only implementation evidence is recorded. RED evidence is unit-level, not Stack-B integration; see report. Function-body mutation was denied by function ownership and was not attempted with elevated grants.                                                           |
 | T030 | Complete: registration surface, approved Stack-B uploaded/published image fixture, 12 loaded-image geometry/axe cases, decoded dimensions, form separation and CLS evidence are recorded in `tests/integration/evidence/f14-ui/loaded-banner-geometry.json` and the S16 evidence report. |
-| T031 | Complete: persisted editor save/publish flow, current-only publication display, workspace switching and editor/preview e2e contracts are recorded in the S16 evidence report and `tests/e2e/branding-production-ui.spec.ts`. |
-| T037 | Complete: F14 contract requires the F11 Storage denial test/report; no F11-owned file changed. |
-| T038 | Complete locally: readiness-gated Storage CI lane uses the root profile, isolated fixtures, and a hard zero-skip check; hosted execution unavailable while repository is private. |
-| T039 | Verified Storage plan allowances and capacity source/evidence are missing; no allowance values are assumed. |
-| T040 | Approved recovery-evidence artifact path and Stack-B Storage backup/restore proof are missing. |
-| T041 | The complete Q-M01..Q-M30 acceptance matrix and recorded CI/run artifacts are not complete; the broad integration suite is not a substitute for this matrix. |
-| T042 | Complete: static published-brand placeholder and contract pass; see T035 design-gate evidence in s17-r3 report. |
-| T043 | Production/release blocker: full Q-M01..Q-M30 isolated Storage matrix, hosted CI run IDs, complete state restoration, and backup/restore evidence are not available; related T039–T041 remain open. |
+| T031 | Complete: persisted editor save/publish flow, current-only publication display, workspace switching and editor/preview e2e contracts are recorded in the S16 evidence report and `tests/e2e/branding-production-ui.spec.ts`.                                                             |
+| T037 | Complete: F14 contract requires the F11 Storage denial test/report; no F11-owned file changed.                                                                                                                                                                                           |
+| T038 | Complete locally: readiness-gated Storage CI lane uses the root profile, isolated fixtures, and a hard zero-skip check; hosted execution unavailable while repository is private.                                                                                                        |
+| T039 | Verified Storage plan allowances and capacity source/evidence are missing; no allowance values are assumed.                                                                                                                                                                              |
+| T040 | Approved recovery-evidence artifact path and Stack-B Storage backup/restore proof are missing.                                                                                                                                                                                           |
+| T041 | The complete Q-M01..Q-M30 acceptance matrix and recorded CI/run artifacts are not complete; the broad integration suite is not a substitute for this matrix.                                                                                                                             |
+| T042 | Complete: static published-brand placeholder and contract pass; see T035 design-gate evidence in s17-r3 report.                                                                                                                                                                          |
+| T043 | Production/release blocker: full Q-M01..Q-M30 isolated Storage matrix, hosted CI run IDs, complete state restoration, and backup/restore evidence are not available; related T039–T041 remain open.                                                                                      |
 
 ### F14b — owner-facing upload and alt-text editor (PO-approved deferral)
 
@@ -198,33 +198,33 @@ Start F14b immediately after F14 merges, in parallel with F13/F15. F14b complete
 - **Full suites: PASS.** After the final fresh reset, the established local Vault fixture provisioner ran for the integration prerequisites. `npm test`: 70 files, 1421 passed, 0 failed, 0 skipped. `LIFTER_SUPABASE_STACK=b npm run test:integration`: 33 files, 32 passed, 1 skipped; 920 passed, 0 failed, 2 skipped.
 - **Stack A/C isolation: PASS.** Captured before and after with `docker ps --format` only; no CLI, query, start, stop, reset, or other operation targeted either stack. Container IDs, ports, and statuses were unchanged (elapsed uptime aside). A's `supabase_vector_lifter` was already `Restarting (0)` before and remained so.
 
-| Stack A container | ID | Ports | Status before / after |
-| --- | --- | --- | --- |
-| `supabase_db_lifter` | `907b4a66c306` | `54322:5432` | healthy / healthy |
-| `supabase_studio_lifter` | `08e2daabebd1` | `54323:3000` | healthy / healthy |
-| `supabase_pg_meta_lifter` | `8135ec9aafe7` | `8080/tcp` | Up / Up |
-| `supabase_edge_runtime_lifter` | `2f018f0d539f` | none | Up / Up |
-| `supabase_storage_lifter` | `24d9c7a70c7f` | `5000/tcp` | healthy / healthy |
-| `supabase_rest_lifter` | `4e3b3e548565` | `3000/tcp` | Up / Up |
-| `supabase_realtime_lifter` | `5fa68117ec03` | `4000/tcp` | healthy / healthy |
-| `supabase_inbucket_lifter` | `6ab10d9d5744` | `54324:8025`, `54325:1025`, `54326:1110` | healthy / healthy |
-| `supabase_auth_lifter` | `7145a5a226e0` | `9999/tcp` | healthy / healthy |
-| `supabase_kong_lifter` | `c1b8f21208b6` | `54321:8000` | healthy / healthy |
-| `supabase_vector_lifter` | `62fc97d17240` | none | Restarting (0) / Restarting (0) |
-| `supabase_analytics_lifter` | `ad57b43ece15` | `54327:4000` | healthy / healthy |
+| Stack A container              | ID             | Ports                                    | Status before / after           |
+| ------------------------------ | -------------- | ---------------------------------------- | ------------------------------- |
+| `supabase_db_lifter`           | `907b4a66c306` | `54322:5432`                             | healthy / healthy               |
+| `supabase_studio_lifter`       | `08e2daabebd1` | `54323:3000`                             | healthy / healthy               |
+| `supabase_pg_meta_lifter`      | `8135ec9aafe7` | `8080/tcp`                               | Up / Up                         |
+| `supabase_edge_runtime_lifter` | `2f018f0d539f` | none                                     | Up / Up                         |
+| `supabase_storage_lifter`      | `24d9c7a70c7f` | `5000/tcp`                               | healthy / healthy               |
+| `supabase_rest_lifter`         | `4e3b3e548565` | `3000/tcp`                               | Up / Up                         |
+| `supabase_realtime_lifter`     | `5fa68117ec03` | `4000/tcp`                               | healthy / healthy               |
+| `supabase_inbucket_lifter`     | `6ab10d9d5744` | `54324:8025`, `54325:1025`, `54326:1110` | healthy / healthy               |
+| `supabase_auth_lifter`         | `7145a5a226e0` | `9999/tcp`                               | healthy / healthy               |
+| `supabase_kong_lifter`         | `c1b8f21208b6` | `54321:8000`                             | healthy / healthy               |
+| `supabase_vector_lifter`       | `62fc97d17240` | none                                     | Restarting (0) / Restarting (0) |
+| `supabase_analytics_lifter`    | `ad57b43ece15` | `54327:4000`                             | healthy / healthy               |
 
-| Stack C container | ID | Ports | Status before / after |
-| --- | --- | --- | --- |
-| `supabase_db_lifter-stack-c` | `204d352b06d9` | `35422:5432` | healthy / healthy |
-| `supabase_studio_lifter-stack-c` | `5fba3e79c38b` | `35423:3000` | healthy / healthy |
-| `supabase_pg_meta_lifter-stack-c` | `52fc47e0bb01` | `8080/tcp` | healthy / healthy |
-| `supabase_edge_runtime_lifter-stack-c` | `4f9bab92c483` | none | Up / Up |
-| `supabase_storage_lifter-stack-c` | `2809399aaf25` | `5000/tcp` | healthy / healthy |
-| `supabase_rest_lifter-stack-c` | `3651fa32ec03` | `3000/tcp` | Up / Up |
-| `supabase_realtime_lifter-stack-c` | `596680f85e72` | `4000/tcp` | healthy / healthy |
-| `supabase_inbucket_lifter-stack-c` | `fc99c3ba902f` | `35424:8025`, `35425:1025`, `35426:1110` | healthy / healthy |
-| `supabase_auth_lifter-stack-c` | `31cc3f43e428` | `9999/tcp` | healthy / healthy |
-| `supabase_kong_lifter-stack-c` | `36c5d72129f9` | `35421:8000` | healthy / healthy |
+| Stack C container                      | ID             | Ports                                    | Status before / after |
+| -------------------------------------- | -------------- | ---------------------------------------- | --------------------- |
+| `supabase_db_lifter-stack-c`           | `204d352b06d9` | `35422:5432`                             | healthy / healthy     |
+| `supabase_studio_lifter-stack-c`       | `5fba3e79c38b` | `35423:3000`                             | healthy / healthy     |
+| `supabase_pg_meta_lifter-stack-c`      | `52fc47e0bb01` | `8080/tcp`                               | healthy / healthy     |
+| `supabase_edge_runtime_lifter-stack-c` | `4f9bab92c483` | none                                     | Up / Up               |
+| `supabase_storage_lifter-stack-c`      | `2809399aaf25` | `5000/tcp`                               | healthy / healthy     |
+| `supabase_rest_lifter-stack-c`         | `3651fa32ec03` | `3000/tcp`                               | Up / Up               |
+| `supabase_realtime_lifter-stack-c`     | `596680f85e72` | `4000/tcp`                               | healthy / healthy     |
+| `supabase_inbucket_lifter-stack-c`     | `fc99c3ba902f` | `35424:8025`, `35425:1025`, `35426:1110` | healthy / healthy     |
+| `supabase_auth_lifter-stack-c`         | `31cc3f43e428` | `9999/tcp`                               | healthy / healthy     |
+| `supabase_kong_lifter-stack-c`         | `36c5d72129f9` | `35421:8000`                             | healthy / healthy     |
 
 ## Dependencies and execution order
 
@@ -236,6 +236,24 @@ Start F14b immediately after F14 merges, in parallel with F13/F15. F14b complete
 - U10 has no independent portal feature scope and remains conditional on P4.
 - T044 pinned stack-B context/operation proof blocks acceptance of U03 validator promotion, U04 validated-bucket policy, and U06 proxy. Execute it before those units are marked accepted regardless of its numeric position in this task file. Failure means stop and return to the architect.
 - T045/T046 cover bounded hashed render handles and live token/version/slot resolution; T047 covers restricted identity credentials and rotation; T048 covers exact route/header/privacy behavior; T049 covers validator receipts; T050 covers transactional GC claims; T051 covers definer ownership/grants and PO-vs-WO scope. Q-M21..Q-M30 map to these tasks in quickstart.
+
+## Hero production registration tasks (S29-PO-3 Q7)
+
+- [x] **T052 [FR-026, FR-027, FR-029]** Reconcile the production Hero with approved prototype `97debaf`, selected Light/Dark/Follow Device theme, print theme, Emerald tokens and approved Glisse treatment. Keep implementation/screenshots open until current-head assertions and review evidence are recorded. Evidence: PO approval S32-PO-1 of the r18 visual review (without claiming PO screenshot inspection); current code head 542d7af passed the 54-case Webpack-dev and production Glisse suites, including all 48 contrast rows in each environment. No rendered output changed in r19.
+- [x] **T053 [FR-028]** Restore the S28-PO-4 registration fields and DOB-derived age with regression tests; preserve the approved design. F15 owns Intake prefill; coordinate the dependency and do not duplicate it.
+- [ ] **T054 [FR-030]** Preserve the floating preferences pill and offset the 390px no-banner card with an existing spacing token; assert no heading overlap.
+- [ ] **T055 [FR-026, FR-027, FR-029, FR-030]** Run and record the approved browser screenshot, theme, locale, viewport, accessibility, contrast, performance, CI, CodeRabbit and review evidence for the actual implementation head.
+- [ ] **T056 [FR-026, FR-027, FR-028, FR-029, FR-030]** Reconcile this requirement set after Hero implementation and close only tasks with executed passing assertions on that exact head.
+- [x] **T057 [FR-028]** Add RED/GREEN unit coverage and enforce the S32 username format in the client schema and `validateSignupFields`; test 3/30-character boundaries, ASCII character set, and case-insensitive handling without changing unapproved copy.
+- [ ] **T058 [FR-028]** Audit synthetic Stack B usernames using count-only and anonymized pattern classes, then submit remediation options to the PO. Defer the database check constraint until the PO approves remediation (S32-PO-9 Q9); production audit/remediation requires a separate approved step. S34-PO-1 H2=A defers enforcement against existing accounts pending safe remediation. This round adds no username DB constraint or existing-account validation and makes no username data changes. Keep this task open; preserve migrations `20261104001000` and `20261108230000`.
+- [x] **T059 [FR-028]** Add RED/GREEN application mapping from unavailable status to Username `invalid_input`, Username field error semantics and submit-time focus; include date-of-birth and Telegram server errors in field rendering and focus order. Clear the username server error on edit and check availability only on submit (S32-PO-9 Q11). Use the exact EN strings approved by S32-PO-9 Q10 and exact AR strings approved by S34-PO-1 H1=A, byte-for-byte; taken and reserved share one message. Evidence: commit `0dbc25a`; `tests/unit/client-accounts-messages.test.ts::uses the approved EN and AR username validation copy byte-for-byte`; `tests/unit/client-signup-focus.test.tsx::focuses Username when the server reports the unavailable status there (en/ar)`; targeted unit files passed 13/13.
+- [x] **T060 [FR-008, FR-028]** Capture and review the username format-error state under the Frontend Design Gate at AR/EN, light/dark and 390/1440px. Evidence: commit `8f09b8b`; `tests/e2e/client-signup-username-screenshots.spec.ts::captures invalid Username across locale, theme and viewport` passed 1/1 with 8 captures and axe 0 per capture; screenshots and review notes in `C:/Users/NEW LAP/AppData/Local/Temp/lifter-s34-hero-r22/INDEX.md`.
+- [x] **T061 [FR-028]** Align the F14 signup clarification and plan with S34-PO-1 H1=A/H2=A: record the approved, shipped Arabic copy; defer the existing-account database constraint and validation under T058. Evidence: commit `ecc3aff`; current-head S34 H1/H2 cross-artifact check passed, and `tests/unit/client-accounts-messages.test.ts::uses the approved EN and AR username validation copy byte-for-byte` passed in the 24/24 targeted unit run.
+- [ ] **T062 [FR-028]** Repair signup regression-test fixtures so invalid-password cases provide valid required identity fields, and future-DOB cases use relative dates while asserting the intended DOB rejection. Preserve all existing validation assertions. Partial evidence: commit `00c6ac8`; affected unit files passed 24/24. Stack B Playwright verification remains pending; S35 authorizes only the existing synthetic fixture writes through the unmodified harness on Stack B.
+- [ ] **T063 [FR-029]** Apply S35-PO-1 Hero option A to the light-theme field error border using the existing `error.fg` token; preserve the dark-theme border treatment. Add a regression assertion, measure border-to-input-background contrast (≥3:1), and capture the rendered invalid state under the required locale/theme/viewport matrix.
+- [x] **T064 [FR-028]** Rename the signup username unavailable migration to reserved version `20261108230000` to put it above every origin migration version. Preserve byte-identical content and leave shared `20261104001000_f15_signup_profile.sql` unchanged under the one-time ordering exception in S37-PO-8 item 1. Verify Stack B/D applied history before the rename; update old-filename references in a separate follow-up commit. Evidence: rename commit `48954cf6`, blob `f70ccc05` unchanged; reference alignment `51bce06d`; see `traceability.md` S37 round 31 section.
+- [x] **T065 [FR-029]** Coalesce window `resize` sampling of the Hero artwork into at most one `requestAnimationFrame` per frame (CodeRabbit nitpick, review `5819204371` on `bb090811`, PR #30 round 32): the pending frame is cancelled on effect cleanup; sampled values, the no-ResizeObserver window path and reduced-motion behaviour are otherwise unchanged. RED/GREEN unit coverage in `tests/unit/registration-hero.test.ts`; no migration change. Evidence: code commit `bc17cf227e17b8fc47ae713a616774adad918f4f`; `tests/unit/registration-hero.test.ts::coalesces a burst of window resize events into one sample per frame`, `::cancels a pending resize frame on cleanup and only once`, `::removes the coalesced resize listener it registered`, `::keeps the window resize path when the browser has no ResizeObserver`; unit file 38/38 GREEN after RED 4 failed / 34 passed; see `traceability.md` S38 round 32 section.
+- [x] **T066 [FR-015, FR-028]** Fix two signup form UX defects confirmed by the s38 read-only bug hunt on PR #30 (`5102877f`): (a) the Name field re-validates on edit, so its stale identity error clears without waiting for blur, using the same rule as Date of birth and Telegram; (b) when the submit button holds focus at submit time, focus moves to the existing pending status region once the button is disabled for the pending submission, instead of being left to the browser. Field-focused submission (for example Enter-key submission from a text field) is NOT covered by this task and remains an open, unimplemented case. RED: `tests/unit/client-signup-focus.test.tsx::clears a client-side name error on edit without waiting for blur` and `::moves focus to the pending status when the focused submit control is disabled`. Existing copy and components only; no migration and no visual change. GREEN on the committed head: targeted unit files 49/49, full `vitest run` 2,246 passed with one unrelated failure in `tests/unit/backup-streams.test.ts` (pre-existing on this host; see `traceability.md` S38 round 33). Browser basis: Firefox moves focus to `BODY` when the focused button is disabled, Chromium keeps it on the disabled button. Evidence: `traceability.md` S38 round 33 section.
 
 ## Verification stop conditions
 

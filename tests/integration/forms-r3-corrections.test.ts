@@ -1,16 +1,175 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { afterAll, expect, it } from 'vitest';
-import { sql } from './harness';
+import type { JSONValue } from 'postgres';
+import { createStaff, sql } from './harness';
+import { pending as createPendingClient } from './client-accounts-fixture';
 import {
   clientContext,
   registered,
   request,
   sqlCall,
+  waitForLock,
+  worker,
 } from './registration-approval-operations-fixture';
 
 const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('rollback T014 synthetic correction fixture');
+const prewriteBoundsSql = readFileSync(
+  new URL(
+    '../../supabase/migrations/20261112031200_f15_prewrite_answer_bounds.sql',
+    import.meta.url,
+  ),
+  'utf8',
+);
+
+async function runCorrectionRevocationRace() {
+  const context = await clientContext();
+  const pendingClient = await db.begin((tx) =>
+    createPendingClient(tx, context),
+  );
+  const client = {
+    id: pendingClient.id as string,
+    userId: pendingClient.auth_user_id as string,
+    link: pendingClient.registration_link_id as string,
+    rows: null,
+  };
+  await db.begin(async (tx) => {
+    expect(
+      (
+        await sqlCall(
+          tx,
+          context.po.userId,
+          'approve',
+          request(context, client),
+        )
+      ).status,
+    ).toBe('ok');
+  });
+  const trainer = await createStaff(
+    'trainer',
+    't151-stale-correction-authorization',
+  );
+  const formId = randomUUID();
+  const assignmentId = randomUUID();
+  const policy = `t151-${randomUUID()}`;
+  const label = `t151-correction-${randomUUID()}`;
+  await db`
+    insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+    values(${context.wsA.id},${trainer.userId},${context.po.userId})
+  `;
+  const definition = { questions: [{ id: 'ordinary', type: 'shortText' }] };
+  await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
+    values(${policy},'terms','published')`;
+  await db`insert into public.forms(id,workspace_id,name)
+    values(${formId},${context.wsA.id},${label})`;
+  await db`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+    values(${context.wsA.id},${formId},1,${policy},${db.json(definition)},'published')`;
+  await db`insert into public.form_assignments(id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
+    values(${assignmentId},${context.wsA.id},${client.id},${formId},1,${policy},${db.json(definition)})`;
+  await db`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
+    values(${context.wsA.id},${assignmentId},1,${db.json({ ordinary: 'before' })})`;
+  await db`insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
+    values(${context.wsA.id},${assignmentId},1,clock_timestamp())`;
+
+  const blocker = sql();
+  const labelForWait = `${label}-worker`;
+  const corrector = worker(labelForWait);
+  let signalLock!: () => void;
+  let releaseLock!: () => void;
+  const lockAcquired = new Promise<void>((resolve) => {
+    signalLock = resolve;
+  });
+  const hold = blocker.begin(async (tx) => {
+    await tx`select 1 from public.form_assignments
+      where workspace_id=${context.wsA.id} and id=${assignmentId} for update`;
+    signalLock();
+    await new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+  });
+  await lockAcquired;
+  let attempt: Promise<unknown> | undefined;
+  try {
+    attempt = corrector.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: trainer.userId, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      const [row] = await tx`select public.correct_form_answer(
+        ${context.wsA.id},${assignmentId},1,${randomUUID()},
+        ${tx.json({ ordinary: 'after' })},'T151 concurrent revocation',${tx.json([])}
+      ) as result`;
+      return row?.result;
+    });
+    expect(
+      await waitForLock(db, labelForWait),
+      'correct_form_answer must wait on the assignment lock',
+    ).toBe(true);
+    await db`update public.workspace_memberships
+      set revoked_at=clock_timestamp(),revoked_by=${context.po.userId}
+      where workspace_id=${context.wsA.id} and user_id=${trainer.userId} and revoked_at is null`;
+    releaseLock();
+    await hold;
+    return {
+      result: await attempt,
+      revisions:
+        await db`select revision,answer_values from public.form_answer_revisions
+      where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,
+      intents: await db`select 1 from app_private.form_correction_intents
+      where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,
+      audits: await db`select 1 from public.audit_events
+      where action='form.answer_corrected' and target_id=${assignmentId}`,
+    };
+  } finally {
+    if (releaseLock) releaseLock();
+    await Promise.allSettled([hold, ...(attempt ? [attempt] : [])]);
+    await blocker.end();
+    await corrector.end();
+  }
+}
+
+it('T151 rechecks correction authorization after waiting for the assignment lock', async () => {
+  const state = await runCorrectionRevocationRace();
+  expect(state.result).toEqual({ status: 'not_permitted' });
+  expect(state.revisions).toEqual([
+    { revision: 1, answer_values: { ordinary: 'before' } },
+  ]);
+  expect(state.intents).toHaveLength(0);
+  expect(state.audits).toHaveLength(0);
+});
+
+it('T151 correction recheck removal mutation is killed by the revocation race', async () => {
+  const signature =
+    'public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)';
+  const [original] = await db`
+    select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition`;
+  const guard = `  -- Re-read staff authorization after the assignment lock wait.\n  if assigned_user is distinct from actor then\n    role := app_private.current_staff_role();\n    if role is null\n      or not app_private.role_has_capability(role, 'read_form_answers')\n      or not app_private.has_workspace_access(p_workspace_id, 'read_form_answers') then\n      return jsonb_build_object('status', 'not_permitted');\n    end if;\n  end if;\n`;
+  const mutant = (original?.definition as string).replace(guard, '');
+  expect(mutant).not.toBe(original?.definition);
+  await db.unsafe(mutant);
+  try {
+    const state = await runCorrectionRevocationRace();
+    let mutationKilled = false;
+    try {
+      expect(state.result).toEqual({ status: 'not_permitted' });
+      expect(state.revisions).toEqual([
+        { revision: 1, answer_values: { ordinary: 'before' } },
+      ]);
+    } catch {
+      mutationKilled = true;
+    }
+    expect(mutationKilled).toBe(true);
+    expect(state.result).toMatchObject({ status: 'corrected', revision: 2 });
+    expect(state.revisions).toHaveLength(2);
+    expect(state.intents).toHaveLength(1);
+    expect(state.audits).toHaveLength(1);
+  } finally {
+    await db.unsafe(original?.definition as string);
+  }
+  const [restored] = await db`
+    select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition`;
+  expect(restored?.definition).toBe(original?.definition);
+});
 
 it('T014 appends a client self-correction without changing the original or logging content', async () => {
   const context = await clientContext();
@@ -21,15 +180,22 @@ it('T014 appends a client self-correction without changing the original or loggi
   const intentKey = randomUUID();
   const originalAnswers = {
     ordinary: 'original',
+    mustKeep: 'original required answer',
     health: 'synthetic health value',
+    hiddenQ: 'inapplicable value',
+    score: 5,
   };
   const correctedAnswers = {
     ordinary: 'corrected',
+    mustKeep: 'corrected required answer',
     health: 'updated synthetic health value',
+    hiddenQ: 'still inapplicable value',
+    score: 6,
   };
 
-  await expect(
-    db.begin(async (tx) => {
+  let outerError: unknown;
+  try {
+    await db.begin(async (tx) => {
       expect(
         (
           await sqlCall(
@@ -44,7 +210,34 @@ it('T014 appends a client self-correction without changing the original or loggi
         insert into app_private.terms_policy_versions(version,policy_kind,status)
         values(${policy},'terms','published')
       `;
-      const definition = { questions: [{ id: 'ordinary' }, { id: 'health' }] };
+      const definition = {
+        questions: [
+          { id: 'ordinary', type: 'shortText', charLimit: 10 },
+          { id: 'mustKeep', type: 'shortText', required: true, charLimit: 30 },
+          { id: 'health', type: 'longText', charLimit: 1000 },
+          {
+            id: 'hiddenQ',
+            type: 'shortText',
+            when: {
+              mode: 'all',
+              conditions: [
+                { questionId: 'ordinary', operator: 'equals', value: 'show' },
+              ],
+            },
+          },
+          {
+            id: 'score',
+            type: 'slider',
+            validation: { min: 0, max: 10, step: 1 },
+          },
+          { id: 'N08', type: 'singleChoice', choices: ['low', 'high'] },
+          {
+            id: 'N08.foods',
+            type: 'multiChoice',
+            choices: ['low:eggs', 'high:eggs'],
+          },
+        ],
+      };
       await tx`insert into public.forms(id,workspace_id,name)
         values(${formId},${context.wsA.id},'T014 synthetic corrections')`;
       await tx`
@@ -102,14 +295,169 @@ it('T014 appends a client self-correction without changing the original or loggi
       expect(revisionMutationKilled).toBe(true);
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
       await tx`set local role authenticated`;
+      const [originalSecurity] =
+        await tx`select pg_catalog.pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)'::regprocedure) as definition`;
+      const securityRollback = new Error('rollback security mutation');
+      let securityMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          await sp`alter function public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb) security invoker`;
+          const [mutated] =
+            await sp`select p.prosecdef from pg_catalog.pg_proc p where p.oid='public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)'::regprocedure`;
+          try {
+            expect(mutated?.prosecdef).toBe(true);
+          } catch {
+            securityMutationKilled = true;
+          }
+          throw securityRollback;
+        }),
+      ).rejects.toBe(securityRollback);
+      expect(securityMutationKilled).toBe(true);
+      const [restoredSecurity] =
+        await tx`select pg_catalog.pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)'::regprocedure) as definition, (select p.prosecdef from pg_catalog.pg_proc p where p.oid='public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)'::regprocedure) as prosecdef`;
+      expect(restoredSecurity?.definition).toBe(originalSecurity?.definition);
+      expect(restoredSecurity?.prosecdef).toBe(true);
+      const clearGuard = "and p_answer_values ? (question->>'id')";
+      expect(originalSecurity?.definition).toContain(clearGuard);
+      const guardMutant = originalSecurity?.definition.replace(
+        clearGuard,
+        `and false\n      ${clearGuard}`,
+      );
+      expect(guardMutant).not.toBe(originalSecurity?.definition);
+      const guardMutationRollback = new Error(
+        'rollback required-answer guard mutation',
+      );
+      let guardMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          await sp.unsafe(guardMutant!);
+          await sp`set local role authenticated`;
+          const [attempt] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},1,${randomUUID()},
+              ${sp.json({ ...correctedAnswers, mustKeep: '' })},'synthetic correction note'
+            ) as result
+          `;
+          try {
+            expect(attempt?.result).toEqual({ status: 'invalid' });
+          } catch {
+            guardMutationKilled = true;
+          }
+          throw guardMutationRollback;
+        }),
+      ).rejects.toBe(guardMutationRollback);
+      expect(guardMutationKilled).toBe(true);
+      const [restoredGuard] = await tx`
+        select pg_catalog.pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)'::regprocedure) as definition
+      `;
+      expect(restoredGuard?.definition).toBe(originalSecurity?.definition);
+      const [unknownKey] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},1,${randomUUID()},
+          ${tx.json({ ...correctedAnswers, outside_snapshot: 'synthetic' })},
+          'synthetic correction note'
+        ) as result
+      `;
+      expect(unknownKey?.result).toEqual({ status: 'invalid' });
+      const [inconsistentBudget] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},1,${randomUUID()},
+          ${tx.json({ ...correctedAnswers, N08: 'low', 'N08.foods': ['high:eggs'] })},
+          'synthetic correction note'
+        ) as result
+      `;
+      expect(inconsistentBudget?.result).toEqual({ status: 'invalid' });
+      const expectInvalidCorrection = async (
+        values: Record<string, JSONValue>,
+      ) => {
+        const probeRollback = new Error(
+          'rollback T014 invalid correction probe',
+        );
+        let result: unknown;
+        await expect(
+          tx.savepoint(async (sp) => {
+            const [attempt] = await sp`
+              select public.correct_form_answer(
+                ${context.wsA.id},${assignmentId},1,${randomUUID()},
+                ${sp.json(values)},'synthetic correction note'
+              ) as result
+            `;
+            result = attempt?.result;
+            throw probeRollback;
+          }),
+        ).rejects.toBe(probeRollback);
+        expect(result).toEqual({ status: 'invalid' });
+      };
+      const [clearedRequired] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},1,${randomUUID()},
+          ${tx.json({ ...correctedAnswers, mustKeep: '' })},'synthetic correction note'
+        ) as result
+      `;
+      expect(clearedRequired?.result).toEqual({ status: 'invalid' });
+      await tx`reset role`;
+      expect(
+        await tx`
+        select
+          (select count(*)::int from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as revisions,
+          (select count(*)::int from app_private.form_corrections where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as corrections,
+          (select count(*)::int from app_private.form_correction_intents where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as intents,
+          (select count(*)::int from public.audit_events where action='form.answer_corrected' and target_id=${assignmentId}) as correction_audits
+      `,
+      ).toEqual([
+        { revisions: 1, corrections: 0, intents: 0, correction_audits: 0 },
+      ]);
+      await tx`set local role authenticated`;
+      await expectInvalidCorrection({ ...correctedAnswers, score: '6' });
+      await expectInvalidCorrection({ ...correctedAnswers, score: 11 });
+      await expectInvalidCorrection({ ...correctedAnswers, mustKeep: null });
+      await expectInvalidCorrection({
+        ...correctedAnswers,
+        N08: 'not-a-choice',
+      });
+      const unrelatedRollback = new Error(
+        'rollback unrelated-only correction probe',
+      );
+      let unrelatedResult: unknown;
+      let unrelatedStoredAnswers: unknown;
+      await expect(
+        tx.savepoint(async (sp) => {
+          const [attempt] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},1,${randomUUID()},
+              ${sp.json({ ordinary: 'narrow' })},'synthetic correction note'
+            ) as result
+          `;
+          unrelatedResult = attempt?.result;
+          await sp`reset role`;
+          const [revision] = await sp`
+            select answer_values from public.form_answer_revisions
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=2
+          `;
+          unrelatedStoredAnswers = revision?.answer_values;
+          throw unrelatedRollback;
+        }),
+      ).rejects.toBe(unrelatedRollback);
+      expect(unrelatedResult).toMatchObject({
+        status: 'corrected',
+        revision: 2,
+      });
+      expect(unrelatedStoredAnswers).toEqual({
+        ...originalAnswers,
+        ordinary: 'narrow',
+      });
+      await tx`reset role`;
       await expect(
         tx.savepoint(async (sp) => {
           await sp`
-            select public.correct_form_answer(
-              ${context.wsA.id},${assignmentId},1,${randomUUID()},
-              ${sp.json({ ...correctedAnswers, outside_snapshot: 'synthetic' })},
-              'synthetic correction note'
-            ) as result
+            insert into public.form_answer_revisions(
+              workspace_id,assignment_id,revision,answer_values
+            ) values (
+              ${context.wsA.id},${assignmentId},2,
+              ${sp.json({ ...correctedAnswers, N08: 'low', 'N08.foods': ['high:eggs'] })}
+            )
           `;
         }),
       ).rejects.toThrow('invalid_form_answer_snapshot');
@@ -119,6 +467,18 @@ it('T014 appends a client self-correction without changing the original or loggi
         ) as result
       `;
       expect(overlongNote?.result).toEqual({ status: 'answer_too_long' });
+      const [overCharLimit] = await tx`select public.correct_form_answer(
+        ${context.wsA.id},${assignmentId},1,${randomUUID()},${tx.json({ ordinary: 'x'.repeat(11), health: 'safe' })},'synthetic note'
+      ) as result`;
+      expect(overCharLimit?.result).toEqual({ status: 'answer_too_long' });
+      expect(prewriteBoundsSql).toContain(
+        "octet_length(entry.value #>> '{}') > 4096",
+      );
+      await tx`reset role`;
+      expect(
+        await tx`select count(*)::int as count from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,
+      ).toEqual([{ count: 1 }]);
+      await tx`set local role authenticated`;
       const [result] = await tx`
         select public.correct_form_answer(
           ${context.wsA.id},${assignmentId},1,${intentKey},${tx.json(correctedAnswers)},'synthetic correction note'
@@ -136,6 +496,155 @@ it('T014 appends a client self-correction without changing the original or loggi
           ) as result
         `,
       ).toEqual([{ result: result?.result }]);
+      const removalKey = randomUUID();
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`set local role authenticated`;
+          const [firstRemoval] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},2,${removalKey},${sp.json({})},
+              'synthetic removal note',${sp.json(['ordinary'])}
+            ) as result
+          `;
+          const [replayedRemoval] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},2,${removalKey},${sp.json({})},
+              'synthetic removal note',${sp.json(['ordinary'])}
+            ) as result
+          `;
+          const [changedRemovalReplay] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},2,${removalKey},${sp.json({})},
+              'synthetic removal note',${sp.json(['health'])}
+            ) as result
+          `;
+          expect(firstRemoval?.result).toMatchObject({
+            status: 'corrected',
+            revision: 3,
+          });
+          expect(replayedRemoval?.result).toEqual(firstRemoval?.result);
+          expect(changedRemovalReplay?.result).toMatchObject({
+            status: 'conflict',
+            revision: 3,
+          });
+          await sp`reset role`;
+          const [removedRevision] = await sp`
+            select answer_values from public.form_answer_revisions
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=3
+          `;
+          expect(removedRevision?.answer_values).not.toHaveProperty('ordinary');
+          expect(
+            await sp`
+            select count(*)::int as count from public.audit_events
+            where action='form.answer_corrected' and target_id=${assignmentId}
+          `,
+          ).toEqual([{ count: 2 }]);
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+
+      const invalidRemoval = async (
+        remove: JSONValue,
+        answers: Record<string, JSONValue> = {},
+      ) => {
+        let result: unknown;
+        await expect(
+          tx.savepoint(async (sp) => {
+            await sp`set local role authenticated`;
+            const [attempt] = await sp`
+              select public.correct_form_answer(
+                ${context.wsA.id},${assignmentId},2,${randomUUID()},${sp.json(answers)},
+                'synthetic removal note',${sp.json(remove)}
+              ) as result
+            `;
+            result = attempt?.result;
+            throw rollback;
+          }),
+        ).rejects.toBe(rollback);
+        return result;
+      };
+      expect(await invalidRemoval(['mustKeep'])).toEqual({ status: 'invalid' });
+      expect(await invalidRemoval(['missing'])).toEqual({ status: 'invalid' });
+      expect(await invalidRemoval([null as unknown as JSONValue])).toEqual({
+        status: 'invalid',
+      });
+      expect(await invalidRemoval([''])).toEqual({ status: 'invalid' });
+      expect(await invalidRemoval(['ordinary', 'ordinary'])).toEqual({
+        status: 'invalid',
+      });
+      expect(await invalidRemoval('ordinary' as unknown as JSONValue)).toEqual({
+        status: 'invalid',
+      });
+      expect(await invalidRemoval(null as unknown as JSONValue)).toEqual({
+        status: 'invalid',
+      });
+      expect(
+        await invalidRemoval(['ordinary'], { ordinary: 'conflict' }),
+      ).toEqual({ status: 'invalid' });
+      expect(await invalidRemoval([], { ordinary: null })).toEqual({
+        status: 'invalid',
+      });
+      await tx`reset role`;
+      expect(
+        await tx`
+          select
+            (select count(*)::int from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as revisions,
+            (select count(*)::int from app_private.form_corrections where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as corrections,
+            (select count(*)::int from app_private.form_correction_intents where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as intents,
+            (select count(*)::int from public.audit_events where action='form.answer_corrected' and target_id=${assignmentId}) as audits
+        `,
+      ).toEqual([{ revisions: 2, corrections: 1, intents: 1, audits: 1 }]);
+      await tx`set local role authenticated`;
+      const noOpRemovalRollback = new Error('rollback absent removal probe');
+      let absentRemovalResult: unknown;
+      await expect(
+        tx.savepoint(async (sp) => {
+          const [attempt] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},2,${randomUUID()},${sp.json({})},
+              'synthetic absent removal note',${sp.json(['score'])}
+            ) as result
+          `;
+          absentRemovalResult = attempt?.result;
+          throw noOpRemovalRollback;
+        }),
+      ).rejects.toBe(noOpRemovalRollback);
+      expect(absentRemovalResult).toMatchObject({ status: 'corrected' });
+      const inapplicableRemovalRollback = new Error(
+        'rollback inapplicable removal probe',
+      );
+      let inapplicableRemovalResult: unknown;
+      let inapplicableRemovalAnswers: unknown;
+      await expect(
+        tx.savepoint(async (sp) => {
+          const [attempt] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},2,${randomUUID()},${sp.json({})},
+              'synthetic inapplicable removal note',${sp.json(['hiddenQ'])}
+            ) as result
+          `;
+          inapplicableRemovalResult = attempt?.result;
+          await sp`reset role`;
+          const [revision] = await sp`
+            select answer_values from public.form_answer_revisions
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=3
+          `;
+          inapplicableRemovalAnswers = revision?.answer_values;
+          throw inapplicableRemovalRollback;
+        }),
+      ).rejects.toBe(inapplicableRemovalRollback);
+      expect(inapplicableRemovalResult).toMatchObject({ status: 'corrected' });
+      expect(inapplicableRemovalAnswers).not.toHaveProperty('hiddenQ');
+      expect(await invalidRemoval(['hiddenQ'])).toMatchObject({
+        status: 'corrected',
+      });
+      const [oversizedRequest] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},2,${randomUUID()},
+          ${tx.json({ ordinary: 'x'.repeat(263_000) })},'synthetic removal note',${tx.json(['N08'])}
+        ) as result
+      `;
+      expect(oversizedRequest?.result).toEqual({ status: 'payload_too_large' });
       const [history] = await tx`
         select public.read_form_answer(${context.wsA.id},${assignmentId},'history') as result
       `;
@@ -177,7 +686,7 @@ it('T014 appends a client self-correction without changing the original or loggi
           await sp`set local role authenticated`;
           await sp`
             select public.correct_form_answer(
-              ${context.wsA.id},${assignmentId},2,${secondIntentKey},${sp.json({ ...correctedAnswers, ordinary: 'must rollback' })},'synthetic mutation note'
+              ${context.wsA.id},${assignmentId},2,${secondIntentKey},${sp.json({ ...correctedAnswers, ordinary: 'rollback' })},'synthetic mutation note'
             )
           `;
         }),
@@ -209,8 +718,11 @@ it('T014 appends a client self-correction without changing the original or loggi
         ).rejects.toBe(rollback);
       }
       throw rollback;
-    }),
-  ).rejects.toBe(rollback);
+    });
+  } catch (error) {
+    outerError = error;
+  }
+  expect(outerError).toBe(rollback);
 });
 
 it('T014 keeps Trainer, WO, and PO correction roles pending shared capability reconciliation', async () => {

@@ -42,6 +42,75 @@ async function workspace(tx: postgres.TransactionSql) {
   return { actor, workspaceId };
 }
 
+it('returns forbidden when an authorized trainer cannot select the default form', async () => {
+  await expect(
+    db.begin(async (tx) => {
+      const fixture = await workspace(tx);
+      const trainer = randomUUID();
+      await tx`insert into auth.users(id,email) values
+        (${trainer},${`f15-default-trainer-${trainer}@example.test`})`;
+      await tx`insert into public.staff_profiles(user_id,role)
+        values(${trainer},'trainer')`;
+      await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+        values(${fixture.workspaceId},${trainer},${fixture.actor})`;
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: trainer, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      const [access] = await tx`
+        select app_private.role_has_capability('trainer','author_forms') as can_author,
+          app_private.has_workspace_access(${fixture.workspaceId},'author_forms') as has_access
+      `;
+      expect(access).toEqual({ can_author: true, has_access: true });
+      const [original] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'public.select_default_onboarding_form(uuid,uuid)'::regprocedure
+        ) as definition,
+        (select prosecdef from pg_catalog.pg_proc
+          where oid='public.select_default_onboarding_form(uuid,uuid)'::regprocedure) as security_definer
+      `;
+      const mutationRollback = new Error(
+        'rollback default-selection security mutant',
+      );
+      let securityMutantKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          await sp`alter function public.select_default_onboarding_form(uuid,uuid) security invoker`;
+          await sp`set local role authenticated`;
+          const [mutated] = await sp`
+            select prosecdef as security_definer from pg_catalog.pg_proc
+            where oid='public.select_default_onboarding_form(uuid,uuid)'::regprocedure
+          `;
+          try {
+            expect(mutated?.security_definer).toBe(true);
+          } catch {
+            securityMutantKilled = true;
+          }
+          await sp`reset role`;
+          throw mutationRollback;
+        }),
+      ).rejects.toBe(mutationRollback);
+      expect(securityMutantKilled).toBe(true);
+      const [restored] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'public.select_default_onboarding_form(uuid,uuid)'::regprocedure
+        ) as definition,
+        (select prosecdef from pg_catalog.pg_proc
+          where oid='public.select_default_onboarding_form(uuid,uuid)'::regprocedure) as security_definer
+      `;
+      expect(restored?.definition).toBe(original?.definition);
+      expect(restored?.security_definer).toBe(true);
+      await tx`set local role authenticated`;
+      const [result] = await tx`
+        select public.select_default_onboarding_form(
+          ${fixture.workspaceId},${randomUUID()}
+        ) as result
+      `;
+      expect(result?.result).toEqual({ status: 'forbidden' });
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
 describe('T006/T009 persisted onboarding default', () => {
   it('stores one workspace-scoped default with forced RLS and no direct grants', async () => {
     const rows = await db`

@@ -56,7 +56,7 @@ it('uses the inert owner-only F11 cron pattern with restricted grants and adviso
 
   const migration = readFileSync(
     new URL(
-      '../../supabase/migrations/20261104030800_f15_alert_schedules.sql',
+      '../../supabase/migrations/20261112022800_f15_alert_schedules.sql',
       import.meta.url,
     ),
     'utf8',

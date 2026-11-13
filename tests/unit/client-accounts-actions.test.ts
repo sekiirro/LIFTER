@@ -41,13 +41,13 @@ it('rejects empty email components and multiple separators through invalid field
   for (const email of ['@example.test', 'person@', 'person@@example.test']) {
     expect(normalizedEmail(email), email).toBeNull();
     const validation = validateSignupFields({
-      name: 'Example Middle Person',
+      name: 'Example Sami Person',
+      dateOfBirth: '1990-04-12',
+      username: 'example.person',
+      telegramUsername: '',
       email,
       phone: '+201012345678',
       password: 'Strong9!Password',
-      dateOfBirth: '1990-04-12',
-      username: 'example_user',
-      telegramUsername: '',
     });
     expect(validation.fields).toBeNull();
     expect(validation.invalidFields).toContain('email');
@@ -63,13 +63,13 @@ it('routes malformed email shapes to field validation before admission or collis
     token: 'A'.repeat(43),
     requestSecret: 'B'.repeat(43),
     fields: {
-      name: 'Example Middle Person',
+      name: 'Example Sami Person',
+      dateOfBirth: '1990-04-12',
+      username: 'example.person',
+      telegramUsername: '',
       email: '@example.test',
       phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
       password: 'Strong9!Password',
-      dateOfBirth: '1990-04-12',
-      username: 'example_user',
-      telegramUsername: '',
     },
     origin: 'https://signup.example.test',
     expectedOrigin: 'https://signup.example.test',
@@ -93,15 +93,9 @@ it('T023 public results contain only contract status, translated copy and safe f
   const duplicate = signupResult('duplicate', 'en');
   expect(duplicate).toEqual({
     status: 'duplicate',
-    message:
-      'We could not complete this registration with these details. Contact your coach or support.',
+    message: 'This email is already registered. Contact support.',
   });
   expect(Object.keys(duplicate).sort()).toEqual(['message', 'status']);
-  expect(signupResult('duplicate', 'ar')).toEqual({
-    status: 'duplicate',
-    message:
-      'تعذّر إكمال التسجيل بهذه البيانات. يُرجى التواصل مع مدرّبك أو الدعم.',
-  });
   expect(signupResult('unavailable', 'ar').message.length).toBeGreaterThan(0);
 });
 
@@ -137,12 +131,12 @@ it('Q-M22 preserves database unavailable through the signup action result mappin
       token: 'A'.repeat(43),
       requestSecret: 'B'.repeat(43),
       fields: {
-        name: 'Example Middle Person',
+        name: 'Example Sami Person',
         email: 'client@example.test',
         phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
         password: 'Complex!2345',
         dateOfBirth: '1990-04-12',
-        username: 'example_user',
+        username: 'example.person',
         telegramUsername: '',
       },
       origin: 'https://signup.example.test',
@@ -167,14 +161,59 @@ it('Q-M22 preserves database unavailable through the signup action result mappin
   }
 });
 
-it('T045 strict signup shape accepts the profile extension and rejects unknown fields', () => {
+it('maps one database username-unavailable result to invalid_input on Username', async () => {
+  vi.stubEnv('SIGNUP_RATE_KEY', 'a'.repeat(64));
+  vi.stubEnv('SIGNUP_ATTEST_KEY', 'b'.repeat(64));
+  vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:54321');
+  vi.stubEnv('SUPABASE_ANON_KEY', 'unit-test-anon-key');
+  signupRpcSpy
+    .mockReset()
+    .mockResolvedValueOnce({
+      data: {
+        status: 'admitted',
+        admission_ticket: '00000000-0000-4000-8000-000000000001',
+      },
+      error: null,
+    })
+    .mockResolvedValueOnce({
+      data: { status: 'username_unavailable' },
+      error: null,
+    });
+  try {
+    const result = await processClientSignup({
+      token: 'A'.repeat(43),
+      requestSecret: 'B'.repeat(43),
+      fields: {
+        name: 'Example Sami Person',
+        email: 'client@example.test',
+        phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
+        password: 'Complex!2345',
+        dateOfBirth: '1990-04-12',
+        username: 'example.person',
+        telegramUsername: '',
+      },
+      origin: 'https://signup.example.test',
+      expectedOrigin: 'https://signup.example.test',
+      headers: {
+        get: (name) => (name === 'CF-Connecting-IP' ? '192.0.2.2' : null),
+      },
+      signedIn: async () => false,
+      locale: 'en',
+    });
+    expect(result).toEqual(signupResult('invalid_input', 'en', ['username']));
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
+
+it('T023 strict signup shape rejects unknown fields and accepts the approved profile fields', () => {
   const accepted = {
-    name: 'Example Middle Person',
+    name: 'Example Sami Person',
     email: 'example@example.test',
     phone: '+201012345678',
     password: 'Complex!2345',
     dateOfBirth: '1990-04-12',
-    username: 'example_user',
+    username: 'example.person',
     telegramUsername: '',
   };
   expect(signupFields(accepted) !== null).toBe(true);
@@ -185,6 +224,11 @@ it('T045 strict signup shape accepts the profile extension and rejects unknown f
     validateSignupFields({ ...accepted, role: 'admin' }).invalidFields.length >
       0,
   ).toBe(true);
+  for (const username of ['ab', 'a'.repeat(31), 'abc-def', 'café', 'ábc'])
+    expect(
+      validateSignupFields({ ...accepted, username }).invalidFields,
+      username,
+    ).toContain('username');
 });
 
 function source(path: string) {
@@ -303,9 +347,11 @@ it('T023 keeps tokens and submitted identity values out of public result code an
   expect(results).toContain("'duplicate'");
   expect(results).toContain('getMessages');
   expect(results).toContain('clientSignup.duplicate');
-  expect(results).not.toMatch(/clientSignup\.duplicate\s*:\s*['"]/);
+  expect(results).not.toContain(
+    'This email is already registered. Contact support.',
+  );
   expect(getMessages('en')['clientSignup.duplicate']).toBe(
-    'We could not complete this registration with these details. Contact your coach or support.',
+    'This email is already registered. Contact support.',
   );
   expect(getMessages('ar')['clientSignup.unavailable']).toBe(
     'يرجى المحاولة مرة أخرى لاحقًا.',
@@ -321,8 +367,16 @@ it('T023 rejects unknown payload fields and maps all database statuses safely', 
   const validation = source('lib/client-accounts/validation.ts');
   const results = source('lib/client-accounts/results.ts');
 
-  expect(validation).toContain("'dateOfBirth'");
-  expect(validation).toContain("'telegramUsername'");
+  for (const field of [
+    'name',
+    'dateOfBirth',
+    'username',
+    'telegramUsername',
+    'email',
+    'phone',
+    'password',
+  ])
+    expect(validation).toContain(`'${field}'`);
   expect(service).toContain('validateSignupFields');
   expect(service).toContain('invalid_input');
   for (const status of [
@@ -439,12 +493,12 @@ it('U6-R1 returns sign_out_required before admission or signup RPC calls', async
     token: 'A'.repeat(43),
     requestSecret: 'B'.repeat(43),
     fields: {
-      name: 'Example Middle Person',
+      name: 'Example Sami Person',
       email: 'client@example.test',
       phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
       password: 'Complex!2345',
       dateOfBirth: '1990-04-12',
-      username: 'example_user',
+      username: 'example.person',
       telegramUsername: '',
     },
     origin: 'https://signup.example.test',

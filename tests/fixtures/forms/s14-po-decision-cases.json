@@ -2,7 +2,11 @@
   "pendingCopy": ["P2_health_notice"],
   "approvedENRows": [
     "B01",
+    "B02",
     "B06",
+    "N01",
+    "N07",
+    "N07.2",
     "T03.2",
     "T03.3",
     "T03.4",
@@ -10,17 +14,15 @@
     "T03.6",
     "T08",
     "N07.training_timing",
-    "N08"
-  ],
-  "pendingENRows": [
-    "B02",
-    "N01",
-    "N07",
-    "N07.2",
+    "N08",
     "N08.low.foods",
-    "N11.feedback.0_2",
-    "N12"
+    "N12",
+    "N11.feedback.0_2"
   ],
+  "approvedENCopy": {
+    "N08.low.foods": "Cottage cheese / plant protein / eggs / baladi bread"
+  },
+  "pendingENRows": ["N08.medium.foods", "N08.high.foods"],
   "parentIds": [
     "B01",
     "B02",

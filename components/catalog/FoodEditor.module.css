@@ -1,0 +1,127 @@
+.editor {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+}
+.header {
+  display: grid;
+  gap: var(--space-2);
+}
+.header h2 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  line-height: var(--line-height-heading);
+  text-wrap: balance;
+}
+.header p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+.form {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+.group {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.group legend {
+  padding-inline: var(--space-1);
+  font-weight: 600;
+}
+.group > p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+.field {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+.field label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.field select {
+  inline-size: 100%;
+  min-block-size: var(--touch-min);
+  max-inline-size: 100%;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-button);
+}
+.error {
+  margin: 0;
+  color: var(--color-error-fg);
+  font-size: var(--text-sm);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.errorSummary {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  color: var(--color-error-fg);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-card);
+}
+.errorSummary h3,
+.errorSummary ul {
+  margin: 0;
+}
+.errorSummary ul {
+  display: grid;
+  gap: var(--space-1);
+  padding-inline-start: var(--space-5);
+}
+.errorSummary a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
+}
+.candidate {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  list-style: none;
+}
+ul.group {
+  margin: 0;
+  padding: var(--space-3);
+  list-style: none;
+}
+.candidate {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-bg);
+}
+@media (min-width: 40rem) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

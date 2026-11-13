@@ -17,14 +17,16 @@ import { scanSensitiveLogLines } from './server-log-privacy';
 import { parsePhoneNumber } from 'libphonenumber-js';
 import { generateEgyptianMobile } from './egyptian-mobile';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = 'http://localhost:3000';
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
 let validToken: string;
 let pendingToken: string;
+let duplicateToken: string;
 let providerToken: string;
 let expiredToken: string;
+let knownStaffEmail: string;
 let fixture: Awaited<
   ReturnType<
     typeof import('../integration/registration-links-fixture').registrationFixture
@@ -36,6 +38,7 @@ test.beforeAll(async () => {
   const { registrationFixture, secret, issue, checked } =
     await import('../integration/registration-links-fixture');
   fixture = await registrationFixture();
+  knownStaffEmail = fixture.po.email;
   const seed = async () => {
     const value = secret();
     checked(
@@ -45,6 +48,7 @@ test.beforeAll(async () => {
   };
   validToken = await seed();
   pendingToken = await seed();
+  duplicateToken = await seed();
   providerToken = await seed();
   const expired =
     await import('../integration/registration-links-fixture').then(
@@ -421,7 +425,7 @@ async function fillSignup(
     .fill('1990-04-12');
   await page
     .getByLabel(m['clientSignup.username'], { exact: true })
-    .fill(`member_${randomUUID().slice(0, 8)}`);
+    .fill(`client${randomUUID().replaceAll('-', '').slice(0, 24)}`);
   await page
     .getByLabel(m['clientSignup.email'], { exact: true })
     .fill(values.email);
@@ -742,6 +746,11 @@ test('valid signup link renders a minimal form with private route headers', asyn
   await expect(page.getByLabel('Country')).toHaveValue('EG');
   await expect(page.getByLabel('Phone number')).toBeVisible();
   await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Date of birth', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Username', { exact: true })).toBeVisible();
+  await expect(
+    page.getByLabel('Telegram username (Optional)', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByLabel('Email')).toBeVisible();
   await expect(page.getByLabel('Password')).toBeVisible();
   await expect(page.locator('input[name="token"]')).toHaveCount(0);
@@ -757,7 +766,7 @@ test('pending submission disables the form and ignores a second submit', async (
   await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.14' });
   await page.goto(`/register/${pendingToken}`);
   await fillSignup(page, {
-    name: 'Example Person Client',
+    name: 'Example Client Person',
     email: `client-${randomUUID()}@example.test`,
   });
   let release!: () => void;
@@ -847,7 +856,7 @@ for (const locale of ['ar', 'en'] as const) {
     await fillSignup(
       page,
       {
-        name: 'Example Person Client',
+        name: 'Example Client Person',
         email: 'invalid',
         phone: '01012',
       },
@@ -873,7 +882,7 @@ for (const locale of ['ar', 'en'] as const) {
     await fillSignup(
       page,
       {
-        name: 'Example Person Client',
+        name: 'Example Client Person',
         email: `client-${randomUUID()}@example.test`,
       },
       locale,
@@ -901,7 +910,7 @@ for (const locale of ['ar', 'en'] as const) {
     await fillSignup(
       page,
       {
-        name: 'Example Person Client',
+        name: 'Example Client Person',
         email,
       },
       locale,
@@ -960,7 +969,7 @@ test('provider failure returns generic unavailable, then a retry can complete', 
   await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.16' });
   await page.goto(`/register/${providerToken}`);
   await fillSignup(page, {
-    name: 'Example Person Client',
+    name: 'Example Client Person',
     email: `provider-${randomUUID()}@example.test`,
   });
   execFileSync('docker', ['stop', localSupabaseContainer('kong')], {
@@ -1019,7 +1028,7 @@ test('committed signup retry returns invalid and never creates a second identity
   const getResponse = await page.goto(`/register/${validToken}`);
   expect(getResponse?.headers()['referrer-policy']).toBe('no-referrer');
   expect(getResponse?.headers()['cache-control']).toContain('no-store');
-  await fillSignup(page, { name: 'Example Person Client', email });
+  await fillSignup(page, { name: 'Example Client Person', email });
   const responsePromise = page.waitForResponse(
     (response) => response.request().method() === 'POST',
   );
@@ -1106,7 +1115,7 @@ for (const locale of ['ar', 'en'] as const) {
     });
     const firstResponse = await page.goto(`/register/${token}`);
     expect(firstResponse?.status()).toBe(200);
-    await fillSignup(page, { name: 'Example Person Client', email }, locale);
+    await fillSignup(page, { name: 'Example Client Person', email }, locale);
     const actionResponsePromise = page.waitForResponse(
       (response) => response.request().method() === 'POST',
     );
@@ -1139,6 +1148,28 @@ for (const locale of ['ar', 'en'] as const) {
     }
   });
 }
+
+test('identity collision keeps the contract duplicate wording without field details', async ({
+  page,
+  context,
+}) => {
+  test.skip(!local, 'Requires the disposable local Supabase stack.');
+  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.12' });
+  await page.goto(`/register/${duplicateToken}`);
+  await fillSignup(page, {
+    name: 'Example Client Person',
+    email: knownStaffEmail,
+  });
+  await page
+    .getByRole('button', { name: 'Create registration request' })
+    .click();
+  await expect(page.getByRole('status')).toHaveText(
+    'This email is already registered. Contact support.',
+  );
+  const duplicateMessage = await page.getByRole('status').textContent();
+  expect(duplicateMessage?.includes(knownStaffEmail) ?? false).toBe(false);
+});
 
 for (const locale of ['ar', 'en'] as const) {
   test(`${locale} duplicate responses are generic and identical across D-08 collision classes`, async ({
@@ -1439,7 +1470,7 @@ test('lost committed response leaves one identity and the link no longer opens a
   await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
   await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.13' });
   await page.goto(`/register/${state.token}`);
-  await fillSignup(page, { name: 'Example Person Client', email });
+  await fillSignup(page, { name: 'Example Client Person', email });
   let committedResponseStatus = 0;
   await page.route(`**/register/${state.token}`, async (route) => {
     if (route.request().method() !== 'POST') return route.continue();
@@ -1456,7 +1487,7 @@ test('lost committed response leaves one identity and the link no longer opens a
   );
   await expect(
     page.getByLabel(getMessages('en')['clientSignup.name'], { exact: true }),
-  ).toHaveValue('Example Person Client');
+  ).toHaveValue('Example Client Person');
   await expect(
     page.getByLabel(getMessages('en')['clientSignup.email']),
   ).toHaveValue(email);

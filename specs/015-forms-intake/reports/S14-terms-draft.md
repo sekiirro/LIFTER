@@ -4,14 +4,14 @@
 
 ## Source policy map
 
-| Policy topic | Approved LIFTER source |
-| --- | --- |
-| Account identity and access | [Constitution I and III](../../../.specify/memory/constitution.md); [F11 spec](../../011-client-accounts/spec.md), especially pending-approval and account-uniqueness requirements; [F15 signup extension](../contracts/signup-extension.md). |
-| Health and personal information | [Constitution VII](../../../.specify/memory/constitution.md); [F15 spec FR-023/025](../spec.md); [F15 authorization and audit contract](../contracts/authorization-and-audit.md). |
-| Retention and deletion | [F15 retention and alert contract](../contracts/retention-and-alerts.md); [F15 spec FR-012/033, RET-1..3](../spec.md); [production readiness DP-01/02](../../../docs/13-production-readiness.md). |
-| Refunds | [Decision register D-15](../../../docs/04-changes-and-questions.md#d-15-refunds) and the approved F13/F15 decisions in the local [decision source](C:/Users/NEW%20LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md). |
-| Freeze and subscription timing | [F13/F15 PO decisions](C:/Users/NEW%20LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md) (local source; not a repository link); [F15 spec recurrence rules](../spec.md#po-decisions-and-traceability). |
-| Consent/version recording | [D-S14-2 in F15 spec](../spec.md#d-s14-15-mandatory-intake-identity-and-flow-2026-10-30); [F15 signup extension](../contracts/signup-extension.md). |
+| Policy topic                    | Approved LIFTER source                                                                                                                                                                                                                        |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Account identity and access     | [Constitution I and III](../../../.specify/memory/constitution.md); [F11 spec](../../011-client-accounts/spec.md), especially pending-approval and account-uniqueness requirements; [F15 signup extension](../contracts/signup-extension.md). |
+| Health and personal information | [Constitution VII](../../../.specify/memory/constitution.md); [F15 spec FR-023/025](../spec.md); [F15 authorization and audit contract](../contracts/authorization-and-audit.md).                                                             |
+| Retention and deletion          | [F15 retention and alert contract](../contracts/retention-and-alerts.md); [F15 spec FR-012/033, RET-1..3](../spec.md); [production readiness DP-01/02](../../../docs/13-production-readiness.md).                                             |
+| Refunds                         | [Decision register D-15](../../../docs/04-changes-and-questions.md#d-15-refunds) and the approved F13/F15 decisions in the [F15 PO decision traceability](../spec.md#po-decisions-and-traceability).                                          |
+| Freeze and subscription timing  | [F15 PO decision traceability](../spec.md#po-decisions-and-traceability) and [F15 spec recurrence rules](../spec.md#po-decisions-and-traceability).                                                                                           |
+| Consent/version recording       | [D-S14-2 in F15 spec](../spec.md#d-s14-15-mandatory-intake-identity-and-flow-2026-10-30); [F15 signup extension](../contracts/signup-extension.md).                                                                                           |
 
 ## Approved Egyptian Arabic
 
@@ -62,15 +62,14 @@ Account details are required to manage identity and access. Email addresses and 
 - Historical S14 decision: a separate health-data notice appeared immediately before health questions without a checkbox or consent receipt. S17 supersedes the standalone UI; that draft is provenance only, not a pending ship approval. Minimal contextual guidance may use the PO-approved phrase only where genuinely useful.
 - Architect default: use existing premium card/checkbox components for the Terms Card; do not borrow YBS styling.
 
-
 ## Superseded: separate health-data notice draft copy
 
 Superseded by S17: this historical draft is not a required standalone UI or a pending ship deliverable. The former S14 display was immediately before health questions and had no acknowledgment checkbox or consent record. Where a form question makes brief health-data context genuinely useful, minimal contextual guidance may use «عن بياناتك الصحية» / “About your health data”. Do not add acknowledgment or consent. Terms Card text and consent policy remain unchanged.
 
 ## Remaining copy awaiting PO approval
 
-PO-approved intake English is limited to B01 “Full name (three parts)”, B06 “Gender” / “Male” / “Female”, T08 “Training split”, N08 “What’s your food budget?”, N07 timing question/options from S32-PO-8 Q6, and T03 option values 2–6 from S32-PO-8 Q5. S33-PO-3 also approves Arabic T03 labels `2`, `3`, `4`, `5`, `6` and Arabic N07 `الوجبة رقم {number}`. The N07 meal-count question/options, N08 budget and food-chip option labels, N11 labels/feedback, N12 question/card descriptions, and every other EN intake row remain **DRAFT — pending PO approval**. Health-notice entries below are historical S14 draft provenance; standalone notice translation is superseded and is not a ship blocker. This inventory records approved Terms, sex and Arabic T03/N07 copy plus the remaining intake translation review.
+Per S34-PO-4, S34-PO-6, and PD-S34-NEW-01, the N07 meal-count English question and options and the remaining English intake rows/options recorded in the spec and canonical approved-copy fixture are approved. S41-PO-3 approves N08.low.foods byte-exact; N08.medium.foods and N08.high.foods remain pending PO approval. The low-budget English label is recorded in the spec and decision fixture. S33-PO-3 approves Arabic T03 labels 2, 3, 4, 5, 6 and Arabic N07. Health-notice entries below are historical S14 draft provenance; standalone notice translation is superseded and is not a ship blocker.
 
 - **Health notice Arabic** — historical S14 draft in `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.ar`); standalone UI superseded by S17, contextual-only where useful.
 - **Health notice English** — historical S14 draft in `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.en`); standalone UI superseded by S17, contextual-only where useful.
-- **Remaining EN intake rows and options** — `specs/015-forms-intake/spec.md` (EN translation and EN option translations tables). Items listed as approved in the S32-PO-5/S32-PO-8 register are the only exceptions; all remaining authored translations are pending PO review before publication.
+- **Remaining EN intake rows and options** — specs/015-forms-intake/spec.md and the canonical decision fixture retain row-level status. S41-PO-3 approves only N08.low.foods byte-exact; N08.medium.foods, N08.high.foods, and all other pending EN rows remain pending.

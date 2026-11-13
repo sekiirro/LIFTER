@@ -13,16 +13,16 @@
 
 Changes were checked against the current code. Current edits include:
 
-| Thread | Finding | Change | Evidence |
-|---|---|---|---|
-| `PRRT_kwDOVYgYQ86zMtVd` | Number input in builder preview lost its displayed value after input | `FormPreview` stringifies numeric answer values for controlled input | `components/forms/FormPreview.tsx` |
-| `PRRT_kwDOVYgYQ86zMtVs` | Successful answer correction left dirty/save state set | Clear dirty refs/state only when latest answers still equal the submitted correction snapshot | `components/forms/QuestionFlow.tsx` |
-| `PRRT_kwDOVYgYQ86zMtV5` | Authorized-route age assertion was fixed at 36 | Derive expected value using `calculateAgeInCairo('1990-04-12', new Date())` | `tests/e2e/forms-authorized-route.spec.ts` |
-| `PRRT_kwDOVYgYQ86zNY1t` | Authenticated terminal Telegram payload/replay response used retry-triggering non-2xx | Authenticated invalid JSON and invalid/replayed start now return 200 | `app/api/telegram/webhook/route.ts` |
-| `PRRT_kwDOVYgYQ86zNY2b` | Signup validation effect could refocus during identity edits | Do not steal focus when another form control already has focus | `app/register/[token]/SignupForm.tsx` |
-| `PRRT_kwDOVYgYQ86zNY2s` | Telegram sendMessage fetch had no bound | Add a 10-second abort timeout | `lib/forms/telegram-delivery.ts` |
-| `PRRT_kwDOVYgYQ86zNY35` | E2E locale/theme cookies used hard-coded fallback origin | Use configured Playwright project baseURL and require it | `tests/e2e/forms-production-route.spec.ts` |
-| `PRRT_kwDOVYgYQ86zNY4P` | Assignment mutation test used an unconditional failing assertion | Query matching initial-occurrence rows and assert one row after dropping uniqueness | `tests/integration/forms-r3-assignment-invariants.test.ts` |
+| Thread                  | Finding                                                                               | Change                                                                                        | Evidence                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `PRRT_kwDOVYgYQ86zMtVd` | Number input in builder preview lost its displayed value after input                  | `FormPreview` stringifies numeric answer values for controlled input                          | `components/forms/FormPreview.tsx`                         |
+| `PRRT_kwDOVYgYQ86zMtVs` | Successful answer correction left dirty/save state set                                | Clear dirty refs/state only when latest answers still equal the submitted correction snapshot | `components/forms/QuestionFlow.tsx`                        |
+| `PRRT_kwDOVYgYQ86zMtV5` | Authorized-route age assertion was fixed at 36                                        | Derive expected value using `calculateAgeInCairo('1990-04-12', new Date())`                   | `tests/e2e/forms-authorized-route.spec.ts`                 |
+| `PRRT_kwDOVYgYQ86zNY1t` | Authenticated terminal Telegram payload/replay response used retry-triggering non-2xx | Authenticated invalid JSON and invalid/replayed start now return 200                          | `app/api/telegram/webhook/route.ts`                        |
+| `PRRT_kwDOVYgYQ86zNY2b` | Signup validation effect could refocus during identity edits                          | Do not steal focus when another form control already has focus                                | `app/register/[token]/SignupForm.tsx`                      |
+| `PRRT_kwDOVYgYQ86zNY2s` | Telegram sendMessage fetch had no bound                                               | Add a 10-second abort timeout                                                                 | `lib/forms/telegram-delivery.ts`                           |
+| `PRRT_kwDOVYgYQ86zNY35` | E2E locale/theme cookies used hard-coded fallback origin                              | Use configured Playwright project baseURL and require it                                      | `tests/e2e/forms-production-route.spec.ts`                 |
+| `PRRT_kwDOVYgYQ86zNY4P` | Assignment mutation test used an unconditional failing assertion                      | Query matching initial-occurrence rows and assert one row after dropping uniqueness           | `tests/integration/forms-r3-assignment-invariants.test.ts` |
 
 ## Remaining blocker
 

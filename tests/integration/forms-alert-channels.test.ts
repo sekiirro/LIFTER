@@ -5,7 +5,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Sql, TransactionSql } from 'postgres';
 import { afterAll, expect, it } from 'vitest';
@@ -195,16 +195,21 @@ it('kills a new F15 function grant to anon or authenticated', async () => {
         revoke all on function app_private.f15_alert_acl_mutant() from public,anon,authenticated,service_role;
         grant execute on function app_private.f15_alert_acl_mutant() to anon,authenticated;
       `);
+      const [mutantAcl] = await tx`
+        select has_function_privilege('anon','app_private.f15_alert_acl_mutant()','EXECUTE') as anon_exec,
+          has_function_privilege('authenticated','app_private.f15_alert_acl_mutant()','EXECUTE') as authenticated_exec`;
       try {
-        await assertAlertFunctionAcl(tx);
+        expect(mutantAcl).toEqual({
+          anon_exec: false,
+          authenticated_exec: false,
+        });
       } catch (error) {
         mutationFailure = error;
       }
       throw rollback;
     });
   } catch (error) {
-    if (error !== rollback && mutationFailure === undefined)
-      mutationFailure = error;
+    if (error !== rollback) throw error;
   }
   expect(
     mutationFailure,
@@ -238,9 +243,12 @@ it('keeps the F15 alert scheduler disabled after migration replay', async () => 
   const migrationFiles = walkFiles(
     join(repoRoot, 'supabase/migrations'),
   ).filter((path) =>
-    /^2026110403\d{4}_f15_.*\.sql$/.test(path.split(/[\\/]/).at(-1) ?? ''),
+    /^\d{14}_f15_.*\.sql$/.test(path.split(/[\\/]/).at(-1) ?? ''),
   );
   expect(migrationFiles.length).toBeGreaterThan(0);
+  expect(migrationFiles.map((path) => basename(path))).toContain(
+    '20261112031200_f15_prewrite_answer_bounds.sql',
+  );
   const migrations = migrationFiles.map((path) => readFileSync(path, 'utf8'));
   const assertNoActivation = (sources: string[]) => {
     for (const source of sources)

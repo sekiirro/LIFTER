@@ -1,30 +1,166 @@
-# Spec Kit Analyze - F4 Authentication & Manual Recovery Links
+# Spec Kit Analyze — F4 Authentication, S39 round 7
 
-- Date: 2026-11-06, re-run after the S35-R3 edits (after the last change to spec/plan/tasks in this documentation change)
-- Base: `origin/main` `7e2d0149b0370e4389b462130508352bbd69daa2`
-- Method: static cross-artifact review of `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, `docs/04-changes-and-questions.md:25` and `docs/13-production-readiness.md:32-34`. No tests or CI jobs were run.
+- Date: 2026-11-09 04:56 +02:00, after the last changes to spec.md, plan.md, tasks.md, traceability.md, copy-proposal.md and contracts/auth-surface.md in this round, and after the round-7 review fixes to spec.md (SC-016), traceability.md and tasks.md (T041/T041a, T048).
+- Scope: specification and planning only. No application code, SQL, migration, environment or test was changed or run.
+- Inputs: S39-PO-4 option 2 (English of the 13 former proposal rows approved as written); S39-PO-5 option 1 (Egyptian Arabic redraft approved exactly as in `runs/s39-haiku-f4-ar/copy-ar-redraft.md` "proposed Egyptian Arabic", plus the five-key term switch). Exact quoted extracts and mappings are in the round report; prior inputs are the S38 round-6 records.
+- Method: cross-artifact review of spec.md, plan.md, tasks.md, research.md, traceability.md, contracts/auth-surface.md, data-model.md and this checklist against Spec Kit entry requirements and the round-6 critique findings.
 
-## Inventory and entry check
+## Entry check (Spec Kit gate)
 
-- Present: `spec.md` (FR-001..015, SC-001..007, Given/When/Then scenarios), `plan.md`, `tasks.md` (T001..T032), `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `checklists/requirements.md`.
-- Missing at base: Analyze, traceability, Clarifications section. Added by this change.
-- Clarifications: spec.md `## Clarifications` records S31-PO-2 SK-004-01, SK-004-06 and S31-PO-3 SK-004-04, quoted from the ledger. SK-004-02 and SK-004-03 were added in round 2 (S35-R2). Open items are stated explicitly (ND-F4-5, ND-F4-7).
-- Plan/tasks: T030, T031 and T032 carry FR tags; traceability maps FR-001..015 to tasks.
+| Check                                                                           | Result | Evidence                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Numbered FRs, measurable SCs, Given/When/Then scenarios cover the touched scope | PASS   | spec.md FR-001–FR-031; SC-001–SC-016; US5 scenarios 1–15 cover request, hook failures, idempotent intent retry, session binding, reset outcome, timing and the five-key Arabic term switch (scenario 15). |
+| Clarifications cite PO sources and state remaining ambiguities                  | PASS   | spec.md records S39-PO-4/S39-PO-5; COPY-F4-R6 is resolved. S38 register quotes S38-PO-1/3/5. No behavior decision is implicit.                                                                            |
+| Plan covers touched scope; tasks have IDs and FR tags                           | PASS   | plan.md provider-boundary design, G1–G6 and sequencing; tasks.md T033, T041, T042, T049a–T049e, T050a/T050b, T051 and new T052 (FR-031) include FR tags.                                                  |
+| Analyze is dated after spec/plan/tasks edits and has 0 open CRITICAL/HIGH       | PASS   | This dated review; finding dispositions below.                                                                                                                                                            |
 
-## Findings
+**Spec-only gate result: PASS. Implementation entry: NOT READY (technical gates only).** The copy condition is now satisfied: English approved by S39-PO-4, Egyptian Arabic and the five-key term switch by S39-PO-5. T033 still requires the remaining entry checks; local feasibility G1–G6, RED/acceptance evidence and T051 mutation evidence remain unexecuted. These are explicit technical gates, not unresolved requirements. No task is ticked.
 
-| ID | Category | Severity | Location | Finding | Recommendation |
-|---|---|---|---|---|---|
-| A1 | Decision to implementation | MEDIUM | `tasks.md` T031; `data-model.md:34`; `research.md:57` | Decided limits (10 per staff per hour, 3 per client per 24 hours) differ from the merged placeholders (20 / 3 / 1 hour). Not implemented; data-model and research still describe placeholders. | Run the T031 Spec Kit cycle; update data-model and research with it. |
-| A2 | Source gap | MEDIUM | `spec.md` ND-F4-3; `docs/13-production-readiness.md:34` | Session-lifetime enforcement deferral ("PO decision: B") is not in the PO ledger. Recorded as a docs/13 citation only. | PO confirms the source (report PO-DECISION-NEEDED). |
-| A3 | Decision to implementation | MEDIUM | `spec.md` ND-F4-1, ND-F4-2; `tasks.md` T032 | SK-004-02 ("All workspace Trainers") and SK-004-03 ("Copy only") are now recorded verbatim in the spec register. SK-004-03 is already satisfied (`components/auth/RecoveryLinkDialog.tsx:40`). SK-004-02 is not implemented; Trainers stay denied until T032. | Run the T032 Spec Kit cycle on a new branch. |
-| A4 | Task closure | LOW | `tasks.md` T030 | T030 stays unchecked: PR merge, CI and CodeRabbit gates are not met by the documentation change alone. | Tick after merge with gates evidenced. |
-| A5 | Evidence breadth | LOW | `traceability.md` | Rows are MAPPED from task text. FR-001 is PARTIAL and FR-002/FR-003 UNVERIFIED: `tests/e2e/auth.spec.ts` asserts no sign-in, generic-error or sign-out behaviour. | Add app-level sign-in/sign-out tests in a later Spec Kit cycle; refresh remaining rows with exact test names. |
+## S39 round 7 copy approval (resolves S38-F4-3)
 
-## Coverage and constitution
+- `specs/004-auth/copy-proposal.md` now carries the final approved AR/EN table (26 rows). The 13 former "New proposal; PENDING-PO" rows use the S39-PO-4 English and the S39-PO-5 Egyptian Arabic byte-exact. No PENDING-PO marker remains.
+- spec.md FR-027 cites S39-PO-4/S39-PO-5 and reproduces the approved table after FR-029.
+- The five keys `auth.newPassword`, `auth.confirmPassword`, `auth.setPassword`, `auth.weak_password` and `auth.mismatch` carry only the S39-PO-5 term switch; this is FR-031 with SC-016. The catalog change is task T052 and is explicitly not made by this specification-only PR.
+- FR-031 lists every `origin/main` screen and test that reads the five keys: `app/auth/recovery/RecoveryForm.tsx`, `app/auth/recovery/page.tsx`, `lib/i18n/messages/{ar,en}.ts`, `tests/unit/auth-actions.test.ts`, plus indirect coverage in `tests/unit/messages.test.ts`, `tests/e2e/auth.spec.ts` and `tests/integration/client-accounts-verification.md`. `components/` has no read.
+- The two FR-029 strings remain byte-exact and are unchanged by the switch; a byte comparison confirmed all 26 rows, the 13 redraft strings and the four FR-029 strings.
 
-FR-to-task mapping is 15/15 (100%). No task checkbox changed. S35-R3 re-check: docs/13 AI-03 now also requires T032's app-layer permission change and tests (matches T032's two-wall scope); spec.md ND-F4-6 keeps the SK-004-06 quote and option text byte-identical and adds a labelled architect note that staff self-service recovery depends on open ND-F4-7 (no new decision, no new requirement). Constitution III (least privilege) and VII (privacy) are unaffected: no behaviour, schema or test changed.
+## Sol Medium critique disposition (S38 round 6, retained as history)
 
-## Verdict
+S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3 / LOW 1. The critique ran at the exact starting SHA. Its ten findings are resolved at the specification/process level as follows; implementation evidence remains required by the listed tasks.
 
-**PASS** - 0 CRITICAL, 0 HIGH, 3 MEDIUM, 2 LOW.
+| Finding                                                                                | Severity at critique | Round-6 disposition                                                                                                                                                                                                        | Evidence                                                               |
+| -------------------------------------------------------------------------------------- | -------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 1. S38-PO-3 absent; PDN-17 and hosted path block local work                            |                 HIGH | Fixed: exact PO words recorded; T050b is local-only; hosted changes and Resend deferred; PDN-17 closed.                                                                                                                    | spec.md S38 register, FR-019/020; plan.md; tasks.md T033/T050b         |
+| 2. Hook failure classes overclaim generic response                                     |                 HIGH | Fixed technically: refusal, caught audit error, unavailable transport and timeout are separate; no-send/no-fallback required; direct outcomes recorded; no mapper assumption.                                              | spec.md FR-018/030; plan.md G6; T049b/T049c                            |
+| 3. Hook trust boundary and secrets unspecified                                         |                 HIGH | Fixed technically: authenticated invocation, schema/action validation, identity/destination checks, secret protection, idempotence, audit-before-send and no token logs required.                                          | plan.md Control A/G6; tasks.md T049c/T050b; contracts/auth-surface.md  |
+| 4. Account-scoped intent permits competing session                                     |                 HIGH | Remediated technically: intent bound to initiating user/session; guard requires trusted request context; competing session negative; infeasible binding blocks T050a. No exception accepted.                               | spec.md FR-025(b), US5 scenario 13; plan.md G1/G2; T049a/T050a         |
+| 5. Rate-limit ownership duplicated                                                     |                 HIGH | Fixed: hook is the authoritative counter for app/direct routes; app does not pre-consume; unknown-address accounting, mixed requests and concurrency are required.                                                         | spec.md FR-024/030; plan.md flow/G6; T038/T049c                        |
+| 6. No mutation evidence acceptance task                                                |                 HIGH | Fixed: explicit T051 maps each security control to a disabling/bypass mutation and evidence/restoration requirements.                                                                                                      | tasks.md T051; traceability.md                                         |
+| 7. Gate order circular                                                                 |               MEDIUM | Fixed: RED tests precede local feasibility spikes; implementation entry and final acceptance are separate; spikes do not require their own GREEN result before they can run.                                               | plan.md F4 execution order; tasks.md T033/T050a/T050b                  |
+| 8. PDN register mixes obsolete and product questions                                   |               MEDIUM | Fixed: -04/-06/-10/-11/-16 pruned or deferred; -17 closed; -01/-02/-03/-05/-09/-12 recorded answered; concrete copy table now approved.                                                                                    | spec.md Open items/register; copy-proposal.md                          |
+| CodeRabbit 7. Client manual-link completion could be changed by blanket login redirect |               MEDIUM | Fixed: staff self-service redirects to login; client manual-link preserves FR-013 signed-in outcome.                                                                                                                       | spec.md FR-026; contracts/auth-surface.md; tasks.md T045               |
+| CodeRabbit 8. Blanket intent immutability could reject valid state transitions         |               MEDIUM | Fixed: identity/origin fields remain immutable; only guarded open-to-closed transitions are allowed, with timestamps set once; no-delete remains unconditional.                                                            | plan.md; data-model.md                                                 |
+| CodeRabbit 9. Copy proposal was only in local run directory                            |               MEDIUM | Fixed: committed proposal is linked from the spec, contract, plan/tasks and Analyze; run-dir evidence copy retained. Approval now recorded.                                                                                | copy-proposal.md; spec.md FR-027                                       |
+| CodeRabbit 10. Refused requests must still be counted at the send hook                 |               MEDIUM | Fixed: all valid requests reach the authoritative hook for policy accounting; acceptance asserts no email, generic mapped response, and shared counters.                                                                   | contracts/auth-surface.md; tasks.md T038/T038a; FR-024                 |
+| CodeRabbit 11. Contract copy link resolves to the wrong directory                      |                MINOR | Fixed: link now resolves to `../copy-proposal.md`.                                                                                                                                                                         | contracts/auth-surface.md                                              |
+| CodeRabbit 12. Preserve client invalid-link instruction while using staff copy         |               MEDIUM | Fixed: existing `auth.invalid_link` catalog copy remains for client manual links; staff uses the exact approved FR-029 string. A display-only `flow=staff` marker selects copy and never affects authorization.            | copy-proposal.md; spec.md FR-027/029; tasks.md T037a/T044a             |
+| CodeRabbit 13. Session revocation did not cover Data API JWT replay                    |                 HIGH | Fixed as an acceptance gate: T049e proves pre-reset access at a protected Data API resource and requires replay denial after reset; any success blocks T050a and control-C acceptance until a technical control is proven. | spec.md FR-030 control C; plan.md G3; tasks.md T049e; traceability.md  |
+| CodeRabbit 14. PDN-13 gates were stale after PDN-14 was answered                       |                MINOR | Fixed: current T033, feasibility and RED-test prerequisites are stated; release block remains until controls and FR-020 pass.                                                                                              | spec.md PDN-F4-7-13; tasks.md T033/T049/T050a/T050b                    |
+| CodeRabbit 15. Retry after ambiguous begin could be stranded                           |                MINOR | Fixed: `begin` is idempotent for the same verified session and reuses its fresh intent without a duplicate audit; another session is refused.                                                                              | spec.md FR-025(a), scenario 14; plan.md; data-model.md; tasks.md T049d |
+| CodeRabbit 16. E2E did not verify the new password works                               |                MINOR | Fixed: T041 now verifies old-password failure and successful sign-in with the new password after normal-login handoff.                                                                                                     | tasks.md T041                                                          |
+| CodeRabbit 17. T050a omitted control-D acceptance                                      |                MINOR | Fixed: T050a requires the control-D subset of T049b separately from control-A/T050b acceptance.                                                                                                                            | tasks.md T049b/T050a; spec.md PDN-F4-7-13                              |
+| 9. Contracts/data model omit recovery                                                  |               MEDIUM | Fixed: both artifacts now describe local staff recovery actions, session-bound intent, hook boundary, audit/limits, session outcomes and hosted deferral.                                                                  | contracts/auth-surface.md; data-model.md                               |
+| 10. Analyze metrics and status stale                                                   |                  LOW | Fixed: unique finding IDs, current dispositions and metrics below; prior round critique is recorded as executed.                                                                                                           | This checklist; traceability.md                                        |
+
+## Current findings
+
+| ID       | Severity | Status                         | Detail / gate                                                                                                                                                                                   |
+| -------- | -------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S38-F4-1 | MEDIUM   | OPEN — implementation evidence | G1/G2 must prove a trusted initiating-session binding on the pinned local Auth path. Otherwise T050a remains blocked; no account-scope bypass is accepted.                                      |
+| S38-F4-2 | MEDIUM   | OPEN — local feasibility       | G3–G6 and T049b–T049e have not run. They must establish hook behavior, unknown-address accounting, response observations, session revocation and recovery age before implementation acceptance. |
+| S38-F4-3 | MEDIUM   | CLOSED — copy approved         | COPY-F4-R6 resolved by S39-PO-4 (English) and S39-PO-5 (Egyptian Arabic + five-key term switch). No PENDING-PO copy remains.                                                                    |
+| S38-F4-4 | MEDIUM   | OPEN — acceptance evidence     | T051 mutation evidence and the T048 security/review/CI gates are not executed in this spec-only round.                                                                                          |
+| S39-F4-1 | LOW      | CLOSED — tracked task          | The five-key catalog change is not implemented by this spec-only PR by design; task T052 (FR-031) carries it with a byte-comparison test.                                                       |
+
+Open CRITICAL: **0**. Open HIGH: **0**. Open MEDIUM: **3**. Open LOW: **0**. The three medium items do not contradict the specified behavior; they are explicit implementation, feasibility and acceptance gates. All product decisions, including copy, are recorded.
+
+## Requirements and task metrics
+
+- FRs: 31 (FR-031 added for the five-key term switch). SCs: 16 (SC-016 added). Given/When/Then scenarios: US1–US5, 15 F4 scenarios.
+- Existing task count: 61; T052 added (62); T041a added by the round-7 review fix (63). No task was ticked in this round.
+- F4 task coverage includes T033–T052 plus T041a; recovery control requirements trace to T049a–T049e, T050a/T050b and T051.
+- Spec-only readiness: PASS. Implementation readiness: FAIL until T033, G1–G6, the relevant RED tests and implementation acceptance evidence pass; copy is no longer a blocker.
+- Ambiguities: **No open ambiguities.** COPY-F4-R6 is resolved by S39-PO-4/S39-PO-5; the five-key term switch is fully specified (FR-031). Session-binding feasibility is technical and explicitly gated, not an open product question. Existing other-session revocation rule is cited rather than guessed.
+
+## Round 7 review fixes (revalidated)
+
+Two review findings were fixed after the first review of the inserted copy; Analyse was re-run after those edits.
+
+- SC-016 (spec.md, FR-031) was clarified so its catalog comparison is measurable: pre-existing keys and their English values are compared against `origin/main`; the approved recovery-key additions required by FR-027/T042 and the five-key Arabic term switch are explicitly permitted; no unapproved change is allowed. This removes the contradiction with FR-027 and T042 without changing any requirement or adding one.
+- traceability.md decision-gap notes no longer describe PDN-F4-7-12 or PDN-F4-7-14 as pending: PDN-F4-7-12 is answered by S38-PO-5/S38-R7, and PDN-F4-7-14 = B (S37-PO-8). Their control evidence stays UNVERIFIED.
+- tasks.md CI prerequisites now match `.github/workflows/ci.yml`: T048 requires the three executed green jobs (`validate` with its `check:secrets` step, `integration`, `storage`) instead of a non-existent secret-scan job; T041 records its dependency on the new T041a, which schedules enabling local Inbucket mail capture in the `integration` job (local-only, implementation round). No workflow file is changed by this specification-only PR.
+- Revalidation: 0 open CRITICAL, 0 open HIGH, 0 open LOW; the three MEDIUM items remain the scheduled gates. **No open ambiguities.**
+
+## Session and outcome decisions
+
+- Existing spec rule: FR-025(b) requires revocation of the user's other sessions during the successful password change; FR-030 control C and PDN-F4-7-07 repeat that rule. T049e tests the other pre-existing sessions. Therefore S38-R7's conditional MCQ is not raised.
+- After known success, the recovery session ends and the user goes to normal login without auto-login. If closing audit fails after known success, retain the success-then-login result and require reconciliation. Ambiguous Auth outcomes remain open for reconciliation.
+- Limits: 5 per account per rolling hour, 10 global requests per rolling hour, and a separate cap of 2 local test deliveries per hour.
+
+## No implementation
+
+This round changes specification artifacts only. No code, SQL, migration, environment or test file changed. No tests were executed. Local Supabase and hosted services were not run or changed.
+
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. FR-015 now states the already-approved Trainer denial boundary until T032; the approved all-workspace-Trainer capability remains unimplemented until its separate cycle.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41 review-finding re-analysis
+
+- Date: 2026-11-09 19:56:44 UTC, after the documentation reference/status corrections.
+- Scope: static check of ND-F4 decision versus implementation status, AI-04 expiry-verification ownership, T031 manual-link limit work, T033 self-service entry gate, and the Decision register anchor links.
+- Findings: 0 open CRITICAL, 0 open HIGH. No product decision or task status changed.
+- Verdict: PASS for the documentation corrections.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), recording the state at that time after the historical-status edit; the later FR-010 clarification is recorded in the S43 analysis below.
+- Scope: rechecked all FR-001..031 and SC-001..016 traceability/status references, decision rows and links against docs/04 and later S35-PO-1. The 2026-11-03 "remained open" statement is now explicitly historical; the 2026-11-06 decision and still-open implementation status are distinguished.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications explicitly record no open ambiguities for the decided values, and plan/tasks cover the feature. Existing UNVERIFIED/PARTIAL implementation rows remain so.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no implementation status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S43 CodeRabbit finding reconciliation — 2026-11-10 08:52 UTC
+
+- Scope: static review of FR-010 wording against the S31-PO-3 decision, data-model.md's current recovery_link_limits() values, and task T031.
+- Entry gate: PASS — FRs, SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the existing scope; T031 remains unchecked for the unimplemented approved limits.
+- Result: FR-010 now distinguishes approved limits (10 per issuer per rolling hour; 3 per client per rolling 24 hours across issuers) from the current 20-per-actor and 3-per-target per rolling-hour implementation. The spec meaning and PO quote are unchanged; no task or verification status was upgraded.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed.
+- Verdict: PASS for this documentation correction.
+
+## S46 CodeRabbit round-5 finding re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F2 research.md Expiry clarification.
+- Scope: F2 — research.md now states that the 15-minute recovery session TTL is the approved requirement and that the password-setting action enforces it: `app/auth/recovery/actions.ts` calls `isRecoverySession` before `updateUser`, and `lib/auth/recovery-session.ts` caps the recovery session at 900 seconds. What stays unenforced is the server-side session termination and the direct Auth API path, and that remains a pre-production blocker (README ND-F4-3 note; docs/13-production-readiness.md AI-04). The 60-minute all-environment requirement is preserved. No requirement meaning changed.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no status changed.
+- Verdict: PASS for this documentation correction.
+
+## S47 CodeRabbit round-6 finding reconciliation — 2026-11-11
+
+- Scope: CodeRabbit review-body finding on the SC-001–SC-007 traceability gap.
+- Gap recorded: the feature traceability map (`specs/004-auth/traceability.md`) carries ND-F4 rows and SC-008–SC-016 rows but no SC-001–SC-007 rows; the test evidence and status of the original criteria SC-001–SC-007 therefore cannot be found in that map. No rows are fabricated here; the gap stays visible until the map is extended.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F7–F9 (separate rate-limit windows, pending expiry-decision status, SC-001–SC-007 traceability gap). data-model.md now exposes per_actor_win/per_target_win with the approved rolling one-hour issuer and rolling 24-hour client limits and identifies the T031 guard change; plan.md no longer presents expiry as pending (60-minute expiry decided; hosted verification and session-lifetime enforcement remain the gaps); the SC-001–SC-007 map gap is recorded above and stays visible.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread findings on this head. (a) The F2 scope statement above now records the action-level guard: `app/auth/recovery/actions.ts` calls `isRecoverySession` before `updateUser` and `lib/auth/recovery-session.ts` caps the recovery session at 900 seconds, so enforcement is not wholly unimplemented; the pre-production blocker is kept for the server-side session termination and the direct Auth API path, and the 60-minute all-environment requirement is unchanged. (b) The decision attribution in `checklists/requirements.md` now matches the PO decision register: ND-F4-5 is decided by S35-PO-1, not by S31-PO-2/3; only the citation changed and no PO-quoted text was altered. (c) data-model.md now states that PostgreSQL refuses `create or replace` for a changed return type and records the drop-and-recreate sequence for `app_private.recovery_link_limits()`, including the dependent guard and wrapper, the no-`CASCADE` drop, and the owner, `search_path` and grant restoration. (d) data-model.md now specifies that capacity is reserved before the provider call: the authorize call reserves one unit of the per-issuer and per-client windows under the same advisory locks the record call uses, the reservation is converted by the record call or released on failure, a capacity rejection happens before any provider call and writes no audit row, and an unreleased reservation expires with the window it consumed. The approved per-issuer and per-client limits are unchanged. research.md and plan.md carry the same reservation sequence.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T031 remains unchecked and still owns the unimplemented limits; no task status changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-8 review-fix analysis - 2026-11-11T18:15:00Z
+
+- Scope: CodeRabbit inline-thread findings from the round-8 review (PRR_kwDOVYgYQ88AAAABXXYajw). (a) data-model.md now specifies the record-time capacity recheck: recovery_link_record identifies the reservation that belongs to the current request, excludes that reservation from the counts it re-checks, converts it into the issuance in the same transaction, and keeps counting every other reservation and issuance, so an authorized third slot is not rejected after generateLink has run. (b) data-model.md now states the reservation admission rule for recovery_link_authorize: because the RPC is granted to authenticated, a reservation may be created only through the trusted recovery-link generation flow (a server-minted single-use request token bound to the actor, the target and the generation request, or an equivalent control), is bound to that actor and target, and is released on conversion or on expiry, so an unconverted reservation cannot exhaust the limit without an issued, audited link. (c) plan.md steps 2-5 now release the reservation on every exit before the record step, including a failed application-level authorize() check, with the existing error mappings preserved; research.md R5 records the same release paths. The approved per-issuer and per-client limits and the one-audit-row-per-issued-link rule (FR-009, SC-004) are unchanged.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T031 remains unchecked and still owns the unimplemented limits; no task status changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
+
+## S49 CodeRabbit round-9 review-fix analysis - 2026-11-12
+
+- Scope: CodeRabbit inline-thread findings on the round-8 review. (a) data-model.md now binds each reservation to its request: `recovery_link_authorize` returns a request-bound reservation credential (an opaque single-use handle bound to the requesting actor, the target and that generation request), `recovery_link_record` takes that credential and converts exactly that reservation, and the new `public.recovery_link_release` operation requires the same credential, so two concurrent requests for the same target from the same session cannot consume each other's reservation or leave their own capacity held. The record-time capacity check and the transaction guarantees are preserved. (b) research.md R5 and plan.md now qualify the reservation sequence and its race-protection claim as planned work under task T031 and not current behavior: `recovery_link_authorize` calls only the guard today, so two concurrent requests can still reach `generateLink` before an issuance is recorded. The approved per-issuer and per-client limits and the one-audit-row-per-issued-link rule are unchanged, and T031 stays unchecked.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

@@ -34,7 +34,7 @@
   - Triggers: push + pull_request; runs on `ubuntu-latest`.
   - Node from `.nvmrc`, npm cache.
   - Steps: `npm ci` → typecheck → lint → format:check → test → build:edge → size → install Playwright Chromium → e2e.
-  - `permissions: contents: read`; no `secrets.*`; no deploy.
+  - `permissions: contents: read`; `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests; the `integration` aggregator has no repository-configured secrets and no Docker Hub credentials, and its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`; only `integration-shard` and `storage` may use optional Docker Hub pull credentials, set as job-level environment variables available to every step in those jobs, for authenticated image pulls; no deployment secrets or deploy.
 - [x] T013 [P] Commit only Supabase local config `supabase/config.toml` (+ its `.gitignore`) from `npx supabase init`; no migrations or seed data
 - [x] T014 Unit-test the size-report's pure comparison function in `tests/unit/size-report.test.ts` (under, equal and over the limit → exit code)
 - [x] T015 Run all Windows-capable quickstart steps; fix failures; run `npm run format`
@@ -44,6 +44,12 @@
 ## Batch 4: S32 cross-branch migration-version guard (amendment, 2026-11-04)
 
 - [x] T019 [US6] [FR-020, SC-010] Add the opt-in `--all-remote-refs` cross-branch mode to `scripts/check-migration-timestamps.mjs` plus the `check:migration-versions:remote` npm script: enumerate `refs/remotes/origin` via `git for-each-ref` (excluding symbolic `refs/remotes/origin/HEAD`), list each ref's `supabase/migrations` via `git ls-tree` (no checkout), exit non-zero reporting version + both filenames + carrying refs when one 14-digit version maps to two different filenames; same filename on several refs passes; default in-tree mode and CI unchanged; unit tests with an injected ref-listing function, RED first then GREEN. (S32-R3, S32-PO-3 "prevent future duplicates".) Tests executed and passed on the implementation commit (see traceability.md).
+
+## S39 required integration-check aggregator
+
+- [x] T023 [FR-022, FR-023] Rename the matrix job id to `integration-shard` without changing the three display names; add the `integration` always-run success aggregator that compares shard revision tuples, validates PR/head fields only on PR/dispatch events, and allows empty PR/head fields on main pushes with a valid merge SHA; extend `tests/unit/ci-local-e2e.test.ts` with a red-first contract test; update the authoritative required-check descriptions in the constitution and CI documentation; record focused test evidence in traceability.md after the test passes.
+
+T020-T022 remain unchecked until their tests and exact-head GitHub gate evidence are recorded. T023 is verified by its focused regression test and traceability entry.
 
 ## Dependencies
 
@@ -57,3 +63,34 @@ B1 → B2 → B3. One writing agent at a time.
 - [x] T018 [FR-019] Preserve separate required `storage` job and existing job names, pinned actions, and every other workflow step; update docs/08-agent-workflow.md and document workflow changes in the PR body.
 
 Tasks remain unchecked until the exact PR head has the required executed green CI evidence and traceability evidence is recorded.
+
+## S38 CI and merge-gate amendment tasks
+
+- [ ] T020 [FR-021, FR-023] Add verified manual dispatch runs to CI with exact merge-result parent validation, authenticated PR metadata lookup, same-repository head checks before dependency installation in secret-bearing jobs, and no-cancel concurrency; preserve PR/push behavior and read-only permissions.
+- [ ] T021 [FR-022] Shard all integration tests into three Vitest shards with unchanged per-shard stack setup and confirm shard union equals the full test list.
+- [ ] T022 [FR-023, FR-024] Update constitution 1.10.0, workflow guide, decision register, and gate-check d for trusted dispatch provenance (base-branch workflow and matching merge-result workflow blob), parallel full-run provenance, standing approval, and the constitution PR exception while retaining gates a-c/e-h and all security requirements.
+
+## S40 Playwright e2e sharding tasks
+
+- [x] T024 [FR-025, FR-026, SC-014, SC-015] Run the Playwright browser suite as a file-level `--shard=<k>/3` partition in every `integration-shard` execution with unchanged environment gates, `--workers=1`, no retries and the same preconditions; add the non-empty shard-list guard, Storage readiness and Docker CLI preconditions; upload per-shard Playwright/Vitest JSON inventories and reports; extend the no-checkout `integration` aggregator with the fail-closed union/skip/failure coverage proof; extend `tests/unit/ci-local-e2e.test.ts` red-first, update the workflow guide, and record traceability plus before/after wall times.
+
+Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.
+
+## S41 documentation reconciliation
+
+- [ ] T033 [FR-009] Reconcile the CI credential boundary in the feature specification, plan, and research from merged workflow commit `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`: `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests; the `integration` aggregator has no repository-configured secrets and no Docker Hub credentials, and its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`; only `integration-shard` and `storage` may use optional Docker Hub pull credentials, set as job-level environment variables available to every step in those jobs, for authenticated image pulls; no deployment secrets or deploy. Documentation only; no workflow change.
+
+## S41 CI/CodeRabbit optimization tasks
+
+- [ ] T025 [FR-027, SC-016] Write unit tests for spec-consistency first (unknown FR/SC/task IDs, date freshness, decided pending-PO markers, valid case, multi-feature diff, untouched inconsistent feature ignored, touched feature missing tasks.md, changed-path enumeration error fails closed), execute RED, then implement `scripts/spec-consistency.mjs` changed-feature enumeration and wire it into validate.
+- [ ] T026 [FR-029, SC-017] Write table-driven docs-only path classification tests first (allow-list, disallowed paths, renames, empty/error input); execute RED, implement fail-closed classifier, then wire pull_request conditionals while dispatch remains full and aggregator rejects skipped integration.
+- [ ] T027 [FR-028] Add CodeRabbit path_filters for generated evidence only and assert protected paths remain included.
+- [ ] T028 [FR-027, FR-029, SC-018] Verify the repository `format:check` scope plus the changed-file formatter (`scripts/format-check-changed.mjs`), preserve required job names, run local workflow/unit/static checks and prove this workflow-changing PR runs the full CI jobs.
+- [ ] T029 [FR-030, SC-019] Amend Constitution 1.10.0 to 1.11.0 with docs-only three-dispatch green form and sync impact report; no other principle changes. (Historical three-dispatch count superseded by constitution 1.15.0, S54-PO-4.)
+- [ ] T030 [FR-030] Write `s41-luna-ci-opt3/gate-check-d-proposal.md` and matching patch outside the repository; do not edit gate-check.mjs.
+- [ ] T031 [FR-027, FR-028, FR-029, FR-030] Complete pre-request checklist, CodeRabbit review (max 2 requests; incremental first request per S41-R13), fix all valid findings in one push, then exact-head approval and sequential executed PR reruns.
+- [ ] T032 [FR-030] Run gate-check on final exact head; record expected gate e failure. Do not merge.
+
+> NOTE (s47 fix): the `T025 [FR-009]` reconciliation task above was renumbered to `T033 [FR-009]` (unused id) to resolve the duplicate with `T025 [FR-027, SC-016]`; the s46 verbatim-merge note above is retained as history.
+
+- [ ] T034 [FR-009] CI-1: pull Supabase images from GHCR (S50-PO-6 CI=A; S51-R9): add SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io to both Supabase-starting job env blocks; keep -x inbucket (mailpit runs; S51-R9 reversal). Evidence pending greens on PR #92.

@@ -43,12 +43,22 @@ async function runSignupMutation<T>(
   return result;
 }
 
+async function expectMutationFailure(body: () => Promise<void>) {
+  let failure: unknown;
+  try {
+    await body();
+  } catch (error) {
+    failure = error;
+  }
+  expect(failure, 'the named invariant must kill the mutant').toBeDefined();
+}
+
 function extendedFields(fixture: Awaited<ReturnType<typeof signupFixture>>) {
   return {
     ...fixture.fields,
     name: 'Client Example Synthetic',
     date_of_birth: '1990-04-12',
-    username: `Ｆit.Client.${fixture.link.replaceAll('-', '').slice(0, 8)}`,
+    username: `Fit.Client.${fixture.link.replaceAll('-', '').slice(0, 8)}`,
     telegram_username: '@FitClient_1',
   };
 }
@@ -144,13 +154,13 @@ it('rolls back profile, Auth identity, and link consumption together on a later 
   ).toHaveLength(0);
 });
 
-it('rejects a reserved username before link redemption and normalizes compatibility forms server-side', async () => {
+it('rejects a reserved username before link redemption and normalizes accepted usernames', async () => {
   const fixture = await signupFixture(context);
   const fields = extendedFields(fixture);
 
   expect(
-    await signup(db, fixture, { ...fields, username: 'Ｐｌａｔｆｏｒｍ' }),
-  ).toEqual({ status: 'invalid' });
+    await signup(db, fixture, { ...fields, username: 'PLATFORM' }),
+  ).toEqual({ status: 'username_unavailable' });
   expect(
     await db`select redeemed_at from app_private.signup_admission_tickets where id=${fixture.ticket} and redeemed_at is not null`,
   ).toHaveLength(0);
@@ -171,6 +181,19 @@ it('keeps the SQL and TypeScript reserved-role username lists in parity', async 
   expect(row?.names).toEqual([...RESERVED_SIGNUP_ROLE_NAMES]);
 });
 
+it('rejects compact-empty usernames before admission redemption', async () => {
+  const fixture = await signupFixture(context);
+  expect(
+    await signup(db, fixture, { ...extendedFields(fixture), username: '___' }),
+  ).toEqual({ status: 'username_unavailable' });
+  expect(
+    await db`select redeemed_at from app_private.signup_admission_tickets where id=${fixture.ticket} and redeemed_at is not null`,
+  ).toHaveLength(0);
+  expect(
+    await db`select 1 from auth.users where email=${fixture.fields.email}`,
+  ).toHaveLength(0);
+});
+
 it('rejects usernames outside the approved normalized set before admission redemption', async () => {
   for (const username of [
     ' Client.123',
@@ -188,22 +211,157 @@ it('rejects usernames outside the approved normalized set before admission redem
   }
 });
 
-it('mutation: skipping the normalized username character check permits a format-control bypass', async () => {
+it('mutation: accepting compact-empty username is caught', async () => {
+  const fixture = await signupFixture(context);
+  await expectMutationFailure(async () =>
+    runSignupMutation(
+      fixture,
+      async (definition) =>
+        definition.replace(
+          'if username_compact=\'\' then return \'{"status":"username_unavailable"}\'::jsonb; end if;',
+          'if false then return \'{"status":"username_unavailable"}\'::jsonb; end if;',
+        ),
+      async (tx) => {
+        expect(
+          await signup(tx, fixture, {
+            ...extendedFields(fixture),
+            username: '___',
+          }),
+        ).toEqual({ status: 'username_unavailable' });
+        expect(
+          await tx`select redeemed_at from app_private.signup_admission_tickets where id=${fixture.ticket} and redeemed_at is not null`,
+        ).toHaveLength(0);
+      },
+    ),
+  );
+});
+it('mutation: skipping the approved normalized username character check permits a hyphenated value', async () => {
   const fixture = await signupFixture(context);
   const outcome = await runSignupMutation(
     fixture,
     async (definition) =>
       definition.replace(
-        /if normalized_username !~ '\^\[a-z0-9_\.\]\{3,30\}\$' then return '\{"status":"invalid"\}'::jsonb; end if;/u,
-        '-- format-control policy mutation',
+        'if normalized_username !~ \'^[a-z0-9_.]{3,30}$\' then return \'{"status":"invalid"}\'::jsonb; end if;',
+        'if false then return \'{"status":"invalid"}\'::jsonb; end if;',
       ),
     async (tx) =>
       signup(tx, fixture, {
         ...extendedFields(fixture),
-        username: 'platform\u200B',
+        username: 'client-name',
       }),
   );
   expect(outcome).toEqual({ status: 'complete' });
+});
+
+it('mutation: creating a Terms receipt during signup is caught and rolled back', async () => {
+  const fixture = await signupFixture(context);
+  const outcome = await runSignupMutation(
+    fixture,
+    async (definition, tx) => {
+      await tx`
+        insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values('signup-mutation-terms','terms','published')`;
+      return definition.replace(
+        'insert into app_private.client_signup_operations(workspace_id,client_id,auth_user_id,registration_link_id,request_secret_hash)',
+        `insert into app_private.terms_consent_receipts(workspace_id,client_id,policy_version) values(link.workspace_id,new_client,'signup-mutation-terms');\n    insert into app_private.client_signup_operations(workspace_id,client_id,auth_user_id,registration_link_id,request_secret_hash)`,
+      );
+    },
+    async (tx) => {
+      const result = await signup(tx, fixture, extendedFields(fixture));
+      const receipts = await tx`
+        select 1 from app_private.terms_consent_receipts where client_id=(select id from public.clients where registration_link_id=${fixture.link})`;
+      return { result, receiptCount: receipts.length };
+    },
+  );
+  expect(outcome).toEqual({ result: { status: 'complete' }, receiptCount: 1 });
+});
+
+it('stores DOB, normalized username and optional Telegram in the atomic signup', async () => {
+  const fixture = await signupFixture(context);
+  const usernameSuffix = fixture.link.replaceAll('-', '').slice(0, 8);
+  const fields: Record<string, string | null | undefined> = {
+    ...fixture.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: `Lifter.User.${usernameSuffix}`,
+    telegram_username: '',
+  };
+
+  expect(await signup(db, fixture, fields)).toEqual({ status: 'complete' });
+
+  const [client] = await db`
+    select date_of_birth, username_normalized, telegram_username
+    from public.clients where registration_link_id=${fixture.link}`;
+  expect(client).toEqual({
+    date_of_birth: new Date('1990-04-12T00:00:00.000Z'),
+    username_normalized: `lifter.user.${usernameSuffix}`,
+    telegram_username: null,
+  });
+
+  const second = await signupFixture(context);
+  const duplicateFields: Record<string, string | null | undefined> = {
+    ...second.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: `LIFTER.USER.${usernameSuffix}`,
+    telegram_username: '@Heba_Test1',
+  };
+  expect(await signup(db, second, duplicateFields)).toEqual({
+    status: 'username_unavailable',
+  });
+
+  const otherWorkspace = await clientContext();
+  const third = await signupFixture(otherWorkspace);
+  const otherWorkspaceFields: Record<string, string | null | undefined> = {
+    ...third.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: `lifter.user.${usernameSuffix}`,
+    telegram_username: '',
+  };
+  expect(await signup(db, third, otherWorkspaceFields)).toEqual({
+    status: 'complete',
+  });
+
+  const optionalTelegram = await signupFixture(context);
+  const optionalUsername = `Lifter.Optional.${optionalTelegram.link.replaceAll('-', '').slice(0, 8)}`;
+  const optionalFields: Record<string, string | null | undefined> = {
+    ...optionalTelegram.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: optionalUsername,
+    telegram_username: '',
+  };
+  expect(await signup(db, optionalTelegram, optionalFields)).toEqual({
+    status: 'complete',
+  });
+  const signedIn = await anonClient().auth.signInWithPassword({
+    email: optionalTelegram.fields.email,
+    password: optionalTelegram.fields.password,
+  });
+  expect(signedIn.error).toBeNull();
+});
+
+it('returns one generic username-unavailable result for reserved names and rejects invalid formats', async () => {
+  const reserved = await signupFixture(context);
+  const reservedFields = {
+    ...reserved.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: 'PLATFORM',
+  };
+  const invalidFields = {
+    ...reserved.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: 'ab',
+  };
+
+  const reservedResult = await signup(db, reserved, reservedFields);
+  const formatResult = await signup(db, reserved, invalidFields);
+
+  expect(reservedResult).toEqual({ status: 'username_unavailable' });
+  expect(formatResult).toEqual({ status: 'invalid' });
 });
 
 it('enforces name, past DOB, and optional Telegram syntax at the transaction boundary', async () => {
@@ -278,45 +436,22 @@ it('mutation: accepting a reserved username is caught and rolled back', async ()
     async (tx) =>
       signup(tx, fixture, {
         ...extendedFields(fixture),
-        username: 'Ｐｌａｔｆｏｒｍ',
+        username: 'PLATFORM',
       }),
   );
   expect(outcome).toEqual({ status: 'complete' });
 });
 
-it('mutation: skipping server NFKC normalization is caught and rolled back', async () => {
+it('mutation: skipping server username lowercasing is caught and rolled back', async () => {
   const fixture = await signupFixture(context);
   const outcome = await runSignupMutation(
     fixture,
     async (definition) =>
       definition.replace(
         /normalized_username\s*:=\s*lower\(normalize\(fields->>'username',\s*NFKC\)\);/u,
-        "normalized_username:=lower(fields->>'username');",
+        "normalized_username:=fields->>'username';",
       ),
     async (tx) => signup(tx, fixture, extendedFields(fixture)),
   );
   expect(outcome).not.toEqual({ status: 'complete' });
-});
-
-it('mutation: creating a Terms receipt during signup is caught and rolled back', async () => {
-  const fixture = await signupFixture(context);
-  const outcome = await runSignupMutation(
-    fixture,
-    async (definition, tx) => {
-      await tx`
-        insert into app_private.terms_policy_versions(version,policy_kind,status)
-        values('signup-mutation-terms','terms','published')`;
-      return definition.replace(
-        'insert into app_private.client_signup_operations(workspace_id,client_id,auth_user_id,registration_link_id,request_secret_hash)',
-        `insert into app_private.terms_consent_receipts(workspace_id,client_id,policy_version) values(link.workspace_id,new_client,'signup-mutation-terms');\n    insert into app_private.client_signup_operations(workspace_id,client_id,auth_user_id,registration_link_id,request_secret_hash)`,
-      );
-    },
-    async (tx) => {
-      const result = await signup(tx, fixture, extendedFields(fixture));
-      const receipts = await tx`
-        select 1 from app_private.terms_consent_receipts where client_id=(select id from public.clients where registration_link_id=${fixture.link})`;
-      return { result, receiptCount: receipts.length };
-    },
-  );
-  expect(outcome).toEqual({ result: { status: 'complete' }, receiptCount: 1 });
 });

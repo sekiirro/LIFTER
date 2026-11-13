@@ -33,22 +33,22 @@ The binding Session 12 and Session 13 PO decision files and the decision registe
 
 **Final PO decisions**
 
-* F15 Q2=C: Delete inapplicable answers from all versions/history. Flag immutable audit conflicts before implementation.
-* A1=B: If no Trainer assigned, notify PO + WO.
-* A2=Modified A: First overdue alert to Trainer 24h after form deadline; escalate to BOTH PO + WO 48h after deadline. On Trainer reassignment, transfer alert without resetting the clock.
-* A3=A: Notify whichever PO/WO remains authorized.
-* F1=A: Automatically resume recurring forms after freeze, without catching up missed forms.
-* F12 PR #18=A: Accept additional U1/T052 scope after review and tests.
-* CI: Use previously approved temporary public window, restore PRIVATE and verify. Preserve all merge gates.
-"Important: Intake Form submission deadline hasn't been decided. Present concise MCQ options with recommendations; don't invent a default. PO-1 remains pending Luna High review. Continue unblocked work. No merge without my explicit approval."
+- F15 Q2=C: Delete inapplicable answers from all versions/history. Flag immutable audit conflicts before implementation.
+- A1=B: If no Trainer assigned, notify PO + WO.
+- A2=Modified A: First overdue alert to Trainer 24h after form deadline; escalate to BOTH PO + WO 48h after deadline. On Trainer reassignment, transfer alert without resetting the clock.
+- A3=A: Notify whichever PO/WO remains authorized.
+- F1=A: Automatically resume recurring forms after freeze, without catching up missed forms.
+- F12 PR #18=A: Accept additional U1/T052 scope after review and tests.
+- CI: Use previously approved temporary public window, restore PRIVATE and verify. Preserve all merge gates.
+  "Important: Intake Form submission deadline hasn't been decided. Present concise MCQ options with recommendations; don't invent a default. PO-1 remains pending Luna High review. Continue unblocked work. No merge without my explicit approval."
 
 **Final PO decisions D1–D4 + PO-1**
 
-* D1=B: Delete inapplicable answers from all versions and related audit records. Review required constitutional amendments and security implications before implementation.
-* D2=A: Mandatory Intake deadline: 23:59 Cairo, third day after assignment.
-* D3=A: Other forms: configurable 1–14 days, default matching Intake; each recurring occurrence has its own deadline.
-* D4=A: Separate Client-late and Trainer-late alerts. Client: Trainer at +24h, PO+WO at +48h after deadline. Preserve existing Trainer-late rules.
-* PO-1: Existing JWTs may remain valid until expiry. On refund, deactivate client and block new sign-ins/refresh with safe failure handling. A+/C no longer applies.
+- D1=B: Delete inapplicable answers from all versions and related audit records. Review required constitutional amendments and security implications before implementation.
+- D2=A: Mandatory Intake deadline: 23:59 Cairo, third day after assignment.
+- D3=A: Other forms: configurable 1–14 days, default matching Intake; each recurring occurrence has its own deadline.
+- D4=A: Separate Client-late and Trainer-late alerts. Client: Trainer at +24h, PO+WO at +48h after deadline. Preserve existing Trainer-late rules.
+- PO-1: Existing JWTs may remain valid until expiry. On refund, deactivate client and block new sign-ins/refresh with safe failure handling. A+/C no longer applies.
 
 Architect note (not a PO decision): D1 requires a forward-only migration changing audit immutability enforcement. The constitutional amendment and security/DB design are PO-approved under D-29; the exact database work waits for F12/F14 merge and verified Stack D.
 
@@ -71,6 +71,7 @@ PO reference: `C:/Users/NEW LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md`, 
 - Telegram sends generic text and an in-app link only. Payload/message content contains IDs and allow-listed codes only; never a client name, answer text or health data.
 - The bot token is a server-only runtime secret. Use a fake transport in tests; never expose or persist token values in repository files, logs, jobs or audit.
 - Deduplicate delivery per `(alert stage, recipient, channel)`. Preserve D-03 and client-late escalation timing. Scheduler activation remains disabled until separate PO approval. Email is out of scope.
+
 ### F15 text/submission limits — PO approval (verbatim)
 
 > "Claude, F15 PO APPROVED: Q1=A (Short: 150 chars, Long: 1,000 chars), Q2=A (256 KiB max submission). Implement live character counters and enforce UTF-8 safety limits server-side. Test actual payload sizes, Arabic/English/emoji, boundary cases, and maximum 20 questions/section and 60/form. Record decisions and continue implementation. Escalate only confirmed conflicts."
@@ -93,6 +94,7 @@ As an approved client, I find my selected intake on login, so I can start onboar
 2. **Given** a rejected or rolled-back F12 operation, **When** assignment processing runs, **Then** no approval-derived assignment is created.
 3. **Given** a previously committed approval before P2 existed, **When** backfill runs, **Then** it has the same assignment/dedup guarantees as a new event.
 4. **Given** missing selection or an unavailable template prerequisite, **When** consumption runs, **Then** no arbitrary form is selected and the fact remains recoverable; the fixed both-facts operation remains safe and the configured trigger governs presentation.
+5. **Given** the selected source form was retired before assignment creation, **When** an approval-triggered, backfill, or reconciliation path attempts to create an assignment, **Then** it creates no new assignment from that form.
 
 ### User Story 2 — Complete and resume intake safely (Priority: P1)
 
@@ -113,7 +115,6 @@ As a client, I answer conditional questions in one Basic/Training/Nutrition inta
 7. **Given** a draft whose Arabic title is nonblank and English title is blank or whitespace, **When** it is saved, **Then** save is rejected and no persisted form is created or changed.
 8. **Given** the English intake is rendered, **When** the meal-count question and options are shown, **Then** its prompt is `How many meals would you like to eat per day?` and its choices are `2 meals`, `3 meals`, `4 meals`, and `5 meals`.
 9. **Given** the English training-time question is rendered, **When** its fixed-time choice is shown, **Then** the client-facing string is `I don't have a fixed time`.
-10. **Given** the N11 slider is rendered in English, **When** its minimum, middle, and maximum labels are shown, **Then** they read `I barely feel hungry`, `Moderate hunger`, and `Very strong hunger`; Arabic rendering retains the approved Arabic labels.
 
 ### User Story 3 — Maintain templates without rewriting history (Priority: P1)
 
@@ -128,6 +129,9 @@ As an authorized form author, I maintain versioned templates and conditional que
 1. **Given** a published version used by an assignment, **When** an authorized author edits the template, **Then** a new version is produced and the assignment's questions, rules and requiredness remain unchanged.
 2. **Given** an attempted rule cycle, executable script or rule set above approved bounds, **When** publication is attempted, **Then** it is rejected before clients can receive it.
 3. **Given** Sales or a staff role outside its permitted scope bypasses the UI to create, publish or alter a template, **When** both authorization walls run, **Then** the action is denied.
+4. **Given** a workspace form has been retired and has an existing assignment snapshot, **When** an authorized staff member requests a manual assignment and the recurring evaluator processes that form's policy, **Then** neither path creates a new assignment or occurrence, and the existing assignment snapshot remains byte-for-byte unchanged.
+5. **Given** retirement and a new assignment attempt race for the same form, **When** the operations serialize on the form's retirement lock, **Then** a writer serialized after retirement creates no assignment, while any assignment serialized before retirement retains its original snapshot.
+6. **Given** the retirement RPC acknowledges success without returning a definition, **When** the authorized staff adapter completes retirement, **Then** it returns the established success result with the authoritative retired form snapshot, including matching form ID, retired status, and revision.
 
 ### User Story 4 — See an accurate intake-based delivery deadline (Priority: P1)
 
@@ -183,17 +187,16 @@ As a client or staff member, I can access only the forms and health information 
 
 As a client, I can see the Cairo submission deadline for each assigned form and receive timely reminders if it becomes overdue.
 
-**Independent Test**: Assign Mandatory Intake and other synthetic forms before and after Cairo midnight and across DST, month/year, and leap boundaries. Verify a 3-day Mandatory Intake deadline, configurable 1-14 day deadlines defaulting to 3, independent deadlines per recurring occurrence, Trainer alert at +24h, PO+WO alert at +48h, no-Trainer routing to PO+WO, and reassignment without a clock reset.
+**Independent Test**: Assign Mandatory Intake and other synthetic forms before and after Cairo midnight and across DST, month/year, and leap boundaries. Verify the 3-day Mandatory Intake deadline, configurable 1-14 day deadlines defaulting to 3, separate recurring deadlines, and immediate notices to authorized PO+WO after the configured deadline passes without accepted submission. Client-to-Trainer assignment and alert routing are deferred to F11/F12 under PDN-S39-F15-01.
 
 **Acceptance Scenarios**:
 
 1. **Given** a Mandatory Intake is assigned on Cairo date D, **When** its deadline is calculated, **Then** the deadline is 23:59:59.999 Cairo on date D+3.
 2. **Given** another form has a configured value from 1 through 14, **When** it is assigned, **Then** its deadline is at the end of that many following Cairo calendar dates; an unset value defaults to 3 and values 0 or 15 reject.
 3. **Given** a recurring occurrence is assigned, **When** its deadline is calculated, **Then** it receives its own deadline from that occurrence assignment time.
-4. **Given** an intake is determined late under the pending PO definition, **When** immediate late-intake notifications are sent, **Then** notify the responsible Trainer, WO and PO at once; the Trainer plan deadline remains five working days after intake, with the WO alert at day five and PO escalation at day seven.
+4. **Given** an assigned intake has no accepted submission when its configured client-submission deadline passes, **When** late-intake evaluation runs, **Then** immediately notify authorized WO and PO. Client-to-Trainer assignment/routing and the client-late Trainer alert are deferred to F11/F12 under PDN-S39-F15-01. The Trainer plan deadline remains five working days after intake, with the WO alert at day five and PO escalation at day seven.
 5. **Given** alert recipients overlap across the immediate, day-five and day-seven stages, **When** notifications are enqueued, **Then** deduplicate recipients while preserving each applicable alert stage and recheck current authorization.
 6. **Given** a client-late alert schedule when the client is closed, refunded, deactivated, or purged, **When** evaluation and lifecycle cleanup run, **Then** no client-late notification is enqueued and related alert rows are removed.
-
 
 ### User Story 8 — Receive approved N11 hunger feedback (Priority: P2)
 
@@ -203,7 +206,6 @@ As a client completing the default intake in English, I see the approved hunger 
 
 1. **Given** an English N11 score of 0, 2, 3, 4, 5, 6, 7, 8, 9 or 10, **When** feedback is resolved, **Then** return the exact PO-approved string for the inclusive band containing that score.
 2. **Given** an Arabic N11 score in the existing 0–10 range, **When** feedback is resolved, **Then** preserve the currently approved Arabic band copy.
-
 
 ### Edge Cases
 
@@ -224,9 +226,9 @@ As a client completing the default intake in English, I see the approved hunger 
 
 - **FR-001**: REQ-P2-01 is carried verbatim: PO, WO, or an authorized Trainer selects the onboarding form; after client approval the selected form is assigned and presented on login according to its configured trigger. Your First Step is the default ordinary editable Forms template; preserve workspace authorization and invitation/approval flow. Deliver this through the Forms/Intake engine (P2), not as a partial engine inside F12.
 - **FR-002**: One idempotent internal assignment operation MUST create an approval-triggered initial assignment only when both a committed F12 `registration.approved` v1 fact and an authorized eligible form selection exist for the same existing workspace/client/initial subscription. Invoke it when configuration/selection is recorded, when the approved client resolves self-intake and during bounded historical backfill/reconciliation. Selection may precede or follow approval; presentation occurs only when the configured trigger is met. Failed/rejected approvals create none. Successful consumption, assignment and audit MUST commit atomically. Dedup by event identity and independently enforce unique initial assignment on `(workspace_id, subscription_id)`; missing prerequisites remain recoverable without an arbitrary fallback.
-- **FR-003**: Assignment configuration MUST support all approved audiences and triggers: all active workspace clients, new clients on joining/onboarding, searched one-or-many clients, and renewal-triggered delivery only when the renewed subscription actually starts (including F13 freeze-related start shifts, never early payment). Custom recurring schedules and manual control over audience, timing, recurrence and stop conditions are supported. Stop recurring deliveries while frozen or inactive. Automatically resume recurrence after a freeze without catch-up deliveries (F1). Each occurrence has its own assignment and client-submission deadline. One-time per-client assignment may be an initial slice. Every assignment binds an eligible published version and current authorization. PO/WO/Trainer may configure within authorized scope; Sales is excluded. No F12 selector/approval prerequisite. This requirement supersedes BRD-06 no-bulk wording for Forms and the earlier per-client-only restriction.
+- **FR-003**: Assignment configuration MUST support all approved audiences and triggers: all active workspace clients, new clients on joining/onboarding, searched one-or-many clients, and renewal-triggered delivery only when the renewed subscription actually starts (including F13 freeze-related start shifts, never early payment). Custom recurring schedules and manual control over audience, timing, recurrence and stop conditions are supported. Stop recurring deliveries while frozen, inactive, or when the source form is retired. Retiring a form immediately prevents every new assignment from that form, whether manually requested or produced by an initial, audience, renewal, or recurring assignment path; recurrence produces no further occurrences from the retired form. Automatically resume recurrence after a freeze without catch-up deliveries (F1), unless the source form has been retired. Each occurrence has its own assignment and client-submission deadline. One-time per-client assignment may be an initial slice. Every assignment binds an eligible published version and current authorization. PO/WO/Trainer may configure within authorized scope; Sales is excluded. No F12 selector/approval prerequisite. This requirement supersedes BRD-06 no-bulk wording for Forms and the earlier per-client-only restriction.
 - **FR-004**: Published form versions MUST have stable question/section identities, typed answers, authored labels, requiredness, validation and declarative conditional rules. Published content is immutable; editing creates a new version. Distinguish platform-owned global published templates from workspace-owned copies: global visibility grants neither global mutation nor access to foreign workspace copies/answers. Validate eligibility of a global published version before copying into a workspace-bound assignment. PO/WO/Trainer workspace builder rights follow the approved F15-1 operation matrix recorded below; Sales is excluded. Your First Step is the ordinary editable default onboarding form; its initial questions may be starter content. Every form has separately authored Arabic and English versions. A draft cannot be saved until its English title is nonblank (S34-PO-5=B).
-- **FR-005**: Every assignment captures an immutable, workspace-owned snapshot of its selected version. Later template edits, publication, retirement or access changes do not alter assigned/submitted forms. Historical authorized reads are independent of templates, subject to RET-1..3 and the approved D1 deletion mechanism. Corrections append revisions; assignment replacement is deferred. D1 erasure is restricted to answer values whose questions are currently inapplicable under the authoritative answer state, across all versions and their answer-change and access-view audit rows, by automatic server-validated processing only. No person or service-role caller can directly trigger or perform deletion. Financial, authentication, authorization, security and unrelated audit records are excluded; the control record stores counts only and no IDs.
+- **FR-005**: Every assignment captures an immutable, workspace-owned snapshot of its selected version. Later template edits, publication, retirement or access changes do not alter assigned/submitted forms or their existing snapshots. Retirement prevents only new assignments; it does not cancel, rewrite, or delete existing assignments, snapshots, answers, submissions, or deadlines. Historical authorized reads are independent of templates, subject to RET-1..3 and the approved D1 deletion mechanism. Corrections append revisions; assignment replacement is deferred. D1 erasure is restricted to answer values whose questions are currently inapplicable under the authoritative answer state, across all versions and their answer-change and access-view audit rows, by automatic server-validated processing only. No person or service-role caller can directly trigger or perform deletion. Financial, authentication, authorization, security and unrelated audit records are excluded; the control record stores counts only and no IDs.
 - **FR-006**: Your First Step is the ordinary editable default onboarding form in Forms. Previously supplied intake questions may be included as editable starter content, but are not a required, fixed, or immutable catalog. An authorized Workspace Owner may edit it, replace it, or select another onboarding form. Authors may add, remove, reorder, and revise questions subject to normal validation and authorization. Submission validates the applicable required answers authored for that version; there is no fixed-catalog or three-substantive-section completion requirement. Publishing creates an immutable version and assignments retain immutable snapshots. Audience, trigger, timing, recurrence and stopping conditions are configured per form under approved Q3=D.
 - **FR-007**: Conditional progression is deterministic, declarative, typed, allow-listed and acyclic; no scripts or external calls. Enforce at most 20 questions per section and 60 per form. Short/long text limits are 150/1,000 Unicode code points; a per-question `charLimit` may be lower (minimum 1), never higher. ZWJ sequences count as multiple code points. Each text answer is limited to 4,096 UTF-8 bytes. Submission cap is 262,144 bytes summed across each answer value JSON serialization, excluding IDs, keys, envelope and transport. Retain maxConditions 400, maxConditionsPerQuestion 16, maxEvaluationSteps 4,000, maxDefinitionBytes 131,072, maxChoices 50. Reject over-bound values before evaluation. D1 erasure selects every answer version whose question is currently inapplicable; it also retries eligible values left by a legal hold or prior incomplete erasure.
 - **FR-008**: Every save validates supplied answers, snapshot identity, applicability, types/choices and bounds server-side; partial drafts are allowed. Submission enforces applicable required answers authored for the selected form version; it does not require fixed sections or a fixed question inventory. Unknown IDs, wrong-snapshot answers and unsafe inputs fail safely. Shared validation is required on every server draft/submission path. Hidden answers cannot bypass requiredness. The D1 erasure selector accepts a server-validated branch fact and selects every answer from all versions whose question is currently inapplicable under authoritative answers. Previous answers may support evidence/validation but do not limit erasure to a before/after delta.
@@ -234,14 +236,14 @@ As a client completing the default intake in English, I see the approved hunger 
 - **FR-010**: Draft writes MUST name assignment and expected current revision. Accepted writes advance authoritative server revision; stale competitors return conflict without overwrite. Last-write means last accepted server revision, never client clock or late arrival. No silent whole-form last-arrival overwrite or automatic merge is permitted; reload/reconcile then save against current revision. Late acknowledgements MUST NOT revert newer displayed state.
 - **FR-011**: Save/submit retries MUST return the same outcome for the same authorized key/canonical intent without duplicate revision/submission/audit; changed intent under that key fails safely. Independently of operation keys, enforce one original accepted submission and SLA per assignment and initial onboarding obligation. When touching F12 records preserve client → subscription → obligations/ledger lock order; the plan MUST define a compatible order for P2 selection/assignment and authorization locks and recheck authorization after waits. Distinct-key assignment/submission races, save-versus-submit, selection/retirement/revocation races and audit-failure rollback MUST preserve these invariants.
 - **FR-012**: Sensitive drafts/submissions/corrections MUST remain server-authorized and client-specific Forms data MUST be purged at 30 days from the authoritative relationship-end event (Closure/Refund/Deactivation). Retention applies to every recoverable copy, including backups. Purge drafts, answers, correction content and any attachments; retain reusable templates and only legally required minimal audit evidence. Immutable financial ledger events are not physically deleted. Technical and legal feasibility for the 30-day maximum, including backup/PITR treatment and legal exceptions, is a pre-production blocker for real client data, not local/CI synthetic work. PO-1 makes every successful refund a client deactivation and starts this clock at that authoritative deactivation fact/time.
-- **FR-013**: A complete accepted submission atomically creates an immutable answer revision, original submission instant, audit and original D-03 Trainer delivery deadline. Invalid submissions create none. Client, Trainer, PO and WO may correct submitted answers while the relationship is active; all roles are denied after Closure, Refund or Deactivation (Q1). Corrections append immutable versions and audit; the original submission instant and Trainer delivery deadline never reset. A correction note is limited to 1,000 Unicode code points and 4 KiB UTF-8 and must be rejected before the correction RPC when either bound is exceeded (S34-PO-2). See the [approved correction matrix](correction-matrix.md). The distinct client-submission deadline is calculated per assignment under D2/D3.
+- **FR-013**: A complete accepted submission atomically creates an immutable answer revision, original submission instant, audit and original D-03 Trainer delivery deadline. Invalid submissions create none. Client, Trainer, PO and WO may correct submitted answers while the relationship is active; all roles are denied after Closure, Refund or Deactivation (Q1). Corrections append immutable versions and audit; the original submission instant and Trainer delivery deadline never reset. A correction may change any supplied field only to a value valid for that field's type, choices, and range in the immutable assignment snapshot. Omitted answer keys are unchanged (partial update preserved); a correction never infers removal from a supplied `null` or empty value. Clearing an answer requires an explicit `remove` list of answer IDs separate from `answer_values`; `remove` must be an array of unique strings, contain no more IDs than the assignment snapshot has questions, and every ID must match the existing answer-ID format and name a question in that snapshot. A non-array, non-string entry, duplicate, unknown ID, or ID in both `answer_values` and `remove` rejects the whole request as `invalid`, before writes. The existing 262,144-byte cap applies to the complete canonicalized correction request, including `answer_values`, `remove`, and note; exceeding it returns `payload_too_large` before writes. Removals are applied before saving and are audited like edits. Removing a required applicable answer is refused with `invalid` and zero writes; removing an already absent answer is a successful no-op for that ID; removing a present but currently inapplicable answer removes it. No-op requests retain the existing correction behavior of appending a revision, correction, intent, and audit. Fields not supplied and not named in the removal list are not re-checked. A rejected correction makes no state change. A correction note is limited to 1,000 Unicode code points and 4 KiB UTF-8 and must be rejected before the correction RPC when either bound is exceeded (S34-PO-2). See the [approved correction matrix](correction-matrix.md). The distinct client-submission deadline is calculated per assignment under D2/D3.
 - **FR-014**: SLA start MUST be the first accepted complete submission of the selected/default onboarding form, targeting the first complete workout/nutrition pair when those authored questions apply. Signup, approval, assignment, draft save and partial completion MUST NOT start it. P2 MUST NOT activate subscriptions or create delivery/productivity facts.
 - **FR-015**: D-03 day counting MUST be a pure tested function of submission instant in IANA `Africa/Cairo`, using local dates and zone rules, never a fixed UTC offset or five 24-hour durations. Every day except Friday is working; no other holidays are excluded. Before 18:00 on a working day counts it as day one; at/after 18:00 starts next working day; Friday starts Saturday. Store fixed rule identifier `cairo-d03-v1` with the frozen deadline facts. No holiday feed or runtime calendar-governance machinery is required.
 - **FR-016**: Preserve original submission instant, Cairo start/date-five result, fixed rule identifier and immutable original delivery deadline. Delivery becomes late at 00:00 Cairo after the fifth working day (`>=` the threshold). Compute the first valid instant of the following `Africa/Cairo` calendar date using a zone library; if 00:00 is skipped at a spring-forward transition, use the first valid instant on that same Cairo date. Include DST fixtures, including spring-forward and overlap cases. A correction never recalculates this deadline.
-- **FR-017**: Preserve existing D-03 Trainer-late alerts exactly under F15 Q4: seven-day catch-up, deduplication, initial alert to assigned Trainer, reassignment handling, then simultaneous PO+WO escalation after 24 hours unresolved. Separately, when a client intake is late, immediately notify the responsible Trainer, WO and PO. The responsible-Trainer source and the event that makes intake late remain PO decisions recorded below. Trainer plan delivery is due five working days after intake under the existing Cairo/Friday/18:00 rules; alert WO at day five and escalate to PO at day seven. In-app is always delivered; Telegram is an additional channel only for explicitly linked staff recipients. Email is forbidden. Once the client is closed, refunded, deactivated, or purged, client-late evaluation and delivery stop immediately and related alert rows are purged under the lifecycle contract (S34-PO-3).
-- **FR-018**: Deduplicate recipients and each logical occurrence, stage and channel across retries/concurrent scans so each intended recipient receives no duplicate. Recheck authorization at enqueue, delivery and read. Late-client-intake notifications are immediate under FR-017; Trainer plan delivery uses its five-working-day deadline, WO alert at day five and PO escalation at day seven. D-03 Trainer-late alerts retain existing Q4 rules exactly. Authoritative delivery timestamps and detector serialization prevent false Trainer-late alerts, retain genuine delay history and suppress obsolete actionable alerts after resolution. Alert rows store IDs only. In-app inbox access is recipient-only, audited and supports mark-read; inbox retention follows the source Forms retention and is purged within RET-3's 30-day maximum.
+- **FR-017**: Preserve existing D-03 Trainer-late alerts exactly under F15 Q4: seven-day catch-up, deduplication, initial alert to assigned Trainer, reassignment handling, then simultaneous PO+WO escalation after 24 hours unresolved. Separately, an intake becomes late when its configured client-submission deadline passes without an accepted submission. Immediately notify authorized WO and PO. At scheduler go-live, client-late catch-up is limited to schedules whose deadline is no more than seven days before evaluation; older schedules are skipped. Suppress catch-up for a schedule if a legacy owner-stage notification already exists, so no recipient is notified twice for the same late intake. Client-to-Trainer assignment/routing and any client-late Trainer alert are deferred to F11/F12 under PDN-S39-F15-01; S36-01=A remains the future authoritative source rule. Trainer plan delivery is due five working days after intake under existing Cairo/Friday/18:00 rules; alert WO at day five and escalate to PO at day seven. In-app is always delivered; Telegram is additional only for explicitly linked staff recipients. Email is forbidden. Once the client is closed, refunded, deactivated, or purged, client-late evaluation and delivery stop immediately and related alert rows are purged under the lifecycle contract (S34-PO-3).
+- **FR-018**: Deduplicate recipients and each logical occurrence, stage and channel across retries/concurrent scans so each intended recipient receives no duplicate. Recheck authorization at enqueue, delivery and read. Late-client-intake owner notifications follow FR-017, including its seven-day catch-up window and suppression of schedules already notified through legacy owner stages; client-late Trainer routing is deferred to F11/F12 under PDN-S39-F15-01; Trainer plan delivery uses its five-working-day deadline, WO alert at day five and PO escalation at day seven. D-03 Trainer-late alerts retain existing Q4 rules exactly. Authoritative delivery timestamps and detector serialization prevent false Trainer-late alerts, retain genuine delay history and suppress obsolete actionable alerts after resolution. Alert rows store IDs only. In-app inbox access is recipient-only, audited and supports mark-read; inbox retention follows source Forms retention and is purged within RET-3's 30-day maximum.
 - **FR-034**: Every form assignment carries an independent client-submission deadline. Your First Step, the default onboarding form, uses assignment Cairo date as day 0 and ends at 23:59:59.999 Cairo on the third following Cairo date. Other forms use an integer setting from 1 through 14 Cairo calendar days, default 3. Each recurring occurrence gets its own assignment-time deadline. Use Africa/Cairo calendar rules, including DST gaps/folds and calendar boundaries; no fixed UTC offset or elapsed 24-hour arithmetic. This deadline is distinct from D-03 Trainer delivery.
-- **FR-035**: Late-client-intake notifications are separate from D-03 Trainer-late alerts and are immediate to the responsible Trainer, WO and PO under FR-017. Trainer plan delivery remains due five working days after intake with the WO alert at day five and PO escalation at day seven. The authoritative responsible-Trainer source and late-intake event remain unresolved PO decisions; do not infer either. Preserve D-03 Trainer-late rules exactly under F15 Q4.
+- **FR-035**: Late-client-intake notifications are separate from D-03 Trainer-late alerts and are immediate to authorized WO and PO when the configured client-submission deadline passes without an accepted submission. At scheduler go-live, catch-up includes only lateness within the preceding seven days and suppresses schedules already notified through legacy owner stages. Client-to-Trainer assignment/routing and the client-late Trainer alert are deferred to F11/F12 under PDN-S39-F15-01; S36-01=A remains the future authoritative source rule. Trainer plan delivery remains due five working days after intake with the WO alert at day five and PO escalation at day seven. Preserve D-03 Trainer-late rules exactly under F15 Q4.
 - **FR-019**: No automatic strike, deduction, firing or compensation change is permitted. Keep safe evidence for human review without implementing P4 balanced assignment/activation. The alert scheduler MUST follow the approved owner-only `pg_cron` pattern in F11 migration `20261031130000_purge_scheduling_pg_cron.sql`: `SECURITY INVOKER`, empty `search_path`, explicit `current_user = 'postgres'` check, transaction advisory lock, restricted cron schema/table grants, owner-only activate/deactivate functions, and no activation call embedded in migration. The scheduler stays disabled until separate PO activation approval. Real-data alerts remain gated on authoritative P4 facts; production activation follows the existing pre-production gate.
 - **FR-020**: Every tenant-owned copy, selection, assignment, answer revision, SLA, processing record and alert MUST carry workspace identity and same-workspace composite `(workspace_id, id)` relationships with enabled/forced RLS across reads, mutations, jobs and all access surfaces. Staff authorization requires current capability/membership except PO global authority over an explicitly joined existing `public.workspaces` row; `has_workspace_access` alone is insufficient because PO may pass for nonexistent UUIDs. Clients require signed self-association and approved state, not staff membership. Background operations use narrowly scoped internal authority. At both authorization walls foreign/nonexistent/unauthorized targets MUST have identical denial status/code/body shape apart from incidental request IDs, with no existence/replay/cache leakage.
 - **FR-021**: Approved clients MUST have self-only form/draft/submission/correction access. Client operations may accept assignment identity but MUST NOT accept client/workspace target parameters; derive identity/scope from signed Auth association and verify ownership. Pending/rejected clients remain denied protected intake with valid sessions; F12 self-status is separate. WO/Trainer may read and correct intake for coaching within current authorized workspaces regardless of responsibility assignment, subject to the approved matrix; Sales has no health-answer, selector, builder or correction right.
@@ -259,9 +261,9 @@ As a client completing the default intake in English, I see the approved hunger 
 - **FR-033**: The F15-owned Forms purge consumer MUST use the authoritative Closure/Refund/Deactivation fact and timestamp, purge drafts, answers, corrections and any supported attachment objects by the end of the 30-day maximum, and cover backups and other recoverable copies. Its scheduled invocation MUST follow the approved owner-only pg_cron control pattern; the existing F11 signup-attempt purge does not purge Forms data. Retain reusable templates and only legally required minimal audit evidence; every purge action MUST be idempotent and must not physically delete immutable financial ledger events. Technical/legal feasibility and any applicable exception require documented pre-production review.
 - **FR-036**: The Form Builder MUST provide editable Draft → Preview → Publish with immutable published versions; add/remove/reorder sections and questions; edit AR/EN labels, options, answer types, rules, editable food lists and visual assets. It MUST work for Mandatory Intake too; no hardcoded question/form structure or permanent mandatory-form lock is allowed. Existing authorization, approved caps and workspace/global ownership rules apply.
 - **FR-037**: The type system MUST support slider, visual image-card single choice, multi-select chips, number+unit, read-only profile-bound text/number, computed age, and derived option sets in addition to existing types. The rule editor MUST express nested conditions, dynamic options and budget-derived option sets within existing condition/evaluation/definition/choice bounds. Enforce all existing approved limits unchanged: 20 questions/section, 60/form, 150/1,000 Unicode code points, 4 KiB UTF-8 per text answer and 256 KiB answer-value JSON per submission.
-- **FR-038**: The F15 program MUST extend the F11 invitation-only signup with DOB, three-component name validation, unique normalized username, optional Telegram and consent acceptance after Nutrition at the Terms Card. Preserve F11 Auth/link transactionality, no-session completion, generic privacy responses, global email/phone uniqueness and zero client access until F12 approval. The full field and receipt contract is `contracts/signup-extension.md`.
+- **FR-038**: The F15 program MUST extend the F11 invitation-only signup with DOB, three-component name validation, unique normalized username, optional Telegram and consent acceptance after Nutrition at the Terms Card. Reject a username when the existing compact normalization (NFKC, lowercase, then removal of whitespace, underscores, dots and hyphens) is empty, using the existing generic username feedback. Preserve F11 Auth/link transactionality, no-session completion, generic privacy responses, global email/phone uniqueness and zero client access until F12 approval. The full field and receipt contract is `contracts/signup-extension.md`.
 - **FR-040**: The default N11 0–10 hunger slider uses the PO-approved EN feedback band strings from S35-PO-3 exactly for scores 0–2, 3–4, 5–6, 7–8 and 9–10. The current approved Arabic feedback band copy remains unchanged. Scores outside 0–10 are rejected; integer boundaries are inclusive and exhaustive.
-- **FR-039**: After F12 approval, the client journey MUST be Basic → Training → Nutrition → Terms Card → new LIFTER Welcome page. No health data is requested before approval. At the post-Nutrition Terms Card, record required unchecked T&C consent with policy version and server timestamp plus separate optional unchecked marketing consent. Signup creates the pending account without T&C consent. Intake is incomplete until T&C acceptance. Terms and Conditions Arabic and English copy was approved verbatim by S30-PO-1 Q2. Public marketing Landing is deferred. Use existing premium card/checkbox components; N11 motion is 150-250ms with prefers-reduced-motion.
+- **FR-039**: After F12 approval, the client journey MUST be Basic -> Training -> Nutrition -> Terms Card -> new LIFTER Welcome page. No health data is requested before approval. At the post-Nutrition Terms Card, record required unchecked T&C consent with policy version and server timestamp plus separate optional unchecked marketing consent. Signup creates the pending account without T&C consent. Intake is incomplete until T&C acceptance. If a selected Terms version becomes stale before approval and remains unconsumed, replace it with the current published Terms version automatically, preserve the prior selection in history, and continue approval. Terms and Conditions Arabic and English copy was approved verbatim by S30-PO-1 Q2. Public marketing Landing is deferred. Use existing premium card/checkbox components; N11 motion is 150-250ms with prefers-reduced-motion.
 
 ## S14 Mandatory Intake
 
@@ -271,6 +273,7 @@ Binding decisions: D-S14-1 through D-S14-5 and session-14 PO decisions (2026-10-
 
 The S14 starter material lists 26 parent IDs; IDs remain stable for questions retained across versions, but no form must keep every listed question. Your First Step may start with this material as editable content; authors may remove or replace questions and sections. P1 adds sex as B06, preserving existing IDs; its AR/EN labels were approved verbatim by S30-PO-1 Q2 as a non-canonical addendum. Child IDs count as questions for the approved 20-per-section / 60-per-form limits. Labels and choice copy resolve through the canonical fixture by section/ordinal; child copy is referenced by its fixture line. No question, option, or food label may be fabricated from this table. Requiredness is authored in the version; children are required only when their branch is applicable. Exact counts use parents plus children, so the configured form remains below approved caps.
 
+<!-- prettier-ignore-start -->
 | Stable ID | Section / copy locator | Answer shape | Units/options and conditional or computed rules |
 | --- | --- | --- | --- |
 | B01 | Basic 1 | Read-only profile-bound text | Sign-up full name; never editable in intake. |
@@ -312,16 +315,13 @@ The S14 starter material lists 26 parent IDs; IDs remain stable for questions re
 | N10 | Nutrition 10 | Three single-choice cards | Exact options in fixture. |
 | N11 | Nutrition 11 | Interactive integer slider | Range 0–10, step 1; live `X/10`; endpoint and midpoint labels exactly as fixture; feedback ranges 0–2, 3–4, 5–6, 7–8 and 9–10, with labels in fixture. Keyboard, screen-reader and mobile touch support. Smooth score feedback is requested; exact animation behavior must respect reduced-motion and must not invent timing/easing beyond DESIGN.md. |
 | N12 | Nutrition 12, last | Visual single-select image cards | Use the source-verified catalog in `tests/fixtures/forms/body-fat-derivative-manifest.json` to resolve each approved percentage to optimized WebP/AVIF derivatives in `public/images/body-fat/`, generated from the read-only YBS source by the reproducible media task. Derivatives target <=150 KB and are capped at 768 source pixels wide. Render image content at no more than 384 CSS pixels wide, keeping assets within 2x display width. Male selects the standard `male` series; female selects `female`; `male-cinematic` is unused. Original images are never committed. Show estimated percentage on each card, and the canonical fixture disclaimer. MUST remain last in Nutrition. Trainers can read the selected numeric percentage. |
+<!-- prettier-ignore-end -->
 
 ### EN translation — PO-approved copy
 
-These English translations are for EN-mode only and do not replace or alter the Arabic fixture. All 68 pending English intake rows approved by S34-PO-6 are recorded with exact values and citations in `fixtures/s34-approved-intake-en.json`; the five N07 meal-count rows are separately approved by S34-PO-4.
+These English translations are for EN-mode only and do not replace or alter the Arabic fixture. S34-PO-6 and PD-S34-NEW-01 approve all 68 remaining pending English intake rows recorded in `fixtures/s34-approved-intake-en.json`; S34-PO-4 separately settles the five N07 meal-count rows. The fixture records the exact approved English value and decision citation for every row.
 
-S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 items listed in their approved rows; S32-PO-8 Q5 approves T03 values 2–6 in both locales; S32-PO-8 Q6 approves N07 timing English. S33-PO-3 approves Arabic T03/N07 strings. S34-PO-4 approves N07 meal count; S34-PO-6 and PD-S34-NEW-01 approve the 68 remaining English rows in the cited intake review source, with exact overrides for T08.system and N11.label.0. No Arabic content is changed by this approval.
-
-## Clarifications ? S34-PO-6 English intake approval
-
-Source: `S34-PO-4 through S34-PO-6 in the PO decision register`, S34-PO-6 and PD-S34-NEW-01. All 68 pending English intake rows are approved, with each row ID, exact English value and `S34-PO-6` citation recorded in `fixtures/s34-approved-intake-en.json`. The five N07 meal-count rows are separately approved by S34-PO-4. The exact overrides are `T08.system = What training split would you like to follow?` and `N11.label.0 = I barely feel hungry`; N11.label.5 and N11.label.10 are also recorded among the 68 approved English rows. The N07 prompt and choices follow S34-PO-4 exactly. The client-rendered `N07.training_timing` key remains `I don't have a fixed time`; `forms.staffNoFixedMealTime` remains staff-only and unchanged. **No open copy ambiguities remain for the approved English rows.**
+S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 items listed in their approved rows; S32-PO-8 Q5 approves T03 values 2–6 in both locales; S32-PO-8 Q6 approves N07 timing English. S33-PO-3 approves Arabic T03/N07 strings. S34-PO-4 approves N07 meal count; S34-PO-6 and PD-S34-NEW-01 approve the 68 remaining pending English rows listed in the intake review source, with exact overrides for T08.system and N11.label.0. No Arabic content is changed by this approval.
 
 ## Clarifications — S33-PO-3
 
@@ -335,6 +335,7 @@ PO record: S33-PO-3 in the PO decision register, 2026-11-04. Verbatim:
 
 Clarification: these exact strings apply to Arabic only. The T03 digits are Western digits. N07 substitutes each selected meal number in the Arabic template. English T03 and N07 remain as approved in S32-PO-8. **No open ambiguities remain for T061–T063.**
 
+<!-- prettier-ignore-start -->
 | Stable ID | EN-mode translation |
 | --- | --- |
 | B01 | Full name (three parts) |
@@ -376,7 +377,7 @@ Clarification: these exact strings apply to Arabic only. The T03 digits are West
 | N05.medications | List the medications and supplements you take. |
 | N05.supplement_suggestion | Would you like us to suggest dietary supplements? |
 | N06 | Tell us what a typical day of eating looks like for you. |
-| N07 | How many meals would you like to eat per day? (maximum: 5; PO-approved departure from canonical source) |
+| N07 | How many meals would you like to eat per day? |
 | N07.training_timing | After which meal would you like to train? |
 | N08 | What’s your food budget? |
 | N08.foods | *(Food chips are shown within the N08 budget question; there is no separate question prompt.)* |
@@ -392,11 +393,13 @@ Clarification: these exact strings apply to Arabic only. The T03 digits are West
 | N11.feedback.9_10 | Very strong hunger |
 | N12 | Choose the body-fat reference that most closely resembles your body shape. |
 | N12.disclaimer | This percentage is an estimate and is not a substitute for measuring body-fat percentage. |
+<!-- prettier-ignore-end -->
 
-The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. S33-PO-3 approves the Arabic T03 option labels. Other rows outside the approved set still require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
+The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
 
 #### EN option translations — PO review
 
+<!-- prettier-ignore-start -->
 | Source option locator | EN-mode option |
 | --- | --- |
 | B06.male | Male |
@@ -412,10 +415,10 @@ The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 en
 | N03.4 | A lot of movement or physically demanding work |
 | T04.less_than_90 | Less than an hour and a half |
 | T04.at_least_90 | An hour and a half or more |
-| N07.2 | 2 meals |
-| N07.3 | 3 meals |
-| N07.4 | 4 meals |
-| N07.5 | 5 meals |
+| N07.2 | Two meals *(pending PO review)* |
+| N07.3 | 3 meals *(pending PO review)* |
+| N07.4 | 4 meals *(pending PO review)* |
+| N07.5 | 5 meals *(pending PO review)* |
 | N07.before_first | Before the first meal |
 | N07.after_meal_n | After meal {n}, for each n from 1 through the selected meal count |
 | N07.no_fixed_time | I don't have a fixed time |
@@ -423,24 +426,25 @@ The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 en
 | N08.medium | Medium budget |
 | N08.high | High budget |
 | N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread |
-| N08.medium.foods | Eggs / chicken / meat / toast / fish |
-| N08.high.foods | Salmon / smoked turkey / steak / ribeye |
+| N08.medium.foods | Eggs / chicken / meat / toast / fish *(pending PO review)* |
+| N08.high.foods | Salmon / smoked turkey / steak / ribeye *(pending PO review)* |
 | N10.before | Before cooking |
 | N10.after | After cooking |
 | N10.no_preference | No preference |
 | N11.label.0 | I barely feel hungry |
 | N11.label.5 | Moderate hunger |
 | N11.label.10 | Very strong hunger |
+<!-- prettier-ignore-end -->
 
-The T04, N08 budget and food-chip, and N12 percentage-specific option records are authored from their exact fixture values; do not paraphrase or manufacture missing card choices. S34-PO-6 approves all 68 pending English intake rows in `fixtures/s34-approved-intake-en.json`; the five N07 meal-count rows are separately approved by S34-PO-4. Budget food chips are children of the N08 question, not a separate prompt.
+The T04, N08 budget and food-chip, and N12 percentage-specific option records are authored from their exact fixture values; do not paraphrase or manufacture missing card choices. S34-PO-6 approves every English row in the pending intake review inventory, including these options, and preserves earlier approvals. Budget food chips are children of the N08 question, not a separate prompt.
 
 ## Clarifications — S32 (2026-11-04, refreshed 2026-11-04)
 
 - **Source:** S32-PO-3, verbatim in the S32 h11 lane brief. The colliding F15 migration is authorized to move by `git mv` to a unique valid version. Preserve F16 #43 and repair history only on Stack D if its read-only verification shows repair is needed. No SQL replay is authorized.
-- **Source:** S32-PO-5, verbatim in the S32 h11 lane brief. It approved the listed F15 controls and exact English copy as of that decision; S34-PO-6 later approves all 68 remaining English intake rows recorded in the intake fixture.
+- **Source:** S32-PO-5, verbatim in the S32 h11 lane brief. It approves the listed F15 controls and exact English copy only where given; all other EN strings remain pending.
 - **Source:** S32-PO-8 Q5, verbatim in the S32 h12 lane brief: “2–6 in both (Recommended)” and exact Arabic labels follow fixture number style and come to the PO for approval before shipping. Record the Arabic source range as 2–6 only; do not invent approved copy. Candidate labels are a separate proposal, not fixture text.
 - **Source:** S32-PO-8 Q6, verbatim in the S32 h12 lane brief: approve question “After which meal would you like to train?” and options “Before the first meal”, “After meal 1” … “After meal N” (N = chosen meal count), “I don't have a fixed time”.
-- **No open ambiguities remain for the work authorized in this round.** S33-PO-3 approves the exact Arabic T03 option labels; they remain unchanged by S34. All 68 pending English intake rows are approved by S34-PO-6 and recorded with row-level citations in the intake fixture.
+- **No open ambiguities remain for the work authorized in this round.** The exact Arabic T03 option labels are a future PO copy-approval gate, not an implementation guess; they are excluded from shipping until approved. All unrelated EN rows remain pending PO review.
 
 ### S32-PO-8 acceptance scenarios
 
@@ -477,6 +481,13 @@ The canonical Arabic extract is `fixtures/mandatory-intake-copy-ar.md`; it remai
 - **Delay occurrence and recipient alert**: One logical lateness occurrence and deduplicated authorized in-app recipient deliveries; no email/SMS or discipline entity is created.
 - **Audit event**: Append-only safe action/access evidence, detached from answer content and governed by separately approved retention.
 
+### S41-PO-12 acceptance scenarios (2026-11-10)
+
+1. **Given** a client has an unconsumed selected Terms version that is stale when approval runs, **When** approval reconciles the selection, **Then** it appends the current published version, preserves the previous selection in history, creates the approved assignment from the current version and completes approval.
+2. **Given** a stale selection is already consumed or no current published Terms version is available, **When** reconciliation runs, **Then** it leaves the selection and assignment untouched and reports the existing internal `stale_selection` result, without inventing a selection or user-visible message.
+3. **Given** client-late schedules are evaluated at go-live, **When** their deadlines are 0 to 7 days old, **Then** eligible owner notices are enqueued unless a legacy owner-stage notice exists; **And** schedules older than seven days and already-notified schedules produce no catch-up notice. Retries and concurrent scans remain idempotent.
+4. **Given** a syntactically valid username consists only of characters removed by compact normalization, **When** signup validates it, **Then** signup returns existing generic username feedback before consuming the invitation or auth identity.
+
 ## Success Criteria
 
 ### Measurable Outcomes
@@ -501,16 +512,63 @@ Unconditional invariants can be verified with synthetic fixtures now. Threshold/
 - **SC-015 (gated: P4)**: Each genuine delay with an assigned Trainer produces the Q4 initial alert to that Trainer; unresolved cases escalate simultaneously to WO+PO after 24 hours, with zero duplicate logical alerts across retries/concurrent scans.
 - **SC-016 (Q5 approved limits)**: Every section accepts at most 20 questions and every form at most 60; 21 in a section or 61 in a form is rejected before evaluation. Short/long text accepts at most 150/1,000 Unicode code points (or the lower published per-question `charLimit`), with a separate 4,096 UTF-8-byte per-answer cap. Submission answer-value JSON bytes, excluding keys/envelope/transport framing, total at most 262,144. English, Arabic with diacritics, emoji/ZWJ and mixed-direction boundaries are covered; a valid 60-answer worst case of 1,000 four-byte code points per answer passes. Character counters use the same pure code-point helper as server validation.
 - **SC-017 (F15-1/F15-3)**: PO/WO/Trainer can perform the approved workspace builder operations only within authorized scope; Sales is denied; `assign_intake_form` returns identical allow/deny results in TypeScript and SQL for every role and known/unknown capability string.
-- **SC-018 (F15-6/F1)**: Assignment configuration covers every decided trigger/audience/recurrence class; recurring forms resume after freeze without catch-up, and each occurrence receives a distinct assignment and deadline.
+- **SC-018 (F15-6/F1/S52-PO-1)**: Assignment configuration covers every decided trigger/audience/recurrence class; recurring forms resume after freeze without catch-up unless retired, and each occurrence receives a distinct assignment and deadline. Across every assignment-creating path, a retired form produces zero new assignments/occurrences; existing assignment snapshots remain byte-for-byte unchanged.
 - **SC-019 (F15-7/Q1/D1)**: Each correction by PO, WO, Trainer or Client, including medical fields and attachments wherever attachments exist, appends a new immutable version and audit under tenant isolation and authorized client scope while the client relationship is active; after Closure, Refund or Deactivation every role is denied. Each denied role/scope operation returns no data/change, client reads/corrections remain self-only, and no correction changes the original deadline. D1 automatic erasure selects every answer value whose question is currently inapplicable from all versions and its answer-change/access-view audit rows, defers with alert on legal hold, fails closed, is tenant-isolated/idempotent and produces a counts-only control record with no IDs. The loss of who-viewed evidence for that answer is an accepted recorded consequence under D-29.
 - **SC-020 (F15-8/RET-1..3/PO-1)**: Synthetic lifecycle fixtures prove the 30-day clock starts from authoritative Closure/Refund/Deactivation; all Forms drafts, answers, correction content and supported attachment objects are purged from every recoverable copy by day 30, templates remain, and financial ledger events remain immutable.
 - **SC-021 (F15-4/S14)**: Every form has independently authored AR and EN versions. The S14 Arabic extract passes byte-equality against the canonical source fixture; EN-mode translations remain a separately reviewed authored table.
-- **SC-022 (D2/D3/D4):** Your First Step, the default onboarding form, is due at 23:59:59.999 Cairo on assignment date +3 Cairo calendar dates (assignment date = day 0); other forms accept configured 1-14 day values and default to 3; recurring assignments get separate deadlines. Late client intake immediately notifies the responsible Trainer, WO and PO; Trainer plan delivery remains due after five working days, WO is alerted at day five, and PO escalation is at day seven. Recipient duplicates are suppressed; D-03 Trainer-late behavior remains unchanged.
+- **SC-022 (D2/D3/D4):** Your First Step, the default onboarding form, is due at 23:59:59.999 Cairo on assignment date +3 Cairo calendar dates (assignment date = day 0); other forms accept configured 1-14 day values and default to 3; recurring assignments get separate deadlines. When the configured deadline passes without an accepted submission, immediately notify authorized WO and PO. Client-to-Trainer assignment/routing and any client-late Trainer alert are deferred under PDN-S39-F15-01. Trainer plan delivery remains due after five working days, WO is alerted at day five, and PO escalates at day seven. Recipient duplicates are suppressed; D-03 Trainer-late behavior remains unchanged.
 - **SC-023 (S34-PO-2):** Correction notes accept at most 1,000 Unicode code points and at most 4,096 UTF-8 bytes. A violation of either bound is rejected before the RPC and by the database function; exact-boundary values pass.
 - **SC-024 (S34-PO-3):** For closed, refunded, deactivated, or purged clients, client-late evaluation creates zero alert, occurrence, schedule, or delivery rows; existing client-late records are removed by lifecycle cleanup. Trainer-late behavior remains governed by the existing Q4 rule.
 - **SC-025 (S34-PO-5):** Zero draft saves with blank/whitespace English `forms.name` succeed, including drafts with nonblank Arabic title; valid English titles still save.
 - **SC-026 (S34-PO-4/6, PD-S34-NEW-01):** Every approved changed EN intake row equals its exact approved string in the canonical spec, runtime fixture, and approved-copy fixture; N07 no-fixed-time is exactly `I don't have a fixed time` at the client-rendered key.
 - **SC-027 (S35-PO-3 N11):** For every score 0 through 10, the EN N11 feedback equals its exact approved band string; boundary tests cover 0, 2, 3, 4, 5, 6, 7, 8, 9 and 10 and prove each integer maps to exactly one inclusive band. Existing Arabic N11 feedback bytes are unchanged.
+- **SC-028 (S41-PO-12):** Before approval, a stale unconsumed Terms selection is replaced with the current published version, its previous selection is retained in history, and approval continues. Scheduler catch-up enqueues no client-late schedule older than seven days and enqueues no duplicate for a schedule with a legacy owner-stage notice. Signup rejects compact-empty usernames with existing generic feedback and performs no identity/link consumption.
+- **SC-029 (S47-PO-7/S49-R13/S50-PO-2):** A direct correction RPC preserves omitted values and treats `null`/empty as values, not removal. It accepts valid explicit removal of a non-required applicable answer with an immutable revision and audit, refuses required-applicable removal with `invalid` and zero writes, treats absent-answer removal as no-op success, and removes a present inapplicable answer. It returns `invalid` with zero writes for conflicts, unknown IDs, duplicate IDs, non-array/non-string removals, or a removal count above the snapshot question count. It returns `payload_too_large` with zero writes when the complete canonicalized request exceeds 262,144 bytes. The same checks exist in the TypeScript validator and RPC. Same-intent replay, including the removal list in the request hash, returns the original result without duplicate state or audit. No-op correction requests preserve existing behavior and append the normal correction state.
+- **SC-030 (S53-R15, FR-004/030):** Every successful staff-adapter retirement result conforms to `FormsStaffResult` and includes the authoritative retired form with the RPC-acknowledged ID, status, and revision; no successful result omits `form`. The retirement RPC response shape remains unchanged.
+
+### S47-PO-7 correction required-answer rule
+
+PO decision source: `C:/Users/NEW LAP/.lifter/runs/s47-po/s47-po-7.verbatim.txt` (PDN-S47-F15-01), byte-exact: **"Block clearing required (Rec.)"**
+
+Architect mapping (not PO wording): a correction may change any supplied field to a value validated for type, choice, and range against the immutable assignment snapshot. It must not clear (null, empty, or remove) an answer whose question is required and applicable. Fields not supplied are not re-checked. Refusal uses the existing correction validation error and changes no state.
+
+**Given** a submitted form with a nonempty answer to a required applicable question, **When** a direct correction RPC attempts to clear that answer, **Then** it returns the existing `invalid` result and persists no correction state. **Given** the same submitted form, **When** a correction supplies only a valid unrelated field, **Then** the correction succeeds without re-checking unsupplied fields.
+
+No open ambiguities remain for S47-PO-7 correction requiredness.
+
+### S49-R13 correction removal semantics
+
+PO decision sources: S49-PO-5 (`C:/Users/NEW LAP/.lifter/runs/s49-po/s49-po-5.verbatim.txt`, byte-exact `S49-57-MCQ-1 = A`) and S50-PO-2 (`C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-2.verbatim.txt`, byte-exact text recorded in the lane report). Architect mappings S49-R13 and S50-R12 are not PO wording. Greptile P1 thread `4544688909` on `supabase/migrations/20261112031700_f15_correction_required_answer_guard.sql:137` is the source question.
+
+Architect mapping (not PO wording): omitted answer keys preserve the prior value (partial update). Clearing requires an explicit removal list separate from supplied values; supplied `null` or empty values are never inferred as removal. Removing a required applicable answer is refused with zero writes. Removals are audited like edits. S50-R12 maps approved S50-PO-2 choices: conflict -> `invalid`; unknown snapshot ID -> `invalid`; 262,144 bytes over the complete canonicalized request and removal list shape/uniqueness/count/ID checks; absent answer -> no-op; present inapplicable answer -> removed; required applicable -> refused. There is no clearing UI in this PR; follow-up task T149 tracks the UI and an EN/Egyptian Arabic copy MCQ before any copy is written.
+
+**Given** a submitted form and a correction request that omits an answer key, **When** the correction is processed, **Then** that answer retains its prior value and no removal occurs.
+
+**Given** a submitted form and a correction request with an explicit removal list naming a non-required applicable answer, **When** the correction is processed, **Then** that answer is removed, and one immutable revision plus its audit are appended.
+
+**Given** a submitted form and a correction request with an explicit removal list naming a required applicable answer, **When** the correction is processed, **Then** it returns the existing `invalid` result and persists no revision, correction, intent, or audit state.
+
+**Given** a submitted form and a correction request that supplies `null` or an empty value for an answer, **When** the correction is processed, **Then** that supplied value is not interpreted as a removal; removal occurs only through the explicit removal list.
+
+**Given** a correction request that includes one answer ID in both `answer_values` and `remove`, **When** validated, **Then** the whole request returns `invalid` without writes.
+
+**Given** a correction request whose removal list contains an unknown snapshot ID, duplicate ID, invalid element, or more IDs than snapshot questions, **When** validated, **Then** the whole request returns `invalid` without writes.
+
+**Given** a correction request whose canonicalized complete body exceeds 262,144 bytes, **When** validated, **Then** it returns `payload_too_large` without writes.
+
+**Given** an already absent answer named in `remove`, **When** correction succeeds, **Then** that ID is a no-op; a present but currently inapplicable answer is removed, while a required applicable answer is refused with `invalid` and zero writes.
+
+**Given** a request with the same intent key and same canonical correction including `remove`, **When** replayed, **Then** the original outcome is returned without duplicate revision, correction, intent, or audit. The removal list participates in the request hash.
+
+No open ambiguities remain for the correction semantics decided by S49-R13 and S50-R12. The existing RPC behavior for an otherwise no-change correction appends its ordinary revision, correction, intent, and audit; this remains unchanged.
+
+## Clarifications - S50 correction removal decisions (2026-11-12)
+
+S50-PO-2 (byte-exact; source `C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-2.verbatim.txt`; SHA-256 `4913b8ccc0cc25ee03364f4e589d2dd5bd5b1f33d0f777a245323ad9e36ef360`):
+
+> Approve S50 decisions: 01A 02A 03A 05A 04A; PDN-S50-WT-1=A. For 03A, enforce the shared 262,144-byte limit on the complete request and validate remove IDs/count. For 04A, track the clear-answer UI as a follow-up task. For WT cleanup, verify ignored local configs are backed up, exclude all active worktrees, never force-delete, and report freed space. Continue delegated work under existing gates; architect independently reviews all agent outputs.
+
+Architect mapping (not PO wording): S50-R12 resolves 01A conflict to `invalid`, 02A unknown snapshot ID to `invalid`, 03A complete-request cap plus strict removal array/unique/count/ID validation, and 05A absent removal as no-op, present inapplicable removal as deletion, required-applicable removal as refusal. 04A is tracked in T149; the clear-answer UI and EN/Egyptian Arabic copy are deferred to a future PO MCQ. The accepted no-change correction behavior is observed in the existing RPC: it appends normal correction state. No open ambiguities remain for T145-T150 except the explicitly deferred future UI copy approval, which blocks only that separate UI task.
 
 ## Clarifications - S36-PO-3 N11 (2026-11-06)
 
@@ -524,14 +582,19 @@ Arabic N11 feedback remains the currently approved text in `lib/forms/s14-starte
 
 Verbatim, byte-exact from `C:/Users/NEW LAP/.lifter/runs/s35-ledger3/s35-po-3.verbatim.txt`:
 
-**ALERTS:** Late client intake → immediately notify responsible Trainer + WO + PO. Trainer plan delivery deadline remains 5 WORKING days after intake, retaining existing Cairo/Friday/18:00 rules; alert WO at day 5, escalate to PO at day 7. Deduplicate recipients.
+**ALERTS:** Late client intake immediately notifies authorized WO + PO. Intake is late when its configured client-submission deadline passes without an accepted submission. Client-to-Trainer assignment/routing and any client-late Trainer alert are deferred to F11/F12 under PDN-S39-F15-01; S36-01=A remains the future authoritative source rule. Trainer plan delivery deadline remains 5 WORKING days after intake, retaining existing Cairo/Friday/18:00 rules; alert WO at day 5, escalate to PO at day 7. Deduplicate recipients.
 
-- **PO-DECISION-NEEDED MCQ S36-01 / T104:** Which authoritative relation supplies the client→responsible-Trainer source for immediate late-intake alerts? Options: (A) the active F12 client assignment relation; (B) an explicit F15 client-Trainer assignment relation; (C) another named authoritative relation supplied by the PO. Recommendation: choose C and defer until the PO names the authoritative relation; the current F15 schema has no authoritative client-to-Trainer source. Implications: A binds alerts to F12's current assignment; B requires confirming or defining F15 ownership; C requires naming the source before implementation. Blocked: T104 and routing of immediate alerts. Reply to thread z7Vym and leave it open.
-- **PO-DECISION-NEEDED MCQ S36-02:** What event makes an intake late for the immediate notification? Options: (A) the configured client submission deadline passes without an accepted submission; (B) a separately defined deadline/event supplied by the PO; (C) an explicit authorized late classification. Recommendation: A is the clearest existing candidate because assignments already have configured deadlines; do not implement it until the PO decides. Implications: A enables deadline-based automation; B requires specification of the alternate event/deadline; C requires defining who may classify and the audit evidence. Blocked: late classification and the immediate notification trigger.
+Binding PO decision source: `C:/Users/NEW LAP/.lifter/runs/s38-po/s38-po-1.verbatim.txt`, S38-PO-5. The PO decision line is quoted byte-exact below:
+
+> S36-01=A, S36-02=A, PDN-01=A, PDN-02=A, PDN-03=B, PDN-05=A, PDN-12=A, PDN-09=A. For PDN-12, clarify whether "stays signed in" preserves an existing session or triggers auto-login; follow OWASP's normal-login recommendation after reset, and flag any conflict before implementation. For PDN-09, retain the 2-minute testing target, but set real-user UX target to 5 minutes from opening the recovery link to successful reset. No additional assumptions or product decisions.
+
+S36-01=A means the existing F12 client assignment is the authoritative client-to-responsible-Trainer source for the deferred F11/F12 work. S36-02=A means an intake is late when its configured submission deadline passes without an accepted submission.
+
+**PDN-S39-F15-01 ? resolved by S39-PO-8:** `* F15 Trainer Alert: Option 1. Defer alert, add assignment to F11/F12 spec, update tests/docs.` F15 ships without client-to-Trainer assignment/routing or the client-late Trainer alert. The existing F12 client assignment remains the approved future source under S36-01=A; the assignment requirement and deferred alert are queued for the separate F11/F12 specification PR, outside this worktree. F15 retains the S36-02 late trigger and immediate owner notices. D-03 Trainer-late behavior remains unchanged. No open ambiguities remain for PDN-S39-F15-01, S36-01=A or S36-02=A.
 
 ## Clarifications — S34 (2026-11-05)
 
-Binding PO sources: `S34-PO-4 through S34-PO-6 in the PO decision register` (S34-PO-4 through S34-PO-6 and PD-S34-NEW-01) and `S32-PO-8 Q6 in the PO decision register` (S32-PO-8 Q6). Intake-row source: `the approved intake review fixture`.
+Binding PO sources: S34-PO-4 through S34-PO-6 and PD-S34-NEW-01 in the PO decision register, plus S32-PO-8 Q6 in that register. Intake-row source is recorded in the repository approved-copy fixture.
 
 - **S34-PO-4 (S34-01=B):** N07.meal_count English question: `How many meals would you like to eat per day?`; choices: `2 meals`, `3 meals`, `4 meals`, `5 meals`. Arabic remains unchanged.
 - **S34-PO-2=A:** `correction_note` has the existing text bound of 1,000 Unicode code points and 4 KiB UTF-8; reject before RPC and enforce in a new forward migration.
@@ -541,7 +604,7 @@ Binding PO sources: `S34-PO-4 through S34-PO-6 in the PO decision register` (S34
 - **PD-S34-NEW-01=A:** Approve the 68 pending English intake rows listed in the intake review file, excluding the five N07 meal-count rows settled by S34-PO-4, subject to the exact T08.system and N11.label.0 overrides above.
 - **S32-PO-8 Q6 / S34 defect correction:** N07.no_fixed_time must be exactly `I don't have a fixed time`; inspect and align the client-rendered message key without changing staff-only semantics.
 
-**No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 records the approved product decisions above and PR destination sequencing.
+**No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 records the approved product decisions and the PR destination sequence.
 
 ## Assumptions and readiness
 
@@ -569,13 +632,14 @@ F15 Q1 — A: No corrections allowed by any role after the client relationship e
 F15 Q2 — D: Remove irrelevant branching answers from the form, audit and history. Check for conflicts with immutable history requirements. Do not override my decision; return any conflict for PO resolution.
 
 F15 Q3 — D: Flexible Form Automation:
-* All active clients within the workspace.
-* New clients automatically on joining/onboarding.
-* Specific clients selected through search (single or multiple).
-* Custom recurring schedules, e.g. weekly check-ins.
-* Renewal-triggered delivery only when the renewed subscription actually starts, including freeze-related delays, never on early payment.
-* Stop recurring deliveries when the client's subscription becomes inactive or frozen.
-* Manual control over audience, timing, recurrence and stopping conditions.
+
+- All active clients within the workspace.
+- New clients automatically on joining/onboarding.
+- Specific clients selected through search (single or multiple).
+- Custom recurring schedules, e.g. weekly check-ins.
+- Renewal-triggered delivery only when the renewed subscription actually starts, including freeze-related delays, never on early payment.
+- Stop recurring deliveries when the client's subscription becomes inactive or frozen.
+- Manual control over audience, timing, recurrence and stopping conditions.
 
 F15 Q4 — Modified B: Initial alert to assigned Trainer. Seven-day catch-up, deduplication and reassignment handling. After 24 hours unresolved, escalate simultaneously to BOTH Platform Owner and Workspace Owner.
 
@@ -583,17 +647,17 @@ Q5 (follow-up, controls) — “F15 Q5: Approve your proposed technical limits, 
 
 Stack C — A APPROVED: Create it with verified isolation from Stacks A/B. F13 refund-session proof takes priority, then F15.
 
-| Decision | Binding outcome | Requirements / acceptance |
-| --- | --- | --- |
-| F15-1 | PO/WO/Trainer create, copy, edit, publish and retire workspace forms; Sales excluded. | FR-004, FR-030; SC-017; User Story 3 |
-| F15-2 + D-03 | Late at 00:00 Cairo after working day five; Friday alone is excluded; DST gap uses the first valid instant of that Cairo date. | FR-015/016; SC-005/006; User Story 4 |
-| F15-3 | Dedicated `assign_intake_form` capability for Trainer authorization, with TypeScript/SQL parity after F12 and F14 capability changes. | FR-022; SC-017 |
-| F15-4 | Historical decision: PO would supply initial Mandatory Intake/questions at implementation; superseded by S17 for the default form and starter content. S14 questions may be editable starter content; Your First Step is the ordinary editable Forms default. Every form has separate Arabic and English versions. | FR-004/006/026, FR-029/SC-013/021 |
-| F15-5 | Initial late alert to responsible Trainer, otherwise PO; if assigned Trainer remains delayed, superseded by Q4: simultaneous WO+PO escalation after 24 hours unresolved; deduplicate. | Superseded by final F15 Q4 below. |
-| F15-6 | Per-form trigger, target audience and recurrence configuration for onboarding, specific-client and recurring eligible individual/cohort forms. The implementation sequence must cover approved Q3=D behavior and is coordinated between T010 and T023. | Extended by final F15 Q3 below; FR-003/031; SC-018; BRD-06 conflict recorded below |
-| F15-7 | PO, WO, Trainer and Client have full correction permissions for submitted forms, including medical fields and attachments; enforce tenant isolation, authorized client scope and immutable version history/audit; Correction Matrix is approved; no further PO approval needed. | FR-013/021/024; SC-019; [approved correction matrix](correction-matrix.md) |
-| F15-8 + RET-1..3 | Keep necessary data while active; start 30 days at Closure/Refund/Deactivation; purge drafts/answers/correction content/attachments; retain templates and minimal legally required audit evidence; maximum 30 days over every recoverable copy including backups; feasibility/legal review before production. | FR-012/024/032/033; SC-014/020 |
-| PO-1 | Every successful refund deactivates the client, blocks login, revokes sessions, preserves financial/audit records, and supplies the authoritative relationship-end fact/time that starts RET-1. | FR-012/033; SC-020 |
+| Decision         | Binding outcome                                                                                                                                                                                                                                                                                                    | Requirements / acceptance                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| F15-1            | PO/WO/Trainer create, copy, edit, publish and retire workspace forms; Sales excluded.                                                                                                                                                                                                                              | FR-004, FR-030; SC-017; User Story 3                                               |
+| F15-2 + D-03     | Late at 00:00 Cairo after working day five; Friday alone is excluded; DST gap uses the first valid instant of that Cairo date.                                                                                                                                                                                     | FR-015/016; SC-005/006; User Story 4                                               |
+| F15-3            | Dedicated `assign_intake_form` capability for Trainer authorization, with TypeScript/SQL parity after F12 and F14 capability changes.                                                                                                                                                                              | FR-022; SC-017                                                                     |
+| F15-4            | Historical decision: PO would supply initial Mandatory Intake/questions at implementation; superseded by S17 for the default form and starter content. S14 questions may be editable starter content; Your First Step is the ordinary editable Forms default. Every form has separate Arabic and English versions. | FR-004/006/026, FR-029/SC-013/021                                                  |
+| F15-5            | Initial late alert to responsible Trainer, otherwise PO; if assigned Trainer remains delayed, superseded by Q4: simultaneous WO+PO escalation after 24 hours unresolved; deduplicate.                                                                                                                              | Superseded by final F15 Q4 below.                                                  |
+| F15-6            | Per-form trigger, target audience and recurrence configuration for onboarding, specific-client and recurring eligible individual/cohort forms. The implementation sequence must cover approved Q3=D behavior and is coordinated between T010 and T023.                                                             | Extended by final F15 Q3 below; FR-003/031; SC-018; BRD-06 conflict recorded below |
+| F15-7            | PO, WO, Trainer and Client have full correction permissions for submitted forms, including medical fields and attachments; enforce tenant isolation, authorized client scope and immutable version history/audit; Correction Matrix is approved; no further PO approval needed.                                    | FR-013/021/024; SC-019; [approved correction matrix](correction-matrix.md)         |
+| F15-8 + RET-1..3 | Keep necessary data while active; start 30 days at Closure/Refund/Deactivation; purge drafts/answers/correction content/attachments; retain templates and minimal legally required audit evidence; maximum 30 days over every recoverable copy including backups; feasibility/legal review before production.      | FR-012/024/032/033; SC-014/020                                                     |
+| PO-1             | Every successful refund deactivates the client, blocks login, revokes sessions, preserves financial/audit records, and supplies the authoritative relationship-end fact/time that starts RET-1.                                                                                                                    | FR-012/033; SC-020                                                                 |
 
 ### F15 Final PO APPROVAL (2026-10-29)
 
@@ -607,16 +671,16 @@ Status of resolved correction-matrix approval item: **DECIDED 2026-10-29 (Final 
 
 Workspace operations require current membership for WO/Trainer and a real existing workspace for PO workspace-scoped actions. Client is limited to assigned forms; Sales is excluded. Global reusable-template governance remains PO-only. A permitted global read/use is eligibility-checked and does not permit mutation or foreign workspace-copy/answer access.
 
-| Operation | Global: PO | Global: WO/Trainer | Global: Sales | Workspace: PO | Workspace: WO | Workspace: Trainer | Workspace: Sales | Client |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Create | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Copy eligible published version into workspace draft | Allow | Deny global mutation; may copy only if eligible in an authorized workspace | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Edit draft | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Publish | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Retire | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Read unpublished draft | Allow | Deny | Deny | Allow | Allow in membership | Allow in membership | Deny | Deny |
-| Read/use eligible published version | Allow | Eligible read/use only; no global mutation | Deny | Allow | Allow in membership | Allow in membership | Deny | Assigned snapshot only |
-| Read local published template/copy | N/A | No foreign-copy access | Deny | Allow | Allow in membership | Allow in membership | Deny | Assigned snapshot only |
+| Operation                                            | Global: PO | Global: WO/Trainer                                                         | Global: Sales | Workspace: PO | Workspace: WO       | Workspace: Trainer  | Workspace: Sales | Client                 |
+| ---------------------------------------------------- | ---------- | -------------------------------------------------------------------------- | ------------- | ------------- | ------------------- | ------------------- | ---------------- | ---------------------- |
+| Create                                               | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Copy eligible published version into workspace draft | Allow      | Deny global mutation; may copy only if eligible in an authorized workspace | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Edit draft                                           | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Publish                                              | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Retire                                               | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Read unpublished draft                               | Allow      | Deny                                                                       | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Deny                   |
+| Read/use eligible published version                  | Allow      | Eligible read/use only; no global mutation                                 | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Assigned snapshot only |
+| Read local published template/copy                   | N/A        | No foreign-copy access                                                     | Deny          | Allow         | Allow in membership | Allow in membership | Deny             | Assigned snapshot only |
 
 ### Closed prior questions (ND status)
 
@@ -626,7 +690,7 @@ Former F15 questions Q1-Q8 are **CLOSED as decision prompts by the binding PO de
 
 - The prior option-B Q1 builder matrix, Q1 recommendation, and Q1 approval gate are superseded by F15-1; Trainers may publish and retire workspace forms.
 - The prior Q7 client-only correction recommendation and FR-013's staff-read-only language are superseded by F15-7 and its approved correction matrix.
-- D4 distinguishes client-late from Trainer-late alerts. Client-late uses +24h Trainer and +48h PO+WO, no Trainer routes to PO+WO, reassignment does not reset the clock, and only authorized PO/WO recipients are notified. Trainer-late under D-03 preserves existing Q4 rules exactly.
+- The earlier D4 client-late +24h/+48h Trainer and owner timing is superseded for F15 shipping by PDN-S39-F15-01. F15 keeps immediate authorized-owner notices under FR-017/035 and defers client-to-Trainer assignment/routing and the client-late Trainer alert to F11/F12. D-03 Trainer-late preserves existing Q4 rules exactly.
 - F15-6 expressly conflicts with BRD-06's no bulk/mass assignment wording (BRD-06 § Reporting and operating scope, approximately line 92) and with the prior F15 per-client-only / no-cohort text. F15-6 controls Forms assignment. Implement all approved Q3=D audiences, triggers, timing, recurrence, and stop conditions per form; coordinate T010 and T023 so recurrence policy and behavior are implemented once. F1 requires resume after freeze without catch-up. PRD-03's recurring check-in behavior is retained in the overall product scope; P5's other check-in features remain separate.
 - Prior blanket exclusion of recurrence in P5 is superseded only for the F15-6 configurable form-assignment capability. P5 scheduling, freeze behavior, measurement linkage and check-in surfaces remain outside this F15 scope.
 
@@ -638,15 +702,17 @@ Only an automatic server-validated worker/function may execute erasure; human ro
 
 ## Open items and gates
 
+<!-- prettier-ignore-start -->
 | Open item | Classification | Handling |
 | --- | --- | --- |
 | D1 exact migration | Database implementation gate | F12/F14 must merge and Stack D must be verified before writing or executing the exact forward migration; no DB work in this lane. |
 | N12 derivative generation | DB-free media task | Source originals remain read-only and uncommitted; generate WebP/AVIF derivatives under public/images/body-fat at max 2x display width, target <=150 KB each. P1 selects male/female standard series; male-cinematic is unused. |
-| Remaining authored English translations | Only rows not covered by S31-R2/S32-PO-8/S34-PO-6 | Keep any still-pending rows unchanged and escalate missing copy; S34-PO-6 approves the remaining English intake rows listed in `fixtures/s34-approved-intake-en.json`. Terms AR/EN and B06 sex labels are approved by S30-PO-1 Q2. The standalone health notice is superseded and is not a ship blocker; contextual guidance may use the PO-approved label where useful. Architect defaults resolve Terms Card and N11 motion patterns. |
+| Remaining authored English translations | Only untranslated/unapproved English rows not covered by S31-R2/S32-PO-8 | Keep pending rows unchanged and escalate missing copy; Terms AR/EN and B06 sex labels are approved by S30-PO-1 Q2. The standalone health notice is superseded and is not a ship blocker; contextual guidance may use the PO-approved label where useful. Architect defaults resolve Terms Card and N11 motion patterns. |
 | 30-day purge feasibility across hosted DB, PITR, snapshots and backups; legal exceptions | Production blocker under RET-3 | Complete and evidence technical/legal review before real Forms data. Synthetic local/CI work may proceed. |
 | Authoritative P4 first-pair delivery and responsible-Trainer coverage | Cross-feature dependency | P4 must provide complete authoritative facts before real-data late classification or alerts. |
 | Attachment feature and storage beyond MVP | Future design item | No upload/storage feature exists in this scope. Any future implementation needs a scoped design and RET-2/3 proof. |
 | ND-F5-1 | Separate retained production open item | Track through its existing owner and register; this F15 decision record does not resolve it. |
+<!-- prettier-ignore-end -->
 
 ### Attachment lifecycle
 
@@ -661,7 +727,7 @@ Forms attachments do not exist in this MVP: no upload field/API, storage owner, 
 5. Client single-question progression, partial autosave, conflicts, atomic submission/SLA, and authorized append-only corrections under the approved matrix; post-relationship-end corrections are denied under Q1. Register the real route in F12 navigation.
 6. Staff intake/correction/SLA views and F14 published brand tokens, with the approved scope and audited-read controls.
 7. Add recurrence/cohort execution under the approved F15-6 eligibility semantics and F1 resume rule.
-8. Delay logic with synthetic facts; real-data classification/alerts only after authoritative P4 integration, using separate D4 client-late and D-03 Trainer-late rules and the F11 owner-only pg_cron pattern. Production scheduler activation follows its existing gate.
+8. Delay logic with synthetic facts; real-data classification/alerts only after authoritative P4 integration. F15 client-late behavior uses the S36-02 configured-deadline trigger and immediate owner notices; client-to-Trainer assignment/routing and the Trainer alert are deferred to F11/F12 under PDN-S39-F15-01. D-03 Trainer-late remains separate and unchanged. Use the F11 owner-only pg_cron pattern. Production scheduler activation follows its existing gate.
 
 ## Dependencies and migration ordering
 
@@ -712,3 +778,33 @@ No deviation is proposed. Spec Debate is complete; this revision records the bin
 ### S17 F15 supersession (2026-10-30; PO decision section 3)
 
 Your First Step («خطوتك الأولى») is the default ordinary editable onboarding form in Forms. Its Arabic title is PO-approved verbatim by “Session 17 PO decision — F15 default form Arabic title”; the Arabic Forms section name «النماذج» is also PO-given. Workspace Owners may edit, replace, or select another onboarding form. Previously supplied S14 questions are editable starter content, not a fixed catalog. Assignment and delivery timing are configurable per form under Q3=D. There is no standalone health notice; use «عن بياناتك الصحية» / “About your health data” only where genuinely useful. This does not alter Terms Card consent. The T3 MCQ is closed. Published versions and assignment snapshots remain immutable.
+
+## Clarifications - S40-PO-1/-2/-4 (2026-11-09)
+
+PO option lines quoted verbatim from the authoritative S40 decision record:
+
+- S40-PO-1: A: Safe rename (Recommended)
+- S40-PO-2: A: Approve ffmpeg step (Recommended)
+- S40-PO-4: A: Keep small prefix (Rec.)
+
+The parenthesized mappings in the PO record are architect wording, not PO words. The S40-PO-4 architect mapping revises the S40-PO-1 mapping for PDN-S40-03: retain 20261112020300_f15_auth_identity_collisions_and_reader_policies.sql and its minimal dependency-closed earlier #57 prefix at original versions below main; rename all other #57 migrations above main and all origin refs without changing SQL content; add one forward migration above the renamed set to reconcile the final definitions. Prefix exception filenames (each retained at its original version): `20261112020000_f15_terms_consent.sql`, `20261112020100_f15_s14_forms.sql`, `20261112020200_f15_s14_privacy.sql`, and `20261112020300_f15_auth_identity_collisions_and_reader_policies.sql`. The SQL reference proof is in round-11 prefix-closure evidence. No open ambiguities remain for this approved sequencing. A genuine difference in main versus approved F15 behavior remains excluded pending a PO decision.
+
+For public signup identity collisions, preserve D-08's approved exact duplicate message in English and Arabic. S16 Q2's field-neutral alternative remained DRAFT under PO Q4=A; stale test fixtures or assertions cannot promote it. This round corrects the F15 fixture and integration expectation to D-08 without changing runtime copy.
+
+## Clarifications — S41-PO-3 (2026-11-09)
+
+PO-MCQ-1, verbatim from the S41 PO decision record: “A: Approve as drafted”. The approved English value for `N08.low.foods` is exactly `Cottage cheese / plant protein / eggs / baladi bread`. This approval applies only to that row. `N08.medium.foods`, `N08.high.foods`, and all other pending English rows remain pending. No Arabic copy or runtime starter content is changed by this decision.
+
+## Clarifications — S41-PO-12 (2026-11-10)
+
+PO option lines quoted byte-exact from `C:/Users/NEW LAP/.lifter/runs/s41-po/s41-po-1.verbatim.txt`: `PO-MCQ-2: A: Swap to current (Rec.)`; `PO-MCQ-3: A: 7-day catch-up (Rec.)`; `PO-MCQ-4: A: Reject (Rec.)`. The architect mappings in the same record define implementation: replace only a stale unconsumed Terms selection with the current published version and retain selection history; catch up client-late schedules only within the prior seven days and suppress those already notified through legacy owner stages; reject usernames whose compact form is empty using existing generic username feedback. No new user-visible copy is introduced. **No open ambiguities remain for T143.**
+
+## Clarifications — S52-PO-1 (2026-11-12)
+
+PO decision quoted byte-exact from `C:/Users/NEW LAP/.lifter/runs/s52-po/s52-po-1.verbatim.txt` (SHA-256 `559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd`): `A`.
+
+Architect mapping S52-R1 (mapping, not PO words): retiring a form immediately blocks all new assignments, whether manual or recurring; existing assignment snapshots stay unchanged; future recurrence creates no occurrences from a retired form. This scope adds no user-visible copy. **No open ambiguities remain for the approved retirement behavior.**
+
+## Clarification — S53-R15 (2026-11-13)
+
+Architect mapping (not PO words): the staff adapter's successful retirement result remains backward-compatible with `FormsStaffResult` and carries the authoritative retired form snapshot. The retirement RPC response remains unchanged; the adapter obtains the snapshot through the existing authorized forms read. The existing `invalid` result is retained if that read cannot confirm the retired form. This is a technical contract correction; it adds no user-visible copy or retirement behavior. No open ambiguities remain for this compatibility fix.

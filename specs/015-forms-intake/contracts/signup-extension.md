@@ -4,15 +4,15 @@ This is a cross-feature logical contract. F11 remains the owner of invitation-to
 
 ## Fields and validation
 
-| Field | Requirement |
-| --- | --- |
-| Full name | Required; after trimming/splitting on Unicode whitespace, at least three non-empty components. Persist the authored name unchanged after validation. |
-| Date of birth | Required; valid past calendar date. Reject impossible and future dates. Store the date without a timezone conversion. Computed age uses the current Africa/Cairo calendar date and is never user-editable. |
-| Username | Required; normalize with Unicode NFKC then lowercase before uniqueness comparison and persistence. Unique within the applicable workspace account namespace. Reject platform/system/role words and workspace identifiers/slugs from the centrally maintained reserved-name list. |
-| Telegram username | Optional. If absent, accept it. If present, validate syntax only; never require Telegram linkage. |
-| Phone, email, password | Preserve F11's existing required validation, generic duplicate response, credential handling and Auth invariants. Email and phone remain globally unique. |
-| Terms consent | Not collected at signup. After Nutrition, the Terms Card shows a required unchecked checkbox; on acceptance persist exact policy version and server timestamp. Intake remains incomplete until accepted. |
-| Marketing consent | At the post-Nutrition Terms Card, offer a separate optional unchecked checkbox. Persist only when explicitly opted in; independently record its policy version and server timestamp. It is not a prerequisite to account creation or intake completion. |
+| Field                  | Requirement                                                                                                                                                                                                                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full name              | Required; after trimming/splitting on Unicode whitespace, at least three non-empty components. Persist the authored name unchanged after validation.                                                                                                                             |
+| Date of birth          | Required; valid past calendar date. Reject impossible and future dates. Store the date without a timezone conversion. Computed age uses the current Africa/Cairo calendar date and is never user-editable.                                                                       |
+| Username               | Required; normalize with Unicode NFKC then lowercase before uniqueness comparison and persistence. Unique within the applicable workspace account namespace. Reject platform/system/role words and workspace identifiers/slugs from the centrally maintained reserved-name list. |
+| Telegram username      | Optional. If absent, accept it. If present, validate syntax only; never require Telegram linkage.                                                                                                                                                                                |
+| Phone, email, password | Preserve F11's existing required validation, generic duplicate response, credential handling and Auth invariants. Email and phone remain globally unique.                                                                                                                        |
+| Terms consent          | Not collected at signup. After Nutrition, the Terms Card shows a required unchecked checkbox; on acceptance persist exact policy version and server timestamp. Intake remains incomplete until accepted.                                                                         |
+| Marketing consent      | At the post-Nutrition Terms Card, offer a separate optional unchecked checkbox. Persist only when explicitly opted in; independently record its policy version and server timestamp. It is not a prerequisite to account creation or intake completion.                          |
 
 ## Preserved F11 invariants
 

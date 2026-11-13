@@ -2,13 +2,16 @@
 
 import {
   useActionState,
-  useCallback,
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Bidi } from '../../../components/ui/Bidi';
+import glass from '../../../components/branding/liquid-glass.module.css';
+import heroStyles from '../../../components/branding/registration-hero.module.css';
+import { PHONE_NUMBER_GROUP_DIRECTION } from '../../../components/branding/registration-hero';
 import {
   runSignupActionSafely,
   signupResult,
@@ -24,6 +27,10 @@ type SignupAction = (
   previous: SignupPublicResult,
   formData: FormData,
 ) => Promise<SignupPublicResult>;
+
+const subscribeToHydration = () => () => {};
+const getHydratedSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
 
 function newRequestSecret(): string {
   const bytes = new Uint8Array(32);
@@ -47,13 +54,6 @@ export async function runValidatedSignupAction(
   return runSignupActionSafely(action, previous, formData, locale);
 }
 
-export function shouldValidateSignupBlur(
-  submitting: boolean,
-  pending: boolean,
-): boolean {
-  return !submitting && !pending;
-}
-
 export function SignupForm({
   action,
   locale,
@@ -64,6 +64,7 @@ export function SignupForm({
   phoneCountries: PhoneCountryOption[];
 }) {
   const submittingRef = useRef(false);
+  const [submissionSequence, setSubmissionSequence] = useState(0);
   const [result, formAction, pending] = useActionState(
     async (previous: SignupPublicResult, formData: FormData) => {
       try {
@@ -75,9 +76,15 @@ export function SignupForm({
         );
       } finally {
         submittingRef.current = false;
+        setSubmissionSequence((sequence) => sequence + 1);
       }
     },
     signupResult('invalid_input', locale),
+  );
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerHydrationSnapshot,
   );
   const [country, setCountry] = useState('EG');
   const [nationalNumber, setNationalNumber] = useState('');
@@ -88,6 +95,8 @@ export function SignupForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [usernameServerErrorDismissed, setUsernameServerErrorDismissed] =
+    useState(false);
   const [touchedIdentityFields, setTouchedIdentityFields] = useState<
     SignupIdentityField[]
   >([]);
@@ -96,7 +105,12 @@ export function SignupForm({
   >([]);
   const [identityFocusRequest, setIdentityFocusRequest] = useState(0);
   const focusIdentityErrorAfterRenderRef = useRef(false);
-  const identityFieldEditRef = useRef(false);
+  const focusPendingStatusRef = useRef(false);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
+  const previousResultFocusRef = useRef<{
+    result: SignupPublicResult;
+    sequence: number;
+  } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLParagraphElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -111,6 +125,8 @@ export function SignupForm({
     name: allMessages['clientSignup.name'],
     dateOfBirth: allMessages['clientSignup.dateOfBirth'],
     username: allMessages['clientSignup.username'],
+    usernameUnavailable: allMessages['clientSignup.usernameUnavailable'],
+    usernameFormatError: allMessages['clientSignup.usernameFormatError'],
     telegramUsername: allMessages['clientSignup.telegramUsername'],
     optional: allMessages['clientSignup.optional'],
     email: allMessages['clientSignup.email'],
@@ -125,17 +141,10 @@ export function SignupForm({
   const selectedCountry =
     phoneCountries.find((option) => option.code === country) ??
     phoneCountries.find((option) => option.code === 'EG');
-
-  const hasIdentityError = useCallback(
-    (field: SignupIdentityField) => {
-      return (
-        identityInvalidFields.includes(field) ||
-        (result.status === 'invalid_input' &&
-          result.invalidFields?.includes(field) === true)
-      );
-    },
-    [identityInvalidFields, result],
-  );
+  const showUsernameServerError =
+    !pending &&
+    !usernameServerErrorDismissed &&
+    result.invalidFields?.includes('username') === true;
 
   function validateTouchedField(field: SignupIdentityField) {
     if (!formRef.current) return;
@@ -148,30 +157,21 @@ export function SignupForm({
   }
 
   function blurIdentityField(field: SignupIdentityField) {
-    if (!shouldValidateSignupBlur(submittingRef.current, pending)) return;
     setTouchedIdentityFields((current) =>
       current.includes(field) ? current : [...current, field],
     );
-    identityFieldEditRef.current = true;
     validateTouchedField(field);
   }
 
   function changeIdentityField(field: SignupIdentityField) {
-    if (touchedIdentityFields.includes(field)) {
-      identityFieldEditRef.current = true;
-      validateTouchedField(field);
-    }
+    if (touchedIdentityFields.includes(field)) validateTouchedField(field);
   }
 
   useEffect(() => {
-    if (identityFieldEditRef.current) {
-      identityFieldEditRef.current = false;
-      return;
-    }
     if (!submitted) return;
     const firstIdentityError = (
       ['name', 'dateOfBirth', 'username', 'telegramUsername'] as const
-    ).find(hasIdentityError);
+    ).find((field) => identityInvalidFields.includes(field));
     if (firstIdentityError) {
       const identityRefs = {
         name: nameRef,
@@ -182,24 +182,37 @@ export function SignupForm({
       if (focusIdentityErrorAfterRenderRef.current) {
         focusIdentityErrorAfterRenderRef.current = false;
         identityRefs[firstIdentityError].current?.focus();
-        return;
       }
-      const activeElement = document.activeElement;
-      if (
-        activeElement instanceof HTMLElement &&
-        formRef.current?.contains(activeElement) &&
-        activeElement !== formRef.current.querySelector('button[type="submit"]')
-      )
-        return;
-      identityRefs[firstIdentityError].current?.focus();
       return;
     }
+  }, [identityFocusRequest, identityInvalidFields, submitted]);
+
+  useEffect(() => {
+    if (!submitted || pending || submissionSequence === 0) return;
+    const previous = previousResultFocusRef.current;
+    if (previous?.result === result && previous.sequence === submissionSequence)
+      return;
+    previousResultFocusRef.current = {
+      result,
+      sequence: submissionSequence,
+    };
     if (result.status === 'invalid_input' && result.invalidFields?.length) {
       const firstInvalid = (
-        ['name', 'email', 'phone', 'password'] as const
+        [
+          'name',
+          'dateOfBirth',
+          'username',
+          'telegramUsername',
+          'email',
+          'phone',
+          'password',
+        ] as const
       ).find((field) => result.invalidFields?.includes(field));
       const fieldRef = {
         name: nameRef,
+        dateOfBirth: dateOfBirthRef,
+        username: usernameRef,
+        telegramUsername: telegramUsernameRef,
         email: emailRef,
         phone: phoneRef,
         password: passwordRef,
@@ -208,7 +221,13 @@ export function SignupForm({
       return;
     }
     resultRef.current?.focus();
-  }, [hasIdentityError, identityFocusRequest, result, submitted]);
+  }, [pending, result, submitted, submissionSequence]);
+
+  useEffect(() => {
+    if (!pending || !focusPendingStatusRef.current) return;
+    focusPendingStatusRef.current = false;
+    resultRef.current?.focus();
+  }, [pending]);
 
   if (result.status === 'sign_out_required')
     return (
@@ -221,7 +240,8 @@ export function SignupForm({
     <form
       ref={formRef}
       action={formAction}
-      className={styles.form}
+      data-hydrated={hydrated ? 'true' : 'false'}
+      className={`${styles.form} ${heroStyles.form}`}
       onSubmit={(event) => {
         if (submittingRef.current) {
           event.preventDefault();
@@ -250,7 +270,10 @@ export function SignupForm({
           return;
         }
         submittingRef.current = true;
+        focusPendingStatusRef.current =
+          document.activeElement === submitButtonRef.current;
         setSubmitted(true);
+        setUsernameServerErrorDismissed(false);
         const secret = event.currentTarget.elements.namedItem('request_secret');
         if (secret instanceof HTMLInputElement)
           secret.value = newRequestSecret();
@@ -264,189 +287,295 @@ export function SignupForm({
         value={JSON.stringify({ country, nationalNumber })}
         readOnly
       />
-      <label className={styles.field}>
+      <label className={`${styles.field} ${heroStyles.field}`}>
         <span>{messages.name}</span>
-        <input
-          ref={nameRef}
-          name="name"
-          aria-label={messages.name}
-          aria-describedby={
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
             (submitted || touchedIdentityFields.includes('name')) &&
-            (hasIdentityError('name') || result.invalidFields?.includes('name'))
-              ? 'signup-name-error'
+            (identityInvalidFields.includes('name') ||
+              result.invalidFields?.includes('name'))
+              ? 'true'
               : undefined
           }
-          type="text"
-          value={name}
-          onChange={(event) => {
-            setName(event.currentTarget.value);
-            changeIdentityField('name');
-          }}
-          autoComplete="name"
-          required
-          disabled={pending}
-          onBlur={() => blurIdentityField('name')}
-          aria-invalid={
-            (submitted || touchedIdentityFields.includes('name')) &&
-            (hasIdentityError('name') || result.invalidFields?.includes('name'))
-          }
-        />
+        >
+          <input
+            ref={nameRef}
+            name="name"
+            aria-label={messages.name}
+            aria-describedby={
+              (submitted || touchedIdentityFields.includes('name')) &&
+              (identityInvalidFields.includes('name') ||
+                result.invalidFields?.includes('name'))
+                ? 'signup-name-error'
+                : undefined
+            }
+            type="text"
+            value={name}
+            onChange={(event) => {
+              setName(event.currentTarget.value);
+              changeIdentityField('name');
+            }}
+            autoComplete="name"
+            required
+            disabled={pending}
+            onBlur={() => blurIdentityField('name')}
+            aria-invalid={
+              (submitted || touchedIdentityFields.includes('name')) &&
+              (identityInvalidFields.includes('name') ||
+                result.invalidFields?.includes('name'))
+            }
+          />
+        </span>
         {(submitted || touchedIdentityFields.includes('name')) &&
-          (hasIdentityError('name') ||
+          (identityInvalidFields.includes('name') ||
             result.invalidFields?.includes('name')) && (
-            <span id="signup-name-error" className={styles.fieldError}>
+            <span
+              id="signup-name-error"
+              className={`${styles.fieldError} ${heroStyles.fieldError}`}
+            >
               {messages.fieldError}
             </span>
           )}
       </label>
-      <label className={styles.field}>
+      <label className={`${styles.field} ${heroStyles.field}`}>
         <span>{messages.dateOfBirth}</span>
-        <input
-          ref={dateOfBirthRef}
-          name="dateOfBirth"
-          aria-label={messages.dateOfBirth}
-          aria-describedby={
-            (submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-            hasIdentityError('dateOfBirth')
-              ? 'signup-date-of-birth-error'
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
+            identityInvalidFields.includes('dateOfBirth') ||
+            result.invalidFields?.includes('dateOfBirth')
+              ? 'true'
               : undefined
           }
-          type="date"
-          autoComplete="bday"
-          value={dateOfBirth}
-          onChange={(event) => {
-            setDateOfBirth(event.currentTarget.value);
-            changeIdentityField('dateOfBirth');
-          }}
-          onBlur={() => blurIdentityField('dateOfBirth')}
-          required
-          disabled={pending}
-          aria-invalid={
-            (submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-            hasIdentityError('dateOfBirth')
-          }
-        />
+        >
+          <input
+            ref={dateOfBirthRef}
+            name="dateOfBirth"
+            aria-label={messages.dateOfBirth}
+            aria-describedby={
+              (submitted || touchedIdentityFields.includes('dateOfBirth')) &&
+              (identityInvalidFields.includes('dateOfBirth') ||
+                result.invalidFields?.includes('dateOfBirth'))
+                ? 'signup-date-of-birth-error'
+                : undefined
+            }
+            type="date"
+            autoComplete="bday"
+            value={dateOfBirth}
+            onChange={(event) => {
+              setDateOfBirth(event.currentTarget.value);
+              changeIdentityField('dateOfBirth');
+            }}
+            onBlur={() => blurIdentityField('dateOfBirth')}
+            required
+            disabled={pending}
+            aria-invalid={
+              (submitted || touchedIdentityFields.includes('dateOfBirth')) &&
+              (identityInvalidFields.includes('dateOfBirth') ||
+                result.invalidFields?.includes('dateOfBirth'))
+            }
+          />
+        </span>
         {(submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-          hasIdentityError('dateOfBirth') && (
-            <span id="signup-date-of-birth-error" className={styles.fieldError}>
+          (identityInvalidFields.includes('dateOfBirth') ||
+            result.invalidFields?.includes('dateOfBirth')) && (
+            <span
+              id="signup-date-of-birth-error"
+              className={`${styles.fieldError} ${heroStyles.fieldError}`}
+            >
               {messages.fieldError}
             </span>
           )}
       </label>
-      <label className={styles.field}>
+      <label className={`${styles.field} ${heroStyles.field}`}>
         <span>{messages.username}</span>
-        <input
-          ref={usernameRef}
-          name="username"
-          aria-label={messages.username}
-          aria-describedby={
-            (submitted || touchedIdentityFields.includes('username')) &&
-            hasIdentityError('username')
-              ? 'signup-username-error'
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
+            identityInvalidFields.includes('username') ||
+            showUsernameServerError
+              ? 'true'
               : undefined
           }
-          type="text"
-          autoComplete="username"
-          value={username}
-          onChange={(event) => {
-            setUsername(event.currentTarget.value);
-            changeIdentityField('username');
-          }}
-          onBlur={() => blurIdentityField('username')}
-          required
-          disabled={pending}
-          aria-invalid={
-            (submitted || touchedIdentityFields.includes('username')) &&
-            hasIdentityError('username')
-          }
-        />
+        >
+          <input
+            ref={usernameRef}
+            name="username"
+            aria-label={messages.username}
+            aria-describedby={
+              (submitted || touchedIdentityFields.includes('username')) &&
+              (identityInvalidFields.includes('username') ||
+                showUsernameServerError)
+                ? 'signup-username-error'
+                : undefined
+            }
+            type="text"
+            autoComplete="username"
+            value={username}
+            onChange={(event) => {
+              setUsername(event.currentTarget.value);
+              if (result.invalidFields?.includes('username')) {
+                setUsernameServerErrorDismissed(true);
+                setTouchedIdentityFields((current) =>
+                  current.includes('username')
+                    ? current
+                    : [...current, 'username'],
+                );
+                validateTouchedField('username');
+              }
+              changeIdentityField('username');
+            }}
+            onBlur={() => blurIdentityField('username')}
+            required
+            disabled={pending}
+            aria-invalid={
+              (submitted || touchedIdentityFields.includes('username')) &&
+              (identityInvalidFields.includes('username') ||
+                showUsernameServerError)
+            }
+          />
+        </span>
         {(submitted || touchedIdentityFields.includes('username')) &&
-          hasIdentityError('username') && (
-            <span id="signup-username-error" className={styles.fieldError}>
-              {messages.fieldError}
+          (identityInvalidFields.includes('username') ||
+            showUsernameServerError) && (
+            <span
+              id="signup-username-error"
+              className={`${styles.fieldError} ${heroStyles.fieldError}`}
+            >
+              <Bidi>
+                {showUsernameServerError
+                  ? messages.usernameUnavailable
+                  : identityInvalidFields.includes('username')
+                    ? messages.usernameFormatError
+                    : messages.fieldError}
+              </Bidi>
             </span>
           )}
       </label>
-      <label className={styles.field}>
+      <label className={`${styles.field} ${heroStyles.field}`}>
         <span>
           {messages.telegramUsername} ({messages.optional})
         </span>
-        <input
-          ref={telegramUsernameRef}
-          name="telegramUsername"
-          aria-label={`${messages.telegramUsername} (${messages.optional})`}
-          aria-describedby={
-            (submitted || touchedIdentityFields.includes('telegramUsername')) &&
-            hasIdentityError('telegramUsername')
-              ? 'signup-telegram-error'
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
+            identityInvalidFields.includes('telegramUsername') ||
+            result.invalidFields?.includes('telegramUsername')
+              ? 'true'
               : undefined
           }
-          type="text"
-          autoComplete="off"
-          value={telegramUsername}
-          onChange={(event) => {
-            setTelegramUsername(event.currentTarget.value);
-            changeIdentityField('telegramUsername');
-          }}
-          onBlur={() => blurIdentityField('telegramUsername')}
-          disabled={pending}
-          aria-invalid={
-            (submitted || touchedIdentityFields.includes('telegramUsername')) &&
-            hasIdentityError('telegramUsername')
-          }
-        />
+        >
+          <input
+            ref={telegramUsernameRef}
+            name="telegramUsername"
+            aria-label={`${messages.telegramUsername} (${messages.optional})`}
+            aria-describedby={
+              (submitted ||
+                touchedIdentityFields.includes('telegramUsername')) &&
+              (identityInvalidFields.includes('telegramUsername') ||
+                result.invalidFields?.includes('telegramUsername'))
+                ? 'signup-telegram-error'
+                : undefined
+            }
+            type="text"
+            autoComplete="off"
+            value={telegramUsername}
+            onChange={(event) => {
+              setTelegramUsername(event.currentTarget.value);
+              changeIdentityField('telegramUsername');
+            }}
+            onBlur={() => blurIdentityField('telegramUsername')}
+            disabled={pending}
+            aria-invalid={
+              (submitted ||
+                touchedIdentityFields.includes('telegramUsername')) &&
+              (identityInvalidFields.includes('telegramUsername') ||
+                result.invalidFields?.includes('telegramUsername'))
+            }
+          />
+        </span>
         {(submitted || touchedIdentityFields.includes('telegramUsername')) &&
-          hasIdentityError('telegramUsername') && (
-            <span id="signup-telegram-error" className={styles.fieldError}>
+          (identityInvalidFields.includes('telegramUsername') ||
+            result.invalidFields?.includes('telegramUsername')) && (
+            <span
+              id="signup-telegram-error"
+              className={`${styles.fieldError} ${heroStyles.fieldError}`}
+            >
               {messages.fieldError}
             </span>
           )}
       </label>
-      <label className={styles.field}>
+      <label className={`${styles.field} ${heroStyles.field}`}>
         <span>{messages.email}</span>
-        <input
-          ref={emailRef}
-          name="email"
-          aria-label={messages.email}
-          aria-describedby={
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
             submitted && result.invalidFields?.includes('email')
-              ? 'signup-email-error'
+              ? 'true'
               : undefined
           }
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.currentTarget.value)}
-          autoComplete="email"
-          required
-          disabled={pending}
-          aria-invalid={submitted && result.invalidFields?.includes('email')}
-        />
+        >
+          <input
+            ref={emailRef}
+            name="email"
+            aria-label={messages.email}
+            aria-describedby={
+              submitted && result.invalidFields?.includes('email')
+                ? 'signup-email-error'
+                : undefined
+            }
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.currentTarget.value)}
+            autoComplete="email"
+            required
+            disabled={pending}
+            aria-invalid={submitted && result.invalidFields?.includes('email')}
+          />
+        </span>
         {submitted && result.invalidFields?.includes('email') && (
-          <span id="signup-email-error" className={styles.fieldError}>
+          <span
+            id="signup-email-error"
+            className={`${styles.fieldError} ${heroStyles.fieldError}`}
+          >
             {messages.fieldError}
           </span>
         )}
       </label>
-      <div className={styles.phoneFields}>
-        <label className={styles.field}>
+      <div className={`${styles.phoneFields} ${heroStyles.phoneFields}`}>
+        <label className={`${styles.field} ${heroStyles.field}`}>
           <span>{messages.country}</span>
-          <select
-            aria-label={messages.country}
-            value={country}
-            disabled={pending}
-            onChange={(event) => setCountry(event.currentTarget.value)}
+          <span
+            className={`${heroStyles.countryPicker} ${glass.liquidGlassEdge}`}
           >
-            {phoneCountries.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.name} (+{option.callingCode})
-              </option>
-            ))}
-          </select>
+            <select
+              aria-label={messages.country}
+              value={country}
+              disabled={pending}
+              onChange={(event) => setCountry(event.currentTarget.value)}
+            >
+              {phoneCountries.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.name} (+{option.callingCode})
+                </option>
+              ))}
+            </select>
+          </span>
         </label>
-        <label className={styles.field}>
+        <label className={`${styles.field} ${heroStyles.field}`}>
           <span>{messages.phone}</span>
-          <span className={styles.phoneNumber}>
-            <span aria-hidden="true">
+          <span
+            className={`${styles.phoneNumber} ${heroStyles.phoneNumber} ${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+            data-testid="phone-number-group"
+            dir={PHONE_NUMBER_GROUP_DIRECTION}
+            data-error={
+              submitted && result.invalidFields?.includes('phone')
+                ? 'true'
+                : undefined
+            }
+          >
+            <span aria-hidden="true" data-testid="country-calling-code">
               <Bidi dir="ltr">+{selectedCountry?.callingCode ?? '20'}</Bidi>
             </span>
             <input
@@ -470,57 +599,88 @@ export function SignupForm({
             />
           </span>
           {submitted && result.invalidFields?.includes('phone') && (
-            <span id="signup-phone-error" className={styles.fieldError}>
+            <span
+              id="signup-phone-error"
+              className={`${styles.fieldError} ${heroStyles.fieldError}`}
+            >
               {messages.fieldError}
             </span>
           )}
         </label>
       </div>
-      <label className={styles.field}>
+      <label className={`${styles.field} ${heroStyles.field}`}>
         <span>{messages.password}</span>
-        <input
-          ref={passwordRef}
-          name="password"
-          aria-label={messages.password}
-          aria-describedby={
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
             submitted && result.invalidFields?.includes('password')
-              ? 'signup-password-error'
+              ? 'true'
               : undefined
           }
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.currentTarget.value)}
-          autoComplete="new-password"
-          required
-          disabled={pending}
-          aria-invalid={submitted && result.invalidFields?.includes('password')}
-        />
+        >
+          <input
+            ref={passwordRef}
+            name="password"
+            aria-label={messages.password}
+            aria-describedby={
+              submitted && result.invalidFields?.includes('password')
+                ? 'signup-password-error'
+                : undefined
+            }
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.currentTarget.value)}
+            autoComplete="new-password"
+            required
+            disabled={pending}
+            aria-invalid={
+              submitted && result.invalidFields?.includes('password')
+            }
+          />
+        </span>
         {submitted && result.invalidFields?.includes('password') && (
-          <span id="signup-password-error" className={styles.fieldError}>
+          <span
+            id="signup-password-error"
+            className={`${styles.fieldError} ${heroStyles.fieldError}`}
+          >
             {messages.fieldError}
           </span>
         )}
       </label>
-      <Button type="submit" disabled={pending}>
+      <Button ref={submitButtonRef} type="submit" disabled={pending}>
         {pending ? messages.pending : messages.submit}
       </Button>
-      {submitted && (
-        <p
-          ref={resultRef}
-          tabIndex={-1}
-          role={
-            pending
-              ? 'status'
-              : result.status === 'invalid_input'
-                ? 'alert'
-                : 'status'
-          }
-          className={styles.message}
-          aria-live="polite"
-        >
-          {pending ? messages.pending : result.message}
-        </p>
-      )}
+      {submitted &&
+        (pending || submissionSequence > 0) &&
+        !(
+          result.status === 'invalid_input' &&
+          usernameServerErrorDismissed &&
+          result.invalidFields?.length === 1 &&
+          result.invalidFields.includes('username')
+        ) && (
+          <p
+            ref={resultRef}
+            tabIndex={-1}
+            role={
+              pending
+                ? 'status'
+                : result.status === 'invalid_input'
+                  ? 'alert'
+                  : 'status'
+            }
+            className={`${styles.message} ${heroStyles.message}`}
+            data-result-status={result.status}
+            aria-live="polite"
+          >
+            {pending
+              ? messages.pending
+              : result.status === 'invalid_input' &&
+                  result.invalidFields?.includes('username') &&
+                  !usernameServerErrorDismissed
+                ? messages.usernameUnavailable
+                : result.message}
+          </p>
+        )}
     </form>
   );
 }

@@ -25,7 +25,12 @@ async function seedAssignment(
   const formId = randomUUID();
   const assignmentId = randomUUID();
   const policy = `t014-${randomUUID()}`;
-  const definition = { questions: [{ id: 'ordinary' }, { id: 'sensitive' }] };
+  const definition = {
+    questions: [
+      { id: 'ordinary', sectionId: 'basic', type: 'shortText' },
+      { id: 'sensitive', sectionId: 'basic', type: 'shortText' },
+    ],
+  };
   const answers = {
     ordinary: `${label} original`,
     sensitive: `${label} synthetic health`,

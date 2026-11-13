@@ -11,6 +11,7 @@ import {
 
 const db = sql();
 afterAll(() => db.end());
+const rollback = new Error('rollback assignment policy fixture');
 type Trigger = 'manual' | 'onboarding' | 'renewal' | 'recurring';
 type Audience = 'all_active_clients' | 'new_clients' | 'specific_clients';
 
@@ -51,6 +52,85 @@ async function configure(
   }
 }
 
+it('refreshes configured_at only when the policy audience changes', async () => {
+  const f = await clientContext();
+  const formId = await createForm(db as unknown as TransactionSql, f.wsA.id);
+  const apply = (audience: Audience) =>
+    db.begin((tx) =>
+      configure(tx, f.po.userId, f.wsA.id, formId, audience, [], 'manual', {
+        client_deadline_days: 3,
+      }),
+    );
+
+  await apply('all_active_clients');
+  await db`
+    update app_private.form_assignment_policies
+    set configured_at='2000-01-01T00:00:00Z'
+    where workspace_id=${f.wsA.id} and form_id=${formId}
+  `;
+  await apply('all_active_clients');
+  const [sameAudience] = await db`
+    select configured_at from app_private.form_assignment_policies
+    where workspace_id=${f.wsA.id} and form_id=${formId}
+  `;
+  expect(new Date(sameAudience!.configured_at).toISOString()).toBe(
+    '2000-01-01T00:00:00.000Z',
+  );
+
+  await apply('new_clients');
+  const [changedAudience] = await db`
+    select configured_at from app_private.form_assignment_policies
+    where workspace_id=${f.wsA.id} and form_id=${formId}
+  `;
+  expect(new Date(changedAudience!.configured_at).toISOString()).not.toBe(
+    '2000-01-01T00:00:00.000Z',
+  );
+
+  await expect(
+    db.begin(async (tx) => {
+      const [original] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)'::regprocedure
+        ) as definition,
+        (select prosecdef from pg_catalog.pg_proc
+          where oid='public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)'::regprocedure) as security_definer
+      `;
+      const mutationRollback = new Error(
+        'rollback assignment-policy security mutant',
+      );
+      let securityMutantKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`alter function public.configure_intake_assignment_policy(
+            uuid,uuid,integer,text,uuid[],text,jsonb,jsonb
+          ) security invoker`;
+          const [mutated] = await sp`
+            select prosecdef as security_definer from pg_catalog.pg_proc
+            where oid='public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)'::regprocedure
+          `;
+          try {
+            expect(mutated?.security_definer).toBe(true);
+          } catch {
+            securityMutantKilled = true;
+          }
+          throw mutationRollback;
+        }),
+      ).rejects.toBe(mutationRollback);
+      expect(securityMutantKilled).toBe(true);
+      const [restored] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)'::regprocedure
+        ) as definition,
+        (select prosecdef from pg_catalog.pg_proc
+          where oid='public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)'::regprocedure) as security_definer
+      `;
+      expect(restored?.definition).toBe(original?.definition);
+      expect(restored?.security_definer).toBe(true);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
 async function core(
   tx: TransactionSql,
   actor: string,
@@ -80,19 +160,19 @@ async function functionDefinition(tx: TransactionSql, identity: string) {
   return row!.definition as string;
 }
 
-async function withFunctionMutant(
+async function withFunctionMutant<T>(
   tx: TransactionSql,
   identity: string,
   mutate: (definition: string) => string,
-  body: () => Promise<void>,
-) {
+  body: () => Promise<T>,
+): Promise<T> {
   const original = await functionDefinition(tx, identity);
   const mutant = mutate(original);
   if (!mutant || mutant === original)
     throw new Error(`Mutation did not change ${identity}`);
   await tx.unsafe(mutant);
   try {
-    await body();
+    return await body();
   } finally {
     await tx.unsafe(original);
   }
@@ -682,7 +762,7 @@ it('kills Sales configuration and stale authorization after lock-wait mutants', 
     pending = caller.begin(async (tx) => {
       const identity =
         'public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)';
-      await withFunctionMutant(
+      return withFunctionMutant(
         tx,
         identity,
         (definition) =>
@@ -733,6 +813,25 @@ it('kills Sales configuration and stale authorization after lock-wait mutants', 
       'authorization revoked during lock wait must return not_found',
       () => expect(result).toEqual({ status: 'not_found' }),
     );
+    const baseline = await caller.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      try {
+        const [row] = await tx`
+          select public.configure_intake_assignment_policy(
+            ${f.wsA.id},${formId},1,'new_clients','{}'::uuid[],'onboarding',
+            '{"client_deadline_days":7}'::jsonb,'{"frozen":true,"inactive":true}'::jsonb
+          ) as result
+        `;
+        return row!.result;
+      } finally {
+        await tx`reset role`;
+      }
+    });
+    expect(
+      baseline,
+      'unmutated function must return not_found for the revoked trainer',
+    ).toEqual({ status: 'not_found' });
   } finally {
     if (release) release();
     await Promise.allSettled([hold, ...(pending ? [pending] : [])]);
