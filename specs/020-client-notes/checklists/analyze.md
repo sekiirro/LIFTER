@@ -432,3 +432,25 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 **Findings:** 0 open CRITICAL; 0 open HIGH.
 **Cross-reference sweep:** FR-001's existing stable ordering and server-page cursor remain unchanged; the saved loaded-page note is merged by ID into its prior position and the refresh cursor stays tied to the refreshed server page. FR-002 already rejects NUL and uses the approved generic save-error state; create and update now share that classification while length guidance remains limited to real length violations. T005/T013 tests and traceability rows cover the behavior. No spec/plan/task requirement, copy, schema, or product decision changed.
 **Ambiguity status:** No open in-scope ambiguity.
+
+## Round 49 - S53-R23 unknown-edit exit guard, deletion/page race, and register reconciliation (2026-11-13)
+
+**Analysis date:** 2026-11-13T06:35:06.358Z. After the FR-001/FR-004, SC-001/SC-009, Story 1 pagination scenario, T005/T017 and traceability updates for S53-R23.
+
+**Inputs:** S53-R23; CodeRabbit review PRR_kwDOVYgYQ88AAAABXuI_wQ; S53-R2 pagination edits; constitution 1.13.0 and S47-PO-14; T005/T017; current ClientNotes state transitions and targeted UI regressions.
+
+**Severity:** 0 open CRITICAL, 0 open HIGH. No open ambiguity remains in this fix batch.
+
+**Findings and disposition:** (1) pendingEdits holds unknown-result edit bodies after Discard closes the active editor. It is now part of hasUnsavedChanges, and the existing approved unknown-result warning remains selected for in-app navigation and beforeunload; no copy changed. (2) A successful delete removes the matching row from the current page scope loaded extra rows while preserving the server cursor. A scope-local deleted-ID set filters any already-running page response so it cannot resurrect that row; new scope loads discard the prior scope set. (3) SC-009 newer-row wording was S53-R2 implementation wording introduced in b53aed6f, not a PO decision; it now promises complete traversal only for the original set surviving rows, with later inserts appearing on refresh or a new first-page load. Deletion retains stable ordering/cursor and cannot restore a deleted row from a late response. FR-001, SC-009, GWT, T017 and traceability align. (4) CN-MCQ-25 and FR-004 now cite the already-merged constitution 1.13.0 Principle I amendment, S47-PO-14 and PR #82 (de7df3b7); no new policy wording was added.
+
+**Test-first evidence:** the two new tests were RED on the entry code, then GREEN in the focused Client Notes UI run (63/63). Mutation A removed pendingEdits from the guard and the navigation/beforeunload regression failed. Mutation B removed deleted-ID filtering and the late response reintroduced the deleted row, failing the delete regression.
+
+**Cross-reference sweep:** FR-001/FR-008/SC-009 -> T017; FR-007 and exit warning/navigation behavior -> T005. Task tags unchanged; approved warning strings unchanged. CN-MCQ-25 and FR-004/SC-001 agree with plan.md:72 and constitution 1.13.0. Traceability lists both new asserting test names. No migration, schema change, or new UI string.
+
+## Round 50 - Final cross-reference and task wording revalidation (2026-11-13)
+
+**Analysis date:** 2026-11-13T06:36:50.338Z, after the final FR/SC/GWT, T005/T017 and decision-register wording edits for S53-R23.
+
+**Severity:** 0 open CRITICAL, 0 open HIGH.
+
+**Cross-reference sweep:** FR-001/FR-008/SC-009 -> T017; FR-007 exit protection -> T005. T005 records that unknown-result edit Retry remains protected by the existing approved warning; T017 records original-set traversal, later-insert refresh behavior, stable cursor and deleted-row filtering. CN-MCQ-25, FR-004 and SC-001 point to constitution 1.13.0 / S47-PO-14 and the plan.md:72 reconciliation. No stale open status or new product decision. Both new tests map to those existing tasks and the tested implementation.

@@ -1587,6 +1587,63 @@ describe('ClientNotes behaviour', () => {
     expect(host!.querySelector('textarea')).toBeNull();
   });
 
+  it('keeps navigation and beforeunload protection armed for a discarded unknown edit', async () => {
+    const note = {
+      id: 'n-pending-edit',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'committed body',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const onUpdate = vi.fn(async () => ({ status: 'unavailable' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      onUpdate,
+      canCreate: false,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'retained edit'),
+    );
+    await act(async () => {
+      byText(mEn['clientNotes.saveChanges']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+
+    const unload = new dom!.window.Event('beforeunload', { cancelable: true });
+    dom!.window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
+
+    const link = dom!.window.document.createElement('a');
+    link.href = '/home';
+    dom!.window.document.body.append(link);
+    const click = new dom!.window.MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+    });
+    await act(async () => link.dispatchEvent(click));
+    expect(click.defaultPrevented).toBe(true);
+    expect(host!.querySelector('dialog')?.textContent).toContain(
+      mEn['clientNotes.saveError'],
+    );
+  });
+
   it('uses the browser beforeunload warning only for unresolved text', async () => {
     await render({ locale: 'en', messages: mEn, status: 'ready', notes: [] });
     const textarea = host!.querySelector('textarea')!;
@@ -2030,6 +2087,101 @@ describe('ClientNotes behaviour', () => {
     });
     expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
     expect(host!.querySelector('[role="alert"]')).not.toBeNull();
+  });
+
+  it('removes a deleted later-page note without moving the server cursor or resurrecting it from an in-flight page', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      id: `page-${index}`,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: `page note ${index}`,
+      created_at: `2026-11-12T10:${String(index % 60).padStart(2, '0')}:00Z`,
+      edited_at: null,
+    }));
+    const deletedNote = {
+      id: 'deleted-page-two',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'deleted page two note',
+      created_at: '2026-11-11T10:00:00Z',
+      edited_at: null,
+    };
+    let finishSecondPage:
+      | ((value: {
+          status: 'ok';
+          notes: (typeof deletedNote)[];
+          hasMore: boolean;
+        }) => void)
+      | undefined;
+    const nextNote = {
+      ...deletedNote,
+      id: 'page-three',
+      body: 'page three note',
+    };
+    const onLoadMore = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'ok',
+        notes: [deletedNote],
+        hasMore: true,
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishSecondPage = resolve;
+          }),
+      );
+    const onDelete = vi.fn(async () => ({ status: 'ok' as const }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: firstPage,
+      hasMore: true,
+      onLoadMore,
+      onDelete,
+      role: 'platform_owner',
+      actorId: 'owner',
+      canCreate: false,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.loadMore']).click());
+    expect(host!.textContent).toContain(deletedNote.body);
+    await act(async () => byText(mEn['clientNotes.loadMore']).click());
+
+    const deletedRow = Array.from(host!.querySelectorAll('li')).find((row) =>
+      row.textContent?.includes(deletedNote.body),
+    )!;
+    await act(async () =>
+      Array.from(deletedRow.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.delete'])!
+        .click(),
+    );
+    await act(async () =>
+      byText(mEn['clientNotes.deleteDialogConfirm']).click(),
+    );
+
+    expect(host!.textContent).not.toContain(deletedNote.body);
+    expect(onLoadMore).toHaveBeenNthCalledWith(2, {
+      created_at: deletedNote.created_at,
+      id: deletedNote.id,
+    });
+
+    await act(async () =>
+      finishSecondPage?.({
+        status: 'ok',
+        notes: [deletedNote, nextNote],
+        hasMore: false,
+      }),
+    );
+    expect(host!.textContent).not.toContain(deletedNote.body);
+    expect(host!.textContent).toContain(nextNote.body);
+    expect(host!.querySelectorAll('li')).toHaveLength(firstPage.length + 1);
   });
 
   it('retains an off-page edited note when a refreshed first page replaces loaded pages', async () => {

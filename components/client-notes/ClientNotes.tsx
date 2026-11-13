@@ -168,6 +168,7 @@ export function ClientNotes(props: ClientNotesProps) {
     scope: pageScope,
     source: sourceNotes,
     extra: [] as readonly ClientNote[],
+    deletedIds: [] as readonly string[],
     cursor: sourceNotes.at(-1) ?? null,
     hasMore: props.hasMore ?? false,
     failed: false,
@@ -268,6 +269,7 @@ export function ClientNotes(props: ClientNotesProps) {
       scope: pageScope,
       source: sourceNotes,
       extra: current.scope === pageScope ? current.extra : [],
+      deletedIds: current.scope === pageScope ? current.deletedIds : [],
       cursor: last,
       hasMore,
       failed: false,
@@ -283,10 +285,17 @@ export function ClientNotes(props: ClientNotesProps) {
       }
       setPageState((current) => {
         const extra = current.scope === pageScope ? current.extra : [];
-        const seen = new Set([...sourceNotes, ...extra].map((note) => note.id));
+        const deletedIds =
+          current.scope === pageScope ? current.deletedIds : [];
+        const seen = new Set([
+          ...sourceNotes.map((note) => note.id),
+          ...extra.map((note) => note.id),
+          ...deletedIds,
+        ]);
         return {
           scope: pageScope,
           source: sourceNotes,
+          deletedIds,
           extra: [
             ...extra,
             ...result.notes!.filter((note) => !seen.has(note.id)),
@@ -423,7 +432,8 @@ export function ClientNotes(props: ClientNotesProps) {
     draft.length > 0 ||
     (!!editedNote && editDraft !== editedNote.body) ||
     unknownCreate ||
-    unknownEdit;
+    unknownEdit ||
+    pendingEdits.length > 0;
 
   useEffect(() => {
     if (!hasUnsavedChanges) return;
@@ -470,7 +480,7 @@ export function ClientNotes(props: ClientNotesProps) {
       setExitMode(
         saving
           ? 'inflight'
-          : unknownCreate || unknownEdit
+          : unknownCreate || unknownEdit || pendingEdits.length > 0
             ? 'unknown'
             : 'unsaved',
       );
@@ -482,7 +492,14 @@ export function ClientNotes(props: ClientNotesProps) {
       window.removeEventListener('beforeunload', warnBeforeUnload);
       document.removeEventListener('click', warnBeforeNavigation, true);
     };
-  }, [exitOpen, hasUnsavedChanges, saving, unknownCreate, unknownEdit]);
+  }, [
+    exitOpen,
+    hasUnsavedChanges,
+    pendingEdits.length,
+    saving,
+    unknownCreate,
+    unknownEdit,
+  ]);
 
   const formatTimestamp = (value: string) => {
     const date = new Date(value);
@@ -685,6 +702,16 @@ export function ClientNotes(props: ClientNotesProps) {
         const res = await props.onDelete?.(noteId);
         if (res?.status === 'ok') {
           props.onSuccess?.('deleted');
+          setPageState((current) => {
+            if (current.scope !== pageScope) return current;
+            return {
+              ...current,
+              extra: current.extra.filter((note) => note.id !== noteId),
+              deletedIds: current.deletedIds.includes(noteId)
+                ? current.deletedIds
+                : [...current.deletedIds, noteId],
+            };
+          });
         } else {
           setDeleteError(
             res?.status === 'denied'
@@ -696,7 +723,7 @@ export function ClientNotes(props: ClientNotesProps) {
         setDeleteError(m['clientNotes.deleteError']);
       }
     },
-    [props, m],
+    [props, m, pageScope],
   );
 
   const startEdit = (note: ClientNote) => {
