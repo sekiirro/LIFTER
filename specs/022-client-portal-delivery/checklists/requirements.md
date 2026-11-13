@@ -13,8 +13,8 @@
 
 ## Requirement Completeness
 
-- [x] No `[NEEDS CLARIFICATION]` markers remain; unresolved PO decisions are listed as numbered MCQs
-- [ ] Requirements are testable and unambiguous (S55-001-Q remains open for directory search fields and filter facets)
+- [x] No `[NEEDS CLARIFICATION]` markers remain; answered PO decisions are recorded in Clarifications and no PO questions remain open
+- [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic
 - [x] Acceptance scenarios are defined in Given/When/Then form
@@ -24,12 +24,12 @@
 
 ## Feature Readiness
 
-- [ ] All functional requirements have final acceptance criteria (S55-001-Q blocks directory query details)
+- [x] All functional requirements have final acceptance criteria
 - [x] User stories cover first delivery, client dashboard, notifications, exports and staff client directory
 - [x] Success criteria map to measurable outcomes
 - [x] No implementation files or migrations are proposed
 
 ## Notes
 
-- The S55-PO-3 decisions are recorded in Clarifications. S55-001-Q is the remaining genuine directory search/filter gap and blocks planning; per lane instructions, do not create `plan.md`, `tasks.md`, or Analyze artifacts until it is answered.
+- S55-PO-3 and S55-PO-7 decisions are recorded in Clarifications. Directory search and filter behavior is defined using existing F11/F13/F20 contracts; Plan, Tasks and Analyze may proceed.
 - Copy proposals in `../copy-proposal.md` are all marked `PROPOSED — PENDING PO APPROVAL`.
