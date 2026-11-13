@@ -991,3 +991,14 @@ A hostile pass found that a pending next-page response could append results afte
 - T093 is checked only after the 64-test focused unit suite and the full 36-file catalog integration batch passed on commit cf8126ea. Traceability maps FR-018 to T093 and names the RED/GREEN/mutation, authorized hidden-revision read, and concurrent-first-save regression tests.
 - Cross-reference sweep: T093 exists in tasks.md, maps to FR-018, and has a verified traceability row; spec/plan requirement text is unchanged. No new PO decision, user-visible copy, permission, or retention rule was introduced. No open ambiguities; 0 open CRITICAL and 0 open HIGH findings.
 - Format and full local gates will be re-run after final documentation formatting. The full repository integration attempt has an environment setup blocker for SIGNUP_* provisioning; all F16 catalog integration files passed separately.
+
+## S52-R6 T094 analysis — 2026-11-13 00:37 +02:00
+
+- Scope: FR-018 existing behavior; the variation editor fallback now reads effective Video/Notes and CAS revision from one workspace-authorized database snapshot when the ordinary variation projection omits an override. No requirement text changed.
+- Entry check: PASS. `spec.md` has FR-018, measurable SCs and Given/When/Then scenarios; `plan.md` covers authorized override reads/writes; the existing decision register defines scoped reads and CAS behavior; T094 is tagged FR-018 in `tasks.md`. No open product ambiguity.
+- Authorization and data exposure: application actor scope is checked before RPC; the SECURITY DEFINER RPC repeats explicit authenticated workspace authorization before ID validation or exercise lookup. Foreign workspace reads return generic `not_permitted`. No permission or response surface is broadened.
+- Concurrency: stable RPC returns effective values and current revision under the same statement snapshot; subsequent writes advance revision and existing CAS rejects stale saves. First-save null-version behavior is unchanged.
+- Security review: postgres-owned SECURITY DEFINER, empty search_path, public/anon/service_role revoked, authenticated execute only. Integration privilege and foreign workspace denial tests added.
+- Read-surface boundary: the existing variation projection includes active global exercises only. The new fallback must preserve that filter so a removed exercise ID cannot retrieve effective Video/Notes directly; integration regression added under T094.
+- Failure handling: malformed RPC payload maps to unavailable; missing exercise maps to generic denial. No new UI copy.
+- Findings: 0 open CRITICAL, 0 open HIGH. T094 remains unchecked until Stack A integration tests pass and traceability evidence is recorded.

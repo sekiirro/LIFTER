@@ -2,7 +2,7 @@
 
 import {
   authoringWorkspaces,
-  exerciseOverrideVersion,
+  exerciseVariationEditorState,
   search,
   writeVariation,
   type CatalogResult,
@@ -117,7 +117,10 @@ export async function loadWorkspaceVideoVariationsAction(
     ];
   });
   if (exerciseId !== undefined && rows.length === 0) {
-    const current = await exerciseOverrideVersion({ workspaceId, exerciseId });
+    const current = await exerciseVariationEditorState({
+      workspaceId,
+      exerciseId,
+    });
     if (current.status !== 'ok') return { status: current.status };
     return {
       status: 'ok',
@@ -126,8 +129,8 @@ export async function loadWorkspaceVideoVariationsAction(
           workspaceId,
           exerciseId,
           version: current.data.version,
-          videoUrl: '',
-          note: '',
+          videoUrl: current.data.videoUrl,
+          note: current.data.note,
         },
       ],
     };

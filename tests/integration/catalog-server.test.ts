@@ -243,6 +243,106 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     ).toEqual({ status: 'ok', data: { version: 1 } });
   });
 
+  it('reads hidden variation values and their revision from one workspace snapshot', async () => {
+    const owner = server(workspaces.po);
+    const trainer = server(workspaces.trainerA);
+    const foreignTrainer = server(workspaces.trainerB);
+    const created = await owner.createExercise({
+      operationKey: fixtureKey(),
+      request: {
+        name_ar: `اختبار ${randomUUID()}`,
+        name_en: `Atomic variation state ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: [],
+        equipment_codes: ['dumbbell'],
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
+      },
+    });
+    expect(created.status).toBe('ok');
+    if (created.status !== 'ok') return;
+    const exerciseId = (created.data as { exercise_id: string }).exercise_id;
+
+    const hidden = await trainer.writeExerciseOverride({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      id: exerciseId,
+      expectedVersion: null,
+      request: { description: 'Description only' },
+    });
+    expect(hidden.status).toBe('ok');
+    const projection = await trainer.search({
+      kind: 'variation',
+      query: '',
+      workspaceId: workspaces.wsA.id,
+      filters: { page_size: 50 },
+    });
+    expect(projection.status).toBe('ok');
+    if (projection.status !== 'ok' || !Array.isArray(projection.data)) return;
+    expect(
+      projection.data.some(
+        (row) =>
+          (row as { result_id?: string }).result_id === exerciseId,
+      ),
+    ).toBe(false);
+    await expect(
+      trainer.exerciseVariationEditorState({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).resolves.toEqual({
+      status: 'ok',
+      data: { version: 1, videoUrl: '', note: '' },
+    });
+
+    const saved = await trainer.writeVariation({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      id: exerciseId,
+      expectedVersion: 1,
+      request: {
+        video_url: 'https://youtu.be/abcdefghijk',
+        note: 'Current workspace note',
+      },
+    });
+    expect(saved.status).toBe('ok');
+    await expect(
+      trainer.exerciseVariationEditorState({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).resolves.toEqual({
+      status: 'ok',
+      data: {
+        version: 2,
+        videoUrl: 'https://youtu.be/abcdefghijk',
+        note: 'Current workspace note',
+      },
+    });
+    await expect(
+      foreignTrainer.exerciseVariationEditorState({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).resolves.toEqual({ status: 'not_permitted' });
+
+    expect(
+      await owner.transitionExercise({
+        operationKey: fixtureKey(),
+        id: exerciseId,
+        expectedVersion: 0,
+        transition: 'remove',
+      }),
+    ).toMatchObject({ status: 'ok' });
+    await expect(
+      trainer.exerciseVariationEditorState({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).resolves.toEqual({ status: 'not_permitted' });
+  });
+
   it('searches exercises created through the session wall by stored taxonomy payload keys', async () => {
     const action = server(workspaces.po);
     const exerciseName = `Filter payload ${randomUUID()}`;

@@ -457,6 +457,57 @@ export function createCatalogServer(deps: CatalogDependencies) {
         }
       })();
     },
+    exerciseVariationEditorState(input: {
+      workspaceId: string;
+      exerciseId: string;
+    }) {
+      return (async (): Promise<
+        CatalogResult<{ version: number; videoUrl: string; note: string }>
+      > => {
+        const ready = await prepare(
+          (actor) => isPO(actor) || scoped(actor, input.workspaceId),
+        );
+        if (ready.result)
+          return { status: ready.result.status } as CatalogResult<{
+            version: number;
+            videoUrl: string;
+            note: string;
+          }>;
+        if (
+          !isUuidV4(input.workspaceId) ||
+          !isUuidV4(input.exerciseId)
+        )
+          return { status: 'invalid' };
+        const result = await rpc<
+          {
+            version?: unknown;
+            video_url?: unknown;
+            notes?: unknown;
+          }[]
+        >(ready.client!, 'catalog_workspace_variation_editor_state', {
+          p_workspace_id: input.workspaceId,
+          p_exercise_id: input.exerciseId,
+        });
+        if (result.status !== 'ok') return result;
+        const row = result.data[0];
+        if (
+          !row ||
+          typeof row.version !== 'number' ||
+          !Number.isInteger(row.version) ||
+          (row.video_url !== null && typeof row.video_url !== 'string') ||
+          (row.notes !== null && typeof row.notes !== 'string')
+        )
+          return { status: 'unavailable' };
+        return {
+          status: 'ok',
+          data: {
+            version: row.version,
+            videoUrl: row.video_url ?? '',
+            note: row.notes ?? '',
+          },
+        };
+      })();
+    },
     alternativePickerOptions(input: {
       workspaceId?: string | null;
       query?: string;
@@ -746,6 +797,7 @@ export const {
   writeVariation,
   writeExerciseOverride,
   exerciseOverrideVersion,
+  exerciseVariationEditorState,
   alternativePickerOptions,
   transitionVariation,
   createFood,

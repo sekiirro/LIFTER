@@ -101,6 +101,25 @@ describe('catalog privilege boundary', () => {
       anon: false,
       service_role: false,
     });
+
+    const [variationEditorState] = await db`
+      select p.prosecdef as security_definer,
+        pg_get_userbyid(p.proowner) as owner,
+        p.proconfig as config,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p
+      where p.oid = 'public.catalog_workspace_variation_editor_state(uuid,uuid)'::regprocedure
+    `;
+    expect(variationEditorState).toEqual({
+      security_definer: true,
+      owner: 'postgres',
+      config: ['search_path=""'],
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
   });
 
   it('pins the F12-F15 denial and owner/search_path rules in a forward migration', () => {

@@ -7,16 +7,23 @@ import {
 const validWorkspaceId = '22222222-2222-4222-8222-222222222222';
 const validExerciseId = '55555555-5555-4555-8555-555555555555';
 
-const { writeVariation, search, exerciseOverrideVersion } = vi.hoisted(() => ({
+const {
+  writeVariation,
+  search,
+  exerciseOverrideVersion,
+  exerciseVariationEditorState,
+} = vi.hoisted(() => ({
   writeVariation: vi.fn(),
   search: vi.fn(),
   exerciseOverrideVersion: vi.fn(),
+  exerciseVariationEditorState: vi.fn(),
 }));
 vi.mock('../../lib/catalog/server', () => ({
   authoringWorkspaces: vi.fn(),
   search,
   writeVariation,
   exerciseOverrideVersion,
+  exerciseVariationEditorState,
 }));
 
 describe('catalog variation actions', () => {
@@ -24,6 +31,7 @@ describe('catalog variation actions', () => {
     writeVariation.mockReset();
     search.mockReset();
     exerciseOverrideVersion.mockReset();
+    exerciseVariationEditorState.mockReset();
     writeVariation.mockResolvedValue({ status: 'ok', data: {} });
   });
 
@@ -277,9 +285,9 @@ describe('catalog variation actions', () => {
 
   it('loads the current authorized override version when variation fields are hidden', async () => {
     search.mockResolvedValue({ status: 'ok', data: [] });
-    exerciseOverrideVersion.mockResolvedValue({
+    exerciseVariationEditorState.mockResolvedValue({
       status: 'ok',
-      data: { version: 4 },
+      data: { version: 4, videoUrl: '', note: '' },
     });
 
     await expect(
@@ -296,7 +304,7 @@ describe('catalog variation actions', () => {
         },
       ],
     });
-    expect(exerciseOverrideVersion).toHaveBeenCalledWith({
+    expect(exerciseVariationEditorState).toHaveBeenCalledWith({
       workspaceId: validWorkspaceId,
       exerciseId: validExerciseId,
     });
@@ -304,10 +312,60 @@ describe('catalog variation actions', () => {
 
   it('fails closed when the authorized version read denies the workspace', async () => {
     search.mockResolvedValue({ status: 'ok', data: [] });
-    exerciseOverrideVersion.mockResolvedValue({ status: 'not_permitted' });
+    exerciseVariationEditorState.mockResolvedValue({
+      status: 'not_permitted',
+    });
 
     await expect(
       loadWorkspaceVideoVariationsAction(validWorkspaceId, validExerciseId),
     ).resolves.toEqual({ status: 'not_permitted' });
+  });
+
+  it('keeps a concurrent save paired with its revision after an empty variation projection', async () => {
+    // Deterministic interleaving: search returns the empty pre-save projection;
+    // the competing trainer commits before the old separate version read.
+    let competingSaveCommitted = false;
+    search.mockImplementation(async () => ({
+      status: 'ok',
+      data: [],
+    }));
+    exerciseOverrideVersion.mockImplementation(async () => {
+      competingSaveCommitted = true;
+      return { status: 'ok', data: { version: 5 } };
+    });
+    exerciseVariationEditorState.mockImplementation(async () => {
+      competingSaveCommitted = true;
+      return {
+        status: 'ok',
+        data: {
+          version: 5,
+          videoUrl: 'https://youtu.be/abcdefghijk',
+          note: 'Saved by another trainer',
+        },
+      };
+    });
+
+    const result = await loadWorkspaceVideoVariationsAction(
+      validWorkspaceId,
+      validExerciseId,
+    );
+
+    expect(competingSaveCommitted).toBe(true);
+    expect(result).toEqual({
+      status: 'ok',
+      data: [
+        {
+          workspaceId: validWorkspaceId,
+          exerciseId: validExerciseId,
+          version: 5,
+          videoUrl: 'https://youtu.be/abcdefghijk',
+          note: 'Saved by another trainer',
+        },
+      ],
+    });
+    expect(exerciseVariationEditorState).toHaveBeenCalledWith({
+      workspaceId: validWorkspaceId,
+      exerciseId: validExerciseId,
+    });
   });
 });

@@ -213,6 +213,54 @@ describe('catalog server authorization and RPC boundary', () => {
     ).toEqual({ status: 'ok', data: { version: 4 } });
   });
 
+  it('reads variation values and revision through one authorized workspace RPC', async () => {
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [],
+    };
+    expect(
+      await catalog().exerciseVariationEditorState({
+        workspaceId: ws,
+        exerciseId: targetId,
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(rpc).not.toHaveBeenCalled();
+
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    rpc.mockResolvedValue({
+      data: [
+        {
+          version: 5,
+          video_url: 'https://youtu.be/abcdefghijk',
+          notes: 'Current workspace note',
+        },
+      ],
+      error: null,
+    });
+    expect(
+      await catalog().exerciseVariationEditorState({
+        workspaceId: ws,
+        exerciseId: targetId,
+      }),
+    ).toEqual({
+      status: 'ok',
+      data: {
+        version: 5,
+        videoUrl: 'https://youtu.be/abcdefghijk',
+        note: 'Current workspace note',
+      },
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      'catalog_workspace_variation_editor_state',
+      { p_workspace_id: ws, p_exercise_id: targetId },
+    );
+  });
+
   it('keeps a null expected version stable for variation operation-key replays', async () => {
     currentActor = {
       userId: 'owner',
