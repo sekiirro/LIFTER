@@ -18,7 +18,7 @@ Proposed internal application contract; route placement follows the existing App
 
 - Signup: use the exact F11 invitation-link route and `client_signup(token, request_secret, admission_ticket, fields)` transaction from `specs/011-client-accounts/contracts/client-signup-surface.md`. Reuse an existing username field or add it within that field contract; never create a parallel signup path.
 - Edit: authenticated client updates only their own username through the account-settings boundary. Enforce workspace uniqueness both in application validation and a database constraint.
-- Q14 remains open: final username-specific format and reserved-name validation waits for PO answer. The planning placeholder must not ship as decided policy.
+- Q14 is decided (S55-PO-9): usernames are 3-20 characters, English letters (A-Z), digits, underscores and dots only; case-insensitive uniqueness per workspace; reserved names (admin, support, lifter, trainer, owner) blocked case-insensitively. Apply at signup and later edits.
 
 ## PO decision
 

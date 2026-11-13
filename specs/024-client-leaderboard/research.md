@@ -2,7 +2,7 @@
 
 ## Scope and evidence
 
-Research uses the current repository contracts and the read-only F11/F23 source check. The source precedence is PO S55-PO-6 / S55-PO-3, then earlier PO decisions, then BRD/PRD. No product rule is inferred beyond the explicit planning placeholder for S55-024-Q14.
+Research uses the current repository contracts and the read-only F11/F23 source check. The source precedence is PO S55-PO-9 / S55-PO-6 / S55-PO-3, then earlier PO decisions, then BRD/PRD. Username validation rules are defined by S55-PO-9 Q14.
 
 ## Decisions
 
@@ -11,7 +11,7 @@ Research uses the current repository contracts and the read-only F11/F23 source 
 - Decision: The client selects the username in the F11 invitation-link signup. Reuse an existing field if one exists; otherwise add the field to that form. Enforce uniqueness within a workspace and allow later client edits.
 - Rationale: Directly implements S55-PO-6 Q11 and keeps the existing F11 signup boundary intact. F11's `client_signup` surface already accepts validated signup fields through a bounded transaction.
 - Alternatives considered: a separate username registration flow, staff assignment, global uniqueness, or a new account lifecycle. Rejected because they conflict with the answer or redesign F11.
-- Open implementation constraint: F11 requires a name but sets no length bound; it normalizes email and phone and defines a password-specific policy. No username format/reserved-name convention exists. S55-024-Q14 remains a non-blocking MCQ; the planning placeholder is non-empty input through the F11 validation seam with no extra constraints and MUST NOT be implemented as policy pending the answer.
+- Username validation (S55-PO-9 Q14): F11 has no username-specific convention; apply 3-20 characters, English letters (A-Z), digits, underscores and dots only; case-insensitive workspace uniqueness; reserved names (admin, support, lifter, trainer, owner) blocked case-insensitively. Reuse the F11 validation/RPC seam.
 
 ### Monthly incumbents and approval
 
@@ -39,7 +39,7 @@ Research uses the current repository contracts and the read-only F11/F23 source 
 
 - Principle I: workspace isolation, deny-by-default, app and database authorization walls, negative foreign-workspace coverage.
 - Principle III: least privilege; PO alone makes final publish/reject decision.
-- Principle IV: only approved behavior; Q14 remains pending.
+- Principle IV: only approved behavior; S55-024-Q14 is resolved by S55-PO-9.
 - Principle VII: minimize health data and exclude it from logs and display.
 - Principle VIII: bilingual accessible UI and Design System use.
 - Principle IX: approval, username uniqueness/edit, and opt-out transitions must be concurrency-safe and idempotent.

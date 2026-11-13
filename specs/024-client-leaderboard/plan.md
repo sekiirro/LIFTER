@@ -24,7 +24,7 @@ Deliver an optional monthly Top-5 leaderboard isolated per workspace. Derive eli
 
 **Performance Goals**: No product-specific latency target is stated. Queries must bound one workspace and at most five visible entries; do not add an invented SLA.
 
-**Constraints**: Two authorization walls; no cross-workspace disclosure; no health values or scoring mechanics in client output/logs; PO-only approval; immediate opt-out; signup username format/reserved-name implementation waits for Q14.
+**Constraints**: Two authorization walls; no cross-workspace disclosure; no health values or scoring mechanics in client output/logs; PO-only approval; immediate opt-out; username validation follows S55-PO-9 Q14.
 
 **Scale/Scope**: Monthly workspace result with no more than five displayed clients; reads available to workspace clients, staff, trainers, workspace owners and the PO, subject to existing capabilities.
 
@@ -33,7 +33,7 @@ Deliver an optional monthly Top-5 leaderboard isolated per workspace. Derive eli
 - **I Strict Workspace Isolation**: PASS in design intent. Every query and mutation is workspace-bound; app authorization and RLS both deny by default; plan includes foreign-workspace negative tests.
 - **II Immutable Financial Truth**: N/A. This feature does not touch money or financial snapshots.
 - **III PO Governance / Least Privilege**: PASS. Only the PO approves/rejects a result; no staff approval capability is added.
-- **IV Approved Scope Only**: PASS with Q14 constraint. No username format/reserved-name policy will be invented.
+- **IV Approved Scope Only**: PASS. Username format/reserved-name policy is defined by S55-PO-9 Q14 and must not be expanded beyond it.
 - **V Versioned Content**: PASS. No plan/form content is edited; dependency snapshots are consumed by reference.
 - **VI Human-Governed Decisions**: PASS. Publication approval is a manual PO decision.
 - **VII Privacy / Health Data**: PASS in design intent. Score inputs stay server-side; projection and logs use allow-lists; opt-out is audited.
@@ -54,7 +54,7 @@ Deliver an optional monthly Top-5 leaderboard isolated per workspace. Derive eli
 2. Ranking retains eligible past winners and compares them to new candidates using current-month values. An opted-out client is filtered before candidate construction.
 3. The server stores the proposed monthly result and exposes it only after the PO records approval. Until approval, clients continue to see the previous approved result. A later opt-out immediately filters the opted-out row from that result.
 4. Each workspace viewer reads only the display allow-list: rank and client username. No health metric, check-in answer, score, client code, note, plan detail, or scoring explanation crosses the client boundary.
-5. The client username is created/validated in F11's invitation-link signup transaction and edited through the existing account-settings area; both paths enforce workspace uniqueness. Q14 must be decided before final format/reserved-name validation is implemented.
+5. The client username is created/validated in F11's invitation-link signup transaction and edited through the existing account-settings area; both paths enforce workspace uniqueness and the S55-PO-9 Q14 format, case-insensitive uniqueness and reserved-name rules.
 
 ## Constitution Check (post-design)
 
@@ -63,7 +63,7 @@ Deliver an optional monthly Top-5 leaderboard isolated per workspace. Derive eli
 - The client projection, audit payloads and log allow-lists preserve Principle VII.
 - Copy and rendered-state validation must satisfy Principle VIII.
 - All mutation operations use stable idempotency/concurrency boundaries per Principle IX.
-- No unresolved CRITICAL/HIGH product decision blocks the plan. S55-024-Q14 remains a non-blocking implementation detail.
+- No unresolved CRITICAL/HIGH product decision blocks the plan. S55-024-Q11 through S55-024-Q14 are resolved.
 
 ## Project Structure
 
@@ -87,7 +87,7 @@ specs/024-client-leaderboard/          # requirements and design artifacts
 Target one user-story vertical slice per PR, approximately 400?800 changed lines as permitted by S54 R3/R8. Merge origin/main before a push and run the local CI-equivalent before that push. Any incomplete slice is gated by the separate server-side default-OFF feature-flag mechanism; the flag never gates authorization/RLS. Perform one cumulative AI review when the feature is complete.
 
 1. Flag mechanism prerequisite (separate small spec/PR): server-side default-OFF flag and fail-closed read behavior.
-2. Client identity/settings slice: F11 invitation-link username, workspace uniqueness, later client edit, and direct opt-out; wait for S55-024-Q14 before final format/reserved-name behavior.
+2. Client identity/settings slice: F11 invitation-link username, workspace uniqueness, later client edit, and direct opt-out; apply the S55-PO-9 Q14 format, case-insensitive uniqueness and reserved-name rules.
 3. Read-only leaderboard slice: eligibility, current-month score, privacy projection, workspace isolation.
 4. PO publication slice: candidate result, audit decision, approved-list swap only on approval.
 5. Cross-cutting privacy/localization/isolation hardening: data allow-lists, accessible UI, concurrency and regression evidence.

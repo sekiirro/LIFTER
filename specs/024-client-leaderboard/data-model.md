@@ -35,7 +35,7 @@ This document is a proposed implementation model for review; it adds no product 
 - Identity remains owned by F11's canonical client account/signup contract.
 - Signup selection, workspace-scoped uniqueness, and later client edits follow S55-PO-6 Q11.
 - Reuse an existing username field if present; otherwise add it to the F11 signup form/RPC flow. No separate username account or identity table.
-- Q14 format/reserved-name details remain pending. Do not implement the planning placeholder as a permanent policy.
+- Username validation (S55-PO-9 Q14): 3-20 characters, English letters (A-Z), digits, underscores and dots only; case-insensitive uniqueness per workspace; reserved names (admin, support, lifter, trainer, owner) blocked case-insensitively. Apply at signup and later edits.
 
 ### ScoreInputs (transient only)
 

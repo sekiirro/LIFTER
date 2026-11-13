@@ -2,7 +2,7 @@
 
 **Feature Branch**: `024-client-leaderboard`
 **Spec directory**: `specs/024-client-leaderboard`
-**Status**: Spec-only (Clarify complete; one non-blocking username validation question remains). No implementation, migrations, tests, merges or deployment are authorized by this spec.
+**Status**: Spec-only (Clarify complete, including S55-024-Q14). No implementation, migrations, tests, merges or deployment are authorized by this spec.
 **MCQ ID prefix**: `S55-024-Q`
 **Lane**: s55-luna-spec024c (SPEC LANE)
 
@@ -126,7 +126,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 - Tie scores: per approved tie-break (FR-021).
 - Opt-out before manual PO approval: the client is excluded from that result (FR-008).
 - An opted-out client is removed immediately even if their username appears on the current approved list; the remaining list is not held pending PO approval (S55-PO-6 Q13).
-- A username already in use in the same workspace cannot be selected at signup or a later edit; the same username may be used in another workspace (S55-PO-6 Q11).
+- A username must be 3-20 characters using English letters (A-Z), digits, underscores and dots only; reserved names (admin, support, lifter, trainer, owner) are blocked case-insensitively; a username already in use (case-insensitively) in the same workspace cannot be selected at signup or a later edit; the same username may be used in another workspace (S55-PO-6 Q11; S55-PO-9 Q14).
 
 ## Functional Requirements
 
@@ -162,7 +162,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 
 ### Privacy and data minimization
 
-- **FR-022**: Displayed identity MUST be the client's username only. The client chooses a username during F11 invitation-link signup; reuse an existing field if one exists, otherwise add it to that signup. The username MUST be unique within the workspace and clients MUST be able to edit it later. Reuse F11 validation/RPC boundaries; format and reserved-name rules remain pending S55-024-Q14. Profile photos are out of scope for this version; an optional avatar may be considered later (S55-PO-3 Q7; S55-PO-6 Q11).
+- **FR-022**: Displayed identity MUST be the client's username only. The client chooses a username during F11 invitation-link signup; reuse an existing field if one exists, otherwise add it to that signup. The username MUST be 3-20 characters and contain only English letters (A-Z), digits, underscores and dots. Uniqueness MUST be case-insensitive per workspace: the same username (ignoring case) cannot be selected by two clients in the same workspace at signup or in a later edit, while the same username may be used in a different workspace. Reserved names (admin, support, lifter, trainer, owner) MUST be blocked case-insensitively. Clients MUST be able to edit the username later. Profile photos are out of scope for this version; an optional avatar may be considered later (S55-PO-3 Q7; S55-PO-6 Q11; S55-PO-9 Q14).
 - **FR-023**: The leaderboard MUST NOT display or expose any health value: no measurements, weights, body-fat, circumferences, check-in answers, notes, progress photos, or plan content (BRD assessment C4 mitigation; PRD-09 line 216).
 - **FR-024**: Data minimization: the leaderboard projection MUST store only the fields required for ranking and display; no raw measurement or check-in data is stored in the leaderboard (privacy).
 - **FR-025**: Client opt-out occurs directly in account settings and immediately removes the client from the visible list and all later results; the action is audited (S55-PO-6 Q13).
@@ -186,7 +186,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 - **FR-034**: Plan-adherence inputs MUST reuse F19 delivery facts; no duplicate delivery primitive (spec 019).
 - **FR-035**: Workspace isolation MUST reuse spec 003 tenancy/RLS (spec 003).
 - **FR-036**: Audit MUST reuse spec 005 audit log (spec 005).
-- **FR-037**: Reuse the F11 invitation-link signup and `client_signup` RPC boundaries (F11 FR-001-FR-007; `specs/011-client-accounts/contracts/client-signup-surface.md`) for the username field; do not redesign signup or create a parallel client identity. Reuse spec 022 account-settings conventions where available for client edits, and do not treat F21 staff display names as client identities. Username format/reserved-name rules remain S55-024-Q14.
+- **FR-037**: Reuse the F11 invitation-link signup and `client_signup` RPC boundaries (F11 FR-001-FR-007; `specs/011-client-accounts/contracts/client-signup-surface.md`) for the username field; do not redesign signup or create a parallel client identity. Reuse spec 022 account-settings conventions where available for client edits, and do not treat F21 staff display names as client identities. Username format (3-20 characters, English letters, digits, underscores and dots), case-insensitive workspace uniqueness, and case-insensitive reserved-name blocking (admin, support, lifter, trainer, owner) apply at signup and in later edits (S55-PO-9 Q14).
 
 ### Copy and localization
 
@@ -221,7 +221,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 - Leaderboard is optional and post-MVP; v1 pilot excludes it (S54-PO-5) except spec-only planning now.
 - Legal/privacy review (assessment C4) is required before Full Launch; this spec assumes no health metrics are shown.
 - Spec 023 is authoritative for check-in and progress data; this spec consumes the adherence answers by name and is read-only with respect to spec 023.
-- S55-PO-6 resolves Q11-Q13. Q14 is a non-blocking validation/reserved-name detail; for planning only, assume a non-empty username using the existing F11 signup validation seam with no additional length, character, or reserved-name restriction. This is a conservative placeholder, not a PO decision; implementation of this policy waits for the Q14 answer.
+- S55-PO-6 resolves Q11-Q13. S55-PO-9 Q14 resolves username validation: 3-20 characters, English letters (A-Z), digits, underscores and dots only; case-insensitive uniqueness per workspace; reserved names (admin, support, lifter, trainer, owner) blocked case-insensitively. Apply at signup and later edits.
 - No implementation authorized.
 
 ## Clarifications
@@ -249,9 +249,11 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-6.verbatim.txt`; PO wording
 - **S55-024-Q12**: "Past winners and new candidates are re-scored on the current month's data; a past winner is replaced only when a new candidate's current score is higher; the current approved list stays visible until the PO approves the next one." See FR-019, FR-020, FR-026, FR-029 and SC-008.
 - **S55-024-Q13**: "Client opts out directly in account settings; removed from the visible list immediately and from later results; audited." See FR-007-FR-009, FR-025, FR-039 and SC-003/006.
 
-### Non-blocking clarification -- S55-024-Q14 (2026-11-14)
+### Decided -- S55-PO-9 (2026-11-14)
 
-F11 provides no username-specific format or reserved-name conventions. The planning placeholder is a non-empty username accepted by the existing signup input-validation seam with no additional username-specific restrictions. This is pending PO decision and MUST NOT be represented as approved policy or implemented until decided.
+Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-9.verbatim.txt`; PO wording is quoted verbatim.
+
+- **S55-024-Q14**: "Usernames must be 3-20 characters, English letters (A-Z), digits, underscores and dots only. Case-insensitive uniqueness per workspace. Block reserved names (admin, support, lifter, trainer, owner)." Usernames MUST be 3-20 characters using English letters (A-Z), digits, underscores and dots only; uniqueness MUST be case-insensitive per workspace at signup and in later edits; reserved names (admin, support, lifter, trainer, owner) MUST be blocked case-insensitively. See FR-022 and FR-037.
 
 ### Earlier decisions retained
 
@@ -262,22 +264,11 @@ F11 provides no username-specific format or reserved-name conventions. The plann
 
 ### Open questions for the PO
 
-Only one non-blocking item remains. Its conservative planning placeholder is not PO-approved policy.
-
-#### S55-024-Q14 -- Username format and reserved names
-
-F11 (`specs/011-client-accounts`) defines a signup validation seam and required fields but no username-specific character, length, or reserved-name convention. What rules should apply?
-
-Options:
-
-- A: Accept a non-empty value through the existing F11 signup input-validation seam; impose no username-specific length, character, or reserved-name restrictions.
-- B: Define explicit username length, allowed-character, and reserved-name rules before implementation.
-
-Implications: A minimizes new signup policy but leaves a broad set of values available; B permits explicit constraints but needs the PO to provide each rule. Recommendation: A as a conservative planning placeholder only, not as implementation approval. Blocks: final username input-validation and reserved-name behavior, but not Plan/Tasks/Analyze. Q11's workspace uniqueness and later-edit behavior are already decided.
+None. S55-024-Q11 through S55-024-Q14 are resolved (see Clarifications above).
 
 ## Overlap and coordination notes
 
 - Do not duplicate F13 freeze/entitlement, F15 forms/scheduling, F17/F18/F19 planning and delivery, F20 notes, F21 staff display names, spec 022 account-settings conventions (its contract is not present in this checkout), spec 023 progress/check-in data, or this spec's leaderboard rules.
-- Coordinate with open PRs #58/#86/#88/#90; consume merged contracts.
+- Consume merged F13/F16/F20 contracts; coordinate with open PR #58 (F15-B).
 - Reuse the F11 invitation-link signup surface and `client_signup` contract; do not redesign signup. Reuse account-settings patterns from spec 022 where available, F11/F21 identity ownership boundaries, and spec 023 progress/adherence fields by name.
 - Leaderboard is optional; gated by legal review (assessment C4) before Full Launch.

@@ -29,5 +29,20 @@ All strings below are proposals only. Do not use them until the PO approves the 
 Notes:
 
 - The notice contains no score, formula, weight, or scoring-input details.
-- Copy reflects the decided direct, immediate opt-out and later username editing. No format/reserved-name guidance is proposed while S55-024-Q14 remains open.
+- Copy reflects the decided direct, immediate opt-out and later username editing. Username validation rules (3-20 characters; English letters, digits, underscores and dots only; case-insensitive workspace uniqueness; reserved names admin, support, lifter, trainer, owner blocked case-insensitively) follow S55-PO-9 Q14; validation-error strings above are PROPOSED — PENDING PO APPROVAL.
+
+Validation error copy (PROPOSED — PENDING PO APPROVAL):
+
+| Key                                       | English (professional)                                                   | Egyptian colloquial Arabic                                        | Status                         |
+| ----------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------- | ------------------------------ |
+| `clientSignup.username.tooShort`          | Username must be at least 3 characters.                                  | اسم المستخدم يجب أن يكون 3 أحرف على الأقل.                        | PROPOSED — PENDING PO APPROVAL |
+| `clientSignup.username.tooLong`           | Username must be at most 20 characters.                                  | اسم المستخدم يجب ألا يتجاوز 20 حرفاً.                             | PROPOSED — PENDING PO APPROVAL |
+| `clientSignup.username.invalidChars`      | Username can contain only English letters, digits, underscores and dots. | اسم المستخدم يقبل فقط أحرف انكليزية وأرقاماً وشرطة سفلية ونقاطاً. | PROPOSED — PENDING PO APPROVAL |
+| `clientSignup.username.reserved`          | This username is reserved.                                               | هذا اسم المستخدم محجوز.                                           | PROPOSED — PENDING PO APPROVAL |
+| `accountSettings.username.tooShort`       | Username must be at least 3 characters.                                  | اسم المستخدم يجب أن يكون 3 أحرف على الأقل.                        | PROPOSED — PENDING PO APPROVAL |
+| `accountSettings.username.tooLong`        | Username must be at most 20 characters.                                  | اسم المستخدم يجب ألا يتجاوز 20 حرفاً.                             | PROPOSED — PENDING PO APPROVAL |
+| `accountSettings.username.invalidChars`   | Username can contain only English letters, digits, underscores and dots. | اسم المستخدم يقبل فقط أحرف انكليزية وأرقاماً وشرطة سفلية ونقاطاً. | PROPOSED — PENDING PO APPROVAL |
+| `accountSettings.username.reserved`       | This username is reserved.                                               | هذا اسم المستخدم محجوز.                                           | PROPOSED — PENDING PO APPROVAL |
+| `accountSettings.username.workspaceTaken` | This username is already used in your workspace.                         | اسم المستخدم ده مستخدم في مساحة شغلك.                             | PROPOSED — PENDING PO APPROVAL |
+
 - Exact digit rendering follows existing locale conventions; wording remains subject to PO approval.
