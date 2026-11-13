@@ -785,6 +785,184 @@ describe('F20 T004 client note mutation boundaries', () => {
     }
   });
 
+  it('rechecks authorization after a same-key create retry waits on its key lock', async () => {
+    const retryingTrainer = await createStaff(
+      'trainer',
+      'client-notes-create-key-lock-revoke',
+    );
+    const membership = await f.context.po.client
+      .from('workspace_memberships')
+      .insert({
+        user_id: retryingTrainer.userId,
+        workspace_id: f.workspaceId,
+        granted_by: f.context.po.userId,
+      });
+    expect(membership.error).toBeNull();
+
+    const key = f.key();
+    const created = await f.createAs(retryingTrainer, 'same-key retry', key);
+    expect(created.error).toBeNull();
+    const [note] = await f.db`
+      select id from public.client_notes
+      where workspace_id = ${f.workspaceId}
+        and client_id = ${f.clientId} and idempotency_key = ${key}
+    `;
+    expect(note?.id).toBeDefined();
+
+    let releaseLock!: () => void;
+    let signalLock!: (backendPid: number) => void;
+    const lockGate = new Promise<void>((resolve) => (releaseLock = resolve));
+    const lockReady = new Promise<number>((resolve) => (signalLock = resolve));
+    const lockHeld = f.db.begin(async (tx) => {
+      const [backend] = await tx`select pg_backend_pid() as pid`;
+      await tx`
+        select id from app_private.client_note_create_keys
+        where workspace_id = ${f.workspaceId}
+          and client_id = ${f.clientId} and idempotency_key = ${key}
+        for update
+      `;
+      signalLock(Number(backend?.pid));
+      await lockGate;
+    });
+    const observer = sql();
+
+    try {
+      const blockerPid = await lockReady;
+      let retryOutcome = 'pending';
+      const retry = retryingTrainer.client
+        .rpc('create_client_note', {
+          p_workspace_id: f.workspaceId,
+          p_client_id: f.clientId,
+          p_body: 'same-key retry',
+          p_idempotency_key: key,
+        })
+        .then((result) => {
+          retryOutcome = result.error?.code ?? 'success';
+          return result;
+        });
+      const deadline = Date.now() + 3000;
+      let observedBlock = false;
+      while (Date.now() < deadline) {
+        const blockers = await observer`
+          select pid from pg_catalog.pg_stat_activity
+          where pid <> pg_backend_pid()
+            and ${blockerPid} = any(pg_catalog.pg_blocking_pids(pid))
+        `;
+        if (blockers.length > 0) {
+          observedBlock = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      expect(observedBlock, retryOutcome).toBe(true);
+
+      const revoked = await admin()
+        .from('workspace_memberships')
+        .update({
+          revoked_at: new Date().toISOString(),
+          revoked_by: f.context.po.userId,
+        })
+        .eq('workspace_id', f.workspaceId)
+        .eq('user_id', retryingTrainer.userId)
+        .is('revoked_at', null);
+      expect(revoked.error).toBeNull();
+      releaseLock();
+      await lockHeld;
+      const result = await retry;
+      expect(result.error?.code).toBe('42501');
+      expect(result.data).toBeNull();
+      const [remaining] = await f.db`
+        select id from public.client_notes where id = ${String(note?.id)}
+      `;
+      expect(remaining?.id).toBe(note?.id);
+    } finally {
+      releaseLock();
+      await lockHeld;
+      await observer.end();
+      await admin()
+        .from('workspace_memberships')
+        .update({ revoked_at: null, revoked_by: null })
+        .eq('workspace_id', f.workspaceId)
+        .eq('user_id', retryingTrainer.userId);
+    }
+  });
+
+  it('rechecks owner authorization after delete waits on its create-key lock', async () => {
+    const key = f.key();
+    const note = await f.createAsTrainer({ body: 'delete role race', key });
+    let releaseLock!: () => void;
+    let signalLock!: (backendPid: number) => void;
+    const lockGate = new Promise<void>((resolve) => (releaseLock = resolve));
+    const lockReady = new Promise<number>((resolve) => (signalLock = resolve));
+    const lockHeld = f.db.begin(async (tx) => {
+      const [backend] = await tx`select pg_backend_pid() as pid`;
+      await tx`
+        select id from app_private.client_note_create_keys
+        where workspace_id = ${f.workspaceId}
+          and client_id = ${f.clientId} and idempotency_key = ${key}
+        for update
+      `;
+      signalLock(Number(backend?.pid));
+      await lockGate;
+    });
+    const observer = sql();
+    const previousRole = 'platform_owner';
+
+    try {
+      const blockerPid = await lockReady;
+      let deleteOutcome = 'pending';
+      const deletion = f.context.po.client
+        .rpc('delete_client_note', { p_note_id: note.id })
+        .then((result) => {
+          deleteOutcome = result.error?.code ?? 'success';
+          return result;
+        });
+      const deadline = Date.now() + 3000;
+      let observedBlock = false;
+      while (Date.now() < deadline) {
+        const blockers = await observer`
+          select pid from pg_catalog.pg_stat_activity
+          where pid <> pg_backend_pid()
+            and ${blockerPid} = any(pg_catalog.pg_blocking_pids(pid))
+        `;
+        if (blockers.length > 0) {
+          observedBlock = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      expect(observedBlock, deleteOutcome).toBe(true);
+
+      const downgraded = await admin()
+        .from('staff_profiles')
+        .update({ role: 'sales' })
+        .eq('user_id', f.context.po.userId);
+      expect(downgraded.error).toBeNull();
+      releaseLock();
+      await lockHeld;
+      const result = await deletion;
+      expect(result.error?.code).toBe('42501');
+      const [remaining] = await f.db`
+        select id from public.client_notes where id = ${String(note.id)}
+      `;
+      expect(remaining?.id).toBe(note.id);
+      const [keyRow] = await f.db`
+        select outcome from app_private.client_note_create_keys
+        where workspace_id = ${f.workspaceId}
+          and client_id = ${f.clientId} and idempotency_key = ${key}
+      `;
+      expect(keyRow?.outcome).toBe('created');
+    } finally {
+      releaseLock();
+      await lockHeld;
+      await observer.end();
+      await admin()
+        .from('staff_profiles')
+        .update({ role: previousRole })
+        .eq('user_id', f.context.po.userId);
+    }
+  });
+
   it('rolls back key state, note deletion, and audit on key-state failure', async () => {
     const key = f.key();
     const note = await f.createAsTrainer({ body: 'delete atomically', key });

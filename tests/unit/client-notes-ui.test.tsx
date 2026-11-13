@@ -353,8 +353,10 @@ describe('ClientNotes behaviour', () => {
       );
     await act(async () => {
       button()!.click();
+      button()!.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    expect(onLoadMore).toHaveBeenCalledTimes(1);
     expect(onLoadMore).toHaveBeenCalledWith({
       created_at: '2026-11-08T10:15:00Z',
       id: 'n1',
@@ -671,6 +673,7 @@ describe('ClientNotes behaviour', () => {
       'button[type="submit"]',
     )!;
     await act(async () => {
+      submit.click();
       submit.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
@@ -1618,8 +1621,10 @@ describe('ClientNotes behaviour', () => {
     );
     await act(async () => {
       byText(mEn['clientNotes.saveChanges']).click();
+      byText(mEn['clientNotes.saveChanges']).click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    expect(onUpdate).toHaveBeenCalledTimes(1);
     await act(async () => byText(mEn['clientNotes.cancel']).click());
     await act(async () =>
       byText(mEn['clientNotes.exitWarning.discard']).click(),
@@ -1653,6 +1658,76 @@ describe('ClientNotes behaviour', () => {
     });
     dom!.window.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('keeps exit protection armed after discarding an edit while its save is in flight', async () => {
+    const note = {
+      id: 'n-inflight-exit',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'before save',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    let resolveUpdate: ((result: { status: string }) => void) | undefined;
+    const onUpdate = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+      onUpdate,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'after save'),
+    );
+    await act(async () => {
+      byText(mEn['clientNotes.saveChanges']).click();
+      byText(mEn['clientNotes.saveChanges']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    expect(host!.textContent).toContain(
+      mEn['clientNotes.exitWarning.bodyInFlight'],
+    );
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+
+    const unload = new dom!.window.Event('beforeunload', { cancelable: true });
+    dom!.window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
+
+    const link = dom!.window.document.createElement('a');
+    link.href = '/home';
+    dom!.window.document.body.append(link);
+    const navigation = new dom!.window.MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+    });
+    await act(async () => link.dispatchEvent(navigation));
+    expect(navigation.defaultPrevented).toBe(true);
+    expect(host!.querySelector('dialog')?.textContent).toContain(
+      mEn['clientNotes.exitWarning.bodyInFlight'],
+    );
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    await act(async () => resolveUpdate?.({ status: 'ok' }));
   });
 
   it('does not warn when cancelling an unchanged edit', async () => {
@@ -2087,6 +2162,60 @@ describe('ClientNotes behaviour', () => {
     });
     expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
     expect(host!.querySelector('[role="alert"]')).not.toBeNull();
+  });
+
+  it('disables only the deleting note control until its delete request settles', async () => {
+    const note = {
+      id: 'delete-inflight',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'delete is pending',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    let resolveDelete: ((result: { status: string }) => void) | undefined;
+    const onDelete = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveDelete = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'platform_owner',
+      actorId: 'owner',
+      canCreate: false,
+      onDelete,
+    });
+    const row = Array.from(host!.querySelectorAll('li')).find((item) =>
+      item.textContent?.includes(note.body),
+    )!;
+    const deleteButton = Array.from(row.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.delete'],
+    )!;
+    await act(async () => deleteButton.click());
+    const confirm = Array.from(
+      host!.querySelectorAll<HTMLButtonElement>('dialog button'),
+    ).find(
+      (button) => button.textContent === mEn['clientNotes.deleteDialogConfirm'],
+    )!;
+    await act(async () => {
+      confirm.click();
+      confirm.click();
+    });
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    expect(deleteButton.disabled).toBe(true);
+    await act(async () => deleteButton.click());
+    expect(onDelete).toHaveBeenCalledTimes(1);
+
+    await act(async () => resolveDelete?.({ status: 'denied' }));
+    expect(deleteButton.disabled).toBe(false);
+    expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
   });
 
   it('removes a deleted later-page note without moving the server cursor or resurrecting it from an in-flight page', async () => {

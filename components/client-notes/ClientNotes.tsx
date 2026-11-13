@@ -180,6 +180,7 @@ export function ClientNotes(props: ClientNotesProps) {
     ? mergePageNotes(sourceNotes, pageState.extra)
     : sourceNotes;
   const [loadingMore, setLoadingMore] = useState(false);
+  const loadMoreInFlight = useRef(false);
   const status = props.status ?? 'ready';
   const actorId = props.actorId ?? null;
   const role = props.role ?? null;
@@ -199,8 +200,11 @@ export function ClientNotes(props: ClientNotesProps) {
   const activeEditorId = useRef<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingNoteIds, setDeletingNoteIds] = useState<string[]>([]);
+  const deletingNoteIdsRef = useRef(new Set<string>());
   const createRequestSequence = useRef(0);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [unknownCreate, setUnknownCreate] = useState(false);
@@ -263,7 +267,15 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const loadMore = async () => {
     const last = pageStateIsCurrent ? pageState.cursor : sourceNotes.at(-1);
-    if (!last || !hasMore || loadingMore || !props.onLoadMore) return;
+    if (
+      !last ||
+      !hasMore ||
+      loadingMore ||
+      loadMoreInFlight.current ||
+      !props.onLoadMore
+    )
+      return;
+    loadMoreInFlight.current = true;
     setLoadingMore(true);
     setPageState((current) => ({
       scope: pageScope,
@@ -308,6 +320,7 @@ export function ClientNotes(props: ClientNotesProps) {
     } catch {
       setPageState((current) => ({ ...current, failed: true }));
     } finally {
+      loadMoreInFlight.current = false;
       setLoadingMore(false);
     }
   };
@@ -431,6 +444,7 @@ export function ClientNotes(props: ClientNotesProps) {
   const hasUnsavedChanges =
     draft.length > 0 ||
     (!!editedNote && editDraft !== editedNote.body) ||
+    saving ||
     unknownCreate ||
     unknownEdit ||
     pendingEdits.length > 0;
@@ -528,6 +542,7 @@ export function ClientNotes(props: ClientNotesProps) {
   const handleCreate = useCallback(
     async (e?: FormEvent) => {
       e?.preventDefault();
+      if (saveInFlight.current) return;
       const retryingUnknown = unknownCreate && pendingCreate !== null;
       const rawBody = retryingUnknown ? pendingCreate.body : draft;
       const body = normalizeClientNoteBody(rawBody);
@@ -557,6 +572,7 @@ export function ClientNotes(props: ClientNotesProps) {
       const requestSequence = ++nextCreateRequestSequence;
       createRequestSequences.set(requestIdentity, requestSequence);
       const localSequence = ++createRequestSequence.current;
+      saveInFlight.current = true;
       // Persist before dispatch so a same-tab reload can reconcile an unknown result.
       writePendingCreate(record);
       setSaving(true);
@@ -609,6 +625,7 @@ export function ClientNotes(props: ClientNotesProps) {
           setPendingCreate(record);
         }
       } finally {
+        saveInFlight.current = false;
         if (createRequestSequence.current === localSequence) setSaving(false);
         if (createRequestSequences.get(requestIdentity) === requestSequence)
           createRequestSequences.delete(requestIdentity);
@@ -627,6 +644,7 @@ export function ClientNotes(props: ClientNotesProps) {
   );
 
   const handleUpdate = async (noteId: string, retryBody?: string) => {
+    if (saveInFlight.current) return;
     const rawBody = retryBody ?? editDraft;
     const body = normalizeClientNoteBody(rawBody);
     const requestGeneration = editorGeneration.current;
@@ -643,6 +661,7 @@ export function ClientNotes(props: ClientNotesProps) {
       }
       return;
     }
+    saveInFlight.current = true;
     setSaving(true);
     if (ownsEditor()) setSaveError(null);
     try {
@@ -690,12 +709,18 @@ export function ClientNotes(props: ClientNotesProps) {
         setUnknownEdit(true);
       }
     } finally {
+      saveInFlight.current = false;
       setSaving(false);
     }
   };
 
   const handleDelete = useCallback(
     async (noteId: string) => {
+      if (deletingNoteIdsRef.current.has(noteId)) return;
+      deletingNoteIdsRef.current.add(noteId);
+      setDeletingNoteIds((current) =>
+        current.includes(noteId) ? current : [...current, noteId],
+      );
       setDeleteTargetId(null);
       setDeleteError(null);
       try {
@@ -721,6 +746,9 @@ export function ClientNotes(props: ClientNotesProps) {
         }
       } catch {
         setDeleteError(m['clientNotes.deleteError']);
+      } finally {
+        deletingNoteIdsRef.current.delete(noteId);
+        setDeletingNoteIds((current) => current.filter((id) => id !== noteId));
       }
     },
     [props, m, pageScope],
@@ -957,6 +985,7 @@ export function ClientNotes(props: ClientNotesProps) {
                             <Button
                               type="button"
                               variant="destructive"
+                              disabled={deletingNoteIds.includes(note.id)}
                               onClick={() => setDeleteTargetId(note.id)}
                             >
                               {m['clientNotes.delete']}

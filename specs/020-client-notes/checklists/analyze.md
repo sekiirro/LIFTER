@@ -1,5 +1,17 @@
 # Spec Kit Analyze — F20 Client Notes
 
+## S53-R28 concurrency re-analysis
+
+- **Analysis date:** 2026-11-13T08:09:00Z, after edits to `spec.md`, `plan.md`, and `tasks.md` for S53-R28.
+- **Scope:** create idempotency replay and delete key-row waits; authorization changes while those locks are held; save-in-flight exit protection after Discard; duplicate per-note delete requests and synchronous repeated save/load-more activation.
+- **Requirements:** FR-005 now requires a current authorization/scope check after each waited-on note or key lock and before note/key outcome is inspected, returned, or mutated. Story 2 scenario 9 and Story 3 scenario 10 specify revocation/downgrade lock races and unchanged note/key/audit state. FR-007 and Story 3 scenario 9 keep exit guards armed through an in-flight save after Discard. Story 3 scenario 11 disables only the deleting note's Delete control until the request settles.
+- **Authorization boundary review:** create checks the current actor, coaching-work access, and workspace/client scope after both fresh-key acquisition and duplicate-key lock acquisition; delete re-checks Platform Owner, workspace access, and client scope after the note-row and create-key-row locks; update already re-checks workspace and author/owner authorization after the note-row lock. The read-only client-context RPC has no lock or mutation path. No list RPC is implemented as a SECURITY DEFINER function; list reads remain under RLS and workspace access.
+- **Synchronous activation review:** repeated same-turn activations of create, update, or load-more reached the handler twice before React rendered the disabled state. A synchronous in-flight ref now closes that race; the same-turn tests failed before and passed after the guard.
+- **Failure and recovery states:** lock-wait denials use the existing generic `42501` authorization denial; the delete transaction rolls back key state and note/audit effects on denial. Existing UI warning and refusal strings remain unchanged; no new product copy is introduced. Per-note delete state clears on both success and refusal/error.
+- **Cross-reference review:** T004/T011 map database hardening and race coverage to FR-005 and scenarios 9/10; T005/T013 map pending-save guards and duplicate-delete UI behavior to FR-007 and scenarios 9/11. Executed evidence is recorded in `traceability.md` after final-head verification.
+- **Ambiguities:** none open for this scope; the S53-R28 architect ruling determines the lock re-check and pending-action behavior. No additional product decision or copy change is needed.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. No requirement conflicts, data-retention changes, new user states without an outcome, or changes outside F20 were identified.
+
 **Analysis date**: 2026-11-09T22:18Z (round 17, re-run after fixing the one round-16 CodeRabbit finding in review 5833166638 and the follow-up Major in review 5833569785 before the second review request: a failed pre-dispatch `sessionStorage` write now falls back to page memory without blocking the create and without a same-tab reload guarantee; every spec, plan, tasks, contracts, data-model, research and analyze edit precedes this analysis)
 **Inputs**: spec.md, plan.md, tasks.md, data-model.md, research.md, contracts/client-notes-api.md, contracts/client-notes-rls.md
 **Scope**: Spec-only. No code, SQL, migrations, or runtime work.
