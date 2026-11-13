@@ -2220,7 +2220,7 @@ describe('ClientNotes behaviour', () => {
       client_id: 'c',
       author_user_id: 'u1',
       body,
-      created_at: `2026-11-08T10:1${index}:00Z`,
+      created_at: `2026-11-08T10:${String(11 - index)}:00Z`,
       edited_at: null,
     }));
     await render({
@@ -2279,7 +2279,7 @@ describe('ClientNotes behaviour', () => {
       client_id: 'c',
       author_user_id: 'u1',
       body,
-      created_at: `2026-11-08T10:1${index}:00Z`,
+      created_at: `2026-11-08T10:${String(11 - index)}:00Z`,
       edited_at: null,
     }));
     const props = {
@@ -2662,6 +2662,129 @@ describe('ClientNotes behaviour', () => {
     expect(host!.textContent).not.toContain(deletedNote.body);
     expect(host!.textContent).toContain(nextNote.body);
     expect(host!.querySelectorAll('li')).toHaveLength(firstPage.length + 1);
+  });
+
+  it('orders saved off-page snapshots by creation time after first-page refreshes', async () => {
+    const note = (id: string, body: string, minute: number) => ({
+      id,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:${String(minute).padStart(2, '0')}:00Z`,
+      edited_at: null as string | null,
+    });
+    const firstPage = [
+      note('n1', 'first page one', 13),
+      note('n2', 'first page two', 12),
+    ];
+    const oldestOffPage = note('n4', 'oldest off-page', 9);
+    const newerOffPage = note('n3', 'newer off-page', 10);
+    let currentNotes = firstPage;
+    const refreshedOnce = [
+      note('n0', 'first refresh insert', 14),
+      ...firstPage,
+    ];
+    const refreshedTwice = [
+      note('n00', 'second refresh insert', 15),
+      ...refreshedOnce,
+    ];
+    const onLoadMore = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'ok',
+        notes: [oldestOffPage],
+        hasMore: true,
+      })
+      .mockResolvedValueOnce({
+        status: 'ok',
+        notes: [newerOffPage],
+        hasMore: true,
+      });
+    const onUpdate = vi.fn(async (noteId: string, body: string) => {
+      const original =
+        noteId === oldestOffPage.id ? oldestOffPage : newerOffPage;
+      return {
+        status: 'ok',
+        note: { ...original, body, edited_at: '2026-11-13T04:00:00Z' },
+      };
+    });
+    const props: Record<string, unknown> = {
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: currentNotes,
+      hasMore: true,
+      onLoadMore,
+      onUpdate,
+      onSuccess: () => {
+        currentNotes =
+          currentNotes === firstPage ? refreshedOnce : refreshedTwice;
+        root!.render(
+          createElement(ClientNotes, {
+            ...props,
+            notes: currentNotes,
+          } as never),
+        );
+      },
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+      clientId: 'c',
+      workspaceId: 'w',
+    };
+    await render(props);
+
+    const buttonWithText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    const saveOffPageNote = async (originalBody: string, savedBody: string) => {
+      await act(async () =>
+        buttonWithText(mEn['clientNotes.loadMore']).click(),
+      );
+      const row = Array.from(host!.querySelectorAll('li')).find((item) =>
+        item.textContent?.includes(originalBody),
+      )!;
+      await act(async () =>
+        Array.from(row.querySelectorAll('button'))
+          .find((button) => button.textContent === mEn['clientNotes.edit'])!
+          .click(),
+      );
+      await act(async () =>
+        setValue(host!.querySelector('textarea')!, savedBody),
+      );
+      await act(async () => {
+        buttonWithText(mEn['clientNotes.saveChanges']).click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    };
+
+    await saveOffPageNote('oldest off-page', 'saved oldest off-page');
+    await saveOffPageNote('newer off-page', 'saved newer off-page');
+
+    const rowTexts = Array.from(host!.querySelectorAll('li')).map(
+      (item) => item.textContent ?? '',
+    );
+    expect(
+      rowTexts.findIndex((text) => text.includes('saved newer off-page')),
+    ).toBeLessThan(
+      rowTexts.findIndex((text) => text.includes('saved oldest off-page')),
+    );
+    expect(onUpdate).toHaveBeenNthCalledWith(
+      1,
+      oldestOffPage.id,
+      'saved oldest off-page',
+    );
+    expect(onUpdate).toHaveBeenNthCalledWith(
+      2,
+      newerOffPage.id,
+      'saved newer off-page',
+    );
+    expect(onLoadMore).toHaveBeenNthCalledWith(2, {
+      created_at: firstPage[1]!.created_at,
+      id: firstPage[1]!.id,
+    });
   });
 
   it('retains an off-page edited note when a refreshed first page replaces loaded pages', async () => {
@@ -3315,7 +3438,7 @@ describe('ClientNotes behaviour', () => {
       client_id: 'c',
       author_user_id: 'u1',
       body,
-      created_at: `2026-11-08T10:1${index}:00Z`,
+      created_at: `2026-11-08T10:${String(11 - index)}:00Z`,
       edited_at: null,
     }));
     const onUpdate = vi.fn(async () => ({ status: 'unavailable' }));
@@ -3550,7 +3673,7 @@ describe('ClientNotes behaviour', () => {
       client_id: 'c',
       author_user_id: 'u1',
       body,
-      created_at: `2026-11-08T10:1${index}:00Z`,
+      created_at: `2026-11-08T10:${String(11 - index)}:00Z`,
       edited_at: null,
     }));
     let resolveDelete: ((result: { status: string }) => void) | undefined;

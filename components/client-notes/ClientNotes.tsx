@@ -81,7 +81,16 @@ function mergePageNotes(
       seen.add(note.id);
       return true;
     }),
-  ];
+  ].sort((left, right) => {
+    const createdAtOrder =
+      Date.parse(right.created_at) - Date.parse(left.created_at);
+    if (Number.isFinite(createdAtOrder) && createdAtOrder !== 0)
+      return createdAtOrder;
+    return (
+      right.created_at.localeCompare(left.created_at) ||
+      right.id.localeCompare(left.id)
+    );
+  });
 }
 
 const PLATFORM_OWNER = 'platform_owner';
