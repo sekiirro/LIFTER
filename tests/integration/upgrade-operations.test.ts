@@ -1566,7 +1566,8 @@ it('T049 recomputes the upgraded projection after removing a counted freeze', as
     const [after] = await tx`select
       (app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},
         (clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as end_on`;
-    const [expected] = await tx`select (${upgradedEnd}::date-3)::text as end_on`;
+    const [expected] =
+      await tx`select (${upgradedEnd}::date-3)::text as end_on`;
     expect(after!.end_on).toBe(expected!.end_on);
   });
 });
@@ -1662,7 +1663,8 @@ it('T049 subtracts only unconsumed freeze coverage and reflows a later renewal',
     const [after] = await tx`select
       (app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},
         (clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as end_on`;
-    const [expected] = await tx`select (${beforeRemoval!.end_on}::date-2)::text as end_on`;
+    const [expected] =
+      await tx`select (${beforeRemoval!.end_on}::date-2)::text as end_on`;
     expect(after!.end_on).toBe(expected!.end_on);
   });
 });
