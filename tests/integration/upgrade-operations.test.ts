@@ -8,6 +8,7 @@ import {
   sqlPay,
   sql,
 } from './registration-approval-payment-fixture';
+import { graph } from './registration-approval-fixture';
 import {
   call,
   clientContext,
@@ -1505,6 +1506,164 @@ it('T042 freeze reflows an unstarted renewal from the effective upgraded term', 
     const [expected] =
       await tx`select (${upgradedEnd}::date+3)::text as start_on`;
     expect(reflowed!.start_on).toBe(expected!.start_on);
+  });
+});
+
+it('T049 recomputes the upgraded projection after removing a counted freeze', async () => {
+  const f = await clientContext();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    const purchase = { t: { id: ids.client }, sid: ids.subscription };
+    const activation = new Date(Date.now() - 10 * 86400000);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()})`;
+    const freezeId = randomUUID();
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    const [freezeDates] = await tx`select
+      (((${activation} at time zone 'Africa/Cairo')::date+2)::text) as apply_on,
+      (((${activation} at time zone 'Africa/Cairo')::date+5)::text) as stop_on`;
+    await tx`insert into public.subscription_freezes(
+      id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+      values(${freezeId},${f.wsA.id},${purchase.sid},
+        ${freezeDates!.apply_on}::date,10,${f.trainerA.userId},
+        clock_timestamp())`;
+    await tx`insert into public.subscription_freeze_events(
+      workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id,recorded_at)
+      values(${f.wsA.id},${purchase.sid},${freezeId},'stop',${freezeDates!.stop_on}::date,${f.trainerA.userId},
+        clock_timestamp())`;
+    const result = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: target,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+    expect(result.status).toBe('ok');
+    const upgradedEnd = (result.receipt as Record<string, unknown>)
+      .service_end_exclusive as string;
+    const [before] = await tx`select
+      (app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},
+        (clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as end_on`;
+    expect(before!.end_on).toBe(upgradedEnd);
+
+    const removed = await freeze(tx, f.trainerA.userId, {
+      action: 'remove',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      freeze_id: freezeId,
+      request_key: randomUUID(),
+      expected_revision: 2,
+    });
+    expect(removed.status).toBe('removed');
+    const [after] = await tx`select
+      (app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},
+        (clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as end_on`;
+    const [expected] = await tx`select (${upgradedEnd}::date-3)::text as end_on`;
+    expect(after!.end_on).toBe(expected!.end_on);
+  });
+});
+
+it('T049 subtracts only unconsumed freeze coverage and reflows a later renewal', async () => {
+  const f = await clientContext();
+  const baseOffer = await packageOfferId(f.link);
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 1,
+  });
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    const purchase = { t: { id: ids.client }, sid: ids.subscription };
+    const activation = new Date(Date.now() - 81 * 86400000);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()})`;
+    const [dates] = await tx`select
+      (((${activation} at time zone 'Africa/Cairo')::date+61)::text) as base_end,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date-1)::text as stop_on`;
+    const freezeId = randomUUID();
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`insert into public.subscription_freezes(
+      id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+      values(${freezeId},${f.wsA.id},${purchase.sid},${dates!.base_end}::date-3,30,${f.trainerA.userId},clock_timestamp())`;
+    await tx`insert into public.subscription_freeze_events(
+      workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id,recorded_at)
+      values(${f.wsA.id},${purchase.sid},${freezeId},'stop',${dates!.stop_on}::date,${f.trainerA.userId},clock_timestamp())`;
+    const upgraded = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: target,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+    expect(upgraded.status).toBe('ok');
+
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let renewed: Record<string, unknown>;
+    try {
+      const [row] = await tx`select public.record_renewal(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        predecessor_subscription_id: purchase.sid,
+        package_offer_id: baseOffer,
+        request_key: randomUUID(),
+        expected_revision: 1,
+        renewal_confirmed: true,
+        installments: null,
+      } as JSONValue)}) as result`;
+      renewed = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(renewed!.status).toBe('ok');
+    const renewalReceipt = renewed!.receipt as Record<string, unknown>;
+    const renewalId = renewalReceipt.renewal_id as string;
+    const [obligation] = await tx`select id,seq,amount_minor::text,currency
+      from public.subscription_installments where subscription_id=${purchase.sid} and renewal_id=${renewalId}`;
+    const paid = await sqlPay(tx, f.trainerA.userId, 'collect', {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      request_key: randomUUID(),
+      subscription_id: purchase.sid,
+      obligation_id: obligation!.id as string,
+      expected_installment_seq: obligation!.seq as number,
+      expected_revision: 0,
+      expected_previous_event_id: null,
+      expected_amount_minor: obligation!.amount_minor as string,
+      currency: obligation!.currency as string,
+      collected_on: '1900-01-01',
+      payment_confirmed: true,
+    });
+    expect(paid.status).toBe('ok');
+    const [beforeRemoval] = await tx`select
+      (app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},
+        (clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as end_on`;
+
+    const removed = await freeze(tx, f.trainerA.userId, {
+      action: 'remove',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      freeze_id: freezeId,
+      request_key: randomUUID(),
+      expected_revision: 2,
+    });
+    expect(removed.status).toBe('removed');
+    const [after] = await tx`select
+      (app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},
+        (clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as end_on`;
+    const [expected] = await tx`select (${beforeRemoval!.end_on}::date-2)::text as end_on`;
+    expect(after!.end_on).toBe(expected!.end_on);
   });
 });
 
