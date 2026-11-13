@@ -3,6 +3,8 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
+  useReducer,
   useRef,
   useState,
   useSyncExternalStore,
@@ -16,17 +18,21 @@ import { getMessages } from '../../lib/i18n';
 import type { Locale } from '../../lib/design/preferences';
 import { dirFor } from '../../lib/design/preferences';
 import { normalizeClientNoteBody } from '../../lib/client-notes/validation';
+import {
+  clearClientNotesRequestSequences,
+  clientNotesHasUnsavedWork,
+  clientNotesReducer,
+  createClientNotesState,
+  createRequestSequences,
+  nextClientNotesRequestSequence,
+  transitionClientNotesState,
+  type ClientNote as ClientNoteState,
+  type PendingCreate,
+  type PendingEdit,
+} from '../../lib/client-notes/state';
 import styles from './ClientNotes.module.css';
 
-export type ClientNote = {
-  id: string;
-  workspace_id: string;
-  client_id: string;
-  author_user_id: string;
-  body: string;
-  created_at: string;
-  edited_at: string | null;
-};
+export type ClientNote = ClientNoteState;
 
 export type ClientNotesStatus = 'idle' | 'loading' | 'error' | 'ready';
 export type ClientNoteCursor = Pick<ClientNote, 'created_at' | 'id'>;
@@ -81,41 +87,6 @@ function mergePageNotes(
 const PLATFORM_OWNER = 'platform_owner';
 const PENDING_CREATE_PREFIX = 'lifter-client-notes-pending-create:v1:';
 const TAB_NAME_PREFIX = 'lifter-client-notes-tab:v1:';
-
-type PendingCreate = {
-  tabId: string;
-  actorId: string;
-  clientId: string;
-  workspaceId: string;
-  text: string;
-  body: string;
-  idempotencyKey: string;
-  retrySent: boolean;
-};
-
-type PendingEdit = {
-  noteId: string;
-  body: string;
-  status: 'unknown' | 'denied';
-};
-
-type ExitTarget =
-  | {
-      kind: 'edit';
-      noteId: string;
-      generation: number;
-      body: string;
-      switchTo: string | null;
-      navigation: boolean;
-    }
-  | {
-      kind: 'create';
-      body: string;
-      navigation: boolean;
-    };
-
-const createRequestSequences = new Map<string, number>();
-let nextCreateRequestSequence = 0;
 
 function pendingCreateIdentity(record: PendingCreate) {
   return `${record.tabId}:${record.actorId}:${record.workspaceId}:${record.clientId}`;
@@ -174,6 +145,19 @@ export function ClientNotes(props: ClientNotesProps) {
   const m = props.messages ?? getMessages(locale);
   const dir = dirFor(locale);
   const sourceNotes = props.notes ?? EMPTY_NOTES;
+  const [recoveryState, dispatchRecovery] = useReducer(
+    clientNotesReducer,
+    props.actorId ?? null,
+    createClientNotesState,
+  );
+  const sessionGeneration = useRef(0);
+  const mounted = useRef(true);
+  const priorActorId = useRef(props.actorId ?? null);
+  const isCurrentSession = useCallback(
+    (generation: number) =>
+      mounted.current && sessionGeneration.current === generation,
+    [],
+  );
   const pageScope = JSON.stringify([
     props.workspaceId ?? null,
     props.clientId ?? null,
@@ -212,12 +196,14 @@ export function ClientNotes(props: ClientNotesProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingNoteSnapshot, setEditingNoteSnapshot] =
     useState<ClientNote | null>(null);
-  const [editedSnapshotState, setEditedSnapshotState] = useState({
-    scope: pageScope,
-    notes: [] as readonly ClientNote[],
-  });
   const editedSnapshots =
-    editedSnapshotState.scope === pageScope ? editedSnapshotState.notes : [];
+    recoveryState.editedSnapshotScope === pageScope
+      ? recoveryState.editedSnapshots.filter(
+          (note) =>
+            props.hasMore !== false ||
+            sourceNotes.some((n) => n.id === note.id),
+        )
+      : [];
   const editorGeneration = useRef(0);
   const activeEditorId = useRef<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
@@ -233,9 +219,16 @@ export function ClientNotes(props: ClientNotesProps) {
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [unknownCreate, setUnknownCreate] = useState(false);
   const [unknownEdit, setUnknownEdit] = useState(false);
-  const [pendingEdits, setPendingEdits] = useState<PendingEdit[]>([]);
-  const [pendingCreate, setPendingCreate] = useState<PendingCreate | null>(
-    null,
+  const pendingEdits = recoveryState.pendingEdits;
+  const pendingCreate = recoveryState.pendingCreate;
+  const setPendingCreate = useCallback(
+    (record: PendingCreate | null) =>
+      dispatchRecovery(
+        record
+          ? { type: 'pending-create-set', record }
+          : { type: 'pending-create-cleared' },
+      ),
+    [],
   );
   const storageAvailable = useRef(true);
   const tabId = useRef<string | null>(null);
@@ -251,7 +244,7 @@ export function ClientNotes(props: ClientNotesProps) {
   const [exitMode, setExitMode] = useState<'unsaved' | 'inflight' | 'unknown'>(
     'unsaved',
   );
-  const exitTarget = useRef<ExitTarget | null>(null);
+  const exitTarget = recoveryState.exitTarget;
 
   const notesWithEditedSnapshots = mergePageNotes(pageNotes, editedSnapshots);
   const notes =
@@ -274,20 +267,31 @@ export function ClientNotes(props: ClientNotesProps) {
       navigation = false,
     ) => {
       const noteId = activeEditorId.current;
-      exitTarget.current = noteId
-        ? {
-            kind: 'edit',
-            noteId,
-            generation: editorGeneration.current,
-            body: editDraft,
-            switchTo,
-            navigation,
-          }
-        : { kind: 'create', body: draft, navigation };
+      dispatchRecovery({
+        type: 'exit-target-set',
+        target: noteId
+          ? {
+              kind: 'edit',
+              noteId,
+              generation: editorGeneration.current,
+              body: editDraft,
+              switchTo,
+              navigation,
+            }
+          : draft.length > 0 || pendingCreate !== null
+            ? { kind: 'create', body: draft, navigation }
+            : pendingEdits.length > 0
+              ? {
+                  kind: 'pending',
+                  noteIds: pendingEdits.map((pending) => pending.noteId),
+                  navigation,
+                }
+              : { kind: 'create', body: draft, navigation },
+      });
       setExitMode(mode);
       setExitOpen(true);
     },
-    [draft, editDraft],
+    [draft, editDraft, pendingCreate, pendingEdits],
   );
 
   const setActiveEditor = (noteId: string | null) => {
@@ -297,19 +301,91 @@ export function ClientNotes(props: ClientNotesProps) {
   };
 
   const setPendingEdit = (pending: PendingEdit) => {
-    setPendingEdits((current) => {
-      const withoutNote = current.filter(
-        (item) => item.noteId !== pending.noteId,
-      );
-      return [...withoutNote, pending];
-    });
+    dispatchRecovery({ type: 'pending-edit-set', pending });
   };
 
   const clearPendingEdit = (noteId: string) => {
-    setPendingEdits((current) =>
-      current.filter((item) => item.noteId !== noteId),
-    );
+    dispatchRecovery({ type: 'pending-edit-cleared', noteId });
   };
+
+  useLayoutEffect(() => {
+    mounted.current = true;
+    sessionGeneration.current += 1;
+    dispatchRecovery({
+      type: 'session-mounted',
+      actorId: priorActorId.current,
+    });
+    return () => {
+      mounted.current = false;
+      sessionGeneration.current += 1;
+      const transition = transitionClientNotesState(
+        createClientNotesState(priorActorId.current),
+        { type: 'session-unmounted' },
+      );
+      for (const effect of transition.effects) {
+        if (effect.type === 'clear-request-sequences')
+          clearClientNotesRequestSequences();
+      }
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const actorId = props.actorId ?? null;
+    if (priorActorId.current === actorId) return;
+    const previousActorId = priorActorId.current;
+    const actorStorageKey =
+      props.clientId && props.workspaceId
+        ? pendingStorageKey(props.workspaceId, props.clientId)
+        : null;
+    priorActorId.current = actorId;
+    sessionGeneration.current += 1;
+    const transition = {
+      type: 'session-changed',
+      actorId,
+    } as const;
+    const result = transitionClientNotesState(
+      createClientNotesState(previousActorId),
+      transition,
+    );
+    dispatchRecovery(transition);
+    for (const effect of result.effects) {
+      if (effect.type === 'clear-request-sequences')
+        clearClientNotesRequestSequences();
+      if (effect.type === 'clear-recovery-storage' && actorStorageKey) {
+        try {
+          window.sessionStorage.removeItem(actorStorageKey);
+        } catch {
+          storageAvailable.current = false;
+        }
+      }
+    }
+    setDraft('');
+    setIdempotencyKey(null);
+    setUnknownCreate(false);
+    setUnknownEdit(false);
+    setActiveEditor(null);
+    setEditingNoteSnapshot(null);
+    setEditDraft('');
+    saveInFlight.current = false;
+    saveInFlightNoteIdRef.current = null;
+    setSaving(false);
+    setSavingNoteId(null);
+    loadMoreInFlight.current = false;
+    setLoadingMore(false);
+    deletingNoteIdsRef.current.clear();
+    setDeletingNoteIds([]);
+    setExitOpen(false);
+    pendingNavigation.current = null;
+  }, [props.actorId, props.clientId, props.workspaceId]);
+
+  useEffect(() => {
+    dispatchRecovery({
+      type: 'first-page-refreshed',
+      scope: pageScope,
+      notes: sourceNotes,
+      complete: props.hasMore !== true,
+    });
+  }, [pageScope, props.hasMore, sourceNotes]);
 
   const loadMore = async () => {
     const last = pageStateIsCurrent ? pageState.cursor : sourceNotes.at(-1);
@@ -322,6 +398,7 @@ export function ClientNotes(props: ClientNotesProps) {
     )
       return;
     loadMoreInFlight.current = true;
+    const requestGeneration = sessionGeneration.current;
     setLoadingMore(true);
     setPageState((current) => ({
       scope: pageScope,
@@ -343,6 +420,7 @@ export function ClientNotes(props: ClientNotesProps) {
         created_at: last.created_at,
         id: last.id,
       });
+      if (!isCurrentSession(requestGeneration)) return;
       if (result.status !== 'ok' || !result.notes) {
         setPageState((current) => ({ ...current, failed: true }));
         return;
@@ -371,10 +449,13 @@ export function ClientNotes(props: ClientNotesProps) {
         };
       });
     } catch {
-      setPageState((current) => ({ ...current, failed: true }));
+      if (isCurrentSession(requestGeneration))
+        setPageState((current) => ({ ...current, failed: true }));
     } finally {
-      loadMoreInFlight.current = false;
-      setLoadingMore(false);
+      if (isCurrentSession(requestGeneration)) {
+        loadMoreInFlight.current = false;
+        setLoadingMore(false);
+      }
     }
   };
 
@@ -412,7 +493,7 @@ export function ClientNotes(props: ClientNotesProps) {
         storageAvailable.current = false;
       }
     },
-    [storageKey],
+    [setPendingCreate, storageKey],
   );
 
   useEffect(() => {
@@ -488,19 +569,22 @@ export function ClientNotes(props: ClientNotesProps) {
     props.clientId,
     props.workspaceId,
     recoveryIdentity,
+    setPendingCreate,
     storageKey,
   ]);
 
   const editedNote = editingId
     ? notes.find((note) => note.id === editingId)
     : undefined;
-  const hasUnsavedChanges =
-    draft.length > 0 ||
-    (!!editedNote && editDraft !== editedNote.body) ||
-    saving ||
-    unknownCreate ||
-    unknownEdit ||
-    pendingEdits.length > 0;
+  const hasUnsavedChanges = clientNotesHasUnsavedWork({
+    createDraft: draft,
+    activeEdit: editedNote
+      ? { original: editedNote.body, body: editDraft }
+      : null,
+    pendingCreateBody: pendingCreate?.body ?? (unknownCreate ? draft : null),
+    pendingEdits,
+    inFlight: saving || deletingNoteIds.length > 0 ? [true] : [],
+  });
 
   useEffect(() => {
     if (!hasUnsavedChanges) return;
@@ -628,9 +712,10 @@ export function ClientNotes(props: ClientNotesProps) {
         retrySent: retryingUnknown ? true : (pendingCreate?.retrySent ?? false),
       };
       const requestIdentity = pendingCreateIdentity(record);
-      const requestSequence = ++nextCreateRequestSequence;
+      const requestSequence = nextClientNotesRequestSequence();
       createRequestSequences.set(requestIdentity, requestSequence);
       const localSequence = ++createRequestSequence.current;
+      const requestGeneration = sessionGeneration.current;
       saveInFlight.current = true;
       // Persist before dispatch so a same-tab reload can reconcile an unknown result.
       writePendingCreate(record);
@@ -638,6 +723,7 @@ export function ClientNotes(props: ClientNotesProps) {
       setSaveError(null);
       try {
         const res = await props.onCreate?.(body, key);
+        if (!isCurrentSession(requestGeneration)) return;
         if (createRequestSequences.get(requestIdentity) !== requestSequence)
           return;
         if (res?.status === 'ok') {
@@ -668,7 +754,7 @@ export function ClientNotes(props: ClientNotesProps) {
           if (!definiteRefusal || retryingUnknown) {
             setUnknownCreate(true);
             setPendingCreate(record);
-            if (!retryingUnknown) writePendingCreate(record);
+            // The identical recovery record was written before dispatch.
           } else {
             // A definite refusal before any retry resolves this create attempt.
             removePendingCreate(record);
@@ -678,12 +764,16 @@ export function ClientNotes(props: ClientNotesProps) {
           }
         }
       } catch {
-        if (createRequestSequences.get(requestIdentity) === requestSequence) {
+        if (
+          isCurrentSession(requestGeneration) &&
+          createRequestSequences.get(requestIdentity) === requestSequence
+        ) {
           setSaveError(m['clientNotes.saveError']);
           setUnknownCreate(true);
           setPendingCreate(record);
         }
       } finally {
+        if (!isCurrentSession(requestGeneration)) return;
         saveInFlight.current = false;
         saveInFlightNoteIdRef.current = null;
         setSavingNoteId(null);
@@ -699,8 +789,10 @@ export function ClientNotes(props: ClientNotesProps) {
       pendingCreate,
       props,
       removePendingCreate,
+      setPendingCreate,
       unknownCreate,
       writePendingCreate,
+      isCurrentSession,
     ],
   );
 
@@ -709,6 +801,7 @@ export function ClientNotes(props: ClientNotesProps) {
     const rawBody = retryBody ?? editDraft;
     const body = normalizeClientNoteBody(rawBody);
     const requestGeneration = editorGeneration.current;
+    const sessionRequestGeneration = sessionGeneration.current;
     const ownsEditor = () =>
       activeEditorId.current === noteId &&
       editorGeneration.current === requestGeneration;
@@ -729,17 +822,14 @@ export function ClientNotes(props: ClientNotesProps) {
     if (ownsEditor()) setSaveError(null);
     try {
       const res = await props.onUpdate?.(noteId, body);
+      if (!isCurrentSession(sessionRequestGeneration)) return;
       if (res?.status === 'ok') {
         if (res.note?.id === noteId) {
-          setEditedSnapshotState((current) => ({
+          dispatchRecovery({
+            type: 'edit-snapshot-upserted',
             scope: pageScope,
-            notes: [
-              ...(current.scope === pageScope
-                ? current.notes.filter((note) => note.id !== noteId)
-                : []),
-              res.note!,
-            ],
-          }));
+            note: res.note,
+          });
         }
         props.onSuccess?.('edited');
         if (res.note?.id === noteId) {
@@ -779,12 +869,14 @@ export function ClientNotes(props: ClientNotesProps) {
         }
       }
     } catch {
-      setPendingEdit({ noteId, body, status: 'unknown' });
-      if (ownsEditor()) {
+      if (isCurrentSession(sessionRequestGeneration))
+        setPendingEdit({ noteId, body, status: 'unknown' });
+      if (isCurrentSession(sessionRequestGeneration) && ownsEditor()) {
         setSaveError(m['clientNotes.saveError']);
         setUnknownEdit(true);
       }
     } finally {
+      if (!isCurrentSession(sessionRequestGeneration)) return;
       saveInFlight.current = false;
       saveInFlightNoteIdRef.current = null;
       setSavingNoteId(null);
@@ -799,6 +891,7 @@ export function ClientNotes(props: ClientNotesProps) {
     )
       return;
     deletingNoteIdsRef.current.add(noteId);
+    const requestGeneration = sessionGeneration.current;
     setDeletingNoteIds((current) =>
       current.includes(noteId) ? current : [...current, noteId],
     );
@@ -806,6 +899,7 @@ export function ClientNotes(props: ClientNotesProps) {
     setDeleteError(null);
     try {
       const res = await props.onDelete?.(noteId);
+      if (!isCurrentSession(requestGeneration)) return;
       if (res?.status === 'ok') {
         props.onSuccess?.('deleted');
         clearPendingEdit(noteId);
@@ -816,14 +910,7 @@ export function ClientNotes(props: ClientNotesProps) {
           setUnknownEdit(false);
           setSaveError(null);
         }
-        setEditedSnapshotState((current) =>
-          current.scope === pageScope
-            ? {
-                ...current,
-                notes: current.notes.filter((note) => note.id !== noteId),
-              }
-            : current,
-        );
+        dispatchRecovery({ type: 'note-deleted', scope: pageScope, noteId });
         setPageState((current) => {
           if (current.scope !== pageScope) return current;
           return {
@@ -842,10 +929,13 @@ export function ClientNotes(props: ClientNotesProps) {
         );
       }
     } catch {
-      setDeleteError(m['clientNotes.deleteError']);
+      if (isCurrentSession(requestGeneration))
+        setDeleteError(m['clientNotes.deleteError']);
     } finally {
-      deletingNoteIdsRef.current.delete(noteId);
-      setDeletingNoteIds((current) => current.filter((id) => id !== noteId));
+      if (isCurrentSession(requestGeneration)) {
+        deletingNoteIdsRef.current.delete(noteId);
+        setDeletingNoteIds((current) => current.filter((id) => id !== noteId));
+      }
     }
   };
 
@@ -886,8 +976,8 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const confirmDiscard = () => {
     setExitOpen(false);
-    const target = exitTarget.current;
-    exitTarget.current = null;
+    const target = exitTarget;
+    dispatchRecovery({ type: 'exit-target-cleared' });
     const continueNavigation = () => {
       const link = pendingNavigation.current;
       pendingNavigation.current = null;
@@ -943,6 +1033,14 @@ export function ClientNotes(props: ClientNotesProps) {
       if (target.navigation) continueNavigation();
       return;
     }
+    if (target.kind === 'pending') {
+      const retainedIds = target.noteIds.filter((noteId) =>
+        pendingEdits.some((pending) => pending.noteId === noteId),
+      );
+      for (const noteId of retainedIds) clearPendingEdit(noteId);
+      if (target.navigation) continueNavigation();
+      return;
+    }
     const sameCreateDraft = draft === target.body;
     const createStillNeedsDiscard =
       sameCreateDraft &&
@@ -968,7 +1066,7 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const stay = () => {
     setExitOpen(false);
-    exitTarget.current = null;
+    dispatchRecovery({ type: 'exit-target-cleared' });
     pendingNavigation.current = null;
   };
 

@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ClientNotes } from '../../components/client-notes/ClientNotes';
+import { createRequestSequences } from '../../lib/client-notes/state';
 import { getMessages } from '../../lib/i18n';
 
 describe('ClientNotes UI', () => {
@@ -615,6 +616,18 @@ describe('ClientNotes behaviour', () => {
       created_at: firstPage[1]!.created_at,
       id: firstPage[1]!.id,
     });
+
+    await act(async () =>
+      root!.render(
+        createElement(ClientNotes, {
+          ...props,
+          notes: [],
+          hasMore: false,
+        } as never),
+      ),
+    );
+    expect(host!.querySelectorAll('li')).toHaveLength(0);
+    expect(host!.textContent).not.toContain('saved older note');
   });
 
   it('uses approved load-error and Retry copy without exposing a server error', async () => {
@@ -1466,6 +1479,120 @@ describe('ClientNotes behaviour', () => {
     expect(host!.textContent).not.toContain('private note text');
   });
 
+  it('does not restore create recovery after sign-out cleanup while create is in flight', async () => {
+    const storageKey =
+      'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    let resolveCreate: ((result: { status: string }) => void) | undefined;
+    const onCreate = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+      onCreate,
+    });
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'secret draft'),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(dom!.window.sessionStorage.getItem(storageKey)).not.toBeNull();
+
+    await act(async () => {
+      dom!.window.sessionStorage.removeItem(storageKey);
+      root!.render(
+        createElement(ClientNotes, {
+          locale: 'en',
+          messages: mEn,
+          status: 'ready',
+          notes: [],
+          actorId: null,
+          clientId: 'client-1',
+          workspaceId: 'workspace-1',
+          onCreate,
+        } as never),
+      );
+    });
+    await act(async () => resolveCreate?.({ status: 'unavailable' }));
+
+    expect(dom!.window.sessionStorage.getItem(storageKey)).toBeNull();
+    expect(host!.textContent).not.toContain('secret draft');
+    expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
+  });
+
+  it('does not restore pending edit state when an update settles after sign-out', async () => {
+    const note = {
+      id: 'n-signout-update',
+      workspace_id: 'workspace-1',
+      client_id: 'client-1',
+      author_user_id: 'actor-1',
+      body: 'committed body',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    let resolveUpdate: ((result: { status: string }) => void) | undefined;
+    const onUpdate = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      actorId: 'actor-1',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+      role: 'trainer',
+      onUpdate,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'unsaved update'),
+    );
+    await act(async () => {
+      byText(mEn['clientNotes.saveChanges']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+
+    await act(async () =>
+      root!.render(
+        createElement(ClientNotes, {
+          locale: 'en',
+          messages: mEn,
+          status: 'ready',
+          notes: [note],
+          actorId: null,
+          clientId: 'client-1',
+          workspaceId: 'workspace-1',
+          role: 'trainer',
+          onUpdate,
+        } as never),
+      ),
+    );
+    await act(async () => resolveUpdate?.({ status: 'unavailable' }));
+
+    expect(host!.textContent).not.toContain('unsaved update');
+    expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
+  });
+
   it('create: proceeds when writing the pre-dispatch recovery record fails', async () => {
     const onCreate = vi.fn(async () => ({ status: 'unavailable' }));
     await render({
@@ -1635,6 +1762,42 @@ describe('ClientNotes behaviour', () => {
     expect(host!.querySelector('form')).not.toBeNull();
   });
 
+  it('does not write create recovery after unmount and clears request ownership', async () => {
+    const storageKey =
+      'lifter-client-notes-pending-create:v1:workspace-1:client-1';
+    let resolveCreate: ((result: { status: string }) => void) | undefined;
+    const onCreate = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveCreate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      actorId: 'actor-unmount',
+      clientId: 'client-1',
+      workspaceId: 'workspace-1',
+      onCreate,
+    });
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'draft before unmount'),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(createRequestSequences.size).toBeGreaterThan(0);
+
+    await act(async () => root!.unmount());
+    expect(createRequestSequences.size).toBe(0);
+    dom!.window.sessionStorage.removeItem(storageKey);
+    await act(async () => resolveCreate?.({ status: 'unavailable' }));
+    expect(dom!.window.sessionStorage.getItem(storageKey)).toBeNull();
+  });
+
   it('protects same-origin in-app navigation with the approved Stay/Discard warning', async () => {
     await render({
       locale: 'en',
@@ -1755,6 +1918,64 @@ describe('ClientNotes behaviour', () => {
     expect(host!.querySelector('dialog')?.textContent).toContain(
       mEn['clientNotes.saveError'],
     );
+  });
+
+  it('replays navigation after Discard when only a retained pending edit remains', async () => {
+    const note = {
+      id: 'n-pending-only-navigation',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'committed body',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      onUpdate: async () => ({ status: 'unavailable' }),
+      canCreate: false,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'retained body'),
+    );
+    await act(async () => byText(mEn['clientNotes.saveChanges']).click());
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+    expect(host!.querySelector('textarea')).toBeNull();
+
+    const link = dom!.window.document.createElement('a');
+    link.href = '/home';
+    dom!.window.document.body.append(link);
+    let replayed = 0;
+    link.addEventListener('click', (event) => {
+      if (!(event as MouseEvent).defaultPrevented) replayed += 1;
+    });
+    await act(async () =>
+      link.dispatchEvent(
+        new dom!.window.MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+        }),
+      ),
+    );
+    expect(host!.querySelector('dialog')).not.toBeNull();
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+    expect(replayed).toBe(1);
   });
 
   it('uses the browser beforeunload warning only for unresolved text', async () => {
@@ -2319,6 +2540,11 @@ describe('ClientNotes behaviour', () => {
 
     expect(onDelete).toHaveBeenCalledTimes(1);
     expect(deleteButton.disabled).toBe(true);
+    const pendingUnload = new dom!.window.Event('beforeunload', {
+      cancelable: true,
+    });
+    dom!.window.dispatchEvent(pendingUnload);
+    expect(pendingUnload.defaultPrevented).toBe(true);
     const editFor = (body: string) => {
       const targetRow = Array.from(host!.querySelectorAll('li')).find((item) =>
         item.textContent?.includes(body),
@@ -2336,6 +2562,11 @@ describe('ClientNotes behaviour', () => {
     expect(deleteButton.disabled).toBe(false);
     expect(editFor(note.body)?.disabled).toBe(false);
     expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
+    const settledUnload = new dom!.window.Event('beforeunload', {
+      cancelable: true,
+    });
+    dom!.window.dispatchEvent(settledUnload);
+    expect(settledUnload.defaultPrevented).toBe(false);
   });
 
   it('removes a deleted later-page note without moving the server cursor or resurrecting it from an in-flight page', async () => {
