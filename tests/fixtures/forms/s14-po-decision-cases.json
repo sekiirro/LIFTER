@@ -1,0 +1,59 @@
+{
+  "pendingCopy": ["P2_health_notice"],
+  "approvedENRows": [
+    "B01",
+    "B02",
+    "B06",
+    "N01",
+    "N07",
+    "N07.2",
+    "T03.2",
+    "T03.3",
+    "T03.4",
+    "T03.5",
+    "T03.6",
+    "T08",
+    "N07.training_timing",
+    "N08",
+    "N08.low.foods",
+    "N12",
+    "N11.feedback.0_2"
+  ],
+  "approvedENCopy": {
+    "N08.low.foods": "Cottage cheese / plant protein / eggs / baladi bread"
+  },
+  "pendingENRows": ["N08.medium.foods", "N08.high.foods"],
+  "parentIds": [
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "T01",
+    "T02",
+    "T03",
+    "T04",
+    "T05",
+    "T06",
+    "T07",
+    "T08",
+    "N01",
+    "N02",
+    "N03",
+    "N04",
+    "N05",
+    "N06",
+    "N07",
+    "N08",
+    "N09",
+    "N10",
+    "N11",
+    "N12"
+  ],
+  "sexSeries": {
+    "male": "male",
+    "female": "female",
+    "male-cinematic": "unused"
+  }
+}

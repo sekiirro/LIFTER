@@ -1,0 +1,65 @@
+{
+  "session": "14",
+  "date": "2026-10-30",
+  "authority": "binding PO decisions; canonical Arabic fixture remains unchanged",
+  "P1_sex": {
+    "classification": "personal data",
+    "purpose": "select N12 image series",
+    "series": {
+      "male": "male",
+      "female": "female",
+      "male-cinematic": "unused"
+    },
+    "copy_status": "Approved verbatim by PO S30-PO-1 Q2 at 5084916",
+    "ar": {
+      "question": "النوع",
+      "male": "ذكر",
+      "female": "أنثى"
+    },
+    "en": {
+      "question": "Sex",
+      "male": "Male",
+      "female": "Female"
+    }
+  },
+  "P2_health_notice": {
+    "s17_supersession": "Standalone UI superseded; use minimal contextual health guidance only where genuinely useful. No acknowledgment or consent receipt.",
+    "position": "immediately before health questions",
+    "acknowledgment_checkbox": false,
+    "consent_record": false,
+    "copy_status": "DRAFT COPY - derived from approved privacy and health-data policies; PO approval required",
+    "source_policies": [
+      "specs/015-forms-intake/spec.md FR-023/025",
+      "specs/015-forms-intake/contracts/authorization-and-audit.md",
+      "specs/015-forms-intake/contracts/retention-and-alerts.md"
+    ],
+    "ar": "هنطلب منك بيانات صحية ولياقة عشان إعداد ومتابعة خطتك. الوصول للبيانات بيكون حسب الصلاحيات المعتمدة، وعمليات الاطلاع الحساسة بتتسجل للمراجعة.",
+    "en": "We will ask for health and fitness information to prepare and manage your plan. Access follows approved permissions, and sensitive access is recorded for review.",
+    "title_status": "DRAFT — proposed title pending PO approval",
+    "title": {
+      "ar": "عن بياناتك الصحية",
+      "en": "About your health data"
+    }
+  },
+  "P3_consent": {
+    "signup": "creates pending account without T&C consent",
+    "terms_card": "post-Nutrition; unchecked required T&C box records policy version and server timestamp",
+    "marketing": "separate optional unchecked consent at Terms Card",
+    "intake_complete": "only after required T&C acceptance",
+    "terms_copy_status": "Approved verbatim by PO S30-PO-1 Q2 at 5084916"
+  },
+  "P4_meals": {
+    "status": "PO-approved deviation from canonical copy",
+    "canonical_file_unchanged": true,
+    "max_meals": 5,
+    "ar_options": ["وجبتين", "3 وجبات", "4 وجبات", "5 وجبات"],
+    "removed": ["ستة وجبات أو أكتر", "exact-number entry"],
+    "derived_timing": "after meal 1..N plus قبل أول وجبة and معنديش ميعاد ثابت"
+  },
+  "architect_defaults": {
+    "terms_card": "premium card using existing card/checkbox components",
+    "n11_motion": "150-250ms with prefers-reduced-motion",
+    "reserved_usernames": "platform/system/role words plus workspace identifiers",
+    "terms_copy": "Approved verbatim by PO S30-PO-1 Q2 at 5084916"
+  }
+}

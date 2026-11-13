@@ -1,0 +1,1137 @@
+[
+  {
+    "key": "clientSignup.dateOfBirth",
+    "ar": "تاريخ الميلاد",
+    "en": "Date of birth"
+  },
+  {
+    "key": "clientSignup.duplicate",
+    "ar": "هذا البريد الإلكتروني مسجّل بالفعل. يُرجى التواصل مع الدعم.",
+    "en": "This email is already registered. Contact support."
+  },
+  {
+    "key": "clientSignup.name",
+    "ar": "الاسم الثلاثي",
+    "en": "Name"
+  },
+  {
+    "key": "clientSignup.optional",
+    "ar": "اختياري",
+    "en": "Optional"
+  },
+  {
+    "key": "clientSignup.telegramUsername",
+    "ar": "اسم مستخدم تيليجرام",
+    "en": "Telegram username"
+  },
+  {
+    "key": "clientSignup.username",
+    "ar": "اسم المستخدم",
+    "en": "Username"
+  },
+  {
+    "key": "forms.aboutHealthData",
+    "ar": "عن بياناتك الصحية",
+    "en": "About your health data"
+  },
+  {
+    "key": "forms.acceptTerms",
+    "ar": "متابعة",
+    "en": "Continue"
+  },
+  {
+    "key": "forms.answerTooLong",
+    "ar": "الإجابة تتجاوز الحد الأقصى للأحرف.",
+    "en": "This answer exceeds the character limit."
+  },
+  {
+    "key": "forms.answerType.boolean",
+    "ar": "نعم أو لا",
+    "en": "Yes or no"
+  },
+  {
+    "key": "forms.answerType.computedAge",
+    "ar": "عمر محسوب",
+    "en": "Calculated age"
+  },
+  {
+    "key": "forms.answerType.date",
+    "ar": "تاريخ",
+    "en": "Date"
+  },
+  {
+    "key": "forms.answerType.derivedChoice",
+    "ar": "اختيار مشتق",
+    "en": "Derived choice"
+  },
+  {
+    "key": "forms.answerType.displayOnly",
+    "ar": "محتوى للقراءة فقط",
+    "en": "Read-only content"
+  },
+  {
+    "key": "forms.answerType.imageChoice",
+    "ar": "اختيار بالصورة",
+    "en": "Image choice"
+  },
+  {
+    "key": "forms.answerType.longText",
+    "ar": "نص طويل",
+    "en": "Long text"
+  },
+  {
+    "key": "forms.answerType.mealCount",
+    "ar": "عدد الوجبات",
+    "en": "Number of meals"
+  },
+  {
+    "key": "forms.answerType.multiChoice",
+    "ar": "اختيارات متعددة",
+    "en": "Multiple choice"
+  },
+  {
+    "key": "forms.answerType.number",
+    "ar": "رقم",
+    "en": "Number"
+  },
+  {
+    "key": "forms.answerType.profileText",
+    "ar": "حقل مرتبط بالملف الشخصي",
+    "en": "Profile-bound text"
+  },
+  {
+    "key": "forms.answerType.shortText",
+    "ar": "نص قصير",
+    "en": "Short text"
+  },
+  {
+    "key": "forms.answerType.singleChoice",
+    "ar": "اختيار واحد",
+    "en": "Single choice"
+  },
+  {
+    "key": "forms.answerType.slider",
+    "ar": "مقياس منزلق",
+    "en": "Slider"
+  },
+  {
+    "key": "forms.conflictBody",
+    "ar": "أعد تحميل أحدث مسودة قبل المتابعة.",
+    "en": "Reload the latest draft before continuing."
+  },
+  {
+    "key": "forms.conflictTitle",
+    "ar": "تم تعديل هذه المسودة في مكان آخر",
+    "en": "This draft changed elsewhere"
+  },
+  {
+    "key": "forms.copyDraft",
+    "ar": "مسودة",
+    "en": "Draft"
+  },
+  {
+    "key": "forms.correct",
+    "ar": "تصحيح الإجابات المُرسلة",
+    "en": "Correct submitted answers"
+  },
+  {
+    "key": "forms.correctionUnavailable",
+    "ar": "التصحيحات غير متاحة لانتهاء علاقة العميل.",
+    "en": "Corrections are unavailable because this client relationship has ended."
+  },
+  {
+    "key": "forms.counter",
+    "ar": "الأحرف: {used} من {limit}، المتبقي {remaining}",
+    "en": "Characters: {used} of {limit}; {remaining} remaining"
+  },
+  {
+    "key": "forms.defaultOnboardingForm",
+    "ar": "خطوتك الأولى",
+    "en": "Your First Step"
+  },
+  {
+    "key": "forms.demoAnswer",
+    "ar": "بناء القوة",
+    "en": "Build strength"
+  },
+  {
+    "key": "forms.demoGoal",
+    "ar": "ما الهدف الذي ترغب في العمل عليه؟",
+    "en": "What would you like to work toward?"
+  },
+  {
+    "key": "forms.demoGoalHint",
+    "ar": "إجابة قصيرة تكفي.",
+    "en": "A short answer is enough."
+  },
+  {
+    "key": "forms.demoHiddenAnswer",
+    "ar": "يجب ألا تظهر هذه الإجابة المخفية",
+    "en": "This hidden history value must not appear"
+  },
+  {
+    "key": "forms.demoInjury",
+    "ar": "هل لديك إصابة؟",
+    "en": "Do you have an injury?"
+  },
+  {
+    "key": "forms.demoInjuryDetail",
+    "ar": "أخبرنا عن الإصابة",
+    "en": "Tell us about the injury"
+  },
+  {
+    "key": "forms.draftAcceptanceMock",
+    "ar": "وصل قبول المسودة إلى المحول الوهمي.",
+    "en": "Draft acceptance reached the mock adapter."
+  },
+  {
+    "key": "forms.draftAcceptanceUnavailable",
+    "ar": "لا يمكن قبول نسخة الشروط المسودة في بيئة الإنتاج.",
+    "en": "This draft policy cannot be accepted in production."
+  },
+  {
+    "key": "forms.draftSaved",
+    "ar": "تم حفظ المسودة.",
+    "en": "Draft saved."
+  },
+  {
+    "key": "forms.healthDataNoticeBody",
+    "ar": "هنطلب منك بيانات صحية ولياقة عشان إعداد ومتابعة خطتك. الوصول للبيانات بيكون حسب الصلاحيات المعتمدة، وعمليات الاطلاع الحساسة بتتسجل للمراجعة.",
+    "en": "We will ask for health and fitness information to prepare and manage your plan. Access follows approved permissions, and sensitive access is recorded for review."
+  },
+  {
+    "key": "forms.healthDataNoticeTitle",
+    "ar": "البيانات الصحية والشخصية",
+    "en": "Health and personal information"
+  },
+  {
+    "key": "forms.healthQuestionExample",
+    "ar": "مثال على سؤال صحي",
+    "en": "Health question example"
+  },
+  {
+    "key": "forms.historyEmpty",
+    "ar": "لا توجد إصدارات سابقة.",
+    "en": "No earlier versions."
+  },
+  {
+    "key": "forms.historyTitle",
+    "ar": "سجل الإجابات",
+    "en": "Answer history"
+  },
+  {
+    "key": "forms.intakeIncomplete",
+    "ar": "النموذج غير مكتمل حتى توافق على الشروط.",
+    "en": "Intake is incomplete until you accept the terms."
+  },
+  {
+    "key": "forms.invalidForm",
+    "ar": "هذا النموذج غير متاح. تواصل مع مدربك.",
+    "en": "This form is unavailable. Contact your coach."
+  },
+  {
+    "key": "forms.limitReached",
+    "ar": "وصلت إلى الحد الأقصى للأحرف.",
+    "en": "Character limit reached."
+  },
+  {
+    "key": "forms.loading",
+    "ar": "جارٍ تحميل النموذج…",
+    "en": "Loading intake…"
+  },
+  {
+    "key": "forms.next",
+    "ar": "السؤال التالي",
+    "en": "Next question"
+  },
+  {
+    "key": "forms.no",
+    "ar": "لا",
+    "en": "No"
+  },
+  {
+    "key": "forms.optionalMarketing",
+    "ar": "أوافق على تلقي تحديثات تسويقية",
+    "en": "I agree to receive marketing updates"
+  },
+  {
+    "key": "forms.previous",
+    "ar": "السؤال السابق",
+    "en": "Previous question"
+  },
+  {
+    "key": "forms.progress",
+    "ar": "السؤال {current} من {total}",
+    "en": "Question {current} of {total}"
+  },
+  {
+    "key": "forms.reloadDraft",
+    "ar": "إعادة تحميل أحدث مسودة",
+    "en": "Reload latest draft"
+  },
+  {
+    "key": "forms.required",
+    "ar": "مطلوب",
+    "en": "Required"
+  },
+  {
+    "key": "forms.requiredTerms",
+    "ar": "أوافق على الشروط والأحكام",
+    "en": "I accept the terms and conditions"
+  },
+  {
+    "key": "forms.retrySave",
+    "ar": "أعد المحاولة",
+    "en": "Retry save"
+  },
+  {
+    "key": "forms.saveCorrection",
+    "ar": "حفظ التصحيح",
+    "en": "Save correction"
+  },
+  {
+    "key": "forms.saveDraft",
+    "ar": "حفظ المسودة",
+    "en": "Save draft"
+  },
+  {
+    "key": "forms.saveFailed",
+    "ar": "تعذر حفظ المسودة. حاول مرة أخرى.",
+    "en": "Draft could not be saved. Try again."
+  },
+  {
+    "key": "forms.saveNow",
+    "ar": "احفظ الآن",
+    "en": "Save now"
+  },
+  {
+    "key": "forms.saving",
+    "ar": "جارٍ حفظ المسودة…",
+    "en": "Saving draft…"
+  },
+  {
+    "key": "forms.staffAddAssetReference",
+    "ar": "إضافة معرّف صورة",
+    "en": "Add image reference"
+  },
+  {
+    "key": "forms.staffAddCondition",
+    "ar": "إضافة شرط",
+    "en": "Add condition"
+  },
+  {
+    "key": "forms.staffAddDerivedChoice",
+    "ar": "إضافة الخيارات المشتقة",
+    "en": "Add derived options"
+  },
+  {
+    "key": "forms.staffAddFeedbackBand",
+    "ar": "إضافة نطاق تعليق",
+    "en": "Add feedback band"
+  },
+  {
+    "key": "forms.staffAddHealthNotice",
+    "ar": "إضافة تنبيه صحي",
+    "en": "Add health notice"
+  },
+  {
+    "key": "forms.staffAddImageChoice",
+    "ar": "إضافة اختيار بالصور",
+    "en": "Add image choice"
+  },
+  {
+    "key": "forms.staffAddMealCount",
+    "ar": "إضافة عدد الوجبات",
+    "en": "Add meal count"
+  },
+  {
+    "key": "forms.staffAddOption",
+    "ar": "إضافة خيار",
+    "en": "Add choice"
+  },
+  {
+    "key": "forms.staffAddQuestion",
+    "ar": "إضافة سؤال",
+    "en": "Add question"
+  },
+  {
+    "key": "forms.staffAddSection",
+    "ar": "إضافة قسم",
+    "en": "Add section"
+  },
+  {
+    "key": "forms.staffAddSectionHint",
+    "ar": "أضف قسمًا قبل إضافة الأسئلة.",
+    "en": "Add a section before adding questions."
+  },
+  {
+    "key": "forms.staffAddSexSelector",
+    "ar": "إضافة محدد الجنس",
+    "en": "Add sex selector"
+  },
+  {
+    "key": "forms.staffAnswerCharacterLimit",
+    "ar": "حد أحرف الإجابة",
+    "en": "Answer character limit"
+  },
+  {
+    "key": "forms.staffAnswerPreview",
+    "ar": "معاينة الإجابة",
+    "en": "Answer preview"
+  },
+  {
+    "key": "forms.staffAnswerType",
+    "ar": "نوع الإجابة",
+    "en": "Answer type"
+  },
+  {
+    "key": "forms.staffArabicName",
+    "ar": "اسم الاستمارة بالعربية",
+    "en": "Arabic form name"
+  },
+  {
+    "key": "forms.staffArabicOption",
+    "ar": "الخيار بالعربية",
+    "en": "Arabic choice"
+  },
+  {
+    "key": "forms.staffArabicQuestion",
+    "ar": "السؤال بالعربية",
+    "en": "Arabic question"
+  },
+  {
+    "key": "forms.staffArabicSection",
+    "ar": "اسم القسم بالعربية",
+    "en": "Arabic section name"
+  },
+  {
+    "key": "forms.staffAssetReference",
+    "ar": "معرّف الصورة",
+    "en": "Image reference"
+  },
+  {
+    "key": "forms.staffAssignedForms",
+    "ar": "الاستمارات المسندة",
+    "en": "Assigned forms"
+  },
+  {
+    "key": "forms.staffAssignment",
+    "ar": "إسناد استمارة",
+    "en": "Form assignment"
+  },
+  {
+    "key": "forms.staffAuthorizedOwnersOnly",
+    "ar": "ينتقل تنبيه المدرّب عند إعادة الإسناد دون إعادة ضبط الساعة. أبلغ المالكين المخوّلين حاليًا فقط.",
+    "en": "On reassignment, transfer the Trainer alert without resetting its clock. Notify only currently authorized owners."
+  },
+  {
+    "key": "forms.staffBeforeFirstMeal",
+    "ar": "قبل أول وجبة",
+    "en": "Before the first meal"
+  },
+  {
+    "key": "forms.staffBoolean.no",
+    "ar": "لا",
+    "en": "No"
+  },
+  {
+    "key": "forms.staffBoolean.yes",
+    "ar": "نعم",
+    "en": "Yes"
+  },
+  {
+    "key": "forms.staffBuilder",
+    "ar": "منشئ الاستمارة",
+    "en": "Form builder"
+  },
+  {
+    "key": "forms.staffBuilderHint",
+    "ar": "أنشئ مسودة بمحتوى عربي وإنجليزي منفصل.",
+    "en": "Create a draft with separate Arabic and English content."
+  },
+  {
+    "key": "forms.staffCalendarDays",
+    "ar": "أيام تقويمية",
+    "en": "calendar days"
+  },
+  {
+    "key": "forms.staffChoiceValue",
+    "ar": "قيمة الخيار",
+    "en": "Choice value"
+  },
+  {
+    "key": "forms.staffChoices",
+    "ar": "خيارات الإجابة",
+    "en": "Answer choices"
+  },
+  {
+    "key": "forms.staffClientEscalation",
+    "ar": "التصعيد إلى مالك المنصة ومالك مساحة العمل المخوّلين.",
+    "en": "Escalate to the authorized Platform Owner and Workspace Owner."
+  },
+  {
+    "key": "forms.staffClientFirstAlert",
+    "ar": "المدرّب المكلّف؛ وإن لم يوجد، يُنبّه المالكان المخوّلان.",
+    "en": "Assigned Trainer; if none is assigned, the authorized owners."
+  },
+  {
+    "key": "forms.staffClientLate",
+    "ar": "تنبيهات تأخر العميل",
+    "en": "Client submission alerts"
+  },
+  {
+    "key": "forms.staffClientReference",
+    "ar": "معرّف العميل",
+    "en": "Client reference"
+  },
+  {
+    "key": "forms.staffConditionContains",
+    "ar": "يحتوي على",
+    "en": "Contains"
+  },
+  {
+    "key": "forms.staffConditionEquals",
+    "ar": "يساوي",
+    "en": "Equals"
+  },
+  {
+    "key": "forms.staffConditionIsAnswered",
+    "ar": "له إجابة",
+    "en": "Has an answer"
+  },
+  {
+    "key": "forms.staffConditionMode",
+    "ar": "مطابقة الشروط",
+    "en": "Match conditions"
+  },
+  {
+    "key": "forms.staffConditionModeAll",
+    "ar": "كل الشروط",
+    "en": "All conditions"
+  },
+  {
+    "key": "forms.staffConditionModeAny",
+    "ar": "أي شرط",
+    "en": "Any condition"
+  },
+  {
+    "key": "forms.staffConditionNotEquals",
+    "ar": "لا يساوي",
+    "en": "Does not equal"
+  },
+  {
+    "key": "forms.staffConditionOperator",
+    "ar": "الشرط",
+    "en": "Condition"
+  },
+  {
+    "key": "forms.staffConditionQuestion",
+    "ar": "السؤال المرتبط",
+    "en": "Related question"
+  },
+  {
+    "key": "forms.staffConditionValue",
+    "ar": "القيمة",
+    "en": "Value"
+  },
+  {
+    "key": "forms.staffConditional",
+    "ar": "إظهار بشرط",
+    "en": "Show conditionally"
+  },
+  {
+    "key": "forms.staffCopied",
+    "ar": "أصبحت نسخة المسودة جاهزة للتحرير.",
+    "en": "A draft copy is ready to edit."
+  },
+  {
+    "key": "forms.staffCopy",
+    "ar": "نسخ إلى مسودة",
+    "en": "Copy to a draft"
+  },
+  {
+    "key": "forms.staffCreateForm",
+    "ar": "إنشاء استمارة",
+    "en": "Create a form"
+  },
+  {
+    "key": "forms.staffD03Deadline",
+    "ar": "مهلة تسليم {deadline}",
+    "en": "{deadline} delivery deadline"
+  },
+  {
+    "key": "forms.staffDateOfBirthBinding",
+    "ar": "محسوب من تاريخ الميلاد المسجل.",
+    "en": "Calculated from the registered date of birth."
+  },
+  {
+    "key": "forms.staffDateOfBirthField",
+    "ar": "مصدر تاريخ الميلاد",
+    "en": "Date-of-birth source"
+  },
+  {
+    "key": "forms.staffDateOfBirthField.dateOfBirth",
+    "ar": "تاريخ الميلاد المسجل",
+    "en": "Registered date of birth"
+  },
+  {
+    "key": "forms.staffDeadline",
+    "ar": "المهلة (توقيت القاهرة)",
+    "en": "Deadline (Cairo time)"
+  },
+  {
+    "key": "forms.staffDeadlineDays",
+    "ar": "مهلة التقديم بعد الإسناد (أيام)",
+    "en": "Submission deadline after assignment (days)"
+  },
+  {
+    "key": "forms.staffDeadlineHint",
+    "ar": "مهلة الاستمارات الأخرى من يوم إلى 14 يومًا بتقويم القاهرة؛ الافتراضي 3 أيام.",
+    "en": "Other forms allow 1–14 Cairo calendar days; the default is 3."
+  },
+  {
+    "key": "forms.staffDeadlinePolicy",
+    "ar": "تستخدم المهل أيام تقويم القاهرة وتُحسب لكل إسناد.",
+    "en": "Deadlines use Cairo calendar dates and are calculated for each assignment."
+  },
+  {
+    "key": "forms.staffDefault",
+    "ar": "الافتراضي",
+    "en": "default"
+  },
+  {
+    "key": "forms.staffDefaultConfigurationError",
+    "ar": "يحتاج الإعداد إلى تصحيح. اختر نموذجًا متاحًا أدناه. (مسودة)",
+    "en": "The onboarding default needs correction. Select an eligible form below. (DRAFT)"
+  },
+  {
+    "key": "forms.staffDerivedFromQuestion",
+    "ar": "مشتق من السؤال",
+    "en": "Derived from question"
+  },
+  {
+    "key": "forms.staffDescription",
+    "ar": "أنشئ استمارات ثنائية اللغة وراجع المهل التجريبية.",
+    "en": "Build bilingual forms and review mock intake deadlines."
+  },
+  {
+    "key": "forms.staffDisplayTextArabic",
+    "ar": "النص بالعربية",
+    "en": "Text in Arabic"
+  },
+  {
+    "key": "forms.staffDisplayTextEnglish",
+    "ar": "النص بالإنجليزية",
+    "en": "Text in English"
+  },
+  {
+    "key": "forms.staffEnglishName",
+    "ar": "اسم الاستمارة بالإنجليزية",
+    "en": "English form name"
+  },
+  {
+    "key": "forms.staffEnglishOption",
+    "ar": "الخيار بالإنجليزية",
+    "en": "English choice"
+  },
+  {
+    "key": "forms.staffEnglishQuestion",
+    "ar": "السؤال بالإنجليزية",
+    "en": "English question"
+  },
+  {
+    "key": "forms.staffEnglishSection",
+    "ar": "اسم القسم بالإنجليزية",
+    "en": "English section name"
+  },
+  {
+    "key": "forms.staffFeedbackBands",
+    "ar": "نطاقات التعليق",
+    "en": "Feedback bands"
+  },
+  {
+    "key": "forms.staffFeedbackText",
+    "ar": "نص التعليق",
+    "en": "Feedback text"
+  },
+  {
+    "key": "forms.staffFixedChoices",
+    "ar": "خيارات ثابتة",
+    "en": "Fixed choices"
+  },
+  {
+    "key": "forms.staffFormReference",
+    "ar": "معرّف الاستمارة",
+    "en": "Form reference"
+  },
+  {
+    "key": "forms.staffFormStatus",
+    "ar": "الحالة",
+    "en": "Status"
+  },
+  {
+    "key": "forms.staffHours",
+    "ar": "ساعة",
+    "en": "hours"
+  },
+  {
+    "key": "forms.staffIntake",
+    "ar": "الاستقبال",
+    "en": "Intake"
+  },
+  {
+    "key": "forms.staffLoadFailed",
+    "ar": "تعذر تحميل المعاينة. حاول مجددًا.",
+    "en": "Unable to load the preview. Try again."
+  },
+  {
+    "key": "forms.staffLoading",
+    "ar": "جارٍ تحميل معاينة الموظفين…",
+    "en": "Loading the staff preview…"
+  },
+  {
+    "key": "forms.staffMaximumLabel",
+    "ar": "تسمية الحد الأقصى",
+    "en": "Maximum label"
+  },
+  {
+    "key": "forms.staffMaximumValue",
+    "ar": "الحد الأقصى",
+    "en": "Maximum value"
+  },
+  {
+    "key": "forms.staffMealNumber",
+    "ar": "الوجبة",
+    "en": "Meal"
+  },
+  {
+    "key": "forms.staffMiddleLabel",
+    "ar": "تسمية الوسط",
+    "en": "Middle label"
+  },
+  {
+    "key": "forms.staffMinimumLabel",
+    "ar": "تسمية الحد الأدنى",
+    "en": "Minimum label"
+  },
+  {
+    "key": "forms.staffMinimumValue",
+    "ar": "الحد الأدنى",
+    "en": "Minimum value"
+  },
+  {
+    "key": "forms.staffMockPreview",
+    "ar": "معاينة تجريبية. لا توجد سجلات عملاء متصلة.",
+    "en": "Mock preview. No client records are connected."
+  },
+  {
+    "key": "forms.staffMoveQuestionDown",
+    "ar": "تحريك السؤال لأسفل",
+    "en": "Move question down"
+  },
+  {
+    "key": "forms.staffMoveQuestionUp",
+    "ar": "تحريك السؤال لأعلى",
+    "en": "Move question up"
+  },
+  {
+    "key": "forms.staffMoveSectionDown",
+    "ar": "تحريك القسم لأسفل",
+    "en": "Move section down"
+  },
+  {
+    "key": "forms.staffMoveSectionUp",
+    "ar": "تحريك القسم لأعلى",
+    "en": "Move section up"
+  },
+  {
+    "key": "forms.staffNoAssignments",
+    "ar": "لا توجد استمارات مسندة",
+    "en": "No assigned forms"
+  },
+  {
+    "key": "forms.staffNoAssignmentsHint",
+    "ar": "ستظهر الاستمارات هنا عند إسنادها إلى عميل.",
+    "en": "Assignments appear here when a form is assigned to a client."
+  },
+  {
+    "key": "forms.staffNoDraft",
+    "ar": "لا توجد مسودة استمارة محددة",
+    "en": "No form draft selected"
+  },
+  {
+    "key": "forms.staffNoDraftHint",
+    "ar": "أنشئ مسودة فارغة لبدء التحرير.",
+    "en": "Create a blank draft to start authoring."
+  },
+  {
+    "key": "forms.staffNoFixedMealTime",
+    "ar": "معنديش ميعاد ثابت",
+    "en": "No fixed meal time"
+  },
+  {
+    "key": "forms.staffOtherDeadline",
+    "ar": "الاستمارات الأخرى",
+    "en": "Other forms"
+  },
+  {
+    "key": "forms.staffOwnersAt",
+    "ar": "تنبيه المالكين",
+    "en": "Owner alert"
+  },
+  {
+    "key": "forms.staffPreviewForm",
+    "ar": "معاينة الاستمارة",
+    "en": "Preview form"
+  },
+  {
+    "key": "forms.staffPreviewHint",
+    "ar": "هذه معاينة للمسودة قبل النشر.",
+    "en": "Preview this draft before publishing."
+  },
+  {
+    "key": "forms.staffPreviewRole",
+    "ar": "دور المعاينة",
+    "en": "Preview role"
+  },
+  {
+    "key": "forms.staffPrivacy",
+    "ar": "تصنيف الخصوصية",
+    "en": "Privacy classification"
+  },
+  {
+    "key": "forms.staffPrivacy.health",
+    "ar": "بيانات صحية",
+    "en": "Health data"
+  },
+  {
+    "key": "forms.staffPrivacy.none",
+    "ar": "غير مصنف",
+    "en": "Not classified"
+  },
+  {
+    "key": "forms.staffPrivacy.personal",
+    "ar": "بيانات شخصية",
+    "en": "Personal data"
+  },
+  {
+    "key": "forms.staffProfileField",
+    "ar": "حقل الملف الشخصي",
+    "en": "Profile field"
+  },
+  {
+    "key": "forms.staffProfileField.fullName",
+    "ar": "الاسم الثلاثي",
+    "en": "Full name"
+  },
+  {
+    "key": "forms.staffPublish",
+    "ar": "نشر الاستمارة",
+    "en": "Publish form"
+  },
+  {
+    "key": "forms.staffPublished",
+    "ar": "تم نشر الاستمارة.",
+    "en": "Form published."
+  },
+  {
+    "key": "forms.staffPurpose",
+    "ar": "الغرض من البيانات",
+    "en": "Data purpose"
+  },
+  {
+    "key": "forms.staffPurpose.n12Series",
+    "ar": "اختيار سلسلة صور {series}",
+    "en": "Select the {series} image series"
+  },
+  {
+    "key": "forms.staffPurpose.none",
+    "ar": "دون غرض محدد",
+    "en": "No specific purpose"
+  },
+  {
+    "key": "forms.staffQuestionCount",
+    "ar": "الأسئلة",
+    "en": "Questions"
+  },
+  {
+    "key": "forms.staffQuestionId",
+    "ar": "معرّف السؤال الثابت",
+    "en": "Stable question ID"
+  },
+  {
+    "key": "forms.staffQuestionLimitReached",
+    "ar": "وصلت الاستمارة إلى حد الأسئلة المعتمد.",
+    "en": "This form has reached the approved question limit."
+  },
+  {
+    "key": "forms.staffReadOnlyBinding",
+    "ar": "هذا الحقل مقروء فقط من بيانات الملف.",
+    "en": "Read from the profile; clients cannot edit this value."
+  },
+  {
+    "key": "forms.staffReference",
+    "ar": "معرّف الإسناد",
+    "en": "Assignment reference"
+  },
+  {
+    "key": "forms.staffRemoveCondition",
+    "ar": "حذف الشرط",
+    "en": "Remove condition"
+  },
+  {
+    "key": "forms.staffRemoveConfirm",
+    "ar": "هل تريد حذف هذا العنصر؟",
+    "en": "Remove this item?"
+  },
+  {
+    "key": "forms.staffRemoveOption",
+    "ar": "حذف الخيار",
+    "en": "Remove choice"
+  },
+  {
+    "key": "forms.staffRemoveQuestion",
+    "ar": "حذف السؤال",
+    "en": "Remove question"
+  },
+  {
+    "key": "forms.staffRemoveSection",
+    "ar": "حذف القسم",
+    "en": "Remove section"
+  },
+  {
+    "key": "forms.staffRequired",
+    "ar": "مطلوب",
+    "en": "Required"
+  },
+  {
+    "key": "forms.staffResult.conflict",
+    "ar": "تغيرت هذه المسودة في مكان آخر. أعد تحميل أحدث نسخة قبل الحفظ.",
+    "en": "This draft changed elsewhere. Reload the latest version before saving."
+  },
+  {
+    "key": "forms.staffResult.default_selected",
+    "ar": "هذه الاستمارة مختارة كخطوة البدء الافتراضية. اختر استمارة أخرى كخطوة البدء قبل إيقافها. (مسودة)",
+    "en": "This form is the selected onboarding default. Select another onboarding form before retiring it. (DRAFT)"
+  },
+  {
+    "key": "forms.staffResult.forbidden",
+    "ar": "لا يمكن لدور المعاينة إدارة استمارات مساحة العمل.",
+    "en": "This preview role cannot manage workspace forms."
+  },
+  {
+    "key": "forms.staffResult.invalid",
+    "ar": "أضف اسمًا عربيًا وإنجليزيًا للاستمارة وقسمًا وسؤالًا قبل النشر.",
+    "en": "Add an English and Arabic form name, section, and question before publishing."
+  },
+  {
+    "key": "forms.staffResult.missing",
+    "ar": "لم تعد هذه الاستمارة متاحة في المعاينة.",
+    "en": "This form is no longer available in the preview."
+  },
+  {
+    "key": "forms.staffRetire",
+    "ar": "إيقاف الاستمارة",
+    "en": "Retire form"
+  },
+  {
+    "key": "forms.staffRetired",
+    "ar": "تم إيقاف الاستمارة.",
+    "en": "Form retired."
+  },
+  {
+    "key": "forms.staffReturnToEdit",
+    "ar": "العودة للتحرير",
+    "en": "Return to editing"
+  },
+  {
+    "key": "forms.staffRole.po",
+    "ar": "مالك المنصة",
+    "en": "Platform owner"
+  },
+  {
+    "key": "forms.staffRole.sales",
+    "ar": "مبيعات",
+    "en": "Sales"
+  },
+  {
+    "key": "forms.staffRole.trainer",
+    "ar": "مدرّب",
+    "en": "Trainer"
+  },
+  {
+    "key": "forms.staffRole.wo",
+    "ar": "مالك مساحة العمل",
+    "en": "Workspace owner"
+  },
+  {
+    "key": "forms.staffSalesDenied",
+    "ar": "لا يمكن للمبيعات إدارة استمارات مساحة العمل.",
+    "en": "Sales cannot manage workspace forms."
+  },
+  {
+    "key": "forms.staffSaveDraft",
+    "ar": "حفظ المسودة",
+    "en": "Save draft"
+  },
+  {
+    "key": "forms.staffSaved",
+    "ar": "تم حفظ المسودة.",
+    "en": "Draft saved."
+  },
+  {
+    "key": "forms.staffSavedForms",
+    "ar": "الاستمارات المحفوظة",
+    "en": "Saved forms"
+  },
+  {
+    "key": "forms.staffSection",
+    "ar": "القسم",
+    "en": "Section"
+  },
+  {
+    "key": "forms.staffSetDefaultOnboarding",
+    "ar": "تعيين كنموذج إعداد (مسودة)",
+    "en": "Set as onboarding form (DRAFT)"
+  },
+  {
+    "key": "forms.staffSlaAlerts",
+    "ar": "المهل الزمنية والتنبيهات",
+    "en": "SLA and alerts"
+  },
+  {
+    "key": "forms.staffStatus.clientLate",
+    "ar": "استمارة العميل متأخرة",
+    "en": "Client form overdue"
+  },
+  {
+    "key": "forms.staffStatus.draft",
+    "ar": "مسودة",
+    "en": "Draft"
+  },
+  {
+    "key": "forms.staffStatus.published",
+    "ar": "منشورة",
+    "en": "Published"
+  },
+  {
+    "key": "forms.staffStatus.resolved",
+    "ar": "تم الحل",
+    "en": "Resolved"
+  },
+  {
+    "key": "forms.staffStatus.retired",
+    "ar": "متوقفة",
+    "en": "Retired"
+  },
+  {
+    "key": "forms.staffStatus.trainerLate",
+    "ar": "تسليم المدرّب متأخر",
+    "en": "Trainer delivery overdue"
+  },
+  {
+    "key": "forms.staffStep",
+    "ar": "مقدار الخطوة",
+    "en": "Step"
+  },
+  {
+    "key": "forms.staffSyntheticOnly",
+    "ar": "معاينة تجريبية فقط. لا يبدأ التنبيه الفعلي قبل توافر بيانات التسليم والمدرّب المعتمدة.",
+    "en": "Synthetic preview only. Real-data alerting waits for authoritative delivery and Trainer facts."
+  },
+  {
+    "key": "forms.staffTitle",
+    "ar": "استمارات الموظفين",
+    "en": "Staff forms"
+  },
+  {
+    "key": "forms.staffTrainerAt",
+    "ar": "تنبيه المدرّب",
+    "en": "Trainer alert"
+  },
+  {
+    "key": "forms.staffTrainerLate",
+    "ar": "تنبيهات تأخر المدرّب",
+    "en": "Trainer delivery alerts"
+  },
+  {
+    "key": "forms.staffTrainerLatePolicy",
+    "ar": "يبقى مسار {workflow} منفصلًا: مهلة استدراك {recoveryDays} أيام، منع التكرار، تنبيه أولي للمدرّب المكلّف، معالجة إعادة الإسناد، ثم التصعيد المتزامن للمالكين بعد {escalationHours} ساعة دون حل.",
+    "en": "Keep the separate {workflow} workflow: {recoveryDays}-day catch-up, deduplication, initial alert to the assigned Trainer, reassignment handling, then simultaneous escalation to both owners after {escalationHours} hours unresolved."
+  },
+  {
+    "key": "forms.staffUnitArabic",
+    "ar": "الوحدة بالعربية",
+    "en": "Unit in Arabic"
+  },
+  {
+    "key": "forms.staffUnitEnglish",
+    "ar": "الوحدة بالإنجليزية",
+    "en": "Unit in English"
+  },
+  {
+    "key": "forms.staffViews",
+    "ar": "عروض استمارات الموظفين",
+    "en": "Staff form views"
+  },
+  {
+    "key": "forms.submit",
+    "ar": "إرسال الإجابات",
+    "en": "Submit answers"
+  },
+  {
+    "key": "forms.submitFailed",
+    "ar": "تعذر إرسال إجاباتك. حاول مرة أخرى.",
+    "en": "Your answers could not be submitted. Try again."
+  },
+  {
+    "key": "forms.submitMissing",
+    "ar": "أكمل الأسئلة المطلوبة قبل الإرسال.",
+    "en": "Complete the required questions before submitting."
+  },
+  {
+    "key": "forms.submitSuccess",
+    "ar": "تم إرسال إجاباتك.",
+    "en": "Your answers were submitted."
+  },
+  {
+    "key": "forms.termsCardTitle",
+    "ar": "الشروط والأحكام",
+    "en": "Terms and conditions"
+  },
+  {
+    "key": "forms.title",
+    "ar": "بيانات العميل",
+    "en": "Client intake"
+  },
+  {
+    "key": "forms.unsaved",
+    "ar": "هناك تغييرات غير محفوظة.",
+    "en": "Unsaved changes."
+  },
+  {
+    "key": "forms.version",
+    "ar": "الإصدار {version}",
+    "en": "Version {version}"
+  },
+  {
+    "key": "forms.welcomeBody",
+    "ar": "اكتمل نموذجك. يمكنك المتابعة إلى خطتك.",
+    "en": "Your intake is complete. You can continue to your plan."
+  },
+  {
+    "key": "forms.welcomeDraftStatus",
+    "ar": "مسودة — نص الترحيب بانتظار موافقة مالك المنتج",
+    "en": "DRAFT — Welcome copy pending PO approval"
+  },
+  {
+    "key": "forms.welcomeTitle",
+    "ar": "أهلًا بك",
+    "en": "Welcome to LIFTER"
+  },
+  {
+    "key": "forms.yes",
+    "ar": "نعم",
+    "en": "Yes"
+  }
+]

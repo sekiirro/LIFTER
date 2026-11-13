@@ -217,6 +217,56 @@ describe('jobs outbox (T005)', () => {
     });
   });
 
+  it('T005 persists only the allow-listed F15 transport code in a dead job and audit', async () => {
+    const canary = 'forms-private-canary-provider-token';
+    const id = await enqueue({
+      workspace: f.wsA.id,
+      maxAttempts: 1,
+      jobKind: 'forms.alert',
+      payload: {
+        alert_id: randomUUID(),
+        recipient_id: randomUUID(),
+      },
+    });
+    const claimed = await claimOwn(id);
+    expect(
+      checked(
+        await service.rpc('jobs_fail', {
+          id,
+          lease: claimed.lease_token,
+          error_code: canary,
+        }),
+      ),
+    ).toBe('dead');
+
+    const job = await readJob(id);
+    const [audit] = await db`
+      select action,details from public.audit_events
+      where target_id=${id} and action='job.dead_lettered'
+    `;
+    expect(job).toMatchObject({
+      status: 'dead',
+      last_error: 'handler_error',
+      payload: expect.objectContaining({
+        alert_id: expect.any(String),
+        recipient_id: expect.any(String),
+      }),
+    });
+    expect(audit).toMatchObject({
+      action: 'job.dead_lettered',
+      details: {
+        kind: 'forms.alert',
+        error: 'handler_error',
+        attempts: 1,
+      },
+    });
+    expect(JSON.stringify({ job, audit })).not.toContain(canary);
+    expect(Object.keys(job.payload as object).sort()).toEqual([
+      'alert_id',
+      'recipient_id',
+    ]);
+  });
+
   it('(e,f) reclaims an expired lease, ignores stale reports, and completes the current lease', async () => {
     const id = await enqueue();
     const first = await claimOwn(id, 1);

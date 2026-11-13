@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { brandingFixture, credential } from './branding-security-fixture';
 import { admin, loadEnv, sql } from './harness';
@@ -10,9 +9,8 @@ import { brandingValidatedObjectName } from '../../lib/branding/object-path';
 
 const db = sql();
 let fixture: Awaited<ReturnType<typeof brandingFixture>>;
-let mutationOriginal: string | undefined;
-let mutationOriginalMd5: string | undefined;
-let mutationSignature: string | undefined;
+let mutationOriginal:
+  { definition: string; md5: string; identity: string } | undefined;
 async function applyGcFunctionDefinition(definition: string) {
   await db`grant create on schema app_private to branding_definer`;
   await db`grant branding_definer to postgres with set true`;
@@ -28,20 +26,19 @@ async function applyGcFunctionDefinition(definition: string) {
 }
 afterAll(async () => {
   if (mutationOriginal) {
-    if (!mutationSignature || !mutationOriginalMd5)
-      throw new Error('T050 mutation restoration guard is incomplete');
-    await applyGcFunctionDefinition(mutationOriginal);
-    const signature = mutationSignature;
-    const [restored] = await db<{ definition: string }[]>`
-      select pg_get_functiondef(${signature}::regprocedure) as definition
-    `;
-    const restoredMd5 = createHash('md5')
-      .update(restored?.definition ?? '')
-      .digest('hex');
-    expect(restoredMd5, 'branding GC mutation restoration MD5').toBe(
-      mutationOriginalMd5,
-    );
-    console.log('T050 mutation restored');
+    try {
+      await applyGcFunctionDefinition(mutationOriginal.definition);
+      const [restored] = await db<{ md5: string }[]>`
+        select md5(pg_get_functiondef(
+          ${mutationOriginal.identity}::regprocedure
+        )) as md5
+      `;
+      if (restored?.md5 !== mutationOriginal.md5)
+        throw new Error('T050 mutation restore hash mismatch');
+      console.log('T050 mutation restored and verified');
+    } finally {
+      mutationOriginal = undefined;
+    }
   }
   await db.end();
 });
@@ -56,15 +53,13 @@ beforeAll(async () => {
   } as const;
   if (!(mutation in signatures)) throw new Error('unknown_gc_mutation');
   const signature = signatures[mutation as keyof typeof signatures];
-  mutationSignature = signature;
-  const [row] = await db<{ definition: string }[]>`
-    select pg_get_functiondef(${signature}::regprocedure) as definition
+  const [row] = await db<{ definition: string; md5: string }[]>`
+    select pg_get_functiondef(${signature}::regprocedure) as definition,
+      md5(pg_get_functiondef(${signature}::regprocedure)) as md5
   `;
-  if (!row?.definition) throw new Error('missing_gc_mutation_target');
-  mutationOriginal = row.definition;
-  mutationOriginalMd5 = createHash('md5')
-    .update(mutationOriginal)
-    .digest('hex');
+  if (!row?.definition || !row.md5)
+    throw new Error('missing_gc_mutation_target');
+  mutationOriginal = { ...row, identity: signature };
   const replacements: Record<string, [RegExp, string]> = {
     publish: [
       /if exists\(select 1 from app_private\.branding_gc_claims g\s+where g\.workspace_id=d\.workspace_id(?:\s+and g\.lease_until\s*>\s*statement_timestamp\(\))?\)\s*then\s*raise exception using errcode='40001',message='branding_deletion_in_progress';\s*end if;/,
@@ -80,8 +75,8 @@ beforeAll(async () => {
     ],
   };
   const [pattern, replacement] = replacements[mutation]!;
-  const mutated = mutationOriginal.replace(pattern, replacement);
-  if (mutated === mutationOriginal)
+  const mutated = mutationOriginal.definition.replace(pattern, replacement);
+  if (mutated === mutationOriginal.definition)
     throw new Error('gc_mutation_target_not_found');
   await applyGcFunctionDefinition(mutated);
 });
