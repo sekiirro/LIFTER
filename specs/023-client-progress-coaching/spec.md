@@ -203,12 +203,12 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 
 **Options**:
 
-| Option | Description |
-|--------|-------------|
-| A | Inherit the assigned form's weekly day and a single default time; repetition once (p5-audit recommendation). Exact default time requires PO approval. |
-| B | Fixed platform-wide time for all workspaces. |
-| C | Workspace-configured time; no default until configured. |
-| D | Per-client configured time. |
+| Option | Description                                                                                                                                           |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A      | Inherit the assigned form's weekly day and a single default time; repetition once (p5-audit recommendation). Exact default time requires PO approval. |
+| B      | Fixed platform-wide time for all workspaces.                                                                                                          |
+| C      | Workspace-configured time; no default until configured.                                                                                               |
+| D      | Per-client configured time.                                                                                                                           |
 
 **Recommendation**: A, unless PO prefers workspace configurability (C). Exact default time string must be PO-approved (EN + Egyptian Arabic not applicable to time, but time value is a product decision).
 
@@ -222,11 +222,11 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 
 **Options**:
 
-| Option | Description |
-|--------|-------------|
-| A | Auto-extract updates the existing same-day record and appends a correction-history entry (recommended). |
-| B | Auto-extract skips (first record wins) and logs a conflict for trainer review. |
-| C | Auto-extract creates a new timestamped version; display dedups by day. |
+| Option | Description                                                                                             |
+| ------ | ------------------------------------------------------------------------------------------------------- |
+| A      | Auto-extract updates the existing same-day record and appends a correction-history entry (recommended). |
+| B      | Auto-extract skips (first record wins) and logs a conflict for trainer review.                          |
+| C      | Auto-extract creates a new timestamped version; display dedups by day.                                  |
 
 **Recommendation**: A, to keep a single same-day record with auditable history.
 
