@@ -222,13 +222,17 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const setPendingEdit = (pending: PendingEdit) => {
     setPendingEdits((current) => {
-      const withoutNote = current.filter((item) => item.noteId !== pending.noteId);
+      const withoutNote = current.filter(
+        (item) => item.noteId !== pending.noteId,
+      );
       return [...withoutNote, pending];
     });
   };
 
   const clearPendingEdit = (noteId: string) => {
-    setPendingEdits((current) => current.filter((item) => item.noteId !== noteId));
+    setPendingEdits((current) =>
+      current.filter((item) => item.noteId !== noteId),
+    );
   };
 
   const loadMore = async () => {
@@ -811,13 +815,13 @@ export function ClientNotes(props: ClientNotesProps) {
                         <div className={styles.actions}>
                           {canEditNote(note, actorId, role) &&
                             pendingEdits.length === 0 && (
-                            <Button
-                              type="button"
-                              onClick={() => startEdit(note)}
-                            >
-                              {m['clientNotes.edit']}
-                            </Button>
-                          )}
+                              <Button
+                                type="button"
+                                onClick={() => startEdit(note)}
+                              >
+                                {m['clientNotes.edit']}
+                              </Button>
+                            )}
                           {canDeleteNote(note, role) && (
                             <Button
                               type="button"
@@ -903,7 +907,9 @@ export function ClientNotes(props: ClientNotesProps) {
                 <Button
                   type="button"
                   disabled={saving}
-                  onClick={() => void handleUpdate(pending.noteId, pending.body)}
+                  onClick={() =>
+                    void handleUpdate(pending.noteId, pending.body)
+                  }
                 >
                   {m['clientNotes.retry']}
                 </Button>
