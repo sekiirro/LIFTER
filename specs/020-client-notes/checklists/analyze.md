@@ -424,3 +424,11 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 **Findings:** 0 open CRITICAL; 0 open HIGH.
 **Cross-reference sweep:** The tasks.md summary now identifies T005/T017 as complete and T007/PR gates as remaining; detailed task rows and traceability agree. No FR, SC, task tag, copy, behavior or product decision changed.
 **Ambiguity status:** No open in-scope ambiguity.
+
+## Round 47 - S53-R20 loaded-page edit retention and NUL copy classification (2026-11-13)
+
+**Analysis date:** 2026-11-13T05:06:32Z, after the final spec, plan, and task edits; no requirement text changed in this batch.
+**Inputs:** S53-R20; Greptile review PRR_kwDOVYgYQ88AAAABXtmUfA; existing FR-001/FR-002, SC-009, T005/T013; approved clientNotes.saveError and clientNotes.tooLongError bundle entries.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** FR-001's existing stable ordering and server-page cursor remain unchanged; the saved loaded-page note is merged by ID into its prior position and the refresh cursor stays tied to the refreshed server page. FR-002 already rejects NUL and uses the approved generic save-error state; create and update now share that classification while length guidance remains limited to real length violations. T005/T013 tests and traceability rows cover the behavior. No spec/plan/task requirement, copy, schema, or product decision changed.
+**Ambiguity status:** No open in-scope ambiguity.
