@@ -26,7 +26,9 @@ const assignedStackA = (() => {
     return false;
   }
 })();
-const local = isDisposableStackC(process.env) || assignedStackA;
+const local =
+  isDisposableStackC(process.env) ||
+  (assignedStackA && process.env.CI !== 'true');
 let fixture: Awaited<
   ReturnType<(typeof import('../integration/harness'))['twoWorkspaceFixture']>
 >;
