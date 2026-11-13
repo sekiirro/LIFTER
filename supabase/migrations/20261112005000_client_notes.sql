@@ -164,6 +164,7 @@ begin
     raise exception 'client note create denied' using errcode = '42501';
   end if;
   if p_body is null or p_idempotency_key is null
+     or char_length(p_idempotency_key) > 36
      or p_idempotency_key !~ '^(?:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|cn-[0-9]+-[a-z0-9]*)$' then
     raise exception 'client note create refused' using errcode = '22023';
   end if;

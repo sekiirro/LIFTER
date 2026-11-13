@@ -1711,6 +1711,225 @@ describe('ClientNotes behaviour', () => {
     expect(host!.querySelector('[role="alert"]')).not.toBeNull();
   });
 
+  it('retains an off-page edited note when a refreshed first page replaces loaded pages', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      id: `page-${index}`,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: `page note ${index}`,
+      created_at: `2026-11-12T10:${String(index % 60).padStart(2, '0')}:00Z`,
+      edited_at: null,
+    }));
+    const offPageNote = {
+      id: 'off-page-note',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'off-page original',
+      created_at: '2026-11-11T10:00:00Z',
+      edited_at: null,
+    };
+    const props = {
+      locale: 'en' as const,
+      messages: mEn,
+      status: 'ready' as const,
+      notes: firstPage,
+      hasMore: true,
+      onLoadMore: vi.fn(async () => ({
+        status: 'ok',
+        notes: [offPageNote],
+        hasMore: false,
+      })),
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+    };
+    await render(props);
+    const loadMore = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.loadMore'],
+    )!;
+    await act(async () => loadMore.click());
+    const offPageRow = Array.from(host!.querySelectorAll('li')).find(
+      (item) => item.textContent?.includes(offPageNote.body),
+    )!;
+    await act(async () =>
+      Array.from(offPageRow.querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.edit'],
+      )!.click(),
+    );
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'dirty off-page draft'),
+    );
+
+    await act(async () =>
+      root!.render(
+        createElement(ClientNotes, {
+          ...props,
+          notes: firstPage.slice(1),
+          hasMore: true,
+        }),
+      ),
+    );
+
+    expect(host!.querySelector('textarea')?.value).toBe('dirty off-page draft');
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.cancel'],
+      )!.click();
+    });
+    expect(host!.querySelector('dialog')?.textContent).toContain(
+      mEn['clientNotes.exitWarning.body'],
+    );
+    expect(host!.querySelector('textarea')?.value).toBe('dirty off-page draft');
+  });
+
+  it('keeps another note editor active when an older update succeeds late', async () => {
+    let resolveFirst: ((value: { status: string }) => void) | undefined;
+    const notes = ['note A original', 'note B original'].map((body, index) => ({
+      id: `note-${index}`,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:1${index}:00Z`,
+      edited_at: null,
+    }));
+    const onUpdate = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({ status: 'ok' });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes,
+      onUpdate,
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+    });
+    const rowFor = (body: string) =>
+      Array.from(host!.querySelectorAll('li')).find((item) =>
+        item.textContent?.includes(body),
+      )!;
+    await act(async () =>
+      Array.from(rowFor('note A original').querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.edit'],
+      )!.click(),
+    );
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'note A submitted body'),
+    );
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.saveChanges'],
+      )!.click();
+    });
+    await act(async () =>
+      Array.from(rowFor('note B original').querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.edit'],
+      )!.click(),
+    );
+    await act(async () => {
+      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button')).find(
+        (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+      )!.click();
+    });
+    expect(host!.querySelector('textarea')?.value).toBe('note B original');
+
+    await act(async () => {
+      resolveFirst?.({ status: 'ok' });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(host!.querySelector('textarea')?.value).toBe('note B original');
+    expect(host!.textContent).toContain(mEn['clientNotes.saveChanges']);
+  });
+
+  it('keeps a stale unknown update retry separate from the active note editor', async () => {
+    let resolveFirst: ((value: { status: string }) => void) | undefined;
+    const notes = ['note A original', 'note B original'].map((body, index) => ({
+      id: `note-${index}`,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:1${index}:00Z`,
+      edited_at: null,
+    }));
+    const onUpdate = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({ status: 'ok' });
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes,
+      onUpdate,
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+    });
+    const rowFor = (body: string) =>
+      Array.from(host!.querySelectorAll('li')).find((item) =>
+        item.textContent?.includes(body),
+      )!;
+    await act(async () =>
+      Array.from(rowFor('note A original').querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.edit'],
+      )!.click(),
+    );
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'note A submitted body'),
+    );
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.saveChanges'],
+      )!.click();
+    });
+    await act(async () =>
+      Array.from(rowFor('note B original').querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.edit'],
+      )!.click(),
+    );
+    await act(async () => {
+      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button')).find(
+        (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+      )!.click();
+    });
+
+    await act(async () => {
+      resolveFirst?.({ status: 'unavailable' });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const activeEditor = host!.querySelector('textarea')!;
+    expect(activeEditor.value).toBe('note B original');
+    expect(activeEditor.readOnly).toBe(false);
+    const retry = Array.from(host!.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.retry'],
+    )!;
+    await act(async () => {
+      retry.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onUpdate).toHaveBeenNthCalledWith(2, 'note-0', 'note A submitted body');
+    expect(host!.querySelector('textarea')?.value).toBe('note B original');
+    expect(host!.textContent).toContain(mEn['clientNotes.saveChanges']);
+  });
+
   it('disables the closed-editor Retry while its request is in flight', async () => {
     let resolveRetry: ((v: { status: string }) => void) | undefined;
     let attempts = 0;

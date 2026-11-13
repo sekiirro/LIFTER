@@ -2,7 +2,11 @@
 import { getActor } from '../auth/actor';
 import { authorize } from '../auth/authorize';
 import { createSessionClient } from '../supabase/server';
-import { isUuid, normalizeClientNoteBody } from './validation';
+import {
+  CLIENT_NOTE_IDEMPOTENCY_KEY_MAX_LENGTH,
+  isUuid,
+  normalizeClientNoteBody,
+} from './validation';
 
 type Status = 'denied' | 'invalid_input' | 'not_found' | 'unavailable';
 type Note = {
@@ -109,7 +113,8 @@ export async function createClientNote(input: unknown): Promise<NoteResult> {
     if (
       !isUuid(data.clientId) ||
       typeof data.idempotencyKey !== 'string' ||
-      data.idempotencyKey.length === 0
+      data.idempotencyKey.length === 0 ||
+      data.idempotencyKey.length > CLIENT_NOTE_IDEMPOTENCY_KEY_MAX_LENGTH
     )
       return { status: 'invalid_input' };
     const body = normalizeClientNoteBody(data.body);

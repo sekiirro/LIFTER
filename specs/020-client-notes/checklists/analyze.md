@@ -360,3 +360,11 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 **Cross-reference sweep:** spec.md, plan.md, tasks.md and the current analysis all identify CN-MCQ-30 as resolved and the 021 follow-up consistently. Existing tests and implementation are unchanged.
 **Findings:** 0 open CRITICAL; 0 open HIGH.
 **Ambiguity status:** No open ambiguities remain for the current F20 scope.
+
+## Round 39 - S52-R17 fix-batch reanalysis (2026-11-13)
+
+**Analysis date:** 2026-11-13T00:34:36Z, after the T013 row 26 byte-copy correction and S52-R17 implementation/test changes.
+**Inputs:** S52-R17; review 5883729698; FR-001/002/007/009 and T013/T015; current page refresh, editor-generation and idempotency-key boundaries.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Ambiguity status:** No new in-scope ambiguity. CN-MCQ-30 remains answered by S51-PO-3; display-name modeling remains a separate 021 feature. No new user-visible copy is introduced.
+**Cross-reference and copy:** T013 row 26 Arabic cell is copied from spec.md row 26 and verified byte-for-byte (41 UTF-8 bytes; SHA-256 160d2eff2f546de00d8fa7150f5bfb65d07fc6770182c157bbda9664e059dca2). S52-R17 findings map to existing FR-001/007/009 requirements and tests; no task scope change.

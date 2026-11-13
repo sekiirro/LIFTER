@@ -163,4 +163,46 @@ describe('Client Notes list ordering', () => {
     expect(mocks.getActor).not.toHaveBeenCalled();
     expect(mocks.createSessionClient).not.toHaveBeenCalled();
   });
+
+  it('accepts a 36-character generated key and refuses a 37-character key before auth', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: '40000000-0000-4000-8000-000000000001',
+          workspace_id: '10000000-0000-4000-8000-000000000001',
+          client_id: '20000000-0000-4000-8000-000000000001',
+          author_user_id: 'trainer',
+          body: 'valid body',
+          created_at: '2026-11-13T10:00:00Z',
+          edited_at: null,
+        },
+      ],
+      error: null,
+    });
+    mocks.createSessionClient.mockResolvedValueOnce({ rpc });
+    const accepted = await createClientNote({
+      workspaceId: '10000000-0000-4000-8000-000000000001',
+      clientId: '20000000-0000-4000-8000-000000000001',
+      idempotencyKey: '00000000-0000-4000-8000-000000000001',
+      body: 'valid body',
+    });
+    expect(accepted.status).toBe('ok');
+    expect(rpc).toHaveBeenCalledWith(
+      'create_client_note',
+      expect.objectContaining({
+        p_idempotency_key: '00000000-0000-4000-8000-000000000001',
+      }),
+    );
+
+    mocks.getActor.mockClear();
+    const rejected = await createClientNote({
+      workspaceId: '10000000-0000-4000-8000-000000000001',
+      clientId: '20000000-0000-4000-8000-000000000001',
+      idempotencyKey: `cn-1790000000000-${'a'.repeat(20)}`,
+      body: 'valid body',
+    });
+    expect(rejected).toEqual({ status: 'invalid_input' });
+    expect(mocks.getActor).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
 });

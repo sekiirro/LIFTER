@@ -78,6 +78,11 @@ type PendingCreate = {
   retrySent: boolean;
 };
 
+type PendingEdit = {
+  noteId: string;
+  body: string;
+};
+
 const createRequestSequences = new Map<string, number>();
 let nextCreateRequestSequence = 0;
 
@@ -145,14 +150,11 @@ export function ClientNotes(props: ClientNotesProps) {
     failed: false,
   });
   const pageStateIsCurrent = pageState.source === sourceNotes;
-  const notes = pageStateIsCurrent
+  const pageNotes = pageStateIsCurrent
     ? pageState.extra.length > 0
       ? [...sourceNotes, ...pageState.extra]
       : sourceNotes
     : sourceNotes;
-  const hasMore = pageStateIsCurrent
-    ? pageState.hasMore
-    : (props.hasMore ?? false);
   const [loadingMore, setLoadingMore] = useState(false);
   const status = props.status ?? 'ready';
   const actorId = props.actorId ?? null;
@@ -167,6 +169,10 @@ export function ClientNotes(props: ClientNotesProps) {
     () => false,
   );
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingNoteSnapshot, setEditingNoteSnapshot] =
+    useState<ClientNote | null>(null);
+  const editorGeneration = useRef(0);
+  const activeEditorId = useRef<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -175,10 +181,7 @@ export function ClientNotes(props: ClientNotesProps) {
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [unknownCreate, setUnknownCreate] = useState(false);
   const [unknownEdit, setUnknownEdit] = useState(false);
-  const [pendingEdit, setPendingEdit] = useState<{
-    noteId: string;
-    body: string;
-  } | null>(null);
+  const [pendingEdits, setPendingEdits] = useState<PendingEdit[]>([]);
   const [pendingCreate, setPendingCreate] = useState<PendingCreate | null>(
     null,
   );
@@ -199,6 +202,34 @@ export function ClientNotes(props: ClientNotesProps) {
   const [switchEditTargetId, setSwitchEditTargetId] = useState<string | null>(
     null,
   );
+
+  const notes =
+    editingId &&
+    editingNoteSnapshot &&
+    editingNoteSnapshot.id === editingId &&
+    !pageNotes.some((note) => note.id === editingId)
+      ? [...pageNotes, editingNoteSnapshot]
+      : pageNotes;
+  const hasMore = pageStateIsCurrent
+    ? pageState.hasMore
+    : (props.hasMore ?? false);
+
+  const setActiveEditor = (noteId: string | null) => {
+    editorGeneration.current += 1;
+    activeEditorId.current = noteId;
+    setEditingId(noteId);
+  };
+
+  const setPendingEdit = (pending: PendingEdit) => {
+    setPendingEdits((current) => {
+      const withoutNote = current.filter((item) => item.noteId !== pending.noteId);
+      return [...withoutNote, pending];
+    });
+  };
+
+  const clearPendingEdit = (noteId: string) => {
+    setPendingEdits((current) => current.filter((item) => item.noteId !== noteId));
+  };
 
   const loadMore = async () => {
     const last = notes.at(-1);
@@ -495,53 +526,60 @@ export function ClientNotes(props: ClientNotesProps) {
     ],
   );
 
-  const handleUpdate = useCallback(
-    async (noteId: string, retryBody?: string) => {
-      const body = normalizeClientNoteBody(retryBody ?? editDraft);
-      if (body === null) {
+  const handleUpdate = async (noteId: string, retryBody?: string) => {
+    const body = normalizeClientNoteBody(retryBody ?? editDraft);
+    const requestGeneration = editorGeneration.current;
+    const ownsEditor = () =>
+      activeEditorId.current === noteId &&
+      editorGeneration.current === requestGeneration;
+    if (body === null) {
+      if (ownsEditor()) {
         if (editDraft.trim().length === 0)
           setSaveError(m['clientNotes.blankError']);
         else setSaveError(m['clientNotes.tooLongError']);
-        return;
       }
-      setSaving(true);
-      setSaveError(null);
-      try {
-        const res = await props.onUpdate?.(noteId, body);
-        if (res?.status === 'ok') {
-          props.onSuccess?.('edited');
-          setEditingId(null);
+      return;
+    }
+    setSaving(true);
+    if (ownsEditor()) setSaveError(null);
+    try {
+      const res = await props.onUpdate?.(noteId, body);
+      if (res?.status === 'ok') {
+        props.onSuccess?.('edited');
+        clearPendingEdit(noteId);
+        if (ownsEditor()) {
+          setActiveEditor(null);
+          setEditingNoteSnapshot(null);
           setEditDraft('');
           setUnknownEdit(false);
-          setPendingEdit(null);
-        } else {
+          setSaveError(null);
+        }
+      } else {
+        const unknown =
+          res?.status !== 'denied' &&
+          res?.status !== 'invalid_input' &&
+          res?.status !== 'not_found';
+        if (unknown) setPendingEdit({ noteId, body });
+        else clearPendingEdit(noteId);
+        if (ownsEditor()) {
           setSaveError(
             res?.status === 'denied'
               ? m['clientNotes.permissionRefused']
               : m['clientNotes.saveError'],
           );
-          const unknown =
-            res?.status !== 'denied' &&
-            res?.status !== 'invalid_input' &&
-            res?.status !== 'not_found';
           setUnknownEdit(unknown);
-          if (unknown) setPendingEdit({ noteId, body });
-          else if (pendingEdit?.noteId === noteId) {
-            setPendingEdit(null);
-            setEditingId(noteId);
-            setEditDraft(body);
-          }
         }
-      } catch {
+      }
+    } catch {
+      setPendingEdit({ noteId, body });
+      if (ownsEditor()) {
         setSaveError(m['clientNotes.saveError']);
         setUnknownEdit(true);
-        setPendingEdit({ noteId, body });
-      } finally {
-        setSaving(false);
       }
-    },
-    [editDraft, pendingEdit, props, m],
-  );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleDelete = useCallback(
     async (noteId: string) => {
@@ -577,7 +615,8 @@ export function ClientNotes(props: ClientNotesProps) {
       return;
     }
     setSwitchEditTargetId(null);
-    setEditingId(note.id);
+    setActiveEditor(note.id);
+    setEditingNoteSnapshot(note);
     setEditDraft(note.body);
     setSaveError(null);
     setUnknownEdit(false);
@@ -594,7 +633,8 @@ export function ClientNotes(props: ClientNotesProps) {
       setExitOpen(true);
       return;
     }
-    setEditingId(null);
+    setActiveEditor(null);
+    setEditingNoteSnapshot(null);
     setEditDraft('');
     setUnknownEdit(false);
   };
@@ -609,7 +649,8 @@ export function ClientNotes(props: ClientNotesProps) {
       }
       if (unknownEdit) setPendingEdit({ noteId: editingId, body: editDraft });
       setSwitchEditTargetId(null);
-      setEditingId(target.id);
+      setActiveEditor(target.id);
+      setEditingNoteSnapshot(target);
       setEditDraft(target.body);
       setUnknownEdit(false);
       setSaveError(null);
@@ -621,13 +662,15 @@ export function ClientNotes(props: ClientNotesProps) {
     }
     if (exitMode === 'unknown' && unknownEdit && editingId) {
       setPendingEdit({ noteId: editingId, body: editDraft });
-      setEditingId(null);
+      setActiveEditor(null);
+      setEditingNoteSnapshot(null);
       setEditDraft('');
       setUnknownEdit(false);
       return;
     }
     if (editingId) {
-      setEditingId(null);
+      setActiveEditor(null);
+      setEditingNoteSnapshot(null);
       setEditDraft('');
       setUnknownEdit(false);
     } else {
@@ -766,7 +809,8 @@ export function ClientNotes(props: ClientNotesProps) {
                           <Bidi>{note.body}</Bidi>
                         </div>
                         <div className={styles.actions}>
-                          {canEditNote(note, actorId, role) && !pendingEdit && (
+                          {canEditNote(note, actorId, role) &&
+                            pendingEdits.length === 0 && (
                             <Button
                               type="button"
                               onClick={() => startEdit(note)}
@@ -848,19 +892,23 @@ export function ClientNotes(props: ClientNotesProps) {
             </Button>
           )}
 
-          {pendingEdit && !editingId && (
-            <Alert tone="error" title={m['clientNotes.saveError']}>
-              <Button
-                type="button"
-                disabled={saving}
-                onClick={() =>
-                  void handleUpdate(pendingEdit.noteId, pendingEdit.body)
-                }
+          {pendingEdits
+            .filter((pending) => pending.noteId !== editingId)
+            .map((pending) => (
+              <Alert
+                key={pending.noteId}
+                tone="error"
+                title={m['clientNotes.saveError']}
               >
-                {m['clientNotes.retry']}
-              </Button>
-            </Alert>
-          )}
+                <Button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void handleUpdate(pending.noteId, pending.body)}
+                >
+                  {m['clientNotes.retry']}
+                </Button>
+              </Alert>
+            ))}
 
           {moreLoadFailed && (
             <Alert tone="error" title={m['clientNotes.loadError']}>

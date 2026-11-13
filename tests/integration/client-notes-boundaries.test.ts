@@ -44,6 +44,36 @@ describe('F20 T004 client note mutation boundaries', () => {
     });
     expect(fallback.error).toBeNull();
     expect(fallback.data).toBeTruthy();
+
+    const atMax = await f.context.trainerA.client.rpc('create_client_note', {
+      p_workspace_id: f.workspaceId,
+      p_client_id: f.clientId,
+      p_body: 'the maximum generated UUID key is accepted',
+      p_idempotency_key: randomUUID(),
+    });
+    expect(atMax.error).toBeNull();
+    expect(atMax.data).toBeTruthy();
+
+    const notesBeforeOversized = await f.countNotes();
+    const oversizedKey = `cn-1790000000000-${'a'.repeat(20)}`;
+    expect(oversizedKey).toHaveLength(37);
+    const oversized = await f.context.trainerA.client.rpc(
+      'create_client_note',
+      {
+        p_workspace_id: f.workspaceId,
+        p_client_id: f.clientId,
+        p_body: 'oversized key must not persist',
+        p_idempotency_key: oversizedKey,
+      },
+    );
+    expect(oversized.error?.code).toBe('22023');
+    expect(await f.countNotes()).toBe(notesBeforeOversized);
+    const [oversizedKeyCount] = await f.db`
+      select count(*)::int as count from app_private.client_note_create_keys
+      where workspace_id = ${f.workspaceId} and client_id = ${f.clientId}
+        and idempotency_key = ${oversizedKey}
+    `;
+    expect(oversizedKeyCount?.count).toBe(0);
   });
 
   it('resolves client context only for authorized workspace actors', async () => {
