@@ -219,12 +219,7 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           page.getByText(m['catalog.detailOpenVideo']),
         ).toBeVisible();
-        const workspaceSelector = page.getByLabel(
-          m['catalog.editorWorkspace'],
-          {
-            exact: true,
-          },
-        );
+        const workspaceSelector = page.locator('#detail-workspace');
         await workspaceSelector.focus();
         await page.keyboard.press('Tab');
         const workspaceSubmit = page.getByRole('button', {
@@ -270,9 +265,7 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           privateDetail.getByText('Private saved notes', { exact: true }),
         ).toBeVisible();
-        const workspaceDetailSelector = page.getByLabel(
-          m['catalog.editorWorkspace'],
-        );
+        const workspaceDetailSelector = page.locator('#detail-workspace');
         await expect(
           workspaceDetailSelector.locator('option[value=""]'),
         ).toHaveCount(0);
