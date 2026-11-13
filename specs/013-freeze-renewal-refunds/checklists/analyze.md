@@ -441,3 +441,7 @@ Revalidated the new T051 task against existing F13 FR-039, SC-037, and GWT scena
 ### T051 standalone removal-floor compatibility refresh (2026-11-13)
 
 The full F12/F13 run and isolated `freeze-lifecycle.test.ts::T008 Remove preserves the Cairo day on which its fact is recorded` exposed a regression: restricting removal floors to freezes applied inside an existing term omitted a post-expiry freeze on a subscription with no future renewal. The approved existing test expects the removal's recorded Cairo day to remain the standalone subscription floor. Updated T051 plan/task mapping to preserve that case while keeping term-scoped floors when a future renewal exists. Added a forward migration only; no FR/SC/spec or PO decision changed. Rechecked all relevant F13 references and task tags. No open ambiguities. **CRITICAL: 0. HIGH: 0.**
+
+### T051 completion and traceability refresh (2026-11-13)
+
+After implementation commit `4ccce6f8`, reran T051's projection/removal mutation and standalone freeze-removal tests on that exact code tree. The `[x]` task state and traceability row now cite those passing Stack C tests and the full 27-file regression. No FR/SC/spec text changed; **CRITICAL: 0. HIGH: 0. No open ambiguities.**
