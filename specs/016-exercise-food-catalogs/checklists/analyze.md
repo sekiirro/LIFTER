@@ -1001,7 +1001,7 @@ A hostile pass found that a pending next-page response could append results afte
 - Security review: postgres-owned SECURITY DEFINER, empty search_path, public/anon/service_role revoked, authenticated execute only. Integration privilege and foreign workspace denial tests added.
 - Read-surface boundary: the existing variation projection includes active global exercises only. The new fallback must preserve that filter so a removed exercise ID cannot retrieve effective Video/Notes directly; integration regression added under T094.
 - Failure handling: malformed RPC payload maps to unavailable; missing exercise maps to generic denial. No new UI copy.
-- Findings: 0 open CRITICAL, 0 open HIGH. T094 remains unchecked until Stack A integration tests pass and traceability evidence is recorded.
+- Findings: 0 open CRITICAL, 0 open HIGH. T094 completion evidence is recorded in traceability.md after the Stack A integration batch passed on the implementation commit.
 
 ## S53-R19 T094 revalidation — 2026-11-13
 
