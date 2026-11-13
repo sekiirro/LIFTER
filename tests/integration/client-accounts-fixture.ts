@@ -82,12 +82,15 @@ export async function pending(
   patch: Record<string, unknown> = {},
   userId?: string,
 ) {
+  const registrationLinkId = patch.registration_link_id ?? f.link;
+  if (typeof registrationLinkId !== 'string')
+    throw new Error('Pending fixture registration link id must be a string');
   const user = userId ? { id: userId } : await identity(tx);
   await tx`select set_config('request.jwt.claims','{}',true)`;
   const [row] = await tx`insert into public.clients ${tx({
     workspace_id: f.wsA.id,
     auth_user_id: user.id,
-    registration_link_id: f.link,
+    registration_link_id: registrationLinkId,
     package_version_id: f.p.versionId,
     email_normalized: 'IGNORED@example.test',
     phone_e164:
@@ -99,7 +102,7 @@ export async function pending(
     name: 'U2 synthetic',
     ...patch,
   })} returning *`;
-  await tx`update public.registration_links set consumed_at=now() where id=${patch.registration_link_id ?? f.link}`;
+  await tx`update public.registration_links set consumed_at=now() where id=${registrationLinkId}`;
   return row!;
 }
 

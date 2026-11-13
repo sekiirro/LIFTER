@@ -13,15 +13,24 @@ import {
   issue as issueRegistrationLink,
   publish,
 } from './registration-links-fixture';
+import { createSynthetic } from './packages-fixture';
 
 const db = sql();
 afterAll(() => db.end());
 
 it('T050 returns workspace-wide queue totals on every page without combining currencies', async () => {
   const f = await clientContext();
-  const currencyLink = async (currency: string) => {
+  const currencyLink = async (
+    currency: string,
+    installments: readonly {
+      seq: number;
+      amount_minor: string;
+      due_offset_days: number;
+    }[],
+  ) => {
+    const packageFixture = await createSynthetic(f);
     const versionId = checkedLink(
-      await publish(f, f.p.id, {
+      await publish(f, packageFixture.id, {
         tier_rank: 1,
         price_minor: '1200',
         currency,
@@ -43,12 +52,24 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
     );
     const versionContext = { ...f, p: { ...f.p, versionId } };
     const linkId = checkedLink(
-      await issueRegistrationLink(versionContext, f.po.client),
+      await issueRegistrationLink(versionContext, f.po.client, {
+        installments,
+      }),
     ) as string;
     return { versionId, linkId };
   };
-  const egp = await currencyLink('EGP');
-  const usd = await currencyLink('USD');
+  const egpSchedule = [
+    { seq: 1, amount_minor: '300', due_offset_days: 0 },
+    { seq: 2, amount_minor: '400', due_offset_days: 30 },
+    { seq: 3, amount_minor: '500', due_offset_days: 60 },
+  ] as const;
+  const usdSchedule = [
+    { seq: 1, amount_minor: '400', due_offset_days: 0 },
+    { seq: 2, amount_minor: '600', due_offset_days: 30 },
+    { seq: 3, amount_minor: '200', due_offset_days: 60 },
+  ] as const;
+  const egp = await currencyLink('EGP', egpSchedule);
+  const usd = await currencyLink('USD', usdSchedule);
   await probe(async (tx) => {
     await graph(tx, f, {
       currency: 'EGP',

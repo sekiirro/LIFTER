@@ -162,6 +162,7 @@ function pagination(
 function okQueue(
   data: unknown,
   fields: readonly string[],
+  includePaymentTotals = false,
 ): SafeResult | ReadFailure {
   const failure = safeStatus(data);
   if (failure)
@@ -171,9 +172,17 @@ function okQueue(
   if (!object(data) || data.status !== 'ok' || !Array.isArray(data.items))
     return { status: 'unavailable' };
   const items = data.items.map((item) => pick(item, fields));
+  if (includePaymentTotals && !Array.isArray(data.totals))
+    return { status: 'unavailable' };
   const cursor = data.next_cursor ?? null;
   if (!(cursor === null || uuid(cursor))) return { status: 'unavailable' };
-  return { status: 'ok', items, next_cursor: cursor };
+  const result: SafeResult = { status: 'ok', items };
+  if (includePaymentTotals)
+    result.totals = (data.totals as unknown[]).map((item) =>
+      pick(item, ['currency', 'unpaid_minor']),
+    );
+  result.next_cursor = cursor;
+  return result;
 }
 
 export async function readRegistrationApprovalQueue(
@@ -330,7 +339,7 @@ export async function readWorkspacePaymentQueue(
     return {
       status: data.status === 'not_permitted' ? 'not_permitted' : 'unavailable',
     };
-  return okQueue(data, PAYMENT_QUEUE_FIELDS);
+  return okQueue(data, PAYMENT_QUEUE_FIELDS, true);
 }
 
 export async function readSubscriptionPaymentStatus(
