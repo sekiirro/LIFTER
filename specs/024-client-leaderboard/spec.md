@@ -241,7 +241,6 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-3.verbatim.txt`; the PO's w
 - **S55-PO-3 Q9**: “PO-only manual final approval after WhatsApp verification (verification happens outside the app; the app records the PO's approval/rejection with audit)” (FR-003, FR-026, FR-028). No separate proposal step is specified.
 - **S55-PO-3 Q10**: “notice shown once on the client dashboard when first eligible + in account settings” (FR-005).
 
-
 ### Decided -- S55-PO-6 (2026-11-14)
 
 Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-6.verbatim.txt`; PO wording is quoted verbatim.

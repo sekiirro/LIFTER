@@ -1,15 +1,16 @@
 ﻿# Specification Analysis: F24 Client Leaderboard
 
 **Date**: 2026-11-14  
+**Run**: after final spec, plan, task, and traceability formatting
 **Inputs**: `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`, `research.md`, `.specify/memory/constitution.md`  
 **Requirements**: 40 FRs, 8 SCs  
 **Tasks**: 29
 
 ## Findings
 
-| ID | Category | Severity | Location | Summary | Recommendation |
-| --- | --- | --- | --- | --- | --- |
-| A1 | Ambiguity | MEDIUM | spec.md Q14; FR-022/037 | Username character/length and reserved-name rules are not established by F11. Q14 is explicitly non-blocking for planning; final policy implementation waits for the PO. | Keep the conservative placeholder confined to planning and obtain the answer before shipping username-specific validation. |
+| ID  | Category  | Severity | Location                | Summary                                                                                                                                                                  | Recommendation                                                                                                             |
+| --- | --------- | -------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Ambiguity | MEDIUM   | spec.md Q14; FR-022/037 | Username character/length and reserved-name rules are not established by F11. Q14 is explicitly non-blocking for planning; final policy implementation waits for the PO. | Keep the conservative placeholder confined to planning and obtain the answer before shipping username-specific validation. |
 
 ## Coverage Summary
 
