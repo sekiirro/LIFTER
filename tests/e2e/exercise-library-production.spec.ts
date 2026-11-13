@@ -219,7 +219,12 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           page.getByText(m['catalog.detailOpenVideo']),
         ).toBeVisible();
-        const workspaceSelector = page.getByLabel(m['catalog.editorWorkspace']);
+        const workspaceSelector = page.getByLabel(
+          m['catalog.editorWorkspace'],
+          {
+            exact: true,
+          },
+        );
         await workspaceSelector.focus();
         await page.keyboard.press('Tab');
         const workspaceSubmit = page.getByRole('button', {
