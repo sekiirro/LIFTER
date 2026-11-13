@@ -307,7 +307,13 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
         args.push(values[typeName]!);
       }
       if (
-        ['record_refund', 'record_renewal', 'close_client'].includes(fn.proname)
+        [
+          'record_refund',
+          'record_renewal',
+          'record_subscription_upgrade',
+          'record_subscription_date_adjustment',
+          'close_client',
+        ].includes(fn.proname)
       ) {
         await tx.savepoint(async (inner) => {
           await inner`set local role authenticated`;
@@ -335,6 +341,8 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                       value !== null &&
                       'status' in value &&
                       (value.status === 'invalid' ||
+                        (fn.proname === 'record_subscription_upgrade' &&
+                          value.status === 'not_permitted') ||
                         (fn.proname === 'read_client_form_draft' &&
                           value.status === 'not_found') ||
                         ([
@@ -362,6 +370,8 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
     expect(unauthorizedPaymentRpcResults).toEqual({
       record_refund: { status: 'not_permitted' },
       record_renewal: { status: 'not_permitted' },
+      record_subscription_upgrade: { status: 'not_permitted' },
+      record_subscription_date_adjustment: { status: 'not_permitted' },
       close_client: { status: 'not_permitted' },
     });
   });

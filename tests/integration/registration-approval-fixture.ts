@@ -47,6 +47,8 @@ export async function graph(
     amount?: string;
     offset?: number;
     currency?: string;
+    versionId?: string;
+    linkId?: string;
     authUserId?: string;
     issuedRows?: readonly {
       seq: number;
@@ -55,7 +57,19 @@ export async function graph(
     }[];
   } = {},
 ) {
-  const client = await pending(tx, f, {}, options.authUserId);
+  const versionId = options.versionId ?? f.p.versionId;
+  const linkId = options.linkId ?? f.link;
+  const client = await pending(
+    tx,
+    f,
+    { package_version_id: versionId, registration_link_id: linkId },
+    options.authUserId,
+  );
+  const currency = options.currency ?? 'XTS';
+  const collectedAmount =
+    options.amount ??
+    options.issuedRows?.find((row) => row.seq === 1)?.amount_minor ??
+    '1200';
   await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
   const ids = {
     client: client.id as string,
@@ -71,17 +85,17 @@ export async function graph(
   await tx`insert into app_private.registration_decisions(id,workspace_id,client_id,operation_id,actor_user_id,kind,from_state,to_state)
     values(${ids.decision},${f.wsA.id},${ids.client},${ids.operation},${f.po.userId},'approve','pending-approval','approved')`;
   await tx`insert into public.subscriptions(id,workspace_id,client_id,registration_link_id,package_version_id,price_minor,currency,commission_rate_bp,duration_days,duration_months,created_by)
-    values(${ids.subscription},${f.wsA.id},${ids.client},${f.link},${f.p.versionId},${options.price ?? '1200'},'XTS',17,61,null,${f.po.userId})`;
+    values(${ids.subscription},${f.wsA.id},${ids.client},${linkId},${versionId},${options.price ?? '1200'},${currency},17,61,null,${f.po.userId})`;
   if (options.issuedRows) {
     for (const row of options.issuedRows)
       await tx`insert into public.subscription_installments(id,workspace_id,subscription_id,seq,amount_minor,currency,issued_day_offset,source_kind)
-      values(${row.seq === 1 ? ids.obligation : randomUUID()},${f.wsA.id},${ids.subscription},${row.seq},${row.amount_minor},'XTS',${row.due_offset_days},'issued_schedule')`;
+      values(${row.seq === 1 ? ids.obligation : randomUUID()},${f.wsA.id},${ids.subscription},${row.seq},${row.amount_minor},${currency},${row.due_offset_days},'issued_schedule')`;
   } else {
     await tx`insert into public.subscription_installments(id,workspace_id,subscription_id,seq,amount_minor,currency,issued_day_offset,source_kind)
     values(${ids.obligation},${f.wsA.id},${ids.subscription},1,${options.installment ?? '1200'},${options.currency ?? 'XTS'},${options.offset ?? 0},'single_payment')`;
   }
   await tx`insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,kind,amount_minor,currency,commission_minor,collected_on,effective_on,recorded_by,operation_id)
-    values(${ids.event},${f.wsA.id},${ids.subscription},${ids.obligation},1,1,'collection',${options.amount ?? '1200'},'XTS',${options.commission ?? '2'},'1900-01-01','1900-01-01',${f.po.userId},${ids.operation})`;
+    values(${ids.event},${f.wsA.id},${ids.subscription},${ids.obligation},1,1,'collection',${collectedAmount},${currency},${options.commission ?? '2'},'1900-01-01','1900-01-01',${f.po.userId},${ids.operation})`;
   await tx`insert into app_private.registration_approval_events(id,workspace_id,client_id,subscription_id) values(${ids.fact},${f.wsA.id},${ids.client},${ids.subscription})`;
   await tx`update public.clients set approval_state='approved' where id=${ids.client}`;
   return ids;
