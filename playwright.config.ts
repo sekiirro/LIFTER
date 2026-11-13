@@ -10,6 +10,7 @@ import {
   loadSelectedStackEnv,
   selectStack,
 } from './scripts/local-stack.mjs';
+import { getSupabaseStatusCommand } from './scripts/playwright-stack-command.mjs';
 
 function loadPlaywrightStackEnvironment() {
   if (!process.env.LIFTER_SUPABASE_STACK) return;
@@ -19,14 +20,10 @@ function loadPlaywrightStackEnvironment() {
   const required = ['API_URL', 'ANON_KEY', 'SERVICE_ROLE_KEY', 'DB_URL'];
   if (required.some((key) => !process.env[key])) {
     const { workdir } = getStackConfig(stack);
+    const statusCommand = getSupabaseStatusCommand(workdir);
     const output = execFileSync(
-      'powershell.exe',
-      [
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        `& npx supabase status --workdir '${workdir}' -o env`,
-      ],
+      statusCommand.command,
+      statusCommand.args,
       {
         encoding: 'utf8',
         windowsHide: true,
