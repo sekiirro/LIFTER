@@ -295,3 +295,7 @@ All targeted T152 behavior is now exercised: manual and recurring materializatio
 ## S52 final pre-implementation Analyze refresh (2026-11-13 04:16:49 +02:00)
 
 After formatting changed Markdown through the exact Prettier API used by scripts/format-check-changed.mjs, rechecked T152/T153 requirements and task mapping. Formatting only reflowed prose/tables; FR-003/005, SC-018, scenarios, PO choice, architect mapping, and behavior are unchanged. Entry and cross-reference checks still pass. The current RED/GREEN and two mutation runs cover each effective assignment writer and preserve the assignment snapshot. No new permissions, copy, result contract, deletion, or retention behavior. **CRITICAL: 0. HIGH: 0.** No open ambiguity for approved retirement behavior. Task evidence closure remains pending the implementation commit SHA.
+
+## S52 evidence-closure Analyze refresh (2026-11-13 04:18:12 +02:00)
+
+Revalidated after marking T152/T153 complete and recording implementation commit 94dd5f467a61a47c79c5a295c92516afc98f9fa4 in raceability.md. T152's full touched integration set passed 25/25 on Stack A, the pre-fix RED and both independent guard-removal mutations are recorded, and T153's FR/SC/task/contract/acceptance cross-references agree. The PO choice remains byte-exact A with S52-R1 separately identified as the architect mapping. No pending status remains for the decided retirement behavior. **CRITICAL: 0. HIGH: 0. No open ambiguity for T152/T153.**
