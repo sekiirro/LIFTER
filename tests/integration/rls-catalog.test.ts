@@ -226,7 +226,6 @@ describe('tenancy security catalog (T007)', () => {
       where n.nspname = 'app_private'`;
     expect([...new Set(rows.map((row) => row.proname))].sort()).toEqual(
       [
-
         ...new Set([
           ...registrationPrivate,
           ...approvalFunctions.map((signature) => signature.split('(')[0]!),
