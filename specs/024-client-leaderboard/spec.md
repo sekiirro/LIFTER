@@ -241,6 +241,7 @@ Each MCQ has 2-4 options, implications, a recommendation, and what it blocks. ID
 Question: How should the leaderboard score combine adherence and goal-relative progress?
 
 Options:
+
 - A: Single composite score = (adherence weight × adherence) + (progress weight × goal-relative progress), with weights 50/50. (Recommended starting point)
 - B: Adherence is a gate (minimum threshold) and ranking is by goal-relative progress only.
 - C: Goal-relative progress is a gate and ranking is by adherence only.
@@ -255,6 +256,7 @@ Recommendation: A as a default, subject to PO weights; otherwise D with explicit
 Question: What counts as "adherence"?
 
 Options:
+
 - A: Weekly check-in submission rate only (submitted on time / expected). (Recommended)
 - B: Plan adherence (completed workout/nutrition plan actions) only.
 - C: Combined: check-in submission rate + plan adherence, equal weight.
@@ -268,6 +270,7 @@ Recommendation: A (measurable, reuses F15).
 Question: How is "goal-relative progress" computed per goal type?
 
 Options:
+
 - A: Percentage of goal achieved relative to target (e.g., weight loss target, strength target), normalized 0–100, averaged across active goals. (Recommended)
 - B: Improvement delta vs. baseline, normalized per goal type.
 - C: Binary (goal met / not met) per goal, averaged.
@@ -281,6 +284,7 @@ Recommendation: A if spec 023 exposes targets; otherwise B.
 Question: What are the eligibility rules?
 
 Options:
+
 - A: Active subscription + minimum 14 active days + freeze pauses accumulation (no eligibility during freeze) + opt-out default. (Recommended)
 - B: Active subscription + minimum 7 active days + freeze excludes client entirely + opt-out default.
 - C: Active subscription only + opt-in required (contradicts BRD no prior gate — not recommended).
@@ -294,6 +298,7 @@ Recommendation: A (aligns with BRD; freeze handling consistent with F13).
 Question: What is the ranking period and how often is it recomputed?
 
 Options:
+
 - A: Current subscription cycle (activation→expiry) as period; recompute on data change (check-in/progress update) but publish only on PO action. (Recommended)
 - B: Rolling last 30 days; scheduled daily recompute.
 - C: Calendar month; scheduled weekly recompute.
@@ -307,6 +312,7 @@ Recommendation: A.
 Question: How are score ties broken?
 
 Options:
+
 - A: Higher adherence, then earlier achievement date, then client code. (Recommended)
 - B: Higher goal-relative progress, then adherence, then client code.
 - C: Random among tied (not recommended for fairness).
@@ -320,6 +326,7 @@ Recommendation: A.
 Question: What identity is displayed and how does removal work?
 
 Options:
+
 - A: First name + last initial + profile photo (if available) with initials fallback; opt-out via client self-service button; removal within 24h. (Recommended)
 - B: Initials only + no photo; opt-out via request to staff.
 - C: Full name + photo; opt-out via request to PO only.
@@ -333,6 +340,7 @@ Recommendation: A or B depending on legal review (assessment C4); default B for 
 Question: Who may view a published leaderboard?
 
 Options:
+
 - A: Clients in the same workspace only (gamification among peers). (Recommended)
 - B: Clients + staff/trainers in the workspace.
 - C: Clients + staff + PO.
@@ -346,6 +354,7 @@ Recommendation: A.
 Question: How does publication get approved?
 
 Options:
+
 - A: Workspace owner/staff proposes a leaderboard config; PO approves and publishes (or rejects) with audit. Published view is a snapshot; re-approval required for config changes. (Recommended)
 - B: PO alone initiates and publishes; no proposal step.
 - C: PO approves but published view is live (auto-updates without re-approval).
@@ -359,6 +368,7 @@ Recommendation: A (snapshot + re-approval).
 Question: Where and how is the "you may appear" notice shown?
 
 Options:
+
 - A: Shown on client dashboard once when first eligible + in account settings; exact EN/AR copy per copy-proposal.md. (Recommended)
 - B: Shown only in account settings.
 - C: Shown as a dismissible banner on first login after eligibility.
