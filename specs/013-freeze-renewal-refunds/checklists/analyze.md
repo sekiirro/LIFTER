@@ -357,3 +357,10 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - T050 remains unticked. S52-F13-MCQ-17 leaves the aggregation pagination scope undecided; no queue totals implementation or test expectation was added. Queue behavior is blocked until that product decision is supplied.
 - Current-scope ambiguities: none for T049. MCQ-17 is explicitly open for T050. T044 remains P4/open and T048 remains unticked, outside this implementation scope.
 - Findings: **0 open CRITICAL, 0 open HIGH**. Verdict: PASS for T049; T050 blocked solely by S52-F13-MCQ-17.
+
+## S53-88d payment queue totals analysis — 2026-11-13T02:29:47Z
+
+- Entry gate: FR-044, measurable SC-038, GWT scenario 20, T050, plan, payment-queue contract, and traceability all cover currency-separated queue totals. S52-F13-MCQ-17 is resolved by byte-exact S52-PO-7 `MCQ17B` (SHA-256 `5fdd051fa8222b8fc0dd68c4b9b83a34f7d21f4d38b78e1185841ea57cba1944`); architect S52-R20 mapping is labelled separately.
+- Scope: one read-only `workspace_payment_queue` RPC response gains workspace-wide per-currency totals, using the queue's existing workspace/approval/deactivation filters and unpaid calculation. Totals do not depend on cursor/page size; for unchanged queue data each page returns the same sorted `{currency, unpaid_minor}` array. No schema/table, permission, or retention change is required; existing SECURITY DEFINER/search_path/owner/grants are preserved.
+- Gap sweep checked empty queue, >1 page, mixed currencies, amount encoding, ordering, page/cursor filters, unauthorized access, concurrent queue-state changes between reads, and unchanged queue behavior. No unresolved product behavior remains for T050; no new MCQ is required. T044 stays P4/open and T048 unticked outside this scope.
+- Findings: **0 open CRITICAL, 0 open HIGH**. Verdict: PASS to implement T050.

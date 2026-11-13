@@ -8,9 +8,104 @@ import {
   sql,
   type Context,
 } from './registration-approval-fixture';
+import {
+  checked as checkedLink,
+  issue as issueRegistrationLink,
+  publish,
+} from './registration-links-fixture';
 
 const db = sql();
 afterAll(() => db.end());
+
+it('T050 returns workspace-wide queue totals on every page without combining currencies', async () => {
+  const f = await clientContext();
+  const currencyLink = async (currency: string) => {
+    const versionId = checkedLink(
+      await publish(f, f.p.id, {
+        tier_rank: 1,
+        price_minor: '1200',
+        currency,
+      }),
+    ) as string;
+    const offer = checkedLink(
+      await f.po.client
+        .from('package_offers')
+        .select('id')
+        .eq('current_version_id', versionId)
+        .single(),
+    );
+    checkedLink(
+      await f.po.client.rpc('set_package_offer_available', {
+        workspace_id: f.wsA.id,
+        offer_id: offer.id,
+        available: true,
+      }),
+    );
+    const versionContext = { ...f, p: { ...f.p, versionId } };
+    const linkId = checkedLink(
+      await issueRegistrationLink(versionContext, f.po.client),
+    ) as string;
+    return { versionId, linkId };
+  };
+  const egp = await currencyLink('EGP');
+  const usd = await currencyLink('USD');
+  await probe(async (tx) => {
+    await graph(tx, f, {
+      currency: 'EGP',
+      versionId: egp.versionId,
+      linkId: egp.linkId,
+      commission: '1',
+      issuedRows: [
+        { seq: 1, amount_minor: '300', due_offset_days: 0 },
+        { seq: 2, amount_minor: '400', due_offset_days: 30 },
+        { seq: 3, amount_minor: '500', due_offset_days: 60 },
+      ],
+    });
+    await graph(tx, f, {
+      currency: 'USD',
+      versionId: usd.versionId,
+      linkId: usd.linkId,
+      commission: '1',
+      issuedRows: [
+        { seq: 1, amount_minor: '400', due_offset_days: 0 },
+        { seq: 2, amount_minor: '600', due_offset_days: 30 },
+        { seq: 3, amount_minor: '200', due_offset_days: 60 },
+      ],
+    });
+
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    try {
+      const [first] = await tx`
+        select public.workspace_payment_queue(${f.wsA.id},null,1) as result`;
+      const firstData = first!.result as {
+        items: { currency: string }[];
+        totals?: { currency: string; unpaid_minor: string }[];
+        next_cursor: string | null;
+      };
+      expect(firstData.items).toHaveLength(1);
+      expect(firstData.next_cursor).toMatch(/^[0-9a-f-]{36}$/i);
+      expect(firstData.totals).toEqual([
+        { currency: 'EGP', unpaid_minor: '900' },
+        { currency: 'USD', unpaid_minor: '800' },
+      ]);
+
+      const [second] = await tx`
+        select public.workspace_payment_queue(${f.wsA.id},${firstData.next_cursor},1) as result`;
+      const secondData = second!.result as typeof firstData;
+      expect(secondData.items).toHaveLength(1);
+      expect(secondData.totals).toEqual(firstData.totals);
+
+      const [differentPageSize] = await tx`
+        select public.workspace_payment_queue(${f.wsA.id},null,2) as result`;
+      expect((differentPageSize!.result as typeof firstData).totals).toEqual(
+        firstData.totals,
+      );
+    } finally {
+      await tx`reset role`;
+    }
+  });
+});
 
 type RefundRequest = {
   workspace_id: string;

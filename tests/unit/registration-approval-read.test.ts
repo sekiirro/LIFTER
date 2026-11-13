@@ -152,6 +152,30 @@ describe('registration approval safe readers', () => {
     );
   });
 
+  it('returns only currency and unpaid amount from payment queue totals', async () => {
+    setActor('sales');
+    setBackend({
+      status: 'ok',
+      items: [],
+      totals: [
+        {
+          currency: 'EGP',
+          unpaid_minor: '500',
+          commission_minor: '999',
+        },
+      ],
+      next_cursor: null,
+    });
+    const result = await readWorkspacePaymentQueue({ workspaceId: ws });
+    expect(result).toEqual({
+      status: 'ok',
+      items: [],
+      totals: [{ currency: 'EGP', unpaid_minor: '500' }],
+      next_cursor: null,
+    });
+    expect(JSON.stringify(result)).not.toContain('commission');
+  });
+
   it('keeps payment status safe and maps only the U5 obligation columns', async () => {
     setActor('sales');
     setBackend({

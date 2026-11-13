@@ -99,7 +99,7 @@ export async function pending(
     name: 'U2 synthetic',
     ...patch,
   })} returning *`;
-  await tx`update public.registration_links set consumed_at=now() where id=${f.link}`;
+  await tx`update public.registration_links set consumed_at=now() where id=${patch.registration_link_id ?? f.link}`;
   return row!;
 }
 
