@@ -115,6 +115,82 @@ beforeEach(() => {
 
 describe('production exercise detail route', () => {
   it.each([
+    {
+      label: 'global canonical values',
+      query: { workspace: '' },
+      payload: {
+        ...row.payload,
+        description: 'Global saved description',
+        notes: 'Global saved notes',
+        effective_fields: {
+          ...row.payload.effective_fields,
+          description: {
+            value: 'Global saved description',
+            source: 'canonical',
+          },
+          notes: { value: 'Global saved notes', source: 'canonical' },
+        },
+      },
+      expected: ['Global saved description', 'Global saved notes'],
+    },
+    {
+      label: 'workspace-shared effective override values',
+      query: { workspace: workspaceId },
+      payload: {
+        ...row.payload,
+        description: 'Canonical description',
+        notes: 'Canonical notes',
+        effective_fields: {
+          ...row.payload.effective_fields,
+          description: {
+            value: 'Shared saved description',
+            source: 'override',
+          },
+          notes: { value: 'Shared saved notes', source: 'override' },
+        },
+      },
+      expected: ['Shared saved description', 'Shared saved notes'],
+    },
+    {
+      label: 'workspace-private stored values',
+      query: { scope: 'workspace', workspace: workspaceId },
+      payload: {
+        ...row.payload,
+        description: 'Private saved description',
+        notes: 'Private saved notes',
+        effective_fields: undefined,
+      },
+      expected: ['Private saved description', 'Private saved notes'],
+    },
+  ])(
+    'renders $label with the approved field labels',
+    async ({ query, payload, expected }) => {
+      m.detail.mockResolvedValue({ status: 'ok', data: [{ ...row, payload }] });
+      const html = renderToStaticMarkup(
+        await Page({
+          params: Promise.resolve({ exerciseId: id }),
+          searchParams: Promise.resolve(query),
+        }),
+      );
+      expect(html).toContain(en['catalog.editorDescription']);
+      expect(html).toContain(en['catalog.editorNotes']);
+      for (const value of expected) expect(html).toContain(value);
+    },
+  );
+
+  it('uses the existing empty convention for absent Description and Notes', async () => {
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: '' }),
+      }),
+    );
+    expect(html).toContain(en['catalog.editorDescription']);
+    expect(html).toContain(en['catalog.editorNotes']);
+    expect(html).toContain(en['catalog.editorNone']);
+  });
+
+  it.each([
     'not-a-uuid',
     '55555555-5555-4555-8555-555555555555/extra',
     [

@@ -1012,5 +1012,20 @@ A hostile pass found that a pending next-page response could append results afte
 - Scope: test-harness portability for the existing selected-local-stack environment fallback. Windows keeps its existing PowerShell command; Linux/macOS invoke `npx` with direct argument boundaries. CI still supplies its environment and does not enter this fallback. No F16 product requirement text changed.
 - Traceability: T095 is unique and tagged FR-018; `traceability.md` maps the command-selection unit test and Playwright config evaluation tests to implementation commit `843e9404`.
 - Validation: RED failed before the selector existed; GREEN passed 4/4 focused tests; mutation forcing the Windows command for every platform failed the Linux/macOS selection assertion. The restored implementation passed 4/4.
-- UI scope: no rendered UI changed. `S53-86K-UI-1` remains a PO decision for the separate P1 detail-view rendering request; that P1 is blocked and excluded from T095.
+- UI scope: no rendered UI changed in T095. The separate S53-86K-UI-1 PO decision is resolved by S53-PO-3 and implemented under T096.
 - Analysis result: no new CRITICAL or HIGH technical findings for T095. No open ambiguity remains in the platform command selection behavior.
+
+## S53-R31 / S53-PO-3 T096 analysis - 2026-11-13
+
+- Authority: PO S53-PO-3 source hash `d93da40c3cb58f568fcc939d4d396475242fd3783c238ed1fdaa373b0acba625`; architect S53-R31 is recorded separately as implementation mapping.
+- Scope is read-only Exercise Detail rendering of saved Description and Notes in already authorized Global, workspace-shared, and workspace-private scopes. FR-012 authorization and the existing effective-value resolver are unchanged; no read endpoint or role is added.
+- Labels and empty state are existing localized keys `catalog.editorDescription`, `catalog.editorNotes`, and `catalog.editorNone`; no new copy is required. Text uses existing `Bidi` and token-based detail styles.
+- Test coverage: component/route tests prove each scope renders effective values and empty values use the approved empty key; production E2E proves persisted values for Global, shared override, and private exercise under AR/EN, RTL/LTR, light/dark, 390/1440, with axe and screenshots.
+- Risks checked: authorization bypass, foreign workspace leakage, missing/empty values, untrusted raw payload fields, bidi text, long text wrapping, responsive overflow, empty/error/loading state changes. Existing authorized detail row is the only input; no raw server query is added.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open product ambiguity remains for T096 within the exact PO answer and S53-R31 mapping.
+
+## S53-R31 acceptance-scenario reanalysis � 2026-11-13
+
+- Revalidated after adding FR-018 acceptance scenario 13 and SC-021. The scenario states authorized scopes, populated and empty values, existing approved labels/empty convention, and denied unauthorized scope.
+- Cross references resolve: FR-012, FR-018, SC-021, T096. `ui-handoff.md` and `plan.md` describe the same boundaries; no requirement expands the read surface.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity remains within PO S53-PO-3 and architect mapping S53-R31.

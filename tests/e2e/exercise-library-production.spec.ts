@@ -6,12 +6,27 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
+import { assertLocalStackTarget } from '../../scripts/local-stack.mjs';
 import { isDisposableStackC } from './disposable-stack';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3437';
 const screenshotDir =
   process.env.LIFTER_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s32-f16-lib15');
-const local = isDisposableStackC(process.env);
+const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
+const dbUrl = process.env.DB_URL || process.env.SUPABASE_DB_URL;
+const assignedStackA = (() => {
+  if (process.env.LIFTER_SUPABASE_STACK !== 'a' || !apiUrl || !dbUrl)
+    return false;
+  try {
+    return (
+      assertLocalStackTarget({ stack: 'a', apiUrl, dbUrl }).projectId ===
+      'lifter'
+    );
+  } catch {
+    return false;
+  }
+})();
+const local = isDisposableStackC(process.env) || assignedStackA;
 let fixture: Awaited<
   ReturnType<(typeof import('../integration/harness'))['twoWorkspaceFixture']>
 >;
@@ -51,6 +66,8 @@ async function createWorkspaceExercise() {
         secondary_muscle_codes: ['triceps'],
         equipment_codes: ['barbell'],
         default_reps: 3,
+        description: 'Private saved description',
+        notes: 'Private saved notes',
       },
     },
   );
@@ -87,6 +104,8 @@ test.beforeAll(async () => {
       default_reps: { min: 8, max: 12 },
       default_rest_time: 90,
       default_rir: 2,
+      description: 'Global saved description',
+      notes: 'Global saved notes',
     },
   });
   if (created.error) throw new Error(created.error.message);
@@ -98,7 +117,11 @@ test.beforeAll(async () => {
       p_exercise_id: exerciseId,
       p_expected_version: 0,
       p_operation_key: randomUUID(),
-      p_request: { video_url: 'https://youtu.be/abcdefghijk', notes: '' },
+      p_request: {
+        video_url: 'https://youtu.be/abcdefghijk',
+        description: 'Shared saved description',
+        notes: 'Shared saved notes',
+      },
     },
   );
   if (variation.error) throw new Error(variation.error.message);
@@ -181,6 +204,18 @@ for (const locale of ['ar', 'en'] as const) {
           `/exercise-library/${exerciseId}?workspace=${fixture.wsA.id}`,
         );
         await expect(page.getByTestId('exercise-detail')).toBeVisible();
+        const sharedDetail = page.getByTestId('exercise-detail');
+        await expect(
+          sharedDetail.getByText(m['catalog.editorDescription'], {
+            exact: true,
+          }),
+        ).toBeVisible();
+        await expect(
+          sharedDetail.getByText('Shared saved description', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          sharedDetail.getByText('Shared saved notes', { exact: true }),
+        ).toBeVisible();
         await expect(
           page.getByText(m['catalog.detailOpenVideo']),
         ).toBeVisible();
@@ -201,11 +236,35 @@ for (const locale of ['ar', 'en'] as const) {
           fullPage: true,
         });
 
+        await page.goto(`/exercise-library/${exerciseId}?workspace=`);
+        const globalDetail = page.getByTestId('exercise-detail');
+        await expect(
+          globalDetail.getByText('Global saved description', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          globalDetail.getByText('Global saved notes', { exact: true }),
+        ).toBeVisible();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-detail-global.png`,
+          ),
+          fullPage: true,
+        });
+
         const workspaceExerciseId = await createWorkspaceExercise();
         await page.goto(
           `/exercise-library/${workspaceExerciseId}?scope=workspace&workspace=${fixture.wsA.id}`,
         );
         await expect(page.getByTestId('exercise-detail')).toBeVisible();
+        const privateDetail = page.getByTestId('exercise-detail');
+        await expect(
+          privateDetail.getByText('Private saved description', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          privateDetail.getByText('Private saved notes', { exact: true }),
+        ).toBeVisible();
         const workspaceDetailSelector = page.getByLabel(
           m['catalog.editorWorkspace'],
         );

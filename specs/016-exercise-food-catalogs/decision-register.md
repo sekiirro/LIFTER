@@ -373,3 +373,15 @@ Verbatim PO decision: `F16=A`.
 PO source: `C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-6.verbatim.txt`; SHA256 `c62cd198a022efb057517b6d99d258dab7743bb7a9ea259de4e672e364689888`. The exact decision is recorded in the source as “F16=A”.
 
 Implementation meaning from separate architect mapping S50-R32: on a variation-only write, an explicitly blank Notes or Video value clears that workspace override to the canonical value. An omitted field remains unchanged. No open ambiguity remains for this decision.
+
+## S53-PO-3 F16 answer for S53-86K-UI-1
+
+Source: C:/Users/NEW LAP/.lifter/runs/s53-po/s53-po-3.verbatim.txt
+SHA256: d93da40c3cb58f568fcc939d4d396475242fd3783c238ed1fdaa373b0acba625
+
+Verbatim source bytes follow exactly:
+merge #96 at 08ddaf0d662f6e927b446e939d5239a7474a8084.
+
+S53-F13-MCQ-1=A. S53-86K-UI-1=1. Proceed
+
+Implementation mapping: architect ruling S53-R31 (mapping, not PO words). Render saved Description and Notes in authorized Exercise Detail scopes using the effective values already returned by the existing authorized detail read; no authorization/read-surface change. Use existing approved labels and the screen's existing empty-field convention.

@@ -103,6 +103,22 @@ export function ExerciseDetailView({
           <Bidi dir="auto">{exercise.names[locale] || exercise.names.en}</Bidi>
         </h3>
         <dl className={styles.details}>
+          <div className={styles.wide}>
+            <dt>{m['catalog.editorDescription']}</dt>
+            <dd className={styles.textValue}>
+              <Bidi dir="auto">
+                {exercise.description ?? m['catalog.editorNone']}
+              </Bidi>
+            </dd>
+          </div>
+          <div className={styles.wide}>
+            <dt>{m['catalog.editorNotes']}</dt>
+            <dd className={styles.textValue}>
+              <Bidi dir="auto">
+                {exercise.notes ?? m['catalog.editorNone']}
+              </Bidi>
+            </dd>
+          </div>
           <div>
             <dt>{m['catalog.detailVersion']}</dt>
             <dd>
