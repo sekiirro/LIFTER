@@ -1029,3 +1029,10 @@ A hostile pass found that a pending next-page response could append results afte
 - Revalidated after adding FR-018 acceptance scenario 13 and SC-021. The scenario states authorized scopes, populated and empty values, existing approved labels/empty convention, and denied unauthorized scope.
 - Cross references resolve: FR-012, FR-018, SC-021, T096. `ui-handoff.md` and `plan.md` describe the same boundaries; no requirement expands the read surface.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity remains within PO S53-PO-3 and architect mapping S53-R31.
+
+## S53-R31 T096 validation reanalysis - 2026-11-13
+
+- Verified commit `a1b70d67` contains FR-018/SC-021, the T096 implementation, and component/production E2E assertions. Traceability maps each requirement to T096 and named tests.
+- RED/GREEN/mutation evidence is recorded in `traceability.md`; the temporary UI mutant was restored before final matrix screenshots.
+- No authorization, effective-value resolution, or UI copy changed beyond displaying the existing effective Description/Notes fields and using existing localized labels/empty convention.
+- Findings: 0 open CRITICAL, 0 open HIGH.
