@@ -438,6 +438,100 @@ describe('ClientNotes behaviour', () => {
     });
   });
 
+  it('keeps a saved note from a loaded page visible in place after refresh', async () => {
+    const note = (id: string, body: string, minute: number) => ({
+      id,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:${String(minute).padStart(2, '0')}:00Z`,
+      edited_at: null as string | null,
+    });
+    const firstPage = [
+      note('n1', 'first page one', 12),
+      note('n2', 'first page two', 11),
+    ];
+    const olderNote = note('n3', 'older page note', 10);
+    const refreshedFirstPage = [note('n0', 'new insert', 13), ...firstPage];
+    const onLoadMore = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'ok',
+        notes: [olderNote],
+        hasMore: true,
+      })
+      .mockResolvedValueOnce({ status: 'ok', notes: [], hasMore: false });
+    const onUpdate = vi.fn(async (noteId: string, body: string) => ({
+      status: 'ok',
+      note: {
+        ...olderNote,
+        id: noteId,
+        body,
+        edited_at: '2026-11-13T04:00:00Z',
+      },
+    }));
+    const props: Record<string, unknown> = {
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: firstPage,
+      hasMore: true,
+      onLoadMore,
+      onUpdate,
+      onSuccess: () =>
+        root!.render(
+          createElement(ClientNotes, {
+            ...props,
+            notes: refreshedFirstPage,
+          } as never),
+        ),
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+      clientId: 'c',
+      workspaceId: 'w',
+    };
+    await render(props);
+
+    const buttonWithText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => buttonWithText(mEn['clientNotes.loadMore']).click());
+    const olderRow = Array.from(host!.querySelectorAll('li')).find((item) =>
+      item.textContent?.includes('older page note'),
+    )!;
+    await act(async () =>
+      Array.from(olderRow.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click(),
+    );
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'saved older note'),
+    );
+    await act(async () => {
+      buttonWithText(mEn['clientNotes.saveChanges']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const rowTexts = Array.from(host!.querySelectorAll('li')).map(
+      (item) => item.textContent ?? '',
+    );
+    expect(rowTexts[0]).toContain('new insert');
+    expect(rowTexts[1]).toContain('first page one');
+    expect(rowTexts[2]).toContain('first page two');
+    expect(rowTexts[3]).toContain('saved older note');
+    expect(rowTexts[3]).not.toContain('older page note');
+    expect(onUpdate).toHaveBeenCalledWith('n3', 'saved older note');
+
+    await act(async () => buttonWithText(mEn['clientNotes.loadMore']).click());
+    expect(onLoadMore).toHaveBeenLastCalledWith({
+      created_at: firstPage[1]!.created_at,
+      id: firstPage[1]!.id,
+    });
+  });
+
   it('uses approved load-error and Retry copy without exposing a server error', async () => {
     const note = {
       id: 'n1',
@@ -711,6 +805,96 @@ describe('ClientNotes behaviour', () => {
     expect(
       (host!.querySelector('textarea') as HTMLTextAreaElement).readOnly,
     ).toBe(false);
+  });
+
+  it('uses generic approved save copy for NUL create input and length guidance only for excess length', async () => {
+    const onCreate = vi.fn(async () => ({ status: 'invalid_input' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+    });
+
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, String.fromCharCode(0)),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
+    expect(host!.textContent).not.toContain(mEn['clientNotes.tooLongError']);
+    expect(onCreate).not.toHaveBeenCalled();
+
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'x'.repeat(5001)),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.tooLongError']);
+    expect(onCreate).not.toHaveBeenCalled();
+  });
+
+  it('uses generic approved save copy for NUL update input and length guidance only for excess length', async () => {
+    const note = {
+      id: 'n-validation',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'original note',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const onUpdate = vi.fn(async () => ({ status: 'invalid_input' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      onUpdate,
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+    });
+
+    const row = host!.querySelector('li')!;
+    await act(async () =>
+      Array.from(row.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click(),
+    );
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, String.fromCharCode(0)),
+    );
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button'))
+        .find(
+          (button) => button.textContent === mEn['clientNotes.saveChanges'],
+        )!
+        .click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
+    expect(host!.textContent).not.toContain(mEn['clientNotes.tooLongError']);
+    expect(onUpdate).not.toHaveBeenCalled();
+
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'x'.repeat(5001)),
+    );
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button'))
+        .find(
+          (button) => button.textContent === mEn['clientNotes.saveChanges'],
+        )!
+        .click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.tooLongError']);
+    expect(onUpdate).not.toHaveBeenCalled();
   });
 
   it('uses the approved permission-refusal copy for definite denied mutations', async () => {

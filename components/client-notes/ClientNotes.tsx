@@ -63,6 +63,21 @@ export type ClientNotesProps = {
 
 const EMPTY_NOTES: readonly ClientNote[] = [];
 
+function mergePageNotes(
+  firstPage: readonly ClientNote[],
+  loadedPages: readonly ClientNote[],
+): ClientNote[] {
+  const seen = new Set(firstPage.map((note) => note.id));
+  return [
+    ...firstPage,
+    ...loadedPages.filter((note) => {
+      if (seen.has(note.id)) return false;
+      seen.add(note.id);
+      return true;
+    }),
+  ];
+}
+
 const PLATFORM_OWNER = 'platform_owner';
 const PENDING_CREATE_PREFIX = 'lifter-client-notes-pending-create:v1:';
 const TAB_NAME_PREFIX = 'lifter-client-notes-tab:v1:';
@@ -143,17 +158,25 @@ export function ClientNotes(props: ClientNotesProps) {
   const m = props.messages ?? getMessages(locale);
   const dir = dirFor(locale);
   const sourceNotes = props.notes ?? EMPTY_NOTES;
+  const pageScope = JSON.stringify([
+    props.workspaceId ?? null,
+    props.clientId ?? null,
+    props.actorId ?? null,
+    props.role ?? null,
+  ]);
   const [pageState, setPageState] = useState({
+    scope: pageScope,
     source: sourceNotes,
     extra: [] as readonly ClientNote[],
+    cursor: sourceNotes.at(-1) ?? null,
     hasMore: props.hasMore ?? false,
     failed: false,
   });
-  const pageStateIsCurrent = pageState.source === sourceNotes;
-  const pageNotes = pageStateIsCurrent
-    ? pageState.extra.length > 0
-      ? [...sourceNotes, ...pageState.extra]
-      : sourceNotes
+  const pageStateIsForScope = pageState.scope === pageScope;
+  const pageStateIsCurrent =
+    pageStateIsForScope && pageState.source === sourceNotes;
+  const pageNotes = pageStateIsForScope
+    ? mergePageNotes(sourceNotes, pageState.extra)
     : sourceNotes;
   const [loadingMore, setLoadingMore] = useState(false);
   const status = props.status ?? 'ready';
@@ -213,10 +236,6 @@ export function ClientNotes(props: ClientNotesProps) {
   const hasMore = pageStateIsCurrent
     ? pageState.hasMore
     : (props.hasMore ?? false);
-  const cursorNotes =
-    pageStateIsCurrent && pageState.extra.length > 0
-      ? [...sourceNotes, ...pageState.extra]
-      : sourceNotes;
   const pendingNavigation = useRef<HTMLAnchorElement | null>(null);
   const allowNavigationClick = useRef(false);
 
@@ -242,13 +261,15 @@ export function ClientNotes(props: ClientNotesProps) {
   };
 
   const loadMore = async () => {
-    const last = cursorNotes.at(-1);
+    const last = pageStateIsCurrent ? pageState.cursor : sourceNotes.at(-1);
     if (!last || !hasMore || loadingMore || !props.onLoadMore) return;
     setLoadingMore(true);
     setPageState((current) => ({
+      scope: pageScope,
       source: sourceNotes,
-      extra: current.source === sourceNotes ? current.extra : [],
-      hasMore: current.source === sourceNotes ? current.hasMore : hasMore,
+      extra: current.scope === pageScope ? current.extra : [],
+      cursor: last,
+      hasMore,
       failed: false,
     }));
     try {
@@ -261,14 +282,16 @@ export function ClientNotes(props: ClientNotesProps) {
         return;
       }
       setPageState((current) => {
-        const extra = current.source === sourceNotes ? current.extra : [];
+        const extra = current.scope === pageScope ? current.extra : [];
         const seen = new Set([...sourceNotes, ...extra].map((note) => note.id));
         return {
+          scope: pageScope,
           source: sourceNotes,
           extra: [
             ...extra,
             ...result.notes!.filter((note) => !seen.has(note.id)),
           ],
+          cursor: result.notes!.at(-1) ?? last,
           hasMore: result.hasMore === true,
           failed: false,
         };
@@ -489,11 +512,12 @@ export function ClientNotes(props: ClientNotesProps) {
     async (e?: FormEvent) => {
       e?.preventDefault();
       const retryingUnknown = unknownCreate && pendingCreate !== null;
-      const body = retryingUnknown
-        ? pendingCreate.body
-        : normalizeClientNoteBody(draft);
+      const rawBody = retryingUnknown ? pendingCreate.body : draft;
+      const body = normalizeClientNoteBody(rawBody);
       if (body === null) {
-        if (draft.trim().length === 0)
+        if (rawBody.includes('\u0000'))
+          setSaveError(m['clientNotes.saveError']);
+        else if (rawBody.trim().length === 0)
           setSaveError(m['clientNotes.blankError']);
         else setSaveError(m['clientNotes.tooLongError']);
         return;
@@ -586,14 +610,17 @@ export function ClientNotes(props: ClientNotesProps) {
   );
 
   const handleUpdate = async (noteId: string, retryBody?: string) => {
-    const body = normalizeClientNoteBody(retryBody ?? editDraft);
+    const rawBody = retryBody ?? editDraft;
+    const body = normalizeClientNoteBody(rawBody);
     const requestGeneration = editorGeneration.current;
     const ownsEditor = () =>
       activeEditorId.current === noteId &&
       editorGeneration.current === requestGeneration;
     if (body === null) {
       if (ownsEditor()) {
-        if (editDraft.trim().length === 0)
+        if (rawBody.includes('\u0000'))
+          setSaveError(m['clientNotes.saveError']);
+        else if (rawBody.trim().length === 0)
           setSaveError(m['clientNotes.blankError']);
         else setSaveError(m['clientNotes.tooLongError']);
       }
@@ -605,6 +632,16 @@ export function ClientNotes(props: ClientNotesProps) {
       const res = await props.onUpdate?.(noteId, body);
       if (res?.status === 'ok') {
         props.onSuccess?.('edited');
+        if (res.note?.id === noteId) {
+          setPageState((current) => {
+            if (current.scope !== pageScope) return current;
+            const index = current.extra.findIndex((note) => note.id === noteId);
+            if (index < 0) return current;
+            const extra = [...current.extra];
+            extra[index] = res.note!;
+            return { ...current, extra };
+          });
+        }
         clearPendingEdit(noteId);
         if (ownsEditor()) {
           setActiveEditor(null);
