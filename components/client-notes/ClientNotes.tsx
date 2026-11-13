@@ -96,6 +96,7 @@ type PendingCreate = {
 type PendingEdit = {
   noteId: string;
   body: string;
+  status: 'unknown' | 'denied';
 };
 
 const createRequestSequences = new Map<string, number>();
@@ -176,7 +177,7 @@ export function ClientNotes(props: ClientNotesProps) {
   const pageStateIsForScope = pageState.scope === pageScope;
   const pageStateIsCurrent =
     pageStateIsForScope && pageState.source === sourceNotes;
-  const pageNotes = pageStateIsForScope
+  const pageNotes = pageStateIsCurrent
     ? mergePageNotes(sourceNotes, pageState.extra)
     : sourceNotes;
   const [loadingMore, setLoadingMore] = useState(false);
@@ -196,6 +197,12 @@ export function ClientNotes(props: ClientNotesProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingNoteSnapshot, setEditingNoteSnapshot] =
     useState<ClientNote | null>(null);
+  const [editedSnapshotState, setEditedSnapshotState] = useState({
+    scope: pageScope,
+    notes: [] as readonly ClientNote[],
+  });
+  const editedSnapshots =
+    editedSnapshotState.scope === pageScope ? editedSnapshotState.notes : [];
   const editorGeneration = useRef(0);
   const activeEditorId = useRef<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
@@ -231,13 +238,14 @@ export function ClientNotes(props: ClientNotesProps) {
     null,
   );
 
+  const notesWithEditedSnapshots = mergePageNotes(pageNotes, editedSnapshots);
   const notes =
     editingId &&
     editingNoteSnapshot &&
     editingNoteSnapshot.id === editingId &&
-    !pageNotes.some((note) => note.id === editingId)
-      ? [...pageNotes, editingNoteSnapshot]
-      : pageNotes;
+    !notesWithEditedSnapshots.some((note) => note.id === editingId)
+      ? [...notesWithEditedSnapshots, editingNoteSnapshot]
+      : notesWithEditedSnapshots;
   const hasMore = pageStateIsCurrent
     ? pageState.hasMore
     : (props.hasMore ?? false);
@@ -280,8 +288,14 @@ export function ClientNotes(props: ClientNotesProps) {
     setPageState((current) => ({
       scope: pageScope,
       source: sourceNotes,
-      extra: current.scope === pageScope ? current.extra : [],
-      deletedIds: current.scope === pageScope ? current.deletedIds : [],
+      extra:
+        current.scope === pageScope && current.source === sourceNotes
+          ? current.extra
+          : [],
+      deletedIds:
+        current.scope === pageScope && current.source === sourceNotes
+          ? current.deletedIds
+          : [],
       cursor: last,
       hasMore,
       failed: false,
@@ -296,9 +310,10 @@ export function ClientNotes(props: ClientNotesProps) {
         return;
       }
       setPageState((current) => {
-        const extra = current.scope === pageScope ? current.extra : [];
-        const deletedIds =
-          current.scope === pageScope ? current.deletedIds : [];
+        const samePage =
+          current.scope === pageScope && current.source === sourceNotes;
+        const extra = samePage ? current.extra : [];
+        const deletedIds = samePage ? current.deletedIds : [];
         const seen = new Set([
           ...sourceNotes.map((note) => note.id),
           ...extra.map((note) => note.id),
@@ -667,6 +682,17 @@ export function ClientNotes(props: ClientNotesProps) {
     try {
       const res = await props.onUpdate?.(noteId, body);
       if (res?.status === 'ok') {
+        if (res.note?.id === noteId) {
+          setEditedSnapshotState((current) => ({
+            scope: pageScope,
+            notes: [
+              ...(current.scope === pageScope
+                ? current.notes.filter((note) => note.id !== noteId)
+                : []),
+              res.note!,
+            ],
+          }));
+        }
         props.onSuccess?.('edited');
         if (res.note?.id === noteId) {
           setPageState((current) => {
@@ -691,7 +717,9 @@ export function ClientNotes(props: ClientNotesProps) {
           res?.status !== 'denied' &&
           res?.status !== 'invalid_input' &&
           res?.status !== 'not_found';
-        if (unknown) setPendingEdit({ noteId, body });
+        if (unknown) setPendingEdit({ noteId, body, status: 'unknown' });
+        else if (retryBody !== undefined && res?.status === 'denied')
+          setPendingEdit({ noteId, body, status: 'denied' });
         else clearPendingEdit(noteId);
         if (ownsEditor()) {
           setSaveError(
@@ -703,7 +731,7 @@ export function ClientNotes(props: ClientNotesProps) {
         }
       }
     } catch {
-      setPendingEdit({ noteId, body });
+      setPendingEdit({ noteId, body, status: 'unknown' });
       if (ownsEditor()) {
         setSaveError(m['clientNotes.saveError']);
         setUnknownEdit(true);
@@ -714,45 +742,50 @@ export function ClientNotes(props: ClientNotesProps) {
     }
   };
 
-  const handleDelete = useCallback(
-    async (noteId: string) => {
-      if (deletingNoteIdsRef.current.has(noteId)) return;
-      deletingNoteIdsRef.current.add(noteId);
-      setDeletingNoteIds((current) =>
-        current.includes(noteId) ? current : [...current, noteId],
-      );
-      setDeleteTargetId(null);
-      setDeleteError(null);
-      try {
-        const res = await props.onDelete?.(noteId);
-        if (res?.status === 'ok') {
-          props.onSuccess?.('deleted');
-          setPageState((current) => {
-            if (current.scope !== pageScope) return current;
-            return {
-              ...current,
-              extra: current.extra.filter((note) => note.id !== noteId),
-              deletedIds: current.deletedIds.includes(noteId)
-                ? current.deletedIds
-                : [...current.deletedIds, noteId],
-            };
-          });
-        } else {
-          setDeleteError(
-            res?.status === 'denied'
-              ? m['clientNotes.permissionRefused']
-              : m['clientNotes.deleteError'],
-          );
-        }
-      } catch {
-        setDeleteError(m['clientNotes.deleteError']);
-      } finally {
-        deletingNoteIdsRef.current.delete(noteId);
-        setDeletingNoteIds((current) => current.filter((id) => id !== noteId));
+  const handleDelete = async (noteId: string) => {
+    if (deletingNoteIdsRef.current.has(noteId)) return;
+    deletingNoteIdsRef.current.add(noteId);
+    setDeletingNoteIds((current) =>
+      current.includes(noteId) ? current : [...current, noteId],
+    );
+    setDeleteTargetId(null);
+    setDeleteError(null);
+    try {
+      const res = await props.onDelete?.(noteId);
+      if (res?.status === 'ok') {
+        props.onSuccess?.('deleted');
+        setEditedSnapshotState((current) =>
+          current.scope === pageScope
+            ? {
+                ...current,
+                notes: current.notes.filter((note) => note.id !== noteId),
+              }
+            : current,
+        );
+        setPageState((current) => {
+          if (current.scope !== pageScope) return current;
+          return {
+            ...current,
+            extra: current.extra.filter((note) => note.id !== noteId),
+            deletedIds: current.deletedIds.includes(noteId)
+              ? current.deletedIds
+              : [...current.deletedIds, noteId],
+          };
+        });
+      } else {
+        setDeleteError(
+          res?.status === 'denied'
+            ? m['clientNotes.permissionRefused']
+            : m['clientNotes.deleteError'],
+        );
       }
-    },
-    [props, m, pageScope],
-  );
+    } catch {
+      setDeleteError(m['clientNotes.deleteError']);
+    } finally {
+      deletingNoteIdsRef.current.delete(noteId);
+      setDeletingNoteIds((current) => current.filter((id) => id !== noteId));
+    }
+  };
 
   const startEdit = (note: ClientNote) => {
     if (
@@ -806,7 +839,12 @@ export function ClientNotes(props: ClientNotesProps) {
         setSwitchEditTargetId(null);
         return;
       }
-      if (unknownEdit) setPendingEdit({ noteId: editingId, body: editDraft });
+      if (unknownEdit)
+        setPendingEdit({
+          noteId: editingId,
+          body: editDraft,
+          status: 'unknown',
+        });
       setSwitchEditTargetId(null);
       setActiveEditor(target.id);
       setEditingNoteSnapshot(target);
@@ -821,7 +859,7 @@ export function ClientNotes(props: ClientNotesProps) {
       return;
     }
     if (exitMode === 'unknown' && unknownEdit && editingId) {
-      setPendingEdit({ noteId: editingId, body: editDraft });
+      setPendingEdit({ noteId: editingId, body: editDraft, status: 'unknown' });
       setActiveEditor(null);
       setEditingNoteSnapshot(null);
       setEditDraft('');
@@ -1062,7 +1100,11 @@ export function ClientNotes(props: ClientNotesProps) {
               <Alert
                 key={pending.noteId}
                 tone="error"
-                title={m['clientNotes.saveError']}
+                title={
+                  pending.status === 'denied'
+                    ? m['clientNotes.permissionRefused']
+                    : m['clientNotes.saveError']
+                }
               >
                 <Button
                   type="button"

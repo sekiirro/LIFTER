@@ -366,6 +366,89 @@ describe('ClientNotes behaviour', () => {
     expect(button()).toBeUndefined();
   });
 
+  it('resets loaded continuation rows when the first page changes', async () => {
+    const note = (id: string, second: number) => ({
+      id,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: id,
+      created_at: new Date(Date.UTC(2026, 10, 13, 0, 0, second)).toISOString(),
+      edited_at: null,
+    });
+    const firstPage = Array.from({ length: 100 }, (_, index) =>
+      note(`page-${index}`, 300 - index),
+    );
+    const originalSecondPage = Array.from({ length: 100 }, (_, index) =>
+      note(`page-${index + 100}`, 200 - index),
+    );
+    const refreshedFirstPage = [
+      note('newer-insert', 400),
+      ...firstPage.slice(0, 99),
+    ];
+    const resumedSecondPage = [
+      firstPage[99]!,
+      ...Array.from({ length: 99 }, (_, index) =>
+        note(`page-${index + 100}`, 200 - index),
+      ),
+    ];
+    const onLoadMore = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'ok',
+        notes: originalSecondPage,
+        hasMore: true,
+      })
+      .mockResolvedValueOnce({
+        status: 'ok',
+        notes: resumedSecondPage,
+        hasMore: false,
+      });
+    const props = {
+      locale: 'en' as const,
+      messages: mEn,
+      status: 'ready' as const,
+      notes: firstPage,
+      hasMore: true,
+      onLoadMore,
+      canCreate: false,
+    };
+    await render(props);
+
+    const loadMore = () =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.loadMore'],
+      )!;
+    await act(async () => loadMore().click());
+    expect(host!.querySelectorAll('li')).toHaveLength(200);
+
+    await act(async () =>
+      root!.render(
+        createElement(ClientNotes, {
+          ...props,
+          notes: refreshedFirstPage,
+        }),
+      ),
+    );
+    expect(host!.querySelectorAll('li')).toHaveLength(100);
+    expect(host!.textContent).not.toContain('page-100');
+
+    await act(async () => loadMore().click());
+    expect(onLoadMore).toHaveBeenNthCalledWith(2, {
+      created_at: refreshedFirstPage.at(-1)!.created_at,
+      id: refreshedFirstPage.at(-1)!.id,
+    });
+    const renderedIds = Array.from(host!.querySelectorAll('li')).map(
+      (item) => item.textContent?.match(/newer-insert|page-\d+/)?.[0] ?? null,
+    );
+    expect(host!.querySelectorAll('li')).toHaveLength(200);
+    expect(new Set(renderedIds).size).toBe(200);
+    expect(renderedIds).toEqual([
+      ...refreshedFirstPage.map((item) => item.id),
+      ...resumedSecondPage.map((item) => item.id),
+    ]);
+  });
+
   it('keeps the load-more cursor on the refreshed server page when an older edited row is retained', async () => {
     const note = (id: string, body: string, minute: number) => ({
       id,
@@ -1188,6 +1271,13 @@ describe('ClientNotes behaviour', () => {
 
   it('create: persists before dispatch and clears the unresolved record after Retry succeeds', async () => {
     let calls = 0;
+    const dispatchRecords: Array<{
+      body: string;
+      idempotencyKey: string;
+      storedBody: string;
+      storedIdempotencyKey: string;
+      retrySent: boolean;
+    }> = [];
     const onCreate = vi.fn(async (body: string, key: string) => {
       calls += 1;
       const stored = JSON.parse(
@@ -1195,10 +1285,12 @@ describe('ClientNotes behaviour', () => {
           'lifter-client-notes-pending-create:v1:workspace-1:client-1',
         )!,
       ) as { body: string; idempotencyKey: string; retrySent: boolean };
-      expect(stored).toMatchObject({
+      dispatchRecords.push({
         body,
         idempotencyKey: key,
-        retrySent: calls > 1,
+        storedBody: stored.body,
+        storedIdempotencyKey: stored.idempotencyKey,
+        retrySent: stored.retrySent,
       });
       return calls === 1 ? { status: 'unavailable' } : { status: 'ok' };
     });
@@ -1232,6 +1324,22 @@ describe('ClientNotes behaviour', () => {
     expect(onCreate).toHaveBeenCalledTimes(2);
     expect(onCreate.mock.calls[1]![0]).toBe('retained body');
     expect(onCreate.mock.calls[1]![1]).toBe(key);
+    expect(dispatchRecords).toEqual([
+      {
+        body: 'retained body',
+        idempotencyKey: key,
+        storedBody: 'retained body',
+        storedIdempotencyKey: key,
+        retrySent: false,
+      },
+      {
+        body: 'retained body',
+        idempotencyKey: key,
+        storedBody: 'retained body',
+        storedIdempotencyKey: key,
+        retrySent: true,
+      },
+    ]);
     expect(
       dom!.window.sessionStorage.getItem(
         'lifter-client-notes-pending-create:v1:workspace-1:client-1',
@@ -2887,6 +2995,8 @@ describe('ClientNotes behaviour', () => {
     const onUpdate = vi
       .fn()
       .mockResolvedValueOnce({ status: 'unavailable' })
+      .mockResolvedValueOnce({ status: 'denied' })
+      .mockResolvedValueOnce({ status: 'unavailable' })
       .mockResolvedValueOnce({ status: 'ok' });
     await render({
       locale: 'en',
@@ -2925,7 +3035,29 @@ describe('ClientNotes behaviour', () => {
       byText(mEn['clientNotes.retry']).click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    expect(
+      Array.from(host!.querySelectorAll('[role="alert"]')).some((alert) =>
+        alert.textContent?.includes(mEn['clientNotes.permissionRefused']),
+      ),
+    ).toBe(true);
+    expect(host!.textContent).toContain(mEn['clientNotes.retry']);
     expect(onUpdate).toHaveBeenNthCalledWith(2, 'n-retry', 'retained body');
+    await act(async () => {
+      byText(mEn['clientNotes.retry']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(
+      Array.from(host!.querySelectorAll('[role="alert"]')).some((alert) =>
+        alert.textContent?.includes(mEn['clientNotes.saveError']),
+      ),
+    ).toBe(true);
+    expect(onUpdate).toHaveBeenNthCalledWith(3, 'n-retry', 'retained body');
+    await act(async () => {
+      byText(mEn['clientNotes.retry']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onUpdate).toHaveBeenNthCalledWith(4, 'n-retry', 'retained body');
+    expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
   });
 
   it('delete failures use approved generic copy only', async () => {

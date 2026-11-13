@@ -5,6 +5,7 @@ import {
   identity,
   type ClientContext,
 } from './client-accounts-fixture';
+import { checked, issue } from './registration-links-fixture';
 
 export type ClientNotesFixture = {
   context: ClientContext;
@@ -13,6 +14,12 @@ export type ClientNotesFixture = {
   db: ReturnType<typeof sql>;
   close: () => Promise<void>;
   key: () => string;
+  createSiblingClient: () => Promise<string>;
+  createAsTrainerForClient: (
+    clientId: string,
+    body: string,
+    key?: string,
+  ) => Promise<Record<string, unknown>>;
   createAsTrainer: (input: {
     body: string;
     key?: string;
@@ -87,6 +94,62 @@ export async function clientNotesFixture(): Promise<ClientNotesFixture> {
     db,
     close: () => db.end(),
     key: () => randomUUID(),
+    async createSiblingClient() {
+      const registrationLinkId = checked(await issue(context)) as string;
+      const [sibling] = await db.begin(async (tx) => {
+        await tx`alter table public.clients disable trigger signup_client_insert_guard`;
+        await tx`alter table public.clients disable trigger signup_client_integrity`;
+        await tx`alter table public.clients disable trigger audit_client_signup`;
+        try {
+          const user = await identity(tx);
+          const phone =
+            '+201' +
+            BigInt('0x' + randomUUID().replaceAll('-', '').slice(0, 10))
+              .toString()
+              .padStart(10, '0')
+              .slice(-10);
+          const [row] = await tx`
+            insert into public.clients (
+              workspace_id, auth_user_id, registration_link_id,
+              package_version_id, email_normalized, phone_e164, name
+            ) values (
+              ${context.wsA.id}, ${user.id}, ${registrationLinkId},
+              ${context.p.versionId}, ${user.email}, ${phone},
+              'Client Notes sibling test client'
+            ) returning id
+          `;
+          await tx`alter table public.clients enable trigger signup_client_insert_guard`;
+          await tx`alter table public.clients enable trigger signup_client_integrity`;
+          await tx`alter table public.clients enable trigger audit_client_signup`;
+          return [row];
+        } catch (error) {
+          await tx`alter table public.clients enable trigger signup_client_insert_guard`;
+          await tx`alter table public.clients enable trigger signup_client_integrity`;
+          await tx`alter table public.clients enable trigger audit_client_signup`;
+          throw error;
+        }
+      });
+      if (!sibling) throw new Error('Synthetic sibling client missing');
+      return sibling.id as string;
+    },
+    async createAsTrainerForClient(clientId, body, key = randomUUID()) {
+      const result = await context.trainerA.client.rpc('create_client_note', {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientId,
+        p_body: body,
+        p_idempotency_key: key,
+      });
+      if (result.error) {
+        const error = result.error as { code?: string; message?: string };
+        throw new Error(
+          `Client note create RPC failed (${error.code ?? 'unknown'}: ${error.message ?? 'unknown'})`,
+        );
+      }
+      const row = Array.isArray(result.data) ? result.data[0] : result.data;
+      if (!row || typeof row !== 'object')
+        throw new Error('Client note create returned no row');
+      return row as Record<string, unknown>;
+    },
     async createAsTrainer({ body, key = randomUUID() }) {
       const result = await createAs(context.trainerA, body, key);
       if (result.error) {

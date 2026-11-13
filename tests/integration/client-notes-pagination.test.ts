@@ -50,6 +50,25 @@ describe('F20 client notes real-query pagination', () => {
       ),
     );
     const expectedIds = new Set(inserted.map((note) => String(note.id)));
+    const siblingClientId = await fixture.createSiblingClient();
+    const siblingNote = await fixture.createAsTrainerForClient(
+      siblingClientId,
+      'same workspace, different client',
+    );
+    const siblingNoteId = String(siblingNote.id);
+    const siblingRead = await fixture.readNote(
+      fixture.context.trainerA,
+      siblingNoteId,
+    );
+    expect(siblingRead.error).toBeNull();
+    expect(siblingRead.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: siblingNoteId,
+          client_id: siblingClientId,
+        }),
+      ]),
+    );
     const reached: string[] = [];
     const pageLengths: number[] = [];
     let cursor: { created_at: string; id: string } | undefined;
@@ -73,5 +92,6 @@ describe('F20 client notes real-query pagination', () => {
     expect(reached).toHaveLength(205);
     expect(new Set(reached).size).toBe(205);
     expect(new Set(reached)).toEqual(expectedIds);
+    expect(reached).not.toContain(siblingNoteId);
   }, 120_000);
 });

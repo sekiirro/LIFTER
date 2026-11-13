@@ -1,5 +1,15 @@
 # Spec Kit Analyze — F20 Client Notes
 
+## S53-R37 pagination refresh and retry re-analysis
+
+- **Analysis date:** 2026-11-13T09:23:07Z, after edits to `spec.md`, `plan.md`, and `tasks.md` for S53-R37.
+- **Scope:** first-page refresh after continuation loading, editor snapshot visibility, standalone edit Retry denial, and pagination client scoping.
+- **Requirements:** FR-001/SC-009/T017 now explicitly reset continuation rows and cursor to the changed first-page source; edited active or successfully saved older notes remain separately visible through editor snapshots and never own the cursor. Existing approved `clientNotes.permissionRefused` is used for a denied standalone Retry while retaining the body; other pending edit failures keep the approved save-error title.
+- **Test coverage:** the 200-row UI refresh regression verifies reset, refreshed cursor and no duplicate/missing resumed row; existing dirty-editor, saved-older-note, delete/in-flight-page and unknown-edit tests verify separate snapshots and pending state; the real-query pagination integration test verifies a readable same-workspace sibling-client row is excluded from the requested client's pages. Retry-denial UI test asserts the retained body/action and approved refusal copy, then verifies other failure and success transitions.
+- **Cross-reference review:** FR-001, FR-007, FR-008, SC-009, T017, GWT scenario 6 and the T017 traceability row are aligned. No behavior outside S53-R37 is changed. No new copy, data retention, permission, or authorization rule is introduced.
+- **Ambiguities:** none. The loaded-page retention behavior was implementation wording from commit `b53aed6f`, not a PO decision; S53-R20's visibility requirement is preserved through separate edited-note snapshots.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. Retry state transitions and first-page refresh/active-edit interaction have explicit tested outcomes; no further PO decision is required.
+
 ## S53-R28 concurrency re-analysis
 
 - **Analysis date:** 2026-11-13T08:09:00Z, after edits to `spec.md`, `plan.md`, and `tasks.md` for S53-R28.
