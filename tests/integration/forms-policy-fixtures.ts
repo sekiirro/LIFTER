@@ -163,10 +163,11 @@ export async function withFormsPolicyF13Fixtures(
     const [early] = await tx`
       select r.service_start_date::text,
         app_private.f13_project_entitlement(${f.wsA.id},r.subscription_id,${calendar!.today}::date)->>'status' as status,
-        i.id as installment_id,i.amount_minor::text,s.currency
+        i.id as installment_id,i.seq,i.amount_minor::text,s.currency
       from public.subscription_renewals r
       join public.subscriptions s on s.workspace_id=r.workspace_id and s.id=r.subscription_id
       join public.subscription_installments i on i.workspace_id=s.workspace_id and i.subscription_id=s.id
+        and i.renewal_id=r.id
       where r.subscription_id=${earlyRenewalId}
     `;
     const payment = await sqlPay(tx, f.trainerA.userId, 'collect', {
@@ -175,7 +176,7 @@ export async function withFormsPolicyF13Fixtures(
       request_key: randomUUID(),
       subscription_id: earlyRenewalId,
       obligation_id: early!.installment_id,
-      expected_installment_seq: 1,
+      expected_installment_seq: early!.seq,
       expected_revision: 0,
       expected_previous_event_id: null,
       expected_amount_minor: early!.amount_minor,
@@ -183,7 +184,13 @@ export async function withFormsPolicyF13Fixtures(
       collected_on: '1900-01-01',
       payment_confirmed: true,
     });
-    if (payment.status !== 'ok' || early!.status !== 'future')
+    // F13 projects the continuous subscription's current state; the renewal's
+    // own service boundary remains future even while that subscription is active.
+    if (
+      payment.status !== 'ok' ||
+      early!.status !== 'active' ||
+      early!.service_start_date <= calendar!.today
+    )
       throw new Error('Early-paid renewal fixture must remain F13 future');
 
     const missedRenewalId = await renewal(tx, f, purchases[4]!, offers[4]!);

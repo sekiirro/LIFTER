@@ -539,12 +539,44 @@ it('R8 refunds one selected purchase and leaves another purchase for manual reso
   );
   expect(renewal.status).toBe('ok');
   const renewalSubscriptionId = renewal.receipt!.subscription_id as string;
+  const renewalId = renewal.receipt!.renewal_id as string;
+  expect(renewalSubscriptionId).toBe(purchase.sid);
+  const [renewalInstallment] = await db`
+    select id,seq,amount_minor::text,currency from public.subscription_installments
+    where workspace_id=${f.wsA.id} and subscription_id=${purchase.sid} and renewal_id=${renewalId}`;
+  expect(renewalInstallment).toBeDefined();
+  const renewalCollection = await db.begin((tx) =>
+    sqlPay(tx, f.trainerA.userId, 'collect', {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      request_key: randomUUID(),
+      subscription_id: purchase.sid,
+      obligation_id: renewalInstallment!.id as string,
+      expected_installment_seq: renewalInstallment!.seq as number,
+      expected_revision: 0,
+      expected_previous_event_id: null,
+      expected_amount_minor: renewalInstallment!.amount_minor as string,
+      currency: renewalInstallment!.currency as string,
+      collected_on: '1900-01-01',
+      payment_confirmed: true,
+    }),
+  );
+  expect(renewalCollection.status).toBe('ok');
   const [before] = await db`
     select r.service_start_date::text,r.service_end_exclusive::text,
-      (select count(*)::int from public.payment_events e where e.subscription_id=s.id) as events
+      (select count(*)::int from public.payment_events e where e.subscription_id=s.id) as events,
+      (select count(*)::int from public.payment_events e
+        where e.subscription_id=s.id and e.obligation_id=${renewalInstallment!.id} and e.kind='collection') as renewal_collections,
+      (select count(*)::int from public.subscription_installments i
+        where i.subscription_id=s.id and i.renewal_id is null
+          and not exists(select 1 from public.payment_events e
+            where e.subscription_id=i.subscription_id and e.obligation_id=i.id and e.kind='collection'
+              and not exists(select 1 from public.payment_events correction
+                where correction.workspace_id=e.workspace_id and correction.reverses_event_id=e.id))) as unpaid_original_obligations
     from public.subscriptions s join public.subscription_renewals r
       on r.workspace_id=s.workspace_id and r.subscription_id=s.id
-    where s.id=${renewalSubscriptionId}`;
+    where s.id=${renewalSubscriptionId} and r.id=${renewalId}`;
+  expect(before!.renewal_collections).toBe(1);
 
   const missingPurchase = await f.po.client.rpc('record_refund', {
     request: {
@@ -574,14 +606,36 @@ it('R8 refunds one selected purchase and leaves another purchase for manual reso
     select r.service_start_date::text,r.service_end_exclusive::text,
       (select count(*)::int from public.payment_events e where e.subscription_id=s.id) as events,
       (select count(*)::int from public.refund_operations ro where ro.subscription_id=s.id) as refunds,
-      (select count(*)::int from public.subscription_obligation_cancellations c where c.subscription_id=s.id) as cancellations
+      (select count(*)::int from public.payment_events e
+        where e.subscription_id=s.id and e.obligation_id=${renewalInstallment!.id} and e.kind='collection') as renewal_collections,
+      (select count(*)::int from public.refund_allocation_events a
+        join public.subscription_installments i on i.workspace_id=a.workspace_id
+          and i.subscription_id=a.subscription_id and i.id=a.obligation_id
+        where a.subscription_id=s.id and i.renewal_id=${renewalId}) as renewal_refunds,
+      (select count(*)::int from public.subscription_obligation_cancellations c
+        join public.subscription_installments i on i.workspace_id=c.workspace_id
+          and i.subscription_id=c.subscription_id and i.id=c.obligation_id
+        where c.subscription_id=s.id and i.renewal_id=${renewalId}) as renewal_cancellations,
+      (select count(*)::int from public.subscription_obligation_cancellations c
+        join public.subscription_installments i on i.workspace_id=c.workspace_id
+          and i.subscription_id=c.subscription_id and i.id=c.obligation_id
+        where c.subscription_id=s.id and i.renewal_id is null) as cancelled_original_obligations,
+      (select count(*)::int from public.subscription_installments i
+        where i.subscription_id=s.id and i.renewal_id is null
+          and not exists(select 1 from public.payment_events e
+            where e.subscription_id=i.subscription_id and e.obligation_id=i.id and e.kind='collection'
+              and not exists(select 1 from public.payment_events correction
+                where correction.workspace_id=e.workspace_id and correction.reverses_event_id=e.id))) as unpaid_original_obligations
     from public.subscriptions s join public.subscription_renewals r
       on r.workspace_id=s.workspace_id and r.subscription_id=s.id
-    where s.id=${renewalSubscriptionId}`;
+    where s.id=${renewalSubscriptionId} and r.id=${renewalId}`;
   expect(after).toEqual({
     ...before,
-    refunds: 0,
-    cancellations: 0,
+    refunds: 1,
+    renewal_collections: 1,
+    renewal_refunds: 0,
+    renewal_cancellations: 0,
+    cancelled_original_obligations: before!.unpaid_original_obligations,
   });
   const [deactivated] = await db`
     select c.deactivated_at is not null as inactive,
