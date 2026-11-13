@@ -411,3 +411,18 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 ## S53 queue decision source precision (2026-11-13T08:35:32Z)
 
 The F13 decision register quotes only the PO answer bytes applicable to F13 (S53-F13-MCQ-1=A) and records the full source path/SHA; adjacent PO answers for other features are not copied into F13. S53-R30 remains clearly labeled architect mapping. No open CRITICAL/HIGH findings; no open ambiguities for FR-044.
+
+## S53-R36 regression root-cause and completion analysis (2026-11-13T09:15:19Z)
+
+- Entry gate: PASS. T049 remains within FR-039/SC-037 and T050 remains within FR-044/SC-038; no requirement text changed in this follow-up.
+- T049 root cause: the uncommitted test edit shifted the first freeze-removal fixture activation from 10 to 81 days ago. The shared term is 61 days and that fixture's stopped freeze contributes only three days, so the pre-upgrade projector correctly rejects the already expired subscription. Restoring the active-term 10-day fixture passes; the separate 81-day partial-freeze/later-renewal fixture remains unchanged and passes. No conflict between S52-PO-4 MCQ-16B and the review correction was found.
+- T042 root cause: Vault signup keys were absent after reset and have now been reprovisioned via the local-only documented procedure. The global audit count observed one accumulated upgrade audit; the assertion now scopes to audit rows attached to upgrades for this test subscription and still detects writes by the denied operation.
+- Verification on Stack C: focused T049/T042 cases 4/4, full upgrade integration 30/30, full F12/F13 regression 27 files / 668 tests. Unit 187 files / 2,527 tests; typecheck, lint, format gates, migration timestamp and all-ref scans passed. Earlier 88e transaction-scoped mutations continue to cover legacy replay, selected anchor, and currency grouping; S52 mutation evidence covers unconsumed-day subtraction.
+- Security review: no new DB function was introduced by the queue-detail migration; replaced queue function retains SECURITY DEFINER, empty search_path, postgres owner, existing revoke list and authenticated grant. Private-function inventory unchanged.
+- No open CRITICAL/HIGH findings. No open ambiguities for the decided T049/T050 behavior. T044 remains P4/open; T048 remains unticked.
+
+## S53-R36 task-traceability consistency (2026-11-13T09:16:12Z)
+
+- T050 is checked only after the item-detail RED/GREEN, currency-collapse mutation, 27-file Stack C regression, and local gates passed on the tested tree. Its traceability row names implementation commit `e8434a5bf66c5323fff3357fdc73733f51815543` and the integration/unit test identifiers.
+- Follow-up T049 fixture correction is linked to the same commit and records its expected stale-state RED, corrected GREEN, and prior remaining-days/anchor mutation evidence. T042 no-write intent remains tested with an audit assertion scoped to the target purchase.
+- No requirement changed in this evidence update. No open CRITICAL/HIGH findings; T044 stays P4/open and T048 remains unticked.
