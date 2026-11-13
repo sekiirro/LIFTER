@@ -1689,6 +1689,7 @@ async function seedFreezeRemovalRenewalTimeline(
   target: string,
   renewalRecordedDay: number,
   renewalStartDay: number,
+  removalAfterRenewal = false,
 ) {
   const ids = await graph(tx, f);
   const purchase = { t: { id: ids.client }, sid: ids.subscription };
@@ -1721,10 +1722,12 @@ async function seedFreezeRemovalRenewalTimeline(
       (select recorded_at from public.subscription_freezes where workspace_id=${f.wsA.id} and id=${freezeId})
     from public.package_offers o join public.package_versions v on v.workspace_id=o.workspace_id and v.id=o.current_version_id
     where o.workspace_id=${f.wsA.id} and o.id=${target}`;
-  await tx`insert into public.subscription_freeze_events(
+  const recordRemoval = async () =>
+    tx`insert into public.subscription_freeze_events(
       workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id,recorded_at)
     values(${f.wsA.id},${purchase.sid},${freezeId},'remove',${dayZero}::date+80,${f.trainerA.userId},
       (((${dayZero}::date+80)::timestamp+interval '12 hours') at time zone 'Africa/Cairo'))`;
+  if (!removalAfterRenewal) await recordRemoval();
   const baseOffer = await packageOfferId(f.link);
   const renewalId = randomUUID();
   await tx`insert into public.subscription_renewals(
@@ -1736,6 +1739,7 @@ async function seedFreezeRemovalRenewalTimeline(
       ((((${dayZero}::date+${renewalRecordedDay}::integer)::timestamp+interval '12 hours') at time zone 'Africa/Cairo'))
     from public.package_offers o join public.package_versions v on v.workspace_id=o.workspace_id and v.id=o.current_version_id
     where o.workspace_id=${f.wsA.id} and o.id=${baseOffer}`;
+  if (removalAfterRenewal) await recordRemoval();
   return {
     workspaceId: f.wsA.id,
     subscriptionId: purchase.sid,
@@ -1793,6 +1797,7 @@ it('T049 shifts a renewal recorded before removal when its term still includes r
       target,
       79,
       120,
+      true,
     );
     const [seedFacts] = await tx`
       select f.recorded_at::text as freeze_recorded_at,
@@ -1832,7 +1837,62 @@ it('T049 shifts a renewal recorded before removal when its term still includes r
     const [expected] =
       await tx`select (${timeline.dayZero}::date+150)::text as effective_end`;
     expect(projection!.effective_end).toBe(expected!.effective_end);
+    const [revised] = await tx`
+      select service_start_date::text as service_start_date
+      from public.subscription_renewal_date_revisions
+      where workspace_id=${timeline.workspaceId}
+        and subscription_id=${timeline.subscriptionId}
+      order by revision desc limit 1
+    `;
+    const [revisedExpected] =
+      await tx`select (${timeline.dayZero}::date+90)::text as service_start_date`;
+    expect(revised!.service_start_date).toBe(
+      revisedExpected!.service_start_date,
+    );
   });
+});
+
+it('T049 kills reflow based on the saved upgraded end after carried freeze removal', async () => {
+  const f = await clientContext();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 90,
+  });
+  await withCrashSafeFunctionMutant(
+    'app_private.f13_reflow_unstarted_renewal()',
+    (definition) =>
+      definition.replace(
+        'term_end:=term_end-removed_days;',
+        'term_end:=upgrade_row.service_end_exclusive;',
+      ),
+    async () =>
+      await expectInvariantFailure(async () => {
+        await probe(async (tx) => {
+          const timeline = await seedFreezeRemovalRenewalTimeline(
+            tx,
+            f,
+            target,
+            79,
+            120,
+            true,
+          );
+          const [revised] = await tx`
+            select service_start_date::text as service_start_date
+            from public.subscription_renewal_date_revisions
+            where workspace_id=${timeline.workspaceId}
+              and subscription_id=${timeline.subscriptionId}
+            order by revision desc limit 1
+          `;
+          const [expected] = await tx`
+            select (${timeline.dayZero}::date+90)::text as service_start_date
+          `;
+          expect(revised!.service_start_date).toBe(
+            expected!.service_start_date,
+          );
+        });
+      }),
+  );
 });
 
 async function addLaterRenewalFreezeRemoval(

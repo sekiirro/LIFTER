@@ -445,3 +445,7 @@ The full F12/F13 run and isolated `freeze-lifecycle.test.ts::T008 Remove preserv
 ### T051 completion and traceability refresh (2026-11-13)
 
 After implementation commit `4ccce6f8`, reran T051's projection/removal mutation and standalone freeze-removal tests on that exact code tree. The `[x]` task state and traceability row now cite those passing Stack C tests and the full 27-file regression. No FR/SC/spec text changed; **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+### T156 task alignment (2026-11-13)
+
+T156 and its plan step are tagged FR-039/SC-037. The requirement is already explicit: freeze removal after upgrade recomputes the continuous projection and later renewal boundaries. Technical analysis found that the installed reflow trigger still derives its predecessor end from the stored upgrade row, while the current projection accounts for the unconsumed per-freeze removal. The repair is a forward replacement of the trigger function; it retains immutable lifecycle and payment facts, does not change user-facing behavior or requirement text, and appends a date revision only for an unstarted renewal. The focused Stack C test and saved-end mutant cover the date boundary. **CRITICAL: 0. HIGH: 0. No open ambiguities.**

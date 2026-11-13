@@ -71,6 +71,11 @@ export const guardedFunctions = [
     name: 'app_private.materialize_intake_assignment_occurrence_core',
   },
   {
+    identity: 'app_private.f13_reflow_unstarted_renewal()',
+    migration: '20261113140100_f13_reflow_carried_freeze_removal.sql',
+    name: 'app_private.f13_reflow_unstarted_renewal',
+  },
+  {
     identity: 'app_private.reconcile_f15_form_assignment(uuid,uuid)',
     migration: '20261112031500_f15_po12_decisions.sql',
     name: 'app_private.reconcile_f15_form_assignment',
