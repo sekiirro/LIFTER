@@ -1519,7 +1519,7 @@ it('T049 recomputes the upgraded projection after removing a counted freeze', as
   await probe(async (tx) => {
     const ids = await graph(tx, f);
     const purchase = { t: { id: ids.client }, sid: ids.subscription };
-    const activation = new Date(Date.now() - 10 * 86400000);
+    const activation = new Date(Date.now() - 81 * 86400000);
     await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
       values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()})`;
     const freezeId = randomUUID();
@@ -1666,6 +1666,75 @@ it('T049 subtracts only unconsumed freeze coverage and reflows a later renewal',
     const [expected] =
       await tx`select (${beforeRemoval!.end_on}::date-2)::text as end_on`;
     expect(after!.end_on).toBe(expected!.end_on);
+  });
+});
+
+it('T049 preserves a newer manual date when a freeze is removed after upgrade', async () => {
+  const f = await clientContext();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    const purchase = { t: { id: ids.client }, sid: ids.subscription };
+    const activation = new Date(Date.now() - 62 * 86400000);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()})`;
+    const [dates] = await tx`select
+      (((${activation} at time zone 'Africa/Cairo')::date+61)::text) as base_end,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date)::text as today,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date+220)::text as manual_end`;
+    const freezeId = randomUUID();
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`insert into public.subscription_freezes(
+      id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+      values(${freezeId},${f.wsA.id},${purchase.sid},${dates!.base_end}::date-3,10,${f.trainerA.userId},clock_timestamp())`;
+    await tx`insert into public.subscription_freeze_events(
+      workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id,recorded_at)
+      values(${f.wsA.id},${purchase.sid},${freezeId},'stop',${dates!.base_end}::date-1,${f.trainerA.userId},clock_timestamp())`;
+    const upgraded = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: target,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+    expect(upgraded.status).toBe('ok');
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let adjusted: Record<string, unknown>;
+    try {
+      const [row] = await tx`select public.record_subscription_date_adjustment(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        subscription_id: purchase.sid,
+        new_service_start_date: dates!.today,
+        new_service_end_exclusive: dates!.manual_end,
+        request_key: randomUUID(),
+      } as JSONValue)}) as result`;
+      adjusted = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(adjusted.status).toBe('ok');
+    const removed = await freeze(tx, f.trainerA.userId, {
+      action: 'remove',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      freeze_id: freezeId,
+      request_key: randomUUID(),
+      expected_revision: 2,
+    });
+    expect(removed.status).toBe('removed');
+    const [after] = await tx`select
+      (app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},
+        (clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as end_on`;
+    expect(after!.end_on).toBe(dates!.manual_end);
   });
 });
 

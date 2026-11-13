@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
-import type { TransactionSql } from 'postgres';
+import type { JSONValue, TransactionSql } from 'postgres';
 import {
   clientContext,
   graph,
@@ -56,7 +56,7 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
         installments,
       }),
     ) as string;
-    return { versionId, linkId };
+    return { versionId, linkId, offerId: offer.id as string };
   };
   const egpSchedule = [
     { seq: 1, amount_minor: '300', due_offset_days: 0 },
@@ -94,6 +94,34 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
       ],
     });
 
+    await tx`insert into public.subscription_activations(
+      workspace_id,subscription_id,activated_at,delivery_event_id)
+      select ${f.wsA.id},s.id,clock_timestamp(),${randomUUID()}
+      from public.subscriptions s where s.workspace_id=${f.wsA.id}
+        and s.registration_link_id=${egp.linkId}
+        and not exists(select 1 from public.subscription_activations a
+          where a.workspace_id=s.workspace_id and a.subscription_id=s.id)`;
+    const [egpSubscription] = await tx`select id,client_id from public.subscriptions
+      where workspace_id=${f.wsA.id} and registration_link_id=${egp.linkId}`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let usdRenewal: Record<string, unknown>;
+    try {
+      const [row] = await tx`select public.record_renewal(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: egpSubscription!.client_id,
+        predecessor_subscription_id: egpSubscription!.id,
+        package_offer_id: usd.offerId,
+        request_key: randomUUID(),
+        expected_revision: 0,
+        renewal_confirmed: true,
+        installments: null,
+      } as JSONValue)}) as result`;
+      usdRenewal = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(usdRenewal!.status).toBe('ok');
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
     await tx`set local role authenticated`;
     try {
@@ -108,7 +136,7 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
       expect(firstData.next_cursor).toMatch(/^[0-9a-f-]{36}$/i);
       expect(firstData.totals).toEqual([
         { currency: 'EGP', unpaid_minor: '900' },
-        { currency: 'USD', unpaid_minor: '800' },
+        { currency: 'USD', unpaid_minor: '2000' },
       ]);
 
       const [second] = await tx`

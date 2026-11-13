@@ -378,6 +378,45 @@ it('accepts uppercase renewal UUIDs and replays without recording a second renew
   });
 });
 
+it('replays an exact renewal stored with the legacy canonical hash unchanged', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const input = {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    };
+    const [legacy] = await tx`
+      select extensions.digest(convert_to(jsonb_build_array(
+        1,${f.wsA.id}::text,${purchase.t.id}::text,${purchase.sid}::text,
+        ${offerId}::text,0,true,'[]'::jsonb
+      )::text,'UTF8'),'sha256') as binding`;
+    const stored = {
+      status: 'ok',
+      receipt: { operation_id: randomUUID(), renewal_id: randomUUID(), legacy: true },
+    };
+    await tx`insert into app_private.subscription_renewal_operations(
+      workspace_id,client_id,actor_user_id,request_key,predecessor_subscription_id,
+      subscription_id,expected_revision,canonical_args_hash,result_receipt,recorded_at)
+      values(${f.wsA.id},${purchase.t.id},${f.trainerA.userId},${input.request_key},
+        ${purchase.sid},${purchase.sid},0,${legacy!.binding},${tx.json(stored as JSONValue)},clock_timestamp())`;
+    const replay = await renewal(tx, f.trainerA.userId, input);
+    expect(replay).toEqual(stored);
+    const [counts] = await tx`
+      select (select count(*)::int from public.subscription_renewals
+        where client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from app_private.subscription_renewal_operations
+          where actor_user_id=${f.trainerA.userId} and request_key=${input.request_key}) as operations`;
+    expect(counts).toEqual({ renewals: 0, operations: 1 });
+  });
+});
+
 it('treats refund deactivation as terminal across another renewal purchase and freeze', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {

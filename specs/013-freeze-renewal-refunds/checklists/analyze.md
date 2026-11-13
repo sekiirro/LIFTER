@@ -372,3 +372,22 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Verification: T050 integration passed on Stack C at committed implementation `99df43d6c2a3075c7302c0340b3d25399c6a676e` (1/1); unit suite passed 15/15; typecheck passed. Cursor-dependent-total and collapsed-currency SQL mutations each caused the T050 assertion to fail; each mutation ran in a transaction rolled back by the fixture probe.
 - Cross-reference: FR-044, SC-038, scenario 20, payment-queue contract, plan/T050, tasks/T050, and traceability/T050 agree. Task tick and traceability evidence are recorded.
 - Findings: **0 open CRITICAL, 0 open HIGH**. **No open ambiguities** remain for T050. T044 remains P4/open; T048 remains unticked outside scope.
+
+## 2026-11-13 T050 and review remediation Analyze (2026-11-13T06:06:05Z)
+
+- Entry gate: PASS. spec.md has numbered FR-039/FR-044, measurable SC-037/SC-038, Given/When/Then scenarios 19/20, recorded S52 PO answers and architect mappings, and task/plan coverage. This analysis follows the current edits to spec, plan, and tasks.
+- Review finding PRRT_kwDOVYgYQ8628nCR: removed the duplicate FR-043 that carried obsolete S51-F13-MCQ-12 pending language. The single remaining FR-043 does not conflict with S51-PO-9 / FR-042.
+- Review findings PRRT_kwDOVYgYQ8628nCZ, PRRT_kwDOVYgYQ8628nCi, and PRRT_kwDOVYgYQ8628nCv: legacy canonical-v1 replay, selected-upgrade-anchor behavior, still-unconsumed freeze subtraction, and later renewal reflow are decided by the existing operation idempotency and S52-PO-4 / S52-R9 text. Planned as forward-only CREATE OR REPLACE corrections that preserve stored receipts/history and existing function hardening.
+- Queue finding PRRT_kwDOVYgYQ8628nC1: `subscription_installments.currency` has no parent-subscription equality constraint; `record_renewal` writes the selected package-version currency. FR-044 aggregate totals therefore group each unpaid installment by its own currency, preserve workspace filters and page-independent totals, and do not sum currencies.
+- PO-DECISION-NEEDED S53-F13-MCQ-1: mixed-currency queue-item representation for a subscription is unresolved. Options and implications are recorded in spec.md; item-detail shape is blocked. This does not block the separately decided aggregate totals. No item-shape behavior or expectation is inferred.
+- Findings: 0 open CRITICAL; 0 open HIGH. Analysis verdict: PASS for the decided migration/test scope; mixed-currency items shape remains explicitly blocked under S53-F13-MCQ-1.
+
+## 2026-11-13 review-fix implementation analysis (2026-11-13T06:18:25Z)
+
+- Entry gate: PASS. The decided scope is covered by FR-039/FR-044, SC-037/SC-038 and scenarios 19/20; the mixed-currency queue-item detail question is separately recorded as S53-F13-MCQ-1.
+- Legacy renewal replay now compares both the current canonical-v2 binding and the exact legacy canonical-v1 binding; matching operations return their stored receipt unchanged.
+- Freeze removal now adjusts the upgrade projection only when the upgrade is the selected term-end anchor. Existing unconsumed-day and later-paid-renewal reflow behavior is preserved.
+- Queue totals now aggregate each unpaid installment by its own currency across the existing workspace filters before pagination. Queue item representation is unchanged and not specified by this correction.
+- Security review: the three replaced functions retain SECURITY DEFINER, empty search_path, postgres ownership, and the prior explicit revoke/grant lists. No new private function was added; the private-function inventory is unchanged.
+- Verification: focused Stack C tests passed for legacy replay, newer-manual-date freeze removal, and mixed-currency totals. Mutations rejecting legacy binding, applying freeze subtraction when upgrade is not the anchor, and grouping by subscription currency each failed the corresponding assertion. Existing T049 unconsumed and later-renewal mutation evidence remains in the S52 run report.
+- PO-DECISION-NEEDED: S53-F13-MCQ-1 remains open only for mixed-currency queue-item detail representation. No undecided choice is implemented. Findings: 0 open CRITICAL, 0 open HIGH for the decided scope.
