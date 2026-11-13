@@ -113,14 +113,14 @@ describe('sign-in and sign-out actions', () => {
     expect(mocks.redirect).toHaveBeenCalledWith(destination);
   });
   it('signs out of the current browser only', async () => {
-    await expect(signOut()).rejects.toThrow('redirect');
+    await expect(signOut()).resolves.toBe(true);
     expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' });
-    expect(mocks.redirect).toHaveBeenCalledWith('/login');
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
   it('does not expose a thrown sign-out provider error', async () => {
     mocks.signOut.mockRejectedValue(new Error('sensitive provider detail'));
-    await expect(signOut()).rejects.toThrow('redirect');
-    expect(mocks.redirect).toHaveBeenCalledWith('/login');
+    await expect(signOut()).resolves.toBe(false);
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
 });
 

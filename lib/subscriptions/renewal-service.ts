@@ -25,6 +25,7 @@ export type RenewalRpcClient = {
 
 export type RenewalReceipt = {
   operation_id: string;
+  renewal_id?: string;
   workspace_id: string;
   client_id: string;
   predecessor_subscription_id: string;
@@ -54,6 +55,7 @@ const MINOR_UNITS = /^[1-9][0-9]{0,17}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RECEIPT_KEYS = [
   'operation_id',
+  'renewal_id',
   'workspace_id',
   'client_id',
   'predecessor_subscription_id',
@@ -105,12 +107,22 @@ function validInput(input: RenewalInput): boolean {
 }
 
 function safeReceipt(value: unknown): RenewalReceipt | null {
-  if (!isRecord(value) || Object.keys(value).length !== RECEIPT_KEYS.length)
+  if (!isRecord(value)) return null;
+  const legacyKeys = RECEIPT_KEYS.filter((key) => key !== 'renewal_id');
+  const hasCurrentShape = Object.keys(value).length === RECEIPT_KEYS.length;
+  const hasLegacyShape = Object.keys(value).length === legacyKeys.length;
+  if (!hasCurrentShape && !hasLegacyShape) return null;
+  if (
+    !(hasLegacyShape ? legacyKeys : RECEIPT_KEYS).every((key) =>
+      Object.hasOwn(value, key),
+    )
+  )
     return null;
-  if (!RECEIPT_KEYS.every((key) => Object.hasOwn(value, key))) return null;
   if (
     typeof value.operation_id !== 'string' ||
     !UUID.test(value.operation_id) ||
+    (Object.hasOwn(value, 'renewal_id') &&
+      (typeof value.renewal_id !== 'string' || !UUID.test(value.renewal_id))) ||
     typeof value.workspace_id !== 'string' ||
     !UUID.test(value.workspace_id) ||
     typeof value.client_id !== 'string' ||
@@ -136,9 +148,7 @@ function safeReceipt(value: unknown): RenewalReceipt | null {
     value.service_start_date >= value.service_end_exclusive
   )
     return null;
-  return Object.fromEntries(
-    RECEIPT_KEYS.map((key) => [key, value[key]]),
-  ) as RenewalReceipt;
+  return { ...value } as RenewalReceipt;
 }
 
 /** Validates an authorized renewal request and accepts only its safe purchase snapshot receipt. */

@@ -307,3 +307,11 @@ Re-read `spec.md`, `plan.md`, `contracts/forms-api.md`, `tasks.md`, and `traceab
 ## S53-R15 evidence closure Analyze - 2026-11-13 06:13:01 +02:00
 
 Revalidated T154 after implementation commit `c8eb353d99e08a17c37888dce84d6923223966cd`, test evidence, task completion and traceability update. `FormsStaffAdapter.retire` is typed as `Promise<FormsStaffResult>`; its success path verifies the RPC acknowledgement and returns either the matching response form or an authoritative matching retired form from `get_staff_forms`. Missing, mismatched, or failed hydration returns the existing `invalid` result. RPC contract and S52 retirement semantics are unchanged. T154 is tagged FR-004/030 and SC-030, test evidence is linked, and no stale pending state remains. #58 is untouched; its restack requires only refreshed typecheck and relevant test validation, with no source edits anticipated. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for T154.**
+
+## S54-R14 renewal occurrence task alignment refresh (2026-11-13)
+
+Revalidated T155 against existing F15 FR-003/FR-031 and F13 continuous-renewal projection after updating plan.md and tasks.md. The task preserves the established per-renewal occurrence identity and service-boundary behavior; no FR/SC/requirement text, PO decision, user-visible copy, permission, retention rule, or RPC contract changed. Stack C RED/GREEN and lookup-identity mutation coverage exercises two renewal rows sharing one continuous subscription. Cross-reference sweep: FR-003/FR-031/T155 aligned across spec, plan, tasks, Analyze, and traceability. No open ambiguities. **CRITICAL: 0. HIGH: 0.**
+
+### T155 completion and traceability refresh (2026-11-13)
+
+After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/identity mutation tests on that exact code tree. The `[x]` task state and traceability row cite those passing Stack C tests and the full 35-file F15 forms/intake suite. No FR/SC/spec text changed; **CRITICAL: 0. HIGH: 0. No open ambiguities.**

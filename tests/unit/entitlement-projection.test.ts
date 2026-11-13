@@ -10,7 +10,7 @@ const base: EntitlementProjectionInput = {
   serviceStartDate: '2026-11-01',
   durationDays: 10,
   freezes: [],
-  successorCoverage: [],
+  renewalCoverage: [],
   terminalRefund: false,
 };
 
@@ -66,7 +66,7 @@ describe('projectEntitlement', () => {
       projectEntitlement({
         ...base,
         asOfDate: '2026-11-12',
-        successorCoverage: [
+        renewalCoverage: [
           { serviceStartDate: '2026-11-11', serviceEndExclusive: '2026-11-21' },
         ],
       }),

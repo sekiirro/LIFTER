@@ -20,7 +20,10 @@ vi.mock('../../lib/supabase/server', () => ({
   createSessionClient: m.session,
 }));
 vi.mock('next/headers', () => ({ cookies: m.cookies }));
-vi.mock('next/navigation', () => ({ notFound: m.notFound }));
+vi.mock('next/navigation', () => ({
+  notFound: m.notFound,
+  useRouter: () => ({ replace: vi.fn() }),
+}));
 vi.mock('../../app/(app)/packages/PackagesManager', () => ({
   PackagesManager: (props: { data: unknown }) =>
     createElement(
