@@ -107,7 +107,7 @@ An implementer working against multiple fetched remote branches can detect, befo
 
 ### User Story 7 - Fast, exact-head CI evidence (Priority: P1)
 
-The PO and merge lane can collect three full CI results concurrently without accepting a result for a different PR head, while retaining every required test and security gate.
+The PO and merge lane can collect one full CI result for an exact PR head without accepting a result for a different PR head, while retaining every required test and security gate. (Historical three-result form superseded by constitution 1.15.0, S54-PO-4.)
 
 **Acceptance Scenarios**:
 
@@ -188,7 +188,7 @@ The PO and merge lane can collect three full CI results concurrently without acc
 
 ### Session 2026-11-04
 
-- **S33-PO-4 (binding)**: The Product Owner directed: “S33-Q6: Approve Option 2. Implement all proposed CI optimizations, but keep the Storage job separate for now.” The same decision directs GitHub-hosted runners, postpones local self-hosted runner work and PR #45, and preserves exact-head CodeRabbit approval, zero unresolved threads, three executed green CI runs, and explicit PO approval per merge. No automatic merges.
+- **S33-PO-4 (binding)**: The Product Owner directed: “S33-Q6: Approve Option 2. Implement all proposed CI optimizations, but keep the Storage job separate for now.” The same decision directs GitHub-hosted runners, postpones local self-hosted runner work and PR #45, and preserves exact-head CodeRabbit approval, zero unresolved threads, three executed green CI runs, and explicit PO approval per merge. No automatic merges. (The "three executed green CI runs" count is superseded by constitution 1.15.0, S54-PO-4.)
 - The approved CI scope for this specification is: push events only on `main`; `pull_request` CI per pull request head; PR-only concurrency that cancels superseded runs while unique main-push groups prevent queued runs from being replaced; remove the unused Playwright browser installation from `validate` only when no validate step uses a browser; retain `validate`, `integration`, and separate required `storage` jobs and all other steps/checks.
 - **No open ambiguities** remain for this CI optimization scope.
 
@@ -245,14 +245,14 @@ The maintainer wants CI to detect dangling feature identifiers, keep review focu
 3. **Given** a PO decision is recorded in docs/04, **When** a feature reference is marked pending for that decided identifier, **Then** spec-consistency fails.
 4. **Given** an allowed Markdown-only PR, **When** pull_request CI runs, **Then** validate and format/spec checks run and integration-shard, integration, and storage are skipped by design; any unlisted path or detection failure takes full CI, and a skipped integration cannot satisfy the aggregator.
 5. **Given** workflow_dispatch, **When** it runs for any PR, **Then** validate, all integration shards, integration, and storage run.
-6. **Given** a docs-only PR with exact-head APPROVED, **When** its green definition is evaluated, **Then** three full dispatch runs after approval are required; no gate is relaxed.
+6. **Given** a docs-only PR with exact-head APPROVED, **When** its green definition is evaluated, **Then** one full `workflow_dispatch` run on the exact PR/head is required, with no review-timing requirement (constitution 1.15.0); no gate is relaxed.
 
 ### S41 requirements (S41-PO-8/9/10; S41-R11; S41-R15)
 
 - **FR-027**: CI validate MUST run a fail-closed spec-consistency check covering every `specs/<feature>/` directory touched by the change. Changed paths are enumerated from the base...head diff for pull_request (the merge commit's first parent when HEAD is the PR merge commit, otherwise the event base SHA), the before...after diff for push, and the first-parent...merge diff for workflow_dispatch; any enumeration error exits non-zero. Each touched feature MUST provide `spec.md` and `tasks.md`, and every FR/SC/task reference in its tasks, traceability and Analyze documents MUST exist in its spec/tasks; Analyze date MUST NOT precede the latest spec/plan/tasks change. `traceability.md` and `checklists/analyze.md` are checked when present. Untouched features are not checked. No pending-PO marker may remain for a decision recorded in docs/04. The changed-file formatter (`scripts/format-check-changed.mjs`) MUST check every changed Markdown, YAML and JSON file, including paths under `docs/`, `specs/` and `.specify/` that the repository-wide `format:check` ignores by configuration; both checks MUST run in validate.
 - **FR-028**: CodeRabbit path filters MUST exclude generated evidence only; feature specs, plans, tasks, source, tests, migrations and workflows MUST remain reviewable.
 - **FR-029**: Docs-only means every changed path is a `.md` file beneath `docs/`, `specs/`, or `.specify/`, or exactly root README.md or CHANGELOG.md. Both rename paths are checked. Detection errors and every unlisted path classify as non-docs-only. Only pull_request docs-only runs may skip integration-shard, integration and storage; workflow_dispatch always runs the full jobs. Required check names remain present, and integration MUST fail if its matrix was skipped.
-- **FR-030**: Constitution version MUST become 1.11.0 and define the docs-only green form as three full workflow_dispatch runs for the exact PR/head, started after exact-head APPROVED, each executing validate, all integration shards, integration and storage; a separate gate-check d proposal/patch is supplied, with no gate-check implementation change in this PR.
+- **FR-030**: Constitution version MUST become 1.11.0 and define the docs-only green form as one full `workflow_dispatch` run for the exact PR/head, with no review-timing requirement (constitution 1.15.0); a separate gate-check d proposal/patch is supplied, with no gate-check implementation change in this PR. (Historical S41 form: three full workflow_dispatch runs for the exact PR/head, started after exact-head APPROVED, each executing validate, all integration shards, integration and storage; superseded by constitution 1.15.0, S54-PO-4.)
 
 ### S41 measurable outcomes
 
@@ -271,6 +271,6 @@ The maintainer wants CI to detect dangling feature identifiers, keep review focu
 
 ## Clarifications (2026-11-09; no open ambiguities)
 
-- S41-PO-8: `Approved all 4 CI/CodeRabbit optimizations,`; S41-PO-9a: `docs/04 canonical (Rec.)`; S41-PO-9b: `3 full dispatches (Rec.)`; S41-PO-10: `B: A + README/CHANGELOG (Rec.)`. These are verbatim PO excerpts; source: `runs/s41-po/s41-po-1.verbatim.txt`.
+- S41-PO-8: `Approved all 4 CI/CodeRabbit optimizations,`; S41-PO-9a: `docs/04 canonical (Rec.)`; S41-PO-9b: `3 full dispatches (Rec.)`; S41-PO-10: `B: A + README/CHANGELOG (Rec.)`. These are verbatim PO excerpts; source: `runs/s41-po/s41-po-1.verbatim.txt`. (The "3 full dispatches" count is superseded by constitution 1.15.0, S54-PO-4.)
 - S41-PO-10 architect mapping defines the exact allow-list and fail-closed rename/detection behavior; S41-R11 defines implementation and S41-R15 authorizes continuation. S40-PO-11: `No gate relaxation.`
 - No open ambiguities remain for this S41 scope.

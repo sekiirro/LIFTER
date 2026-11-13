@@ -266,3 +266,16 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. FR-023 resolves to the existing scaffold feature; no task status changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this wording alignment.
 - Verdict: PASS for this documentation-only correction.
+
+## S54 round-2 alignment (constitution 1.15.0) - 2026-11-13
+
+Scope: Greptile PR #98 round-2 blocking findings. Aligned the Analyze rule wording in `.specify/memory/constitution.md` and `docs/08-agent-workflow.md` with CI enforcement (`scripts/spec-consistency.mjs` date order); aligned FR-030 and User Story 8 scenario 6 plus remaining merge-gate counts in `specs/001-project-scaffold-ci/spec.md`, `plan.md`, `tasks.md` and `docs/03-roadmap.md` to one full `workflow_dispatch` run for docs-only PRs (constitution 1.15.0). FR-027 enforcement description unchanged. No product behavior or script changes.
+
+- [x] Analyze rule now states CI enforces date order; review-fix rounds changing only code/tests need no new Analyze; traceability-only re-dating is a date update; full Analyze required only for FR/SC/acceptance or plan design text changes.
+- [x] FR-030 and User Story 8 scenario 6 require one full `workflow_dispatch` run on the exact PR/head with no review-timing requirement; historical three-run counts retained with "(superseded by constitution 1.15.0, S54-PO-4)".
+- [x] Historical merge-gate counts in spec.md/plan.md/tasks.md annotated as superseded.
+- [x] This entry is dated after all edits above.
+
+**Findings**: 0 CRITICAL, 0 HIGH. No open ambiguities remain.
+
+**Verdict**: PASS - 0 CRITICAL, 0 HIGH.

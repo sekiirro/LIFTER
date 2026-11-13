@@ -15,9 +15,7 @@ applies to every unit that changes rendered UI.
   actions. (S29-PO-3 Q4)
 - No AI agent may independently make product decisions, whether discovered during Specify, Clarify,
   Analyze, implementation, or reviews. Clarify is mandatory for every feature and must end with
-  zero open ambiguities before implementation, recorded explicitly, never assumed. Before implementation, the current Analyze must
-  postdate the
-  latest spec, plan, or tasks change and have zero open CRITICAL/HIGH findings. Analyze must be re-dated only when FR/SC/acceptance requirement text changes; code/test-only review fixes do not require a re-dated Analyze. Unresolved product
+  zero open ambiguities before implementation, recorded explicitly, never assumed. Before implementation, the current Analyze must be dated after the latest spec, plan, or task change and have zero open CRITICAL or HIGH findings; CI enforces this date order. Review-fix rounds that change only code or tests (no spec, plan or tasks edits) need no new Analyze. When only task status or traceability evidence changes, re-dating Analyze is a date update recording that no requirement text changed; a full Analyze is required only when FR/SC/acceptance or plan design text changes. Unresolved product
   decisions are presented as numbered MCQs with options, implications, and a recommendation; wait for
   explicit PO approval. (S29-PO-2; S29-PO-3 Q1-Q2, Q1 tightened by S37-PO-1 Q1)
 - **Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.** They own bounded implementation and checks. Codex may delegate eligible low-risk work through OpenCode; writers do not approve their own work.
