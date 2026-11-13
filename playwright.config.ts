@@ -21,14 +21,10 @@ function loadPlaywrightStackEnvironment() {
   if (required.some((key) => !process.env[key])) {
     const { workdir } = getStackConfig(stack);
     const statusCommand = getSupabaseStatusCommand(workdir);
-    const output = execFileSync(
-      statusCommand.command,
-      statusCommand.args,
-      {
-        encoding: 'utf8',
-        windowsHide: true,
-      },
-    );
+    const output = execFileSync(statusCommand.command, statusCommand.args, {
+      encoding: 'utf8',
+      windowsHide: true,
+    });
     for (const line of output.split(/\r?\n/)) {
       const separator = line.indexOf('=');
       if (separator < 1) continue;
