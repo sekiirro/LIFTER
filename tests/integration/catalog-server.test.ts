@@ -282,8 +282,7 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     if (projection.status !== 'ok' || !Array.isArray(projection.data)) return;
     expect(
       projection.data.some(
-        (row) =>
-          (row as { result_id?: string }).result_id === exerciseId,
+        (row) => (row as { result_id?: string }).result_id === exerciseId,
       ),
     ).toBe(false);
     await expect(

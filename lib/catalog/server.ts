@@ -473,10 +473,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
             videoUrl: string;
             note: string;
           }>;
-        if (
-          !isUuidV4(input.workspaceId) ||
-          !isUuidV4(input.exerciseId)
-        )
+        if (!isUuidV4(input.workspaceId) || !isUuidV4(input.exerciseId))
           return { status: 'invalid' };
         const result = await rpc<
           {
