@@ -1672,6 +1672,136 @@ it('T049 subtracts only unconsumed freeze coverage and reflows a later renewal',
   });
 });
 
+async function seedFreezeRemovalRenewalTimeline(
+  tx: TransactionSql,
+  f: Awaited<ReturnType<typeof clientContext>>,
+  target: string,
+  renewalRecordedDay: number,
+  renewalStartDay: number,
+) {
+  const ids = await graph(tx, f);
+  const purchase = { t: { id: ids.client }, sid: ids.subscription };
+  await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+    values(${f.wsA.id},${purchase.sid},clock_timestamp(),${randomUUID()})`;
+  const [dates] = await tx`select
+    ((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::date as day_zero,
+    (((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::timestamp at time zone 'Africa/Cairo') as upgrade_at`;
+  const dayZero = dates!.day_zero as string;
+  const upgradeId = randomUUID();
+  const operationId = randomUUID();
+  const freezeId = randomUUID();
+  await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+  await tx`insert into public.subscription_freezes(
+      id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+    values(${freezeId},${f.wsA.id},${purchase.sid},${dayZero}::date+50,30,${f.trainerA.userId},clock_timestamp())`;
+  await tx`insert into app_private.subscription_upgrade_operations(
+      id,workspace_id,client_id,subscription_id,actor_user_id,request_key,expected_revision,
+      canonical_args_hash,result_receipt,recorded_at,transaction_id)
+    values(${operationId},${f.wsA.id},${purchase.t.id},${purchase.sid},${f.trainerA.userId},${randomUUID()},0,
+      extensions.digest(convert_to('historical projection fixture','UTF8'),'sha256'),'{}'::jsonb,
+      ${dates!.upgrade_at}::timestamptz,pg_current_xact_id())`;
+  await tx`insert into public.subscription_upgrades(
+      id,workspace_id,client_id,subscription_id,operation_id,package_offer_id,package_version_id,tier_rank,
+      package_price_minor,currency,commission_rate_bp,duration_days,credit_minor,additional_payment_minor,
+      commission_minor,service_start_date,service_end_exclusive,expected_revision,recorded_by,recorded_at)
+    select ${upgradeId},${f.wsA.id},${purchase.t.id},${purchase.sid},${operationId},o.id,v.id,o.tier_rank,
+      v.price_minor,v.currency,v.commission_rate_bp,90,0,v.price_minor,0,${dayZero}::date,${dayZero}::date+120,
+      0,${f.trainerA.userId},${dates!.upgrade_at}::timestamptz
+    from public.package_offers o join public.package_versions v on v.workspace_id=o.workspace_id and v.id=o.current_version_id
+    where o.workspace_id=${f.wsA.id} and o.id=${target}`;
+  await tx`insert into public.subscription_freeze_events(
+      workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id,recorded_at)
+    values(${f.wsA.id},${purchase.sid},${freezeId},'remove',${dayZero}::date+80,${f.trainerA.userId},
+      (((${dayZero}::date+80)::timestamp+interval '12 hours') at time zone 'Africa/Cairo'))`;
+  const baseOffer = await packageOfferId(f.link);
+  const renewalId = randomUUID();
+  await tx`insert into public.subscription_renewals(
+      id,workspace_id,client_id,predecessor_subscription_id,subscription_id,package_offer_id,package_version_id,
+      expected_revision,recording_date,service_start_date,service_end_exclusive,recorded_by,recorded_at)
+    select ${renewalId},${f.wsA.id},${purchase.t.id},${purchase.sid},${purchase.sid},o.id,v.id,1,
+      ${dayZero}::date+${renewalRecordedDay}::integer,${dayZero}::date+${renewalStartDay}::integer,
+      ${dayZero}::date+${renewalStartDay}::integer+60,${f.trainerA.userId},
+      ((((${dayZero}::date+${renewalRecordedDay}::integer)::timestamp+interval '12 hours') at time zone 'Africa/Cairo'))
+    from public.package_offers o join public.package_versions v on v.workspace_id=o.workspace_id and v.id=o.current_version_id
+    where o.workspace_id=${f.wsA.id} and o.id=${baseOffer}`;
+  return {
+    workspaceId: f.wsA.id,
+    subscriptionId: purchase.sid,
+    renewalId,
+    dayZero,
+  };
+}
+
+it('T049 preserves a renewal recorded after the removed freeze and expired term (day 120/80/130)', async () => {
+  const f = await clientContext();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    const timeline = await seedFreezeRemovalRenewalTimeline(
+      tx,
+      f,
+      target,
+      130,
+      130,
+    );
+    const [renewal] =
+      await tx`select recording_date::text,service_start_date::text,service_end_exclusive::text
+      from public.subscription_renewals where id=${timeline.renewalId}`;
+    const [recordedDates] =
+      await tx`select (${timeline.dayZero}::date+130)::text as on,
+      (${timeline.dayZero}::date+190)::text as until`;
+    expect(renewal).toEqual({
+      recording_date: recordedDates!.on,
+      service_start_date: recordedDates!.on,
+      service_end_exclusive: recordedDates!.until,
+    });
+    const [projection] = await tx`select
+      (app_private.f13_project_entitlement(${timeline.workspaceId},${timeline.subscriptionId},
+        ${timeline.dayZero}::date+140)->>'effective_end_exclusive') as effective_end`;
+    const [expected] =
+      await tx`select (${timeline.dayZero}::date+190)::text as effective_end`;
+    expect(projection!.effective_end).toBe(expected!.effective_end);
+  });
+});
+
+it('T049 shifts a renewal recorded before removal when its term still includes removed freeze days', async () => {
+  const f = await clientContext();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1600',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    const timeline = await seedFreezeRemovalRenewalTimeline(
+      tx,
+      f,
+      target,
+      79,
+      120,
+    );
+    const [renewal] =
+      await tx`select recording_date::text,service_start_date::text,service_end_exclusive::text
+      from public.subscription_renewals where id=${timeline.renewalId}`;
+    const [recordedDates] =
+      await tx`select (${timeline.dayZero}::date+79)::text as on,
+      (${timeline.dayZero}::date+120)::text as starts_on,(${timeline.dayZero}::date+180)::text as until`;
+    expect(renewal).toEqual({
+      recording_date: recordedDates!.on,
+      service_start_date: recordedDates!.starts_on,
+      service_end_exclusive: recordedDates!.until,
+    });
+    const [projection] = await tx`select
+      (app_private.f13_project_entitlement(${timeline.workspaceId},${timeline.subscriptionId},
+        ${timeline.dayZero}::date+140)->>'effective_end_exclusive') as effective_end`;
+    const [expected] =
+      await tx`select (${timeline.dayZero}::date+150)::text as effective_end`;
+    expect(projection!.effective_end).toBe(expected!.effective_end);
+  });
+});
+
 it('T049 preserves a newer manual date when a freeze is removed after upgrade', async () => {
   const f = await clientContext();
   const target = await targetOffer(f, {
