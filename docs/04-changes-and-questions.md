@@ -428,7 +428,7 @@ then Delegate one agent to update and verify the LIFTER handoff, generate the ne
 
 ## S44–S51 PO decisions — recorded 2026-11-13
 
-These PO decisions are recorded here byte-exact. Each block is the raw text of the recorded PO session, embedded unchanged; the source file, byte count and SHA-256 are given under each entry so the text can be verified against its source. Architect interpretation notes that appear in the source files are not PO words and are not quoted here; they remain in the cited source files. Each block carries a `<!-- prettier-ignore -->` marker so the formatter never alters the recorded text.
+These PO decisions are recorded here byte-exact. Each block is the raw text of the recorded PO session, embedded unchanged; the source file, byte count and SHA-256 are given under each entry so the text can be verified against its source. Architect interpretation notes that appear in the source files are not PO words and are not quoted here; they remain in the cited source files. Each block carries a `<!-- prettier-ignore -->` marker so the formatter never alters the recorded text. When a source file does not end with a newline, one newline is added before the closing fence for display only; the byte count and SHA-256 always describe the unmodified source file.
 
 ### S44-PO-1 — PO words, verbatim
 
