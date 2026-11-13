@@ -143,6 +143,77 @@ describe('Client Notes list ordering', () => {
     expect(mocks.limit).toHaveBeenCalledTimes(11);
   });
 
+  it('keeps surviving older rows ordered when inserts and deletes happen between keyset pages', async () => {
+    const makeNote = (index: number, createdAt?: string) => ({
+      id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+      workspace_id: '10000000-0000-4000-8000-000000000001',
+      client_id: '20000000-0000-4000-8000-000000000001',
+      author_user_id: '30000000-0000-4000-8000-000000000001',
+      body: `note-${index}`,
+      created_at:
+        createdAt ??
+        new Date(Date.UTC(2026, 10, 12, 10, 0, 0) - index * 1000).toISOString(),
+      edited_at: null as string | null,
+    });
+    const original = Array.from({ length: 205 }, (_, index) => makeNote(index));
+    const sortNewestFirst = (rows: typeof original) =>
+      [...rows].sort(
+        (a, b) =>
+          b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id),
+      );
+    const reached: typeof original = [];
+    mocks.rows = original.slice(0, 101);
+    const first = await readClientNotes({
+      workspaceId: '10000000-0000-4000-8000-000000000001',
+      clientId: '20000000-0000-4000-8000-000000000001',
+    });
+    expect(first.status).toBe('ok');
+    if (first.status !== 'ok') throw new Error('Expected first page');
+    reached.push(...first.notes);
+    let cursor = first.nextCursor;
+    expect(cursor).not.toBeNull();
+
+    const live = sortNewestFirst([
+      ...original.filter(
+        (note) => note.id !== original[5]!.id && note.id !== original[150]!.id,
+      ),
+      makeNote(999, '2026-11-12T11:00:00.000Z'),
+    ]);
+    let hasMore = true;
+    while (hasMore && cursor) {
+      const currentCursor = cursor;
+      const afterCursor = live.filter(
+        (note) =>
+          note.created_at < currentCursor.created_at ||
+          (note.created_at === currentCursor.created_at &&
+            note.id < currentCursor.id),
+      );
+      mocks.rows = afterCursor.slice(0, 101);
+      const page = await readClientNotes({
+        workspaceId: '10000000-0000-4000-8000-000000000001',
+        clientId: '20000000-0000-4000-8000-000000000001',
+        cursor,
+      });
+      expect(page.status).toBe('ok');
+      if (page.status !== 'ok') throw new Error('Expected continuation page');
+      reached.push(...page.notes);
+      hasMore = page.hasMore;
+      cursor = page.nextCursor;
+    }
+
+    const originalAfterFirst = original
+      .slice(100)
+      .filter((note) => note.id !== original[150]!.id);
+    expect(reached.slice(100).map((note) => note.id)).toEqual(
+      originalAfterFirst.map((note) => note.id),
+    );
+    expect(new Set(reached.map((note) => note.id)).size).toBe(reached.length);
+    expect(mocks.or).toHaveBeenCalledWith(
+      `created_at.lt.${first.nextCursor!.created_at},and(created_at.eq.${first.nextCursor!.created_at},id.lt.${first.nextCursor!.id})`,
+    );
+    expect(reached.some((note) => note.id === makeNote(999).id)).toBe(false);
+  });
+
   it('refuses invalid body boundaries before reaching the database boundary', async () => {
     for (const body of [
       '',

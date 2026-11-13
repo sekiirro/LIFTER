@@ -213,6 +213,12 @@ export function ClientNotes(props: ClientNotesProps) {
   const hasMore = pageStateIsCurrent
     ? pageState.hasMore
     : (props.hasMore ?? false);
+  const cursorNotes =
+    pageStateIsCurrent && pageState.extra.length > 0
+      ? [...sourceNotes, ...pageState.extra]
+      : sourceNotes;
+  const pendingNavigation = useRef<HTMLAnchorElement | null>(null);
+  const allowNavigationClick = useRef(false);
 
   const setActiveEditor = (noteId: string | null) => {
     editorGeneration.current += 1;
@@ -236,7 +242,7 @@ export function ClientNotes(props: ClientNotesProps) {
   };
 
   const loadMore = async () => {
-    const last = notes.at(-1);
+    const last = cursorNotes.at(-1);
     if (!last || !hasMore || loadingMore || !props.onLoadMore) return;
     setLoadingMore(true);
     setPageState((current) => ({
@@ -402,9 +408,58 @@ export function ClientNotes(props: ClientNotesProps) {
       event.preventDefault();
       event.returnValue = '';
     };
+    const warnBeforeNavigation = (event: MouseEvent) => {
+      if (allowNavigationClick.current) {
+        allowNavigationClick.current = false;
+        return;
+      }
+      if (exitOpen) {
+        event.preventDefault();
+        return;
+      }
+      if (
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const target = event.target as {
+        closest?: (selector: string) => HTMLAnchorElement | null;
+      } | null;
+      const link = target?.closest?.('a[href]');
+      if (
+        !link ||
+        link.hasAttribute('download') ||
+        (link.target && link.target !== '_self')
+      )
+        return;
+      const destination = new URL(link.href, window.location.href);
+      if (
+        destination.origin !== window.location.origin ||
+        (destination.pathname === window.location.pathname &&
+          destination.search === window.location.search)
+      )
+        return;
+      event.preventDefault();
+      pendingNavigation.current = link;
+      setExitMode(
+        saving
+          ? 'inflight'
+          : unknownCreate || unknownEdit
+            ? 'unknown'
+            : 'unsaved',
+      );
+      setExitOpen(true);
+    };
     window.addEventListener('beforeunload', warnBeforeUnload);
-    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
-  }, [hasUnsavedChanges]);
+    document.addEventListener('click', warnBeforeNavigation, true);
+    return () => {
+      window.removeEventListener('beforeunload', warnBeforeUnload);
+      document.removeEventListener('click', warnBeforeNavigation, true);
+    };
+  }, [exitOpen, hasUnsavedChanges, saving, unknownCreate, unknownEdit]);
 
   const formatTimestamp = (value: string) => {
     const date = new Date(value);
@@ -645,6 +700,14 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const confirmDiscard = () => {
     setExitOpen(false);
+    const continueNavigation = () => {
+      const link = pendingNavigation.current;
+      pendingNavigation.current = null;
+      if (!link?.isConnected) return;
+      allowNavigationClick.current = true;
+      link.click();
+      allowNavigationClick.current = false;
+    };
     if (editingId && switchEditTargetId) {
       const target = notes.find((note) => note.id === switchEditTargetId);
       if (!target) {
@@ -662,6 +725,7 @@ export function ClientNotes(props: ClientNotesProps) {
     }
     if (exitMode === 'unknown' && !editingId && pendingCreate) {
       setCreateEditorClosed(true);
+      continueNavigation();
       return;
     }
     if (exitMode === 'unknown' && unknownEdit && editingId) {
@@ -670,6 +734,7 @@ export function ClientNotes(props: ClientNotesProps) {
       setEditingNoteSnapshot(null);
       setEditDraft('');
       setUnknownEdit(false);
+      continueNavigation();
       return;
     }
     if (editingId) {
@@ -682,11 +747,13 @@ export function ClientNotes(props: ClientNotesProps) {
       setIdempotencyKey(null);
       setCreateEditorClosed(true);
     }
+    continueNavigation();
   };
 
   const stay = () => {
     setExitOpen(false);
     setSwitchEditTargetId(null);
+    pendingNavigation.current = null;
   };
 
   const cancelCreate = () => {

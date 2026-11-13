@@ -368,3 +368,43 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 **Findings:** 0 open CRITICAL; 0 open HIGH.
 **Ambiguity status:** No new in-scope ambiguity. CN-MCQ-30 remains answered by S51-PO-3; display-name modeling remains a separate 021 feature. No new user-visible copy is introduced.
 **Cross-reference and copy:** T013 row 26 Arabic cell is copied from spec.md row 26 and verified byte-for-byte (41 UTF-8 bytes; SHA-256 160d2eff2f546de00d8fa7150f5bfb65d07fc6770182c157bbda9664e059dca2). S52-R17 findings map to existing FR-001/007/009 requirements and tests; no task scope change.
+
+## Round 40 - S53-R2 pagination and navigation fix-batch analysis (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:24:24Z, after FR-001, SC-009, plan.md and T017 were amended for concurrent list mutations and cursor ownership.
+**Inputs:** S53-R2; Greptile review 5885002200; existing FR-007 exit protection; updated FR-001/SC-009, plan, T017 and route/UI contracts.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** FR-001/FR-008 and SC-009 map to T017; acceptance coverage now includes insertion/deletion between page requests and excludes editor-only retained snapshots from the keyset cursor. FR-007 already covers navigating away from an unsaved editor and approved Stay/Discard copy, so no new copy or behavior decision is required.
+**Ambiguity status:** No open in-scope ambiguity. The existing approved exit warning covers in-app navigation; list ordering uses immutable server-created `created_at` plus unique `id`, and the cursor remains the last row in the prior server page.
+
+## Round 41 - S53-R2 post-format cross-reference reanalysis (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:38:27Z, after the final formatting pass over spec.md, plan.md, and tasks.md.
+**Inputs:** S53-R2; Greptile 5885002200; FR-001/FR-007/FR-008; SC-009; Story 1 pagination and Story 2/3 exit scenarios; plan, T017 and traceability links.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** FR-001/FR-008 → SC-009 → T017 is consistent in spec, plan and tasks. Existing FR-007 and Story 2/3 GWT scenarios cover navigation-away exit warning with resolved approved copy; no copy amendment. Decision register contains no open issue for this fix batch. Traceability will receive final current-head test evidence before T017 is re-ticked.
+**Ambiguity status:** No open ambiguity in the amended pagination/exit behavior.
+
+## Round 42 - S53-R2 Stack D plan-evidence cross-reference (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:40:04Z, after T017 and plan.md were updated to record the evidence-gated list-order index.
+**Inputs:** Stack D `EXPLAIN (ANALYZE, BUFFERS)` on 20,012 realistic matching rows; S53-R2; FR-001/FR-008, SC-009, T017 and the new forward migration.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** The server-page keyset cursor and mutation guarantees are consistent across FR-001, SC-009, GWT scenario, plan.md and T017. The index condition is tied directly to observed sequential scan and explicit `(created_at DESC, id DESC)` sort evidence; migration remains forward-only and does not alter any applied migration.
+**Ambiguity status:** No open ambiguity; no PO-decision or new copy is required.
+
+## Round 43 - S53-R2 in-app navigation task traceability (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:41:19Z, after T005 was reopened for same-origin in-app navigation and T017 was expanded for the evidence-gated index.
+**Inputs:** S53-R2; Greptile 5885002200; existing FR-007 GWT exit protection; FR-001/FR-008/SC-009 keyset behavior; tasks and plan.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** T005 covers the FR-007 warning on in-app navigation and preserves modified/external/download/new-tab handling; T017 covers FR-001/FR-008/SC-009 and evidence-based indexing. Both remain unticked until final-head focused tests (including Stack D UI verification) pass.
+**Ambiguity status:** Existing approved Stay/Discard copy and navigation behavior apply; no PO decision or new string is needed.
+
+## Round 44 - S53-R2 migration-context reconciliation (2026-11-13)
+
+**Analysis date:** 2026-11-13T02:46:33Z, after plan.md replaced the stale “migration described only” statement with the evidence-gated forward-index decision.
+**Inputs:** Stack D 20,012-row list EXPLAIN showing sequential scan and explicit sort; S53-R2; migration `20261113023322_client_notes_list_order_index.sql`; FR-001/FR-008/SC-009/T017.
+**Findings:** 0 open CRITICAL; 0 open HIGH.
+**Cross-reference sweep:** Plan, T017 and the new forward migration now agree that only an index matching `(workspace_id, client_id, created_at DESC, id DESC)` is authorized by the observed plan. No applied migration, new behavior, PO decision, or copy changed.
+**Ambiguity status:** No open ambiguity.

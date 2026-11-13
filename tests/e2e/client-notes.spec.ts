@@ -286,6 +286,46 @@ test.describe('staff Client Details Notes tab on Stack D', () => {
     await expect(page.getByText(body, { exact: true })).toBeVisible();
   });
 
+  test('warns before following in-app navigation with an unsaved note', async ({
+    page,
+    context,
+  }) => {
+    await installSession(context, fixture.context.trainerA);
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/clients/${fixture.clientId}`);
+    const messages = getMessages('en');
+    const draft = 'unsaved navigation draft';
+    await page
+      .getByRole('textbox', { name: messages['clientNotes.noteLabel'] })
+      .fill(draft);
+
+    const home = page.getByRole('link', { name: messages['nav.home'] });
+    await home.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText(
+      messages['clientNotes.exitWarning.title'],
+    );
+    await expect(page).toHaveURL(`${origin}/clients/${fixture.clientId}`);
+    await dialog
+      .getByRole('button', { name: messages['clientNotes.exitWarning.stay'] })
+      .click();
+    await expect(
+      page.getByRole('textbox', { name: messages['clientNotes.noteLabel'] }),
+    ).toHaveValue(draft);
+
+    await home.click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', {
+        name: messages['clientNotes.exitWarning.discard'],
+      })
+      .click();
+    await expect(page).toHaveURL(`${origin}/`);
+  });
+
   test('renders the signed-in sign-out control accessibly across locale and theme variants', async ({
     page,
     context,

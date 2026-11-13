@@ -364,6 +364,80 @@ describe('ClientNotes behaviour', () => {
     expect(button()).toBeUndefined();
   });
 
+  it('keeps the load-more cursor on the refreshed server page when an older edited row is retained', async () => {
+    const note = (id: string, body: string, minute: number) => ({
+      id,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:${String(minute).padStart(2, '0')}:00Z`,
+      edited_at: null,
+    });
+    const olderEdited = note('n3', 'older page', 10);
+    const onLoadMore = vi
+      .fn()
+      .mockResolvedValueOnce({
+        status: 'ok',
+        notes: [olderEdited],
+        hasMore: true,
+      })
+      .mockResolvedValueOnce({ status: 'ok', notes: [], hasMore: false });
+    const firstPage = [
+      note('n1', 'first page', 12),
+      note('n2', 'last server row', 11),
+    ];
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: firstPage,
+      hasMore: true,
+      onLoadMore,
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+    });
+    const loadMore = () =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === mEn['clientNotes.loadMore'],
+      )!;
+    await act(async () => loadMore().click());
+    const editOlder = Array.from(host!.querySelectorAll('li'))
+      .find((item) => item.textContent?.includes('older page'))!
+      .querySelector('button')!;
+    await act(async () => editOlder.click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'dirty older edit'),
+    );
+
+    const refreshedFirstPage = [
+      note('n0', 'new insert ahead of cursor', 13),
+      ...firstPage,
+    ];
+    await act(async () =>
+      root!.render(
+        createElement(ClientNotes, {
+          locale: 'en',
+          messages: mEn,
+          status: 'ready',
+          notes: refreshedFirstPage,
+          hasMore: true,
+          onLoadMore,
+          role: 'trainer',
+          actorId: 'u1',
+          canCreate: false,
+        }),
+      ),
+    );
+    expect(host!.textContent).toContain('dirty older edit');
+    await act(async () => loadMore().click());
+    expect(onLoadMore).toHaveBeenLastCalledWith({
+      created_at: '2026-11-08T10:11:00Z',
+      id: 'n2',
+    });
+  });
+
   it('uses approved load-error and Retry copy without exposing a server error', async () => {
     const note = {
       id: 'n1',
@@ -1264,6 +1338,69 @@ describe('ClientNotes behaviour', () => {
     expect(reopen).toBeDefined();
     await act(async () => reopen!.click());
     expect(host!.querySelector('form')).not.toBeNull();
+  });
+
+  it('protects same-origin in-app navigation with the approved Stay/Discard warning', async () => {
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+    });
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'unsaved'),
+    );
+    const link = dom!.window.document.createElement('a');
+    link.href = '/home';
+    link.textContent = 'Home';
+    dom!.window.document.body.append(link);
+    let replayedNavigation = 0;
+    let captureReplay = false;
+    link.addEventListener('click', (event) => {
+      if (!captureReplay) return;
+      replayedNavigation += 1;
+      event.preventDefault();
+    });
+
+    const click = () =>
+      link.dispatchEvent(
+        new dom!.window.MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+        }),
+      );
+    let prevented = false;
+    await act(async () => {
+      prevented = !click();
+    });
+    expect(prevented).toBe(true);
+    const dialog = host!.querySelector('dialog')!;
+    expect(dialog.textContent).toContain(mEn['clientNotes.exitWarning.title']);
+    expect(dialog.textContent).toContain(mEn['clientNotes.exitWarning.body']);
+    expect(dialog.textContent).toContain(mEn['clientNotes.exitWarning.stay']);
+    expect(dialog.textContent).toContain(
+      mEn['clientNotes.exitWarning.discard'],
+    );
+    const stay = Array.from(dialog.querySelectorAll('button')).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.stay'],
+    )!;
+    await act(async () => stay.click());
+    expect(host!.querySelector('textarea')).not.toBeNull();
+
+    await act(async () => {
+      prevented = !click();
+    });
+    expect(prevented).toBe(true);
+    const discard = Array.from(
+      host!.querySelectorAll<HTMLButtonElement>('dialog button'),
+    ).find(
+      (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
+    )!;
+    captureReplay = true;
+    await act(async () => discard.click());
+    expect(replayedNavigation).toBe(1);
+    expect(host!.querySelector('textarea')).toBeNull();
   });
 
   it('uses the browser beforeunload warning only for unresolved text', async () => {

@@ -28,7 +28,7 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - No version table/history. Edits are last save wins (CN-MCQ-11): the winner is the write the database commits last, and `edited_at` is set (CN-MCQ-03). `id`, `workspace_id`, `client_id`, `author_user_id` and `created_at` are immutable; a direct UPDATE changing any of them is refused.
 - Audit: one metadata-only event per successful create, edit or hard delete (actor, workspace, client/note IDs, action, timestamp). Audit never stores note text, and no generic row-snapshot capture may store body content (CN-MCQ-07). Retention is the existing `public.audit_events` policy, inherited unchanged (CN-MCQ-13). The note mutation and its audit event share one database transaction (a failed audit write rolls the mutation back). Rejected or denied operations emit no successful note-mutation event (`specs/005-audit-log` US1 scenario 2).
 - Ordering: `created_at` descending with `id` tie-break; edits do not reorder (CN-MCQ-01).
-- Migration is described only: future additive/forward-only schema + indexes/constraints/policies or safe mutation functions, chosen after fresh all-origin-ref scan. No concrete version or SQL is authorized here.
+- Migrations are additive and forward-only, chosen after a fresh all-origin-ref scan. The S53-R2 Stack D EXPLAIN (ANALYZE, BUFFERS) showed a sequential scan and explicit list-order sort on 20,012 matching rows; this evidence authorizes only the new 20261113023322_client_notes_list_order_index.sql composite index. No applied migration is edited.
 
 ### UI
 
@@ -88,7 +88,7 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 
 ## S50-PO-6 implementation amendment (S50-R32 mapping)
 
-- F20-01=A (S50-PO-6, architect mapping S50-R32; copy CN-MCQ-26 resolved by S51-PO-1 A): ordered keyset load-more using `(created_at, id)` and approved `clientNotes.loadMore`; terminal page hides the action.
+- F20-01=A (S50-PO-6, architect mapping S50-R32; copy CN-MCQ-26 resolved by S51-PO-1 A): ordered keyset load-more using `(created_at, id)` and approved `clientNotes.loadMore`; the cursor is the last row from the prior server page, distinct from any editor-retained snapshot. Newer inserts and deletions between requests do not shift the cursor or skip/repeat surviving older rows; terminal page hides the action. Stack D `EXPLAIN (ANALYZE, BUFFERS)` showed a sequential scan and explicit sort on the realistic list query, so the ordered composite index is included via a new forward migration.
 - F20-02=B (S50-PO-6, architect mapping S50-R32; condition S51-PO-1 29B): use a trustworthy server-controlled author name only if the source exists within current schema and authorization boundaries. Audit found no such source; F20 renders the existing approved unavailable-author fallback. Future profile/name modeling is assigned by S51-PO-3 to separate feature 021-staff-display-names (CN-MCQ-30); no migration is in scope for F20.
 - F20-03=A (S50-PO-6, architect mapping S50-R32): on unknown edit outcome, Discard closes the editor while retaining the request body in page memory and exposes Retry elsewhere in the same Notes tab, reusing existing approved `clientNotes.retry`; retry is a new save under last-save-wins.
 - No copy remains pending within T017-T019. CN-MCQ-30 is resolved; F20 keeps the approved fallback until separate feature 021-staff-display-names ships. No guessed strings, user-editable name source, or role/name mapping is used.
