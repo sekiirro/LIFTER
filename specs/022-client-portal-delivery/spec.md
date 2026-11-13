@@ -68,16 +68,16 @@ A client with plan entitlement exports a published workout or nutrition plan in 
 
 This is a gap audit of the checked-out LIFTER source and committed specs; no YBS material is used (S54-PO-11). Only P4 gaps are specified here. Existing ownership is reused.
 
-| BRD/PRD client-section requirement | Existing LIFTER surface or contract | Gap / disposition in this spec |
-| --- | --- | --- |
-| Client accounts and authorized client identity (PRD-02; BRD-02) | F11 `specs/011-client-accounts/spec.md`, account authorization and `app/(client)/account/status` | Reuse. P4 adds no registration, identity or credential rules. |
-| Client plan dashboard and subscription state (PRD-01, PRD-06, PRD-07; roadmap P4) | F19 client projection contract defines delivered plan identity, latest revision and self-read boundary; F13 defines entitlement projection. Current client pages include welcome, assigned forms and account status, but no plans dashboard. | Gap: dashboard view and subscription status/end-date presentation (FR-004–006). |
-| PDF and Excel exports of plans (PRD-04, PRD-05; S54-PO-12) | F17 export FR-017/018 and T037–T041; F18 export FR-006/014 and T023. | Gap: client-authorized export entry point and enforcement using these outputs, without a second renderer (FR-008). |
-| In-app notifications (PRD-10) | F15 `app_private.form_alert_inbox`, `public.read_form_alert_inbox`, `public.mark_form_alert_read`; committed inbox rows currently address staff alert recipients. PR #58 is open for F15 UI work. | Gap: first-plan/activation client events and client inbox access. Extend the F15 inbox/event surface; preserve existing F15 event recipients and do not create another inbox (FR-009). |
-| Staff client directory: search, filters, accountability indicators and actionable indicators (BRD-06; PRD-01 Trainer workspace; PRD-11) | F11 specifies client accounts, approval, assignment and unassigned-client behavior. F20 specifies staff Client Details/Notes; PR #90 is open. No staff client-directory page was found in this checkout. | Gap found; whether this directory gap belongs in P4 v1 is open in `S54-022-Q1`. No duplicate account, assignment, or notes behavior is specified. |
-| Client forms, measurements, progress, food alternatives, settings and history (PRD-01, PRD-03, PRD-05, PRD-09) | Assigned client forms exist at `app/(client)/forms/[assignmentId]`; F15 owns form assignment and submission. F18 owns nutrition selection/export rules. F20 owns staff notes, not client history. No client settings, measurements/progress or client plan-history page was found in this checkout. | Reuse F15/F18 behavior. Settings, progress/measurements and broader history are gaps outside this P4 plan-delivery spec; do not duplicate F15/F18/F20 or imply they are implemented. |
-| Comprehensive client-data exports | BRD-06 and PRD-11 reserve comprehensive export to Platform Owner. | Out of scope. P4 adds per-plan client PDF/Excel only; no client dataset export. |
-| Migration or synchronization from YBS | BRD-06; roadmap says no migration. | Out of scope; no import or synchronization (S54-PO-11). |
+| BRD/PRD client-section requirement                                                                                                      | Existing LIFTER surface or contract                                                                                                                                                                                                                                                                 | Gap / disposition in this spec                                                                                                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Client accounts and authorized client identity (PRD-02; BRD-02)                                                                         | F11 `specs/011-client-accounts/spec.md`, account authorization and `app/(client)/account/status`                                                                                                                                                                                                    | Reuse. P4 adds no registration, identity or credential rules.                                                                                                                          |
+| Client plan dashboard and subscription state (PRD-01, PRD-06, PRD-07; roadmap P4)                                                       | F19 client projection contract defines delivered plan identity, latest revision and self-read boundary; F13 defines entitlement projection. Current client pages include welcome, assigned forms and account status, but no plans dashboard.                                                        | Gap: dashboard view and subscription status/end-date presentation (FR-004–006).                                                                                                        |
+| PDF and Excel exports of plans (PRD-04, PRD-05; S54-PO-12)                                                                              | F17 export FR-017/018 and T037–T041; F18 export FR-006/014 and T023.                                                                                                                                                                                                                                | Gap: client-authorized export entry point and enforcement using these outputs, without a second renderer (FR-008).                                                                     |
+| In-app notifications (PRD-10)                                                                                                           | F15 `app_private.form_alert_inbox`, `public.read_form_alert_inbox`, `public.mark_form_alert_read`; committed inbox rows currently address staff alert recipients. PR #58 is open for F15 UI work.                                                                                                   | Gap: first-plan/activation client events and client inbox access. Extend the F15 inbox/event surface; preserve existing F15 event recipients and do not create another inbox (FR-009). |
+| Staff client directory: search, filters, accountability indicators and actionable indicators (BRD-06; PRD-01 Trainer workspace; PRD-11) | F11 specifies client accounts, approval, assignment and unassigned-client behavior. F20 specifies staff Client Details/Notes; PR #90 is open. No staff client-directory page was found in this checkout.                                                                                            | Gap found; whether this directory gap belongs in P4 v1 is open in `S54-022-Q1`. No duplicate account, assignment, or notes behavior is specified.                                      |
+| Client forms, measurements, progress, food alternatives, settings and history (PRD-01, PRD-03, PRD-05, PRD-09)                          | Assigned client forms exist at `app/(client)/forms/[assignmentId]`; F15 owns form assignment and submission. F18 owns nutrition selection/export rules. F20 owns staff notes, not client history. No client settings, measurements/progress or client plan-history page was found in this checkout. | Reuse F15/F18 behavior. Settings, progress/measurements and broader history are gaps outside this P4 plan-delivery spec; do not duplicate F15/F18/F20 or imply they are implemented.   |
+| Comprehensive client-data exports                                                                                                       | BRD-06 and PRD-11 reserve comprehensive export to Platform Owner.                                                                                                                                                                                                                                   | Out of scope. P4 adds per-plan client PDF/Excel only; no client dataset export.                                                                                                        |
+| Migration or synchronization from YBS                                                                                                   | BRD-06; roadmap says no migration.                                                                                                                                                                                                                                                                  | Out of scope; no import or synchronization (S54-PO-11).                                                                                                                                |
 
 ## Scope and Deferrals
 
@@ -177,11 +177,11 @@ This is a gap audit of the checked-out LIFTER source and committed specs; no YBS
 
 **Recommended:** Option A. Keep P4 focused on client plan delivery/dashboard/notifications/exports and record directory gaps for a later feature, consistent with the prior P4-Q6=A scope recommendation.
 
-| Option | Description | Implication |
-| --- | --- | --- |
-| A | Defer remaining directory gaps; this spec records them only. | Keeps the current v1 client portal boundary; no directory delivery claim. |
-| B | Include BRD/PRD directory search, filters and actionable indicators in this P4 spec. | Expands v1 requirements and requires directory scenarios/copy. |
-| C | Include only a plan-waiting indicator. | Adds a narrow staff directory surface and requires defining its data and placement. |
+| Option | Description                                                                          | Implication                                                                         |
+| ------ | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| A      | Defer remaining directory gaps; this spec records them only.                         | Keeps the current v1 client portal boundary; no directory delivery claim.           |
+| B      | Include BRD/PRD directory search, filters and actionable indicators in this P4 spec. | Expands v1 requirements and requires directory scenarios/copy.                      |
+| C      | Include only a plan-waiting indicator.                                               | Adds a narrow staff directory surface and requires defining its data and placement. |
 
 **Blocks:** Final v1 P4 boundary and whether directory requirements are added before planning.
 
@@ -193,11 +193,11 @@ This is a gap audit of the checked-out LIFTER source and committed specs; no YBS
 
 **Recommended:** Option A. It matches the dashboard rule and avoids adding a client history selector before history is in scope.
 
-| Option | Description | Implication |
-| --- | --- | --- |
-| A | Export only the latest published revision for each delivered plan. | Aligns export with the dashboard's latest-revision projection. |
-| B | Let the client select any published revision of that delivered plan. | Requires revision history navigation and client authorization for historic exports. |
-| C | Show all revisions but export only the latest. | Adds history visibility without historic export. |
+| Option | Description                                                          | Implication                                                                         |
+| ------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| A      | Export only the latest published revision for each delivered plan.   | Aligns export with the dashboard's latest-revision projection.                      |
+| B      | Let the client select any published revision of that delivered plan. | Requires revision history navigation and client authorization for historic exports. |
+| C      | Show all revisions but export only the latest.                       | Adds history visibility without historic export.                                    |
 
 **Blocks:** Export selection UI, export authorization and historical nutrition-selection acceptance criteria.
 
@@ -209,11 +209,11 @@ This is a gap audit of the checked-out LIFTER source and committed specs; no YBS
 
 **Recommended:** Option A. It gives each independently delivered plan a notice and makes the resulting activation explicit once.
 
-| Option | Description | Implication |
-| --- | --- | --- |
-| A | One notice for each first-plan delivery, plus one separate notice when the pair activates. | Three notices across a normal first pair; each event has its own proposed copy. |
-| B | One notice for each first-plan delivery; the second notice also states that activation is complete. | Two notices, with activation embedded in the completing delivery. |
-| C | One notice only after both first plans have been delivered and activation completes. | No notice for the first independently delivered plan. |
+| Option | Description                                                                                         | Implication                                                                     |
+| ------ | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| A      | One notice for each first-plan delivery, plus one separate notice when the pair activates.          | Three notices across a normal first pair; each event has its own proposed copy. |
+| B      | One notice for each first-plan delivery; the second notice also states that activation is complete. | Two notices, with activation embedded in the completing delivery.               |
+| C      | One notice only after both first plans have been delivered and activation completes.                | No notice for the first independently delivered plan.                           |
 
 **Blocks:** Event count, inbox deduplication keys and final notification copy.
 
@@ -225,10 +225,10 @@ This is a gap audit of the checked-out LIFTER source and committed specs; no YBS
 
 **Recommended:** Option A, after your review of the proposal table.
 
-| Option | Description | Implication |
-| --- | --- | --- |
-| A | Approve every proposed string as written. | The listed strings become the approved source for this feature. |
-| B | Return replacements for any rows that need changes. | Changed rows remain blocked until exact EN and Egyptian Arabic text is supplied. |
+| Option | Description                                         | Implication                                                                      |
+| ------ | --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| A      | Approve every proposed string as written.           | The listed strings become the approved source for this feature.                  |
+| B      | Return replacements for any rows that need changes. | Changed rows remain blocked until exact EN and Egyptian Arabic text is supplied. |
 
 **Blocks:** Final user-visible copy and implementation readiness for the proposed keys.
 
@@ -240,10 +240,10 @@ This is a gap audit of the checked-out LIFTER source and committed specs; no YBS
 
 **Recommended:** Option A. It is consistent with F19's no-plan-content denial and reveals no restricted plan details.
 
-| Option | Description | Implication |
-| --- | --- | --- |
-| A | Hide the plan list and show only subscription status/end date and an approved restricted state. | No plan metadata is exposed after entitlement is denied. |
-| B | Keep plan names/dates visible but remove plan content and export actions. | Requires a metadata-only projection while entitlement is denied. |
-| C | Show an explicit per-plan locked entry without plan details. | Requires a lock-state list projection and separate copy. |
+| Option | Description                                                                                     | Implication                                                      |
+| ------ | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| A      | Hide the plan list and show only subscription status/end date and an approved restricted state. | No plan metadata is exposed after entitlement is denied.         |
+| B      | Keep plan names/dates visible but remove plan content and export actions.                       | Requires a metadata-only projection while entitlement is denied. |
+| C      | Show an explicit per-plan locked entry without plan details.                                    | Requires a lock-state list projection and separate copy.         |
 
 **Blocks:** Restricted dashboard projection and entitlement-denied user experience.
