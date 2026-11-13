@@ -1480,3 +1480,124 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-4.verbatim.txt`; 337 bytes;
 ```text
 I approve all 7 recommendations with the safeguards we discussed. Implement them, update the governance rules and persistent handoff/startup instructions so every future session automatically follows them. Ensure existing agents and PRs are handled safely. Preserve security, correctness, and test coverage. No unnecessary review loops.
 ```
+
+### S54-PO-5 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-5.verbatim.txt`; 644 bytes; SHA-256 `e23d31f25cec8f5380cc418c50f677fe7ff109a9ee3840fae068ccc656581758`.
+
+<!-- prettier-ignore -->
+```text
+S54-V1-SCOPE answer (AskUserQuestion): "Choose A — Lean Pilot, but preserve all essential end-to-end workflows, security, data integrity, and approved business rules. Defer only nonessential tasks. Never silently cut core F13/F17/F18/F19 functionality. Record all deferred tasks, finish in-flight work, and persist the approved scope in governance and session handoffs." — option A text: P0–P3 plus a minimal P4: deliver the first workout and nutrition plans, the client sees their plan and subscription, in-app notifications. Defer PDF/Excel export, finance reporting depth, P5–P8, and the P3/P4-tagged tasks inside finished features.
+```
+
+### S54-PO-6 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-6.verbatim.txt`; 268 bytes; SHA-256 `a55dffdf2440c4795e563e1568952bb0c2d0934fa9c5fcf6464640884c32bafb`.
+
+<!-- prettier-ignore -->
+```text
+S54-90-MIGR answer (AskUserQuestion): "Keep unchanged (Recommended)" — option text: Same as your S19 ruling for pushed migrations: leave the names, accept the green CI replay as proof, and record the exception. #90 proceeds to one AI review now, with no extra push.
+```
+
+### S54-PO-7 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-7.verbatim.txt`; 195 bytes; SHA-256 `dc9d8e7768920cb5025bca65d76b2e70ab8e9f9ea2ab747edd08a22c5170180c`.
+
+<!-- prettier-ignore -->
+```text
+merge #98 at fff9b3ff41588f4f5cd5057f1c7ac43287fa3738, #86 at c320ab62722686877509ea8ddf56c93466c08766 and #90 at e0d00d1c6acf6ee83b6102b71c2092b9373693af; dismiss their stale CodeRabbit reviews
+```
+
+### S54-PO-8 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-8.verbatim.txt`; 425 bytes; SHA-256 `04dce1433b68bea765eded0b75a6a771c6eb766950e14c162e63e8180c6f3396`.
+
+<!-- prettier-ignore -->
+```text
+S54-DEFER answer (AskUserQuestion): "Approve, keep F14b" — option text: Defer the other 10 but keep the logo/banner upload editor in v1 (owners can brand their workspace themselves).
+S54-TICK-AUDIT answer (AskUserQuestion): "Run the audit (Recommended)" — option text: Two LongCat agents, read-only, split by feature. The result is a done-with-evidence vs truly-remaining list, which I review before any tasks.md change.
+```
+
+### S54-PO-9 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-9.verbatim.txt`; 718 bytes; SHA-256 `0ad2314f156ab6427afce5daf2b7631941d5e0962d29072aba3cb9614338629b`.
+
+<!-- prettier-ignore -->
+```text
+Delegate agents to audit all P4/P5 requirements against the latest BRD, PRD, roadmap, decision register, existing specs, and PO approvals.
+
+Produce separate P4/P5 feature inventories, approved decisions, conflicts, dependencies, and numbered MCQs with recommendations. Prioritize newer PO decisions. Prevent overlap with F13/F19/F20 and ongoing PRs.
+
+**Phase 1: Report all unresolved decisions to me and STOP. No assumptions.**
+
+After my approvals, delegate Spec Kit Specify → Clarify → Plan → Tasks → Analyze for each independent feature. Open separate spec-only PRs for P4 and P5, with CI and architect review.
+
+No implementation, merges, or deployment. Keep existing agents running. Return concise reports.
+```
+
+### S54-PO-10 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-10.verbatim.txt`; 563 bytes; SHA-256 `28fe4bc81cc2f630b59a81e5e93e1f8deb04b4f567bbb226cd9498aa3031ab72`.
+
+<!-- prettier-ignore -->
+```text
+S54-90-FINISH answer (AskUserQuestion): "Fix, then merge (Recommended)" — option text: Luna sorts the rows newest-first, adds a test that fails before the fix, pushes once and gets 1 CI run. No third AI review: I review the diff, then ask you for the merge command at the new SHA.
+S54-90-MIGR-2 answer (AskUserQuestion): "Extend to all #90 (Recommended)" — option text: Keep the names unchanged, as in S54-PO-6. Luna confirms none of them touch tables or functions that a newer main migration redefines; if one does, it gets re-issued with a newer timestamp.
+```
+
+### S54-PO-11 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-11.verbatim.txt`; 1379 bytes; SHA-256 `59832dbdadbb376e70871dbf00f182dc9884b5eb92189ba47d14d9f5513c3d89`.
+
+<!-- prettier-ignore -->
+```text
+Record these LIFTER PO decisions. **Written decisions override MCQ letters**, since ChatGPT invented some B/C options.
+
+**P4:** Q1–4=A, Q7=A. Q5: Show ALL delivered plans (latest published revision per plan), subscription status/end date. Q6: Audit existing Client Section against YBS; reuse, don't duplicate. Q8: Client PDF + Excel exports.
+
+**P5:** Q1=A, Q3–4=A, Q6–7=A, Q11–15=A. Q2: Reminder on check-in day + 24h later if unanswered. Q5: Auto-extract measurements from F15 weekly forms into Progress, preserving mappings, units and history; no duplicate entry.
+
+**P5 Q8–10:** Clients freely select existing approved food alternatives without requests or revisions. New alternatives require requests; trainer adds/replaces within max 3 slots via draft + manual publish. Preserve F18 mapping, client-specific totals/exports and fallback rules.
+
+**Client Leaderboard:** Move workspace-isolated Top-5 from P8 to P5. Separate spec-only PR for my friend. Ranking combines adherence and goal-relative progress. Ask PO about scoring, eligibility and privacy.
+
+Delegate independent **P4, P5 Progress and P5 Leaderboard** spec agents. Respect active lanes, Constitution and Spec Kit gates. Propose EN/Egyptian Arabic copy for PO approval.
+
+**No implementation, merges or deployment.** Flag genuine ambiguities before specs. Return concise unresolved decisions and PR links.
+```
+
+### S54-PO-12 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-12.verbatim.txt`; 849 bytes; SHA-256 `c3d66d749c6eecf3a3b3354c297fa9e37940aaa368f1da81a624211e11c36271`.
+
+<!-- prettier-ignore -->
+```text
+S54-YBS answer (AskUserQuestion): "No YBS access; use BRD" — option text: Audit LIFTER's existing client section against the BRD/PRD client-section requirements only; no YBS material.
+S54-EXPORTS-V1 answer (AskUserQuestion): "Back into v1" — option text: Client PDF+Excel exports are in v1: the 5 planner export tasks return to v1 and the P4 export feature gets built in the v1 window.
+S54-P5-Q15 answer (AskUserQuestion, user text): "Q11–14=A refers to your original MCQs.
+
+Q15–17 were added by ChatGPT:
+- Q15: First weekly check-in 7 days after activation, then every 7 days. Account for freezes.
+- Q16: Move workspace-isolated Client Top-5 Leaderboard from P8 to P5.
+- Q17: Rank using adherence + goal-relative progress, with the exact formula pending PO approval.
+
+Treat these as additional PO decisions, not your original MCQ options."
+```
+
+### S54-PO-13 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-13.verbatim.txt`; 136 bytes; SHA-256 `b462431944a923e3dcf55cd953e3405790c9b73f852270cc008bafc2e1380c73`.
+
+<!-- prettier-ignore -->
+```text
+Delegate an agent to update the handoff and write the next session’s startup prompt. Preserve running agents. Report both, then stop.
+```
+
+### S54-PO-14 — PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-14.verbatim.txt`; 8 bytes; SHA-256 `f542f2a154440b792e0be8ee909dcb0259b42a47ea3cb24de3333e7b73dae101`.
+
+<!-- prettier-ignore -->
+```text
+approve
+```
