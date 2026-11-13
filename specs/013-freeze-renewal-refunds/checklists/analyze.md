@@ -1,10 +1,10 @@
-# Spec Kit Analyze: F13 continuity decisions
+﻿# Spec Kit Analyze: F13 continuity decisions
 
 ## Historical analysis (retained)
 
 The original analysis and S24 addendum below are preserved as history. The current-head refresh is appended after that record.
 
-**Pass**: spec ↔ plan ↔ tasks consistency review. No implementation or tests run. **Model/effort**: Luna High.
+**Pass**: spec â†” plan â†” tasks consistency review. No implementation or tests run. **Model/effort**: Luna High.
 **Analyzed:** 2026-11-10 17:48 UTC
 **Method:** Reconciled S45-PO-2/S45-R3 with byte-exact source verification; reviewed FR-005/012/038/039, scenarios 13/14, SC-033 and SC-034, plan, T041/T042, traceability, lifecycle/data model, research, and earlier S43-PO-6/architect mapping for credit after upgrade, renewal, then upgrade. Reviewed in-flight, unknown-result, retry, deletion, concurrency, crash-between-step, and no-partial-write states for these spec-only changes.
 
@@ -35,7 +35,7 @@ The original analysis and S24 addendum below are preserved as history. The curre
 **Analyzed:** 2026-11-11 00:51 Africa/Cairo
 **Scope:** CodeRabbit round-3 fixes for expired-renewal term anchoring and cumulative refund caps.
 
-Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each of the five validated keys (`client_id`, `predecessor_subscription_id`, `package_offer_id`, `request_key`, `expected_revision`) reject absence as `invalid_input`, and requires `renewal_confirmed` to be `true`. That `invalid_input` result is reached only after authentication and the workspace preflight succeed: an unauthenticated caller returns `not_permitted`, and a missing or malformed `workspace_id` returns `not_permitted` before that branch. `installments` is optional: an omitted or null `installments` is not `invalid_input` — the renewal then uses the package price — and the initial shape check rejects a present, non-null `installments` that is not an array or is an empty array. That is the only check on the request shape: a non-empty array passes the shape check and can still return `invalid_input` later, when an installment amount or due offset is invalid or when the installment total differs from the package price. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
+Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each of the five validated keys (`client_id`, `predecessor_subscription_id`, `package_offer_id`, `request_key`, `expected_revision`) reject absence as `invalid_input`, and requires `renewal_confirmed` to be `true`. That `invalid_input` result is reached only after authentication and the workspace preflight succeed: an unauthenticated caller returns `not_permitted`, and a missing or malformed `workspace_id` returns `not_permitted` before that branch. `installments` is optional: an omitted or null `installments` is not `invalid_input` â€” the renewal then uses the package price â€” and the initial shape check rejects a present, non-null `installments` that is not an array or is an empty array. That is the only check on the request shape: a non-empty array passes the shape check and can still return `invalid_input` later, when an installment amount or due offset is invalid or when the installment total differs from the package price. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
 
 **S45 R3 results (kept with the S45 R3 scope above):**
 
@@ -63,7 +63,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 
 - FR-to-task mapping: 36/36; SC-to-task mapping: 14/14. Existing T017 records cross-feature FR/SC reconciliation and T018 records runtime consumer boundaries.
 - Clarifications cite D-13, D-15, D-20, and S22-PO-5. Resolved ND-01/ND-08 remain closed; unresolved retention items are explicit.
-- **PASS WITH OPEN PRODUCTION BLOCKERS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM; 50/50 FR/SC items mapped. Static evidence only; no tests executed.
+- **PASS WITH OPEN PRODUCTION BLOCKERS** â€” 0 CRITICAL, 0 HIGH, 2 MEDIUM; 50/50 FR/SC items mapped. Static evidence only; no tests executed.
 
 ## S31 round 6 refresh
 
@@ -73,7 +73,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - **Finding:** SC-009 has named evidence for over-balance validation, audit rollback, outbox rollback, deactivation rollback, authorization and hook behavior. No asserting test was found for an injected numeric overflow failure with zero partial lifecycle/financial/receipt effects. Retention and hosted-hook evidence are separate criteria and do not lower SC-009.
 - **Coverage:** FR mapping remains 36/36 and SC mapping 14/14. SC-009 stays PARTIAL for the specific numeric-overflow assertion gap; retention remains tracked under FR-029 and B4/ND-F5-1 (DP-01/DP-02), and hosted verification remains tracked under FR-019/FR-035, T020, and Go-Live gate F13-PB-03. SC-014 is not downgraded or held PARTIAL by the hosted gate; retention and hosted verification are separate criteria from SC-010/SC-014.
 - **Verdict:** 0 CRITICAL, 0 HIGH; 3 MEDIUM. Static source/test-name review only; no tests executed.
-- **Severity note (S33):** this file defines no separate rubric for a missing-verification evidence gap, so the S31 count is stated both ways. Reading 1 (gap excluded as an evidence limitation): 2 MEDIUM carried forward from the S30 snapshot (F13-A01 — RET-1..3/B4 retention production blockers; F13-A02 — T020 D-20 deferral), plus the SC-009 numeric-overflow evidence gap tracked separately as SC-009 PARTIAL. Reading 2 (gap included as a MEDIUM finding): 3 MEDIUM. The higher total is retained: **3 MEDIUM** (F13-A01, F13-A02, and the S31 SC-009 numeric-overflow evidence gap). No severity is lowered and no finding is reclassified downward.
+- **Severity note (S33):** this file defines no separate rubric for a missing-verification evidence gap, so the S31 count is stated both ways. Reading 1 (gap excluded as an evidence limitation): 2 MEDIUM carried forward from the S30 snapshot (F13-A01 â€” RET-1..3/B4 retention production blockers; F13-A02 â€” T020 D-20 deferral), plus the SC-009 numeric-overflow evidence gap tracked separately as SC-009 PARTIAL. Reading 2 (gap included as a MEDIUM finding): 3 MEDIUM. The higher total is retained: **3 MEDIUM** (F13-A01, F13-A02, and the S31 SC-009 numeric-overflow evidence gap). No severity is lowered and no finding is reclassified downward.
 
 ## S33 SK-52 fix round 4 refresh
 
@@ -116,12 +116,12 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 ## S46 CodeRabbit round-5 finding re-analysis
 
 - Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F5 traceability date-check rewrite.
-- Scope: F5 — the Known-gaps date-check row now retains the S35-R4 UNCERTAIN record as history and states the current check is satisfied (S41 re-analyses of 2026-11-09 postdate the latest spec/plan/tasks changes of 2026-11-04/11-01). This S46 section postdates all spec/plan/tasks edits. Matrix totals unchanged (0 VERIFIED / 43 PARTIAL / 7 UNVERIFIED); T019/T020 remain open/blocked.
-- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks are present.
+- Scope: F5 â€” the Known-gaps date-check row now retains the S35-R4 UNCERTAIN record as history and states the current check is satisfied (S41 re-analyses of 2026-11-09 postdate the latest spec/plan/tasks changes of 2026-11-04/11-01). This S46 section postdates all spec/plan/tasks edits. Matrix totals unchanged (0 VERIFIED / 43 PARTIAL / 7 UNVERIFIED); T019/T020 remain open/blocked.
+- Entry gate: PASS â€” numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks are present.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
 - Verdict: PASS for this documentation-only correction. (The S45 R3 PASS results are recorded with the S45 R3 scope above, not here.)
 
-## 2026-11-11 Analyze — Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
+## 2026-11-11 Analyze â€” Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
 
 - Scope: correct the two S43-PO-8 scenario-to-SC citations and the 50-row traceability status summary.
 - PASS: scenario 2 maps upgrade term anchors to SC-027; scenario 3 maps pre-activation duration start to SC-028. SC-029 remains mapped to renewal-then-upgrade credit.
@@ -130,18 +130,18 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - PASS: numbered FRs, measurable SCs, GWT acceptance, clarifications, plan coverage, task mappings, and dated analysis artifacts exist for the touched feature.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.
 
-## 2026-11-11 Analyze — merge of main, no PR content change (01:52 UTC)
+## 2026-11-11 Analyze â€” merge of main, no PR content change (01:52 UTC)
 
 - Scope: merged main commit b1476db5f95d447ed2b0525e19ed4a9c890b90cc; no PR content change.
 - CRITICAL: 0 open; HIGH: 0 open.
 
-## 2026-11-11T02:40:45Z Analyze — merge of main d1b1aff3 (PR #77 F13 continuity), no PR content change
+## 2026-11-11T02:40:45Z Analyze â€” merge of main d1b1aff3 (PR #77 F13 continuity), no PR content change
 
 - Scope: merged main tip d1b1aff3; conflict resolution only. 7 hunks across 3 files: analyze.md 2 keep-both (HEAD S30-S46 history + MAIN continuity/Greptile/merge notes); spec.md 2 take-main (PR decision-traceability rows restating successor-lineage and purchase-selection facts superseded by S43-PO-5/FR-037..039, recorded as superseded); traceability.md hunk1 keep-both (distinct gap notes), hunks 2-3 take-main (successor-era PARTIAL rows superseded by current UNVERIFIED/PARTIAL). No product choice taken.
 - Entry: numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications/PO-decision register, FR-tagged tasks present; this pass follows the merge.
 - Findings: 0 CRITICAL, 0 HIGH. T019/T020 gates remain open/blocked as recorded.
 
-## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+## S47 CodeRabbit round-6 review-fix analysis â€” 2026-11-11T06:24:05Z
 
 - Scope: CodeRabbit review-body findings F1-F3 (required-key claim, S45 R3 placement, date-check rationale). The migration summary names the five validated keys with workspace_id returning not_permitted first; S45 R3 results sit with the S45 R3 scope; the date-check rationale cites the post-merge re-analyses and the S35-R4 UNCERTAIN record is marked historical.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
@@ -169,16 +169,16 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
 
-## 2026-11-12T04:56Z — S49-R10 main-sync re-analysis
+## 2026-11-12T04:56Z â€” S49-R10 main-sync re-analysis
 
-- Entry gate: PASS — `spec.md` retains numbered FRs, measurable SCs, GWT scenarios and the Clarifications section; `plan.md` covers T041/T042/T045; `tasks.md` includes FR-tagged task IDs and S48-PO-19 T044/P4 deferral; this Analyze section follows the merge reconciliation and latest task/traceability edits.
+- Entry gate: PASS â€” `spec.md` retains numbered FRs, measurable SCs, GWT scenarios and the Clarifications section; `plan.md` covers T041/T042/T045; `tasks.md` includes FR-tagged task IDs and S48-PO-19 T044/P4 deferral; this Analyze section follows the merge reconciliation and latest task/traceability edits.
 - Scope: static review after merging `origin/main` at `f7f8a96c470325692f70258814a39fb54eb76533`. Main's F13 Clarifications state T020 remains open (no D-20 PO deferral), blocked by local-only staging and F13-PB-03. The task and traceability text now preserve that distinction. Current T041/T042 statuses are unticked/PARTIAL due the unasserted renewal extension end date; T043 and T045 remain verified/ticked; T044 remains open/P4 and FR-041 PARTIAL.
 - Cross-reference/status sweep: older T041/T042 verification rows are labeled historical and point to the current S49 partial rows. No stale claim remains that T041/T042 are currently complete. Task/FR mapping and T044 deferral align with traceability.
 - Ambiguities: no new ambiguity was introduced by this sync. Existing open product questions remain explicit: `S49-F13-MCQ-1` blocks renewal/freeze extension date arithmetic; `S48-F13-MCQ-4` blocks the treatment of unpaid original installments after upgrade. Neither is answered by implementation or test expectation.
 - Findings: 0 open CRITICAL, 0 open HIGH. This was documentation/status reconciliation only; no product behavior or test code changed. Prior Stack C regression evidence remains 27 files / 653 passing with no new failure IDs. Exact-head CI is currently blocked by repeated Docker Hub `toomanyrequests: Rate exceeded` errors; those runs are not counted as green.
 - Verdict: PASS for documentation reconciliation; production/CI and the two cited PO decisions remain explicit blockers.
 
-## 2026-11-12T05:02Z — post-format and status cross-check
+## 2026-11-12T05:02Z â€” post-format and status cross-check
 
 - Rechecked the F13 merge reconciliation after Prettier normalization. T041/T042 historical `VERIFIED` rows are explicitly labeled as superseded; current rows are PARTIAL and tasks remain unticked. T043/T045 remain verified, T044 remains open/P4, FR-041 PARTIAL.
 - T020 now matches the merged-main Clarifications and decision register: it remains open/blocked by D-20, with no PO deferral and F13-PB-03 separate. This is an existing readiness blocker, not a new product question.
@@ -209,23 +209,23 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL, 0 open HIGH. No new product question was introduced by formatting.
 - Verdict: PASS for the documentation formatting correction.
 
-## 2026-11-12T12:24:33Z — S51 upgrade installment replacement spec analysis
+## 2026-11-12T12:24:33Z â€” S51 upgrade installment replacement spec analysis
 
 - Entry gate: PASS. `spec.md` has numbered FR-043, measurable SC-035, and GWT scenario 17; the Clarifications/PO-decision register records the byte-exact S50-PO-6 answer, source path and SHA-256, and explicitly states that open ambiguities remain. `plan.md` covers the blocked work; `tasks.md` adds FR-tagged T048, unchecked; lifecycle contract and traceability identify the same scope. This section is dated after those edits.
 - Scope: documentation-only specification of PO S50-PO-6 / architect mapping S50-R32. The decided core is replacement/repricing of unpaid original-plan installments after upgrade; settled F12 payment/collection facts remain immutable. No implementation, test expectation, numerical repricing formula, schedule date, receipt/commission rule, or additional product default was introduced.
-- Clarification sweep: S51-F13-MCQ-1 (eligible installment states, partial/overdue), -2 (repricing basis), -3 (due-date schedule), -4 (receipt content), -5 (commission), -6 (audit detail), -7 (in-flight payment concurrency), and -8 (overpayment) are numbered with 2–3 options, implications, and recommendations. Each unresolved choice blocks T048 and is not encoded as a requirement.
+- Clarification sweep: S51-F13-MCQ-1 (eligible installment states, partial/overdue), -2 (repricing basis), -3 (due-date schedule), -4 (receipt content), -5 (commission), -6 (audit detail), -7 (in-flight payment concurrency), and -8 (overpayment) are numbered with 2â€“3 options, implications, and recommendations. Each unresolved choice blocks T048 and is not encoded as a requirement.
 - Cross-reference review: FR-038/043, SC-035, GWT 17, T048, plan, lifecycle contract, and traceability all point to MCQ-1..8. T044 remains P4/open and untouched.
 - Findings: 0 open CRITICAL; 0 open HIGH. Product decisions MCQ-1..8 remain open and block implementation semantics. No implementation or tests are claimed in this spec-only lane.
 - Verdict: PASS for this specification phase; T048 remains blocked pending PO answers.
 
-## 2026-11-12T12:26:19Z — S51 final documentation recheck
+## 2026-11-12T12:26:19Z â€” S51 final documentation recheck
 
 - Rechecked all six changed F13 documentation files after the final task/status edit. Prettier `--check` passes for all six; `git diff --check` passes after removing introduced EOF whitespace. No source code or tests changed.
 - Status sweep: prior S49 mention of S48-F13-MCQ-4 is explicitly historical and is closed by S50-PO-6 on policy direction; S51 MCQ-1..8 carry only its unresolved details. T044 remains unticked/P4 and untouched; T048 remains unchecked. FR-038/043, SC-035, scenario 17, plan, task, contract, traceability, and the MCQs are cross-referenced.
 - Findings: 0 open CRITICAL; 0 open HIGH. Eight PO questions remain open and block T048 implementation. No implementation/tests/CI greens are claimed.
 - Verdict: PASS for the S51 specification-only phase.
 
-## 2026-11-12T13:21:08Z — S51-PO-1 settled-only upgrade re-analysis
+## 2026-11-12T13:21:08Z â€” S51-PO-1 settled-only upgrade re-analysis
 
 - Entry gate: PASS. spec.md contains revised FR-038/FR-043, measurable SC-035/036, GWT scenarios 17/18, and the S51-PO-1 decision register with source path/SHA. plan.md, unchecked FR-tagged T048, lifecycle contract, traceability, and this dated analysis cover the implementation scope.
 - Authority: S51-PO-1 byte-exact source SHA-256 3800b4dac13b8b17e5b72f83ea46d21a0e9e652c513ab2dfd4ef70d9ca751e7a. S50-PO-6 F13=C is explicitly superseded without altering the old source. Architect mapping S51-R7 is labeled separately.
@@ -234,7 +234,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL; 0 open HIGH. S51-F13-MCQ-9 remains open and blocks only new receipt-field choices. This is the required re-analysis before implementation; no tests/implementation are claimed here.
 - Verdict: PASS to implement settled-only upgrade rules, retaining current safe receipt fields pending MCQ-9.
 
-## 2026-11-12T13:24:05Z — S51 receipt clarification re-analysis
+## 2026-11-12T13:24:05Z â€” S51 receipt clarification re-analysis
 
 - Reassessed the old receipt MCQ against the actual current upgrade receipt and integration expectations. The current receipt includes `commission_rate_bp` and `commission_minor`; no existing contract text located in the F13 lifecycle contract forbids those fields.
 - Added S51-F13-MCQ-10 for whether the operation receipt exposes Platform Owner commission rate and amount to its caller. MCQ-9 continues to cover the remaining non-commission receipt fields. Both are explicit PO-DECISION-NEEDED questions; implementation must leave receipt shape unchanged pending answers.
@@ -242,7 +242,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Entry/scope gate: PASS for resolved upgrade implementation requirements. Findings: 0 open CRITICAL; 0 open HIGH. MCQ-9 and MCQ-10 block receipt-shape changes only. No implementation or test results are asserted in this analysis.
 - Verdict: PASS to implement resolved S51-PO-1 rules while retaining the existing receipt shape.
 
-## 2026-11-12T14:31:02Z — S51 receipt fields cross-reference re-analysis
+## 2026-11-12T14:31:02Z â€” S51 receipt fields cross-reference re-analysis
 
 - Entry gate: PASS. FR-038/043, SC-035/036, GWT scenarios 17/18, T048, plan, lifecycle contract, traceability and the S51-PO-1 register cover settled-only upgrades. The S51-PO-1 byte-exact source/hash and S50 supersession remain recorded.
 - Clarification sweep: S51-F13-MCQ-9 covers non-commission receipt fields; S51-F13-MCQ-10 separately covers whether the existing Platform Owner commission rate/amount fields remain in the successful receipt. Both questions include options, implications and recommendations; either blocks receipt-shape changes only. All other S51-PO-1 rules are resolved.
@@ -250,7 +250,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL; 0 open HIGH. No additional product question identified. No defaults or receipt changes were encoded.
 - Verdict: PASS to continue T048 implementation while preserving the current receipt shape pending MCQ-9/-10.
 
-## 2026-11-12T14:40:04Z — S51 implementation status and task cross-reference re-analysis
+## 2026-11-12T14:40:04Z â€” S51 implementation status and task cross-reference re-analysis
 
 - Entry gate: PASS. Current FR-038/043, SC-035/036, GWT 17/18, T048, plan, lifecycle contract, traceability and S51-PO-1 decision register agree on settled-only upgrades and preserve the existing receipt shape.
 - Clarification sweep: S51-F13-MCQ-9 (non-commission receipt fields) and MCQ-10 (current commission rate/amount fields) remain numbered product questions with options, implications, and recommendations. They block receipt-shape changes only. All eligibility, upfront collection, no-schedule, stored-rate commission, audit, lock/revalidation, and over-balance requirements are specified by S51-PO-1.
@@ -258,7 +258,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL; 0 open HIGH. No decision was inferred for receipt fields. T048 remains unticked until its tests pass and evidence is committed.
 - Verdict: PASS; implementation may proceed with receipt shape unchanged pending MCQ-9/-10.
 
-## 2026-11-12T14:41:05Z — T048 verification evidence re-analysis
+## 2026-11-12T14:41:05Z â€” T048 verification evidence re-analysis
 
 - Entry gate: PASS. T048 is checked only after Stack C integration tests passed on implementation commit `402b4e02913671be0aac0d6ed8708ff875b3207c`; tasks.md and traceability.md cite the same test names and commit.
 - Implementation review: the forward migration changes only the effective upgrade writer, keeps its `SECURITY DEFINER`, empty search path, owner and grants unchanged, locks client/subscription/installments before checking immutable net payment events, and retains the existing over-balance guard before writes. No historical rows are rewritten and no replacement schedule or receipt-field change is added.
@@ -267,18 +267,18 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL; 0 open HIGH.
 - Verdict: PASS; T048 evidence is complete for its decided scope.
 
-## S51-PO-2 receipt decision analysis — 2026-11-12T15:41:36Z
+## S51-PO-2 receipt decision analysis â€” 2026-11-12T15:41:36Z
 
 - Entry gate: PASS. `spec.md` retains numbered FRs, measurable SCs, Given/When/Then scenario 18 and a decision register; `plan.md`, `tasks.md`, and the lifecycle contract cover the receipt and replay behavior. This analysis follows the S51-PO-2 edits to those files.
 - Authority: verified byte-exact PO source `C:/Users/NEW LAP/.lifter/runs/s51-po/s51-po-2.verbatim.txt`, SHA-256 `cda1f389106feff2ca7a854efe102c1283e33208182b0f06dbd1e33838f61880`. MCQ-9=9A and MCQ-10=10B; commission remains stored on the upgrade row as set by S51-PO-1.
 - Contract check: new successful receipts must contain operation/upgrade IDs, package/version, full price difference, currency, and effective dates; commission fields are omitted. The existing-operation replay branch returns the persisted JSON receipt before constructing a new receipt, so pre-change rows are returned without modification. The forward migration redefines the writer only; no data rewrite is included.
-- Clarification sweep: existing `workspace_id`, `client_id`, `subscription_id`, `tier_rank`, `package_price_minor`, and `credit_minor` fields are not specified by 9A. S51-F13-MCQ-11 is recorded with options/implications/recommendation; only these fields’ disposition is blocked. Implementation must not silently remove or add a disposition for them.
+- Clarification sweep: existing `workspace_id`, `client_id`, `subscription_id`, `tier_rank`, `package_price_minor`, and `credit_minor` fields are not specified by 9A. S51-F13-MCQ-11 is recorded with options/implications/recommendation; only these fieldsâ€™ disposition is blocked. Implementation must not silently remove or add a disposition for them.
 - Cross-reference sweep: FR-043, SC-036, scenario 18, T048, plan, contract, and traceability all reference S51-PO-2 and MCQ-11. T044 remains P4/open and is untouched. Older Analyze entries describing MCQ-9/-10 as open are historical and superseded by this entry.
 - Migration scan: candidate version `20261112152326` is after the maximum fetched origin-ref version `20261112133858` and earlier than observed UTC `2026-11-12 15:23:26` at creation time; local timestamp and 120-ref cross-reference scans pass. Stack C identity and API/DB ports were verified before reset.
 - Findings: 0 open CRITICAL, 0 open HIGH. No ambiguity remains for 9A required fields, 10B omission, or unchanged stored-receipt replay; MCQ-11 is the sole explicit open product question and blocks only those extra-field dispositions.
 - Verdict: PASS for the authorized commission omission and replay-preservation changes, with MCQ-11 explicitly held open.
 
-## S51-PO-2 implementation evidence re-analysis — 2026-11-12T16:03:08Z
+## S51-PO-2 implementation evidence re-analysis â€” 2026-11-12T16:03:08Z
 
 - Entry gate: PASS. This dated analysis follows the final T048 checkbox and traceability updates. The current tests and implementation commit are recorded in traceability.md.
 - Implementation: `88d689f03a46dbebddecc45f2fd3a04ed4b94f32` adds forward-only migration `20261112152326_f13_upgrade_receipt_commission_omission.sql`, copied from the current effective function. New receipts omit only the two PO-2 commission fields; the stored commission calculation, upgrade-row values, operation replay branch, owner, `SECURITY DEFINER`, empty `search_path`, revokes, and authenticated grant remain intact.
@@ -287,21 +287,21 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity is assumed; MCQ-11 explicitly records the only unresolved receipt-field question.
 - Verdict: PASS; T048 is ticked with current commit and test evidence. Stop for PO direction on MCQ-11 before changing the six extra fields.
 
-## S51 self-review status correction — 2026-11-12T16:10:00Z
+## S51 self-review status correction â€” 2026-11-12T16:10:00Z
 
 - Cross-reference sweep found and corrected a stale tasks.md sentence that described T048 as unticked despite its verified receipt evidence. tasks.md now records the implementation and evidence commit SHAs and the current 26/26 focused and 27-file/273-test Stack C results.
 - No requirement or implementation behavior changed. FR-043, SC-036, T048, traceability, and the prior Analyze findings remain aligned; T044 stays P4/open.
 - Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-11 remains the only PO-decision question; no field disposition is encoded.
 - Verdict: PASS; documentation status matches verified task evidence.
 
-## S51 changed-file CI formatting correction — 2026-11-12T16:15:51Z
+## S51 changed-file CI formatting correction â€” 2026-11-12T16:15:51Z
 
 - Revalidated the receipt requirements after applying Prettier to the three spec files flagged by the CI changed-file formatter. The formatting-only changes do not alter FR-043, SC-036, scenario 18, the six-field MCQ-11 boundary, or task scope.
 - CI's changed-file formatter now passes for all six changed Markdown/YAML/JSON files in the branch diff when run with the same candidate set.
 - Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-11 remains the only PO-decision question; no disposition was introduced.
 - Verdict: PASS; no behavior or product decision changed.
 
-## S51-PO-5 compatibility-field and review-fix re-analysis � 2026-11-12T18:17:23Z
+## S51-PO-5 compatibility-field and review-fix re-analysis ï¿½ 2026-11-12T18:17:23Z
 
 - Entry gate: PASS. `spec.md` has numbered FR-043, measurable SC-036, the GWT scenario for successful upgrade receipt and explicit decision register; `plan.md`, FR-tagged T048 in `tasks.md`, contract, and traceability cover the touched receipt scope. This entry follows the latest spec/plan/task edits.
 - Decision record: S51-PO-5 is copied byte-exact in `spec.md` with source path and SHA-256 `ccfe05c2e10d36f3a77ebcd6a69e9645721facc5ce176df79468c88c41575eee`. It resolves MCQ-11: retain all six compatibility fields. The successful integration test now asserts those fields.
@@ -310,7 +310,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL, 0 open HIGH within the authorized scope. PO-decision-needed: MCQ-12, independent renewal-purchase refund selection only.
 - Verdict: PASS for S51-PO-5 receipt compatibility and review corrections; T044 remains untouched.
 
-## S51-PO-5 and CodeRabbit follow-up analysis � 2026-11-12T18:39:29Z
+## S51-PO-5 and CodeRabbit follow-up analysis ï¿½ 2026-11-12T18:39:29Z
 
 - Entry gate: PASS after the final receipt edits. `spec.md` contains numbered FR-043, measurable SC-036, and GWT scenario 18 including all six compatibility fields; Clarifications includes byte-exact S51-PO-5 source/hash and explicit remaining MCQ-12. Plan, T048 and the lifecycle contract align; this Analyze entry follows the last spec/plan/task edits.
 - PO resolution: MCQ-11 is resolved by S51-PO-5. The six fields are in the scenario, SC-036, contract, task, and decision register. Earlier Analyze entries that called MCQ-11 open are historical and superseded by this entry. T044 remains P4/open and FR-041 PARTIAL.
@@ -335,7 +335,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Findings: 0 open CRITICAL, 0 open HIGH. S51-F13-MCQ-12 remains with the PO and refund-selection behavior is unchanged.
 - Verdict: PASS for the authorized review correction.
 
-## S52-88 projection and queue clarification analysis — 2026-11-12T22:06:34Z
+## S52-88 projection and queue clarification analysis â€” 2026-11-12T22:06:34Z
 
 - Entry gate revalidated: `spec.md` has numbered FR-039/042/044, measurable SC-037/038, and GWT scenarios 19/20; `plan.md` and `tasks.md` carry T049/T050 with matching FR/SC tags; lifecycle, refund-ledger and payment-queue contracts match those references; the S51 MCQ-12 status is updated in the register and historical task record.
 - Authority: verified S51-PO-9 SHA-256 `a6487ac2162898d360463c6c0a7a9c27ede015cd42e97d6e4f22a4436400ade2` and S52-PO-3 SHA-256 `0f36cf167250663114dbc56c35d40a244c6c33c4a22bf073ad8f5e5fc9951183`; S51-R3/S52-R3 map MCQ-12=B; S52-R5 maps MCQ-13=A and MCQ-14=A. Architect mappings are labeled separately from PO wording.
@@ -343,7 +343,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Reviewed retry/replay, in-flight payment, concurrency, deletion, history/audit preservation, cross-currency arithmetic, task/FR/SC references, and conflicts with S51-PO-1. T044 remains P4/open; T048 status is unchanged.
 - Findings: **0 open CRITICAL, 0 open HIGH**. Two PO questions remain explicitly open as S52-F13-MCQ-15 and S52-F13-MCQ-16; they block only the scope stated above.
 
-## S52-88b ruling reconciliation analysis — 2026-11-12T23:49:57Z
+## S52-88b ruling reconciliation analysis â€” 2026-11-12T23:49:57Z
 
 - Revalidated S52-PO-4 verbatim `MCQ16B` and its SHA-256 in the decision register. S52-R9 maps the answer to subtract only freeze contribution still unconsumed at removal time, keep elapsed coverage consumed, recompute later renewal boundaries on the continuous subscription, and preserve history/audit. FR-039, SC-037, scenario 19, the lifecycle contract, T049, and traceability now agree.
 - S52-R8 resolves MCQ-15 as a technical contract, not a PO decision: sorted `{currency, unpaid_minor}` entries using the existing decimal-string convention. FR-044, SC-038, scenario 20, payment-queue contract, T050, and traceability agree on that item shape.
@@ -351,21 +351,21 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Retry/replay, lock ordering, append-only freeze/upgrade/payment facts, currency separation, obligation currency tags, and later-renewal projection are cross-checked against current FR/contracts. T044 stays P4/open; T048 remains unticked; no receipt or refund-selection behavior changed.
 - Findings: **0 open CRITICAL, 0 open HIGH**. Verdict: PASS for requirement coherence; implementation remains subject to T049/T050 RED/GREEN/mutation and final Stack C validation.
 
-## S52-88b implementation and completion analysis — 2026-11-13T00:12:27Z
+## S52-88b implementation and completion analysis â€” 2026-11-13T00:12:27Z
 
 - T049 is implemented and verified by commit `aedb9d7185fcba62c411ac47d8966f874282e568`. The simple removal, consumed-coverage, and later-renewal projection cases pass on Stack C; both T049 cases fail when the unconsumed-days subtraction is removed. Task and traceability evidence cite the migration, tests, and run report.
 - T050 remains unticked. S52-F13-MCQ-17 leaves the aggregation pagination scope undecided; no queue totals implementation or test expectation was added. Queue behavior is blocked until that product decision is supplied.
 - Current-scope ambiguities: none for T049. MCQ-17 is explicitly open for T050. T044 remains P4/open and T048 remains unticked, outside this implementation scope.
 - Findings: **0 open CRITICAL, 0 open HIGH**. Verdict: PASS for T049; T050 blocked solely by S52-F13-MCQ-17.
 
-## S53-88d payment queue totals analysis — 2026-11-13T02:29:47Z
+## S53-88d payment queue totals analysis â€” 2026-11-13T02:29:47Z
 
 - Entry gate: FR-044, measurable SC-038, GWT scenario 20, T050, plan, payment-queue contract, and traceability all cover currency-separated queue totals. S52-F13-MCQ-17 is resolved by byte-exact S52-PO-7 `MCQ17B` (SHA-256 `5fdd051fa8222b8fc0dd68c4b9b83a34f7d21f4d38b78e1185841ea57cba1944`); architect S52-R20 mapping is labelled separately.
 - Scope: one read-only `workspace_payment_queue` RPC response gains workspace-wide per-currency totals, using the queue's existing workspace/approval/deactivation filters and unpaid calculation. Totals do not depend on cursor/page size; for unchanged queue data each page returns the same sorted `{currency, unpaid_minor}` array. No schema/table, permission, or retention change is required; existing SECURITY DEFINER/search_path/owner/grants are preserved.
 - Gap sweep checked empty queue, >1 page, mixed currencies, amount encoding, ordering, page/cursor filters, unauthorized access, concurrent queue-state changes between reads, and unchanged queue behavior. No unresolved product behavior remains for T050; no new MCQ is required. T044 stays P4/open and T048 unticked outside this scope.
 - Findings: **0 open CRITICAL, 0 open HIGH**. Verdict: PASS to implement T050.
 
-### Analyze � T050 currency-separated workspace queue totals (2026-11-13T02:59:10Z)
+### Analyze ï¿½ T050 currency-separated workspace queue totals (2026-11-13T02:59:10Z)
 
 - Authority: S52-PO-7 `MCQ17B` (source SHA-256 `5fdd051fa8222b8fc0dd68c4b9b83a34f7d21f4d38b78e1185841ea57cba1944`), mapped by architect S52-R20. Totals include every unpaid obligation matching workspace queue filters, independent of cursor/page/page size; return a currency-sorted array with decimal-string amounts.
 - Implementation review: `workspace_payment_queue` preserves authorization, input validation, owner, `SECURITY DEFINER`, empty `search_path`, revokes, and authenticated execute grant. The total CTE aggregates filtered unpaid amounts by currency before pagination; page rows remain tagged by their own currency. Read adapter requires totals and projects only the approved total fields.
@@ -395,7 +395,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 ## S53-R30 queue item detail analysis (2026-11-13T08:20:31Z)
 
 - Entry gate: PASS. FR-044, SC-038, Given/When/Then scenario 20, plan/T050, tasks/T050, payment-queue contract, and traceability cover per-subscription currency-separated unpaid details and workspace totals. S53-PO-3 is recorded byte-exact in the spec decision register with its SHA-256; S53-R30 is identified as architect mapping, not PO wording.
-- Decision: one item per subscription carries unpaid_by_currency, sorted by currency, entries {currency, unpaid_minor} using decimal-string money encoding. Existing subscription cursor/page behavior stays unchanged; no cross-currency sum. No new user-visible copy or labels are needed: the existing “Unpaid” label can display the per-currency values using the existing registration approval minor-unit formatter.
+- Decision: one item per subscription carries unpaid_by_currency, sorted by currency, entries {currency, unpaid_minor} using decimal-string money encoding. Existing subscription cursor/page behavior stays unchanged; no cross-currency sum. No new user-visible copy or labels are needed: the existing â€œUnpaidâ€ label can display the per-currency values using the existing registration approval minor-unit formatter.
 - Implementation scope: forward replacement of public.workspace_payment_queue plus strict allow-listed read projection, item type, existing payment queue UI. Authorization, filter, totals, and cursor logic stay intact; function owner/security/search_path/grants are preserved. No new private function or inventory row.
 - Gap sweep: considered zero-unpaid subscriptions, empty queues, mixed-currency installment rows, amount encoding/order, cursor/page-size invariance, role filtering, and arithmetic overflow. No additional behavior is specified beyond the PO decision and existing queue contract. No new MCQ required.
 - Findings: **0 open CRITICAL, 0 open HIGH**. **No open ambiguities** for this queue behavior. T044 remains P4/open; T048 remains unticked.
@@ -426,3 +426,10 @@ The F13 decision register quotes only the PO answer bytes applicable to F13 (S53
 - T050 is checked only after the item-detail RED/GREEN, currency-collapse mutation, 27-file Stack C regression, and local gates passed on the tested tree. Its traceability row names implementation commit `e8434a5bf66c5323fff3357fdc73733f51815543` and the integration/unit test identifiers.
 - Follow-up T049 fixture correction is linked to the same commit and records its expected stale-state RED, corrected GREEN, and prior remaining-days/anchor mutation evidence. T042 no-write intent remains tested with an audit assertion scoped to the target purchase.
 - No requirement changed in this evidence update. No open CRITICAL/HIGH findings; T044 stays P4/open and T048 remains unticked.
+
+## S53-R38 renewal boundary after freeze removal analysis (2026-11-13T10:39:06Z)
+
+- PO compatibility: S52-PO-4 `MCQ16B` and FR-039 require subtracting only removed freeze coverage still unconsumed at removal; elapsed coverage remains consumed. A renewal recorded after freeze removal with a start on its recording date no longer contains that removed contribution and must not move earlier. A renewal recorded before removal whose projected boundary still contains those days continues to shift. No conflict or PO escalation.
+- Technical review: projector only applies the removed-days shift to renewal source events recorded at/before the removal event, and floors the effective start at the renewal recording date and prior continuous term end. Paid renewal coverage, manual-date projection, upgrade-anchor selection, immutable renewal facts, and existing audit history remain preserved. Existing function hardening remains SECURITY DEFINER, empty search_path, postgres owner, prior revoke list, and service_role execute grant; no private-function inventory change.
+- Tests: RED exact day-120/80/130 regression (30-day early end); GREEN both post-removal preservation and pre-removal still-includes-days cases; mutation removing eligibility guard and recording-date floor killed. Stack C full F12/F13 regression: 27 files, 670 passed. Unit: 187 files, 2,527 passed; lint, typecheck and both formatting gates passed. Migration timestamp scans pass, candidate later than every scanned origin ref.
+- Gap sweep: reviewed post-removal expiry, pre-removal renewal, date-revision preservation, continuous multi-renewal boundaries, manual dates, upgrade anchor, and replay/audit facts. No additional product choice is introduced. **0 open CRITICAL, 0 open HIGH. No open ambiguities for this T049 behavior.** T044 remains P4/open; T048 stays unticked.
