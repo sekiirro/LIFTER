@@ -2,7 +2,7 @@
 
 **Feature Branch**: `023-client-progress-coaching`
 **Spec directory**: `specs/023-client-progress-coaching`
-**Status**: Draft — Specify + Clarify. Spec-only. Open PO questions remain (see `## Open questions for the PO`).
+**Status**: Draft — Specify + Clarify. Spec-only. Open PO questions remain (see `## Open questions for the PO`): S54-023-Q1 and S54-023-Q2 resolved by S55-PO-3; new MCQ S55-023-Q3 (adherence answer scale) open.
 **Created**: 2026-11-13
 **Scope**: P5 Progress coaching loop: weekly check-ins, measurements, food replacement requests, client timeline. Trainer notes reuse F20 (no new notes FRs). Client leaderboard is a SEPARATE spec (024) and is NOT included here.
 
@@ -64,7 +64,8 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 ### Edge cases
 
 - What happens when a freeze starts and ends within the same 7-day window? The anchor shifts by frozen days; no catch-up.
-- What happens when an auto-extracted measurement conflicts with an existing same-day record? See open MCQ S54-023-Q2.
+- What happens when an auto-extracted measurement conflicts with an existing same-day record? It directly updates the existing record in place and records the change in the background audit log; no user-visible correction-history entry is created (S55-PO-3 Q2=A).
+- What answer scale do the two adherence questions use? Pending MCQ S55-023-Q3; until resolved no scale is assumed.
 - What happens when a weekly form question mapping changes between revisions? Historical measurements preserve their original mapping and units (Assumptions).
 - What happens when a food replacement request is open and the client's subscription expires? Follows F13 plan-access restrictions; request state retained.
 
@@ -78,7 +79,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - **FR-004**: Previously outstanding check-in forms MUST remain visible across freeze and resume. (Source: BRD-04.6)
 - **FR-005**: Weekly check-in completion MUST NOT be a login gate. (Source: BRD-04.6)
 - **FR-006**: The system MUST send an in-app reminder on the check-in day and a second reminder 24 hours later if the check-in remains unanswered. (Source: S54-PO-11 Q2 written)
-- **FR-007**: Reminder time-of-day MUST be resolved per open MCQ S54-023-Q1; until resolved, no fixed time may be assumed. (Source: lane scope; p5-audit S54-P5-Q2)
+- **FR-007**: Reminder time-of-day MUST be 10:00 AM in the workspace's configured timezone (workspace time). Both the check-in-day reminder and the 24-hour follow-up reminder are sent at 10:00 AM workspace time on their respective days. (Source: S55-PO-3 Q1=A, PO wording "10 AM workspace time"; S54-023-Q1 resolved.)
 - **FR-008**: Check-in KPI "handled check-ins received" MUST count check-ins received, not check-ins sent. (Source: BRD-05)
 - **FR-009**: A frozen client MUST NOT receive inappropriate active-cycle check-in prompts. (Source: BRD-04.6)
 
@@ -86,7 +87,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 
 - **FR-010**: The system MUST maintain a dedicated Progress measurement store with a source reference to the weekly form submission when a measurement is captured via a form. (Source: S54-PO-11 Q4=A; p5-audit S54-P5-Q4)
 - **FR-011**: The system MUST auto-extract measurements from F15 weekly form answers into the Progress store, preserving question mappings, units and history. (Source: S54-PO-11 Q5 written)
-- **FR-012**: The system MUST reject a second measurement entry for the same client/day/type and direct the user to edit the existing record, except where an auto-extract conflicts (see open MCQ S54-023-Q2). (Source: S54-PO-11 Q6=A; p5-audit S54-P5-Q6)
+- **FR-012**: The system MUST reject a second manual measurement entry for the same client/day/type and direct the user to edit the existing record. When an auto-extracted measurement conflicts with an existing same-day record, the system MUST directly update that record's value and original units in place and record the change in the background audit log; no user-visible correction-history entry is created for such an auto-update. (Source: S54-PO-11 Q6=A; p5-audit S54-P5-Q6; S55-PO-3 Q2=A, PO wording "directly update measurement, no complicated history UI; keep background audit"; S54-023-Q2 resolved.)
 - **FR-013**: Any authorized trainer in the workspace MAY correct a measurement; corrections MUST be recorded in edit history with actor, timestamp, previous and new values. (Source: S54-PO-11 Q7=A; BRD-09)
 - **FR-014**: Measurement types and units MUST be derived from the F15 weekly form question mappings; P5 MUST NOT define a separate measurement catalog. (Source: S54-PO-11 Q5 written)
 - **FR-015**: The system MUST NOT create duplicate manual measurement entries that duplicate an auto-extracted measurement for the same client/day/type. (Source: S54-PO-11 Q5 written)
@@ -124,9 +125,14 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 
 - **FR-036**: In-app notifications for check-in reminders and food replacement requests MUST reuse the F15 notification inbox and dedupe patterns; no duplicate inbox. (Source: p4-audit overlap map; F15)
 
+### Weekly check-in adherence self-report (P5-A → spec 024 input)
+
+- **FR-037**: The weekly check-in form MUST include two self-reported adherence questions — one for workout adherence and one for diet adherence — captured as form answers using F15 forms machinery (typed answers, validation, immutable snapshots, retention). Each answer MUST be stored as part of the weekly form submission and exposed to spec 024 (client leaderboard) by the agreed field names `workoutAdherence` and `dietAdherence` (values only). The leaderboard adherence input is the arithmetic mean of the two values. These questions are a temporary proxy until mobile tracking exists. The exact answer scale (numeric range and labels) is pending PO approval (MCQ S55-023-Q3); until resolved, no scale may be assumed and no rating labels may be invented. (Source: S55-PO-3 cross-spec spec 024 Q2; spec 024 FR-017/FR-033; F15 reuse.)
+- **FR-038**: The system MUST NOT display or expose leaderboard scoring mechanics, ranks, score formulas, or any "you may appear on the leaderboard" scoring rationale to clients through the weekly check-in or any client-facing surface; the adherence questions are presented as neutral self-report items only. (Source: S55-PO-3 cross-spec; spec 024 FR-023 data minimization.)
+
 ## Key Entities
 
-- **WeeklyCheckIn**: occurrence with client, subscription, scheduled date, form reference, status (assigned/submitted/expired), freeze-adjusted anchor.
+- **WeeklyCheckIn**: occurrence with client, subscription, scheduled date, form reference, status (assigned/submitted/expired), freeze-adjusted anchor; includes self-reported `workoutAdherence` and `dietAdherence` answers (scale per MCQ S55-023-Q3).
 - **ProgressMeasurement**: client, type, value, unit, recorded date, source form submission reference, correction history.
 - **MeasurementCorrection**: measurement reference, actor, timestamp, previous value, new value.
 - **FoodReplacementRequest**: client, food item, plan revision reference, free-text, status (open/rejected/approved-via-published-revision/stale-closed), created/closed timestamps.
@@ -144,6 +150,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - **SC-008**: 100% of food replacement requests obey one-open-per-food and the F15 text limits with no attachments.
 - **SC-009**: 100% of timeline views show only the fixed meaningful set, to authorized actors only.
 - **SC-010**: No new notes FRs or duplicate F20 functionality is introduced by P5.
+- **SC-011**: 100% of weekly check-ins include the two self-reported adherence questions; their values are exposed to spec 024 by the agreed field names `workoutAdherence` and `dietAdherence`; no leaderboard scoring mechanics are shown to clients.
 
 ## Assumptions
 
@@ -152,6 +159,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - Timeline ordering is chronological (newest or oldest per UI convention) with a deterministic tie-break; pagination is a UI concern outside this spec.
 - Food replacement notification recipients follow p5-audit Q8 option A (authorized trainer/workspace owner on open; client on resolution).
 - KPI "handled check-ins received" is consumed by P7 reporting; no payroll consequence is added by P5.
+- The two self-reported adherence questions (workout/diet) are a temporary proxy for mobile tracking; their answer scale is pending PO approval (MCQ S55-023-Q3). They are presented as neutral self-report items and never expose leaderboard scoring mechanics.
 - Existing audit retention (F11/F20) applies to all P5 tables; no new retention rule.
 
 ## Dependencies
@@ -163,6 +171,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - F20 client notes (notes, audit) — reuse; no new P5 notes spec.
 - F21 staff display names (bylines) — reuse.
 - F11 auth/audit/RLS — reuse.
+- Spec 024 client leaderboard (branch `024-client-leaderboard`) — consumes this spec's `workoutAdherence` and `dietAdherence` values by name for adherence scoring; this spec MUST NOT redefine leaderboard scoring. (Coordinate by reading spec 024 only; never edit it.)
 - P4 client portal/notifications — P5-A/B/C/E require client dashboard and in-app notifications.
 
 ## Overlap / reuse (must not duplicate)
@@ -175,6 +184,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - F21 bylines — P5-D depends on F21.
 - F15 notification inbox — P5-A/P5-C reuse.
 - Open PRs #58, #86, #88, #90 — touchpoints; coordinate, no duplicate.
+- Spec 024 leaderboard — consumes adherence values by name; no duplicate scoring logic.
 
 ## Clarifications
 
@@ -191,46 +201,29 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 9. **F19 plan core** (spec 019): Ready & Publish is an explicit action; P5-C approval prepares draft.
 10. **F20 client notes** (spec 020): notes governed by F20; P5 adds no notes spec.
 11. **BRD-04.6/04.8, BRD-05, BRD-06, BRD-09** master: check-in recurrence, measurement entry/correction, food replacement, timeline events, client visibility.
-12. **Resolved MCQs**: S54-P5-Q1=A, Q3=A, Q4=A, Q6=A, Q7=A, Q8-10 (written), Q11=A, Q12=A, Q13=A, Q14=A, Q15=A. Q2 behavior resolved (reminder day + 24h); time-of-day open (S54-023-Q1). Q5 resolved as auto-extract (written).
+12. **Resolved MCQs**: S54-P5-Q1=A, Q3=A, Q4=A, Q6=A, Q7=A, Q8-10 (written), Q11=A, Q12=A, Q13=A, Q14=A, Q15=A. Q2 behavior resolved (reminder day + 24h); time-of-day resolved (S54-023-Q1 = 10:00 AM workspace time, S55-PO-3 Q1=A). Same-day measurement conflict resolved (S54-023-Q2 = direct update + background audit, S55-PO-3 Q2=A). Q5 resolved as auto-extract (written).
+13. **S55-PO-3** (2026-11-13): For spec 023: Q1=A (reminder send time 10 AM workspace time), Q2=A (directly update measurement, no complicated history UI; keep background audit). Cross-spec spec 024 Q2: custom — weekly check-in gains two self-reported adherence questions (workout adherence, diet adherence) whose average is the leaderboard adherence input, temporary until mobile tracking exists; never reveal scoring mechanics. Answer scale for the two questions is NOT specified and is raised as MCQ S55-023-Q3. (Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-3.verbatim.txt`.)
 
 ### Open questions for the PO
 
-#### S54-023-Q1 — Reminder time of day
+#### S55-023-Q3 — Answer scale for the two self-reported adherence questions
 
-**Question**: At what time of day should the two check-in reminders be sent?
+**Question**: What answer scale should the two weekly check-in adherence questions (workout adherence, diet adherence) use?
 
-**Why it matters**: Determines reminder scheduling and notification copy timing for P5-A.
-
-**Options**:
-
-| Option | Description                                                                                                                                           |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A      | Inherit the assigned form's weekly day and a single default time; repetition once (p5-audit recommendation). Exact default time requires PO approval. |
-| B      | Fixed platform-wide time for all workspaces.                                                                                                          |
-| C      | Workspace-configured time; no default until configured.                                                                                               |
-| D      | Per-client configured time.                                                                                                                           |
-
-**Recommendation**: A, unless PO prefers workspace configurability (C). Exact default time string must be PO-approved (EN + Egyptian Arabic not applicable to time, but time value is a product decision).
-
-**Blocks**: P5-A reminder scheduling and notification tests.
-
-#### S54-023-Q2 — Same-day measurement conflict with auto-extract
-
-**Question**: When an auto-extracted measurement conflicts with an existing same-day record (from a prior form submission or manual entry), what should happen?
-
-**Why it matters**: Determines data integrity and history semantics for P5-B.
+**Why it matters**: Determines storage type, validation, copy labels and how the values are consumed by spec 024 for adherence scoring. The questions, field names (`workoutAdherence`, `dietAdherence`) and exposure to spec 024 are already fixed by S55-PO-3; only the scale is open.
 
 **Options**:
 
-| Option | Description                                                                                             |
-| ------ | ------------------------------------------------------------------------------------------------------- |
-| A      | Auto-extract updates the existing same-day record and appends a correction-history entry (recommended). |
-| B      | Auto-extract skips (first record wins) and logs a conflict for trainer review.                          |
-| C      | Auto-extract creates a new timestamped version; display dedups by day.                                  |
+| Option | Description                                                                                                                                |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| A      | 0–10 numeric scale (integer), consistent with the existing F15 N11 hunger score (0–10). (Recommended for consistency with existing forms.) |
+| B      | 1–5 star/numeric scale.                                                                                                                    |
+| C      | Percentage 0–100.                                                                                                                          |
+| D      | PO-specified scale (PO states the range and labels).                                                                                       |
 
-**Recommendation**: A, to keep a single same-day record with auditable history.
+**Recommendation**: A, to reuse F15's existing 0–10 numeric handling and copy patterns; otherwise D with explicit values.
 
-**Blocks**: P5-B data model and auto-extract implementation.
+**Blocks**: FR-037 storage/validation/copy; spec 024 adherence scoring (FR-017/FR-018); copy-proposal rating labels.
 
 ## Out of scope
 
