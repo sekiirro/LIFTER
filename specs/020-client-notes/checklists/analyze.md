@@ -476,3 +476,17 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 **Severity:** 0 open CRITICAL, 0 open HIGH.
 
 **Cross-reference sweep:** FR-001/FR-008/SC-009 -> T017; FR-007 exit protection -> T005. T005 records that unknown-result edit Retry remains protected by the existing approved warning; T017 records original-set traversal, later-insert refresh behavior, stable cursor and deleted-row filtering. CN-MCQ-25, FR-004 and SC-001 point to constitution 1.13.0 / S47-PO-14 and the plan.md:72 reconciliation. No stale open status or new product decision. Both new tests map to those existing tasks and the tested implementation.
+
+## Round 51 - S53-R41 warning target and deleted recovery revalidation (2026-11-13)
+
+**Analysis date:** 2026-11-13T10:56:07Z, after the S53-R41 source changes and after confirming no additional spec, plan, or task requirement edits were needed.
+
+**Inputs:** S53-R41; CodeRabbit review 5889306205; FR-007/T019; ClientNotes state × event table and dialog/async interleaving table; current unit tests.
+
+**Findings:** 0 open CRITICAL; 0 open HIGH. No open in-scope ambiguity.
+
+**Review:** Discard now acts only on the captured editor/draft identity and generation. If the captured editor has already resolved, the warning closes without clearing another draft or replaying stale navigation. Successful deletion clears only that note's retained pending edit. Save/delete overlap is serialized per note and rendered controls reflect pending work. Existing approved copy is reused; no behavior or copy requiring PO input was added.
+
+**Coverage and traceability:** T019 remains tagged FR-007/FR-009/SC-005 and is already complete. `traceability.md` maps the S53-R41 state transitions to asserting unit tests and implementation commit `1af09730`. The expanded state table covers delete cleanup and warning/async interleavings. No FR, SC, GWT, plan requirement, task tag, permission, data-retention rule, schema, or product decision changed.
+
+**Ambiguity status:** No open ambiguity; no PO decision or new user-visible string is required.
