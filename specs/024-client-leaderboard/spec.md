@@ -2,13 +2,13 @@
 
 **Feature Branch**: `024-client-leaderboard`
 **Spec directory**: `specs/024-client-leaderboard`
-**Status**: Spec-only (Clarify complete except for the numbered blocking PO questions below). No implementation, migrations, tests, merges or deployment are authorized by this spec.
+**Status**: Spec-only (Clarify complete; one non-blocking username validation question remains). No implementation, migrations, tests, merges or deployment are authorized by this spec.
 **MCQ ID prefix**: `S55-024-Q`
-**Lane**: s55-luna-spec024b (SPEC LANE)
+**Lane**: s55-luna-spec024c (SPEC LANE)
 
 ## Scope and authority
 
-This spec defines the monthly, workspace-isolated Top-5 client leaderboard moved from P8 to P5 by S54-PO-11. S55-PO-3 resolves the scoring, eligibility, display identity, visibility, approval, and notice decisions. Three product gaps remain as numbered MCQs in `## Open questions for the PO`; they block planning.
+This spec defines the monthly, workspace-isolated Top-5 client leaderboard moved from P8 to P5 by S54-PO-11. S55-PO-3 resolves the scoring, eligibility, display identity, visibility, approval, and notice decisions. S55-PO-6 resolves username ownership and workspace uniqueness, current-month winner re-scoring and approval boundary, and immediate self-service opt-out. One username-format/reserved-name detail remains as a non-blocking MCQ; the conservative planning default is explicitly marked pending.
 
 Authority (newer overrides older): S54-PO-9, S54-PO-11, S54-PO-12 (verbatim files under `C:/Users/NEW LAP/.lifter/runs/s54-po/`) plus earlier PO decisions cited in the Phase 1 audits `C:/Users/NEW LAP/.lifter/runs/s54-luna-p4audit/p4-audit.md` and `C:/Users/NEW LAP/.lifter/runs/s54-beam-p5audit/p5-audit.md`, and the MCQ table `C:/Users/NEW LAP/.lifter/runs/s54-arch/p4p5-phase1-decisions.md`. BRD/PRD master line 219 is the originating requirement. Constitution: `.specify/memory/constitution.md`.
 
@@ -53,7 +53,7 @@ This feature consumes; it does not redefine:
 - **Spec 019 plan core** (`specs/019-plan-core`): `plan_deliveries`, activation sources, atomic delivery/activation transaction. Plan-adherence inputs reuse F19.
 - **Spec 020 client notes** (`specs/020-client-notes`): internal-only notes boundary; leaderboard must never expose notes.
 - **Spec 021 staff display names** (`specs/021-staff-display-names`): server-owned staff identity; staff names are not client identities.
-- **Spec 023 client progress/coaching** (branch `023-client-progress-coaching`, in progress in parallel): measurements, check-ins, progress visibility. **This spec references spec 023 by name and does not redefine its data.** Goal-relative progress inputs are consumed from spec 023's approved measurement/check-in model.
+- **Spec 023 client progress/coaching** (`specs/023-client-progress-coaching`): measurements, check-ins, progress visibility. **This spec references spec 023 by name and does not redefine its data.** Goal-relative progress inputs are consumed from spec 023's approved model; adherence is read by the field names `workoutAdherence` and `dietAdherence`, each a 0?10 integer per FR-037. This spec is read-only with respect to 023.
 - **Open PRs**: #58 (F15 UI), #86 (F16 catalog), #88 (F13), #90 (F20). Coordinate; do not clone.
 
 Out of scope (deferred/not owned): finance reporting, exports, P4 client portal implementation, Telegram bot, full P8 hardening. Leaderboard is optional and post-MVP gating applies.
@@ -76,14 +76,14 @@ A Platform Owner (PO) approves and publishes a workspace-isolated Top-5 leaderbo
 
 An eligible client is informed once on the dashboard when first eligible and can find the notice in account settings. Participation is opt-out by default, with no prior signup gate.
 
-**Independent test**: Enroll an eligible client, verify the one-time dashboard notice and account-settings notice, then verify the client's username appears only after PO approval and not after an opt-out request.
+**Independent test**: Enroll an eligible client, verify the one-time dashboard notice and account-settings notice, then verify the client's username appears only after PO approval and disappears immediately when the client opts out in account settings.
 
 **Acceptance scenarios**
 
 1. **Given** a client who becomes eligible for the first time, **When** they open the dashboard, **Then** the notice is shown once and remains available in account settings (FR-005, FR-013).
-2. **Given** an eligible, non-opted-out client, **When** the PO approves a monthly publication, **Then** their username may appear in the ranked list (FR-013, FR-015, FR-022).
-3. **Given** a client who opts out, **When** a later monthly result is approved, **Then** they do not appear (FR-007, FR-008).
-4. **Given** a client who requests removal, **When** the request is handled under the PO-selected flow, **Then** the required removal occurs and is audited (FR-007–FR-009, FR-039; S55-024-Q13).
+2. **Given** an eligible, non-opted-out client with a workspace-unique username, **When** the PO approves a monthly publication, **Then** their username may appear in the ranked list; they chose it during invitation-link signup and can edit it later (FR-013, FR-015, FR-022, FR-037; S55-PO-6 Q11).
+3. **Given** a client who opts out in account settings, **When** the action completes, **Then** they are removed from the current visible list immediately, excluded from later results and the action is audited (FR-007-FR-009, FR-025, FR-039).
+4. **Given** a client on the currently approved list, **When** they opt out in account settings, **Then** their entry is removed immediately from the visible list and excluded from later results, and the action is audited (FR-007-FR-009, FR-025, FR-039; S55-PO-6 Q13).
 
 ### Story 3 — Ranking uses adherence + goal-relative progress (Priority P1)
 
@@ -120,11 +120,13 @@ A leaderboard never mixes or exposes clients across workspaces.
 ### Edge cases
 
 - Fewer than 5 eligible clients: list only eligible (FR-002).
-- A prior monthly winner remains displayed and recognized until outperformed by a new competitor; the score basis and update/approval boundary remain open as S55-024-Q12.
-- Client opts out after appearing: must not be included in subsequent client-visible results (FR-007–FR-009); removal from an already displayed result is part of S55-024-Q13.
+- Past winners and new candidates are re-scored using the current month's data. A past winner remains on the list until a new candidate's current score is higher; the current approved list stays visible until the PO approves its successor (S55-PO-6 Q12).
+- A client who opts out in account settings is removed immediately from the visible list and excluded from later results, and the action is audited (S55-PO-6 Q13; FR-007-FR-009, FR-025, FR-039).
 - Client becomes ineligible (subscription ends, freeze): no longer eligible under FR-010–FR-012.
 - Tie scores: per approved tie-break (FR-021).
-- Opt-out before manual PO approval: honored before the result is made visible (FR-008).
+- Opt-out before manual PO approval: the client is excluded from that result (FR-008).
+- An opted-out client is removed immediately even if their username appears on the current approved list; the remaining list is not held pending PO approval (S55-PO-6 Q13).
+- A username already in use in the same workspace cannot be selected at signup or a later edit; the same username may be used in another workspace (S55-PO-6 Q11).
 
 ## Functional Requirements
 
@@ -136,9 +138,9 @@ A leaderboard never mixes or exposes clients across workspaces.
 - **FR-004**: The leaderboard is optional: if no approved monthly result exists for a workspace, no leaderboard is shown to any viewer (BRD "Optional").
 - **FR-005**: A client-facing notice that the client may appear MUST be shown once on the client dashboard when the client first becomes eligible and remain available in account settings. Proposed copy is in `copy-proposal.md` and awaits PO approval (S55-PO-3 Q10; BRD line 219).
 - **FR-006**: The system MUST NOT impose a universal prior opt-in as an extra signup gate (BRD line 219).
-- **FR-007**: A client MUST be able to request removal / opt out of the leaderboard at any time (BRD line 219).
-- **FR-008**: An opt-out or removal request MUST prevent the client from appearing in subsequent client-visible results for that workspace; removal behavior for an already displayed monthly result is pending S55-024-Q13 (BRD line 219).
-- **FR-009**: Opt-out/removal requests and their handling MUST be audited (FR-039); handling and timing are pending S55-024-Q13.
+- **FR-007**: A client MUST be able to opt out directly in account settings at any time (BRD line 219; S55-PO-6 Q13).
+- **FR-008**: A client opt-out MUST immediately remove the client from the currently visible leaderboard and exclude the client from later results in that workspace (S55-PO-6 Q13; BRD line 219).
+- **FR-009**: The client's self-service opt-out and its handling MUST be audited with actor and timestamp (FR-039; S55-PO-6 Q13).
 
 ### Eligibility
 
@@ -152,19 +154,19 @@ A leaderboard never mixes or exposes clients across workspaces.
 
 - **FR-015**: Ranking MUST combine adherence and goal-relative progress (S54-PO-11; S54-PO-12 Q17).
 - **FR-016**: The composite score MUST weight adherence and goal-relative progress equally, 50% each (S55-PO-3 Q1).
-- **FR-017**: Adherence MUST be the average of the two self-reported workout-adherence and diet-adherence check-in answers. These are temporary proxy inputs until mobile tracking exists. Consume the `workoutAdherence` and `dietAdherence` fields from spec 023 by name; do not edit or redefine their form contract (S55-PO-3 Q2; spec 023 FR-037).
+- **FR-017**: Adherence MUST be the average of the self-reported workout and diet answers, consumed by the exact spec 023 field names `workoutAdherence` and `dietAdherence`; each is a 0-10 integer. These are temporary proxy inputs until mobile tracking exists. Do not edit or redefine spec 023 FR-037 or its F15 form contract (S55-PO-3 Q2; S55-PO-5 Q3; spec 023 FR-037).
 - **FR-018**: Goal-relative progress MUST be normalized improvement versus baseline per goal type, consuming the relevant progress inputs from spec 023 without redefining its data model (S55-PO-3 Q3).
-- **FR-019**: The leaderboard period is monthly and the client-facing result is a Top 5 (S55-PO-3 Q5). How prior winners compare with new monthly competitors is pending S55-024-Q12.
-- **FR-020**: The monthly candidate ranking is computed for the monthly period. The PO manually approves or rejects each client-visible result after external WhatsApp verification; refresh and incumbent carryover behavior remain pending S55-024-Q12 (S55-PO-3 Q5, Q9).
+- **FR-019**: The leaderboard period is monthly and the client-facing result is a Top 5. Past winners and new candidates are re-scored on current-month data; a past winner is replaced only when a new candidate's current score is higher (S55-PO-3 Q5; S55-PO-6 Q12).
+- **FR-020**: The next monthly result replaces the current approved list only after the PO manually approves it following external WhatsApp verification; until then the current approved list stays visible. The PO may reject the candidate result; rejection leaves the current approved list visible (S55-PO-3 Q9; S55-PO-6 Q12).
 - **FR-021**: Equal scores MUST be ordered by higher adherence, then earlier achievement date, then client code (S55-PO-3 Q6).
 
 ### Privacy and data minimization
 
-- **FR-022**: Displayed identity MUST be the client's username only. Profile photos are out of scope for this version; an optional avatar may be considered later. Username creation, uniqueness, and editing rules are pending S55-024-Q11 (S55-PO-3 Q7).
+- **FR-022**: Displayed identity MUST be the client's username only. The client chooses a username during F11 invitation-link signup; reuse an existing field if one exists, otherwise add it to that signup. The username MUST be unique within the workspace and clients MUST be able to edit it later. Reuse F11 validation/RPC boundaries; format and reserved-name rules remain pending S55-024-Q14. Profile photos are out of scope for this version; an optional avatar may be considered later (S55-PO-3 Q7; S55-PO-6 Q11).
 - **FR-023**: The leaderboard MUST NOT display or expose any health value: no measurements, weights, body-fat, circumferences, check-in answers, notes, progress photos, or plan content (BRD assessment C4 mitigation; PRD-09 line 216).
 - **FR-024**: Data minimization: the leaderboard projection MUST store only the fields required for ranking and display; no raw measurement or check-in data is stored in the leaderboard (privacy).
-- **FR-025**: Opt-out/removal handling, including self-service versus request, removal timing, and behavior for an already displayed result, is pending S55-024-Q13.
-- **FR-026**: The app MUST record a PO approval or rejection after WhatsApp verification and audit the actor, timestamp, decision, and associated monthly result. No separate proposal workflow is specified. Whether approved results are fixed snapshots or update with monthly incumbent comparisons is pending S55-024-Q12 (S55-PO-3 Q9).
+- **FR-025**: Client opt-out occurs directly in account settings and immediately removes the client from the visible list and all later results; the action is audited (S55-PO-6 Q13).
+- **FR-026**: The app MUST record a PO approval or rejection after WhatsApp verification and audit the actor, timestamp, decision, and associated monthly result. No separate proposal workflow is specified. Current-month re-scoring and the approved-list boundary follow S55-PO-6 Q12.
 
 ### Visibility
 
@@ -173,7 +175,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 ### Publish-approval flow
 
 - **FR-028**: The Platform Owner alone performs the manual final approval or rejection after WhatsApp verification; the verification itself is outside the app (S55-PO-3 Q9).
-- **FR-029**: Each monthly result requires the manual final approval specified in FR-028 before client visibility. Other re-approval behavior depends on S55-024-Q12.
+- **FR-029**: Each new monthly result requires the manual final approval specified in FR-028 before it replaces the current approved list. The current approved list remains visible until that approval; immediate opt-out removal still applies (S55-PO-6 Q12, Q13).
 - **FR-030**: Each PO approval or rejection decision MUST be recorded with its monthly result and audit reference (FR-026, FR-039).
 
 ### Reuse and integration
@@ -184,7 +186,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 - **FR-034**: Plan-adherence inputs MUST reuse F19 delivery facts; no duplicate delivery primitive (spec 019).
 - **FR-035**: Workspace isolation MUST reuse spec 003 tenancy/RLS (spec 003).
 - **FR-036**: Audit MUST reuse spec 005 audit log (spec 005).
-- **FR-037**: Display identity MUST use the client username source once its rules are decided (S55-024-Q11); staff display names (spec 021) are not client identities.
+- **FR-037**: Reuse the F11 invitation-link signup and `client_signup` RPC boundaries (F11 FR-001-FR-007; `specs/011-client-accounts/contracts/client-signup-surface.md`) for the username field; do not redesign signup or create a parallel client identity. Reuse spec 022 account-settings conventions where available for client edits, and do not treat F21 staff display names as client identities. Username format/reserved-name rules remain S55-024-Q14.
 
 ### Copy and localization
 
@@ -197,29 +199,29 @@ A leaderboard never mixes or exposes clients across workspaces.
 
 ## Key Entities
 
-- **LeaderboardPublication**: a monthly workspace result with PO approval or rejection after WhatsApp verification, decision timestamp and actor; incumbent carryover behavior remains open (S55-024-Q12).
+- **LeaderboardPublication**: A monthly workspace result with PO approval/rejection after WhatsApp verification, decision timestamp and actor. New candidates and past winners are re-scored on current-month data; a changed list replaces the current approved list only after PO approval.
 - **LeaderboardEntry**: a ranked row for one eligible, non-opted-out client: rank, username and period reference. No score or health values are displayed.
 - **EligibilityRecord**: derived eligibility state per client per period (active subscription, active days, freeze state, opt-out flag). Consumed from F13 and the named form/progress contracts.
-- **OptOutRequest**: client removal/opt-out action or request, with handling and timing pending S55-024-Q13, and audit reference.
+- **OptOutState**: A client-controlled account-settings choice; opting out immediately hides the client from the visible list and excludes them from future results, with an audit reference.
 - **ScoreInputs**: average of the two adherence answers and normalized baseline improvement by goal type, consumed by name from spec 023. These inputs and scoring mechanics are never shown in client-facing copy.
 
 ## Success Criteria
 
 - **SC-001**: 100% of published leaderboards contain at most 5 entries; 100% contain only eligible, non-opted-out clients from the same workspace.
 - **SC-002**: 0 client-visible monthly leaderboard results occur without manual PO approval after WhatsApp verification.
-- **SC-003**: 100% of clients whose opt-out/removal has taken effect are absent from subsequent client-visible results; timing for an already displayed result is pending S55-024-Q13.
+- **SC-003**: 100% of clients who opt out are removed from the visible list immediately and are absent from all later results; every opt-out is audited.
 - **SC-004**: 0 health values appear in leaderboard payloads or UI (automated field allow-list check).
 - **SC-005**: 0 cross-workspace client appearances in any leaderboard (RLS + query isolation test).
 - **SC-006**: 100% of approval/rejection and opt-out/removal handling produce an audit event with actor and timestamp.
 - **SC-007**: 100% of newly eligible clients see the notice once on the dashboard, and can find it in account settings.
-- **SC-008**: 100% of monthly candidate rankings follow the 50/50 score and approved tie-break; client-facing copy reveals no formula, weights, or input names.
+- **SC-008**: 100% of monthly rankings follow the 50/50 score and approved tie-break; past winners and new candidates use current-month data, and a past winner is replaced only when a new candidate's current score is higher. The approved list remains visible until the PO approves its successor. Client-facing copy reveals no formula, weights, or input names.
 
 ## Assumptions
 
 - Leaderboard is optional and post-MVP; v1 pilot excludes it (S54-PO-5) except spec-only planning now.
 - Legal/privacy review (assessment C4) is required before Full Launch; this spec assumes no health metrics are shown.
 - Spec 023 is authoritative for check-in and progress data; this spec consumes the adherence answers by name and is read-only with respect to spec 023.
-- Three product gaps remain in `## Open questions for the PO`; planning is blocked until resolved.
+- S55-PO-6 resolves Q11-Q13. Q14 is a non-blocking validation/reserved-name detail; for planning only, assume a non-empty username using the existing F11 signup validation seam with no additional length, character, or reserved-name restriction. This is a conservative placeholder, not a PO decision; implementation of this policy waits for the Q14 answer.
 - No implementation authorized.
 
 ## Clarifications
@@ -232,13 +234,25 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-3.verbatim.txt`; the PO's w
 - **S55-PO-3 Q2**: “average self-reported workout + diet adherence from two check-in questions; temporary until mobile tracking exists; don't reveal scoring mechanics” (FR-017, FR-023, FR-038). Consume spec 023 fields by name, read-only.
 - **S55-PO-3 Q3**: “Q3=B (normalized baseline improvement)” per goal type (FR-018).
 - **S55-PO-3 Q4**: “Q4=A” and “active subscription + minimum 14 active days + freeze pauses accumulation (no eligibility during freeze) + opt-out default” (FR-010–FR-014).
-- **S55-PO-3 Q5**: “monthly Top 5; previous winners remain displayed and recognized until new competitors outperform them” (FR-019, FR-020; comparison semantics open in S55-024-Q12).
+- **S55-PO-3 Q5**: “monthly Top 5; previous winners remain displayed and recognized until new competitors outperform them” (FR-019, FR-020; the current-month comparison and approval boundary follow S55-PO-6 Q12).
 - **S55-PO-3 Q6**: “Q6=A: higher adherence, then earlier achievement date, then client code” (FR-021).
-- **S55-PO-3 Q7**: “username only (optional avatar later)” for display (FR-022). F11/F21 do not define client username rules; see S55-024-Q11.
+- **S55-PO-3 Q7**: “username only (optional avatar later)” for display (FR-022). F11 supplies the signup flow; S55-PO-6 Q11 defines the username lifecycle.
 - **S55-PO-3 Q8**: “clients in the workspace, staff, trainers, workspace owners, PO” (FR-027).
 - **S55-PO-3 Q9**: “PO-only manual final approval after WhatsApp verification (verification happens outside the app; the app records the PO's approval/rejection with audit)” (FR-003, FR-026, FR-028). No separate proposal step is specified.
 - **S55-PO-3 Q10**: “notice shown once on the client dashboard when first eligible + in account settings” (FR-005).
-- **S55-PO-3 Q7 removal detail**: no removal method or timing was given; see S55-024-Q13.
+
+
+### Decided -- S55-PO-6 (2026-11-14)
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-6.verbatim.txt`; PO wording is quoted verbatim.
+
+- **S55-024-Q11**: "Username is chosen during signup via invitation link. Reuse the existing field if present; otherwise add it. Enforce workspace uniqueness and allow later edits." The client chooses the username in F11 invitation-link signup; reuse an existing field if present, otherwise add it there; enforce workspace-scoped uniqueness; allow later client edits. See FR-022 and FR-037.
+- **S55-024-Q12**: "Past winners and new candidates are re-scored on the current month's data; a past winner is replaced only when a new candidate's current score is higher; the current approved list stays visible until the PO approves the next one." See FR-019, FR-020, FR-026, FR-029 and SC-008.
+- **S55-024-Q13**: "Client opts out directly in account settings; removed from the visible list immediately and from later results; audited." See FR-007-FR-009, FR-025, FR-039 and SC-003/006.
+
+### Non-blocking clarification -- S55-024-Q14 (2026-11-14)
+
+F11 provides no username-specific format or reserved-name conventions. The planning placeholder is a non-empty username accepted by the existing signup input-validation seam with no additional username-specific restrictions. This is pending PO decision and MUST NOT be represented as approved policy or implemented until decided.
 
 ### Earlier decisions retained
 
@@ -249,44 +263,22 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-3.verbatim.txt`; the PO's w
 
 ### Open questions for the PO
 
-Each question has 2–4 options, implications, a recommendation, and what it blocks.
+Only one non-blocking item remains. Its conservative planning placeholder is not PO-approved policy.
 
-#### S55-024-Q11 — Client username rules
+#### S55-024-Q14 -- Username format and reserved names
 
-F11 (`specs/011-client-accounts`) and F21 (`specs/021-staff-display-names`) define no client username. What rules govern the username shown on the leaderboard?
-
-Options:
-
-- A: Client chooses a globally unique username; client can edit it.
-- B: Workspace owner or PO assigns a workspace-unique username; only authorized staff can edit it.
-- C: System assigns a unique, non-editable username.
-
-Implications: Options determine who creates and changes the display identity and its uniqueness scope. Recommendation: A for client control, subject to the PO defining validation and reserved-name rules. Blocks: FR-022, username contract and display lifecycle.
-
-#### S55-024-Q12 — Monthly winner carryover and comparison
-
-How should the monthly result retain a prior winner until a new competitor outperforms them, given each result requires PO approval?
+F11 (`specs/011-client-accounts`) defines a signup validation seam and required fields but no username-specific character, length, or reserved-name convention. What rules should apply?
 
 Options:
 
-- A: Keep each winner's last approved monthly score as the comparison threshold; a new monthly candidate replaces that incumbent only when the candidate's score is higher. Keep the current approved list visible until the PO approves the changed monthly result.
-- B: Recalculate incumbents and new candidates together using the current month's inputs; replace an incumbent only when a new candidate's current score is higher, and keep the current approved list visible until the PO approves the new monthly result.
+- A: Accept a non-empty value through the existing F11 signup input-validation seam; impose no username-specific length, character, or reserved-name restrictions.
+- B: Define explicit username length, allowed-character, and reserved-name rules before implementation.
 
-Implications: A preserves the winning month's score as the incumbent threshold; B compares on current inputs and can change incumbent scores. Both retain the approved display while the next PO decision is pending. Recommendation: A, which follows the wording that winners remain until outperformed while preserving a clear prior result. Blocks: FR-019, FR-020, FR-026, monthly ranking/publishing scenarios.
-
-#### S55-024-Q13 — Opt-out and removal handling
-
-The BRD allows clients to request removal or opt out, but does not define the action path or timing. How should a client request be handled?
-
-Options:
-
-- A: Client opts out directly in account settings; remove the client from the visible list immediately and from later results.
-- B: Client submits a removal request to the PO; remove the client after the PO records a decision.
-
-Implications: A is immediate self-service; B adds a human review step and leaves the client listed while pending. Recommendation: A, consistent with the stated right to opt out at any time. Blocks: FR-007–FR-009, FR-025, removal scenarios and audit behavior.
+Implications: A minimizes new signup policy but leaves a broad set of values available; B permits explicit constraints but needs the PO to provide each rule. Recommendation: A as a conservative planning placeholder only, not as implementation approval. Blocks: final username input-validation and reserved-name behavior, but not Plan/Tasks/Analyze. Q11's workspace uniqueness and later-edit behavior are already decided.
 
 ## Overlap and coordination notes
 
 - Do not duplicate F13 freeze/entitlement, F15 forms/scheduling, F17/F18/F19 planning and delivery, F20 notes, F21 staff display names, spec 022 account-settings conventions (its contract is not present in this checkout), spec 023 progress/check-in data, or this spec's leaderboard rules.
 - Coordinate with open PRs #58/#86/#88/#90; consume merged contracts.
+- Reuse the F11 invitation-link signup surface and `client_signup` contract; do not redesign signup. Reuse account-settings patterns from spec 022 where available, F11/F21 identity ownership boundaries, and spec 023 progress/adherence fields by name.
 - Leaderboard is optional; gated by legal review (assessment C4) before Full Launch.
