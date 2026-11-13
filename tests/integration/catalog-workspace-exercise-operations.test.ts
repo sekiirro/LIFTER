@@ -39,10 +39,14 @@ afterAll(async () => Promise.all([db.end(), concurrentDb.end()]));
 const request = {
   name_ar: 'تمرين مساحة',
   name_en: 'Workspace exercise',
+  description: 'Workspace description',
+  notes: 'Workspace coaching note',
   primary_muscle_code: 'chest',
   secondary_muscle_codes: ['triceps'],
   equipment_codes: ['barbell'],
-  defaults: { working_sets: 3 },
+  default_rest_time: 90,
+  default_rir: 2,
+  default_reps: { min: 8, max: 12 },
 };
 
 describe('workspace exercise create/version RPC', () => {
@@ -145,11 +149,30 @@ describe('workspace exercise create/version RPC', () => {
       db`select count(*)::int as versions from public.workspace_exercise_versions where workspace_id = ${wsB} and workspace_exercise_id = ${result.exercise_id}`,
     ).resolves.toEqual([{ versions: 2 }]);
     await expect(
-      db`select version, payload ->> 'name_en' as name_en from public.workspace_exercise_versions
+      db`select version, payload ->> 'name_en' as name_en,
+          payload ->> 'description' as description, notes,
+          default_rest_time, default_rir, default_reps
+        from public.workspace_exercise_versions
         where workspace_id = ${wsB} and workspace_exercise_id = ${result.exercise_id} order by version`,
     ).resolves.toEqual([
-      { version: 1, name_en: request.name_en },
-      { version: 2, name_en: update.name_en },
+      {
+        version: 1,
+        name_en: request.name_en,
+        description: request.description,
+        notes: request.notes,
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: { min: 8, max: 12 },
+      },
+      {
+        version: 2,
+        name_en: update.name_en,
+        description: request.description,
+        notes: request.notes,
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: { min: 8, max: 12 },
+      },
     ]);
   });
 });

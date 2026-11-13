@@ -1,6 +1,13 @@
 'use client';
 
-import { useId, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import { Alert } from '../ui/Alert';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
@@ -14,6 +21,7 @@ import {
 } from '../../lib/catalog/schemas';
 import {
   alternativeName,
+  alternativeOptionValue,
   buildExerciseInput,
   canEditExercise,
   draftFromExercise,
@@ -31,6 +39,7 @@ import {
 import { dirFor, type Locale } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 import styles from './ExerciseEditor.module.css';
+import { searchAlternativeOptionsAction } from '../../app/(app)/exercise-library/actions';
 
 export type ExerciseEditorStatus = 'ready' | 'saving' | 'error';
 
@@ -40,7 +49,10 @@ export type ExerciseEditorProps = {
   scope?: ExerciseScope;
   hasCoachingWork?: boolean;
   exercise?: NormalizedExercise | null;
+  exerciseId?: string;
+  workspaceId?: string | null;
   alternatives?: readonly ExerciseAlternativeOption[];
+  alternativesNextCursor?: string | null;
   initialDraft?: ExerciseEditorDraft;
   initialErrors?: ExerciseEditorErrors;
   status?: ExerciseEditorStatus;
@@ -57,6 +69,11 @@ const ERROR_MESSAGE_KEYS: Record<ExerciseEditorErrorCode, keyof Messages> = {
   invalid_choice: 'catalog.editorErrorChoice',
   too_many_alternatives: 'catalog.editorErrorTooManyAlternatives',
   text_too_long: 'catalog.editorErrorTextTooLong',
+  description_too_long: 'catalog.editorErrorDescriptionTooLong',
+  notes_too_long: 'catalog.editorErrorDescriptionTooLong',
+  invalid_video_url: 'catalog.videoVariationInvalidUrl',
+  duplicate_alternative: 'catalog.editorErrorDuplicateAlternative',
+  self_alternative: 'catalog.editorErrorSelfAlternative',
 };
 
 function errorText(
@@ -69,11 +86,12 @@ function errorText(
 function emptyDraft(): ExerciseEditorDraft {
   return {
     names: { ar: '', en: '' },
+    description: '',
+    notes: '',
+    videoUrl: '',
     primaryMuscle: '',
     secondaryMuscles: [],
     equipment: '',
-    warmupSets: '',
-    workingSets: '',
     repsMode: 'fixed',
     repsValue: '',
     repsMin: '',
@@ -110,7 +128,10 @@ export function ExerciseEditor({
   scope = 'global',
   hasCoachingWork = false,
   exercise = null,
+  exerciseId,
+  workspaceId = null,
   alternatives = [],
+  alternativesNextCursor = null,
   initialDraft,
   initialErrors,
   status = 'ready',
@@ -126,6 +147,101 @@ export function ExerciseEditor({
   const [errors, setErrors] = useState<ExerciseEditorErrors>(
     initialErrors ?? {},
   );
+  const [alternativeQuery, setAlternativeQuery] = useState('');
+  const [alternativeOptions, setAlternativeOptions] = useState([
+    ...alternatives,
+  ]);
+  const [alternativeCursor, setAlternativeCursor] = useState(
+    alternativesNextCursor,
+  );
+  const [alternativeLoading, setAlternativeLoading] = useState(false);
+  const [alternativeLoadError, setAlternativeLoadError] = useState(false);
+  const alternativeSearchKey = JSON.stringify([
+    workspaceId,
+    alternativeQuery,
+    draft.alternativeExerciseIds,
+  ]);
+  const latestAlternativeSearchKey = useRef(alternativeSearchKey);
+  useLayoutEffect(() => {
+    latestAlternativeSearchKey.current = alternativeSearchKey;
+  }, [alternativeSearchKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setAlternativeLoading(true);
+      setAlternativeLoadError(false);
+      try {
+        const result = await searchAlternativeOptionsAction({
+          workspaceId,
+          query: alternativeQuery,
+          cursor: null,
+          selectedIds: draft.alternativeExerciseIds,
+          excludeId: exerciseId ?? null,
+        });
+        if (cancelled) return;
+        if (result.status !== 'ok') {
+          setAlternativeLoadError(true);
+          return;
+        }
+        const data = result.data as {
+          options: ExerciseAlternativeOption[];
+          nextCursor: string | null;
+        };
+        setAlternativeOptions(data.options);
+        setAlternativeCursor(data.nextCursor);
+      } catch {
+        if (!cancelled) setAlternativeLoadError(true);
+      } finally {
+        if (!cancelled) setAlternativeLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [alternativeQuery, workspaceId, exerciseId, draft.alternativeExerciseIds]);
+
+  async function loadNextAlternatives() {
+    if (!alternativeCursor || alternativeLoading) return;
+    const requestedQuery = alternativeQuery;
+    const requestedSearchKey = latestAlternativeSearchKey.current;
+    setAlternativeLoading(true);
+    setAlternativeLoadError(false);
+    try {
+      const result = await searchAlternativeOptionsAction({
+        workspaceId,
+        query: requestedQuery,
+        cursor: alternativeCursor,
+        selectedIds: draft.alternativeExerciseIds,
+        excludeId: exerciseId ?? null,
+      });
+      if (requestedSearchKey !== latestAlternativeSearchKey.current) return;
+      if (result.status !== 'ok') {
+        setAlternativeLoadError(true);
+        return;
+      }
+      const data = result.data as {
+        options: ExerciseAlternativeOption[];
+        nextCursor: string | null;
+      };
+      setAlternativeOptions((previous) => {
+        const merged = new Map(
+          previous.map((option) => [alternativeOptionValue(option), option]),
+        );
+        for (const option of data.options)
+          merged.set(alternativeOptionValue(option), option);
+        return [...merged.values()];
+      });
+      setAlternativeCursor(data.nextCursor);
+    } catch {
+      if (requestedSearchKey === latestAlternativeSearchKey.current)
+        setAlternativeLoadError(true);
+    } finally {
+      if (requestedSearchKey === latestAlternativeSearchKey.current)
+        setAlternativeLoading(false);
+    }
+  }
 
   const canEdit = canEditExercise(scope, role, hasCoachingWork);
   const reps = repsFromDraft(draft);
@@ -133,10 +249,14 @@ export function ExerciseEditor({
   const repsError =
     errors.repsValue ?? errors.repsMin ?? errors.repsMax ?? errors.repsMode;
   const alternativesAtMax = draft.alternativeExerciseIds.length >= 3;
-  const alternativeOptions = alternatives;
   const selectedAlternatives = draft.alternativeExerciseIds.map((id) => {
-    const option = alternativeOptions.find((item) => item.id === id);
-    return { id, name: option ? alternativeName(option, locale) : id };
+    const option = alternativeOptions.find(
+      (item) => alternativeOptionValue(item) === id,
+    );
+    return {
+      id,
+      name: option ? alternativeName(option, locale) : id.replace(/^[gw]:/, ''),
+    };
   });
 
   function setValue<K extends keyof ExerciseEditorDraft>(
@@ -168,10 +288,10 @@ export function ExerciseEditor({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canEdit) return;
-    const nextErrors = validateExerciseEditorDraft(draft);
+    const nextErrors = validateExerciseEditorDraft(draft, exerciseId);
     setErrors(nextErrors);
     if (hasExerciseEditorErrors(nextErrors)) return;
-    if (!buildExerciseInput(draft)) return;
+    if (!buildExerciseInput(draft, exerciseId)) return;
     onSubmit?.(draft);
   }
 
@@ -236,26 +356,6 @@ export function ExerciseEditor({
         <h3>{m['catalog.editorDefaultsTitle']}</h3>
         <p>{m['catalog.editorDefaultsIntro']}</p>
         <dl className={styles.summaryList}>
-          <div data-defaults-warmup={draft.warmupSets.trim()}>
-            <dt>{m['catalog.editorWarmupSets']}</dt>
-            <dd>
-              {draft.warmupSets.trim() ? (
-                <Bidi dir="ltr">{draft.warmupSets.trim()}</Bidi>
-              ) : (
-                m['catalog.editorNone']
-              )}
-            </dd>
-          </div>
-          <div data-defaults-working={draft.workingSets.trim()}>
-            <dt>{m['catalog.editorWorkingSets']}</dt>
-            <dd>
-              {draft.workingSets.trim() ? (
-                <Bidi dir="ltr">{draft.workingSets.trim()}</Bidi>
-              ) : (
-                m['catalog.editorNone']
-              )}
-            </dd>
-          </div>
           <div data-defaults-reps={repsText}>
             <dt>{m['catalog.editorReps']}</dt>
             <dd>
@@ -341,6 +441,41 @@ export function ExerciseEditor({
                 onChange: (event) => setName('en', event.currentTarget.value),
               }}
             />
+            <Field
+              label={m['catalog.editorDescription']}
+              error={errorText(errors.description, m)}
+              inputProps={{
+                id: `${base}-description`,
+                value: draft.description,
+                disabled: !canEdit,
+                onChange: (event) =>
+                  setValue('description', event.currentTarget.value),
+              }}
+            />
+            <Field
+              label={m['catalog.editorNotes']}
+              error={errorText(errors.notes, m)}
+              inputProps={{
+                id: `${base}-notes`,
+                value: draft.notes,
+                disabled: !canEdit,
+                onChange: (event) =>
+                  setValue('notes', event.currentTarget.value),
+              }}
+            />
+            <Field
+              label={m['catalog.editorVideo']}
+              error={errorText(errors.videoUrl, m)}
+              inputProps={{
+                id: `${base}-video`,
+                type: 'url',
+                inputMode: 'url',
+                value: draft.videoUrl,
+                disabled: !canEdit,
+                onChange: (event) =>
+                  setValue('videoUrl', event.currentTarget.value),
+              }}
+            />
             <div className={styles.field}>
               <label htmlFor={`${base}-primary-muscle`}>
                 {m['catalog.editorPrimaryMuscle']}
@@ -406,39 +541,6 @@ export function ExerciseEditor({
 
         <fieldset className={styles.group}>
           <legend>{m['catalog.editorDefaultsFormTitle']}</legend>
-          <div className={styles.grid}>
-            <Field
-              label={m['catalog.editorWarmupSets']}
-              error={errorText(errors.warmupSets, m)}
-              inputProps={{
-                id: `${base}-warmup-sets`,
-                type: 'number',
-                inputMode: 'numeric',
-                min: 0,
-                max: 100,
-                value: draft.warmupSets,
-                disabled: !canEdit,
-                onChange: (event) =>
-                  setValue('warmupSets', event.currentTarget.value),
-              }}
-            />
-            <Field
-              label={m['catalog.editorWorkingSets']}
-              error={errorText(errors.workingSets, m)}
-              inputProps={{
-                id: `${base}-working-sets`,
-                type: 'number',
-                inputMode: 'numeric',
-                min: 0,
-                max: 100,
-                value: draft.workingSets,
-                disabled: !canEdit,
-                onChange: (event) =>
-                  setValue('workingSets', event.currentTarget.value),
-              }}
-            />
-          </div>
-
           <fieldset className={styles.repsGroup}>
             <legend>{m['catalog.editorReps']}</legend>
             <div className={styles.radioRow}>
@@ -473,7 +575,7 @@ export function ExerciseEditor({
                   type: 'number',
                   inputMode: 'numeric',
                   min: 1,
-                  max: 1000,
+                  max: 100,
                   value: draft.repsValue,
                   disabled: !canEdit,
                   onChange: (event) =>
@@ -491,7 +593,7 @@ export function ExerciseEditor({
                   type: 'number',
                   inputMode: 'numeric',
                   min: 1,
-                  max: 1000,
+                  max: 100,
                   value: draft.repsMin,
                   disabled: !canEdit,
                   onChange: (event) =>
@@ -506,7 +608,7 @@ export function ExerciseEditor({
                   type: 'number',
                   inputMode: 'numeric',
                   min: 1,
-                  max: 1000,
+                  max: 100,
                   value: draft.repsMax,
                   disabled: !canEdit,
                   onChange: (event) =>
@@ -530,7 +632,8 @@ export function ExerciseEditor({
                 type: 'number',
                 inputMode: 'numeric',
                 min: 0,
-                max: 100000,
+                max: 600,
+                step: 15,
                 value: draft.restSeconds,
                 disabled: !canEdit,
                 onChange: (event) =>
@@ -545,7 +648,7 @@ export function ExerciseEditor({
                 type: 'number',
                 inputMode: 'numeric',
                 min: 0,
-                max: 10,
+                max: 5,
                 value: draft.rir,
                 disabled: !canEdit,
                 onChange: (event) => setValue('rir', event.currentTarget.value),
@@ -558,15 +661,33 @@ export function ExerciseEditor({
             <p className={styles.hint} id={`${base}-alternatives-hint`}>
               {m['catalog.editorAlternativesHint']}
             </p>
+            <Field
+              label={m['catalog.searchLabel']}
+              inputProps={{
+                id: `${base}-alternative-search`,
+                type: 'search',
+                value: alternativeQuery,
+                disabled: !canEdit,
+                onChange: (event) =>
+                  setAlternativeQuery(event.currentTarget.value),
+              }}
+            />
+            <p role="status" aria-live="polite" aria-busy={alternativeLoading}>
+              {alternativeLoading ? m['catalog.loading'] : ''}
+            </p>
+            {alternativeLoadError ? (
+              <p className={styles.error} role="alert">
+                {m['catalog.editorStatusErrorDescription']}
+              </p>
+            ) : null}
             {alternativeOptions.length ? (
               <ul className={styles.alternativeList}>
                 {alternativeOptions.map((option) => {
-                  const checked = draft.alternativeExerciseIds.includes(
-                    option.id,
-                  );
-                  const id = `${base}-alternative-${option.id}`;
+                  const value = alternativeOptionValue(option);
+                  const checked = draft.alternativeExerciseIds.includes(value);
+                  const id = `${base}-alternative-${value}`;
                   return (
-                    <li key={option.id}>
+                    <li key={value}>
                       <input
                         id={id}
                         type="checkbox"
@@ -574,10 +695,7 @@ export function ExerciseEditor({
                         disabled={!canEdit || (!checked && alternativesAtMax)}
                         aria-describedby={`${base}-alternatives-hint`}
                         onChange={(event) =>
-                          toggleAlternative(
-                            option.id,
-                            event.currentTarget.checked,
-                          )
+                          toggleAlternative(value, event.currentTarget.checked)
                         }
                       />
                       <label htmlFor={id}>
@@ -590,8 +708,21 @@ export function ExerciseEditor({
                 })}
               </ul>
             ) : (
-              <p className={styles.hint}>{m['catalog.editorNone']}</p>
+              <div className={styles.hint}>
+                <p>{m['catalog.noResultsTitle']}</p>
+                <p>{m['catalog.noResultsDescription']}</p>
+              </div>
             )}
+            {alternativeCursor ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!canEdit || alternativeLoading}
+                onClick={loadNextAlternatives}
+              >
+                {m['catalog.nextPage']}
+              </Button>
+            ) : null}
             {alternativesAtMax && (
               <p className={styles.hint}>
                 {m['catalog.editorAlternativesMax']}

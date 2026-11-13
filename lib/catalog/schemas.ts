@@ -78,8 +78,10 @@ export type ExerciseInput = {
   primaryMuscle: string;
   secondaryMuscles?: string[];
   equipment: string;
+  description?: string;
+  notes?: string;
+  videoUrl?: string;
   defaults?: ExerciseDefaults;
-  notes?: Partial<Record<CatalogLocale, string>>;
   lifecycleState?: CatalogLifecycleState;
 };
 
@@ -88,8 +90,10 @@ export type NormalizedExercise = {
   primaryMuscle: MuscleGroupCode;
   secondaryMuscles: MuscleGroupCode[];
   equipment: EquipmentCode;
+  description?: string;
+  notes?: string;
+  videoUrl?: string;
   defaults?: ExerciseDefaults;
-  notes?: Partial<Record<CatalogLocale, string>>;
   lifecycleState: CatalogLifecycleState;
 };
 
@@ -180,6 +184,12 @@ export type NormalizedCatalogSearch = {
 export const MAX_SEARCH_PAGE_SIZE = 50;
 export const MAX_CATALOG_TEXT_LENGTH = 120;
 export const MAX_CATALOG_NOTE_LENGTH = 2000;
+export const MAX_CATALOG_DESCRIPTION_LENGTH = 2000;
+export const MAX_EXERCISE_REST_SECONDS = 600;
+export const EXERCISE_REST_STEP_SECONDS = 15;
+export const MAX_EXERCISE_RIR = 5;
+export const MAX_EXERCISE_REPS = 100;
+export const MAX_EXERCISE_ALTERNATIVES = 3;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -262,6 +272,24 @@ function requireNonEmptyString(
   return normalized;
 }
 
+function requireOptionalText(
+  value: unknown,
+  label: string,
+  maxLength: number,
+): string | undefined {
+  if (typeof value !== 'string') {
+    throw new CatalogValidationError(`${label} must be text`);
+  }
+  const normalized = value.trim();
+  if (!normalized) return undefined;
+  if (Array.from(normalized).length > maxLength) {
+    throw new CatalogValidationError(
+      `${label} must be ${maxLength} characters or fewer`,
+    );
+  }
+  return normalized;
+}
+
 function requireFiniteNonNegative(value: unknown, label: string): number {
   if (!isFiniteNumber(value) || value < 0) {
     throw new CatalogValidationError(
@@ -308,12 +336,27 @@ function normalizeReps(value: unknown): ExerciseReps | undefined {
   if (kind === 'fixed') {
     return {
       kind: 'fixed',
-      value: requirePositiveFinite(value.value, 'Exercise reps value'),
+      value: requireInteger(
+        value.value,
+        'Exercise reps value',
+        1,
+        MAX_EXERCISE_REPS,
+      ),
     };
   }
   if (kind === 'range') {
-    const min = requirePositiveFinite(value.min, 'Exercise reps min');
-    const max = requirePositiveFinite(value.max, 'Exercise reps max');
+    const min = requireInteger(
+      value.min,
+      'Exercise reps min',
+      1,
+      MAX_EXERCISE_REPS,
+    );
+    const max = requireInteger(
+      value.max,
+      'Exercise reps max',
+      1,
+      MAX_EXERCISE_REPS,
+    );
     if (min > max) {
       throw new CatalogValidationError('Exercise reps min must not exceed max');
     }
@@ -349,15 +392,21 @@ function normalizeExerciseDefaults(
   const reps = normalizeReps(value.reps);
   if (reps) result.reps = reps;
   if (value.restSeconds !== undefined) {
-    result.restSeconds = requireInteger(
+    const restSeconds = requireInteger(
       value.restSeconds,
       'Rest seconds',
       0,
-      100000,
+      MAX_EXERCISE_REST_SECONDS,
     );
+    if (restSeconds % EXERCISE_REST_STEP_SECONDS !== 0) {
+      throw new CatalogValidationError(
+        `Rest seconds must use ${EXERCISE_REST_STEP_SECONDS}-second steps`,
+      );
+    }
+    result.restSeconds = restSeconds;
   }
   if (value.rir !== undefined && value.rir !== null) {
-    result.rir = requireInteger(value.rir, 'RIR', 0, 10);
+    result.rir = requireInteger(value.rir, 'RIR', 0, MAX_EXERCISE_RIR);
   } else if (value.rir === null) {
     result.rir = null;
   }
@@ -367,10 +416,23 @@ function normalizeExerciseDefaults(
         'Alternative exercise ids must be an array',
       );
     }
+    if (value.alternativeExerciseIds.length > MAX_EXERCISE_ALTERNATIVES) {
+      throw new CatalogValidationError(
+        'At most three alternatives are allowed',
+      );
+    }
     result.alternativeExerciseIds = value.alternativeExerciseIds.map(
       (item, index) =>
         requireNonEmptyString(item, `Alternative exercise id ${index + 1}`),
     );
+    if (
+      new Set(result.alternativeExerciseIds).size !==
+      result.alternativeExerciseIds.length
+    ) {
+      throw new CatalogValidationError(
+        'Alternative exercise ids must be unique',
+      );
+    }
   }
   return Object.keys(result).length ? result : undefined;
 }
@@ -398,10 +460,8 @@ export function normalizeExerciseInput(input: unknown): NormalizedExercise {
     required: true,
     maxLength: MAX_CATALOG_TEXT_LENGTH,
   });
-  if (!names.ar || !names.en) {
-    throw new CatalogValidationError(
-      'Both ar and en exercise names are required',
-    );
+  if (!names.en) {
+    throw new CatalogValidationError('An English exercise name is required');
   }
 
   const primaryMuscle = requireNonEmptyString(
@@ -421,12 +481,26 @@ export function normalizeExerciseInput(input: unknown): NormalizedExercise {
 
   const secondaryMuscles = normalizeSecondaryMuscles(input.secondaryMuscles);
 
-  const notes =
-    input.notes === undefined
+  const description =
+    input.description === undefined || input.description === null
       ? undefined
-      : normalizeLocalizedText(input.notes, 'note', {
-          maxLength: MAX_CATALOG_NOTE_LENGTH,
-        });
+      : requireOptionalText(
+          input.description,
+          'Description',
+          MAX_CATALOG_DESCRIPTION_LENGTH,
+        );
+  const notes =
+    input.notes === undefined || input.notes === null
+      ? undefined
+      : requireOptionalText(input.notes, 'Notes', MAX_CATALOG_NOTE_LENGTH);
+  const videoUrl =
+    input.videoUrl === undefined || input.videoUrl === null
+      ? undefined
+      : requireOptionalText(
+          input.videoUrl,
+          'Video URL',
+          MAX_CATALOG_NOTE_LENGTH,
+        );
 
   const defaults = normalizeExerciseDefaults(input.defaults);
 
@@ -440,12 +514,14 @@ export function normalizeExerciseInput(input: unknown): NormalizedExercise {
         );
 
   return {
-    names: { ar: names.ar, en: names.en },
+    names: { ar: names.ar ?? '', en: names.en },
     primaryMuscle: primaryMuscle as MuscleGroupCode,
     secondaryMuscles,
     equipment: equipment as EquipmentCode,
+    ...(description ? { description } : {}),
+    ...(notes ? { notes } : {}),
+    ...(videoUrl ? { videoUrl } : {}),
     ...(defaults ? { defaults } : {}),
-    ...(notes && Object.keys(notes).length ? { notes } : {}),
     lifecycleState,
   };
 }

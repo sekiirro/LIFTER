@@ -6,12 +6,29 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
+import { assertLocalStackTarget } from '../../scripts/local-stack.mjs';
 import { isDisposableStackC } from './disposable-stack';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3437';
 const screenshotDir =
   process.env.LIFTER_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s32-f16-lib15');
-const local = isDisposableStackC(process.env);
+const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
+const dbUrl = process.env.DB_URL || process.env.SUPABASE_DB_URL;
+const assignedStackA = (() => {
+  if (process.env.LIFTER_SUPABASE_STACK !== 'a' || !apiUrl || !dbUrl)
+    return false;
+  try {
+    return (
+      assertLocalStackTarget({ stack: 'a', apiUrl, dbUrl }).projectId ===
+      'lifter'
+    );
+  } catch {
+    return false;
+  }
+})();
+const local =
+  isDisposableStackC(process.env) ||
+  (assignedStackA && process.env.CI !== 'true');
 let fixture: Awaited<
   ReturnType<(typeof import('../integration/harness'))['twoWorkspaceFixture']>
 >;
@@ -50,7 +67,9 @@ async function createWorkspaceExercise() {
         primary_muscle_code: 'chest',
         secondary_muscle_codes: ['triceps'],
         equipment_codes: ['barbell'],
-        defaults: { working_sets: 3 },
+        default_reps: 3,
+        description: 'Private saved description',
+        notes: 'Private saved notes',
       },
     },
   );
@@ -84,25 +103,29 @@ test.beforeAll(async () => {
       primary_muscle_code: 'chest',
       secondary_muscle_codes: ['triceps'],
       equipment_codes: ['barbell'],
-      defaults: {
-        warmup_sets: 1,
-        working_sets: 3,
-        reps: { min: 8, max: 12 },
-        rest_seconds: 90,
-        rir: 2,
-        alternative_exercise_ids: [],
-      },
+      default_reps: { min: 8, max: 12 },
+      default_rest_time: 90,
+      default_rir: 2,
+      description: 'Global saved description',
+      notes: 'Global saved notes',
     },
   });
   if (created.error) throw new Error(created.error.message);
   exerciseId = created.data.exercise_id;
-  const variation = await fixture.po.client.rpc('catalog_write_variation', {
-    p_workspace_id: fixture.wsA.id,
-    p_exercise_id: exerciseId,
-    p_expected_version: null,
-    p_operation_key: randomUUID(),
-    p_request: { video_url: 'https://youtu.be/abcdefghijk', note: '' },
-  });
+  const variation = await fixture.po.client.rpc(
+    'catalog_write_exercise_override',
+    {
+      p_workspace_id: fixture.wsA.id,
+      p_exercise_id: exerciseId,
+      p_expected_version: 0,
+      p_operation_key: randomUUID(),
+      p_request: {
+        video_url: 'https://youtu.be/abcdefghijk',
+        description: 'Shared saved description',
+        notes: 'Shared saved notes',
+      },
+    },
+  );
   if (variation.error) throw new Error(variation.error.message);
   await mkdir(screenshotDir, { recursive: true });
 });
@@ -183,10 +206,22 @@ for (const locale of ['ar', 'en'] as const) {
           `/exercise-library/${exerciseId}?workspace=${fixture.wsA.id}`,
         );
         await expect(page.getByTestId('exercise-detail')).toBeVisible();
+        const sharedDetail = page.getByTestId('exercise-detail');
+        await expect(
+          sharedDetail.getByText(m['catalog.editorDescription'], {
+            exact: true,
+          }),
+        ).toBeVisible();
+        await expect(
+          sharedDetail.getByText('Shared saved description', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          sharedDetail.getByText('Shared saved notes', { exact: true }),
+        ).toBeVisible();
         await expect(
           page.getByText(m['catalog.detailOpenVideo']),
         ).toBeVisible();
-        const workspaceSelector = page.getByLabel(m['catalog.editorWorkspace']);
+        const workspaceSelector = page.locator('#detail-workspace');
         await workspaceSelector.focus();
         await page.keyboard.press('Tab');
         const workspaceSubmit = page.getByRole('button', {
@@ -203,14 +238,36 @@ for (const locale of ['ar', 'en'] as const) {
           fullPage: true,
         });
 
+        await page.goto(`/exercise-library/${exerciseId}?workspace=`);
+        const globalDetail = page.getByTestId('exercise-detail');
+        await expect(
+          globalDetail.getByText('Global saved description', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          globalDetail.getByText('Global saved notes', { exact: true }),
+        ).toBeVisible();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-detail-global.png`,
+          ),
+          fullPage: true,
+        });
+
         const workspaceExerciseId = await createWorkspaceExercise();
         await page.goto(
           `/exercise-library/${workspaceExerciseId}?scope=workspace&workspace=${fixture.wsA.id}`,
         );
         await expect(page.getByTestId('exercise-detail')).toBeVisible();
-        const workspaceDetailSelector = page.getByLabel(
-          m['catalog.editorWorkspace'],
-        );
+        const privateDetail = page.getByTestId('exercise-detail');
+        await expect(
+          privateDetail.getByText('Private saved description', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          privateDetail.getByText('Private saved notes', { exact: true }),
+        ).toBeVisible();
+        const workspaceDetailSelector = page.locator('#detail-workspace');
         await expect(
           workspaceDetailSelector.locator('option[value=""]'),
         ).toHaveCount(0);

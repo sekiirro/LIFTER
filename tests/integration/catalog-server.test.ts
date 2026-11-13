@@ -164,17 +164,19 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     expect(restored.error).toBeNull();
   });
 
-  it('creates a workspace variation through the real RPC with an explicit null version', async () => {
+  it('routes a workspace variation through the F16 override RPC with version zero', async () => {
     const action = server(workspaces.po);
     const exercise = await action.createExercise({
       operationKey: fixtureKey(),
       request: {
-        name_ar: `اختبار ${randomUUID()}`,
+        name_ar: `Hidden revision ${randomUUID()}`,
         name_en: `Variation create ${randomUUID()}`,
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['dumbbell'],
-        defaults: {},
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
       },
     });
     expect(exercise.status).toBe('ok');
@@ -188,6 +190,158 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     expect(result.status).toBe('ok');
   });
 
+  it('reads the current revision when a non-video override is hidden from the variation projection', async () => {
+    const owner = server(workspaces.po);
+    const trainer = server(workspaces.trainerA);
+    const created = await owner.createExercise({
+      operationKey: fixtureKey(),
+      request: {
+        name_ar: `اختبار ${randomUUID()}`,
+        name_en: `Hidden variation revision ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: [],
+        equipment_codes: ['dumbbell'],
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
+      },
+    });
+    expect(created.status).toBe('ok');
+    if (created.status !== 'ok') return;
+    const exerciseId = (created.data as { exercise_id: string }).exercise_id;
+    const saved = await trainer.writeExerciseOverride({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      id: exerciseId,
+      expectedVersion: null,
+      request: { description: 'Description only' },
+    });
+    expect(saved.status).toBe('ok');
+
+    const projection = await trainer.search({
+      kind: 'variation',
+      query: '',
+      workspaceId: workspaces.wsA.id,
+      filters: { page_size: 50 },
+    });
+    expect(projection.status).toBe('ok');
+    if (projection.status !== 'ok') return;
+    expect(Array.isArray(projection.data)).toBe(true);
+    if (!Array.isArray(projection.data)) return;
+    expect(
+      projection.data.some(
+        (row: unknown) =>
+          (row as { result_id?: string }).result_id === exerciseId,
+      ),
+    ).toBe(false);
+
+    expect(
+      await trainer.exerciseOverrideVersion({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).toEqual({ status: 'ok', data: { version: 1 } });
+  });
+
+  it('reads hidden variation values and their revision from one workspace snapshot', async () => {
+    const owner = server(workspaces.po);
+    const trainer = server(workspaces.trainerA);
+    const foreignTrainer = server(workspaces.trainerB);
+    const created = await owner.createExercise({
+      operationKey: fixtureKey(),
+      request: {
+        name_ar: `اختبار ${randomUUID()}`,
+        name_en: `Atomic variation state ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: [],
+        equipment_codes: ['dumbbell'],
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
+      },
+    });
+    expect(created.status).toBe('ok');
+    if (created.status !== 'ok') return;
+    const exerciseId = (created.data as { exercise_id: string }).exercise_id;
+
+    const hidden = await trainer.writeExerciseOverride({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      id: exerciseId,
+      expectedVersion: null,
+      request: { description: 'Description only' },
+    });
+    expect(hidden.status).toBe('ok');
+    const projection = await trainer.search({
+      kind: 'variation',
+      query: '',
+      workspaceId: workspaces.wsA.id,
+      filters: { page_size: 50 },
+    });
+    expect(projection.status).toBe('ok');
+    if (projection.status !== 'ok' || !Array.isArray(projection.data)) return;
+    expect(
+      projection.data.some(
+        (row) => (row as { result_id?: string }).result_id === exerciseId,
+      ),
+    ).toBe(false);
+    await expect(
+      trainer.exerciseVariationEditorState({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).resolves.toEqual({
+      status: 'ok',
+      data: { version: 1, videoUrl: '', note: '' },
+    });
+
+    const saved = await trainer.writeVariation({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      id: exerciseId,
+      expectedVersion: 1,
+      request: {
+        video_url: 'https://youtu.be/abcdefghijk',
+        note: 'Current workspace note',
+      },
+    });
+    expect(saved.status).toBe('ok');
+    await expect(
+      trainer.exerciseVariationEditorState({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).resolves.toEqual({
+      status: 'ok',
+      data: {
+        version: 2,
+        videoUrl: 'https://youtu.be/abcdefghijk',
+        note: 'Current workspace note',
+      },
+    });
+    await expect(
+      foreignTrainer.exerciseVariationEditorState({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).resolves.toEqual({ status: 'not_permitted' });
+
+    expect(
+      await owner.transitionExercise({
+        operationKey: fixtureKey(),
+        id: exerciseId,
+        expectedVersion: 0,
+        transition: 'remove',
+      }),
+    ).toMatchObject({ status: 'ok' });
+    await expect(
+      trainer.exerciseVariationEditorState({
+        workspaceId: workspaces.wsA.id,
+        exerciseId,
+      }),
+    ).resolves.toEqual({ status: 'not_permitted' });
+  });
+
   it('searches exercises created through the session wall by stored taxonomy payload keys', async () => {
     const action = server(workspaces.po);
     const exerciseName = `Filter payload ${randomUUID()}`;
@@ -199,7 +353,9 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['barbell'],
-        defaults: {},
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
       },
     });
     expect(created.status).toBe('ok');
@@ -265,7 +421,9 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['barbell'],
-        defaults: {},
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
       },
     });
     expect(workspaceCreated.status).toBe('ok');
@@ -425,22 +583,26 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
             request: {},
           }),
       );
-      await check(canCoach[index] ? ['catalog_write_variation'] : [], () =>
-        actions.writeVariation({
-          operationKey: key(),
-          workspaceId: scoped,
-          id: randomUUID(),
-          request: {},
-        }),
+      await check(
+        canCoach[index] ? ['catalog_write_exercise_override'] : [],
+        () =>
+          actions.writeVariation({
+            operationKey: key(),
+            workspaceId: scoped,
+            id: randomUUID(),
+            request: {},
+          }),
       );
-      await check(canCoach[index] ? ['catalog_transition_variation'] : [], () =>
-        actions.transitionVariation({
-          operationKey: key(),
-          workspaceId: scoped,
-          id: randomUUID(),
-          expectedVersion: 1,
-          transition: 'remove',
-        }),
+      await check(
+        canCoach[index] ? ['catalog_write_exercise_override'] : [],
+        () =>
+          actions.transitionVariation({
+            operationKey: key(),
+            workspaceId: scoped,
+            id: randomUUID(),
+            expectedVersion: 1,
+            transition: 'remove',
+          }),
       );
       await check(canCoach[index] ? ['catalog_create_food'] : [], () =>
         actions.createFood({

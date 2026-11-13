@@ -16,7 +16,6 @@ const ALLOWED_HOSTS = new Set([
   'www.youtube.com',
   'youtu.be',
   'drive.google.com',
-  'docs.google.com',
 ]);
 
 export function isAllowedCatalogVideoUrl(value: string): boolean {
@@ -53,10 +52,7 @@ export function validateVideoVariationDraft(
 export function buildVideoVariationRequest(draft: VideoVariationDraft) {
   const url = draft.videoUrl.trim();
   const note = draft.note.trim();
-  return {
-    ...(url ? { video_url: url } : {}),
-    ...(note ? { note } : {}),
-  };
+  return { video_url: url || null, note: note || null };
 }
 
 export function resetVariationForWorkspace(workspaceId: string) {

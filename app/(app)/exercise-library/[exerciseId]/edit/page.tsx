@@ -2,7 +2,10 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Bidi } from '../../../../../components/ui/Bidi';
 import { requireActor } from '../../../../../lib/auth/actor';
-import { exerciseDetail } from '../../../../../lib/catalog/server';
+import {
+  alternativePickerOptions,
+  exerciseDetail,
+} from '../../../../../lib/catalog/server';
 import { normalizeExerciseInput } from '../../../../../lib/catalog/schemas';
 import {
   LOCALE_COOKIE,
@@ -12,6 +15,7 @@ import {
 import { getMessages } from '../../../../../lib/i18n';
 import { ExerciseAuthoringForm } from '../../ExerciseAuthoringForm';
 import { exerciseInput } from '../../../../../lib/catalog/exercise-input';
+import { draftFromExercise } from '../../../../../lib/catalog/exercise-editor';
 import styles from '../../exercise-library.module.css';
 
 const UUID =
@@ -44,14 +48,16 @@ export default async function EditExercisePage({
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
   const payload = row.payload as Record<string, unknown>;
-  const instructions = {
-    ...(typeof payload.instructions_ar === 'string'
-      ? { ar: payload.instructions_ar }
-      : {}),
-    ...(typeof payload.instructions_en === 'string'
-      ? { en: payload.instructions_en }
-      : {}),
-  };
+  const options = await alternativePickerOptions({
+    workspaceId: null,
+    selectedIds: draftFromExercise(exercise).alternativeExerciseIds,
+    excludeId: exerciseId,
+  });
+  const alternatives = (
+    options.status === 'ok' ? options.data.options : []
+  ).filter((option) => option.id !== row.exercise_id);
+  const alternativesNextCursor =
+    options.status === 'ok' ? options.data.nextCursor : null;
   return (
     <main className={styles.main} dir={dirFor(locale)} lang={locale}>
       <header className={styles.header}>
@@ -75,7 +81,8 @@ export default async function EditExercisePage({
         id={row.exercise_id}
         expectedVersion={row.version}
         exercise={exercise}
-        instructions={instructions}
+        alternatives={alternatives}
+        alternativesNextCursor={alternativesNextCursor}
         equipmentCodes={
           Array.isArray(payload.equipment_codes)
             ? payload.equipment_codes.filter(
