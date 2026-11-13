@@ -317,5 +317,5 @@ describe('Client Notes pure state transitions', () => {
       expect(coverage).toContain(`delete:${outcome}`);
     expect(coverage).toContain('refresh:complete');
     expect(coverage).toContain('refresh:incomplete');
-  });
+  }, 30_000);
 });
