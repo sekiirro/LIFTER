@@ -131,6 +131,7 @@ As an authorized form author, I maintain versioned templates and conditional que
 3. **Given** Sales or a staff role outside its permitted scope bypasses the UI to create, publish or alter a template, **When** both authorization walls run, **Then** the action is denied.
 4. **Given** a workspace form has been retired and has an existing assignment snapshot, **When** an authorized staff member requests a manual assignment and the recurring evaluator processes that form's policy, **Then** neither path creates a new assignment or occurrence, and the existing assignment snapshot remains byte-for-byte unchanged.
 5. **Given** retirement and a new assignment attempt race for the same form, **When** the operations serialize on the form's retirement lock, **Then** a writer serialized after retirement creates no assignment, while any assignment serialized before retirement retains its original snapshot.
+6. **Given** the retirement RPC acknowledges success without returning a definition, **When** the authorized staff adapter completes retirement, **Then** it returns the established success result with the authoritative retired form snapshot, including matching form ID, retired status, and revision.
 
 ### User Story 4 — See an accurate intake-based delivery deadline (Priority: P1)
 
@@ -523,6 +524,7 @@ Unconditional invariants can be verified with synthetic fixtures now. Threshold/
 - **SC-027 (S35-PO-3 N11):** For every score 0 through 10, the EN N11 feedback equals its exact approved band string; boundary tests cover 0, 2, 3, 4, 5, 6, 7, 8, 9 and 10 and prove each integer maps to exactly one inclusive band. Existing Arabic N11 feedback bytes are unchanged.
 - **SC-028 (S41-PO-12):** Before approval, a stale unconsumed Terms selection is replaced with the current published version, its previous selection is retained in history, and approval continues. Scheduler catch-up enqueues no client-late schedule older than seven days and enqueues no duplicate for a schedule with a legacy owner-stage notice. Signup rejects compact-empty usernames with existing generic feedback and performs no identity/link consumption.
 - **SC-029 (S47-PO-7/S49-R13/S50-PO-2):** A direct correction RPC preserves omitted values and treats `null`/empty as values, not removal. It accepts valid explicit removal of a non-required applicable answer with an immutable revision and audit, refuses required-applicable removal with `invalid` and zero writes, treats absent-answer removal as no-op success, and removes a present inapplicable answer. It returns `invalid` with zero writes for conflicts, unknown IDs, duplicate IDs, non-array/non-string removals, or a removal count above the snapshot question count. It returns `payload_too_large` with zero writes when the complete canonicalized request exceeds 262,144 bytes. The same checks exist in the TypeScript validator and RPC. Same-intent replay, including the removal list in the request hash, returns the original result without duplicate state or audit. No-op correction requests preserve existing behavior and append the normal correction state.
+- **SC-030 (S53-R15, FR-004/030):** Every successful staff-adapter retirement result conforms to `FormsStaffResult` and includes the authoritative retired form with the RPC-acknowledged ID, status, and revision; no successful result omits `form`. The retirement RPC response shape remains unchanged.
 
 ### S47-PO-7 correction required-answer rule
 
@@ -802,3 +804,7 @@ PO option lines quoted byte-exact from `C:/Users/NEW LAP/.lifter/runs/s41-po/s41
 PO decision quoted byte-exact from `C:/Users/NEW LAP/.lifter/runs/s52-po/s52-po-1.verbatim.txt` (SHA-256 `559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd`): `A`.
 
 Architect mapping S52-R1 (mapping, not PO words): retiring a form immediately blocks all new assignments, whether manual or recurring; existing assignment snapshots stay unchanged; future recurrence creates no occurrences from a retired form. This scope adds no user-visible copy. **No open ambiguities remain for the approved retirement behavior.**
+
+## Clarification — S53-R15 (2026-11-13)
+
+Architect mapping (not PO words): the staff adapter's successful retirement result remains backward-compatible with `FormsStaffResult` and carries the authoritative retired form snapshot. The retirement RPC response remains unchanged; the adapter obtains the snapshot through the existing authorized forms read. The existing `invalid` result is retained if that read cannot confirm the retired form. This is a technical contract correction; it adds no user-visible copy or retirement behavior. No open ambiguities remain for this compatibility fix.

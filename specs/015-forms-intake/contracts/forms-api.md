@@ -60,6 +60,10 @@ Correction result/error codes remain the existing allow-listed set: `invalid`, `
 - Denial response shape is indistinguishable for foreign/nonexistent/unauthorized targets except incidental request ID.
 - Success acknowledgement means durable accepted revision only. Network uncertainty remains unsaved/unknown until reconciliation.
 
+## Staff retirement adapter compatibility (S53-R15)
+
+`FormsStaffAdapter.retire` returns the shared `FormsStaffResult` contract: every `status: 'ok'` result includes a `form`. The existing retirement RPC continues to return only its status, form ID, revision, and retired status. After an acknowledged retirement, the adapter reads the authoritative retired form through the existing authorized `get_staff_forms` operation and returns that snapshot with the acknowledged ID/revision. It does not return bare success if the read fails or cannot confirm that form; it returns the existing `invalid` result. This preserves the RPC contract and keeps existing callers that access `result.form.id` type-safe.
+
 ## S17 persistence slice
 
 The F15-owned relations are `public.forms`, `public.form_versions`, and

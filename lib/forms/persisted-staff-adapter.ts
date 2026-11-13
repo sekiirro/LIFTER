@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   FormsStaffAdapter,
   FormsStaffResult,
-  FormsStaffRetireResult,
   FormsStaffSelectionResult,
   FormsStaffSnapshot,
   StaffFormDraft,
@@ -140,24 +139,58 @@ export function createPersistedFormsStaffAdapter(
       });
       return builderResult(data, error);
     },
-    async retire(_role, formId, requestId): Promise<FormsStaffRetireResult> {
+    async retire(_role, formId, requestId): Promise<FormsStaffResult> {
       const { data, error } = await client.rpc('retire_workspace_form', {
         p_workspace_id: workspaceId,
         p_form_id: formId,
         p_request_id: requestIdOrNew(requestId),
       });
       const response = data as BuilderResponse | null;
+      if (response?.status !== 'ok') return builderResult(data, error);
       if (
-        !error &&
-        response?.status === 'ok' &&
-        response.formId === formId &&
-        typeof response.revision === 'number' &&
-        response.formStatus === 'retired' &&
-        !response.definition
+        error ||
+        response.formId !== formId ||
+        typeof response.revision !== 'number' ||
+        response.formStatus !== 'retired'
       ) {
-        return { status: 'ok' };
+        return { status: 'invalid' };
       }
-      return builderResult(data, error);
+      if (response.definition) {
+        const result = builderResult(data, error);
+        if (
+          result.status === 'ok' &&
+          result.form.id === formId &&
+          result.form.status === 'retired' &&
+          result.form.revision === response.revision
+        ) {
+          return result;
+        }
+        return { status: 'invalid' };
+      }
+
+      const { data: staffData, error: staffError } = await client.rpc(
+        'get_staff_forms',
+        { p_workspace_id: workspaceId },
+      );
+      if (staffError) return { status: 'invalid' };
+      const staffResponse = staffData as StaffFormsResponse | null;
+      const configurationError =
+        staffResponse?.status === 'configuration_error' &&
+        staffResponse.errorCode === 'onboarding_default_configuration';
+      if (staffResponse?.status !== 'ok' && !configurationError) {
+        return { status: 'invalid' };
+      }
+      const form = staffResponse.forms?.find(
+        (candidate) => candidate.id === formId,
+      );
+      if (
+        !form ||
+        form.status !== 'retired' ||
+        form.revision !== response.revision
+      ) {
+        return { status: 'invalid' };
+      }
+      return { status: 'ok', form };
     },
     async copy(_role, formId, requestId): Promise<FormsStaffResult> {
       const { data, error } = await client.rpc('copy_workspace_form', {
