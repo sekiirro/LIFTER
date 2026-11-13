@@ -1,0 +1,122 @@
+{
+  "dateUtc": "2026-11-10",
+  "mainSha": "c88816d2bb815ef813f333677ab3cef36a650128",
+  "stack": "A",
+  "status": "COMPLETE_READ_ONLY_INVENTORY",
+  "entryCheck": {
+    "status": "PASS",
+    "spec": "specs/016-exercise-food-catalogs/spec.md: numbered FRs, measurable SCs, Given/When/Then scenarios",
+    "clarifications": "specs/016-exercise-food-catalogs/spec.md and decision-register.md: explicit no-open-ambiguities statement for current scope",
+    "planAndTask": "specs/016-exercise-food-catalogs/plan.md migration step 1; tasks.md T068 [FR-031, FR-003]",
+    "analyze": "specs/016-exercise-food-catalogs/checklists/analyze.md: dated 2026-11-09 after latest spec changes; 0 open CRITICAL and 0 open HIGH"
+  },
+  "stackReplay": {
+    "status": "PASS",
+    "source": "origin/main",
+    "reset": "Stack A local db reset applied main migrations",
+    "seedConfig": "No seed file matched supabase/seed.sql; replay contains zero workspaces and zero exercise records",
+    "provenance": "S45-R5 assigns Stack A replayed from origin/main as the deployed-equivalent mock inventory and states no production or real clients exist"
+  },
+  "inventory": {
+    "generatedAtUtc": "2026-11-10T18:40:29.169Z",
+    "stack": "A",
+    "legacy": {
+      "workspaceCount": 0,
+      "variationRowCount": 0,
+      "variationVersionRowCount": 0,
+      "lifecycle": {
+        "active": 0,
+        "removed": 0,
+        "merged": 0
+      },
+      "workspacesWithoutExplicitRow": 0,
+      "variationRowsByWorkspace": {},
+      "currentPayloadTotals": {
+        "notePresent": 0,
+        "videoUrlPresent": 0,
+        "videoUrlByHost": {
+          "youtube": 0,
+          "googleDrive": 0,
+          "docsGoogle": 0,
+          "other": 0
+        }
+      },
+      "historyPayloadTotals": {
+        "notePresent": 0,
+        "videoUrlPresent": 0,
+        "videoUrlByHost": {
+          "youtube": 0,
+          "googleDrive": 0,
+          "docsGoogle": 0,
+          "other": 0
+        }
+      },
+      "alternativeLists": {
+        "versionsWithLists": 0,
+        "duplicateTargets": 0,
+        "moreThanThree": 0,
+        "missingOrInactiveTargets": 0
+      }
+    },
+    "canonical": {
+      "exerciseIdentities": {
+        "total": 0,
+        "lifecycle": {
+          "active": 0,
+          "removed": 0,
+          "merged": 0
+        }
+      },
+      "exerciseVersions": {
+        "versionRows": 0,
+        "rowsWithInstructions": 0,
+        "rowsWithNotes": 0,
+        "rowsWithTaxonomy": 0,
+        "rowsMissingRequiredCanonicalFields": 0,
+        "defaultsOutsideBounds": {
+          "restTimeOutOfBounds": 0,
+          "rirOutOfBounds": 0,
+          "repsOutOfBounds": 0
+        },
+        "alternativeLists": {
+          "versionsWithLists": 0,
+          "duplicateTargets": 0,
+          "moreThanThree": 0,
+          "missingOrInactiveTargets": 0
+        }
+      },
+      "workspaceExerciseIdentities": {
+        "total": 0,
+        "lifecycle": {
+          "active": 0,
+          "removed": 0,
+          "merged": 0
+        }
+      },
+      "workspaceExerciseVersions": {
+        "versionRows": 0,
+        "rowsWithInstructions": 0,
+        "rowsWithNotes": 0,
+        "rowsWithTaxonomy": 0,
+        "rowsMissingRequiredCanonicalFields": 0,
+        "defaultsOutsideBounds": {
+          "restTimeOutOfBounds": 0,
+          "rirOutOfBounds": 0,
+          "repsOutOfBounds": 0
+        },
+        "alternativeLists": {
+          "versionsWithLists": 0,
+          "duplicateTargets": 0,
+          "moreThanThree": 0,
+          "missingOrInactiveTargets": 0
+        }
+      }
+    },
+    "mainSha": "c88816d2bb815ef813f333677ab3cef36a650128"
+  },
+  "deletionGate": {
+    "disposableMockData": "ESTABLISHED_EMPTY_LOCAL_REPLAY",
+    "basis": "S45-R5 authority plus successful clean local replay; no configured seed file matched and the inventory found zero workspaces, legacy rows, canonical identities, private identities, or versions",
+    "disposition": "No pre-F16 exercise records exist to delete on this replay; this is inventory evidence, not authorization to run a cutover"
+  }
+}

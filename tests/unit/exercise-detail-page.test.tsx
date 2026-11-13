@@ -9,6 +9,9 @@ const m = vi.hoisted(() => ({
   actor: vi.fn(),
   detail: vi.fn(),
   workspaces: vi.fn(),
+  alternatives: vi.fn(),
+  pickerOptions: vi.fn(),
+  overrideVersion: vi.fn(),
   cookies: vi.fn(),
   notFound: vi.fn(),
 }));
@@ -17,6 +20,20 @@ vi.mock('../../lib/auth/actor', () => ({ requireActor: m.actor }));
 vi.mock('../../lib/catalog/server', () => ({
   exerciseDetail: m.detail,
   authoringWorkspaces: m.workspaces,
+  alternativeOptions: m.alternatives,
+  alternativePickerOptions: m.pickerOptions,
+  exerciseOverrideVersion: m.overrideVersion,
+}));
+vi.mock('../../components/catalog/ExerciseOverrideEditor', () => ({
+  ExerciseOverrideEditor: (props: {
+    workspaceId: string;
+    expectedVersion: number;
+  }) =>
+    createElement('div', {
+      'data-testid': 'override-editor',
+      'data-workspace': props.workspaceId,
+      'data-version': props.expectedVersion,
+    }),
 }));
 vi.mock('../../app/(app)/exercise-library/ExerciseAuthoringForm', () => ({
   ExerciseAuthoringForm: (props: { equipmentCodes?: string[] }) =>
@@ -42,12 +59,18 @@ const row = {
     primary_muscle_code: 'chest',
     secondary_muscle_codes: ['triceps'],
     equipment_codes: ['barbell'],
-    defaults: {
-      warmup_sets: 1,
-      working_sets: 3,
-      reps: { min: 8, max: 12 },
-      rest_seconds: 90,
-      rir: 2,
+    effective_fields: {
+      name: {
+        value: { name_ar: 'تمرين التفاصيل', name_en: 'Detail exercise' },
+        source: 'canonical',
+      },
+      description: { value: null, source: 'none' },
+      notes: { value: null, source: 'none' },
+      video: { value: null, source: 'none' },
+      alternatives: { value: [], source: 'none' },
+      default_rest_time: { value: 90, source: 'canonical' },
+      default_rir: { value: 2, source: 'canonical' },
+      default_reps: { value: { min: 8, max: 12 }, source: 'canonical' },
     },
   },
   created_at: '2026-11-02T12:00:00Z',
@@ -59,6 +82,7 @@ const row = {
   survivor_id: id,
   lifecycle_state: 'active',
   lifecycle_revision: 0,
+  override_version: 5,
   variation: {
     workspace_id: workspaceId,
     video_url: 'https://youtu.be/abcdefghijk',
@@ -78,12 +102,94 @@ beforeEach(() => {
     data: [{ id: workspaceId, name: 'North Studio' }],
   });
   m.detail.mockResolvedValue({ status: 'ok', data: [row] });
+  m.alternatives.mockResolvedValue({ status: 'ok', data: [] });
+  m.pickerOptions.mockResolvedValue({
+    status: 'ok',
+    data: { options: [], nextCursor: null },
+  });
+  m.overrideVersion.mockResolvedValue({ status: 'ok', data: { version: 0 } });
   m.notFound.mockImplementation(() => {
     throw new Error('404');
   });
 });
 
 describe('production exercise detail route', () => {
+  it.each([
+    {
+      label: 'global canonical values',
+      query: { workspace: '' },
+      payload: {
+        ...row.payload,
+        description: 'Global saved description',
+        notes: 'Global saved notes',
+        effective_fields: {
+          ...row.payload.effective_fields,
+          description: {
+            value: 'Global saved description',
+            source: 'canonical',
+          },
+          notes: { value: 'Global saved notes', source: 'canonical' },
+        },
+      },
+      expected: ['Global saved description', 'Global saved notes'],
+    },
+    {
+      label: 'workspace-shared effective override values',
+      query: { workspace: workspaceId },
+      payload: {
+        ...row.payload,
+        description: 'Canonical description',
+        notes: 'Canonical notes',
+        effective_fields: {
+          ...row.payload.effective_fields,
+          description: {
+            value: 'Shared saved description',
+            source: 'override',
+          },
+          notes: { value: 'Shared saved notes', source: 'override' },
+        },
+      },
+      expected: ['Shared saved description', 'Shared saved notes'],
+    },
+    {
+      label: 'workspace-private stored values',
+      query: { scope: 'workspace', workspace: workspaceId },
+      payload: {
+        ...row.payload,
+        description: 'Private saved description',
+        notes: 'Private saved notes',
+        effective_fields: undefined,
+      },
+      expected: ['Private saved description', 'Private saved notes'],
+    },
+  ])(
+    'renders $label with the approved field labels',
+    async ({ query, payload, expected }) => {
+      m.detail.mockResolvedValue({ status: 'ok', data: [{ ...row, payload }] });
+      const html = renderToStaticMarkup(
+        await Page({
+          params: Promise.resolve({ exerciseId: id }),
+          searchParams: Promise.resolve(query),
+        }),
+      );
+      expect(html).toContain(en['catalog.editorDescription']);
+      expect(html).toContain(en['catalog.editorNotes']);
+      for (const value of expected) expect(html).toContain(value);
+    },
+  );
+
+  it('uses the existing empty convention for absent Description and Notes', async () => {
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: '' }),
+      }),
+    );
+    expect(html).toContain(en['catalog.editorDescription']);
+    expect(html).toContain(en['catalog.editorNotes']);
+    expect(html).toContain(en['catalog.editorNone']);
+  });
+
   it.each([
     'not-a-uuid',
     '55555555-5555-4555-8555-555555555555/extra',
@@ -114,6 +220,154 @@ describe('production exercise detail route', () => {
       scope: 'global',
       workspaceId: null,
     });
+  });
+
+  it('uses the override version returned with the authorized detail snapshot', async () => {
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+    expect(html).toContain('data-testid="override-editor"');
+    expect(html).toContain('data-version="5"');
+    expect(m.overrideVersion).not.toHaveBeenCalled();
+  });
+
+  it('resolves private Alternative names in the selected workspace context', async () => {
+    const privateAlternativeId = '77777777-7777-4777-8777-777777777777';
+    m.detail.mockResolvedValue({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          payload: {
+            ...row.payload,
+            effective_fields: {
+              ...row.payload.effective_fields,
+              alternatives: {
+                value: [{ workspace_exercise_id: privateAlternativeId }],
+                source: 'override',
+              },
+            },
+          },
+        },
+      ],
+    });
+    m.pickerOptions.mockImplementation(
+      async (input: { workspaceId: string | null }) => ({
+        status: 'ok',
+        data: {
+          options:
+            input.workspaceId === workspaceId
+              ? [
+                  {
+                    id: privateAlternativeId,
+                    kind: 'private',
+                    names: { en: 'Workspace private alternative' },
+                  },
+                ]
+              : [],
+          nextCursor: null,
+        },
+      }),
+    );
+
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+
+    expect(html).toContain('Workspace private alternative');
+    expect(m.pickerOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId, excludeId: id }),
+    );
+  });
+
+  it('uses the resolved canonical video when no workspace variation row exists', async () => {
+    m.detail.mockResolvedValue({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          variation: null,
+          payload: {
+            ...row.payload,
+            video_url: 'https://youtu.be/canonical01',
+            effective_fields: {
+              ...row.payload.effective_fields,
+              video: {
+                value: 'https://youtu.be/canonical01',
+                source: 'canonical',
+              },
+            },
+          },
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+    expect(html).toContain('href="https://youtu.be/canonical01"');
+  });
+
+  it('T092 FR-024 shows the checked private video from a workspace-private detail payload', async () => {
+    m.detail.mockResolvedValue({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          origin_workspace_id: null,
+          variation: null,
+          payload: {
+            ...row.payload,
+            video_url: 'https://youtu.be/private01',
+            effective_fields: undefined,
+          },
+        },
+      ],
+    });
+
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+
+    expect(html).toContain('href="https://youtu.be/private01"');
+  });
+
+  it('does not render an unresolved raw Video URL', async () => {
+    m.detail.mockResolvedValue({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          variation: null,
+          payload: {
+            ...row.payload,
+            video_url: 'https://disallowed.example/private',
+            effective_fields: {
+              ...row.payload.effective_fields,
+              video: { value: null, source: 'none' },
+            },
+          },
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+    expect(html).not.toContain('href="https://disallowed.example/private"');
   });
 
   it('shows the empty workspace choice only for platform-owner global detail', async () => {

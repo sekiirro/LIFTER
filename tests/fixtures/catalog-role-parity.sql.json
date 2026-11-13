@@ -73,6 +73,33 @@
       "Unknown/unauthenticated": "Deny"
     },
     {
+      "operation": "Workspace override create/update of Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR and Default Reps",
+      "PO": "Allow for an explicit workspace",
+      "WO": "Allow in own current workspace",
+      "Trainer": "Allow in own current workspace",
+      "Sales": "Deny",
+      "Client": "Deny",
+      "Unknown/unauthenticated": "Deny"
+    },
+    {
+      "operation": "Read workspace override, merged library and effective resolution",
+      "PO": "Allow for an explicit workspace",
+      "WO": "Allow in own current workspace",
+      "Trainer": "Allow in own current workspace",
+      "Sales": "Deny",
+      "Client": "Deny",
+      "Unknown/unauthenticated": "Deny"
+    },
+    {
+      "operation": "Create/version workspace-private exercise with its own video",
+      "PO": "Allow for an explicit workspace",
+      "WO": "Allow in own current workspace",
+      "Trainer": "Allow in own current workspace",
+      "Sales": "Deny",
+      "Client": "Deny",
+      "Unknown/unauthenticated": "Deny"
+    },
+    {
       "operation": "Read/write workspace-only exercise",
       "PO": "Allow with explicit workspace scope",
       "WO": "Allow in own current workspace",

@@ -86,7 +86,7 @@ Tasks remain unchecked until tests and exact-head GitHub gate evidence are recor
 - [ ] T026 [FR-029, SC-017] Write table-driven docs-only path classification tests first (allow-list, disallowed paths, renames, empty/error input); execute RED, implement fail-closed classifier, then wire pull_request conditionals while dispatch remains full and aggregator rejects skipped integration.
 - [ ] T027 [FR-028] Add CodeRabbit path_filters for generated evidence only and assert protected paths remain included.
 - [ ] T028 [FR-027, FR-029, SC-018] Verify the repository `format:check` scope plus the changed-file formatter (`scripts/format-check-changed.mjs`), preserve required job names, run local workflow/unit/static checks and prove this workflow-changing PR runs the full CI jobs.
-- [ ] T029 [FR-030, SC-019] Amend Constitution 1.10.0 to 1.11.0 with docs-only three-dispatch green form and sync impact report; no other principle changes.
+- [ ] T029 [FR-030, SC-019] Amend Constitution 1.10.0 to 1.11.0 with docs-only three-dispatch green form and sync impact report; no other principle changes. (Historical three-dispatch count superseded by constitution 1.15.0, S54-PO-4.)
 - [ ] T030 [FR-030] Write `s41-luna-ci-opt3/gate-check-d-proposal.md` and matching patch outside the repository; do not edit gate-check.mjs.
 - [ ] T031 [FR-027, FR-028, FR-029, FR-030] Complete pre-request checklist, CodeRabbit review (max 2 requests; incremental first request per S41-R13), fix all valid findings in one push, then exact-head approval and sequential executed PR reruns.
 - [ ] T032 [FR-030] Run gate-check on final exact head; record expected gate e failure. Do not merge.

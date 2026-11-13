@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "source": "global",
+  "exerciseId": "ex-1",
+  "canonicalVersion": 3,
+  "overrideVersion": 5,
+  "name": {
+    "en": "Planner edited name",
+    "ar": "اسم المدرب"
+  },
+  "description": "Planner description",
+  "notes": "Trainer note",
+  "alternatives": [
+    {
+      "globalExerciseId": "ex-2"
+    }
+  ],
+  "defaults": {
+    "restSeconds": 75,
+    "rir": 1,
+    "reps": {
+      "kind": "fixed",
+      "value": 10
+    }
+  }
+}

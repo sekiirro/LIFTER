@@ -51,13 +51,16 @@ export function ExerciseLibraryResults({
             : '/exercise-library/new'
         }
         emptyActionLabel={m['catalog.addExercise']}
-        itemHref={(item) =>
-          `/exercise-library/${item.id}${
-            workspaceId
-              ? `?scope=workspace&workspace=${encodeURIComponent(workspaceId)}`
-              : ''
-          }`
-        }
+        itemHref={(item) => {
+          if (!workspaceId) return `/exercise-library/${item.id}`;
+          const scope =
+            item.kind === 'exercise' && item.scope === 'workspace'
+              ? '&scope=workspace'
+              : '';
+          return `/exercise-library/${item.id}?workspace=${encodeURIComponent(
+            workspaceId,
+          )}${scope}`;
+        }}
         onSearch={(searchState) => search(searchState)}
       />
       {nextHref ? (

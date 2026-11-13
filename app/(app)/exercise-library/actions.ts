@@ -5,18 +5,28 @@ import { revalidatePath } from 'next/cache';
 import { requireActor } from '../../../lib/auth/actor';
 import {
   createExercise,
+  alternativePickerOptions,
   removeWorkspaceExercise,
   transitionExercise,
   versionExercise,
+  writeExerciseOverride,
   writeWorkspaceExercise,
   type CatalogMutation,
   type CatalogResult,
 } from '../../../lib/catalog/server';
 import {
+  alternativeRef,
   buildExerciseInput,
   type ExerciseEditorDraft,
 } from '../../../lib/catalog/exercise-editor';
-import { EQUIPMENT_CODES } from '../../../lib/catalog/schemas';
+import {
+  OVERRIDE_FIELDS,
+  type OverrideField,
+} from '../../../lib/catalog/exercise-override';
+import {
+  EQUIPMENT_CODES,
+  MAX_CATALOG_NOTE_LENGTH,
+} from '../../../lib/catalog/schemas';
 import { isUuidV4 } from '../../../lib/catalog/uuid';
 
 export type SaveExerciseInput = {
@@ -26,7 +36,6 @@ export type SaveExerciseInput = {
   operationKey: string;
   id?: string;
   expectedVersion?: number;
-  instructions?: Partial<Record<'ar' | 'en', string>>;
   equipmentCodes?: string[];
 };
 
@@ -36,6 +45,14 @@ export type RemoveExerciseInput = {
   exerciseId: string;
   expectedRevision: number;
   operationKey: string;
+};
+
+export type SearchAlternativeOptionsInput = {
+  workspaceId: string | null;
+  query: string;
+  cursor?: string | null;
+  selectedIds: string[];
+  excludeId?: string | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -52,8 +69,9 @@ function validSavePayload(value: unknown): value is SaveExerciseInput {
   const stringDraftFields = [
     'primaryMuscle',
     'equipment',
-    'warmupSets',
-    'workingSets',
+    'description',
+    'notes',
+    'videoUrl',
     'repsValue',
     'repsMin',
     'repsMax',
@@ -80,12 +98,7 @@ function validSavePayload(value: unknown): value is SaveExerciseInput {
         Number(value.expectedVersion) >= 0)) &&
     (value.equipmentCodes === undefined ||
       (Array.isArray(value.equipmentCodes) &&
-        value.equipmentCodes.every((code) => typeof code === 'string'))) &&
-    (value.instructions === undefined ||
-      (isRecord(value.instructions) &&
-        Object.values(value.instructions).every(
-          (text) => typeof text === 'string',
-        )))
+        value.equipmentCodes.every((code) => typeof code === 'string')))
   );
 }
 
@@ -142,17 +155,71 @@ export async function removeExerciseAction(
   return result;
 }
 
+export async function searchAlternativeOptionsAction(
+  input: SearchAlternativeOptionsInput,
+): Promise<CatalogResult> {
+  if (
+    !isRecord(input) ||
+    (input.workspaceId !== null && !isUuidV4(input.workspaceId)) ||
+    (input.excludeId !== undefined &&
+      input.excludeId !== null &&
+      !isUuidV4(input.excludeId)) ||
+    typeof input.query !== 'string' ||
+    (input.cursor !== undefined &&
+      input.cursor !== null &&
+      typeof input.cursor !== 'string') ||
+    !Array.isArray(input.selectedIds) ||
+    input.selectedIds.length > 3 ||
+    !input.selectedIds.every(
+      (value) =>
+        typeof value === 'string' &&
+        /^(g|w):[0-9a-f-]+$/i.test(value) &&
+        isUuidV4(value.slice(2)),
+    )
+  )
+    return { status: 'invalid' };
+  return alternativePickerOptions(input);
+}
+
+/**
+ * Builds the approved eight-field payload (FR-003) for the create/version RPCs.
+ * The database validator is authoritative; this conversion only shapes the
+ * request and never sends the retired `instructions_*` or `defaults` keys.
+ */
+function alternativesFor(
+  values: readonly string[],
+  scope: 'global' | 'workspace',
+): unknown[] {
+  const alternatives: unknown[] = [];
+  for (const value of values) {
+    const ref = alternativeRef(value);
+    if (!ref) continue;
+    if (scope === 'global') {
+      if (ref.kind === 'global') alternatives.push(ref.id);
+    } else {
+      alternatives.push(
+        ref.kind === 'private'
+          ? { workspace_exercise_id: ref.id }
+          : { global_exercise_id: ref.id },
+      );
+    }
+  }
+  return alternatives;
+}
+
 function requestFor(
   draft: ExerciseEditorDraft,
-  instructions?: Partial<Record<'ar' | 'en', string>>,
+  scope: 'global' | 'workspace',
+  currentExerciseId?: string,
   equipmentCodes?: string[],
 ): Record<string, unknown> | null {
-  const exercise = buildExerciseInput(draft);
+  const exercise = buildExerciseInput(draft, currentExerciseId);
   if (!exercise) return null;
   const defaults = exercise.defaults;
+  const reps = defaults?.reps;
   return {
-    name_ar: exercise.names.ar,
     name_en: exercise.names.en,
+    ...(exercise.names.ar ? { name_ar: exercise.names.ar } : {}),
     primary_muscle_code: exercise.primaryMuscle,
     ...(exercise.secondaryMuscles?.length
       ? { secondary_muscle_codes: exercise.secondaryMuscles }
@@ -163,32 +230,25 @@ function requestFor(
             EQUIPMENT_CODES.includes(code as (typeof EQUIPMENT_CODES)[number]),
           )
         : [exercise.equipment],
-    ...(instructions?.ar === undefined
-      ? {}
-      : { instructions_ar: instructions.ar }),
-    ...(instructions?.en === undefined
-      ? {}
-      : { instructions_en: instructions.en }),
-    defaults: {
-      ...(defaults?.warmupSets === undefined
-        ? {}
-        : { warmup_sets: defaults.warmupSets }),
-      ...(defaults?.workingSets === undefined
-        ? {}
-        : { working_sets: defaults.workingSets }),
-      ...(defaults?.reps?.kind === 'fixed'
-        ? { reps: { value: defaults.reps.value } }
-        : defaults?.reps?.kind === 'range'
-          ? { reps: { min: defaults.reps.min, max: defaults.reps.max } }
-          : {}),
-      ...(defaults?.restSeconds === undefined
-        ? {}
-        : { rest_seconds: defaults.restSeconds }),
-      ...(defaults?.rir === undefined ? {} : { rir: defaults.rir }),
-      ...(defaults?.alternativeExerciseIds?.length
-        ? { alternative_exercise_ids: defaults.alternativeExerciseIds }
+    ...(exercise.description ? { description: exercise.description } : {}),
+    ...(exercise.notes ? { notes: exercise.notes } : {}),
+    ...(exercise.videoUrl ? { video_url: exercise.videoUrl } : {}),
+    ...(reps?.kind === 'fixed'
+      ? { default_reps: reps.value }
+      : reps?.kind === 'range'
+        ? { default_reps: { min: reps.min, max: reps.max } }
         : {}),
-    },
+    ...(defaults?.restSeconds === undefined
+      ? {}
+      : { default_rest_time: defaults.restSeconds }),
+    ...(defaults?.rir === undefined || defaults.rir === null
+      ? {}
+      : { default_rir: defaults.rir }),
+    ...(defaults?.alternativeExerciseIds?.length
+      ? {
+          alternatives: alternativesFor(defaults.alternativeExerciseIds, scope),
+        }
+      : {}),
   };
 }
 
@@ -202,6 +262,8 @@ export async function saveExerciseAction(
     actor.role === 'workspace_owner' || actor.role === 'trainer';
   if (input.scope === 'global') {
     if (!isPlatformOwner) return { status: 'not_permitted' };
+    if (input.draft.alternativeExerciseIds.some((id) => id.startsWith('w:')))
+      return { status: 'invalid' };
     if (
       input.equipmentCodes?.some(
         (code) =>
@@ -211,7 +273,8 @@ export async function saveExerciseAction(
       return { status: 'invalid' };
     const request = requestFor(
       input.draft,
-      input.instructions,
+      'global',
+      input.id,
       input.id ? input.equipmentCodes : undefined,
     );
     if (!request) return { status: 'invalid' };
@@ -246,7 +309,12 @@ export async function saveExerciseAction(
     )
   )
     return { status: 'invalid' };
-  const request = requestFor(input.draft, input.instructions);
+  const request = requestFor(
+    input.draft,
+    'workspace',
+    input.id,
+    input.id ? input.equipmentCodes : undefined,
+  );
   if (!request) return { status: 'invalid' };
   const result = await writeWorkspaceExercise({
     operationKey: input.operationKey,
@@ -260,4 +328,149 @@ export async function saveExerciseAction(
     if (input.id) revalidatePath(`/exercise-library/${input.id}`);
   }
   return result;
+}
+
+const RESET_REQUESTS: Record<OverrideField, Record<string, null>> = {
+  name: { name_en: null },
+  description: { description: null },
+  notes: { notes: null },
+  video: { video_url: null },
+  alternatives: { alternatives: null },
+  default_rest_time: { default_rest_time: null },
+  default_rir: { default_rir: null },
+  default_reps: { default_reps: null },
+};
+
+export type SaveExerciseOverrideInput = {
+  workspaceId: string;
+  exerciseId: string;
+  expectedVersion: number;
+  operationKey: string;
+  request: Record<string, unknown>;
+};
+
+export type ResetExerciseOverrideInput = {
+  workspaceId: string;
+  exerciseId: string;
+  expectedVersion: number;
+  operationKey: string;
+  field: OverrideField;
+};
+
+function validOverrideMutation(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isUuidV4(value.workspaceId) &&
+    isUuidV4(value.exerciseId) &&
+    Number.isInteger(value.expectedVersion) &&
+    Number(value.expectedVersion) >= 0 &&
+    isUuidV4(value.operationKey)
+  );
+}
+
+function validOverrideRequest(
+  value: unknown,
+): value is Record<string, unknown> {
+  if (!isRecord(value) || !Object.keys(value).length) return false;
+  if (
+    Object.keys(value).some(
+      (key) =>
+        ![
+          'name_en',
+          'name_ar',
+          'description',
+          'notes',
+          'video_url',
+          'alternatives',
+          'default_rest_time',
+          'default_rir',
+          'default_reps',
+        ].includes(key),
+    )
+  )
+    return false;
+  for (const field of ['notes', 'video_url'] as const) {
+    const text = value[field];
+    if (
+      typeof text === 'string' &&
+      Array.from(text.trim()).length > MAX_CATALOG_NOTE_LENGTH
+    )
+      return false;
+  }
+  return Object.values(value).every(
+    (item) =>
+      item === null ||
+      typeof item === 'string' ||
+      (typeof item === 'number' && Number.isFinite(item)) ||
+      (Array.isArray(item) &&
+        item.every(
+          (target) =>
+            isRecord(target) &&
+            (typeof target.global_exercise_id === 'string' ||
+              typeof target.workspace_exercise_id === 'string'),
+        )) ||
+      (isRecord(item) &&
+        Object.keys(item).every((key) => key === 'min' || key === 'max') &&
+        Object.keys(item).length > 0 &&
+        typeof item.min === 'number' &&
+        Number.isInteger(item.min) &&
+        typeof item.max === 'number' &&
+        Number.isInteger(item.max)),
+  );
+}
+
+async function overrideAuthorized(
+  workspaceId: string,
+): Promise<{ ok: true } | { ok: false; result: CatalogResult }> {
+  const actor = await requireActor();
+  const isPlatformOwner = actor.role === 'platform_owner';
+  const workspaceRole =
+    actor.role === 'workspace_owner' || actor.role === 'trainer';
+  if (
+    (!isPlatformOwner && !workspaceRole) ||
+    !authorize(actor, 'coaching_work', workspaceId)
+  )
+    return { ok: false, result: { status: 'not_permitted' } };
+  return { ok: true };
+}
+
+async function writeOverride(
+  input: {
+    workspaceId: string;
+    exerciseId: string;
+    expectedVersion: number;
+    operationKey: string;
+  },
+  request: Record<string, unknown>,
+): Promise<CatalogResult> {
+  const authorized = await overrideAuthorized(input.workspaceId);
+  if (!authorized.ok) return authorized.result;
+  const result = await writeExerciseOverride({
+    workspaceId: input.workspaceId,
+    id: input.exerciseId,
+    expectedVersion: input.expectedVersion,
+    operationKey: input.operationKey,
+    request,
+  });
+  if (result.status === 'ok') {
+    revalidatePath('/exercise-library');
+    revalidatePath(`/exercise-library/${input.exerciseId}`);
+  }
+  return result;
+}
+
+export async function saveExerciseOverrideAction(
+  input: SaveExerciseOverrideInput,
+): Promise<CatalogResult> {
+  if (!validOverrideMutation(input) || !validOverrideRequest(input.request))
+    return { status: 'invalid' };
+  return writeOverride(input, input.request);
+}
+
+export async function resetExerciseOverrideFieldAction(
+  input: ResetExerciseOverrideInput,
+): Promise<CatalogResult> {
+  if (!validOverrideMutation(input) || !OVERRIDE_FIELDS.includes(input.field))
+    return { status: 'invalid' };
+  return writeOverride(input, RESET_REQUESTS[input.field]);
 }

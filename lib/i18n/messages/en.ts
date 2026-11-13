@@ -569,6 +569,18 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.editorErrorChoice': 'Choose a value from the list.',
   'catalog.editorErrorTooManyAlternatives':
     'Choose no more than three alternatives.',
+  // S48 PO copy (S48-PO-1/2/3/5/6): approved and locked by catalog-approved-copy.test.ts.
+  'catalog.editorDescription': 'Description',
+  'catalog.editorNotes': 'Notes',
+  'catalog.editorVideo': 'Video URL',
+  'catalog.editorErrorDescriptionTooLong': 'Use 2,000 characters or fewer.',
+  'catalog.editorErrorSelfAlternative':
+    "An exercise can't be its own alternative.",
+  'catalog.editorErrorDuplicateAlternative':
+    'This alternative is already added.',
+  'catalog.overrideInherited': 'Inherited from Global',
+  'catalog.overrideCustomized': 'Customized',
+  'catalog.overrideReset': 'Reset to Global',
   // S26 copy batch: approved showcase labels are locked by catalog-approved-copy.test.ts.
   'catalog.showcaseView': 'View',
   'catalog.showcaseViewList': 'List',

@@ -22,6 +22,8 @@ export type CatalogFilterKey = 'muscleGroup' | 'equipment' | 'basis';
 export type CatalogExerciseListItem = {
   id: string;
   kind: 'exercise';
+  scope?: 'global' | 'workspace';
+  cursor?: string;
   names: Record<CatalogLocale, string>;
   primaryMuscle: MuscleGroupCode;
   equipment: EquipmentCode;
@@ -107,7 +109,10 @@ export function catalogItemName(
   locale: CatalogLocale,
 ): string {
   const fallback: CatalogLocale = locale === 'ar' ? 'en' : 'ar';
-  return item.names[locale] ?? item.names[fallback] ?? item.id;
+  const preferred = item.names[locale]?.trim();
+  if (preferred) return preferred;
+  const alternate = item.names[fallback]?.trim();
+  return alternate || item.id;
 }
 
 export function compactCatalogFilters(

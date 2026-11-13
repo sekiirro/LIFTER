@@ -1,8 +1,24 @@
 [
-  { "key": "catalog.all", "ar": "الكل", "en": "All" },
-  { "key": "catalog.basis", "ar": "الأساس", "en": "Basis" },
-  { "key": "catalog.carbs", "ar": "الكربوهيدرات", "en": "Carbohydrates" },
-  { "key": "catalog.clear", "ar": "مسح", "en": "Clear" },
+  {
+    "key": "catalog.all",
+    "ar": "الكل",
+    "en": "All"
+  },
+  {
+    "key": "catalog.basis",
+    "ar": "الأساس",
+    "en": "Basis"
+  },
+  {
+    "key": "catalog.carbs",
+    "ar": "الكربوهيدرات",
+    "en": "Carbohydrates"
+  },
+  {
+    "key": "catalog.clear",
+    "ar": "مسح",
+    "en": "Clear"
+  },
   {
     "key": "catalog.duplicateCancel",
     "ar": "العودة إلى التعديل",
@@ -88,7 +104,11 @@
     "ar": "إعدادات الخطة الافتراضية",
     "en": "Plan defaults"
   },
-  { "key": "catalog.editorEquipment", "ar": "المعدات", "en": "Equipment" },
+  {
+    "key": "catalog.editorEquipment",
+    "ar": "المعدات",
+    "en": "Equipment"
+  },
   {
     "key": "catalog.editorErrorChoice",
     "ar": "اختر قيمة من القائمة.",
@@ -144,14 +164,26 @@
     "ar": "حالة الدورة",
     "en": "Lifecycle state"
   },
-  { "key": "catalog.editorLifecycleActive", "ar": "نشط", "en": "Active" },
-  { "key": "catalog.editorLifecycleRemoved", "ar": "مُزال", "en": "Removed" },
+  {
+    "key": "catalog.editorLifecycleActive",
+    "ar": "نشط",
+    "en": "Active"
+  },
+  {
+    "key": "catalog.editorLifecycleRemoved",
+    "ar": "مُزال",
+    "en": "Removed"
+  },
   {
     "key": "catalog.editorLifecycleSuperseded",
     "ar": "مستبدل",
     "en": "Superseded"
   },
-  { "key": "catalog.editorMerge", "ar": "دمج تكرار", "en": "Merge duplicate" },
+  {
+    "key": "catalog.editorMerge",
+    "ar": "دمج تكرار",
+    "en": "Merge duplicate"
+  },
   {
     "key": "catalog.editorNameAr",
     "ar": "الاسم بالعربية",
@@ -162,13 +194,21 @@
     "ar": "الاسم بالإنجليزية",
     "en": "English name"
   },
-  { "key": "catalog.editorNone", "ar": "غير محدد", "en": "Not set" },
+  {
+    "key": "catalog.editorNone",
+    "ar": "غير محدد",
+    "en": "Not set"
+  },
   {
     "key": "catalog.editorPrimaryMuscle",
     "ar": "العضلة الأساسية",
     "en": "Primary muscle"
   },
-  { "key": "catalog.editorReadOnly", "ar": "عرض فقط", "en": "View only" },
+  {
+    "key": "catalog.editorReadOnly",
+    "ar": "عرض فقط",
+    "en": "View only"
+  },
   {
     "key": "catalog.editorReadOnlyNotice",
     "ar": "التمارين العالمية يديرها مالك المنصة. لا يمكن لهذا الدور حفظها أو حوكمتها.",
@@ -179,8 +219,16 @@
     "ar": "إزالة من المكتبة",
     "en": "Remove from catalog"
   },
-  { "key": "catalog.editorReps", "ar": "التكرارات", "en": "Reps" },
-  { "key": "catalog.editorRepsFixed", "ar": "ثابت", "en": "Fixed" },
+  {
+    "key": "catalog.editorReps",
+    "ar": "التكرارات",
+    "en": "Reps"
+  },
+  {
+    "key": "catalog.editorRepsFixed",
+    "ar": "ثابت",
+    "en": "Fixed"
+  },
   {
     "key": "catalog.editorRepsFixedValue",
     "ar": "عدد التكرارات الثابت",
@@ -196,9 +244,21 @@
     "ar": "الحد الأدنى للتكرارات",
     "en": "Minimum reps"
   },
-  { "key": "catalog.editorRepsRange", "ar": "نطاق", "en": "Range" },
-  { "key": "catalog.editorRest", "ar": "الراحة", "en": "Rest" },
-  { "key": "catalog.editorRestore", "ar": "استعادة", "en": "Restore" },
+  {
+    "key": "catalog.editorRepsRange",
+    "ar": "نطاق",
+    "en": "Range"
+  },
+  {
+    "key": "catalog.editorRest",
+    "ar": "الراحة",
+    "en": "Rest"
+  },
+  {
+    "key": "catalog.editorRestore",
+    "ar": "استعادة",
+    "en": "Restore"
+  },
   {
     "key": "catalog.editorRir",
     "ar": "RIR (تكرارات الاحتياط)",
@@ -219,7 +279,11 @@
     "ar": "جارٍ حفظ التمرين…",
     "en": "Saving exercise…"
   },
-  { "key": "catalog.editorSeconds", "ar": "ثانية", "en": "seconds" },
+  {
+    "key": "catalog.editorSeconds",
+    "ar": "ثانية",
+    "en": "seconds"
+  },
   {
     "key": "catalog.editorStatusError",
     "ar": "تعذّر حفظ التمرين",
@@ -255,7 +319,11 @@
     "ar": "لا توجد عناصر بعد",
     "en": "Nothing here yet"
   },
-  { "key": "catalog.equipment", "ar": "المعدات", "en": "Equipment" },
+  {
+    "key": "catalog.equipment",
+    "ar": "المعدات",
+    "en": "Equipment"
+  },
   {
     "key": "catalog.errorDescription",
     "ar": "حدث خطأ. حاول مرة أخرى.",
@@ -271,21 +339,41 @@
     "ar": "ابحث في التمارين المتاحة وصفّها حسب العضلة الأساسية أو المعدات.",
     "en": "Search available exercises and filter by primary muscle or equipment."
   },
-  { "key": "catalog.exerciseKind", "ar": "تمرين", "en": "Exercise" },
+  {
+    "key": "catalog.exerciseKind",
+    "ar": "تمرين",
+    "en": "Exercise"
+  },
   {
     "key": "catalog.exerciseTitle",
     "ar": "مكتبة التمارين",
     "en": "Exercise library"
   },
-  { "key": "catalog.fat", "ar": "الدهون", "en": "Fat" },
-  { "key": "catalog.filterBasis", "ar": "الأساس", "en": "Basis" },
-  { "key": "catalog.filterEquipment", "ar": "المعدات", "en": "Equipment" },
+  {
+    "key": "catalog.fat",
+    "ar": "الدهون",
+    "en": "Fat"
+  },
+  {
+    "key": "catalog.filterBasis",
+    "ar": "الأساس",
+    "en": "Basis"
+  },
+  {
+    "key": "catalog.filterEquipment",
+    "ar": "المعدات",
+    "en": "Equipment"
+  },
   {
     "key": "catalog.filterMuscle",
     "ar": "العضلة الأساسية",
     "en": "Primary muscle"
   },
-  { "key": "catalog.filters", "ar": "عوامل التصفية", "en": "Filters" },
+  {
+    "key": "catalog.filters",
+    "ar": "عوامل التصفية",
+    "en": "Filters"
+  },
   {
     "key": "catalog.foodAlternativeAdd",
     "ar": "إضافة بديل",
@@ -341,9 +429,21 @@
     "ar": "اختر مساحة عمل",
     "en": "Select a workspace"
   },
-  { "key": "catalog.foodCooked", "ar": "مطبوخ", "en": "Cooked" },
-  { "key": "catalog.foodEditorSave", "ar": "حفظ الطعام", "en": "Save food" },
-  { "key": "catalog.foodEditorTitle", "ar": "إضافة طعام", "en": "Add food" },
+  {
+    "key": "catalog.foodCooked",
+    "ar": "مطبوخ",
+    "en": "Cooked"
+  },
+  {
+    "key": "catalog.foodEditorSave",
+    "ar": "حفظ الطعام",
+    "en": "Save food"
+  },
+  {
+    "key": "catalog.foodEditorTitle",
+    "ar": "إضافة طعام",
+    "en": "Add food"
+  },
   {
     "key": "catalog.foodErrorAlternativePortion",
     "ar": "أدخل كمية حصة أكبر من صفر.",
@@ -384,13 +484,21 @@
     "ar": "راجع الحقول التي تحتاج إلى تصحيح",
     "en": "Review the fields that need attention"
   },
-  { "key": "catalog.foodFat", "ar": "الدهون (غ)", "en": "Fat (g)" },
+  {
+    "key": "catalog.foodFat",
+    "ar": "الدهون (غ)",
+    "en": "Fat (g)"
+  },
   {
     "key": "catalog.foodFiber",
     "ar": "الألياف (غ)، اختياري",
     "en": "Fiber (g), optional"
   },
-  { "key": "catalog.foodIdentity", "ar": "هوية الطعام", "en": "Food identity" },
+  {
+    "key": "catalog.foodIdentity",
+    "ar": "هوية الطعام",
+    "en": "Food identity"
+  },
   {
     "key": "catalog.foodIntro",
     "ar": "ابحث في الأطعمة المتاحة وصفّها حسب الأساس.",
@@ -401,20 +509,36 @@
     "ar": "الطاقة (سعرة حرارية)",
     "en": "Energy (kcal)"
   },
-  { "key": "catalog.foodKcalUnit", "ar": "سعرة حرارية", "en": "kcal" },
+  {
+    "key": "catalog.foodKcalUnit",
+    "ar": "سعرة حرارية",
+    "en": "kcal"
+  },
   {
     "key": "catalog.foodKcalWarningOnly",
     "ar": "تختلف السعرات عن تقدير المغذيات بمعادلة {protein}/{carbs}/{fat}. لن يمنع هذا التحذير الحفظ.",
     "en": "Calories differ from the {protein}/{carbs}/{fat} macro estimate. This warning will not prevent saving."
   },
-  { "key": "catalog.foodKind", "ar": "طعام", "en": "Food" },
-  { "key": "catalog.foodNameAr", "ar": "الاسم بالعربية", "en": "Arabic name" },
+  {
+    "key": "catalog.foodKind",
+    "ar": "طعام",
+    "en": "Food"
+  },
+  {
+    "key": "catalog.foodNameAr",
+    "ar": "الاسم بالعربية",
+    "en": "Arabic name"
+  },
   {
     "key": "catalog.foodNameEn",
     "ar": "الاسم بالإنجليزية",
     "en": "English name"
   },
-  { "key": "catalog.foodNames", "ar": "أسماء الطعام", "en": "Food names" },
+  {
+    "key": "catalog.foodNames",
+    "ar": "أسماء الطعام",
+    "en": "Food names"
+  },
   {
     "key": "catalog.foodNoOrigin",
     "ar": "دون ربط بمساحة عمل",
@@ -460,8 +584,16 @@
     "ar": "المنتج الأساسي",
     "en": "Canonical product"
   },
-  { "key": "catalog.foodProtein", "ar": "البروتين (غ)", "en": "Protein (g)" },
-  { "key": "catalog.foodRaw", "ar": "نيئ", "en": "Raw" },
+  {
+    "key": "catalog.foodProtein",
+    "ar": "البروتين (غ)",
+    "en": "Protein (g)"
+  },
+  {
+    "key": "catalog.foodRaw",
+    "ar": "نيئ",
+    "en": "Raw"
+  },
   {
     "key": "catalog.foodSaveError",
     "ar": "تعذّر حفظ الطعام",
@@ -477,7 +609,11 @@
     "ar": "تم حفظ الطعام وأصبح متاحًا في الكتالوج.",
     "en": "Food saved and available in the catalog."
   },
-  { "key": "catalog.foodSaving", "ar": "جارٍ حفظ الطعام", "en": "Saving food" },
+  {
+    "key": "catalog.foodSaving",
+    "ar": "جارٍ حفظ الطعام",
+    "en": "Saving food"
+  },
   {
     "key": "catalog.foodServingAdd",
     "ar": "إضافة وحدة حصة",
@@ -503,15 +639,31 @@
     "ar": "إزالة وحدة الحصة",
     "en": "Remove serving unit"
   },
-  { "key": "catalog.foodServings", "ar": "وحدات الحصة", "en": "Serving units" },
-  { "key": "catalog.foodTitle", "ar": "مكتبة الأطعمة", "en": "Food library" },
-  { "key": "catalog.foodWeighing", "ar": "حالة الوزن", "en": "Weighing state" },
+  {
+    "key": "catalog.foodServings",
+    "ar": "وحدات الحصة",
+    "en": "Serving units"
+  },
+  {
+    "key": "catalog.foodTitle",
+    "ar": "مكتبة الأطعمة",
+    "en": "Food library"
+  },
+  {
+    "key": "catalog.foodWeighing",
+    "ar": "حالة الوزن",
+    "en": "Weighing state"
+  },
   {
     "key": "catalog.foodWorkspaceRequired",
     "ar": "اختر مساحة العمل التي لديك فيها صلاحية التوجيه.",
     "en": "Select the workspace where you have coaching access."
   },
-  { "key": "catalog.kcal", "ar": "السعرات", "en": "Calories" },
+  {
+    "key": "catalog.kcal",
+    "ar": "السعرات",
+    "en": "Calories"
+  },
   {
     "key": "catalog.listLabel",
     "ar": "نتائج المكتبة",
@@ -532,20 +684,36 @@
     "ar": "لا توجد نتائج",
     "en": "No results"
   },
-  { "key": "catalog.previewKind", "ar": "نوع المكتبة", "en": "Library kind" },
-  { "key": "catalog.previewState", "ar": "الحالة", "en": "State" },
+  {
+    "key": "catalog.previewKind",
+    "ar": "نوع المكتبة",
+    "en": "Library kind"
+  },
+  {
+    "key": "catalog.previewState",
+    "ar": "الحالة",
+    "en": "State"
+  },
   {
     "key": "catalog.primaryMuscle",
     "ar": "العضلة الأساسية",
     "en": "Primary muscle"
   },
-  { "key": "catalog.protein", "ar": "البروتين", "en": "Protein" },
+  {
+    "key": "catalog.protein",
+    "ar": "البروتين",
+    "en": "Protein"
+  },
   {
     "key": "catalog.resultsCount",
     "ar": "النتائج: {count}",
     "en": "Results: {count}"
   },
-  { "key": "catalog.retry", "ar": "إعادة المحاولة", "en": "Retry" },
+  {
+    "key": "catalog.retry",
+    "ar": "إعادة المحاولة",
+    "en": "Retry"
+  },
   {
     "key": "catalog.searchLabel",
     "ar": "البحث في المكتبة",
@@ -556,14 +724,26 @@
     "ar": "اكتب اسم تمرين أو طعام",
     "en": "Type an exercise or food name"
   },
-  { "key": "catalog.searchSubmit", "ar": "بحث", "en": "Search" },
+  {
+    "key": "catalog.searchSubmit",
+    "ar": "بحث",
+    "en": "Search"
+  },
   {
     "key": "catalog.showcaseCoachingWork",
     "ar": "دعم التوجيه",
     "en": "Coaching work"
   },
-  { "key": "catalog.showcaseCoachingWorkOff", "ar": "معطل", "en": "Off" },
-  { "key": "catalog.showcaseCoachingWorkOn", "ar": "مفعل", "en": "On" },
+  {
+    "key": "catalog.showcaseCoachingWorkOff",
+    "ar": "معطل",
+    "en": "Off"
+  },
+  {
+    "key": "catalog.showcaseCoachingWorkOn",
+    "ar": "مفعل",
+    "en": "On"
+  },
   {
     "key": "catalog.showcaseIntro",
     "ar": "معاينة عربية أولًا مع الإنجليزية، والبحث وعوامل التصفية والحالات.",
@@ -579,21 +759,41 @@
     "ar": "افتراضي التكرارات",
     "en": "Reps default"
   },
-  { "key": "catalog.showcaseRepsFixed", "ar": "ثابت", "en": "Fixed" },
-  { "key": "catalog.showcaseRepsRange", "ar": "نطاق", "en": "Range" },
-  { "key": "catalog.showcaseRole", "ar": "الدور", "en": "Role" },
+  {
+    "key": "catalog.showcaseRepsFixed",
+    "ar": "ثابت",
+    "en": "Fixed"
+  },
+  {
+    "key": "catalog.showcaseRepsRange",
+    "ar": "نطاق",
+    "en": "Range"
+  },
+  {
+    "key": "catalog.showcaseRole",
+    "ar": "الدور",
+    "en": "Role"
+  },
   {
     "key": "catalog.showcaseRolePo",
     "ar": "مالك المنصة",
     "en": "Platform owner"
   },
-  { "key": "catalog.showcaseRoleTrainer", "ar": "مدرّب", "en": "Trainer" },
+  {
+    "key": "catalog.showcaseRoleTrainer",
+    "ar": "مدرّب",
+    "en": "Trainer"
+  },
   {
     "key": "catalog.showcaseScope",
     "ar": "نطاق التمرين",
     "en": "Exercise scope"
   },
-  { "key": "catalog.showcaseScopeGlobal", "ar": "عالمي", "en": "Global" },
+  {
+    "key": "catalog.showcaseScopeGlobal",
+    "ar": "عالمي",
+    "en": "Global"
+  },
   {
     "key": "catalog.showcaseScopeWorkspace",
     "ar": "مساحة العمل",
@@ -604,18 +804,46 @@
     "ar": "غلاف قائمة المكتبة",
     "en": "Catalog list shell"
   },
-  { "key": "catalog.showcaseView", "ar": "العرض", "en": "View" },
+  {
+    "key": "catalog.showcaseView",
+    "ar": "العرض",
+    "en": "View"
+  },
   {
     "key": "catalog.showcaseViewEditor",
     "ar": "محرر التمرين",
     "en": "Exercise editor"
   },
-  { "key": "catalog.showcaseViewList", "ar": "القائمة", "en": "List" },
-  { "key": "catalog.stateEmpty", "ar": "فارغة", "en": "Empty" },
-  { "key": "catalog.stateError", "ar": "خطأ", "en": "Error" },
-  { "key": "catalog.stateLoading", "ar": "تحميل", "en": "Loading" },
-  { "key": "catalog.stateNoResults", "ar": "لا نتائج", "en": "No results" },
-  { "key": "catalog.stateReady", "ar": "قائمة", "en": "List" },
+  {
+    "key": "catalog.showcaseViewList",
+    "ar": "القائمة",
+    "en": "List"
+  },
+  {
+    "key": "catalog.stateEmpty",
+    "ar": "فارغة",
+    "en": "Empty"
+  },
+  {
+    "key": "catalog.stateError",
+    "ar": "خطأ",
+    "en": "Error"
+  },
+  {
+    "key": "catalog.stateLoading",
+    "ar": "تحميل",
+    "en": "Loading"
+  },
+  {
+    "key": "catalog.stateNoResults",
+    "ar": "لا نتائج",
+    "en": "No results"
+  },
+  {
+    "key": "catalog.stateReady",
+    "ar": "قائمة",
+    "en": "List"
+  },
   {
     "key": "catalog.videoVariationExercise",
     "ar": "التمرين العام",
@@ -700,5 +928,50 @@
     "key": "catalog.videoVariationWorkspaceRequired",
     "ar": "اختر مساحة العمل صراحةً.",
     "en": "Choose a workspace explicitly."
+  },
+  {
+    "key": "catalog.editorDescription",
+    "ar": "الوصف",
+    "en": "Description"
+  },
+  {
+    "key": "catalog.editorNotes",
+    "ar": "ملاحظات",
+    "en": "Notes"
+  },
+  {
+    "key": "catalog.editorVideo",
+    "ar": "رابط الفيديو",
+    "en": "Video URL"
+  },
+  {
+    "key": "catalog.editorErrorDescriptionTooLong",
+    "ar": "الوصف طويل زيادة. خليه 2000 حرف أو أقل",
+    "en": "Use 2,000 characters or fewer."
+  },
+  {
+    "key": "catalog.editorErrorSelfAlternative",
+    "ar": "مينفعش تختار نفس التمرين كبديل لنفسه.",
+    "en": "An exercise can't be its own alternative."
+  },
+  {
+    "key": "catalog.editorErrorDuplicateAlternative",
+    "ar": "البديل ده متضاف قبل كده.",
+    "en": "This alternative is already added."
+  },
+  {
+    "key": "catalog.overrideInherited",
+    "ar": "جاي من المكتبة العامة",
+    "en": "Inherited from Global"
+  },
+  {
+    "key": "catalog.overrideCustomized",
+    "ar": "متعدل",
+    "en": "Customized"
+  },
+  {
+    "key": "catalog.overrideReset",
+    "ar": "رجّعه زي المكتبة العامة",
+    "en": "Reset to Global"
   }
 ]

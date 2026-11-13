@@ -2,6 +2,7 @@
 
 import {
   authoringWorkspaces,
+  exerciseVariationEditorState,
   search,
   writeVariation,
   type CatalogResult,
@@ -101,17 +102,39 @@ export async function loadWorkspaceVideoVariationsAction(
     )
       return [];
     const payload = row.result_payload as Record<string, unknown>;
+    const fields = payload.effective_fields as
+      Record<string, { value?: unknown }> | undefined;
     return [
       {
         workspaceId,
         exerciseId: row.result_id,
         version: row.result_version,
         videoUrl:
-          typeof payload.video_url === 'string' ? payload.video_url : '',
-        note: typeof payload.note === 'string' ? payload.note : '',
+          typeof fields?.video?.value === 'string' ? fields.video.value : '',
+        note:
+          typeof fields?.notes?.value === 'string' ? fields.notes.value : '',
       },
     ];
   });
+  if (exerciseId !== undefined && rows.length === 0) {
+    const current = await exerciseVariationEditorState({
+      workspaceId,
+      exerciseId,
+    });
+    if (current.status !== 'ok') return { status: current.status };
+    return {
+      status: 'ok',
+      data: [
+        {
+          workspaceId,
+          exerciseId,
+          version: current.data.version,
+          videoUrl: current.data.videoUrl,
+          note: current.data.note,
+        },
+      ],
+    };
+  }
   return { status: 'ok', data: rows };
 }
 
