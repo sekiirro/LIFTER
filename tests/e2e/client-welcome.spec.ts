@@ -26,6 +26,21 @@ test('Welcome preview remains directly renderable after reload', async ({
   ).toBeVisible();
 });
 
+test('client Welcome route renders its Terms card through a client wrapper', async ({
+  page,
+  context,
+}) => {
+  const messages = getMessages('en');
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: origin },
+    { name: THEME_COOKIE, value: 'light', url: origin },
+  ]);
+  await page.goto('/welcome');
+  await expect(
+    page.getByRole('heading', { name: messages['forms.termsCardTitle'] }),
+  ).toBeVisible();
+});
+
 test('keyboard Terms preview keeps DRAFT acceptance disabled and marketing optional', async ({
   page,
   context,

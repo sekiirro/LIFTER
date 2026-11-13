@@ -224,8 +224,6 @@ export function FormsStaffConsole({
         setIssue(actionError(messageStatus));
         setStatusMessage('');
       } else {
-        const selectedForm = snapshot?.forms.find((item) => item.id === formId);
-        if (selectedForm) setForm(selectedForm);
         setSnapshot((current) =>
           current
             ? {

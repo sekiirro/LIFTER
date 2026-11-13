@@ -84,4 +84,33 @@ describe('production staff Forms route boundary', () => {
       publishAction.indexOf('adapter.publish('),
     );
   });
+
+  it('preserves the active draft when changing the default form', () => {
+    const staffConsole = readFileSync(
+      resolve(root, 'components/forms/FormsStaffConsole.tsx'),
+      'utf8',
+    );
+    const selectionAction = staffConsole.slice(
+      staffConsole.indexOf('async function selectDefaultOnboardingForm('),
+      staffConsole.indexOf('async function create()'),
+    );
+
+    expect(selectionAction).not.toContain('setForm(');
+    expect(selectionAction).toContain('defaultOnboardingFormId: formId');
+  });
+
+  it('submits the latest answer snapshot after waiting for autosave', () => {
+    const questionFlow = readFileSync(
+      resolve(root, 'components/forms/QuestionFlow.tsx'),
+      'utf8',
+    );
+    const submitAction = questionFlow.slice(
+      questionFlow.indexOf('async function submit('),
+      questionFlow.indexOf("if (state === 'loading')"),
+    );
+
+    expect(submitAction).toContain('latestAnswers.current');
+    expect(submitAction).toContain('answers: submissionAnswers');
+    expect(submitAction).toContain('setSubmitting(true)');
+  });
 });

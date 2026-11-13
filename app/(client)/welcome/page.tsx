@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { TermsCard } from '../../../components/forms/TermsCard';
+import { WelcomeTermsCard } from '../../../components/forms/WelcomeTermsCard';
 import styles from '../../../components/forms/S14ConsentDemo.module.css';
 import { BrandScope } from '../../../components/ui/BrandScope';
 import { Card } from '../../../components/ui/Card';
@@ -49,7 +49,7 @@ export default async function WelcomePage({
   );
   const journey = (
     <main className={styles.main}>
-      <TermsCard
+      <WelcomeTermsCard
         locale={locale}
         policy={{
           version: 'terms-draft-v1',
@@ -64,11 +64,11 @@ export default async function WelcomePage({
           accept: copy['forms.acceptTerms'],
           unavailable: copy['forms.draftAcceptanceUnavailable'],
         }}
-        onAccept={() => undefined}
         pendingMessage={copy['forms.intakeIncomplete']}
-        acceptedContent={acceptedContent}
         mockAcceptanceKey="f15-welcome-terms-mock-v1"
-      />
+      >
+        {acceptedContent}
+      </WelcomeTermsCard>
     </main>
   );
 

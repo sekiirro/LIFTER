@@ -45,6 +45,18 @@ export type LabeledQuestion = FormQuestion & {
   optionLabels?: readonly { en: string; ar: string }[];
 };
 
+export function shouldAutoAdvanceAfterAnswer(
+  type: FormQuestion['type'] | undefined,
+) {
+  return [
+    'boolean',
+    'singleChoice',
+    'multiChoice',
+    'imageChoice',
+    'derivedChoice',
+  ].includes(type ?? '');
+}
+
 function progressMessage(
   template: string,
   current: number,
@@ -165,6 +177,8 @@ export function QuestionFlow({
   const [hasSubmitted, setHasSubmitted] = useState(
     initialState === 'submitted',
   );
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [dirty, setDirty] = useState(false);
   const dirtyRef = useRef(false);
   const [saving, setSaving] = useState(false);
@@ -230,17 +244,21 @@ export function QuestionFlow({
     dirtyRef.current = true;
     setDirty(true);
     setSaveError(false);
-    const nextProgression = evaluateProgression({
-      questions: runtimeQuestions,
-      answers: currentAnswers,
-      currentQuestionId: id,
-    });
-    const firstMissing = nextProgression.missingRequiredQuestionIds[0];
-    setQuestionId(
-      firstMissing === 'N08.foods'
-        ? 'N08'
-        : (firstMissing ?? (id === 'N08.foods' ? 'N08' : id)),
-    );
+    if (shouldAutoAdvanceAfterAnswer(current?.type)) {
+      const nextProgression = evaluateProgression({
+        questions: runtimeQuestions,
+        answers: currentAnswers,
+        currentQuestionId: id,
+      });
+      const firstMissing = nextProgression.missingRequiredQuestionIds[0];
+      setQuestionId(
+        firstMissing === 'N08.foods'
+          ? 'N08'
+          : (firstMissing ?? (id === 'N08.foods' ? 'N08' : id)),
+      );
+    } else {
+      setQuestionId(id === 'N08.foods' ? 'N08' : id);
+    }
     setState('ready');
   }
 
@@ -429,34 +447,43 @@ export function QuestionFlow({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    while (inFlight.current) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    if (conflicted.current) return;
-    if (!hasSubmitted && dirtyRef.current && !(await persist())) return;
-    const validation = validateAnswerSet(
-      runtimeQuestions,
-      applicableClientAnswers(runtimeQuestions, answers),
-    );
-    if (validation.length > 0) {
-      const invalid = validation[0];
-      if (invalid?.questionId) setQuestionId(invalid.questionId);
-      setState(
-        invalid?.code === 'answer_too_long' ? 'invalid-answer' : 'ready',
-      );
-      return;
-    }
-    if (!progression.complete) {
-      setQuestionId(progression.missingRequiredQuestionIds[0]);
-      setState('missing-required');
-      return;
-    }
-    setState('submitting');
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
-      const correctionAnswers = applicableClientAnswers(
+      while (inFlight.current) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      if (conflicted.current) return;
+      if (!hasSubmitted && dirtyRef.current && !(await persist())) return;
+      const submissionAnswers = applicableClientAnswers(
         runtimeQuestions,
-        answers,
+        latestAnswers.current,
       );
+      const validation = validateAnswerSet(runtimeQuestions, submissionAnswers);
+      if (validation.length > 0) {
+        const invalid = validation[0];
+        if (invalid?.questionId) setQuestionId(invalid.questionId);
+        setState(
+          invalid?.code === 'answer_too_long' ? 'invalid-answer' : 'ready',
+        );
+        return;
+      }
+      const submissionProgression = evaluateProgression({
+        questions: runtimeQuestions,
+        answers: answersForClientProgression(
+          runtimeQuestions,
+          submissionAnswers,
+        ),
+        currentQuestionId: questionId,
+      });
+      if (!submissionProgression.complete) {
+        setQuestionId(submissionProgression.missingRequiredQuestionIds[0]);
+        setState('missing-required');
+        return;
+      }
+      setState('submitting');
+      const correctionAnswers = submissionAnswers;
       const result = hasSubmitted
         ? await adapter.correct({
             assignmentId,
@@ -466,7 +493,7 @@ export function QuestionFlow({
         : await adapter.submit({
             assignmentId,
             expectedRevision: revisionRef.current,
-            answers,
+            answers: submissionAnswers,
           });
       if (result.status === 'submitted' || result.status === 'saved') {
         if (
@@ -488,6 +515,9 @@ export function QuestionFlow({
         setState(result.status === 'conflict' ? 'conflict' : 'submit-error');
     } catch {
       setState('submit-error');
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
 
@@ -507,7 +537,7 @@ export function QuestionFlow({
   }
 
   const submitted = state === 'submitted';
-  const locked = state === 'conflict' || state === 'submitting';
+  const locked = state === 'conflict' || state === 'submitting' || submitting;
   return (
     <main className={styles.main}>
       <h1>{messages['forms.title']}</h1>

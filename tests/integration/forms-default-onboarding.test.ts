@@ -58,13 +58,7 @@ it('provisions the approved localized N11 slider in the default starter', async 
           and version_number=1 and status='draft'
       `;
       const definition = version!.definition as typeof starter;
-      const expectedN11 = starter.questions.find(
-        (question) => question.id === 'N11',
-      );
-      const actualN11 = definition.questions.find(
-        (question) => question.id === 'N11',
-      );
-      expect(actualN11).toEqual(expectedN11);
+      expect(definition).toEqual(starter);
       throw rollback;
     }),
   ).rejects.toBe(rollback);

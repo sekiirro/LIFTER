@@ -46,7 +46,7 @@ async function closeClient(
 describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'd')(
   'T018 synthetic lifecycle proof (Stack D only; no cron activation)',
   () => {
-    it('uses a dedicated purge scheduler lock without changing alert evaluation locks', async () => {
+    it('serializes purge scheduler operations on the shared forms lock', async () => {
       await probe(async (tx) => {
         const [activate] = await tx`
           select pg_get_functiondef('app_private.f15_forms_purge_schedule_activate()'::regprocedure) as body`;
@@ -57,10 +57,10 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'd')(
         const [alertScheduler] = await tx`
           select pg_get_functiondef('app_private.f15_alert_schedule_activate()'::regprocedure) as body`;
         expect(activate!.body).toContain(
-          'pg_catalog.pg_advisory_xact_lock(11011,319)',
+          'pg_catalog.pg_advisory_xact_lock(11011,318)',
         );
         expect(deactivate!.body).toContain(
-          'pg_catalog.pg_advisory_xact_lock(11011,319)',
+          'pg_catalog.pg_advisory_xact_lock(11011,318)',
         );
         expect(evaluator!.body).toContain(
           'pg_catalog.pg_advisory_xact_lock(11011,318)',

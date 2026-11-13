@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import {
   QuestionFlow,
+  shouldAutoAdvanceAfterAnswer,
   type LabeledQuestion,
 } from '../../components/forms/QuestionFlow';
 import { TextAnswerField } from '../../components/forms/TextAnswerField';
@@ -139,6 +140,14 @@ describe('QuestionFlow', () => {
         'old-detail': 'must disappear',
       }),
     ).not.toHaveProperty('old-detail');
+  });
+
+  it('keeps text edits on the current question and advances choice answers', () => {
+    expect(shouldAutoAdvanceAfterAnswer('shortText')).toBe(false);
+    expect(shouldAutoAdvanceAfterAnswer('longText')).toBe(false);
+    expect(shouldAutoAdvanceAfterAnswer('number')).toBe(false);
+    expect(shouldAutoAdvanceAfterAnswer('singleChoice')).toBe(true);
+    expect(shouldAutoAdvanceAfterAnswer('derivedChoice')).toBe(true);
   });
 
   it('shows a required question when submitting with a missing answer', () => {

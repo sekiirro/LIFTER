@@ -359,6 +359,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
   for (const locale of ['ar', 'en'] as const) {
     for (const theme of ['light', 'dark'] as const) {
       for (const width of [390, 1440] as const) {
+        const iterationAssignmentId = await createFreshAssignment();
         await page.setViewportSize({
           width,
           height: width === 390 ? 844 : 1000,
@@ -375,11 +376,11 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
             url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
           },
         ]);
-        await page.goto(`/forms/${assignmentId}`);
+        await page.goto(`/forms/${iterationAssignmentId}`);
         const [assignmentClient] = await db`
           select c.name from public.form_assignments a
           join public.clients c on c.workspace_id=a.workspace_id and c.id=a.client_id
-          where a.id=${assignmentId}
+          where a.id=${iterationAssignmentId}
         `;
         expect(assignmentClient?.name).toBeTruthy();
         await expect(
@@ -523,6 +524,11 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
           'displayOnly',
           locale === 'en' ? 'About your health data' : 'عن بياناتك الصحية',
         );
+        await page
+          .getByRole('button', {
+            name: getMessages(locale)['forms.submit'],
+          })
+          .click();
         await expect(
           page
             .getByRole('status')
