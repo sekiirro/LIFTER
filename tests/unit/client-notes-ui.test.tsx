@@ -1750,13 +1750,13 @@ describe('ClientNotes behaviour', () => {
       (button) => button.textContent === mEn['clientNotes.loadMore'],
     )!;
     await act(async () => loadMore.click());
-    const offPageRow = Array.from(host!.querySelectorAll('li')).find(
-      (item) => item.textContent?.includes(offPageNote.body),
+    const offPageRow = Array.from(host!.querySelectorAll('li')).find((item) =>
+      item.textContent?.includes(offPageNote.body),
     )!;
     await act(async () =>
-      Array.from(offPageRow.querySelectorAll('button')).find(
-        (button) => button.textContent === mEn['clientNotes.edit'],
-      )!.click(),
+      Array.from(offPageRow.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click(),
     );
     await act(async () =>
       setValue(host!.querySelector('textarea')!, 'dirty off-page draft'),
@@ -1774,9 +1774,9 @@ describe('ClientNotes behaviour', () => {
 
     expect(host!.querySelector('textarea')?.value).toBe('dirty off-page draft');
     await act(async () => {
-      Array.from(host!.querySelectorAll('button')).find(
-        (button) => button.textContent === mEn['clientNotes.cancel'],
-      )!.click();
+      Array.from(host!.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.cancel'])!
+        .click();
     });
     expect(host!.querySelector('dialog')?.textContent).toContain(
       mEn['clientNotes.exitWarning.body'],
@@ -1819,27 +1819,32 @@ describe('ClientNotes behaviour', () => {
         item.textContent?.includes(body),
       )!;
     await act(async () =>
-      Array.from(rowFor('note A original').querySelectorAll('button')).find(
-        (button) => button.textContent === mEn['clientNotes.edit'],
-      )!.click(),
+      Array.from(rowFor('note A original').querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click(),
     );
     await act(async () =>
       setValue(host!.querySelector('textarea')!, 'note A submitted body'),
     );
     await act(async () => {
-      Array.from(host!.querySelectorAll('button')).find(
-        (button) => button.textContent === mEn['clientNotes.saveChanges'],
-      )!.click();
+      Array.from(host!.querySelectorAll('button'))
+        .find(
+          (button) => button.textContent === mEn['clientNotes.saveChanges'],
+        )!
+        .click();
     });
     await act(async () =>
-      Array.from(rowFor('note B original').querySelectorAll('button')).find(
-        (button) => button.textContent === mEn['clientNotes.edit'],
-      )!.click(),
+      Array.from(rowFor('note B original').querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click(),
     );
     await act(async () => {
-      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button')).find(
-        (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
-      )!.click();
+      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button'))
+        .find(
+          (button) =>
+            button.textContent === mEn['clientNotes.exitWarning.discard'],
+        )!
+        .click();
     });
     expect(host!.querySelector('textarea')?.value).toBe('note B original');
 
@@ -1887,27 +1892,32 @@ describe('ClientNotes behaviour', () => {
         item.textContent?.includes(body),
       )!;
     await act(async () =>
-      Array.from(rowFor('note A original').querySelectorAll('button')).find(
-        (button) => button.textContent === mEn['clientNotes.edit'],
-      )!.click(),
+      Array.from(rowFor('note A original').querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click(),
     );
     await act(async () =>
       setValue(host!.querySelector('textarea')!, 'note A submitted body'),
     );
     await act(async () => {
-      Array.from(host!.querySelectorAll('button')).find(
-        (button) => button.textContent === mEn['clientNotes.saveChanges'],
-      )!.click();
+      Array.from(host!.querySelectorAll('button'))
+        .find(
+          (button) => button.textContent === mEn['clientNotes.saveChanges'],
+        )!
+        .click();
     });
     await act(async () =>
-      Array.from(rowFor('note B original').querySelectorAll('button')).find(
-        (button) => button.textContent === mEn['clientNotes.edit'],
-      )!.click(),
+      Array.from(rowFor('note B original').querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click(),
     );
     await act(async () => {
-      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button')).find(
-        (button) => button.textContent === mEn['clientNotes.exitWarning.discard'],
-      )!.click();
+      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button'))
+        .find(
+          (button) =>
+            button.textContent === mEn['clientNotes.exitWarning.discard'],
+        )!
+        .click();
     });
 
     await act(async () => {
@@ -1925,7 +1935,11 @@ describe('ClientNotes behaviour', () => {
       retry.click();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(onUpdate).toHaveBeenNthCalledWith(2, 'note-0', 'note A submitted body');
+    expect(onUpdate).toHaveBeenNthCalledWith(
+      2,
+      'note-0',
+      'note A submitted body',
+    );
     expect(host!.querySelector('textarea')?.value).toBe('note B original');
     expect(host!.textContent).toContain(mEn['clientNotes.saveChanges']);
   });
