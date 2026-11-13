@@ -1002,3 +1002,7 @@ A hostile pass found that a pending next-page response could append results afte
 - Read-surface boundary: the existing variation projection includes active global exercises only. The new fallback must preserve that filter so a removed exercise ID cannot retrieve effective Video/Notes directly; integration regression added under T094.
 - Failure handling: malformed RPC payload maps to unavailable; missing exercise maps to generic denial. No new UI copy.
 - Findings: 0 open CRITICAL, 0 open HIGH. T094 remains unchecked until Stack A integration tests pass and traceability evidence is recorded.
+
+## S53-R19 T094 revalidation — 2026-11-13
+
+- Revalidated T094 under FR-018 after the Stack A full-chain replay and focused atomic editor-state tests. The returned editable fields and CAS revision share one authorized snapshot; removed exercises and foreign workspace access fail closed. No new product behavior, permission, or UI copy was introduced. No open ambiguities remain for this scoped fix. Open CRITICAL/HIGH findings: 0.

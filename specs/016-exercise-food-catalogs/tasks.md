@@ -167,4 +167,4 @@ Migration-control audit: CI pins Supabase CLI 2.122.0. Its migration runner dete
 
 ## S52-R6 atomic variation editor state — T094
 
-- [ ] **T094 [FR-018] - Read hidden variation values and CAS revision atomically.** When the selected exercise is absent from the variation projection, load its effective Video and Notes together with the current workspace override revision from one workspace-authorized snapshot. Concurrent changes after that snapshot must be rejected by the existing CAS. Keep denial closed; no new copy or permissions.
+- [x] **T094 [FR-018] - Read hidden variation values and CAS revision atomically.** When the selected exercise is absent from the variation projection, load its effective Video and Notes together with the current workspace override revision from one workspace-authorized snapshot. Concurrent changes after that snapshot must be rejected by the existing CAS. Keep denial closed; no new copy or permissions.
