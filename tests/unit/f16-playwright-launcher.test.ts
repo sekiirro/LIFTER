@@ -51,7 +51,7 @@ describe('F16 Stack C Playwright launcher', () => {
       ],
     });
 
-    for (const platform of ['linux', 'darwin']) {
+    for (const platform of ['linux', 'darwin'] as const) {
       expect(getSupabaseStatusCommand('/work/LFTR', platform)).toEqual({
         command: 'npx',
         args: ['supabase', 'status', '--workdir', '/work/LFTR', '-o', 'env'],
