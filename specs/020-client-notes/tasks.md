@@ -1,6 +1,6 @@
 # Tasks: F20 Client Notes
 
-**Status**: Implementation authorized for the S49-PO-7 Client Details route and Notes tab. T002-T004, T016, T018-T019 are complete; T005/T017 revalidation and T007/PR gates remain. CN-MCQ-01..30 are resolved or architect-ruled as recorded in spec.md. No open ambiguities remain for T017-T019; future staff display-name modeling is assigned to separate feature 021-staff-display-names, and F20 retains the approved unavailable-author fallback until 021 ships.
+**Status**: Implementation authorized for the S49-PO-7 Client Details route and Notes tab. T002-T005, T016-T019 are complete; T007/PR gates remain. CN-MCQ-01..30 are resolved or architect-ruled as recorded in spec.md. No open ambiguities remain for T017-T019; future staff display-name modeling is assigned to separate feature 021-staff-display-names, and F20 retains the approved unavailable-author fallback until 021 ships.
 
 ## Documentation / planning task
 
