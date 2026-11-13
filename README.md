@@ -4,6 +4,7 @@
 
 Prerequisites: Node.js 24 (see `.nvmrc`) and npm 11.17.0.
 Install dependencies with `npm ci`.
+The body-fat media unit test also needs ffmpeg (libaom-av1 and libwebp encoders) and ffprobe; see `specs/015-forms-intake/quickstart.md#local-media-test-prerequisites`.
 
 | Command                | Purpose                                                                                                                                                                                                           |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

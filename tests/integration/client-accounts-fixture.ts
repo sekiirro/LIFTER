@@ -269,6 +269,22 @@ export const approvalRpcNames = [
   'installment_collect',
   'collection_correct',
 ] as const;
+
+async function inBatches<T>(
+  items: readonly T[],
+  run: (item: T) => Promise<void>,
+  batchSize = 6,
+) {
+  for (let start = 0; start < items.length; start += batchSize) {
+    const results = await Promise.allSettled(
+      items.slice(start, start + batchSize).map(run),
+    );
+    const failed = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (failed) throw failed.reason;
+  }
+}
 export function approvalDenialRequest(
   context: ClientContext,
   name: string,
@@ -320,7 +336,7 @@ export async function pendingHttpAccess(
   try {
     const tables =
       await db`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
-    for (const table of tables) {
+    await inBatches(tables, async (table) => {
       if (table.relname === 'audit_events') {
         const probes: Array<{ error: unknown; data?: unknown[] | null }> = [];
         probes.push(
@@ -349,17 +365,17 @@ export async function pendingHttpAccess(
             result.error !== null || result.data?.length === 0,
             table.relname,
           );
-        continue;
+        return;
       }
       const result = await client.from(table.relname).select('*');
       assert.ok(
         result.error !== null || result.data?.length === 0,
         table.relname,
       );
-    }
+    });
     const functions =
       await db`select p.proname,p.proargnames,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
-    for (const fn of functions) {
+    await inBatches(functions, async (fn) => {
       if (fn.proname === 'client_self_status') {
         const result = await client.rpc('client_self_status');
         assert.equal(result.error, null, fn.proname);
@@ -367,7 +383,7 @@ export async function pendingHttpAccess(
           status: 'ok',
           approval_state: 'pending-approval',
         });
-        continue;
+        return;
       }
       if ((approvalRpcNames as readonly string[]).includes(fn.proname)) {
         const [target] =
@@ -381,7 +397,7 @@ export async function pendingHttpAccess(
         });
         assert.equal(denied.error, null, fn.proname);
         assert.deepEqual(denied.data, { status: 'not_permitted' }, fn.proname);
-        continue;
+        return;
       }
       if (
         [
@@ -400,7 +416,7 @@ export async function pendingHttpAccess(
         const result = await client.rpc(fn.proname, args);
         assert.equal(result.error, null, fn.proname);
         assert.deepEqual(result.data, { status: 'not_permitted' }, fn.proname);
-        continue;
+        return;
       }
       const args: Record<string, unknown> = {};
       fn.types.forEach((type: string, i: number) => {
@@ -415,6 +431,7 @@ export async function pendingHttpAccess(
           bytea: '\\x00',
           numeric: 1,
           'timestamp with time zone': new Date().toISOString(),
+          'uuid[]': [],
         };
         if (!(type in values))
           throw new Error(
@@ -429,13 +446,24 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
-          (['record_refund', 'record_renewal'].includes(fn.proname)
+          (fn.proname === 'read_client_form_draft' &&
+            result.data?.status === 'not_found') ||
+          ([
+            'select_intake_form',
+            'submit_form_assignment',
+            'configure_intake_assignment_policy',
+            'materialize_intake_assignment_occurrence',
+          ].includes(fn.proname) &&
+            result.data?.status === 'not_found') ||
+          (['record_refund', 'record_renewal', 'close_client'].includes(
+            fn.proname,
+          )
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
               result.data?.status === 'invalid_input'),
         fn.proname,
       );
-    }
+    });
   } finally {
     await db.end();
   }
@@ -453,42 +481,88 @@ export async function pendingRlsAccess(
   tx: TransactionSql,
   context: ClientContext,
   claims: object,
+  seededClientId?: string,
 ) {
+  if (
+    seededClientId !== undefined &&
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(
+      seededClientId,
+    )
+  )
+    throw new Error('RLS probe requires the caller-seeded client UUID');
   const tables = await tx`
     select n.nspname,c.relname from pg_class c
     join pg_namespace n on n.oid=c.relnamespace
     where n.nspname='public' and c.relkind='r' and c.relrowsecurity
-      and c.relname='clients'
+      and (c.relname='clients' or ${seededClientId !== undefined})
   `;
-  if (tables.length !== 1)
+  if (!tables.some((table) => table.relname === 'clients'))
+    throw new Error('F11 RLS probe expected the public.clients policy target');
+  if (seededClientId === undefined && tables.length !== 1)
     throw new Error('F11 RLS probe expected the public.clients policy target');
   await tx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
   await tx`set local statement_timeout = '5s'`;
   for (const table of tables) {
-    // The selected constant exposes no protected field. Grant SELECT on a
-    // safe UUID column to prevent missing privileges from hiding bad RLS.
-    const [column] =
-      await tx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype order by attnum limit 1`;
-    if (!column) throw new Error('RLS probe needs a safe UUID column');
-    const target = '"' + table.nspname + '"."' + table.relname + '"';
-    await tx.unsafe(
-      `grant select ("${column.attname}") on ${target} to authenticated`,
-    );
-    await tx.unsafe(
-      `grant update ("${column.attname}") on ${target} to authenticated`,
-    );
-    await tx`set local role authenticated`;
-    const selected = await tx.unsafe(
-      `select "${column.attname}" from ${target}`,
-    );
-    if (selected.length !== 0)
-      throw new PendingRlsAccessDenied(`${table.relname} SELECT`);
-    const changed = await tx.unsafe(
-      `update ${target} set "${column.attname}"="${column.attname}"`,
-    );
-    if (changed.count !== 0)
-      throw new PendingRlsAccessDenied(`${table.relname} UPDATE`);
-    await tx`reset role`;
+    try {
+      await tx.savepoint(async (tableTx) => {
+        await tableTx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
+        // The selected constant exposes no protected field. Grant SELECT on a
+        // safe UUID column to prevent missing privileges from hiding bad RLS.
+        const [column] =
+          await tableTx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype and attnotnull order by attnum limit 1`;
+        if (!column) throw new Error('RLS probe needs a safe UUID column');
+        const quote = (identifier: string) =>
+          `"${identifier.replaceAll('"', '""')}"`;
+        const target = `${quote(table.nspname)}.${quote(table.relname)}`;
+        const uuidColumn = quote(column.attname);
+        const seedFilter =
+          table.relname === 'clients' && seededClientId
+            ? ` where ${uuidColumn}='${seededClientId}'::uuid`
+            : '';
+        const before = await tableTx.unsafe(
+          `select ${uuidColumn} from ${target}${seedFilter} limit 1`,
+        );
+        if (
+          table.relname === 'clients' &&
+          seededClientId &&
+          before.length !== 1
+        )
+          throw new Error(
+            'RLS probe cannot see the caller-seeded pending client',
+          );
+        if (before.length === 0) throw rollback;
+        const targetId = String(before[0]![column.attname]);
+        if (
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(
+            targetId,
+          )
+        )
+          throw new Error(
+            `RLS probe selected an invalid UUID target from ${table.relname}.${column.attname}: ${targetId}`,
+          );
+        const rowFilter = ` where ${uuidColumn}='${targetId}'::uuid`;
+        await tableTx.unsafe(
+          `grant select (${uuidColumn}) on ${target} to authenticated`,
+        );
+        await tableTx.unsafe(
+          `grant update (${uuidColumn}) on ${target} to authenticated`,
+        );
+        await tableTx`set local role authenticated`;
+        const selected = await tableTx.unsafe(
+          `select ${uuidColumn} from ${target}${rowFilter}`,
+        );
+        if (selected.length !== 0)
+          throw new PendingRlsAccessDenied(`${table.relname} SELECT`);
+        const changed = await tableTx.unsafe(
+          `update ${target} set ${uuidColumn}=${uuidColumn}${rowFilter}`,
+        );
+        if (changed.count !== 0)
+          throw new PendingRlsAccessDenied(`${table.relname} UPDATE`);
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
   }
   await tx`set local role authenticated`;
   const [access] =
