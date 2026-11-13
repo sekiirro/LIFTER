@@ -369,6 +369,12 @@ describe('visibility (T004)', () => {
     expect(poRows.map((row) => row.workspace_id)).toEqual(
       expect.arrayContaining([f.wsA.id, f.wsB.id, workspaceCId, null]),
     );
+    const ownRows = checked(
+      await f.woA.client.from('audit_events').select('*').in('id', ids),
+    );
+    if (!ownRows) throw new Error('WO audit query returned no data');
+    expect(ownRows.length).toBeGreaterThan(0);
+    expect(ownRows.every((row) => row.workspace_id === f.wsA.id)).toBe(true);
     expect(
       checked(
         await f.woA.client.from('audit_events').select('*').in('id', ids),

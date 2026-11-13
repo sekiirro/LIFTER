@@ -1,0 +1,309 @@
+# F15 Spec Kit Analyze — S33 h13
+
+**Date:** 2026-11-04 (after S33-PO-3 and CodeRabbit remediation task updates to `spec.md`, `plan.md`, and `tasks.md`)
+**Final evidence refresh:** 2026-11-04 21:29 Africa/Cairo, after verified T061–T070 task evidence was recorded.
+**Review-thread scope refresh:** 2026-11-04 21:39 Africa/Cairo, after adding tasks T071–T077 for additional unresolved F15 review findings.
+**Entry review refresh:** 2026-11-04 22:25 Africa/Cairo, after adding T078/T079 for S33-PO-3 copy inventory and the existing FR-025 job-diagnostic safety regression.
+**PO-record consistency refresh:** 2026-11-04 21:54 Africa/Cairo, after correcting FR-039 and the data model to cite S30-PO-1 Q2 approval and documenting fresh-checkout junction setup.
+**PO-status reconciliation refresh:** 2026-11-04 22:11 Africa/Cairo, after reconciling the remaining Terms/sex-label status statements in spec.md, plan.md, and checklists/requirements.md with S30-PO-1 Q2; S31-R2/S32-PO-8 still govern remaining English translations.
+**Evidence refresh:** 2026-11-04 22:14 Africa/Cairo, after passing the T071–T077 targeted unit and Stack D integration checks and recording their commit/test evidence in traceability.md.
+**Final evidence refresh:** 2026-11-04 22:45 Africa/Cairo, after the A-owned T078/T079 Stack D/unit checks and traceability/task closure.
+**S34 round-2 entry refresh:** 2026-11-05, after adding T080–T095 to `plan.md` and `tasks.md` and before implementation.
+**S34 T080 clarification refresh:** 2026-11-05, after specifying NFKC/lowercase followed by the S32-PO-7 character-set check; before implementation.
+**S34 T086 decision-boundary refresh:** 2026-11-05, after identifying the persisted Arabic-title fallback as a user-visible product choice and excluding it pending PO decision.
+**Status:** Historical S33 entry review; current S35 entry revalidation is recorded below.
+
+## Entry check
+
+- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for this F15 intake scope. The touched requirements trace to FR-026/036/037 and existing SC coverage.
+- [x] Clarifications cite S32-PO-5, S32-PO-8, and S33-PO-3. **No open ambiguities remain for T061–T063.** Arabic T03 is Western digits exactly `2`, `3`, `4`, `5`, `6`; Arabic N07 uses `الوجبة رقم {number}` dynamically. English T03/N07 stays unchanged; unrelated EN rows remain pending PO review.
+- [x] `plan.md` covers the exact Arabic strings, N07 substitution, Bidi digit-order verification, axe, screenshots, and viewport/theme matrix.
+- [x] `tasks.md` adds T061–T063 tagged with FR-026/036/037, T064–T070 tagged with their existing F15 FRs, and T071–T079 for additional in-scope review fixes; T078/T079 remain open until evidence is recorded on the final stacked heads.
+- [x] This Analyze follows the updated specification, plan and tasks, dated 2026-11-04.
+
+## Scope analysis
+
+- T061 records the approved Arabic strings from S33-PO-3 and removes the superseded pending-copy statement.
+- T062 changes Arabic copy and fixtures only. English T03/N07 strings, layout, tokens, and shared UI behavior remain unchanged.
+- T063 checks actual rendered Arabic labels and dynamic interpolation at 390px and 1024px in light and dark modes. Bidi behavior is checked using the existing component; no new visual behavior or dependency is introduced.
+- T064–T077 fix code/test/documentation defects within the already approved F15 scope. Assignment, audience, client progression, correction authorization, and retirement behavior follow existing FRs; the tasks add no new user policy or copy. Database-dependent acceptance remains subject to Stack D tests.
+- No new color, token, component, interaction, typography rule, or design pattern is needed. The existing UI and design system remain authoritative.
+- T076 reconciles existing PO-approved status and repairs evidence separators; it changes no copy bytes or product decisions. The approval source is S30-PO-1 Q2 in the PO record. T077 documents the existing Stack D layout without changing behavior.
+
+## Findings
+
+- **CRITICAL:** 0
+- **HIGH:** 0
+- **MEDIUM / deferred:** None for the approved T061–T070 scope. Correction-note sizing and post-relationship-end client-late notification policy are not specified; these remain PO decisions in the run report and are excluded from implementation.
+
+## Result
+
+**PASS for T061–T079 within the boundaries above.** T078/T079 are revalidated here for the A-owned stack before acceptance. Re-run Analyze after any further change to `spec.md`, `plan.md`, or `tasks.md` before implementation.
+
+**Scope extension — T078/T079:** T078 updates only the copy inventory to cite the already approved S33-PO-3 strings; T079 enforces the existing FR-025 rule that raw provider errors never enter `jobs.last_error` or dead-letter audit. These add no new user-visible copy, behavior, permissions, data retention, or product policy. T079's allow-list is derived from literal `jobs_fail` call sites in this repository; all caller-provided values remain synthetic. Entry review PASS for this extension: scope exists in FR-025 and the existing S33-PO-3 clarification; plan/tasks map the work; no design/UI decisions are involved; 0 CRITICAL / 0 HIGH findings; no open ambiguity for these authorized fixes.
+
+## Review-thread scope revalidation
+
+- Tasks T061–T077 are checked only after their cited unit, integration, rendered accessibility, or documentation evidence passed on the current split heads; B-owned T062/T063 evidence is on the stacked B head. Additional live findings outside this refreshed scope are triaged in the S33 run report.
+- No implementation requirement or product decision changed during the scope refresh. The existing PO-decision gaps remain excluded and are reported separately.
+- Findings remain **0 CRITICAL / 0 HIGH**; no open ambiguity blocks the approved work.
+
+## S34 round-2 entry check
+
+- [x] `spec.md` retains numbered FRs, measurable SCs, and Given/When/Then scenarios for all touched behavior. T080–T095 map only to existing FR-002/003/004/006/007/008/013/017/019/020/024/025/026/036/037/038/039; no requirement text or PO decision was changed.
+- [x] Clarifications remain the binding PO records cited by F15, including S28 PO records and the S30/S31/S32/S33 F15 decisions. **No open ambiguities remain for the independent implementation tasks T080–T085 and T087–T095:** T080 follows the specified NFKC/lowercase normalization then applies S32-PO-7's 3–30 character English letter/digit/underscore/period set; leading/trailing whitespace and Unicode format characters remain invalid rather than trimmed. T086 and the four earlier product questions remain explicitly excluded and are reported as PO decisions.
+- [x] `plan.md` now covers the S34 remediation scope, forward-only database rule, RED-first tests, mutation evidence, screenshot matrix, and decision boundary.
+- [x] `tasks.md` assigns T080–T095 and FR IDs to every S34 remediation unit. Checkboxes remain open until the cited current-head tests pass.
+- [x] This Analyze follows the 2026-11-05 plan/task updates.
+
+### S34 scope analysis
+
+- T080–T083 repair existing signup, validation, correction, and alert contracts; T080 applies the existing NFKC/lowercase rule before its S32-PO-7 character-set check and rejects whitespace/Unicode format characters. Any SQL change is forward-only and Stack D is the only permitted database stack.
+- T084–T085 and T087–T089 repair documentation, test isolation, test baselines, submitted-draft status handling, and portable S34 PO source citations. T086 was blocked at round-2 entry; S34-PO-5=B now resolves the English-title requirement and existing approved forms.required error key.
+- T090 covers correction-history GET authorization and current-snapshot filtering only; T082 separately covers correction-write revision validation. T091–T094 repair existing signup error, history-label, Bidi rendering, and copy-reference behavior. They add no new styling, component, copy, permission, or workflow decision.
+- T095 corrects rendered evidence for existing copy. It captures the actual required viewports and records exactly those files; no interface layout or visual treatment is changed.
+- No design-system gap is required. Existing tokens, typography, direction handling, components, and approved copy remain authoritative. No dependency, workflow, or CI change is in scope.
+- **CRITICAL findings: 0. HIGH findings: 0.** S34-PO-5 resolves T086; remaining PO-only product decisions are excluded from implementation.
+
+**S34 T090 scope and evidence refresh:** 2026-11-05 01:49 Africa/Cairo, after narrowing T090 in `plan.md` and `tasks.md` to the tested correction-history GET route. T082 remains the owner of correction-write revision validation. `tests/unit/forms-submission-routes.test.ts` passes 9/9; no product behavior or requirement changed. **CRITICAL findings: 0. HIGH findings: 0. No open ambiguities for this scope.**
+
+**Result: PASS for entry into T080–T095.** Re-run Analyze after any subsequent change to `spec.md`, `plan.md`, or `tasks.md` before acceptance.
+
+## S34 round-3 entry review — 2026-11-05 03:03 Africa/Cairo
+
+This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `spec.md`, the S34 task registrations in `tasks.md`, and the plan extension. It was refreshed at 2026-11-05 03:03 Africa/Cairo after adding T102 and the no-ff restack constraints. No task is marked complete by this analysis.
+
+- [x] `spec.md` retains numbered FRs and measurable SCs; SC-023..SC-026 and Given/When/Then cases cover correction-note bounds, relationship-ended client-late alerts, required English draft title, and exact approved EN copy.
+- [x] Clarifications cite S34-PO-4 through S34-PO-6, PD-S34-NEW-01 and S32-PO-8 Q6 in the PO decision register, plus the repository intake review fixture. **No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 is merge sequencing only.
+- [x] `plan.md` covers T096–T102, the no-ff restack, sole allowed historical migration edit, forward-only migrations, Stack D, RED-first tests, and the approved existing message key for T086.
+- [x] `tasks.md` assigns T086 and T096–T102 to existing FRs; completion is gated on test evidence for the current head.
+- [x] This Analyze review is dated after the spec, plan, and task changes above.
+
+### Scope and findings
+
+- T086 uses the S34-PO-5=B required-English-title decision. Existing approved key `forms.required` is present in `tests/fixtures/forms/approved-f15-copy.json` (`Required` / the existing Arabic value); reuse that key verbatim for inline title validation. No new copy or UI pattern is approved.
+- T096 changes only exact PO-approved intake strings and statuses; B06 stays S32-PO-5 as-is. T097 enforces both correction-note bounds before RPC and in a new migration. T098 cancels client-late alerts immediately after the approved lifecycle states and removes related rows within the existing purge lifecycle. T100 applies the one-time exact migration edit and verifies clean replay on Stack D.
+- The UI scope adds no component, layout, tokens, colors, fonts, motion, or dependency. Existing form error presentation, bilingual message system, and DESIGN.md govern. The Design System overrides advisory skill conflicts; any missing component or error-state pattern is a stop-and-report design gap.
+- **CRITICAL findings: 0. HIGH findings: 0.** No new ambiguity or design gap blocks entry; task-level evidence remains pending.
+
+**Result: PASS for T086 and T096–T100 entry.** Re-run Analyze after any later change to the spec, plan, or tasks before accepting implementation.
+
+**S34 T097 verification refresh:** 2026-11-05 04:16 Africa/Cairo; the correction bounds passed focused unit tests 15/15 and Stack D integration 2/2 on commit 1ed864e. No requirement text changed; Critical: 0; High: 0.
+
+**S34 T098 verification refresh:** 2026-11-05 04:21 Africa/Cairo; lifecycle tests passed 11/11 on commit 1b52aeb after clean Stack D replay; Critical: 0; High: 0.
+
+**S34 PO source-mapping refresh:** 2026-11-05 04:24 Africa/Cairo; S34-01=B is cited as S34-PO-4, which also records the no-destination-guard sequencing decision. Entry criteria remain PASS; Critical: 0; High: 0; no open ambiguity in approved S34 scope.
+
+**S34 T089 documentation portability refresh — 2026-11-05 06:39 Africa/Cairo:** Replaced developer-local S34 PO paths in the S34 plan/Analyze and current PO clarification citations with stable decision IDs and repository fixture references. `tests/unit/forms-s14-decision-fixture.test.ts` passes 6/6; it rejects a synthetic absolute path and checks the plan/Analyze PO citations. Corrected T086 analysis to reflect S34-PO-5=B and reuse the existing `forms.required` key. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for authorized scope.**
+
+**S34 T089 acceptance evidence refresh — 2026-11-05 06:40 Africa/Cairo:** T089 is checked only after the focused regression passed on `0adb43a`; the traceability row maps FR-026/036/037 to that test and commit. The updated task completion record adds no requirement or ambiguity. **CRITICAL: 0. HIGH: 0.**
+
+**S35 existing-PR entry revalidation — 2026-11-06:** Added T101-T114 for verified CI/CodeRabbit remediation within existing FR-004/006/008/013/017/018/024/025/026/036/037/038/039 scope. `spec.md` already contains the required numbered FRs, measurable SCs and Given/When/Then acceptance coverage. Existing PO clarifications explicitly govern approved copy, answer snapshots, name validation and client-late timing. **No open ambiguities remain for T101-T103, T105-T114. T104 remains explicitly blocked because the current F15 schema has no authoritative client-to-Trainer assignment relation.** No requirement or user-facing default was inferred. The existing design system covers the narrow T112 pending-submit interaction; no visual token, layout, copy, animation or dependency change is planned. **CRITICAL: 0. HIGH: 0.** Entry PASS for independent tasks; T104 excluded pending PO direction.
+
+**S35 T109/T111 documentation refresh - 2026-11-06:** The Stack D quickstart now derives repository, stack and provisioner paths from the current checkout. The earlier S33 Analyze status is explicitly historical; the S30 quotation and S31 migration source label are repaired without changing their recorded findings. These are documentation-only corrections inside the existing F15 verification scope. **CRITICAL: 0. HIGH: 0. No new ambiguity.**
+
+**S35 T107 acceptance refresh - 2026-11-06 04:27 Africa/Cairo:** `tests/unit/forms-scheduler-cleanup-contract.test.ts` passed 1/1 on current A head `a1782ba` after T107's owned-ID cleanup. `tasks.md` and `traceability.md` now record the passing evidence. This checkbox update adds no requirement; **CRITICAL: 0. HIGH: 0. No open ambiguity.**
+
+**S35 A remediation acceptance refresh — 2026-11-06:** Recorded T102, T103, T105, T106, T108, T109, T110 and T111 completion only after their cited targeted/Stack D checks or documentation checks passed. No requirement or PO decision changed. T104 remains blocked under PD-S35-01; the separate PD-S34-R3-01 N11 English-copy question remains open. Existing FR/SC/GWT coverage remains applicable. **CRITICAL: 0. HIGH: 0. No new ambiguity for completed tasks.**
+**S35 T101 Vite/Vitest startup refresh — 2026-11-06:** Hosted CI showed that runner-loader selection alone did not fix the source-map crash. Vitest 5.1.0 includes the cached-source UTF-8 fix for Vite 8.3.5; the exact `npm run test:integration -- tests/integration/password-policy-parity.test.ts` command passed 58/58 on Stack D and StartedAt was unchanged. This is an existing CI remediation, with no workflow or product behavior change. **CRITICAL: 0. HIGH: 0.**
+
+## S35 F15 round-5 existing-PR entry revalidation — 2026-11-06
+
+`spec.md` contains numbered FRs, measurable SCs, and Given/When/Then coverage for FR-004/006/008/013/024/025/026/036/037/038/039. Clarifications state no open ambiguities for the scoped review remediations. `plan.md` covers those existing signup, validation, lifecycle, test, and documentation scopes. `tasks.md` assigns T115-T129 and tags each with existing FR IDs; duplicate T102 was corrected by assigning the open restack task T129. No requirement or user-facing default is added. PD-S35-01/T104 and PD-S34-R3-01/N11 copy remain excluded and blocked. **CRITICAL: 0. HIGH: 0.** Entry PASS for independent existing-PR fixes.
+
+## S36 T136 CI remediation analysis - 2026-11-06
+
+The existing drift guard maps the localized starter-label migration on B first and falls back on A to `20261112021700_f15_default_provisioning_configuration.sql`, the latest migration on A that defines `app_private.ensure_default_onboarding_form`. The ordered mapping is test-harness-only within FR-024/025; no product behavior, policy, SQL migration, or security assertion changes. **CRITICAL: 0. HIGH: 0. No open ambiguities for this task.**
+
+## S36 N11 and ALERTS clarification analysis - 2026-11-06
+
+N11 EN copy is approved byte-exact by S35-PO-3; the existing Arabic band values remain approved and unchanged. T137 has numbered FR-040, measurable SC-027, Given/When/Then coverage, plan/task linkage, exact PO source and boundaries. ALERTS FR-017/018/035 and the related scenario/success criterion replace the obsolete +24h/+48h client-late stages with the approved immediate and day-five/day-seven schedule. Open ambiguities are explicitly recorded as MCQ S36-01/T104 (authoritative Trainer relation) and MCQ S36-02 (late-intake event); no implementation or product assumption is authorized until PO answers. Analysis scope is specification/copy-only for alerts. **CRITICAL: 0. HIGH: 0. No other ambiguities are assumed closed; the two MCQs remain open.**
+
+## S36 final Spec Kit analysis refresh - 2026-11-06
+
+Revalidated after the final spec/plan/task edits: F15 has numbered FR-017/018/035/040, measurable SC-022/027, Given/When/Then scenarios for immediate and staged alerts and every N11 score/band boundary, a clarification session citing the byte-exact S35-PO-3 N11 and ALERTS paragraphs, T136/T137/T138 task links, and an up-to-date plan. The T104 Trainer source and late-intake event remain explicit PO-decision MCQs, so no-open-ambiguities applies only to T136/T137 and the specification-only requirements recorded by S35-PO-3 / S36-R7. No alert code/migration was changed. **CRITICAL: 0. HIGH: 0. No other open ambiguities for this authorized scope.**
+
+## S36 spec analysis rerun after final amendments - 2026-11-06
+
+Re-read `spec.md`, `plan.md`, and `tasks.md` after the last S36 edits. Numbered FR-017/018/035/040, measurable SC-022/026/027, Given/When/Then coverage, separate N11 and ALERTS clarification sections with byte-exact source paragraphs, T136-T138 task links and plan coverage all pass. MCQ S36-01/T104 and S36-02 remain explicitly open and block only the Trainer relation and late-event implementation choices. No alert code/migration changed. For the independent T136/T137 work and authorized spec-only ALERTS record, CRITICAL: 0; HIGH: 0; no other ambiguities remain.
+
+## S39 F15 round-7 Spec Kit analysis — 2026-11-09
+
+Revalidated `spec.md`, `plan.md`, and `tasks.md` after encoding the S38-PO-5 decisions. The PO line is quoted byte-exact in the ALERTS clarification; S36-01=A identifies the existing F12 client assignment as the responsible-Trainer source, and S36-02=A defines late intake as the configured client-submission deadline passing without an accepted submission. FR-017/018/035 and the Given/When/Then late-intake scenario express that scope; plan.md and T104/T138 link the work to existing FRs. T104 is unblocked for implementation of the approved routing and trigger, subject to RED-first tests. T138 records the already-approved specification change and does not authorize alert implementation or migration by itself. **No open ambiguities remain for S36-01/A, S36-02/A, T104 and T138. CRITICAL: 0. HIGH: 0.**
+
+Entry check: PASS for the T104/T138 scope. `spec.md` has numbered FRs, measurable success criteria, and Given/When/Then scenarios; Clarifications cite S38-PO-5 and explicitly close both decisions; `plan.md` covers the approved source and deadline; `tasks.md` assigns T104/T138 to FR-017/018/035; this dated Analyze follows all three updated artifacts. No implementation evidence is claimed here.
+
+## S39 F15 round-8 Spec Kit analysis ? 2026-11-09
+
+Revalidated spec.md, plan.md, and tasks.md after recording S39-PO-8 / PDN-S39-F15-01. The spec retains numbered FR-017/018/035, measurable success criteria and Given/When/Then coverage for client-late timing and owner notices. S38-PO-5 remains quoted byte-exact; S36-01=A is retained only as the future F11/F12 source rule, and S36-02=A defines the configured submission deadline passing without an accepted submission. The PO-approved deferral means F15 has no client-to-Trainer assignment/routing or client-late Trainer alert; T104 is deferred to the separate F11/F12 specification work. T138 records the approved trigger, immediate owner notices and unchanged D-03 Trainer-late workflow without implementing alert code or migrations. Tests that assert client-late Trainer alerting are to be removed or explicitly skipped with the PO decision cited; tests for D-03 Trainer-late behavior remain in scope and unchanged. **No open ambiguities remain for this authorized round-8 scope. CRITICAL: 0. HIGH: 0.** Entry PASS for T138's specification-only scope and the approved removal/skip-with-reason of client-late Trainer alert assertions; T104 implementation remains deferred. This Analyze follows the latest spec.md, plan.md, and tasks.md edits.
+
+## S39 F15 round-8 final scope analysis ? 2026-11-09
+
+Re-read spec.md, plan.md, and tasks.md after aligning the client-late success criterion, plan summary, and F15 handoff documentation with S39-PO-8. Numbered FR-017/018/035 and measurable SC-022 now state the approved S36-02 configured-deadline trigger and immediate authorized-owner notices. Given/When/Then coverage retains the configured deadline semantics and lifecycle suppression. S38-PO-5 remains quoted byte-exact. S36-01=A is recorded only as the future authoritative source rule for F11/F12. PDN-S39-F15-01 is resolved: F15 has no client-to-Trainer assignment/routing or client-late Trainer alert; T104 is deferred, while T138 is specification-only for the approved late trigger and owner notices. The client-late Trainer integration scenario is explicitly skipped with the PO rationale; the unit test asserts only owner schedule timing; D-03 Trainer-late coverage remains unchanged. **No open ambiguities remain for this authorized scope. CRITICAL: 0. HIGH: 0.** Entry PASS for T138 and the approved test/document updates; no Trainer implementation is included. This analysis follows the latest spec.md, plan.md, and tasks.md.
+
+## S40 F15 round-10 entry analysis — 2026-11-09
+
+Re-read `spec.md`, `plan.md`, and `tasks.md` for existing PR #57 CI/migration-order remediation. The numbered FRs and measurable SCs for builder validation, assignment/forms persistence, signup validation, privacy, and deployment verification remain present with Given/When/Then acceptance coverage. S40-PO-1 is quoted byte-exact in the run report and explicitly selects the safe rename; the parenthesized implementation mapping is architect wording. PO records cited by the feature govern the intended F15 behavior. No user-visible behavior, permission, retention, or default is introduced by filename renaming. T139 maps the reconciliation and verification to existing F15 FRs and the plan covers forward-only migration, Stack D, mutation evidence, and escalation of a genuine conflict. No open ambiguities remain for the authorized migration-order correction; if direct body comparison reveals a genuine F15/main policy conflict, that item is excluded pending a numbered PO MCQ. No UI, frontend-design gate, workflow change, or migration-rule waiver is in scope. **CRITICAL: 0. HIGH: 0.** Entry PASS for T139 implementation; its checkbox remains open until current-head tests and traceability evidence pass.
+
+## S40 F15 round-11 entry and migration analysis - 2026-11-09 (refreshed)
+
+Re-read the feature spec, plan, and task map after recording exact PO option lines, four prefix exception filenames, and the revised S40-PO-4 mapping. Entry check passes for numbered FRs/measurable SCs/Given-When-Then coverage across FR-004/006/008/024/025/038/039; Clarifications cite S40-PO-1/-2/-4 and close the approved sequencing; plan covers prefix/rename/reconcile and Stack D; T139 and existing T115/T117 map code/test repairs to those FRs. No new behavior or user-facing choice is introduced. Dependency proof is in the round-11 run directory: 05000 references 04000 answer tables/policies; 04000 references 03000 form assignments; 03000 references 02000 terms policy table. No other earlier #57 migration is in that closure. The only main/#57 object overlaps are app_private.signup_auth_identity_column and public.client_signup; helper behavior matches, and signup must combine main username-unavailable outcomes with approved F15 normalized username and three-component-name rules while preserving SECURITY DEFINER/search_path/owner/revoke/grants. Stack D exposed an existing missing SQL helper dependency in the latest builder validator (T117), and a stale mutation matcher in the signup regression (T115). Repair only those approved existing FR contracts; keep every RLS/security assertion. CRITICAL: 0. HIGH: 0. No open ambiguities remain for approved scope; a genuine behavior conflict remains escalated. This Analyze follows current spec/plan/tasks and precedes implementation of the T115/T117 repairs.
+
+## S40 round-11 final analysis refresh — 2026-11-09
+
+Revalidated `spec.md`, `plan.md`, and `tasks.md` after current-head evidence was recorded for T115, T117, and T139. The four-file dependency closure and original-version prefix match `prefix-closure.md`; all remaining migration blobs/order were preserved, and the unique forward migration reconciles the two proven overlaps. The clean Stack D replay, 72/72 requested integrations, SECURITY DEFINER/RLS mutation restore (`RESTORE_DIFF_EXIT=0`), and local gates are evidenced in the S40 round-11 verification and run report. No behavior decision was added; a genuine behavior conflict remains an escalation condition. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for the approved migration-order, signup-reconciliation, and validator scope.**
+
+## S40 hosted integration follow-up analysis — 2026-11-09
+
+Reviewed the exact-head hosted integration failures. The F15 generic duplicate string was a draft under S16 Q4=A; the approved D-08 bilingual message remains authoritative, so only the stale F15 fixture and duplicate-response test expectation are corrected. The F15 alert scheduler test is updated to discover the unchanged source under both original and safely-renamed migration clocks. No runtime behavior, workflow, or policy changes. Focused Stack D tests pass 80/80. **CRITICAL: 0. HIGH: 0. No open ambiguities for this test-fixture/harness repair.**
+
+## S40 round-12 CodeRabbit remediation analysis — 2026-11-09
+
+Re-read spec, quickstart, traceability and the architecture D-08 section after the exact-head CodeRabbit review on 12e4be50. No new requirement, permission, copy, default or retention rule is introduced. Quickstart Q-V12/Q-V15 are aligned to the existing client-late trigger in `contracts/retention-and-alerts.md` (configured deadline passing without an accepted submission; immediate authorized PO+WO notices; client-to-Trainer routing and client-late Trainer alert deferred under PDN-S39-F15-01); D-03 Trainer-late rules are unchanged. The alerts route normalizes the `before` cursor to ISO 8601 with the existing 400 `invalid` contract; the new unit test covers it. The configure-policy mutation check now propagates the RPC result and adds an unmutated baseline. **CRITICAL: 0. HIGH: 0. No open ambiguities for this CodeRabbit remediation scope.**
+
+## S40 F15 round-13 entry analysis — 2026-11-09
+
+Re-read spec.md, plan.md and tasks.md for T140, the four existing-PR fixes explicitly approved by architect ruling S40-R17 under the already-decided F15 contract. FR-007/008/013/017/018/021/024/035 provide numbered requirements and measurable success criteria; answer-size and charLimit bounds are stated in FR-007, correction authorization/snapshot behavior in FR-013/021/024, and immediate client-late owner notifications/no client-late Trainer routing in FR-017/018/035. Existing Given/When/Then scenarios cover client-late scheduling/lifecycle, validation and correction. Clarifications record PDN-S39-F15-01 and state no open ambiguities for the approved behavior; T140 maps all affected requirements. The plan specifies forward-only migrations, direct-RPC tests, Stack D and mutation evidence. Local media-codec prerequisites are documentation only. No UI, policy, scope, copy, permission, retention, or default decision is introduced. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for T140.** Entry PASS before implementation.
+
+## S40 F15 round-13 Analyze refresh — 2026-11-09
+
+T140's implementation trace includes the alert inbox stage allow-list and integration function-drift source mapping, both required consumers of the approved immediate owner-stage evaluator. The updated Plan/Tasks still map to existing FR-007/008/013/017/018/021/024/035 and no product decision or user-facing scope was added. **CRITICAL: 0. HIGH: 0. No open ambiguities remain.** Revalidated before implementation continues.
+
+## S40 F15 round-13 clean-replay analysis refresh — 2026-11-09
+
+The required clean Stack D replay exposed that the pushed evaluator referenced public.form_submissions, while the current schema stores submissions in app_private.form_submissions. T140's forward evaluator replacement now uses the actual relation; this preserves the existing accepted-submission suppression behavior and is required for clean replay. The change remains within FR-017/018/035 and the immediate-owner alert decision. No new product decision. **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+## S40 F15 round-13 authorization analysis refresh — 2026-11-09
+
+T140 retains FR-018's existing enqueue-time authorization rule for immediate client-late owners. The forward evaluator serializes workspace-owner membership revocations before selecting current recipients; its direct concurrency integration regression verifies a revoked owner is excluded while the platform owner receives the immediate alert. Existing D-03 Trainer-late behavior remains covered unchanged. This is authorization parity with the approved contract, not a new role or permission. **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+## S41 round 16 existing-PR remediation analysis — 2026-11-09
+
+T141 is limited to valid CodeRabbit findings in existing approved FR scope and local verification reliability. The new SQL is forward-only and retains approved authorization, SECURITY DEFINER, search_path, owner, grant and RLS boundaries; the changed result guards follow the previously approved correction/onboarding contracts. Assignment timestamp behavior follows the existing audience-change contract. S41-PO-3 approves N08.low.foods byte-exact; N08.medium.foods, N08.high.foods and every other pending EN row remain pending. No Arabic or runtime copy is changed. The scheduler fixture change only restricts cleanup discovery to base tables while retaining run-owned and baseline-preservation assertions. No workflow or product-default decision is added. **No open ambiguities remain for T141. CRITICAL: 0. HIGH: 0.**
+
+## S41-PO-3 copy approval Analyze refresh — 2026-11-09
+
+The PO decision register records PO-MCQ-1 as “A: Approve as drafted.” The changed `spec.md` row and decision-case fixture both contain `Cottage cheese / plant protein / eggs / baladi bread`, and the targeted byte comparison confirms exact UTF-8 equality. The scope is limited to N08.low.foods; N08.medium.foods and N08.high.foods remain pending, and no runtime copy or other option is changed. Existing FR-026/036/037 and SC-026 cover exact approved EN row parity. **No open ambiguities remain for this approved row. CRITICAL: 0. HIGH: 0.**
+
+## T141 portable task-reference refresh — 2026-11-09
+
+The remaining machine-local references in T020 and T139 were replaced with the design-gate brief label and the tracked S40 round-11 verification artifact. This is a documentation-link repair only; no requirement or behavior changed. **No open ambiguities remain for T141. CRITICAL: 0. HIGH: 0.**
+
+## S41 round 16 follow-up Analyze refresh — 2026-11-09
+
+Re-read spec.md, plan.md, and tasks.md for T142 and the current CodeRabbit follow-up. Numbered FRs/SCs and existing Given/When/Then scenarios cover the touched validation, assignment revision, erasure progression, correction, alert lifecycle, scheduler, and owner-notice contracts. Clarifications cite the binding PO records; S41-PO-3 approves only N08.low.foods exact EN bytes, with medium/high and other pending rows still pending. Plan and T142 map each technical correction to existing FRs and require forward-only SQL, Stack D tests, and security mutation restore evidence. The client-late catch-up/legacy de-dup, stale selected Terms replacement, and punctuation-only username findings remain explicit PO-MCQ-2/3/4 and are excluded from implementation; no ambiguities remain for the approved independent scope. Self-review checked undefined states (null/overflow, malformed localized labels, completed schedules), authorization/role paths, pending copy, prior PO conflicts, retention effects, and FR/task/test traceability. No further product question was identified. **CRITICAL: 0. HIGH: 0.** This Analyze follows the T142 spec/plan/tasks edits and precedes further implementation.
+
+## S41-PO-12 entry Analyze - 2026-11-10
+
+Re-read the updated F15 specification, plan, and task map for T143 before implementation. The touched requirements are FR-017/018/035 (client-late alerts), FR-038 (signup username), and FR-039 (Terms consent/approval selection); SC-028 and four Given/When/Then scenarios cover stale, consumed, missing-current, retry/concurrency, legacy notices, and compact-empty usernames. Clarifications quote S41-PO-12 option labels exactly and identify architect mappings separately. No new copy, permission, role, retention, or user flow is introduced. T143 maps the new SQL and tests to the touched FRs. The absent `research/` directory has no applicable T143 material; search was attempted and returned no directory. Existing scheduler and alert lifecycle rules remain in force; D-03 Trainer-late behavior is unchanged. The current tables make selections immutable and one-row-per-client, so implementation must preserve history explicitly while adding a current selection, with all unconsumed/consumed and no-current-version states tested. SECURITY DEFINER mutation evidence is required. No additional product ambiguity is identified. **CRITICAL: 0. HIGH: 0.** Entry PASS for T143. Analysis follows the latest spec, plan, and task edits and precedes implementation.
+
+### S41-PO-12 post-edit verification - 2026-11-10
+
+After the plan/task cross-reference correction, confirmed T143 is tagged FR-017/018/035/038/039, all five FR IDs are present in spec.md, SC-028 is present, the S41-PO-12 GWT scenarios exist, and traceability maps each FR group to T143. PO-MCQ-2/3/4 are decided and no longer open decisions for current scope; historical T142 text is explicitly dated and superseded by T143. The latest Clarifications states no open ambiguities for T143. **CRITICAL: 0. HIGH: 0.** Analyze remains current after the last spec/plan/tasks edit.
+
+### S41-PO-12 final spec wording check - 2026-11-10
+
+Refined the no-current-version acceptance case to cite the existing internal `stale_selection` outcome and fail-closed untouched state; it introduces no new user-facing message. Revalidated all touched cross references and exact PO choice labels after this final spec edit. CRITICAL 0; HIGH 0; no open T143 ambiguity.
+
+### S41-PO-12 cross-reference sweep - 2026-11-10
+
+Confirmed spec.md, plan.md, tasks.md, traceability.md and this Analyze all reference the T143 requirements FR-017/018/035/038/039; SC-028 is in the specification; T143 carries the same FR tags in tasks.md and both requirements in plan.md/traceability. No unreferenced touched ID or active pending status remains for PO-MCQ-2/3/4. The only pending records are test/commit evidence for work not yet verified or landed. CRITICAL: 0; HIGH: 0.
+
+### S41-PO-12 implementation verification refresh - 2026-11-10
+
+After T143 tests passed, updated its task and traceability evidence. Reconfirmed requirement, task, plan, traceability, and scenario cross-references; no decided PO item is still marked pending. Stack D integration tests cover concurrent approval retries, stale replacement history, consumed and missing-current selection states, seven-day alert bounds, legacy owner-stage suppression, and compact-empty signup rejection before ticket redemption. Mutation probes killed the stale-refresh, archival, forced-RLS, alert-bound, legacy-suppression, and username mutants. The three touched integration files passed 37/37, and the opt-in scheduler E2E passed 1/1 on Stack D. Analyze follows the final spec/plan/tasks edits. No additional product ambiguity is identified. CRITICAL: 0; HIGH: 0.
+
+## F15 post-format Analyze refresh — 2026-11-11T00:18Z
+
+Revalidated `spec.md`, `plan.md`, `tasks.md`, and `traceability.md` after format-only commit `28642e3b` (no wording change). The commit changes presentation only; the prior lane's wording proof records normalized wording equality for all 40 formatted files and byte-exact preservation of all 257 flagged PO quote lines, including this feature's source material. Numbered FRs, measurable SCs, and existing Given/When/Then scenarios remain aligned; Clarifications cite the binding PO records and state no open ambiguities for the approved scope. The plan and task map still cover the existing approved F15 work with FR-linked task IDs; traceability references remain within the specification/task inventory. Local CI-merge reproduction on merge `79814bc45a864ac4157bea02c38fbf40d5015d70` (base `deac6a909223edf28d3a261f3257e56080f3ca4c`) confirmed freshness was the sole validator finding: latest spec/plan/tasks commit date 2026-11-11, prior Analyze date 2026-11-10. No requirement, behavior, permission, copy, retention rule, or default was changed by the format commit. **CRITICAL: 0. HIGH: 0. No open ambiguities for this format-only consistency refresh.**
+
+## S46 formatter remediation analysis - 2026-11-11T00:38:45Z
+
+Revalidated the existing S41-PO-3 decision for the approved-copy table restoration on PR #57. The task restores the two EN question/option Markdown tables to their exact pre-format bytes and protects those regions from formatter changes; it does not change any copy value, pending status, fixture, parser, behavior, or scope. Existing FR-026/036/037 and task T113 cover exact approved English intake-copy parity. The S41 PO record approves only N08.low.foods; medium/high remain pending. No open ambiguities. CRITICAL: 0. HIGH: 0. Analysis follows the spec edit and precedes acceptance of this documentation repair.
+
+## S47 PR #57 Greptile validation entry analysis — 2026-11-11T02:33Z
+
+Revalidated the existing PR #57 scope before implementation. `spec.md` FR-008 requires server validation of every save's snapshot identity, applicability, answer type/choice/bounds, and says submissions enforce applicable authored required answers; FR-007 defines text and payload bounds, while FR-040 and the form snapshot schema define explicit numeric/range constraints. Partial drafts remain allowed. `tasks.md` T011/T012/T013 cover typed validation and draft/submission route plus database enforcement; T103 covers direct-RPC corrections against the assigned snapshot. `plan.md` covers the shared validation and forward-only persisted boundary. The existing dated Analyze follows the last spec/plan/tasks edits; numbered FRs, measurable SCs and Given/When/Then acceptance remain present. Clarifications/PO records have no open ambiguity for the defined type/choice/range/draft/submission contract. **Entry PASS for these approved existing-PR fixes. CRITICAL: 0. HIGH: 0.** Required-answer semantics for a single correction operation are not defined by FR-008/FR-013 or the approved correction matrix; correction requiredness is excluded pending a PO decision and no rule will be inferred. No spec/plan/task requirement is changed.
+
+## S47-PO-7 correction required-answer Analyze refresh — 2026-11-11T06:00Z
+
+Re-read `spec.md`, `plan.md`, `tasks.md`, `correction-matrix.md`, and traceability for T144/FR-013/SC-029. The byte-exact PO source is `C:/Users/NEW LAP/.lifter/runs/s47-po/s47-po-7.verbatim.txt`: "Block clearing required (Rec.)". The architect mapping is separately labeled: correction may change supplied fields after immutable-snapshot type/choice/range validation; it cannot clear a required applicable answer; unsupplied fields are not requiredness re-checked; refusal uses existing `invalid` validation result and makes no state change. The Given/When/Then scenario covers direct-RPC clear rejection and unrelated-field-only success. The plan and T144 task require a copied forward migration, RED/GREEN direct-RPC coverage, guard-removal mutation, T052 all-ref scan, and remote version check. Existing numbered requirements, measurable SCs and correction scenarios remain present. No permission, copy, retention, role, or unrelated flow changes. S47-PO-7 resolves the only correction-requiredness ambiguity; no open ambiguities remain for T144. **CRITICAL: 0. HIGH: 0.** This Analyze follows the final spec/plan/tasks edits and precedes implementation.
+
+## S47-PO-7 implementation verification refresh — 2026-11-11T06:15Z
+
+After T144 direct integration verification, rechecked FR-013, SC-029, the T144 task, plan, correction matrix, and traceability. Stack A clean replay applied the new forward migration. `tests/integration/forms-r3-corrections.test.ts` passed 2/2, including the required-answer clear rejection, null rejection, unrelated-only partial correction with merge preservation, and the mutation that disabled the guard; the original function definition was restored after the mutation. The prior RED observed the RPC accept an empty required answer as `corrected`, revision 2. T144 is complete for the executed direct-RPC scope. No new PO ambiguity or unrelated behavior change. **CRITICAL: 0. HIGH: 0.**
+
+## S47-PO-7 final evidence cross-reference — 2026-11-11T06:18Z
+
+Revalidated T144's traceability after the final Stack A run: the direct correction test records both no-state-change refusals and unrelated-only patch preservation; the guard-removal mutant is detected and rolled back. `spec.md`, `plan.md`, and `tasks.md` retain FR-013, SC-029, S47-PO-7's exact source pointer and architect mapping, and the approved forward-only migration steps. No requirement wording or scope changed since the prior S47-PO-7 Analyze. **CRITICAL: 0. HIGH: 0. No open ambiguities for T144.**
+
+## S50 explicit correction removal analysis — 2026-11-12
+
+### Entry check
+
+- [x] `spec.md` has numbered FR-013, measurable SC-029, and Given/When/Then scenarios covering conflicts, malformed/unknown/duplicate/over-count IDs, request-size cap, absent and inapplicable answers, required-applicable refusal, replay and audit.
+- [x] PO decisions cite S49-PO-5 and S50-PO-2; architect mappings S49-R13/S50-R12 are labeled separately. **No open ambiguities remain for T145-T150.** The future UI copy decision blocks only T149's separate UI implementation; no copy or UI is in this PR.
+- [x] `plan.md` covers TS/RPC parity, complete canonical request sizing, RPC behavior, forward migration security requirements, Stack A busy/identity checks, and deferred UI copy.
+- [x] `tasks.md` assigns T145-T150, tagged with FR-013; T149 is deferred pending an EN/Egyptian Arabic copy MCQ. No task is ticked before current-head tests.
+- [x] This Analyze follows the final spec, plan and task edits, dated 2026-11-12.
+
+### Edge-case analysis
+
+- In-flight/concurrency: correction's existing lock, expected revision and intent replay flow remain authoritative; removal participates in canonical request hash.
+- Unknown result/retry: same intent and same canonical request returns stored response; changed request under same intent remains conflict per existing RPC behavior.
+- Delete/removal: only explicit remove IDs alter answers; absent ID is a no-op; present inapplicable values are removed; required applicable values reject the whole request before writes.
+- Shape/security: array/string/unique/count/ID/snapshot checks and full 262,144-byte canonical request cap happen in both TS and RPC before writes. Existing authorization, audit atomicity, function owner/grants and empty search_path remain required.
+- No-change: inspected existing migration `20261112031700_f15_correction_required_answer_guard.sql`; it appends a revision, correction, intent and audit for accepted no-value-change requests. Preserve that defined behavior.
+- Data retention/deletion: explicit correction removal is revisioned and audited; it does not change D1 erasure scope or retention rules.
+- Cross references: FR-013 -> SC-029 -> T145-T150; T149 owns deferred UI/copy approval. Removal rules are also reflected in API, audit and correction matrix contracts.
+- Copy and permissions: no user-visible copy or new permission is introduced.
+
+**CRITICAL findings: 0. HIGH findings: 0.**
+
+**Result: PASS for T145-T150.** Re-run Analyze after any later change to spec, plan, or tasks before acceptance.
+
+## S50 migration-order and final scope analysis refresh — 2026-11-12 08:35 Africa/Cairo
+
+The 78 added migrations are now renamed after `origin/main` in their previous relative order, with all repository references updated and timestamp validation passing. The S50 correction behavior remains fully specified and cross-referenced to FR-013/SC-029/T145-T150; no copy or permissions were introduced. A clean Stack A replay exposed an existing-main function collision before the new correction migration can run; the exact finding and required PO/architect decision are recorded as PDN-S50-MIG-REPLAY-1 in the lane report. This is an implementation/replay blocker, not an unresolved behavior in the removal specification. **CRITICAL findings: 0. HIGH findings: 0.**
+
+**Result: PASS for the specified behavior and migration ordering; implementation acceptance remains blocked by PDN-S50-MIG-REPLAY-1.**
+
+## S50-R26 replay and implementation re-analysis — 2026-11-12
+
+Re-read `spec.md`, `plan.md`, `tasks.md`, API/audit contracts and traceability after the explicit-removal implementation. The clarified behavior remains fully scoped: optional applicable and present-inapplicable values may be removed; absent IDs are successful no-op removals; required applicable values reject before writes; `remove` is part of validation, complete-request sizing and replay identity. No-change correction behavior is preserved as defined in the pre-existing RPC. The PO authority remains byte-exact; architect mappings are labeled separately. No new UI/copy, permission, retention, or deletion behavior was introduced. The S50-R26 migration overlap audit found one PR/main collision and corrected it minimally with `CREATE OR REPLACE`, preserving SECURITY DEFINER, empty search_path, ownership and grants. OLD/NEW Stack A schema-only dumps with ownership and ACLs are identical (normalized 32,836 lines, zero diff). Migration ordering is valid; 0 CRITICAL and 0 HIGH findings. No open product ambiguities for the authorized scope; the T149 future UI copy MCQ remains deferred and blocks only that follow-up.
+
+**Result: PASS for current F15 removal scope.**
+
+## S51 T151 final analysis - 2026-11-12
+
+T151 addresses verified authorization races within FR-013 correction and FR-004/030 Builder writes, plus the adapter's existing retirement result contract. No requirement, permission, UX, copy, retention rule, or RPC contract changed. The rechecks run after each blocking lock and before cache return or writes.
+
+Verification on exact head `9f9bbdf330c017b40116e20ea7e5bfa01309676f`: adapter unit 9/9; correction and Builder integration files 28/28; concurrent revocation mutation killed and function restored byte-for-byte; normalized OLD/NEW schema dumps differ only by the 49 intended guard lines in eight hunks, with owner/ACL declarations unchanged.
+
+Cross-reference sweep: FR-004/030/013 - T151 - tests/evidence in traceability.md; no stale T151 pending status. T149 remains the previously deferred future UI/copy task and is outside T151.
+
+**CRITICAL findings: 0. HIGH findings: 0. Result: PASS for T151.** Re-run Analyze after any later spec, plan, or task change.
+
+## S52-PO-1 retired-form assignment eligibility Analyze - 2026-11-12 23:54:17 +02:00
+
+Re-read `spec.md`, `plan.md`, `contracts/forms-api.md`, `tasks.md`, and `traceability.md` for T152-T153 after the final requirements/task edits and before implementation. FR-003/005 and SC-018 define latest-version retirement checks for manual and automated assignment creation; Given/When/Then scenarios cover approval/reconciliation, manual assignment, recurrence, unchanged snapshots, and concurrent retirement ordering. All writers serialize on the existing per-form retirement lock and inspect latest status after acquiring it. The PO decision is recorded byte-exact as `A` with verified SHA-256; S52-R1 is separately labeled architect mapping. T152/T153 are consistently tagged FR-003/005. No new copy, response contract, role, retention, or deletion rule is introduced. Existing published immutable snapshots remain readable under existing authorization and retention contracts. **CRITICAL findings: 0. HIGH findings: 0. No open ambiguities remain for the approved retirement behavior.** Entry PASS for implementation. At this pre-implementation point, T152 was correctly unchecked; that historical status is superseded by the evidence-closure refresh below.
+
+## S52 retirement implementation verification refresh (2026-11-13 04:15:47 +02:00)
+
+All targeted T152 behavior is now exercised: manual and recurring materialization plus approval reconciliation refuse new writes after retirement; successful assignment work preserves pre-existing snapshots; retirement/assignment lock races serialize correctly. RED was reproduced before the SQL changes; GREEN passed 25/25 tests across the two touched Stack A integration files; each of the two SQL guards was independently removed by a mutation probe, detected by its named invariant, and restored. The API contract and result semantics did not change. The migration function attributes, owner, and revokes remain intact. Revalidated FR-003/005, SC-018, T152/T153, contracts, tests, and PO/architect source labeling. No stale decision status or new product ambiguity. **CRITICAL: 0. HIGH: 0.** Analyze follows the formatted spec/plan/tasks and precedes evidence closure; the next refresh below records commit evidence and closes the tasks.
+
+## S52 final pre-implementation Analyze refresh (2026-11-13 04:16:49 +02:00)
+
+After formatting changed Markdown through the exact Prettier API used by scripts/format-check-changed.mjs, rechecked T152/T153 requirements and task mapping. Formatting only reflowed prose/tables; FR-003/005, SC-018, scenarios, PO choice, architect mapping, and behavior are unchanged. Entry and cross-reference checks still pass. The current RED/GREEN and two mutation runs cover each effective assignment writer and preserve the assignment snapshot. No new permissions, copy, result contract, deletion, or retention behavior. **CRITICAL: 0. HIGH: 0.** No open ambiguity for approved retirement behavior. The evidence-closure refresh below records the implementation commit SHA.
+
+## S52 evidence-closure Analyze refresh (2026-11-13 04:18:12 +02:00)
+
+Revalidated after marking T152/T153 complete and recording implementation commit 94dd5f467a61a47c79c5a295c92516afc98f9fa4 in `traceability.md`. T152's full touched integration set passed 25/25 on Stack A, the pre-fix RED and both independent guard-removal mutations are recorded, and T153's FR/SC/task/contract/acceptance cross-references agree. The PO choice remains byte-exact A with S52-R1 separately identified as the architect mapping. No pending status remains for the decided retirement behavior. **CRITICAL: 0. HIGH: 0. No open ambiguity for T152/T153.**
+
+## S53-R15 retirement adapter compatibility Analyze - 2026-11-13 06:07:21 +02:00
+
+Re-read `spec.md`, `plan.md`, `contracts/forms-api.md`, `tasks.md`, and `traceability.md` for T154 after the compatibility clarification and acceptance scenario were recorded. FR-004/030 and SC-030 require every successful `FormsStaffAdapter.retire` result to retain the `FormsStaffResult` shape with an authoritative retired `form`; the RPC response remains unchanged. T154 is uniquely assigned and tagged FR-004/030. The read uses the existing authorized `get_staff_forms` path and accepts only a matching ID/status/revision; missing, failed, or mismatched hydration maps to the existing `invalid` result, so a bare success cannot reach callers. Existing S52 retirement and snapshot rules remain unchanged. No new role, UI, copy, retention, or deletion behavior. The compatibility scenario is Given/When/Then and SC-030 is measurable by unit/contract tests. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for T154. Entry PASS for implementation.**
+
+## S53-R15 evidence closure Analyze - 2026-11-13 06:13:01 +02:00
+
+Revalidated T154 after implementation commit `c8eb353d99e08a17c37888dce84d6923223966cd`, test evidence, task completion and traceability update. `FormsStaffAdapter.retire` is typed as `Promise<FormsStaffResult>`; its success path verifies the RPC acknowledgement and returns either the matching response form or an authoritative matching retired form from `get_staff_forms`. Missing, mismatched, or failed hydration returns the existing `invalid` result. RPC contract and S52 retirement semantics are unchanged. T154 is tagged FR-004/030 and SC-030, test evidence is linked, and no stale pending state remains. #58 is untouched; its restack requires only refreshed typecheck and relevant test validation, with no source edits anticipated. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for T154.**
