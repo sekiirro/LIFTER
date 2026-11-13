@@ -165,14 +165,8 @@ it('narrow 30-day purge removes only old attempts and preserves audit and ticket
     expect(
       await tx`select id,redeemed_at from app_private.signup_admission_tickets order by id`,
     ).toEqual(tickets);
-    for (const audit of audits) {
-      const [survivor] = await tx`
-        select id,details from public.audit_events where id=${audit.id}`;
-      expect(
-        survivor,
-        `preexisting audit row ${audit.id} survives unchanged`,
-      ).toEqual(audit);
-    }
+    // The complete ordered snapshot comparison below verifies every existing
+    // audit row and payload in one query, avoiding one round trip per row.
     expect(
       await tx`select id,details from public.audit_events where action <> 'client.signup_cleanup' order by id`,
       'purge emits no audit rows except client.signup_cleanup',
@@ -193,10 +187,12 @@ it('pending synthetic JWT denies has_workspace_access and every catalog RLS tabl
   const context = await clientContext();
   await probe(async (tx) => {
     const c = await pending(tx, context);
-    await pendingRlsAccess(tx, context, {
-      sub: c.auth_user_id,
-      role: 'authenticated',
-    });
+    await pendingRlsAccess(
+      tx,
+      context,
+      { sub: c.auth_user_id, role: 'authenticated' },
+      c.id,
+    );
   });
 });
 it('pending client signs in later with real JWT and gets no PostgREST table or RPC access', async () => {
@@ -304,6 +300,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           boolean: 'false',
           bytea: "decode('00','hex')",
           'timestamp with time zone': 'now()',
+          'uuid[]': "'{}'::uuid[]",
         };
         if (!values[typeName])
           throw new Error('Uncovered public RPC argument type');
@@ -315,6 +312,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           'record_renewal',
           'record_subscription_upgrade',
           'record_subscription_date_adjustment',
+          'close_client',
         ].includes(fn.proname)
       ) {
         await tx.savepoint(async (inner) => {
@@ -345,6 +343,15 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                       (value.status === 'invalid' ||
                         (fn.proname === 'record_subscription_upgrade' &&
                           value.status === 'not_permitted') ||
+                        (fn.proname === 'read_client_form_draft' &&
+                          value.status === 'not_found') ||
+                        ([
+                          'select_intake_form',
+                          'submit_form_assignment',
+                          'configure_intake_assignment_policy',
+                          'materialize_intake_assignment_occurrence',
+                        ].includes(fn.proname) &&
+                          value.status === 'not_found') ||
                         (['subscription_freeze_operation'].includes(
                           fn.proname,
                         ) &&
@@ -365,6 +372,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
       record_renewal: { status: 'not_permitted' },
       record_subscription_upgrade: { status: 'not_permitted' },
       record_subscription_date_adjustment: { status: 'not_permitted' },
+      close_client: { status: 'not_permitted' },
     });
   });
 });

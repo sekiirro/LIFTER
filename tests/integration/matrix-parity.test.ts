@@ -291,6 +291,9 @@ it('preserves F12 approval removal and scopes F13 capabilities', () => {
     'manage_staff_access',
     'coaching_work',
     'manage_branding',
+    'author_forms',
+    'assign_intake_form',
+    'read_form_answers',
   ]);
   expect(
     Object.fromEntries(ROLES.map((role) => [role, [...MATRIX[role]]])),
@@ -305,12 +308,18 @@ it('preserves F12 approval removal and scopes F13 capabilities', () => {
       'manage_freeze',
       'coaching_work',
       'manage_branding',
+      'author_forms',
+      'assign_intake_form',
+      'read_form_answers',
     ],
     trainer: [
       'generate_registration_link',
       'record_payment',
       'manage_freeze',
       'coaching_work',
+      'author_forms',
+      'assign_intake_form',
+      'read_form_answers',
     ],
     sales: [
       'generate_registration_link',

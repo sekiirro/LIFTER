@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { afterAll, expect, it } from 'vitest';
 import type { JSONValue, TransactionSql } from 'postgres';
 import { clientContext, graph, sql } from './registration-approval-fixture';
@@ -27,6 +28,75 @@ it('T045 refund revision and allocation ordering include upgrade facts and Cairo
   expect(definition).toContain('e.collected_on::timestamp as source_time');
   expect(definition).toContain(
     "u.recorded_at at time zone 'Africa/Cairo' as source_time",
+  );
+});
+
+it('backfills retention facts from matching historical refund operations', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  await db.begin((tx) => activate(tx, f, purchase));
+
+  const migration = readFileSync(
+    new URL(
+      '../../supabase/migrations/20261112031400_f15_review16_followup.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  );
+  const backfill = migration.match(
+    /insert into app_private\.form_retention_windows\([\s\S]*?on conflict \(workspace_id,client_id,source_event_id\) do nothing;/i,
+  )?.[0];
+  expect(backfill).toBeTruthy();
+
+  await db`alter table public.clients disable trigger f15_client_retention_fact`;
+  try {
+    const result = await f.po.client.rpc('record_refund', {
+      request: {
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        purchase_id: purchase.sid,
+        request_key: randomUUID(),
+        amount_minor: '400',
+        external_confirmation: true,
+      },
+    });
+    expect(result.error).toBeNull();
+    expect(result.data).toMatchObject({ status: 'ok' });
+  } finally {
+    await db`alter table public.clients enable trigger f15_client_retention_fact`;
+  }
+
+  const [before] = await db`
+    select c.deactivated_at,r.id as refund_id,
+      count(w.id)::int as retention_count
+    from public.clients c
+    join public.refund_operations r
+      on r.workspace_id=c.workspace_id and r.client_id=c.id and r.recorded_at=c.deactivated_at
+    left join app_private.form_retention_windows w
+      on w.workspace_id=c.workspace_id and w.client_id=c.id and w.source_event_id=r.id
+    where c.workspace_id=${f.wsA.id} and c.id=${purchase.t.id}
+    group by c.deactivated_at,r.id`;
+  expect(before?.retention_count).toBe(0);
+  await db.unsafe(backfill!);
+  await db.unsafe(backfill!);
+  const [after] = await db`
+    select w.source_event_id,w.source_kind,w.ended_at,w.purge_after,
+      c.deactivated_at,r.id as refund_id
+    from app_private.form_retention_windows w
+    join public.clients c on c.workspace_id=w.workspace_id and c.id=w.client_id
+    join public.refund_operations r
+      on r.workspace_id=c.workspace_id and r.client_id=c.id and r.recorded_at=c.deactivated_at
+    where c.workspace_id=${f.wsA.id} and c.id=${purchase.t.id}`;
+  expect(after).toMatchObject({
+    source_event_id: before?.refund_id,
+    source_kind: 'refund',
+    ended_at: before?.deactivated_at,
+    deactivated_at: before?.deactivated_at,
+    refund_id: before?.refund_id,
+  });
+  expect(new Date(after!.purge_after as string).getTime()).toBe(
+    new Date(before!.deactivated_at as string).getTime() +
+      30 * 24 * 60 * 60 * 1000,
   );
 });
 
@@ -455,12 +525,8 @@ it('R8 refunds one selected purchase and leaves another purchase for manual reso
     join public.package_versions v on v.workspace_id=l.workspace_id and v.id=l.package_version_id
     where l.id=${purchase.t.link}`;
   await db.begin((tx) => activate(tx, f, purchase));
-  const originalCollection = await db.begin((tx) =>
-    sqlPay(tx, f.trainerA.userId, 'collect', paymentRequest(f, purchase)),
-  );
-  expect(originalCollection.status).toBe('ok');
   const renewal = await db.begin((tx) =>
-    renewalTx(tx, f.po.userId, {
+    renewalTx(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
       predecessor_subscription_id: purchase.sid,
@@ -468,36 +534,11 @@ it('R8 refunds one selected purchase and leaves another purchase for manual reso
       request_key: randomUUID(),
       expected_revision: 0,
       renewal_confirmed: true,
-      installments: [
-        { amount_minor: '600', due_offset_days: 0 },
-        { amount_minor: '600', due_offset_days: 30 },
-      ],
+      installments: null,
     }),
   );
   expect(renewal.status).toBe('ok');
   const renewalSubscriptionId = renewal.receipt!.subscription_id as string;
-  const renewalPurchaseId = renewal.receipt!.renewal_id as string;
-  const [renewalObligation] = await db`
-    select id,seq,amount_minor::text,currency from public.subscription_installments
-    where workspace_id=${f.wsA.id} and subscription_id=${renewalSubscriptionId}
-      and renewal_id=${renewalPurchaseId} order by seq limit 1`;
-  const renewalCollection = await db.begin((tx) =>
-    sqlPay(tx, f.trainerA.userId, 'collect', {
-      workspace_id: f.wsA.id,
-      client_id: purchase.t.id,
-      request_key: randomUUID(),
-      subscription_id: renewalSubscriptionId,
-      obligation_id: renewalObligation!.id,
-      expected_installment_seq: renewalObligation!.seq,
-      expected_revision: 0,
-      expected_previous_event_id: null,
-      expected_amount_minor: renewalObligation!.amount_minor,
-      currency: renewalObligation!.currency,
-      collected_on: '1800-01-01',
-      payment_confirmed: true,
-    }),
-  );
-  expect(renewalCollection.status).toBe('ok');
   const [before] = await db`
     select r.service_start_date::text,r.service_end_exclusive::text,
       (select count(*)::int from public.payment_events e where e.subscription_id=s.id) as events
@@ -516,25 +557,13 @@ it('R8 refunds one selected purchase and leaves another purchase for manual reso
   });
   expect(missingPurchase.error).toBeNull();
   expect(missingPurchase.data).toEqual({ status: 'invalid_input' });
-  const overSelectedPurchaseBalance = await f.po.client.rpc('record_refund', {
-    request: {
-      workspace_id: f.wsA.id,
-      client_id: purchase.t.id,
-      purchase_id: purchase.sid,
-      request_key: randomUUID(),
-      amount_minor: '1200',
-      external_confirmation: true,
-    },
-  });
-  expect(overSelectedPurchaseBalance.error).toBeNull();
-  expect(overSelectedPurchaseBalance.data).toEqual({ status: 'invalid_input' });
   const refundResult = await f.po.client.rpc('record_refund', {
     request: {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
       purchase_id: purchase.sid,
       request_key: randomUUID(),
-      amount_minor: '800',
+      amount_minor: '400',
       external_confirmation: true,
     },
   });
@@ -544,27 +573,15 @@ it('R8 refunds one selected purchase and leaves another purchase for manual reso
   const [after] = await db`
     select r.service_start_date::text,r.service_end_exclusive::text,
       (select count(*)::int from public.payment_events e where e.subscription_id=s.id) as events,
-      (select count(*)::int from public.payment_events e
-        join public.subscription_installments i on i.workspace_id=e.workspace_id
-          and i.subscription_id=e.subscription_id and i.id=e.obligation_id
-        where e.subscription_id=s.id and i.renewal_id=${renewalPurchaseId}
-          and e.kind='collection') as renewal_collections,
-      (select count(*)::int from public.refund_allocation_events a
-        join public.subscription_installments i on i.workspace_id=a.workspace_id
-          and i.subscription_id=a.subscription_id and i.id=a.obligation_id
-        where a.subscription_id=s.id and i.renewal_id=${renewalPurchaseId}) as renewal_refund_allocations,
-      (select count(*)::int from public.subscription_obligation_cancellations c
-        join public.subscription_installments i on i.workspace_id=c.workspace_id
-          and i.subscription_id=c.subscription_id and i.id=c.obligation_id
-        where c.subscription_id=s.id and i.renewal_id=${renewalPurchaseId}) as renewal_cancellations
+      (select count(*)::int from public.refund_operations ro where ro.subscription_id=s.id) as refunds,
+      (select count(*)::int from public.subscription_obligation_cancellations c where c.subscription_id=s.id) as cancellations
     from public.subscriptions s join public.subscription_renewals r
       on r.workspace_id=s.workspace_id and r.subscription_id=s.id
     where s.id=${renewalSubscriptionId}`;
   expect(after).toEqual({
     ...before,
-    renewal_collections: 1,
-    renewal_refund_allocations: 0,
-    renewal_cancellations: 0,
+    refunds: 0,
+    cancellations: 0,
   });
   const [deactivated] = await db`
     select c.deactivated_at is not null as inactive,

@@ -53,14 +53,14 @@ describe('approved signup profile contract', () => {
     ).not.toContain('username');
   });
 
-  it('accepts only 3–30 ASCII letters, digits, underscores, and periods', () => {
+  it('accepts only normalized 3–30 ASCII letters, digits, underscores, and periods', () => {
     for (const username of ['Ab_', 'a'.repeat(29) + '.', 'A_b.9']) {
       expect(
         validateSignupIdentity({ ...valid, username }, { now }).invalidFields,
       ).not.toContain('username');
     }
 
-    for (const username of ['ab', 'a'.repeat(31), 'abc-def', 'café', 'Ａbc']) {
+    for (const username of ['ab', 'a'.repeat(31), 'abc-def', 'café', 'ábc']) {
       expect(
         validateSignupIdentity({ ...valid, username }, { now }).invalidFields,
       ).toContain('username');
@@ -70,6 +70,10 @@ describe('approved signup profile contract', () => {
       validateSignupIdentity({ ...valid, username: 'MiX.ed_9' }, { now }).value
         ?.username,
     ).toBe('mix.ed_9');
+    expect(
+      validateSignupIdentity({ ...valid, username: 'Ａbc' }, { now }).value
+        ?.username,
+    ).toBe('abc');
   });
 
   it('keeps Telegram optional and validates its format when supplied', () => {

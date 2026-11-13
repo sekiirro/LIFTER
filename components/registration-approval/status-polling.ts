@@ -1,3 +1,5 @@
+import { isApprovedClientDestination } from '../../lib/client-access/routes';
+
 export type ClientStatusResult =
   | {
       status: 'ok';
@@ -12,7 +14,7 @@ export async function performApprovedStatusRedirect({
   preflight: () => Promise<
     ClientStatusResult | { status: 'ok'; destination: string }
   >;
-  navigate: (destination: '/') => void;
+  navigate: (destination: '/' | `/forms/${string}`) => void;
 }): Promise<'redirected' | 'fallback' | 'not_permitted'> {
   let result: ClientStatusResult | { status: 'ok'; destination: string };
   try {
@@ -24,11 +26,11 @@ export async function performApprovedStatusRedirect({
   if (
     result.status !== 'ok' ||
     !('destination' in result) ||
-    result.destination !== '/'
+    !isApprovedClientDestination(result.destination)
   )
     return 'fallback';
   try {
-    navigate('/');
+    navigate(result.destination);
     return 'redirected';
   } catch {
     return 'fallback';

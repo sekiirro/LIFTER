@@ -32,6 +32,9 @@ const requiredCapabilities: Record<Role, string[]> = {
     'manage_workspaces',
     'manage_staff_access',
     'coaching_work',
+    'assign_intake_form',
+    'author_forms',
+    'read_form_answers',
   ],
   workspace_owner: [
     'generate_recovery_link',
@@ -41,12 +44,18 @@ const requiredCapabilities: Record<Role, string[]> = {
     'record_payment',
     'manage_freeze',
     'coaching_work',
+    'assign_intake_form',
+    'author_forms',
+    'read_form_answers',
   ],
   trainer: [
     'generate_registration_link',
     'record_payment',
     'manage_freeze',
     'coaching_work',
+    'assign_intake_form',
+    'author_forms',
+    'read_form_answers',
   ],
   sales: [
     'generate_registration_link',

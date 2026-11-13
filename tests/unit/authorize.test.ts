@@ -23,6 +23,9 @@ const expected: Record<Capability, readonly boolean[]> = {
   manage_staff_access: [true, false, false, false],
   coaching_work: [true, true, true, false],
   manage_branding: [true, true, false, false],
+  author_forms: [true, true, true, false],
+  assign_intake_form: [true, true, true, false],
+  read_form_answers: [true, true, true, false],
 };
 
 describe('approved matrix', () => {
