@@ -99,6 +99,21 @@ type PendingEdit = {
   status: 'unknown' | 'denied';
 };
 
+type ExitTarget =
+  | {
+      kind: 'edit';
+      noteId: string;
+      generation: number;
+      body: string;
+      switchTo: string | null;
+      navigation: boolean;
+    }
+  | {
+      kind: 'create';
+      body: string;
+      navigation: boolean;
+    };
+
 const createRequestSequences = new Map<string, number>();
 let nextCreateRequestSequence = 0;
 
@@ -208,6 +223,8 @@ export function ClientNotes(props: ClientNotesProps) {
   const [editDraft, setEditDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const saveInFlight = useRef(false);
+  const saveInFlightNoteIdRef = useRef<string | null>(null);
+  const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingNoteIds, setDeletingNoteIds] = useState<string[]>([]);
@@ -234,9 +251,7 @@ export function ClientNotes(props: ClientNotesProps) {
   const [exitMode, setExitMode] = useState<'unsaved' | 'inflight' | 'unknown'>(
     'unsaved',
   );
-  const [switchEditTargetId, setSwitchEditTargetId] = useState<string | null>(
-    null,
-  );
+  const exitTarget = useRef<ExitTarget | null>(null);
 
   const notesWithEditedSnapshots = mergePageNotes(pageNotes, editedSnapshots);
   const notes =
@@ -251,6 +266,29 @@ export function ClientNotes(props: ClientNotesProps) {
     : (props.hasMore ?? false);
   const pendingNavigation = useRef<HTMLAnchorElement | null>(null);
   const allowNavigationClick = useRef(false);
+
+  const openExitWarning = useCallback(
+    (
+      mode: 'unsaved' | 'inflight' | 'unknown',
+      switchTo: string | null = null,
+      navigation = false,
+    ) => {
+      const noteId = activeEditorId.current;
+      exitTarget.current = noteId
+        ? {
+            kind: 'edit',
+            noteId,
+            generation: editorGeneration.current,
+            body: editDraft,
+            switchTo,
+            navigation,
+          }
+        : { kind: 'create', body: draft, navigation };
+      setExitMode(mode);
+      setExitOpen(true);
+    },
+    [draft, editDraft],
+  );
 
   const setActiveEditor = (noteId: string | null) => {
     editorGeneration.current += 1;
@@ -506,14 +544,15 @@ export function ClientNotes(props: ClientNotesProps) {
         return;
       event.preventDefault();
       pendingNavigation.current = link;
-      setExitMode(
+      openExitWarning(
         saving
           ? 'inflight'
           : unknownCreate || unknownEdit || pendingEdits.length > 0
             ? 'unknown'
             : 'unsaved',
+        null,
+        true,
       );
-      setExitOpen(true);
     };
     window.addEventListener('beforeunload', warnBeforeUnload);
     document.addEventListener('click', warnBeforeNavigation, true);
@@ -524,6 +563,9 @@ export function ClientNotes(props: ClientNotesProps) {
   }, [
     exitOpen,
     hasUnsavedChanges,
+    draft,
+    editDraft,
+    openExitWarning,
     pendingEdits.length,
     saving,
     unknownCreate,
@@ -558,6 +600,8 @@ export function ClientNotes(props: ClientNotesProps) {
     async (e?: FormEvent) => {
       e?.preventDefault();
       if (saveInFlight.current) return;
+      saveInFlightNoteIdRef.current = null;
+      setSavingNoteId(null);
       const retryingUnknown = unknownCreate && pendingCreate !== null;
       const rawBody = retryingUnknown ? pendingCreate.body : draft;
       const body = normalizeClientNoteBody(rawBody);
@@ -641,6 +685,8 @@ export function ClientNotes(props: ClientNotesProps) {
         }
       } finally {
         saveInFlight.current = false;
+        saveInFlightNoteIdRef.current = null;
+        setSavingNoteId(null);
         if (createRequestSequence.current === localSequence) setSaving(false);
         if (createRequestSequences.get(requestIdentity) === requestSequence)
           createRequestSequences.delete(requestIdentity);
@@ -659,7 +705,7 @@ export function ClientNotes(props: ClientNotesProps) {
   );
 
   const handleUpdate = async (noteId: string, retryBody?: string) => {
-    if (saveInFlight.current) return;
+    if (saveInFlight.current || deletingNoteIdsRef.current.has(noteId)) return;
     const rawBody = retryBody ?? editDraft;
     const body = normalizeClientNoteBody(rawBody);
     const requestGeneration = editorGeneration.current;
@@ -677,6 +723,8 @@ export function ClientNotes(props: ClientNotesProps) {
       return;
     }
     saveInFlight.current = true;
+    saveInFlightNoteIdRef.current = noteId;
+    setSavingNoteId(noteId);
     setSaving(true);
     if (ownsEditor()) setSaveError(null);
     try {
@@ -738,12 +786,18 @@ export function ClientNotes(props: ClientNotesProps) {
       }
     } finally {
       saveInFlight.current = false;
+      saveInFlightNoteIdRef.current = null;
+      setSavingNoteId(null);
       setSaving(false);
     }
   };
 
   const handleDelete = async (noteId: string) => {
-    if (deletingNoteIdsRef.current.has(noteId)) return;
+    if (
+      deletingNoteIdsRef.current.has(noteId) ||
+      saveInFlightNoteIdRef.current === noteId
+    )
+      return;
     deletingNoteIdsRef.current.add(noteId);
     setDeletingNoteIds((current) =>
       current.includes(noteId) ? current : [...current, noteId],
@@ -754,6 +808,14 @@ export function ClientNotes(props: ClientNotesProps) {
       const res = await props.onDelete?.(noteId);
       if (res?.status === 'ok') {
         props.onSuccess?.('deleted');
+        clearPendingEdit(noteId);
+        if (activeEditorId.current === noteId) {
+          setActiveEditor(null);
+          setEditingNoteSnapshot(null);
+          setEditDraft('');
+          setUnknownEdit(false);
+          setSaveError(null);
+        }
         setEditedSnapshotState((current) =>
           current.scope === pageScope
             ? {
@@ -788,17 +850,18 @@ export function ClientNotes(props: ClientNotesProps) {
   };
 
   const startEdit = (note: ClientNote) => {
+    if (deletingNoteIdsRef.current.has(note.id)) return;
     if (
       editingId &&
       editingId !== note.id &&
       (saving || unknownEdit || editDraft !== editedNote?.body)
     ) {
-      setSwitchEditTargetId(note.id);
-      setExitMode(saving ? 'inflight' : unknownEdit ? 'unknown' : 'unsaved');
-      setExitOpen(true);
+      openExitWarning(
+        saving ? 'inflight' : unknownEdit ? 'unknown' : 'unsaved',
+        note.id,
+      );
       return;
     }
-    setSwitchEditTargetId(null);
     setActiveEditor(note.id);
     setEditingNoteSnapshot(note);
     setEditDraft(note.body);
@@ -808,13 +871,11 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const cancelEdit = () => {
     if (saving || unknownEdit) {
-      setExitMode(saving ? 'inflight' : 'unknown');
-      setExitOpen(true);
+      openExitWarning(saving ? 'inflight' : 'unknown');
       return;
     }
     if (editedNote && editDraft !== editedNote.body) {
-      setExitMode('unsaved');
-      setExitOpen(true);
+      openExitWarning('unsaved');
       return;
     }
     setActiveEditor(null);
@@ -825,6 +886,8 @@ export function ClientNotes(props: ClientNotesProps) {
 
   const confirmDiscard = () => {
     setExitOpen(false);
+    const target = exitTarget.current;
+    exitTarget.current = null;
     const continueNavigation = () => {
       const link = pendingNavigation.current;
       pendingNavigation.current = null;
@@ -833,73 +896,93 @@ export function ClientNotes(props: ClientNotesProps) {
       link.click();
       allowNavigationClick.current = false;
     };
-    if (editingId && switchEditTargetId) {
-      const target = notes.find((note) => note.id === switchEditTargetId);
-      if (!target) {
-        setSwitchEditTargetId(null);
+    if (!target) {
+      pendingNavigation.current = null;
+      return;
+    }
+    if (target.kind === 'edit') {
+      const stillOwnsTarget =
+        editingId === target.noteId &&
+        activeEditorId.current === target.noteId &&
+        editorGeneration.current === target.generation &&
+        editDraft === target.body;
+      const currentEditNeedsDiscard =
+        saving || unknownEdit || editDraft !== editedNote?.body;
+      if (!stillOwnsTarget || !currentEditNeedsDiscard) {
+        pendingNavigation.current = null;
+        return;
+      }
+      if (target.switchTo) {
+        const nextEditor = notes.find((note) => note.id === target.switchTo);
+        if (!nextEditor) {
+          return;
+        }
+        if (unknownEdit)
+          setPendingEdit({
+            noteId: target.noteId,
+            body: editDraft,
+            status: 'unknown',
+          });
+        setActiveEditor(nextEditor.id);
+        setEditingNoteSnapshot(nextEditor);
+        setEditDraft(nextEditor.body);
+        setUnknownEdit(false);
+        setSaveError(null);
         return;
       }
       if (unknownEdit)
         setPendingEdit({
-          noteId: editingId,
+          noteId: target.noteId,
           body: editDraft,
           status: 'unknown',
         });
-      setSwitchEditTargetId(null);
-      setActiveEditor(target.id);
-      setEditingNoteSnapshot(target);
-      setEditDraft(target.body);
+      setActiveEditor(null);
+      setEditingNoteSnapshot(null);
+      setEditDraft('');
       setUnknownEdit(false);
-      setSaveError(null);
+      if (target.navigation) continueNavigation();
       return;
     }
-    if (exitMode === 'unknown' && !editingId && pendingCreate) {
+    const sameCreateDraft = draft === target.body;
+    const createStillNeedsDiscard =
+      sameCreateDraft &&
+      (saving || unknownCreate || draft.length > 0 || pendingCreate !== null);
+    if (!createStillNeedsDiscard) {
+      pendingNavigation.current = null;
+      return;
+    }
+    if (unknownCreate && pendingCreate) {
       setCreateEditorClosed(true);
-      continueNavigation();
+      if (target.navigation) continueNavigation();
       return;
     }
-    if (exitMode === 'unknown' && unknownEdit && editingId) {
-      setPendingEdit({ noteId: editingId, body: editDraft, status: 'unknown' });
-      setActiveEditor(null);
-      setEditingNoteSnapshot(null);
-      setEditDraft('');
-      setUnknownEdit(false);
-      continueNavigation();
-      return;
-    }
-    if (editingId) {
-      setActiveEditor(null);
-      setEditingNoteSnapshot(null);
-      setEditDraft('');
-      setUnknownEdit(false);
+    if (saving) {
+      setCreateEditorClosed(true);
     } else {
       setDraft('');
       setIdempotencyKey(null);
       setCreateEditorClosed(true);
     }
-    continueNavigation();
+    if (target.navigation) continueNavigation();
   };
 
   const stay = () => {
     setExitOpen(false);
-    setSwitchEditTargetId(null);
+    exitTarget.current = null;
     pendingNavigation.current = null;
   };
 
   const cancelCreate = () => {
     if (saving) {
-      setExitMode('inflight');
-      setExitOpen(true);
+      openExitWarning('inflight');
       return;
     }
     if (unknownCreate) {
-      setExitMode('unknown');
-      setExitOpen(true);
+      openExitWarning('unknown');
       return;
     }
     if (draft.trim().length > 0) {
-      setExitMode('unsaved');
-      setExitOpen(true);
+      openExitWarning('unsaved');
       return;
     }
     setDraft('');
@@ -1014,6 +1097,10 @@ export function ClientNotes(props: ClientNotesProps) {
                             pendingEdits.length === 0 && (
                               <Button
                                 type="button"
+                                disabled={
+                                  deletingNoteIds.includes(note.id) ||
+                                  savingNoteId === note.id
+                                }
                                 onClick={() => startEdit(note)}
                               >
                                 {m['clientNotes.edit']}
@@ -1023,7 +1110,10 @@ export function ClientNotes(props: ClientNotesProps) {
                             <Button
                               type="button"
                               variant="destructive"
-                              disabled={deletingNoteIds.includes(note.id)}
+                              disabled={
+                                deletingNoteIds.includes(note.id) ||
+                                savingNoteId === note.id
+                              }
                               onClick={() => setDeleteTargetId(note.id)}
                             >
                               {m['clientNotes.delete']}
@@ -1108,7 +1198,7 @@ export function ClientNotes(props: ClientNotesProps) {
               >
                 <Button
                   type="button"
-                  disabled={saving}
+                  disabled={saving || deletingNoteIds.includes(pending.noteId)}
                   onClick={() =>
                     void handleUpdate(pending.noteId, pending.body)
                   }

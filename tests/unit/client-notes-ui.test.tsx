@@ -2289,11 +2289,12 @@ describe('ClientNotes behaviour', () => {
           resolveDelete = resolve;
         }),
     );
+    const otherNote = { ...note, id: 'delete-other', body: 'other row' };
     await render({
       locale: 'en',
       messages: mEn,
       status: 'ready',
-      notes: [note],
+      notes: [note, otherNote],
       role: 'platform_owner',
       actorId: 'owner',
       canCreate: false,
@@ -2318,11 +2319,22 @@ describe('ClientNotes behaviour', () => {
 
     expect(onDelete).toHaveBeenCalledTimes(1);
     expect(deleteButton.disabled).toBe(true);
+    const editFor = (body: string) => {
+      const targetRow = Array.from(host!.querySelectorAll('li')).find((item) =>
+        item.textContent?.includes(body),
+      )!;
+      return Array.from(
+        targetRow.querySelectorAll<HTMLButtonElement>('button'),
+      ).find((button) => button.textContent === mEn['clientNotes.edit']);
+    };
+    expect(editFor(note.body)?.disabled).toBe(true);
+    expect(editFor(otherNote.body)?.disabled).toBe(false);
     await act(async () => deleteButton.click());
     expect(onDelete).toHaveBeenCalledTimes(1);
 
     await act(async () => resolveDelete?.({ status: 'denied' }));
     expect(deleteButton.disabled).toBe(false);
+    expect(editFor(note.body)?.disabled).toBe(false);
     expect(host!.textContent).toContain(mEn['clientNotes.permissionRefused']);
   });
 
@@ -2887,7 +2899,7 @@ describe('ClientNotes behaviour', () => {
       messages: mEn,
       status: 'ready',
       notes: [note],
-      role: 'trainer',
+      role: 'platform_owner',
       actorId: 'u1',
       canCreate: true,
       onUpdate,
@@ -2918,12 +2930,17 @@ describe('ClientNotes behaviour', () => {
     await act(async () => discard.click());
     expect(host!.querySelector('dialog')).toBeNull();
     expect(onUpdate).toHaveBeenCalledTimes(1);
+    const deleteControl = Array.from(
+      host!.querySelectorAll<HTMLButtonElement>('button'),
+    ).find((button) => button.textContent === mEn['clientNotes.delete'])!;
+    expect(deleteControl.disabled).toBe(true);
     await act(async () => {
       resolveUpdate?.({ status: 'error', error: 'boom' });
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(host!.textContent).toContain(mEn['clientNotes.saveError']);
     expect(host!.textContent).not.toContain('boom');
+    expect(deleteControl.disabled).toBe(false);
   });
 
   it('does not restore an unresolved edit after navigation or reload', async () => {
@@ -3058,6 +3075,372 @@ describe('ClientNotes behaviour', () => {
     });
     expect(onUpdate).toHaveBeenNthCalledWith(4, 'n-retry', 'retained body');
     expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
+  });
+
+  it('clears a deleted note pending edit so other notes can be edited', async () => {
+    const notes = ['first note', 'second note'].map((body, index) => ({
+      id: `n${index + 1}`,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:1${index}:00Z`,
+      edited_at: null,
+    }));
+    const onUpdate = vi.fn(async () => ({ status: 'unavailable' }));
+    let resolveDelete: ((result: { status: string }) => void) | undefined;
+    const onDelete = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveDelete = resolve;
+        }),
+    );
+    const props = {
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes,
+      role: 'platform_owner',
+      actorId: 'u1',
+      onUpdate,
+      onDelete,
+      canCreate: false,
+    } as const;
+    await render(props);
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'retained body'),
+    );
+    await act(async () => byText(mEn['clientNotes.saveChanges']).click());
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+    expect(host!.textContent).toContain(mEn['clientNotes.retry']);
+    expect(
+      Array.from(host!.querySelectorAll('button')).filter(
+        (button) => button.textContent === mEn['clientNotes.edit'],
+      ),
+    ).toHaveLength(0);
+
+    const deletedRow = Array.from(host!.querySelectorAll('li')).find((row) =>
+      row.textContent?.includes(notes[0]!.body),
+    )!;
+    await act(async () =>
+      Array.from(deletedRow.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.delete'])!
+        .click(),
+    );
+    await act(async () =>
+      byText(mEn['clientNotes.deleteDialogConfirm']).click(),
+    );
+    const retry = byText(mEn['clientNotes.retry']);
+    expect(retry.disabled).toBe(true);
+    await act(async () => resolveDelete?.({ status: 'ok' }));
+
+    expect(onDelete).toHaveBeenCalledWith('n1');
+    expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
+    await act(async () =>
+      root!.render(
+        createElement(ClientNotes, { ...props, notes: [notes[1]!] }),
+      ),
+    );
+    expect(host!.querySelectorAll('li')).toHaveLength(1);
+    expect(
+      Array.from(host!.querySelectorAll('button')).filter(
+        (button) => button.textContent === mEn['clientNotes.edit'],
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('does not discard a create draft when the captured edit saves before confirmation', async () => {
+    const note = {
+      id: 'n-edit',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'saved body',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    let resolveUpdate:
+      ((result: { status: string; note?: typeof note }) => void) | undefined;
+    const onUpdate = vi.fn(
+      () =>
+        new Promise<{ status: string; note?: typeof note }>((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      onUpdate,
+      canCreate: true,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    const createTextarea =
+      host!.querySelector<HTMLTextAreaElement>('form textarea')!;
+    await act(async () => setValue(createTextarea, 'keep this create draft'));
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    const editTextarea =
+      host!.querySelector<HTMLTextAreaElement>('li textarea')!;
+    await act(async () => setValue(editTextarea, 'saved body updated'));
+    await act(async () => {
+      byText(mEn['clientNotes.saveChanges']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    expect(host!.querySelector('dialog')).not.toBeNull();
+
+    await act(async () => {
+      resolveUpdate?.({
+        status: 'ok',
+        note: { ...note, body: 'saved body updated' },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.querySelector('dialog')).not.toBeNull();
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+
+    expect(host!.querySelector('dialog')).toBeNull();
+    expect(host!.querySelector('form textarea')).not.toBeNull();
+    expect(
+      (host!.querySelector('form textarea') as HTMLTextAreaElement).value,
+    ).toBe('keep this create draft');
+    expect(host!.textContent).toContain('saved body');
+  });
+
+  it('does not replay navigation after the captured edit saves while its warning is open', async () => {
+    const note = {
+      id: 'n-navigation-edit',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'committed edit',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    let resolveUpdate:
+      ((result: { status: string; note?: typeof note }) => void) | undefined;
+    const onUpdate = vi.fn(
+      () =>
+        new Promise<{ status: string; note?: typeof note }>((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+      onUpdate,
+      canCreate: true,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () =>
+      setValue(host!.querySelector('form textarea')!, 'separate create draft'),
+    );
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('li textarea')!, 'submitted edit'),
+    );
+    await act(async () => {
+      byText(mEn['clientNotes.saveChanges']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    const link = dom!.window.document.createElement('a');
+    link.href = '/home';
+    link.textContent = 'Home';
+    dom!.window.document.body.append(link);
+    let replayedNavigation = 0;
+    let captureReplay = false;
+    link.addEventListener('click', (event) => {
+      if (!captureReplay) return;
+      replayedNavigation += 1;
+      event.preventDefault();
+    });
+    await act(async () =>
+      link.dispatchEvent(
+        new dom!.window.MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+        }),
+      ),
+    );
+    expect(host!.querySelector('dialog')).not.toBeNull();
+    await act(async () => {
+      resolveUpdate?.({
+        status: 'ok',
+        note: { ...note, body: 'submitted edit' },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    captureReplay = true;
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+
+    expect(replayedNavigation).toBe(0);
+    expect(host!.querySelector('dialog')).toBeNull();
+    expect(
+      (host!.querySelector('form textarea') as HTMLTextAreaElement).value,
+    ).toBe('separate create draft');
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+    expect(replayedNavigation).toBe(0);
+  });
+
+  it('keeps the captured edit target when another note delete resolves under the warning', async () => {
+    const notes = ['edited row', 'deleted row'].map((body, index) => ({
+      id: `n${index + 1}`,
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body,
+      created_at: `2026-11-08T10:1${index}:00Z`,
+      edited_at: null,
+    }));
+    let resolveDelete: ((result: { status: string }) => void) | undefined;
+    const onDelete = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveDelete = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes,
+      role: 'platform_owner',
+      actorId: 'u1',
+      onDelete,
+      canCreate: false,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    const deletedRow = Array.from(host!.querySelectorAll('li')).find((row) =>
+      row.textContent?.includes('deleted row'),
+    )!;
+    await act(async () =>
+      Array.from(deletedRow.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.delete'])!
+        .click(),
+    );
+    await act(async () =>
+      byText(mEn['clientNotes.deleteDialogConfirm']).click(),
+    );
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'edited draft'),
+    );
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    expect(host!.querySelector('dialog')?.textContent).toContain(
+      mEn['clientNotes.exitWarning.body'],
+    );
+
+    await act(async () => resolveDelete?.({ status: 'ok' }));
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+    expect(onDelete).toHaveBeenCalledWith('n2');
+    expect(host!.querySelector('dialog')).toBeNull();
+    expect(host!.querySelector('textarea')).toBeNull();
+    expect(host!.textContent).toContain('edited row');
+  });
+
+  it('keeps the create draft as the warning target while a pending edit Retry resolves', async () => {
+    const note = {
+      id: 'n-retry-dialog',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'committed',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    let resolveRetry:
+      ((result: { status: string; note?: typeof note }) => void) | undefined;
+    const onUpdate = vi
+      .fn()
+      .mockResolvedValueOnce({ status: 'unavailable' })
+      .mockImplementationOnce(
+        () =>
+          new Promise<{ status: string; note?: typeof note }>((resolve) => {
+            resolveRetry = resolve;
+          }),
+      );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'platform_owner',
+      actorId: 'u1',
+      onUpdate,
+      canCreate: true,
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'retry body'),
+    );
+    await act(async () => byText(mEn['clientNotes.saveChanges']).click());
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+
+    await act(async () =>
+      setValue(host!.querySelector('form textarea')!, 'create draft'),
+    );
+    await act(async () => {
+      byText(mEn['clientNotes.retry']).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => byText(mEn['clientNotes.cancel']).click());
+    expect(host!.querySelector('dialog')).not.toBeNull();
+    await act(async () =>
+      resolveRetry?.({
+        status: 'ok',
+        note: { ...note, body: 'retry body' },
+      }),
+    );
+    await act(async () =>
+      byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+
+    expect(host!.querySelector('dialog')).toBeNull();
+    expect(host!.querySelector('form textarea')).toBeNull();
+    expect(host!.textContent).not.toContain(mEn['clientNotes.retry']);
+    expect(host!.textContent).toContain('committed');
   });
 
   it('delete failures use approved generic copy only', async () => {
