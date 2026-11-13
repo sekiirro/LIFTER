@@ -548,3 +548,12 @@ it('executes the integration aggregator script against push and PR revision case
     expect(result.status, testCase.name).toBe(testCase.expected);
   }
 });
+
+it('uses the Vite runner config loader for integration tests', () => {
+  const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+    scripts: Record<string, string>;
+  };
+  expect(packageJson.scripts['test:integration']).toContain(
+    '--configLoader=runner',
+  );
+});

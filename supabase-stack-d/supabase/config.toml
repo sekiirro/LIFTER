@@ -1,0 +1,49 @@
+project_id = "lifter-stack-d"
+
+[api]
+enabled = true
+port = 45421
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 45422
+shadow_port = 45420
+
+[storage]
+enabled = true
+
+[studio]
+enabled = true
+port = 45423
+
+[inbucket]
+enabled = true
+port = 45424
+smtp_port = 45425
+pop3_port = 45426
+
+[analytics]
+enabled = false
+port = 45427
+
+[edge_runtime]
+enabled = true
+inspector_port = 45428
+
+[db.pooler]
+enabled = false
+port = 45429
+
+[auth]
+enable_signup = false
+minimum_password_length = 8
+
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
+[auth.email]
+# PO ND-F4-3 (2026-10-29): local email OTPs and links, including recovery, expire after 60 minutes.
+otp_expiry = 3600

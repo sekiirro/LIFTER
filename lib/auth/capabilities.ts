@@ -21,6 +21,9 @@ export const CAPABILITIES = [
   'manage_staff_access',
   'coaching_work',
   'manage_branding',
+  'author_forms',
+  'assign_intake_form',
+  'read_form_answers',
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -35,12 +38,18 @@ export const MATRIX: Readonly<Record<Role, readonly Capability[]>> = {
     'manage_freeze',
     'coaching_work',
     'manage_branding',
+    'author_forms',
+    'assign_intake_form',
+    'read_form_answers',
   ],
   trainer: [
     'generate_registration_link',
     'record_payment',
     'manage_freeze',
     'coaching_work',
+    'author_forms',
+    'assign_intake_form',
+    'read_form_answers',
   ],
   sales: [
     'generate_registration_link',

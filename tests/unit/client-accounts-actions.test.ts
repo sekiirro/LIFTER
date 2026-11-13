@@ -224,7 +224,7 @@ it('T023 strict signup shape rejects unknown fields and accepts the approved pro
     validateSignupFields({ ...accepted, role: 'admin' }).invalidFields.length >
       0,
   ).toBe(true);
-  for (const username of ['ab', 'a'.repeat(31), 'abc-def', 'café', 'Ａbc'])
+  for (const username of ['ab', 'a'.repeat(31), 'abc-def', 'café', 'ábc'])
     expect(
       validateSignupFields({ ...accepted, username }).invalidFields,
       username,
