@@ -376,13 +376,19 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           },
         ]);
         await page.goto(`/forms/${assignmentId}`);
+        const [assignmentClient] = await db`
+          select c.name from public.form_assignments a
+          join public.clients c on c.workspace_id=a.workspace_id and c.id=a.client_id
+          where a.id=${assignmentId}
+        `;
+        expect(assignmentClient?.name).toBeTruthy();
         await expect(
           page.getByRole('heading', {
             level: 1,
             name: locale === 'en' ? 'Client intake' : 'بيانات العميل',
           }),
         ).toBeVisible();
-        await expect(page.locator('output')).toHaveText('U3 synthetic test');
+        await expect(page.locator('output')).toHaveText(assignmentClient!.name);
         await expect(
           page.getByRole('heading', {
             level: 2,

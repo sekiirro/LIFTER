@@ -336,8 +336,10 @@ test('intake and alert views keep client-late separate from Trainer-late policy'
   await expect(
     page.getByRole('heading', { name: 'Trainer delivery alerts' }),
   ).toBeVisible();
-  await expect(page.getByText('+24 hours')).toBeVisible();
-  await expect(page.getByText('+48 hours')).toBeVisible();
+  await expect(page.getByText('Owner alert').first()).toBeVisible();
+  await expect(page.getByText(/after\s+24\s+hours unresolved/)).toBeVisible();
+  await expect(page.getByText('+24 hours')).not.toBeVisible();
+  await expect(page.getByText('+48 hours')).not.toBeVisible();
   const alertViolations = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
     .analyze();

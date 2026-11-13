@@ -97,7 +97,7 @@ for (const locale of ['ar', 'en'] as const) {
       `${messages['clientSignup.telegramUsername']} (${messages['clientSignup.optional']})`,
       { exact: true },
     );
-    const name = page.getByLabel(locale === 'ar' ? 'الاسم' : 'Name', {
+    const name = page.getByLabel(messages['clientSignup.name'], {
       exact: true,
     });
     const email = page.getByLabel(
