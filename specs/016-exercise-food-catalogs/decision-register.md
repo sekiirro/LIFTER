@@ -4,14 +4,14 @@ This register preserves prior records and points to later decisions. An entry ma
 
 ## Supersession history
 
-| Record | Historical decision | Status | Superseding authority |
-| --- | --- | --- | --- |
-| S35-PO-1 | F16 manual distribution decision; retain original S35 record verbatim in its source location. | **Superseded**; history retained. | S35-PO-3 F16 REDESIGN paragraph, quoted in `spec.md` Clarifications. |
-| S35-PO-2 | F16 manual distribution decision; retain original S35 record verbatim in its source location. | **Superseded**; history retained. | S35-PO-3 F16 REDESIGN paragraph, quoted in `spec.md` Clarifications. |
-| PR #64, commit `c4543a1`, “independent workspace copies” | Independent workspace catalog copies. | **Superseded**; do not edit its branch or delete its record. | S35-PO-3 F16 REDESIGN paragraph; one global catalog with per-workspace overrides. |
-| S35-PO-3 | One shared global exercise catalog with workspace-specific editable overrides and client-workspace video resolution. | **Current binding decision** for the stated scope. | Original source: `C:/Users/NEW LAP/.lifter/runs/s35-ledger3/s35-po-3.verbatim.txt`. |
-| S36-PO-2 (F16 paragraph) | Answers F16-MCQ-1, -3, -4, -5 and -6; F16-MCQ-2 and -7 become moot; no client transfers between workspaces. F16-MCQ-8 and -10 are re-framed in round 3 as -F and -G; -9 stays open; -A to -E, -H and -I are added in round 3 (see the round-3 section at the end). | **Current binding decision** for the answered items. | Verbatim paragraph in `## S36-PO-2 F16 answers` below; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-2.verbatim.txt`. |
-| S36-PO-3 (F16 bullet, round 4) | Architect mapping of the F16 bullet: answers F16-MCQ-A, -B, -C, -E, -F, -G, -H, -I (both parts), -9 and -D (see `## S36-PO-3 F16 answers (round 4)`); adds F16-MCQ-J (answered by S36-PO-5). | **Current binding PO bullet**. The per-item answers are architect words applied to the bullet, not independent PO decisions. | Verbatim bullet in `## S36-PO-3 F16 answers (round 4)`; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-3.verbatim.txt`. |
+| Record                                                   | Historical decision                                                                                                                                                                                                                                                | Status                                                                                                                       | Superseding authority                                                                                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| S35-PO-1                                                 | F16 manual distribution decision; retain original S35 record verbatim in its source location.                                                                                                                                                                      | **Superseded**; history retained.                                                                                            | S35-PO-3 F16 REDESIGN paragraph, quoted in `spec.md` Clarifications.                                                         |
+| S35-PO-2                                                 | F16 manual distribution decision; retain original S35 record verbatim in its source location.                                                                                                                                                                      | **Superseded**; history retained.                                                                                            | S35-PO-3 F16 REDESIGN paragraph, quoted in `spec.md` Clarifications.                                                         |
+| PR #64, commit `c4543a1`, “independent workspace copies” | Independent workspace catalog copies.                                                                                                                                                                                                                              | **Superseded**; do not edit its branch or delete its record.                                                                 | S35-PO-3 F16 REDESIGN paragraph; one global catalog with per-workspace overrides.                                            |
+| S35-PO-3                                                 | One shared global exercise catalog with workspace-specific editable overrides and client-workspace video resolution.                                                                                                                                               | **Current binding decision** for the stated scope.                                                                           | Original source: `C:/Users/NEW LAP/.lifter/runs/s35-ledger3/s35-po-3.verbatim.txt`.                                          |
+| S36-PO-2 (F16 paragraph)                                 | Answers F16-MCQ-1, -3, -4, -5 and -6; F16-MCQ-2 and -7 become moot; no client transfers between workspaces. F16-MCQ-8 and -10 are re-framed in round 3 as -F and -G; -9 stays open; -A to -E, -H and -I are added in round 3 (see the round-3 section at the end). | **Current binding decision** for the answered items.                                                                         | Verbatim paragraph in `## S36-PO-2 F16 answers` below; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-2.verbatim.txt`.  |
+| S36-PO-3 (F16 bullet, round 4)                           | Architect mapping of the F16 bullet: answers F16-MCQ-A, -B, -C, -E, -F, -G, -H, -I (both parts), -9 and -D (see `## S36-PO-3 F16 answers (round 4)`); adds F16-MCQ-J (answered by S36-PO-5).                                                                       | **Current binding PO bullet**. The per-item answers are architect words applied to the bullet, not independent PO decisions. | Verbatim bullet in `## S36-PO-3 F16 answers (round 4)`; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-3.verbatim.txt`. |
 
 ## F16 MCQ status after S36-PO-2
 
@@ -128,18 +128,18 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-2.verbatim.txt`, F16 par
 
 Architect mapping (`C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-2.md`) is recorded here as architect words applied to the verbatim paragraph, not as independent PO decisions:
 
-| MCQ | Status | Recorded answer | Applied in |
-| --- | --- | --- | --- |
-| F16-MCQ-1 | Answered, option (a) | New workspaces use the global video fallback; no automatic mapping rows. | FR-014, SC-012, spec US2 scenario 5, data-model `exercise_overrides` |
-| F16-MCQ-2 | Moot | No mapping rows exist, so FR-019 (no seeded content) is unchanged. | FR-019 untouched |
-| F16-MCQ-3 | Answered (label flagged) | Published plans freeze exercise names and instructions at publication; video is resolved live. | FR-020, SC-011, spec US6 |
-| F16-MCQ-4 | Answered, option (c) | A workspace alternatives override replaces the global list and may reference workspace-private exercises. | FR-003, data-model `exercise_overrides` |
-| F16-MCQ-5 | Answered, option (a) | Canonical global exercises are edited only in the explicit global admin scope; personal-workspace PO edits write only that workspace override. | FR-002, FR-014, FR-018, SC-001, SC-008 |
-| F16-MCQ-6 | Answered, option (a) | Removing a workspace video restores the global video fallback. | FR-014, contracts override remove/clear |
-| F16-MCQ-7 | Moot | No client transfers between workspaces (below); client workspace equals plan workspace. | FR-022 |
-| F16-MCQ-8 (now F16-MCQ-F) | Open | — | FR-003, FR-026, T037, T040, T044, T056 |
-| F16-MCQ-9 | Open (kept open in round 3) | — | FR-014, FR-024, T045, T050, T058 |
-| F16-MCQ-10 (now F16-MCQ-G) | Open | — | FR-025, FR-027, T048, T058 |
+| MCQ                        | Status                      | Recorded answer                                                                                                                                | Applied in                                                           |
+| -------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| F16-MCQ-1                  | Answered, option (a)        | New workspaces use the global video fallback; no automatic mapping rows.                                                                       | FR-014, SC-012, spec US2 scenario 5, data-model `exercise_overrides` |
+| F16-MCQ-2                  | Moot                        | No mapping rows exist, so FR-019 (no seeded content) is unchanged.                                                                             | FR-019 untouched                                                     |
+| F16-MCQ-3                  | Answered (label flagged)    | Published plans freeze exercise names and instructions at publication; video is resolved live.                                                 | FR-020, SC-011, spec US6                                             |
+| F16-MCQ-4                  | Answered, option (c)        | A workspace alternatives override replaces the global list and may reference workspace-private exercises.                                      | FR-003, data-model `exercise_overrides`                              |
+| F16-MCQ-5                  | Answered, option (a)        | Canonical global exercises are edited only in the explicit global admin scope; personal-workspace PO edits write only that workspace override. | FR-002, FR-014, FR-018, SC-001, SC-008                               |
+| F16-MCQ-6                  | Answered, option (a)        | Removing a workspace video restores the global video fallback.                                                                                 | FR-014, contracts override remove/clear                              |
+| F16-MCQ-7                  | Moot                        | No client transfers between workspaces (below); client workspace equals plan workspace.                                                        | FR-022                                                               |
+| F16-MCQ-8 (now F16-MCQ-F)  | Open                        | —                                                                                                                                              | FR-003, FR-026, T037, T040, T044, T056                               |
+| F16-MCQ-9                  | Open (kept open in round 3) | —                                                                                                                                              | FR-014, FR-024, T045, T050, T058                                     |
+| F16-MCQ-10 (now F16-MCQ-G) | Open                        | —                                                                                                                                              | FR-025, FR-027, T048, T058                                           |
 
 **Label note for architect (F16-MCQ-3):** the architect mapping labels the answer as option (c). The register text of option (c) reads “snapshot names but resolve instructions live”, which contradicts the PO words (names and instructions frozen; videos live) and matches no option exactly. This record binds the PO words. The architect is asked to confirm the label; no implementation may depend on the label alone.
 
@@ -155,27 +155,27 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-3.verbatim.txt`, section
 
 Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3.md`, the F16 lines only (the product mapping and the F16 OPEN line that yields F16-MCQ-J). The architect routing lines of that file are not F16 and are not applied here. The per-item answers below are architect words applied to the verbatim bullet, as instructed. They are not independent PO decisions.
 
-| MCQ | Status (S36-PO-3) | Recorded answer | Applied in |
-| --- | --- | --- | --- |
-| F16-MCQ-A | Answered, option (a) | Per-field reset. Each allowlisted field (name, description, instructions, video, alternatives, notes) returns to the canonical value independently; the override row stays for its other fields. | FR-003, FR-014; data-model `exercise_override_versions`; contracts "Override remove/clear" row; T046, T047, T040 |
-| F16-MCQ-B | Answered, option (a) | An empty alternatives list is allowed and means no alternatives (replace semantics). Alternatives override writes stay BLOCKED by F16-MCQ-J. | FR-025; data-model `exercise_override_alternatives`; T048, T047, T040 |
-| F16-MCQ-C | Answered in part: preserve existing notes, audit before migration | Existing notes are preserved; legacy rows stay readable and immutable; a legacy-data audit (T068) runs BEFORE any migration task. `notes` is an overridable field. Note copy residual: see below. | FR-003, FR-031; data-model legacy `note` row; plan migration step 1; T068, T062, T063 |
-| F16-MCQ-D | Answered in the PO words (cross-feature) | Account deletion frees email/phone for fresh registration in another workspace with no data transfer (S37-PO-10). F11/F12 specifies and implements the behavior in a separate PR; F16 implements nothing. | FR-022; F11/F12 pointer |
-| F16-MCQ-E | Answered, option (a) | The PO may edit any workspace override. Canonical edits stay in the explicit global admin scope (F16-MCQ-5). | FR-014, FR-030; contracts planned rows; T037, T040, T047, T055 |
-| F16-MCQ-F | Answered for the name field only | English name required; Arabic name optional. Description and instructions are a residual: see below. | FR-003, FR-026; T046, T049, T056 |
-| F16-MCQ-G | Answered: frozen at publication | Override alternatives are frozen with the published plan at publication (FR-027), not re-resolved live. Count bound residual: see below. | FR-025, FR-027; data-model `ExerciseSnapshotV2` row; T048, T050, T056, T058 |
-| F16-MCQ-H | Answered for Description; Video clarified by S37-PO-1 Q2 | The Description is frozen at publication. Video stays live and follows the authorized library value. | FR-023, FR-027; T044, T056 |
-| F16-MCQ-I | Answered, (1)(b) and (2)(b) | Workspace search matches canonical and workspace names and shows the effective workspace name. No extra storage quota; database size is monitored against the 70% exit trigger. | FR-035; plan Search paragraph; T064 |
-| F16-MCQ-9 | Answered, option (a) | A workspace-private exercise video is visible to clients only through an authorized plan projection, scoped to the persisted plan/client workspace. No direct catalog, table or search access. | FR-014, FR-024, FR-029; contracts client-view paragraph; T045, T050, T058 |
-| F16-MCQ-J | ANSWERED by S36-PO-5 | Exactly eight fields are editable locally, with Global PO-only. | FR-003; T037, T040, T046-T050, T056-T058, T064 |
-| F16-MCQ-K | ANSWERED by S36-PO-5 line 6 | The eight named fields, all locally editable. This is the question in CodeRabbit thread 861BYOr. | FR-003; T037, T040, T047 |
-| F16-MCQ-L | ANSWERED by S36-PO-5 line 7 | Keep existing Notes; remove Instructions, preserving unique data into Notes. This is the question in CodeRabbit thread tN4f. | FR-003, FR-031; T037, T047, T062 |
-| F16-MCQ-Q | ANSWERED by S37-PO-10 | English name required and Arabic optional for both canonical Global and Workspace names; this supersedes the S20 Arabic-required rule for F16. | FR-001; F16-MCQ-F |
-| F16-MCQ-P | ANSWERED by S37-PO-10 | `docs.google.com` is not an allowed host; delete dummy values at cutover, with no legacy support path. “No video lost” excludes these dummy links. | FR-014, FR-031; T061-T063 |
-| F16-MCQ-O | ANSWERED by S37-PO-1 Q2 = A | Video stays live in published plans and follows the current authorized library value; other published values remain frozen. | FR-014, FR-020, FR-027; SC-009 |
-| F16-MCQ-F-R | ANSWERED by S37-PO-10 | One optional Description value in any language; there is no AR/EN pair. | FR-003, FR-026; T044, T049, T056 |
-| F16-MCQ-G-R | ANSWERED by S37-PO-10 | At most three Alternatives per exercise; target identities must be unique. | FR-025; T048 |
-| A55 | RESOLVED as a technical detail | Metadata outside the exact eight library fields remains available from the immutable version already referenced by the plan; this preserves historical values without adding fields to the redesigned Exercise Library. | FR-027; data-model `ExerciseSnapshotV2`; T056, T059 |
+| MCQ         | Status (S36-PO-3)                                                 | Recorded answer                                                                                                                                                                                                         | Applied in                                                                                                       |
+| ----------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| F16-MCQ-A   | Answered, option (a)                                              | Per-field reset. Each allowlisted field (name, description, instructions, video, alternatives, notes) returns to the canonical value independently; the override row stays for its other fields.                        | FR-003, FR-014; data-model `exercise_override_versions`; contracts "Override remove/clear" row; T046, T047, T040 |
+| F16-MCQ-B   | Answered, option (a)                                              | An empty alternatives list is allowed and means no alternatives (replace semantics). Alternatives override writes stay BLOCKED by F16-MCQ-J.                                                                            | FR-025; data-model `exercise_override_alternatives`; T048, T047, T040                                            |
+| F16-MCQ-C   | Answered in part: preserve existing notes, audit before migration | Existing notes are preserved; legacy rows stay readable and immutable; a legacy-data audit (T068) runs BEFORE any migration task. `notes` is an overridable field. Note copy residual: see below.                       | FR-003, FR-031; data-model legacy `note` row; plan migration step 1; T068, T062, T063                            |
+| F16-MCQ-D   | Answered in the PO words (cross-feature)                          | Account deletion frees email/phone for fresh registration in another workspace with no data transfer (S37-PO-10). F11/F12 specifies and implements the behavior in a separate PR; F16 implements nothing.               | FR-022; F11/F12 pointer                                                                                          |
+| F16-MCQ-E   | Answered, option (a)                                              | The PO may edit any workspace override. Canonical edits stay in the explicit global admin scope (F16-MCQ-5).                                                                                                            | FR-014, FR-030; contracts planned rows; T037, T040, T047, T055                                                   |
+| F16-MCQ-F   | Answered for the name field only                                  | English name required; Arabic name optional. Description and instructions are a residual: see below.                                                                                                                    | FR-003, FR-026; T046, T049, T056                                                                                 |
+| F16-MCQ-G   | Answered: frozen at publication                                   | Override alternatives are frozen with the published plan at publication (FR-027), not re-resolved live. Count bound residual: see below.                                                                                | FR-025, FR-027; data-model `ExerciseSnapshotV2` row; T048, T050, T056, T058                                      |
+| F16-MCQ-H   | Answered for Description; Video clarified by S37-PO-1 Q2          | The Description is frozen at publication. Video stays live and follows the authorized library value.                                                                                                                    | FR-023, FR-027; T044, T056                                                                                       |
+| F16-MCQ-I   | Answered, (1)(b) and (2)(b)                                       | Workspace search matches canonical and workspace names and shows the effective workspace name. No extra storage quota; database size is monitored against the 70% exit trigger.                                         | FR-035; plan Search paragraph; T064                                                                              |
+| F16-MCQ-9   | Answered, option (a)                                              | A workspace-private exercise video is visible to clients only through an authorized plan projection, scoped to the persisted plan/client workspace. No direct catalog, table or search access.                          | FR-014, FR-024, FR-029; contracts client-view paragraph; T045, T050, T058                                        |
+| F16-MCQ-J   | ANSWERED by S36-PO-5                                              | Exactly eight fields are editable locally, with Global PO-only.                                                                                                                                                         | FR-003; T037, T040, T046-T050, T056-T058, T064                                                                   |
+| F16-MCQ-K   | ANSWERED by S36-PO-5 line 6                                       | The eight named fields, all locally editable. This is the question in CodeRabbit thread 861BYOr.                                                                                                                        | FR-003; T037, T040, T047                                                                                         |
+| F16-MCQ-L   | ANSWERED by S36-PO-5 line 7                                       | Keep existing Notes; remove Instructions, preserving unique data into Notes. This is the question in CodeRabbit thread tN4f.                                                                                            | FR-003, FR-031; T037, T047, T062                                                                                 |
+| F16-MCQ-Q   | ANSWERED by S37-PO-10                                             | English name required and Arabic optional for both canonical Global and Workspace names; this supersedes the S20 Arabic-required rule for F16.                                                                          | FR-001; F16-MCQ-F                                                                                                |
+| F16-MCQ-P   | ANSWERED by S37-PO-10                                             | `docs.google.com` is not an allowed host; delete dummy values at cutover, with no legacy support path. “No video lost” excludes these dummy links.                                                                      | FR-014, FR-031; T061-T063                                                                                        |
+| F16-MCQ-O   | ANSWERED by S37-PO-1 Q2 = A                                       | Video stays live in published plans and follows the current authorized library value; other published values remain frozen.                                                                                             | FR-014, FR-020, FR-027; SC-009                                                                                   |
+| F16-MCQ-F-R | ANSWERED by S37-PO-10                                             | One optional Description value in any language; there is no AR/EN pair.                                                                                                                                                 | FR-003, FR-026; T044, T049, T056                                                                                 |
+| F16-MCQ-G-R | ANSWERED by S37-PO-10                                             | At most three Alternatives per exercise; target identities must be unique.                                                                                                                                              | FR-025; T048                                                                                                     |
+| A55         | RESOLVED as a technical detail                                    | Metadata outside the exact eight library fields remains available from the immutable version already referenced by the plan; this preserves historical values without adding fields to the redesigned Exercise Library. | FR-027; data-model `ExerciseSnapshotV2`; T056, T059                                                              |
 
 ### Residuals and label notes (round 4)
 
@@ -334,17 +334,16 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 
 - FR-028 resolves the plan's own referenced identity for video, never the merge survivor. It derives from FR-010 and FR-011 (plan references and media availability stay unchanged). The critique offered a courtesy note to the PO if the architect wants this reviewed; the architect decides.
 
-
 ## S37-PO-5 F16 answers (round 5)
 
 Source quotations: `C:/Users/NEW LAP/.lifter/runs/s37-luna-f16-r5/report.md` (verbatim S36-PO-5 block and earlier F16 source lines). S36-PO-5 is final and supersedes conflicting earlier S36 wording.
 
-| Item | Status | Binding meaning |
-|---|---|---|
-| Earlier F16-MCQ-J (workspace field set) | ANSWERED by S36-PO-5 lines 4-6 | Exactly eight fields are editable locally: Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR, Default Reps. All authorized WO/Trainers may edit all eight. New global exercises appear automatically without overwriting local customizations.
-| F16-MCQ-K (CodeRabbit thread 861BYOr; answered by S36-PO-5 line 6) | ANSWERED by S36-PO-5 line 6 | All eight fields are workspace-editable. Legacy `docs.google.com` host handling is separately closed by F16-MCQ-P / S37-PO-10. | FR-003; T037, T040, T047 |
-| F16-MCQ-L (CodeRabbit thread tN4f; answered by S36-PO-5 line 7) | ANSWERED by S36-PO-5 line 7 | Keep existing Notes; remove Instructions and preserve unique data into Notes. V1 taxonomy metadata outside the eight-field library is retained through the exact immutable version reference already carried by the plan; A55 is resolved as a technical detail.
-| F16-MCQ-O — Video in published-plan frozen values | ANSWERED by S37-PO-1 Q2 = A | Video stays live and follows the library (S36-PO-2); published non-video values remain frozen. |
+| Item                                                               | Status                         | Binding meaning                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------ | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Earlier F16-MCQ-J (workspace field set)                            | ANSWERED by S36-PO-5 lines 4-6 | Exactly eight fields are editable locally: Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR, Default Reps. All authorized WO/Trainers may edit all eight. New global exercises appear automatically without overwriting local customizations. |
+| F16-MCQ-K (CodeRabbit thread 861BYOr; answered by S36-PO-5 line 6) | ANSWERED by S36-PO-5 line 6    | All eight fields are workspace-editable. Legacy `docs.google.com` host handling is separately closed by F16-MCQ-P / S37-PO-10. References: FR-003; T037, T040, T047.                                                                                                       |
+| F16-MCQ-L (CodeRabbit thread tN4f; answered by S36-PO-5 line 7)    | ANSWERED by S36-PO-5 line 7    | Keep existing Notes; remove Instructions and preserve unique data into Notes. V1 taxonomy metadata outside the eight-field library is retained through the exact immutable version reference already carried by the plan; A55 is resolved as a technical detail.           |
+| F16-MCQ-O — Video in published-plan frozen values                  | ANSWERED by S37-PO-1 Q2 = A    | Video stays live and follows the library (S36-PO-2); published non-video values remain frozen.                                                                                                                                                                             |
 
 ## S37-PO-1 Q2 and S37-PO-10 (round 6; byte-exact PO words)
 
@@ -352,3 +351,37 @@ S37-PO-1 Q2: Q2 "F16: S36-PO-5 says 'Published plans retain frozen values' insid
 
 S37-PO-10: S37-PO-10 (2026-11-08, PO message verbatim, answering F16-MCQ-Q, -P, -F-R, -G-R, -D-R; F16-MCQ-O was answered by S37-PO-1 Q2 = A, video stays live):
 PO final: English name required, Arabic optional (Global/Workspace). One optional Description, any language. Max 3 unique Alternatives. Remove dummy docs.google.com links; no legacy support. Account deletion frees email/phone for fresh registration in another workspace, no data transfer. Record in F11/F12. Decisions closed; proceed through gates, no merge without approval.
+
+## S49-PO-3 F16 decisions (2026-11-12; byte-exact)
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s49-po/s49-po-3.verbatim.txt`; SHA256: `193ed59b59c6d77bb641ac2fc22ce85bd157c1271db322f3a5c613567dfec550`.
+
+Verbatim PO record follows; S49-R9 is the separate architect mapping.
+
+#86 decisions:
+MCQ-1 = A
+MCQ-2 = A
+Use server-side search, pagination, debouncing, and preserve selected alternatives.
+Enforce 2,000 characters consistently for Notes and stored Video text references only, not actual video files. Audit existing data and never silently truncate.
+Commit the CodeRabbit fixes and rerun all required gates on the new exact SHA.
+Implementation mapping: architect ruling S49-R9 (not PO words). S49-R11 governs merge sequencing and greens.
+
+## Clarification — S50-PO-6 / PDN-S50-FIX2-1 (2026-11-12)
+
+Verbatim PO decision: `F16=A`.
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s50-po/s50-po-6.verbatim.txt`; SHA256 `c62cd198a022efb057517b6d99d258dab7743bb7a9ea259de4e672e364689888`. The exact decision is recorded in the source as “F16=A”.
+
+Implementation meaning from separate architect mapping S50-R32: on a variation-only write, an explicitly blank Notes or Video value clears that workspace override to the canonical value. An omitted field remains unchanged. No open ambiguity remains for this decision.
+
+## S53-PO-3 F16 answer for S53-86K-UI-1
+
+Source: C:/Users/NEW LAP/.lifter/runs/s53-po/s53-po-3.verbatim.txt
+SHA256: d93da40c3cb58f568fcc939d4d396475242fd3783c238ed1fdaa373b0acba625
+
+Verbatim source bytes follow exactly:
+merge #96 at 08ddaf0d662f6e927b446e939d5239a7474a8084.
+
+S53-F13-MCQ-1=A. S53-86K-UI-1=1. Proceed
+
+Implementation mapping: architect ruling S53-R31 (mapping, not PO words). Render saved Description and Notes in authorized Exercise Detail scopes using the effective values already returned by the existing authorized detail read; no authorization/read-surface change. Use existing approved labels and the screen's existing empty-field convention.

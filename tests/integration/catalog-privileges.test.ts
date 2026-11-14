@@ -52,11 +52,15 @@ describe('catalog privilege boundary', () => {
 
   it('grants only authenticated access to the catalog read RPC and keeps helpers private', async () => {
     const [read] = await db`
-      select has_function_privilege('authenticated', 'public.catalog_search(text,text,jsonb,text,uuid)', 'EXECUTE') as authenticated,
+      select p.prosecdef as security_definer,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
         has_function_privilege('anon', 'public.catalog_search(text,text,jsonb,text,uuid)', 'EXECUTE') as anon,
         has_function_privilege('service_role', 'public.catalog_search(text,text,jsonb,text,uuid)', 'EXECUTE') as service_role
+      from pg_proc p
+      where p.oid = 'public.catalog_search(text,text,jsonb,text,uuid)'::regprocedure
     `;
     expect(read).toEqual({
+      security_definer: false,
       authenticated: true,
       anon: false,
       service_role: false,
@@ -80,6 +84,42 @@ describe('catalog privilege boundary', () => {
       service_role: false,
     });
     expect(helper?.config).toContain('search_path=""');
+
+    const [variationHelper] = await db`
+      select p.prosecdef as security_definer,
+        p.proconfig as config,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p
+      where p.oid = 'app_private.catalog_search_variation(text,jsonb,text,uuid)'::regprocedure
+    `;
+    expect(variationHelper).toEqual({
+      security_definer: true,
+      config: ['search_path=""'],
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+
+    const [variationEditorState] = await db`
+      select p.prosecdef as security_definer,
+        pg_get_userbyid(p.proowner) as owner,
+        p.proconfig as config,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p
+      where p.oid = 'public.catalog_workspace_variation_editor_state(uuid,uuid)'::regprocedure
+    `;
+    expect(variationEditorState).toEqual({
+      security_definer: true,
+      owner: 'postgres',
+      config: ['search_path=""'],
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
   });
 
   it('pins the F12-F15 denial and owner/search_path rules in a forward migration', () => {

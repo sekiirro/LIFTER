@@ -69,11 +69,8 @@ export default async function PaymentsPage({
         }
       />,
     );
-  const items = (result as { items?: never[] }).items ?? [];
-  const nextCursor =
-    'next_cursor' in result && typeof result.next_cursor === 'string'
-      ? result.next_cursor
-      : null;
+  const items = result.items;
+  const nextCursor = result.next_cursor;
   return main(
     <>
       <form method="get">

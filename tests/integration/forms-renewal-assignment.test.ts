@@ -3,9 +3,20 @@ import { randomUUID } from 'node:crypto';
 import type { TransactionSql } from 'postgres';
 import { sql } from './registration-approval-operations-fixture';
 import { withFormsPolicyF13Fixtures } from './forms-policy-fixtures';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
+
+async function expectInvariantFailure(body: () => Promise<void>) {
+  let failed = false;
+  try {
+    await body();
+  } catch {
+    failed = true;
+  }
+  expect(failed).toBe(true);
+}
 
 async function createForm(tx: TransactionSql, workspaceId: string) {
   const terms = `renewal-${randomUUID()}`;
@@ -198,4 +209,85 @@ it('delivers early-paid renewals on the current F13 service start, including fre
       expect(row.deadline).toBe(due[0]!.date);
     }
   });
+});
+
+it('materializes each renewal separately when continuous renewal reuses the subscription id', async () => {
+  await withFormsPolicyF13Fixtures(async (tx, f, scenarios) => {
+    const formId = await createForm(tx, f.wsA.id);
+    await configureRenewalPolicy(tx, f.po.userId, f.wsA.id, formId);
+    const pair = scenarios.twoRenewals;
+    const firstKey = `renewal:${pair.firstRenewalId}`;
+    const secondKey = `renewal:${pair.secondRenewalId}`;
+
+    expect(
+      await materializeAt(
+        tx,
+        f.po.userId,
+        f.wsA.id,
+        formId,
+        firstKey,
+        pair.firstServiceStart,
+      ),
+    ).toMatchObject({ status: 'materialized', count: 1 });
+    expect(
+      await materializeAt(
+        tx,
+        f.po.userId,
+        f.wsA.id,
+        formId,
+        secondKey,
+        pair.secondServiceStart,
+      ),
+    ).toMatchObject({ status: 'materialized', count: 1 });
+
+    const [rows] = await tx`
+      select count(*)::int as count,
+        count(distinct occurrence_key)::int as distinct_keys
+      from app_private.form_assignment_occurrences
+      where workspace_id=${f.wsA.id} and policy_id=(
+        select id from app_private.form_assignment_policies
+        where workspace_id=${f.wsA.id} and form_id=${formId}
+      )
+    `;
+    expect(rows).toEqual({ count: 2, distinct_keys: 2 });
+    expect(
+      await materializeAt(
+        tx,
+        f.po.userId,
+        f.wsA.id,
+        formId,
+        firstKey,
+        pair.secondServiceStart,
+      ),
+    ).toEqual({ status: 'already_materialized', count: 0 });
+  });
+});
+
+it('kills the renewal occurrence lookup that reuses subscription identity', async () => {
+  await withCrashSafeFunctionMutant(
+    'app_private.materialize_intake_assignment_occurrence_core(uuid,uuid,text,date)',
+    (definition) =>
+      definition.replace(
+        'where r.workspace_id=p_workspace_id and r.id=renewal_id;',
+        'where r.workspace_id=p_workspace_id and r.subscription_id=renewal_id;',
+      ),
+    async () =>
+      await expectInvariantFailure(async () => {
+        await withFormsPolicyF13Fixtures(async (tx, f, scenarios) => {
+          const formId = await createForm(tx, f.wsA.id);
+          await configureRenewalPolicy(tx, f.po.userId, f.wsA.id, formId);
+          const pair = scenarios.twoRenewals;
+          expect(
+            await materializeAt(
+              tx,
+              f.po.userId,
+              f.wsA.id,
+              formId,
+              `renewal:${pair.firstRenewalId}`,
+              pair.firstServiceStart,
+            ),
+          ).toMatchObject({ status: 'materialized', count: 1 });
+        });
+      }),
+  );
 });

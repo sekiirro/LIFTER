@@ -49,13 +49,16 @@ describe('catalog schemas', () => {
       });
     });
 
-    it('requires both ar and en names', () => {
+    it('requires an English name and allows Arabic to be optional', () => {
       expect(() =>
         normalizeExerciseInput({ ...validExercise, names: { ar: 'تمرين' } }),
       ).toThrow(/name/i);
-      expect(() =>
-        normalizeExerciseInput({ ...validExercise, names: { en: 'Exercise' } }),
-      ).toThrow(/name/i);
+      expect(
+        normalizeExerciseInput({
+          ...validExercise,
+          names: { en: 'Exercise' },
+        }),
+      ).toMatchObject({ names: { ar: '', en: 'Exercise' } });
       expect(() =>
         normalizeExerciseInput({ ...validExercise, names: {} }),
       ).toThrow(/name/i);

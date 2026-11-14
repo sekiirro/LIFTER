@@ -12,6 +12,61 @@ export type ExerciseSnapshot = {
 
 export type ExerciseSnapshotV1 = ExerciseSnapshot;
 
+/** Frozen planner-entry values for an exercise at publication time. */
+type ExerciseSnapshotV2Base = {
+  schemaVersion: 2;
+  name: { ar?: string; en: string };
+  description?: string;
+  notes?: string;
+  alternatives: (
+    { globalExerciseId: string } | { workspaceExerciseId: string }
+  )[];
+  defaults: {
+    restSeconds?: number;
+    rir?: number | null;
+    reps?: ExerciseDefaults['reps'];
+  };
+};
+
+export type ExerciseSnapshotV2 =
+  | (ExerciseSnapshotV2Base & {
+      source: 'global';
+      exerciseId: string;
+      canonicalVersion: number;
+      overrideVersion: number | null;
+      workspaceExerciseId?: never;
+      workspaceExerciseVersion?: never;
+    })
+  | (ExerciseSnapshotV2Base & {
+      source: 'workspace_private';
+      workspaceExerciseId: string;
+      workspaceExerciseVersion: number;
+      exerciseId?: never;
+      canonicalVersion?: never;
+      overrideVersion?: never;
+    });
+
+export type ExerciseSnapshotV2Input = {
+  source: 'global' | 'workspace_private';
+  exerciseId?: unknown;
+  canonicalVersion?: unknown;
+  workspaceExerciseId?: unknown;
+  workspaceExerciseVersion?: unknown;
+  overrideVersion?: unknown;
+  plannerEntry: {
+    name: unknown;
+    description?: unknown;
+    notes?: unknown;
+    alternatives?: unknown;
+    defaults?: unknown;
+    /** Accepted as input only to make its deliberate live treatment explicit. */
+    videoUrl?: unknown;
+    [key: string]: unknown;
+  };
+  /** Library values are intentionally ignored; published values come from plannerEntry. */
+  currentLibrary?: unknown;
+};
+
 export type FoodSnapshotServing = {
   servingId: string;
   labels: { ar?: string; en?: string };
@@ -36,7 +91,7 @@ export type FoodSnapshot = {
 
 export type FoodSnapshotV1 = FoodSnapshot;
 
-export type Snapshot = ExerciseSnapshot | FoodSnapshot;
+export type Snapshot = ExerciseSnapshot | ExerciseSnapshotV2 | FoodSnapshot;
 
 type ExerciseVersionInput = {
   exerciseId?: unknown;
@@ -101,6 +156,12 @@ function asInt(value: unknown, label: string): number {
     throw new Error(`${label} must be an integer`);
   }
   return n;
+}
+
+function asPositiveInt(value: unknown, label: string): number {
+  const parsed = asInt(value, label);
+  if (parsed <= 0) throw new Error(`${label} must be positive`);
+  return parsed;
 }
 
 export function toExerciseSnapshot(
@@ -377,7 +438,9 @@ function assertNoUnknownKeys(
 
 export function serializeSnapshot(snapshot: unknown): string {
   let canonical: unknown;
-  if (isExerciseSnapshot(snapshot)) {
+  if (isExerciseSnapshotV2(snapshot)) {
+    canonical = canonicalExerciseSnapshotV2(snapshot);
+  } else if (isExerciseSnapshot(snapshot)) {
     canonical = canonicalExercise(snapshot);
   } else if (isFoodSnapshot(snapshot)) {
     canonical = canonicalFood(snapshot);
@@ -606,6 +669,7 @@ export function parseFoodSnapshot(input: unknown): FoodSnapshot {
 
 export function parseSnapshot(input: unknown): Snapshot {
   const obj = typeof input === 'string' ? JSON.parse(input) : input;
+  if (isExerciseSnapshotV2(obj)) return validateExerciseSnapshotV2Impl(obj);
   if (isExerciseSnapshot(obj)) return validateExerciseSnapshotImpl(obj);
   if (isFoodSnapshot(obj)) return validateFoodSnapshotImpl(obj);
   throw new Error('snapshot must be an exercise or food snapshot');
@@ -615,3 +679,237 @@ export const validateSnapshot = parseSnapshot;
 export const validateExerciseSnapshot = parseExerciseSnapshot;
 export const validateFoodSnapshot = parseFoodSnapshot;
 export const deserializeSnapshot = parseSnapshot;
+
+function isExerciseSnapshotV2(input: unknown): input is ExerciseSnapshotV2 {
+  return Boolean(
+    input &&
+    typeof input === 'object' &&
+    !Array.isArray(input) &&
+    (input as Record<string, unknown>).schemaVersion === 2,
+  );
+}
+
+function canonicalExerciseSnapshotV2(
+  input: ExerciseSnapshotV2,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    schemaVersion: 2,
+    source: input.source,
+  };
+  if (input.source === 'global') {
+    out.exerciseId = input.exerciseId;
+    out.canonicalVersion = input.canonicalVersion;
+    out.overrideVersion = input.overrideVersion;
+  } else {
+    out.workspaceExerciseId = input.workspaceExerciseId;
+    out.workspaceExerciseVersion = input.workspaceExerciseVersion;
+  }
+  const name: ExerciseSnapshotV2['name'] = { en: input.name.en };
+  if (input.name.ar !== undefined) name.ar = input.name.ar;
+  out.name = name;
+  if (input.description !== undefined) out.description = input.description;
+  if (input.notes !== undefined) out.notes = input.notes;
+  out.alternatives = input.alternatives.map((alternative) => ({
+    ...alternative,
+  }));
+  const d = input.defaults;
+  const defaults: ExerciseSnapshotV2['defaults'] = {};
+  if (d.restSeconds !== undefined) defaults.restSeconds = d.restSeconds;
+  if (d.rir !== undefined) defaults.rir = d.rir;
+  if (d.reps !== undefined)
+    defaults.reps =
+      d.reps.kind === 'fixed'
+        ? { kind: 'fixed', value: d.reps.value }
+        : { kind: 'range', min: d.reps.min, max: d.reps.max };
+  out.defaults = defaults;
+  return out;
+}
+
+function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
+  if (!input || typeof input !== 'object' || Array.isArray(input))
+    throw new Error('snapshot must be an object');
+  const obj = input as Record<string, unknown>;
+  if (obj.schemaVersion !== 2) throw new Error('schemaVersion must be 2');
+  if (obj.source !== 'global' && obj.source !== 'workspace_private')
+    throw new Error('source is invalid');
+  const keys =
+    obj.source === 'global'
+      ? [
+          'schemaVersion',
+          'source',
+          'exerciseId',
+          'canonicalVersion',
+          'overrideVersion',
+          'name',
+          'description',
+          'notes',
+          'alternatives',
+          'defaults',
+        ]
+      : [
+          'schemaVersion',
+          'source',
+          'workspaceExerciseId',
+          'workspaceExerciseVersion',
+          'name',
+          'description',
+          'notes',
+          'alternatives',
+          'defaults',
+        ];
+  assertNoUnknownKeys(obj, keys, 'ExerciseSnapshotV2');
+  if (obj.source === 'global') {
+    asString(obj.exerciseId, 'exerciseId');
+    asPositiveInt(obj.canonicalVersion, 'canonicalVersion');
+    if (obj.overrideVersion !== null)
+      asPositiveInt(obj.overrideVersion, 'overrideVersion');
+  } else {
+    asString(obj.workspaceExerciseId, 'workspaceExerciseId');
+    asPositiveInt(obj.workspaceExerciseVersion, 'workspaceExerciseVersion');
+  }
+  if (!obj.name || typeof obj.name !== 'object' || Array.isArray(obj.name))
+    throw new Error('name must be an object');
+  const name = obj.name as Record<string, unknown>;
+  assertNoUnknownKeys(name, ['ar', 'en'], 'name');
+  asString(name.en, 'name.en');
+  if (name.ar !== undefined) asString(name.ar, 'name.ar');
+  for (const field of ['description', 'notes'] as const) {
+    if (obj[field] !== undefined && typeof obj[field] !== 'string')
+      throw new Error(`${field} must be a string`);
+  }
+  if (!Array.isArray(obj.alternatives) || obj.alternatives.length > 3)
+    throw new Error('alternatives must contain at most three targets');
+  const alternativeKeys = new Set<string>();
+  for (const value of obj.alternatives) {
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new Error('alternative must be a target object');
+    const target = value as Record<string, unknown>;
+    const hasGlobalTarget = Object.hasOwn(target, 'globalExerciseId');
+    const hasWorkspaceTarget = Object.hasOwn(target, 'workspaceExerciseId');
+    if (hasGlobalTarget === hasWorkspaceTarget)
+      throw new Error('alternative must contain exactly one target');
+    const allowedTargetKey = hasGlobalTarget
+      ? 'globalExerciseId'
+      : 'workspaceExerciseId';
+    assertNoUnknownKeys(target, [allowedTargetKey], 'alternative');
+    if (
+      obj.source === 'global' &&
+      obj.overrideVersion === null &&
+      hasWorkspaceTarget
+    )
+      throw new Error('Global snapshots require Global alternatives');
+    const targetId = asString(target[allowedTargetKey], allowedTargetKey);
+    const uniqueKey = `${allowedTargetKey}:${targetId}`;
+    if (alternativeKeys.has(uniqueKey))
+      throw new Error('alternatives must be unique');
+    alternativeKeys.add(uniqueKey);
+  }
+  if (
+    !obj.defaults ||
+    typeof obj.defaults !== 'object' ||
+    Array.isArray(obj.defaults)
+  )
+    throw new Error('defaults must be an object');
+  const defaults = obj.defaults as Record<string, unknown>;
+  assertNoUnknownKeys(defaults, ['restSeconds', 'rir', 'reps'], 'defaults');
+  if (
+    defaults.restSeconds !== undefined &&
+    (typeof defaults.restSeconds !== 'number' ||
+      !Number.isFinite(defaults.restSeconds) ||
+      defaults.restSeconds < 0)
+  )
+    throw new Error('defaults.restSeconds must be a non-negative number');
+  if (
+    defaults.rir !== undefined &&
+    defaults.rir !== null &&
+    (typeof defaults.rir !== 'number' ||
+      !Number.isFinite(defaults.rir) ||
+      defaults.rir < 0)
+  )
+    throw new Error('defaults.rir must be a non-negative number or null');
+  if (defaults.reps !== undefined) {
+    const reps = defaults.reps as Record<string, unknown>;
+    if (!reps || typeof reps !== 'object' || Array.isArray(reps))
+      throw new Error('defaults.reps must be an object');
+    if (reps.kind === 'fixed') {
+      assertNoUnknownKeys(reps, ['kind', 'value'], 'defaults.reps');
+      if (
+        typeof reps.value !== 'number' ||
+        !Number.isFinite(reps.value) ||
+        reps.value <= 0
+      )
+        throw new Error('defaults.reps.value must be positive');
+    } else if (reps.kind === 'range') {
+      assertNoUnknownKeys(reps, ['kind', 'min', 'max'], 'defaults.reps');
+      if (
+        typeof reps.min !== 'number' ||
+        !Number.isFinite(reps.min) ||
+        reps.min <= 0 ||
+        typeof reps.max !== 'number' ||
+        !Number.isFinite(reps.max) ||
+        reps.max < reps.min
+      )
+        throw new Error('defaults.reps range is invalid');
+    } else throw new Error('defaults.reps.kind is invalid');
+  }
+  const alternatives = obj.alternatives.map((value) => ({
+    ...(value as Record<string, unknown>),
+  })) as ExerciseSnapshotV2['alternatives'];
+  obj.alternatives = alternatives;
+  return input as ExerciseSnapshotV2;
+}
+
+export function toExerciseSnapshotV2(
+  input: ExerciseSnapshotV2Input,
+): ExerciseSnapshotV2 {
+  const entry = input.plannerEntry;
+  const defaultsRaw = (entry.defaults ?? {}) as Record<string, unknown>;
+  const defaults: ExerciseSnapshotV2['defaults'] = {};
+  if (defaultsRaw.restSeconds !== undefined)
+    defaults.restSeconds = defaultsRaw.restSeconds as number;
+  if (defaultsRaw.rir !== undefined)
+    defaults.rir = defaultsRaw.rir as number | null;
+  if (defaultsRaw.reps !== undefined)
+    defaults.reps = clone(defaultsRaw.reps) as ExerciseDefaults['reps'];
+  const snapshot: Record<string, unknown> = {
+    schemaVersion: 2,
+    source: input.source,
+    name: clone(entry.name),
+    alternatives: clone(entry.alternatives ?? []),
+    defaults,
+  };
+  if (entry.description !== undefined) snapshot.description = entry.description;
+  if (entry.notes !== undefined) snapshot.notes = entry.notes;
+  if (input.source === 'global') {
+    snapshot.exerciseId = asString(input.exerciseId, 'exerciseId');
+    snapshot.canonicalVersion = asPositiveInt(
+      input.canonicalVersion,
+      'canonicalVersion',
+    );
+    snapshot.overrideVersion =
+      input.overrideVersion === undefined || input.overrideVersion === null
+        ? null
+        : asPositiveInt(input.overrideVersion, 'overrideVersion');
+  } else {
+    snapshot.workspaceExerciseId = asString(
+      input.workspaceExerciseId,
+      'workspaceExerciseId',
+    );
+    snapshot.workspaceExerciseVersion = asPositiveInt(
+      input.workspaceExerciseVersion,
+      'workspaceExerciseVersion',
+    );
+  }
+  return validateExerciseSnapshotV2Impl(snapshot);
+}
+
+export function serializeExerciseSnapshotV2(
+  snapshot: ExerciseSnapshotV2,
+): string {
+  return JSON.stringify(canonicalExerciseSnapshotV2(snapshot), null, 2);
+}
+
+export function parseExerciseSnapshotV2(input: unknown): ExerciseSnapshotV2 {
+  const obj = typeof input === 'string' ? JSON.parse(input) : clone(input);
+  return validateExerciseSnapshotV2Impl(obj);
+}

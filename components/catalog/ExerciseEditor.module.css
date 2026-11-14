@@ -235,6 +235,20 @@
   font-weight: 600;
 }
 
+.overrideField {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.overrideMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

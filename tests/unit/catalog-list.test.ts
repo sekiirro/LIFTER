@@ -157,6 +157,32 @@ describe('catalog list projection', () => {
     expect(catalogItemName(item, 'en')).toBe('Rice');
   });
 
+  it('falls back to the other locale when the Arabic name is empty', () => {
+    const item = {
+      id: 'exercise-english-only',
+      kind: 'exercise' as const,
+      names: { ar: '', en: 'English only press' },
+      primaryMuscle: 'chest' as const,
+      equipment: 'barbell' as const,
+      lifecycleState: 'active' as const,
+    };
+    expect(catalogItemName(item, 'ar')).toBe('English only press');
+    expect(catalogItemName(item, 'en')).toBe('English only press');
+  });
+
+  it('treats an empty localized name as missing for English-only exercises', () => {
+    const item = {
+      id: 'exercise-1',
+      kind: 'exercise' as const,
+      names: { ar: '', en: 'English only press' },
+      primaryMuscle: 'chest' as const,
+      equipment: 'barbell' as const,
+      lifecycleState: 'active' as const,
+    };
+    expect(catalogItemName(item, 'ar')).toBe('English only press');
+    expect(catalogItemName(item, 'en')).toBe('English only press');
+  });
+
   it('maps Enter to submit and Escape to clear for keyboard search', () => {
     expect(catalogSearchKeyAction('Enter')).toEqual({ type: 'submit' });
     expect(catalogSearchKeyAction('Escape')).toEqual({ type: 'clear' });

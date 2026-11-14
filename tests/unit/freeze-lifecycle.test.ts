@@ -3,8 +3,10 @@ import {
   canManageFreeze,
   calculateFreezeContribution,
   freezeApplicationsFromFacts,
+  isFrozenOn,
   projectFreezeEnd,
   projectFreezeRemoval,
+  requireUnfrozenForOperation,
   validateFreezeApply,
   validateFreezeStop,
   type FreezeApplication,
@@ -300,5 +302,70 @@ describe('freeze entitlement projections', () => {
       latestDeliveredAccessEndExclusive: null,
     });
     expect(freeze).toEqual(application);
+  });
+});
+
+describe('T047 frozen-state operation gates', () => {
+  const tenDayFreeze: FreezeApplication = {
+    id: 'freeze-10',
+    applyDate: '2026-11-01',
+    durationDays: 10,
+  };
+
+  it('refuses upgrade and renewal while frozen and allows both when unfrozen', () => {
+    expect(() =>
+      requireUnfrozenForOperation({ operation: 'upgrade', frozen: true }),
+    ).toThrow(RangeError);
+    expect(() =>
+      requireUnfrozenForOperation({ operation: 'renewal', frozen: true }),
+    ).toThrow(RangeError);
+    expect(() =>
+      requireUnfrozenForOperation({ operation: 'upgrade', frozen: false }),
+    ).not.toThrow();
+    expect(() =>
+      requireUnfrozenForOperation({ operation: 'renewal', frozen: false }),
+    ).not.toThrow();
+  });
+
+  it('rejects an unknown operation without a frozen-state read', () => {
+    expect(() =>
+      requireUnfrozenForOperation({ operation: 'remove', frozen: false }),
+    ).toThrow(RangeError);
+  });
+
+  it('covers the Apply day through the counted end and nothing else', () => {
+    expect(isFrozenOn([tenDayFreeze], '2026-10-31')).toBe(false);
+    expect(isFrozenOn([tenDayFreeze], '2026-11-01')).toBe(true);
+    expect(isFrozenOn([tenDayFreeze], '2026-11-10')).toBe(true);
+    expect(isFrozenOn([tenDayFreeze], '2026-11-11')).toBe(false);
+  });
+
+  it('excludes the Stop day and clears Removed freezes', () => {
+    const stopped = { ...tenDayFreeze, stopDate: '2026-11-03' };
+    expect(calculateFreezeContribution(stopped)).toBe(2);
+    expect(isFrozenOn([stopped], '2026-11-02')).toBe(true);
+    expect(isFrozenOn([stopped], '2026-11-03')).toBe(false);
+    expect(isFrozenOn([{ ...tenDayFreeze, removed: true }], '2026-11-05')).toBe(
+      false,
+    );
+    expect(isFrozenOn([], '2026-11-05')).toBe(false);
+  });
+
+  it('extends expiry by exactly the counted freeze days', () => {
+    expect(calculateFreezeContribution(tenDayFreeze)).toBe(10);
+    expect(projectFreezeEnd('2026-11-20', [tenDayFreeze])).toEqual({
+      effectiveEndExclusive: '2026-11-30',
+      extensionDays: 10,
+    });
+  });
+
+  it('chains the frozen window into the operation gate without mutating facts', () => {
+    const frozen = Object.freeze({ ...tenDayFreeze });
+    const blocked = isFrozenOn([frozen], '2026-11-05');
+    expect(blocked).toBe(true);
+    expect(() =>
+      requireUnfrozenForOperation({ operation: 'renewal', frozen: blocked }),
+    ).toThrow(RangeError);
+    expect(frozen).toEqual(tenDayFreeze);
   });
 });

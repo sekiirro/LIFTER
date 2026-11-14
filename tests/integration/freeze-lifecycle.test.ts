@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
+import type { JSONValue, TransactionSql } from 'postgres';
 import {
   clientContext,
   graph,
   probe,
   sql,
 } from './registration-approval-fixture';
+import { activate, bought } from './registration-approval-payment-fixture';
 import {
   freezeApplicationsFromFacts,
   calculateFreezeContribution,
@@ -13,6 +15,7 @@ import {
   type FreezeApplyFact,
   type FreezeEventFact,
 } from '../../lib/subscriptions/freeze-service';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
@@ -267,6 +270,63 @@ it('T008 Remove preserves the Cairo day on which its fact is recorded', async ()
   });
 });
 
+it('mutation: removing the standalone removal floor is caught', async () => {
+  const f = await clientContext();
+  await withCrashSafeFunctionMutant(
+    'app_private.f13_project_entitlement(uuid,uuid,date)',
+    (definition) =>
+      definition.replace(
+        'and (f.applied_on>=term_start and f.applied_on<term_end or not exists(',
+        'and (f.applied_on>=term_start and f.applied_on<term_end or false and not exists(',
+      ),
+    async () => {
+      let failed = false;
+      try {
+        await probe(async (tx) => {
+          const ids = await graph(tx, f);
+          await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+            values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+          const apply = tx.json({
+            action: 'apply',
+            workspace_id: f.wsA.id,
+            client_id: ids.client,
+            subscription_id: ids.subscription,
+            duration_days: 3,
+            expected_revision: 0,
+            request_key: randomUUID(),
+          });
+          const [applied] =
+            await tx`select public.subscription_freeze_operation(${apply}::jsonb) as receipt`;
+          const freezeId = (applied!.receipt as { freeze_id: string })
+            .freeze_id;
+          const remove = tx.json({
+            action: 'remove',
+            workspace_id: f.wsA.id,
+            client_id: ids.client,
+            subscription_id: ids.subscription,
+            freeze_id: freezeId,
+            expected_revision: 1,
+            request_key: randomUUID(),
+          });
+          await tx`select public.subscription_freeze_operation(${remove}::jsonb)`;
+          const [projection] = await tx`
+            select app_private.f13_project_entitlement(
+              ${f.wsA.id},${ids.subscription},(clock_timestamp() at time zone 'Africa/Cairo')::date
+            ) as value,
+            ((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::text as floor`;
+          expect(projection!.value).toMatchObject({
+            status: 'active',
+            effective_end_exclusive: projection!.floor,
+          });
+        });
+      } catch {
+        failed = true;
+      }
+      expect(failed).toBe(true);
+    },
+  );
+});
+
 it('T008 rejects Stop after a freeze has been Removed', async () => {
   const f = await clientContext();
   await probe(async (tx) => {
@@ -440,5 +500,277 @@ it('T008 audit failure rolls back the Apply fact and idempotency receipt', async
         (select count(*)::int from public.audit_events where target_table='subscription_freezes'
           and details->>'subscription_id'=${ids.subscription}) as audits`;
     expect(counts).toEqual({ freezes: 0, receipts: 0, audits: 0 });
+  });
+});
+
+async function freezeTx(
+  tx: TransactionSql,
+  userId: string,
+  input: Record<string, unknown>,
+) {
+  await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: userId, role: 'authenticated' })},true)`;
+  await tx`set local role authenticated`;
+  try {
+    const [row] = await tx`
+      select public.subscription_freeze_operation(${tx.json(input as JSONValue)}) as receipt`;
+    return row!.receipt as {
+      status: string;
+      freeze_id?: string;
+      revision?: number;
+    };
+  } finally {
+    await tx`reset role`;
+  }
+}
+
+async function renewalTx(
+  tx: TransactionSql,
+  userId: string,
+  input: Record<string, unknown>,
+) {
+  await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: userId, role: 'authenticated' })},true)`;
+  await tx`set local role authenticated`;
+  try {
+    const [row] = await tx`
+      select public.record_renewal(${tx.json(input as JSONValue)}) as result`;
+    return row!.result as { status: string; receipt?: Record<string, unknown> };
+  } finally {
+    await tx`reset role`;
+  }
+}
+
+async function renewalOfferId(
+  tx: TransactionSql | ReturnType<typeof sql>,
+  linkId: string,
+) {
+  const [row] = await tx`
+    select v.offer_id from public.registration_links l
+    join public.package_versions v on v.workspace_id=l.workspace_id and v.id=l.package_version_id
+    where l.id=${linkId}`;
+  if (!row) throw new Error('Fixture package offer missing');
+  return row.offer_id as string;
+}
+
+it('T047 frozen renewal is refused without writes until unfrozen', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  const offerId = await renewalOfferId(db, purchase.t.link);
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const renewed = await renewalTx(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(renewed.status).toBe('ok');
+    const applied = await freezeTx(tx, f.trainerA.userId, {
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      duration_days: 10,
+      expected_revision: 0,
+      request_key: randomUUID(),
+    });
+    expect(applied.status).toBe('applied');
+    const [before] = await tx`
+      select (select count(*)::int from public.subscription_renewals where client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from app_private.subscription_renewal_operations where client_id=${purchase.t.id}) as operations,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payments,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audits`;
+    const denied = await renewalTx(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 1,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(denied).toEqual({ status: 'stale_state' });
+    const [after] = await tx`
+      select (select count(*)::int from public.subscription_renewals where client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from app_private.subscription_renewal_operations where client_id=${purchase.t.id}) as operations,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payments,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audits`;
+    expect(after).toEqual(before);
+    const stopped = await freezeTx(tx, f.trainerA.userId, {
+      action: 'stop',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      freeze_id: applied.freeze_id!,
+      expected_revision: 1,
+      request_key: randomUUID(),
+    });
+    expect(stopped.status).toBe('stopped');
+    const removed = await freezeTx(tx, f.trainerA.userId, {
+      action: 'remove',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      freeze_id: applied.freeze_id!,
+      expected_revision: 2,
+      request_key: randomUUID(),
+    });
+    expect(removed.status).toBe('removed');
+    const resumed = await renewalTx(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 1,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(resumed.status).toBe('ok');
+  });
+});
+
+it('T047 ten counted freeze days extend projected expiry by ten days', async () => {
+  const f = await clientContext();
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    const applied = await freezeTx(tx, f.trainerA.userId, {
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      duration_days: 10,
+      expected_revision: 0,
+      request_key: randomUUID(),
+    });
+    expect(applied.status).toBe('applied');
+    const [projection] = await tx`
+      select app_private.f13_project_entitlement(
+        ${f.wsA.id},${ids.subscription},(clock_timestamp() at time zone 'Africa/Cairo')::date
+      ) as value,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date+61+10)::text as expected_end,
+      app_private.f13_freeze_contribution(${f.wsA.id},${ids.subscription},${applied.freeze_id!}) as counted`;
+    expect(projection!.counted).toBe(10);
+    expect(projection!.value).toMatchObject({
+      status: 'frozen',
+      effective_end_exclusive: projection!.expected_end,
+    });
+  });
+});
+
+it('T047 concurrent freeze applies serialize on one revision', async () => {
+  const f = await clientContext();
+  const ids = await db.begin((tx) => graph(tx, f));
+  await db.begin(async (tx) => {
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+  });
+  const request = () => ({
+    action: 'apply',
+    workspace_id: f.wsA.id,
+    client_id: ids.client,
+    subscription_id: ids.subscription,
+    duration_days: 3,
+    expected_revision: 0,
+    request_key: randomUUID(),
+  });
+  const leftDb = sql();
+  const rightDb = sql();
+  let left: { status: string };
+  let right: { status: string };
+  try {
+    [left, right] = await Promise.all([
+      leftDb.begin((tx) => freezeTx(tx, f.trainerA.userId, request())),
+      rightDb.begin((tx) => freezeTx(tx, f.trainerA.userId, request())),
+    ]);
+  } finally {
+    await Promise.all([leftDb.end(), rightDb.end()]);
+  }
+  expect([left.status, right.status].sort()).toEqual([
+    'applied',
+    'stale_state',
+  ]);
+  const [counts] = await db`
+    select (select count(*)::int from public.subscription_freezes where subscription_id=${ids.subscription}) as freezes,
+      (select count(*)::int from app_private.subscription_freeze_operations where subscription_id=${ids.subscription}) as receipts`;
+  expect(counts).toEqual({ freezes: 1, receipts: 1 });
+});
+
+it('T047 apply, stop and remove audits count exactly once and replay is silent', async () => {
+  const f = await clientContext();
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    const applyKey = randomUUID();
+    const first = await freezeTx(tx, f.trainerA.userId, {
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      duration_days: 3,
+      expected_revision: 0,
+      request_key: applyKey,
+    });
+    expect(first.status).toBe('applied');
+    const replay = await freezeTx(tx, f.trainerA.userId, {
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      duration_days: 3,
+      expected_revision: 0,
+      request_key: applyKey,
+    });
+    expect(replay).toEqual(first);
+    const stopped = await freezeTx(tx, f.trainerA.userId, {
+      action: 'stop',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      freeze_id: first.freeze_id!,
+      expected_revision: 1,
+      request_key: randomUUID(),
+    });
+    expect(stopped.status).toBe('stopped');
+    const removed = await freezeTx(tx, f.trainerA.userId, {
+      action: 'remove',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      freeze_id: first.freeze_id!,
+      expected_revision: 2,
+      request_key: randomUUID(),
+    });
+    expect(removed.status).toBe('removed');
+    const audits = await tx`
+      select action, details from public.audit_events
+      where target_table in ('subscription_freezes','subscription_freeze_events')
+        and (details->>'subscription_id'=${ids.subscription} or target_id=${first.freeze_id!})
+      order by id`;
+    expect(audits.map((audit) => audit.action)).toEqual([
+      'subscription.freeze_applied',
+      'subscription.freeze_stop',
+      'subscription.freeze_remove',
+    ]);
+    expect(Object.keys(audits[0]!.details).sort()).toEqual([
+      'applied_on',
+      'duration_days',
+      'subscription_id',
+    ]);
+    for (const audit of audits.slice(1)) {
+      expect(Object.keys(audit.details).sort()).toEqual([
+        'effective_on',
+        'subscription_id',
+      ]);
+    }
   });
 });

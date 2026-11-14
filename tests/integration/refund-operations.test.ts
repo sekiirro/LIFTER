@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
-import type { TransactionSql } from 'postgres';
+import type { JSONValue, TransactionSql } from 'postgres';
 import {
   clientContext,
   graph,
@@ -8,9 +8,167 @@ import {
   sql,
   type Context,
 } from './registration-approval-fixture';
+import {
+  checked as checkedLink,
+  issue as issueRegistrationLink,
+  publish,
+} from './registration-links-fixture';
+import { createSynthetic } from './packages-fixture';
 
 const db = sql();
 afterAll(() => db.end());
+
+it('T050 returns workspace-wide queue totals on every page without combining currencies', async () => {
+  const f = await clientContext();
+  const currencyLink = async (
+    currency: string,
+    installments: readonly {
+      seq: number;
+      amount_minor: string;
+      due_offset_days: number;
+    }[],
+  ) => {
+    const packageFixture = await createSynthetic(f);
+    const versionId = checkedLink(
+      await publish(f, packageFixture.id, {
+        tier_rank: 1,
+        price_minor: '1200',
+        currency,
+      }),
+    ) as string;
+    const offer = checkedLink(
+      await f.po.client
+        .from('package_offers')
+        .select('id')
+        .eq('current_version_id', versionId)
+        .single(),
+    );
+    checkedLink(
+      await f.po.client.rpc('set_package_offer_available', {
+        workspace_id: f.wsA.id,
+        offer_id: offer.id,
+        available: true,
+      }),
+    );
+    const versionContext = { ...f, p: { ...f.p, versionId } };
+    const linkId = checkedLink(
+      await issueRegistrationLink(versionContext, f.po.client, {
+        installments,
+      }),
+    ) as string;
+    return { versionId, linkId, offerId: offer.id as string };
+  };
+  const egpSchedule = [
+    { seq: 1, amount_minor: '300', due_offset_days: 0 },
+    { seq: 2, amount_minor: '400', due_offset_days: 30 },
+    { seq: 3, amount_minor: '500', due_offset_days: 60 },
+  ] as const;
+  const usdSchedule = [
+    { seq: 1, amount_minor: '400', due_offset_days: 0 },
+    { seq: 2, amount_minor: '600', due_offset_days: 30 },
+    { seq: 3, amount_minor: '200', due_offset_days: 60 },
+  ] as const;
+  const egp = await currencyLink('EGP', egpSchedule);
+  const usd = await currencyLink('USD', usdSchedule);
+  await probe(async (tx) => {
+    await graph(tx, f, {
+      currency: 'EGP',
+      versionId: egp.versionId,
+      linkId: egp.linkId,
+      commission: '1',
+      issuedRows: [
+        { seq: 1, amount_minor: '300', due_offset_days: 0 },
+        { seq: 2, amount_minor: '400', due_offset_days: 30 },
+        { seq: 3, amount_minor: '500', due_offset_days: 60 },
+      ],
+    });
+    await graph(tx, f, {
+      currency: 'USD',
+      versionId: usd.versionId,
+      linkId: usd.linkId,
+      commission: '1',
+      issuedRows: [
+        { seq: 1, amount_minor: '400', due_offset_days: 0 },
+        { seq: 2, amount_minor: '600', due_offset_days: 30 },
+        { seq: 3, amount_minor: '200', due_offset_days: 60 },
+      ],
+    });
+
+    await tx`insert into public.subscription_activations(
+      workspace_id,subscription_id,activated_at,delivery_event_id)
+      select ${f.wsA.id},s.id,clock_timestamp(),${randomUUID()}
+      from public.subscriptions s where s.workspace_id=${f.wsA.id}
+        and s.registration_link_id=${egp.linkId}
+        and not exists(select 1 from public.subscription_activations a
+          where a.workspace_id=s.workspace_id and a.subscription_id=s.id)`;
+    const [egpSubscription] =
+      await tx`select id,client_id from public.subscriptions
+      where workspace_id=${f.wsA.id} and registration_link_id=${egp.linkId}`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let usdRenewal: Record<string, unknown>;
+    try {
+      const [row] = await tx`select public.record_renewal(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: egpSubscription!.client_id,
+        predecessor_subscription_id: egpSubscription!.id,
+        package_offer_id: usd.offerId,
+        request_key: randomUUID(),
+        expected_revision: 0,
+        renewal_confirmed: true,
+        installments: null,
+      } as JSONValue)}) as result`;
+      usdRenewal = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(usdRenewal!.status).toBe('ok');
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    try {
+      const [first] = await tx`
+        select public.workspace_payment_queue(${f.wsA.id},null,1) as result`;
+      const firstData = first!.result as {
+        items: {
+          client_id: string;
+          subscription_id: string;
+          currency: string;
+          unpaid_by_currency?: { currency: string; unpaid_minor: string }[];
+        }[];
+        totals?: { currency: string; unpaid_minor: string }[];
+        next_cursor: string | null;
+      };
+      expect(firstData.items).toHaveLength(1);
+      expect(firstData.next_cursor).toMatch(/^[0-9a-f-]{36}$/i);
+      expect(firstData.totals).toEqual([
+        { currency: 'EGP', unpaid_minor: '900' },
+        { currency: 'USD', unpaid_minor: '2000' },
+      ]);
+
+      const [second] = await tx`
+        select public.workspace_payment_queue(${f.wsA.id},${firstData.next_cursor},1) as result`;
+      const secondData = second!.result as typeof firstData;
+      expect(secondData.items).toHaveLength(1);
+      expect(secondData.totals).toEqual(firstData.totals);
+
+      const [differentPageSize] = await tx`
+        select public.workspace_payment_queue(${f.wsA.id},null,2) as result`;
+      expect((differentPageSize!.result as typeof firstData).totals).toEqual(
+        firstData.totals,
+      );
+      const allItems = [firstData.items[0]!, secondData.items[0]!];
+      const egpItem = allItems.find(
+        (item) => item.subscription_id === egpSubscription!.id,
+      );
+      expect(egpItem?.unpaid_by_currency).toEqual([
+        { currency: 'EGP', unpaid_minor: '900' },
+        { currency: 'USD', unpaid_minor: '1200' },
+      ]);
+    } finally {
+      await tx`reset role`;
+    }
+  });
+});
 
 type RefundRequest = {
   workspace_id: string;

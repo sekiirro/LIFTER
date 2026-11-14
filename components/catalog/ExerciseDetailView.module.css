@@ -80,6 +80,13 @@
   overflow-wrap: anywhere;
 }
 
+.details .textValue {
+  display: block;
+  font-weight: normal;
+  line-height: var(--line-height-body);
+  white-space: pre-wrap;
+}
+
 .wide {
   grid-column: 1 / -1;
 }
