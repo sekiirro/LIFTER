@@ -4,7 +4,7 @@ export const en: Record<keyof typeof ar, string> = {
   // spec 023 client progress coaching (S55-PO-10 approved copy)
   'progress.title': 'Progress',
   'progress.measurements.title': 'Measurements',
-  'progress.measurements.empty': 'No measurements recorded yet.',
+  'progress.measurements.empty': 'No measurements recorded',
   'progress.measurement.edit': 'Edit measurement',
   'checkin.completed.notGate': 'Check-ins do not block access to your account.',
   'checkin.adherence.workout.title': 'Workout adherence',
@@ -27,12 +27,12 @@ export const en: Record<keyof typeof ar, string> = {
   'timeline.event.freezeApply': 'Freeze applied',
   'timeline.event.freezeRemove': 'Freeze removed',
   'timeline.event.closure': 'Closure',
-  // spec 023 PO 2026-11-14 PROPOSED copy (pinned in progress-coaching-copy test)
+  // spec 023: add/saved approved by S57-PO-12; the rest PROPOSED (pinned in progress-coaching-copy test)
   'progress.measurement.add': 'Add measurement',
   'progress.measurement.value': 'Value',
   'progress.measurement.date': 'Date',
   'progress.measurement.save': 'Save measurement',
-  'progress.measurement.saved': 'Measurement saved.',
+  'progress.measurement.saved': 'Measurement saved',
   'progress.measurement.duplicateSameDay':
     'A measurement already exists for this day. Edit it instead.',
   'checkin.config.title': 'Weekly check-in form',

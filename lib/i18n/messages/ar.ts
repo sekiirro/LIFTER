@@ -2,8 +2,8 @@ export const ar = {
   // spec 023 client progress coaching (S55-PO-10 approved copy)
   'progress.title': 'التقدم',
   'progress.measurements.title': 'القياسات',
-  'progress.measurements.empty': 'لسه مفيش قياسات متسجلة.',
-  'progress.measurement.edit': 'تعديل القياس',
+  'progress.measurements.empty': 'لسه مفيش قياسات متسجلة',
+  'progress.measurement.edit': 'عدّل القياس',
   'checkin.completed.notGate':
     'تقدر تدخل حسابك عادي حتى لو ما بعتّش المتابعة الأسبوعية.',
   'checkin.adherence.workout.title': 'التزامك بالتمرين',
@@ -25,12 +25,12 @@ export const ar = {
   'timeline.event.freezeApply': 'تجميد الاشتراك',
   'timeline.event.freezeRemove': 'فك تجميد الاشتراك',
   'timeline.event.closure': 'الإغلاق',
-  // spec 023 PO 2026-11-14 PROPOSED copy (pinned in progress-coaching-copy test)
-  'progress.measurement.add': 'ضيف قياس',
+  // spec 023: add/saved approved by S57-PO-12; the rest PROPOSED (pinned in progress-coaching-copy test)
+  'progress.measurement.add': 'ضيف قياس جديد',
   'progress.measurement.value': 'القيمة',
   'progress.measurement.date': 'التاريخ',
   'progress.measurement.save': 'احفظ القياس',
-  'progress.measurement.saved': 'القياس اتحفظ.',
+  'progress.measurement.saved': 'القياس اتسجّل',
   'progress.measurement.duplicateSameDay':
     'فيه قياس متسجل لليوم ده. عدّله بدل ما تضيف جديد.',
   'checkin.config.title': 'فورم المتابعة الأسبوعية',
