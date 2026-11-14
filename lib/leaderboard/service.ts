@@ -22,6 +22,10 @@ import {
 } from './projection';
 import type { LeaderboardScoreInputSource } from './score-inputs';
 import {
+  LeaderboardInputsUnresolvedError,
+  createSpec023ScoreInputSource,
+} from './spec023-source';
+import {
   checkUsername,
   parseUsernameUpdateResult,
   type UsernameUpdateStatus,
@@ -228,12 +232,14 @@ export type CandidateStatus =
   | 'ineligible_client'
   | 'no_eligible_clients'
   | 'invalid_input'
+  | 'inputs_unresolved'
   | 'not_permitted'
   | 'unavailable';
 
 /**
- * PO-only candidate generation. Requires a spec 023 score source; none is
- * wired on main yet, so no page or action calls this until the adapter lands.
+ * PO-only candidate generation over an injected score source. Fails closed
+ * with `inputs_unresolved` when the source cannot compute a score without
+ * guessing (see spec023-source.ts).
  */
 export async function generateLeaderboardCandidate(
   actor: Actor | null,
@@ -275,7 +281,33 @@ export async function generateLeaderboardCandidate(
     ].includes(String(status))
       ? (status as CandidateStatus)
       : 'unavailable';
-  } catch {
+  } catch (error) {
+    if (error instanceof LeaderboardInputsUnresolvedError)
+      return 'inputs_unresolved';
     return 'unavailable';
   }
+}
+
+/**
+ * PO-only generation from spec 023 data. Not surfaced in any page: no
+ * approved copy exists for a generate button (PO-DECISION-NEEDED). While the
+ * goal-progress normalization, achievement date and client code are
+ * unresolved it returns `inputs_unresolved` and stores nothing.
+ */
+export async function generateLeaderboardCandidateFromSpec023(
+  actor: Actor | null,
+  workspaceId: string,
+): Promise<CandidateStatus> {
+  if (!canDecideLeaderboard(actor)) return 'not_permitted';
+  const client = await createSessionClient().catch(() => null);
+  if (!client) return 'unavailable';
+  return generateLeaderboardCandidate(
+    actor,
+    workspaceId,
+    createSpec023ScoreInputSource({
+      client,
+      goalProgress: null,
+      clientCodes: null,
+    }),
+  );
 }

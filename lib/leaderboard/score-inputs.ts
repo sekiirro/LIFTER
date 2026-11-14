@@ -2,9 +2,8 @@
  * Typed boundary between F24 ranking and spec 023 progress/check-in data.
  *
  * Spec 023 owns the data; F24 is read-only with respect to it (FR-031). The
- * adapter that fills these inputs from spec 023 is intentionally NOT
- * implemented here: spec 023's data contract is not on main yet. Until it is,
- * no `LeaderboardScoreInputSource` exists, so no candidate can be generated.
+ * adapter is `spec023-source.ts`; it fails closed while the goal-progress
+ * normalization, achievement date and client code remain undefined.
  *
  * These values are server-only. They never cross into a client DTO, an audit
  * payload or a log line (FR-023, FR-024, FR-040).
@@ -13,9 +12,12 @@ export type LeaderboardScoreInputs = {
   clientId: string;
   /** Final FR-021 tie-break key. Source pending (no client code exists on main). */
   clientCode: string;
-  /** Spec 023 FR-037 field, current month, 0-10 integer. */
+  /**
+   * Spec 023 FR-037 `workoutAdherence`, current month, on the 0-10 scale
+   * (mean of the month's answered 0-10 integer values; see spec023-source.ts).
+   */
   workoutAdherence: number;
-  /** Spec 023 FR-037 field, current month, 0-10 integer. */
+  /** Spec 023 FR-037 `dietAdherence`, current month, same scale and aggregation. */
   dietAdherence: number;
   /**
    * Goal-relative progress: improvement versus baseline normalized per goal
@@ -49,7 +51,7 @@ const cairoDate = /^\d{4}-\d{2}-\d{2}$/u;
 function isAdherence(value: unknown): value is number {
   return (
     typeof value === 'number' &&
-    Number.isInteger(value) &&
+    Number.isFinite(value) &&
     value >= 0 &&
     value <= 10
   );

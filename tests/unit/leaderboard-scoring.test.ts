@@ -52,11 +52,11 @@ describe('T017/T019 50/50 composite (FR-015-FR-017)', () => {
     expect(mixed.composite).toBeCloseTo(0.5 * 0.7 + 0.5 * 0.4, 12);
   });
 
-  it('rejects inputs outside the spec 023 0-10 integer contract or [0,1] progress', () => {
+  it('rejects inputs outside the spec 023 0-10 scale or [0,1] progress', () => {
     for (const patch of [
       { workoutAdherence: 11 },
       { dietAdherence: -1 },
-      { workoutAdherence: 7.5 },
+      { workoutAdherence: 10.5 },
       { normalizedProgress: 1.01 },
       { normalizedProgress: Number.NaN },
       { achievedOn: '10/11/2026' },
