@@ -27,8 +27,7 @@
 
 - Slice 1 follows architect ruling S55-R5: no provisioning surface was added; existing rows remain nullable for NAME-11 backfill, new profile inserts require a name, and all name mutations use one membership-scoped RPC. Authorization derivation and Stack D evidence are recorded in the lane report.
 
-
-
 ## Slice 2 completion note
+
 - T009 is satisfied under constitution 1.16.0/R6; no FR/SC/requirement text changed in this slice, so Analyze did not need a new date.
 - T010 remains limited to the Client Notes author line; no other display/search/sort/export surface was changed.
