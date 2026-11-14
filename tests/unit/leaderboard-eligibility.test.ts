@@ -77,7 +77,7 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
     const sql = readFileSync(
       resolve(
         process.cwd(),
-        'supabase/migrations/20261117000000_f24_client_leaderboard.sql',
+        'supabase/migrations/20261118210000_f24_client_leaderboard.sql',
       ),
       'utf8',
     );

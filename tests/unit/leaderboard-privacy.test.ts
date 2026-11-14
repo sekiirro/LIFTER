@@ -18,7 +18,7 @@ import { ar } from '../../lib/i18n/messages/ar';
 const migration = readFileSync(
   resolve(
     process.cwd(),
-    'supabase/migrations/20261117000000_f24_client_leaderboard.sql',
+    'supabase/migrations/20261118210000_f24_client_leaderboard.sql',
   ),
   'utf8',
 );
