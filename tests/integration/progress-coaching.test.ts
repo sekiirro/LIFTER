@@ -168,6 +168,17 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
       expect(assignments).toHaveLength(1);
       const assignmentId = assignments[0]!.id as string;
 
+      // A same-day manual entry that the check-in submission will conflict with.
+      const manualWaist = await asUser(
+        tx,
+        clientUser,
+        (sp) =>
+          sp`select public.record_progress_measurement(${ws},${clientId},'waist',79,${today}::date) as r`,
+      );
+      expect(manualWaist[0]!.r).toMatchObject({ status: 'recorded' });
+      const manualWaistId = (manualWaist[0]!.r as { measurement_id: string })
+        .measurement_id;
+
       // Client submits: measurement auto-extracted with source reference and units.
       await tx`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
         values(${ws},${assignmentId},1,${tx.json({ workoutAdherence: 8, dietAdherence: 6, bodyWeight: 92.5, waist: 80 })})`;
@@ -189,6 +200,28 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
         await tx`select count(*)::int as n from public.progress_measurements
         where workspace_id=${ws} and measurement_type in ('workoutAdherence','dietAdherence')`;
       expect(adherenceRows!.n).toBe(0);
+      // FR-012 auto conflict: the same-day record is updated in place, with a
+      // background audit row and no second record.
+      const waistRows =
+        await tx`select id,value::text,source_kind,source_assignment_id
+        from public.progress_measurements
+        where workspace_id=${ws} and client_id=${clientId} and measurement_type='waist'`;
+      expect(waistRows).toEqual([
+        {
+          id: manualWaistId,
+          value: '80',
+          source_kind: 'checkin',
+          source_assignment_id: assignmentId,
+        },
+      ]);
+      const [autoUpdate] =
+        await tx`select change_kind,previous_value::text,new_value::text
+        from app_private.progress_measurement_corrections where measurement_id=${manualWaistId}`;
+      expect(autoUpdate).toEqual({
+        change_kind: 'checkin_update',
+        previous_value: '79',
+        new_value: '80',
+      });
 
       // Spec 024 contract: values by name for coaching staff; Sales/foreign denied.
       const adherence = await asUser(
