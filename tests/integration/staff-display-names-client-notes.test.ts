@@ -14,6 +14,29 @@ afterAll(async () => {
 });
 
 describe('F21 Client Notes author labels and lifecycle retention', () => {
+  it('keeps the author-label RPC postgres-owned, empty-path, and authenticated-only', async () => {
+    const [fn] = await f.db`
+      select p.prosecdef,
+        pg_get_userbyid(p.proowner) as owner,
+        p.proconfig @> array['search_path=""'] as empty_search_path,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_exec,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon_exec,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role_exec
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public'
+        and p.proname = 'get_client_note_author_names'
+    `;
+    expect(fn).toEqual({
+      prosecdef: true,
+      owner: 'postgres',
+      empty_search_path: true,
+      authenticated_exec: true,
+      anon_exec: false,
+      service_role_exec: false,
+    });
+  });
+
   it('returns names only for authors present in the caller workspace notes', async () => {
     await f.createAsTrainer({ body: 'display name author lookup' });
     const labels = await f.context.woA.client.rpc(
