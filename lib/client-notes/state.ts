@@ -6,6 +6,8 @@ export type ClientNote = {
   body: string;
   created_at: string;
   edited_at: string | null;
+  author_display_name?: string | null;
+  author_deactivated?: boolean;
 };
 
 export type PendingCreate = {

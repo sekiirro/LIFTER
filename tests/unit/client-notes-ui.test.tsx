@@ -156,6 +156,40 @@ describe('ClientNotes UI', () => {
     expect(html).not.toMatch(/[٠-٩]/);
   });
 
+  it('renders retained staff names with the approved localized deactivation marker', () => {
+    const note = {
+      id: 'n-staff',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'staff-id',
+      author_display_name: 'Sara Ali',
+      author_deactivated: true,
+      body: 'retained author',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const english = renderToStaticMarkup(
+      createElement(ClientNotes, {
+        locale: 'en',
+        messages: getMessages('en'),
+        status: 'ready',
+        notes: [note],
+      }),
+    );
+    const arabic = renderToStaticMarkup(
+      createElement(ClientNotes, {
+        locale: 'ar',
+        messages: getMessages('ar'),
+        status: 'ready',
+        notes: [note],
+      }),
+    );
+    expect(english).toContain('Sara Ali (deactivated)');
+    expect(arabic).toContain('Sara Ali (متوقف)');
+    expect(english).not.toContain('Unavailable author');
+    expect(arabic).not.toContain('صاحب الملاحظة غير متاح');
+  });
+
   it('renders loading state', () => {
     const m = getMessages('en');
     const html = renderToStaticMarkup(

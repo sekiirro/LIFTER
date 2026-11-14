@@ -17,6 +17,8 @@ type Note = {
   body: string;
   created_at: string;
   edited_at: string | null;
+  author_display_name?: string | null;
+  author_deactivated?: boolean;
 };
 type NoteResult = { status: 'ok'; note: Note } | { status: Status };
 type NoteCursor = { created_at: string; id: string };
@@ -42,6 +44,40 @@ function mapDatabaseError(error: { code?: string } | null): Status {
   if (error?.code === '22023') return 'invalid_input';
   if (error?.code === 'P0002') return 'not_found';
   return 'unavailable';
+}
+
+async function withAuthorLabels(
+  client: NonNullable<Awaited<ReturnType<typeof createSessionClient>>>,
+  workspaceId: string,
+  notes: Note[],
+): Promise<Note[]> {
+  if (!notes.length) return notes;
+  let namesByAuthor = new Map<
+    string,
+    { display_name: string | null; deactivated: boolean }
+  >();
+  try {
+    const result = await client.rpc('get_client_note_author_names', {
+      p_workspace_id: workspaceId,
+      p_author_user_ids: [...new Set(notes.map((note) => note.author_user_id))],
+    });
+    const labels = (result.error ? [] : (result.data ?? [])) as {
+      author_user_id: string;
+      display_name: string | null;
+      deactivated: boolean;
+    }[];
+    namesByAuthor = new Map(labels.map((row) => [row.author_user_id, row]));
+  } catch {
+    // The approved fallback remains usable when the optional name lookup fails.
+  }
+  return notes.map((note) => {
+    const author = namesByAuthor.get(note.author_user_id);
+    return {
+      ...note,
+      author_display_name: author?.display_name ?? null,
+      author_deactivated: author?.deactivated ?? false,
+    };
+  });
 }
 
 async function workspaceContext(workspaceId: unknown) {
@@ -94,7 +130,12 @@ export async function readClientNotes(input: unknown): Promise<ReadResult> {
     if (result.error) return { status: 'unavailable' };
     const rows = (result.data ?? []) as Note[];
     const hasMore = rows.length > NOTES_PAGE_SIZE;
-    const notes = rows.slice(0, NOTES_PAGE_SIZE);
+    const page = rows.slice(0, NOTES_PAGE_SIZE);
+    const notes = await withAuthorLabels(
+      context.client,
+      context.workspaceId,
+      page,
+    );
     const last = notes.at(-1);
     return {
       status: 'ok',
@@ -130,7 +171,10 @@ export async function createClientNote(input: unknown): Promise<NoteResult> {
     if (result.error) return { status: mapDatabaseError(result.error) };
     const row = Array.isArray(result.data) ? result.data[0] : result.data;
     if (!row || typeof row !== 'object') return { status: 'unavailable' };
-    return { status: 'ok', note: row as Note };
+    const [note] = await withAuthorLabels(context.client, context.workspaceId, [
+      row as Note,
+    ]);
+    return { status: 'ok', note: note! };
   } catch {
     return { status: 'unavailable' };
   }
@@ -174,7 +218,12 @@ export async function updateClientNote(input: unknown): Promise<NoteResult> {
     if (result.error) return { status: mapDatabaseError(result.error) };
     const row = Array.isArray(result.data) ? result.data[0] : result.data;
     if (!row || typeof row !== 'object') return { status: 'unavailable' };
-    return { status: 'ok', note: row as Note };
+    const [note] = await withAuthorLabels(
+      context.client,
+      context.note.workspace_id,
+      [row as Note],
+    );
+    return { status: 'ok', note: note! };
   } catch {
     return { status: 'unavailable' };
   }
