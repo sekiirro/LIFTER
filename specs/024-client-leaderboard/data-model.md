@@ -69,7 +69,7 @@ This document is a proposed implementation model for review; it adds no product 
 2. A client-visible publication has an approved PO decision; its public view shows at most five entries.
 3. A new approved publication replaces the prior current result only in the approval transaction.
 4. Opt-out immediately suppresses the username from the public view and all future results, promotes the next eligible entry without reapproval, and keeps the client's private rank.
-8. A client reads only their own private rank and the participant total; no other client's rank outside the public Top 5 is readable by any client or non-PO staff member.
-5. Username uniqueness is scoped to workspace and checked on signup and edit under a concurrency-safe database constraint.
-6. No health values, answer values, notes, plan content, raw scores, client code or formulas are returned or logged.
-7. No duplicate eligibility engine, form scheduler, plan-delivery store, audit log or client identity is introduced.
+5. A client reads only their own private rank and the participant total; no other client's rank outside the public Top 5 is readable by any client or non-PO staff member.
+6. Username uniqueness is scoped to workspace and checked on signup and edit under a concurrency-safe database constraint.
+7. No health values, answer values, notes, plan content, raw scores, client code or formulas are returned or logged.
+8. No duplicate eligibility engine, form scheduler, plan-delivery store, audit log or client identity is introduced.

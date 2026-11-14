@@ -54,8 +54,8 @@ Deliver an optional monthly Top-5 leaderboard isolated per workspace. Derive eli
 2. Ranking orders ALL eligible clients (S57-PO-6). Eligible past winners (the current public Top 5) keep their Top 5 places unless a new candidate scores higher; everyone else follows in score order. An opted-out client is filtered before candidate construction. Goal type (S57-PO-1), monthly mean adherence (S57-PO-4), last scoring input (S57-PO-2) and registration order (S57-PO-3) feed the score and tie-breaks.
 3. The server stores the proposed full ranking and exposes it only after the PO records approval. Until approval, clients continue to see the previous approved ranking. A later opt-out immediately hides that client publicly and promotes the next eligible entry without reapproval.
 4. Each workspace viewer reads only the public Top 5 display allow-list: rank and client username. Each eligible client also reads their own private rank and the participant total (S57-PO-12). No health metric, check-in answer, score, client code, note, plan detail, or scoring explanation crosses the client boundary.
-6. The client sees the Top 5 and private rank inside the Progress page; the old client leaderboard route redirects there (S57-PO-12). Coaching staff set the goal type in a Goals section under Client Details (S57-PO-1).
-5. The client username is created/validated in F11's invitation-link signup transaction and edited through the existing account-settings area; both paths enforce workspace uniqueness and the S55-PO-9 Q14 format, case-insensitive uniqueness and reserved-name rules.
+5. The client sees the Top 5 and private rank inside the Progress page; the old client leaderboard route redirects there (S57-PO-12). Coaching staff set the goal type in a Goals section under Client Details (S57-PO-1).
+6. The client username is created/validated in F11's invitation-link signup transaction and edited through the existing account-settings area; both paths enforce workspace uniqueness and the S55-PO-9 Q14 format, case-insensitive uniqueness and reserved-name rules.
 
 ## Constitution Check (post-design)
 

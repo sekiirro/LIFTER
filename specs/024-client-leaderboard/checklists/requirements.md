@@ -37,4 +37,5 @@
 ## Notes
 
 S55-PO-6 resolves Q11-Q13.
+
 - S57 decisions (2026-11-14/15) are applied: goal type and formula (S57-PO-1), tie-breaks (S57-PO-2, S57-PO-3), monthly mean (S57-PO-4), full ranking and private rank (S57-PO-6), generic signup message (S57-PO-7), and Progress placement plus approved copy (S57-PO-12). Proposed strings that these decisions do not change stay PROPOSED in `copy-proposal.md`, awaiting the PO's edits.
