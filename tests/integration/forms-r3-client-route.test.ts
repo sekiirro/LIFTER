@@ -39,6 +39,9 @@ it('T022 exposes only the signed client assignment and audited answer reads', as
     const contextBody = contextReader?.body as string;
     expect(contextBody).toContain('c.auth_user_id=auth.uid()');
     expect(contextBody).toContain("c.approval_state='approved'");
+    expect(contextBody).toContain(
+      "'relationship_active',c.deactivated_at is null",
+    );
     const ownershipMutant = contextBody.replace(
       'and c.auth_user_id=auth.uid()',
       '',

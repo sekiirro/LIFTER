@@ -8,7 +8,10 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { serverLogRawPath, serverLogSummaryPath } from './server-log-capture';
-import { hasCapturedServerLogs } from './server-log-capture-state';
+import {
+  hasCapturedServerLogs,
+  isReusedServerWithoutCapture,
+} from './server-log-capture-state';
 
 export default async function verifyServerLogCleanup() {
   const rawPath = serverLogRawPath;
@@ -28,7 +31,7 @@ export default async function verifyServerLogCleanup() {
     captureStarted?: boolean;
     totalLines?: number;
   };
-  if (!hasCapturedServerLogs(summary))
+  if (!hasCapturedServerLogs(summary) && !isReusedServerWithoutCapture(summary))
     throw new Error('Server log capture did not run.');
   summary.rawLogDeleted = !existsSync(rawPath);
   writeFileSync(`${summaryPath}.tmp`, JSON.stringify(summary), 'utf8');
@@ -44,7 +47,8 @@ export default async function verifyServerLogCleanup() {
       deleted =
         deleted &&
         summary.rawLogDeleted === true &&
-        hasCapturedServerLogs(summary);
+        (hasCapturedServerLogs(summary) ||
+          isReusedServerWithoutCapture(summary));
     } catch {
       deleted = false;
     }
