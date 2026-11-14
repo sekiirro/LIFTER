@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getActor: vi.fn(),
   createSessionClient: vi.fn(),
   order: vi.fn(),
+  rpc: vi.fn(),
   rows: [] as Record<string, unknown>[],
   limit: vi.fn(),
   or: vi.fn(),
@@ -42,6 +43,7 @@ describe('Client Notes list ordering', () => {
     query.limit.mockReturnValue(query);
     query.or.mockReturnValue(query);
     mocks.rows = [];
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
     mocks.getActor.mockResolvedValue({
       userId: 'trainer',
       role: 'trainer',
@@ -49,6 +51,7 @@ describe('Client Notes list ordering', () => {
     });
     mocks.createSessionClient.mockResolvedValue({
       from: vi.fn(() => query),
+      rpc: mocks.rpc,
     });
   });
 
@@ -68,6 +71,62 @@ describe('Client Notes list ordering', () => {
       ['created_at', { ascending: false }],
       ['id', { ascending: false }],
     ]);
+  });
+
+  it('attaches only scoped server-owned author labels to the visible page', async () => {
+    const author = '30000000-0000-4000-8000-000000000001';
+    mocks.rows = [
+      {
+        id: '40000000-0000-4000-8000-000000000001',
+        workspace_id: '10000000-0000-4000-8000-000000000001',
+        client_id: '20000000-0000-4000-8000-000000000001',
+        author_user_id: author,
+        body: 'note',
+        created_at: '2026-11-12T10:00:00Z',
+        edited_at: null,
+      },
+    ];
+    mocks.rpc.mockResolvedValue({
+      data: [
+        { author_user_id: author, display_name: 'Sara Ali', deactivated: true },
+      ],
+      error: null,
+    });
+    const result = await readClientNotes({
+      workspaceId: '10000000-0000-4000-8000-000000000001',
+      clientId: '20000000-0000-4000-8000-000000000001',
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith('get_client_note_author_names', {
+      p_workspace_id: '10000000-0000-4000-8000-000000000001',
+      p_author_user_ids: [author],
+    });
+    expect(result).toMatchObject({
+      status: 'ok',
+      notes: [{ author_display_name: 'Sara Ali', author_deactivated: true }],
+    });
+  });
+
+  it('keeps the approved fallback fields when the optional label lookup fails', async () => {
+    mocks.rows = [
+      {
+        id: '40000000-0000-4000-8000-000000000001',
+        workspace_id: '10000000-0000-4000-8000-000000000001',
+        client_id: '20000000-0000-4000-8000-000000000001',
+        author_user_id: '30000000-0000-4000-8000-000000000001',
+        body: 'note',
+        created_at: '2026-11-12T10:00:00Z',
+        edited_at: null,
+      },
+    ];
+    mocks.rpc.mockRejectedValue(new Error('name source unavailable'));
+    const result = await readClientNotes({
+      workspaceId: '10000000-0000-4000-8000-000000000001',
+      clientId: '20000000-0000-4000-8000-000000000001',
+    });
+    expect(result).toMatchObject({
+      status: 'ok',
+      notes: [{ author_display_name: null, author_deactivated: false }],
+    });
   });
 
   it('returns one page and a continuation cursor when another page exists', async () => {
@@ -236,20 +295,32 @@ describe('Client Notes list ordering', () => {
   });
 
   it('accepts a 36-character generated key and refuses a 37-character key before auth', async () => {
-    const rpc = vi.fn().mockResolvedValue({
-      data: [
-        {
-          id: '40000000-0000-4000-8000-000000000001',
-          workspace_id: '10000000-0000-4000-8000-000000000001',
-          client_id: '20000000-0000-4000-8000-000000000001',
-          author_user_id: 'trainer',
-          body: 'valid body',
-          created_at: '2026-11-13T10:00:00Z',
-          edited_at: null,
-        },
-      ],
-      error: null,
-    });
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [
+          {
+            id: '40000000-0000-4000-8000-000000000001',
+            workspace_id: '10000000-0000-4000-8000-000000000001',
+            client_id: '20000000-0000-4000-8000-000000000001',
+            author_user_id: 'trainer',
+            body: 'valid body',
+            created_at: '2026-11-13T10:00:00Z',
+            edited_at: null,
+          },
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            author_user_id: 'trainer',
+            display_name: 'Sara Ali',
+            deactivated: false,
+          },
+        ],
+        error: null,
+      });
     mocks.createSessionClient.mockResolvedValueOnce({ rpc });
     const accepted = await createClientNote({
       workspaceId: '10000000-0000-4000-8000-000000000001',
@@ -274,6 +345,6 @@ describe('Client Notes list ordering', () => {
     });
     expect(rejected).toEqual({ status: 'invalid_input' });
     expect(mocks.getActor).not.toHaveBeenCalled();
-    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledTimes(2);
   });
 });
