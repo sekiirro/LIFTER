@@ -20,6 +20,7 @@ import {
   type LeaderboardView,
   type PendingCandidateView,
 } from './projection';
+import { LEADERBOARD_RESOLVERS } from './resolvers';
 import type { LeaderboardScoreInputSource } from './score-inputs';
 import {
   LeaderboardInputsUnresolvedError,
@@ -289,10 +290,10 @@ export async function generateLeaderboardCandidate(
 }
 
 /**
- * PO-only generation from spec 023 data. Not surfaced in any page: no
- * approved copy exists for a generate button (PO-DECISION-NEEDED). While the
- * goal-progress normalization, achievement date and client code are
- * unresolved it returns `inputs_unresolved` and stores nothing.
+ * PO-only generation from spec 023 data, using the production resolver
+ * registry (`resolvers.ts`). Not surfaced in any page: no approved copy
+ * exists for a generate button (PO-DECISION-NEEDED). While any registered
+ * resolver is `null` it returns `inputs_unresolved` and stores nothing.
  */
 export async function generateLeaderboardCandidateFromSpec023(
   actor: Actor | null,
@@ -304,10 +305,6 @@ export async function generateLeaderboardCandidateFromSpec023(
   return generateLeaderboardCandidate(
     actor,
     workspaceId,
-    createSpec023ScoreInputSource({
-      client,
-      goalProgress: null,
-      clientCodes: null,
-    }),
+    createSpec023ScoreInputSource({ client, resolvers: LEADERBOARD_RESOLVERS }),
   );
 }
