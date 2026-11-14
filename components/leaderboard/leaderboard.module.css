@@ -1,0 +1,49 @@
+.main {
+  display: grid;
+  gap: var(--space-6);
+  max-inline-size: 40rem;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-4);
+}
+.section {
+  display: grid;
+  gap: var(--space-3);
+}
+.month {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+.list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}
+.entry:last-child {
+  border-block-end: 0;
+}
+.rank {
+  font-weight: 600;
+}
+.username {
+  overflow-wrap: anywhere;
+}
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+.form {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
