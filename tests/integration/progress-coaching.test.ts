@@ -62,6 +62,16 @@ const checkinDefinition = {
       validation: { min: 20, max: 400 },
       label: { en: 'Body weight', ar: 'الوزن' },
     },
+    {
+      // F15 builder content carries question text as `title`.
+      id: 'waist',
+      sectionId: 'checkin',
+      type: 'number',
+      required: false,
+      unit: { en: 'cm', ar: 'سم' },
+      validation: { min: 30, max: 250 },
+      title: { en: 'Waist', ar: 'الوسط' },
+    },
   ],
 };
 
@@ -101,10 +111,12 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
         await tx`select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as today`;
       const today = clock!.today as string;
       await tx`select set_config('request.jwt.claims','{}',true)`;
-      // Authoritative activation fact, 7 Cairo days ago (synthetic stand-in for F19 T021).
-      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      // Activation fact 7 Cairo days ago. F19's source guard admits only typed
+      // initial sources; the real ready_and_publish_plan path is covered in
+      // progress-coaching-activation-anchor.test.ts.
+      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id,activation_source)
         values(${ws},${ids.subscription},
-          ((${today}::date - 7)::timestamp + interval '9 hours') at time zone 'Africa/Cairo',${randomUUID()})`;
+          ((${today}::date - 7)::timestamp + interval '9 hours') at time zone 'Africa/Cairo',${randomUUID()},'po_override')`;
 
       // Configuration: invalid definition, foreign/Sales denial, then success.
       const terms = await currentTerms(tx);
@@ -158,7 +170,7 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
 
       // Client submits: measurement auto-extracted with source reference and units.
       await tx`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
-        values(${ws},${assignmentId},1,${tx.json({ workoutAdherence: 8, dietAdherence: 6, bodyWeight: 92.5 })})`;
+        values(${ws},${assignmentId},1,${tx.json({ workoutAdherence: 8, dietAdherence: 6, bodyWeight: 92.5, waist: 80 })})`;
       await tx`insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
         values(${ws},${assignmentId},1,clock_timestamp())`;
       const [measurement] =
@@ -202,7 +214,7 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
         );
       // A later F15 answer revision (correction) refreshes the stored values.
       await tx`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
-        values(${ws},${assignmentId},2,${tx.json({ workoutAdherence: 9, dietAdherence: 6, bodyWeight: 92.5 })})`;
+        values(${ws},${assignmentId},2,${tx.json({ workoutAdherence: 9, dietAdherence: 6, bodyWeight: 92.5, waist: 80 })})`;
       const refreshed = await asUser(
         tx,
         f.trainerA.userId,
@@ -218,12 +230,18 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
         f.woA.userId,
         (sp) =>
           sp`select measurement_type, baseline_value::text, measurement_count
-          from public.progress_measurement_baselines(${ws},${today}::date)`,
+          from public.progress_measurement_baselines(${ws},${today}::date)
+          order by measurement_type`,
       );
       expect(baselines).toEqual([
         {
           measurement_type: 'bodyWeight',
           baseline_value: '92.5',
+          measurement_count: 1,
+        },
+        {
+          measurement_type: 'waist',
+          baseline_value: '80',
           measurement_count: 1,
         },
       ]);
@@ -330,8 +348,8 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
         )[0]!.n as number;
       expect(await visible(f.trainerB.userId)).toBe(0);
       expect(await visible(f.salesA.userId)).toBe(0);
-      expect(await visible(clientUser)).toBe(2);
-      expect(await visible(f.trainerA.userId)).toBeGreaterThanOrEqual(2);
+      expect(await visible(clientUser)).toBe(3);
+      expect(await visible(f.trainerA.userId)).toBeGreaterThanOrEqual(3);
       await denied(
         tx,
         f.trainerB.userId,
@@ -349,6 +367,10 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
           expect.objectContaining({
             measurement_type: 'bodyWeight',
             label: { en: 'Body weight', ar: 'الوزن' },
+          }),
+          expect.objectContaining({
+            measurement_type: 'waist',
+            label: { en: 'Waist', ar: 'الوسط' },
           }),
         ]),
       });
