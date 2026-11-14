@@ -145,7 +145,7 @@ export function request(
       : {
           expected_installment_seq: 1,
           expected_amount_minor: t.rows?.[0]?.amount_minor ?? '1200',
-          currency: 'XTS',
+          currency: 'USD',
           collected_on: '1900-01-01',
           payment_confirmed: true,
         }),

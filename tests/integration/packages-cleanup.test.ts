@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  createSynthetic,
+  createLegacySynthetic,
   packagesFixture,
   sql,
   type PackagesFixture,
@@ -25,11 +25,11 @@ afterAll(async () => {
 
 describe('T077 verified legacy offer cleanup', () => {
   it('deletes only a safe verified test offer and restores the no-delete trigger', async () => {
-    const pkg = await createSynthetic(f);
+    const pkg = await createLegacySynthetic(f);
     const offerId = randomUUID();
     await db`
       insert into public.package_offers(id,workspace_id,package_id,duration_days,duration_months,tier_rank)
-      values (${offerId},${f.wsA.id},${pkg.id},777,null,1)
+      values (${offerId},${pkg.workspace_id},${pkg.id},777,null,1)
     `;
 
     await db.unsafe(cleanup);
@@ -89,15 +89,15 @@ describe('T077 verified legacy offer cleanup', () => {
   });
 
   it('refuses to delete a test offer referenced by audit and preserves that record', async () => {
-    const pkg = await createSynthetic(f);
+    const pkg = await createLegacySynthetic(f);
     const offerId = randomUUID();
     await db`
       insert into public.package_offers(id,workspace_id,package_id,duration_days,duration_months,tier_rank)
-      values (${offerId},${f.wsA.id},${pkg.id},777,null,1)
+      values (${offerId},${pkg.workspace_id},${pkg.id},777,null,1)
     `;
     await db`
       insert into public.audit_events(actor_user_id,action,target_table,target_id,workspace_id,details)
-      values (${f.po.userId},'package_offer.test_fixture','package_offers',${offerId},${f.wsA.id},'{}'::jsonb)
+      values (${f.po.userId},'package_offer.test_fixture','package_offers',${offerId},${pkg.workspace_id},'{}'::jsonb)
     `;
     const beforeAudit = await db`
       select id,action,target_table,target_id,details
