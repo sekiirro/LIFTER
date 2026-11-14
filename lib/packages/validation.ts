@@ -1,6 +1,10 @@
 export const PRESET_MONTHS = [1, 3, 6, 8, 12] as const;
 export const TIER_RANKS = [1, 2, 3] as const;
 export const BIGINT_MAX = 9223372036854775807n;
+export const PACKAGE_MARKETS = ['Egypt', 'International'] as const;
+export const PACKAGE_TYPES = ['Year-round', 'Promotional'] as const;
+export type PackageMarket = (typeof PACKAGE_MARKETS)[number];
+export type PackageType = (typeof PACKAGE_TYPES)[number];
 export function isUuid(value: unknown): value is string {
   return (
     typeof value === 'string' &&
@@ -8,6 +12,35 @@ export function isUuid(value: unknown): value is string {
       value,
     )
   );
+}
+export type PackageCategoryIdentity = {
+  workspaceId: string;
+  market: PackageMarket;
+  type: PackageType;
+};
+export function parseCategoryIdentity(
+  input: Record<string, unknown>,
+): PackageCategoryIdentity | null {
+  return isUuid(input.workspaceId) &&
+    (PACKAGE_MARKETS as readonly unknown[]).includes(input.market) &&
+    (PACKAGE_TYPES as readonly unknown[]).includes(input.type)
+    ? {
+        workspaceId: input.workspaceId,
+        market: input.market as PackageMarket,
+        type: input.type as PackageType,
+      }
+    : null;
+}
+export function isCurrencyAllowedForMarket(
+  market: unknown,
+  currency: unknown,
+): boolean {
+  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency))
+    return false;
+  if (market === 'Egypt') return currency === 'EGP';
+  if (market === 'International')
+    return ['EGP', 'USD', 'SAR'].includes(currency);
+  return false;
 }
 export function parseCode(value: unknown): string | null {
   return typeof value === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value)

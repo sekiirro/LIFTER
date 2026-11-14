@@ -104,7 +104,7 @@ it('T018 later sequence requires every earlier obligation currently paid, even a
 for (const extra of [
   { expected_amount_minor: '399' },
   { expected_amount_minor: 400 },
-  { currency: 'USD' },
+  { currency: 'EGP' },
   { collected_on: '9999-12-31' },
   { collected_on: '2025-02-29' },
   { payment_confirmed: false },

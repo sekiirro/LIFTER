@@ -542,7 +542,7 @@ it('Q2 Trainer may collect a renewal installment in its authorized workspace', a
         expected_revision: 0,
         expected_previous_event_id: null,
         expected_amount_minor: '600',
-        currency: 'XTS',
+        currency: 'USD',
         collected_on: '1900-01-01',
         payment_confirmed: true,
       });

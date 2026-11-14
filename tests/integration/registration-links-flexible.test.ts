@@ -54,7 +54,7 @@ it('T050 flexible RPC delegates exact terms and preserves previously issued rows
     await db`select seq,amount_minor::text,due_offset_days from public.registration_link_installments where link_id=${result.data as string} order by seq`;
   expect(link).toEqual({
     price_minor: '1200',
-    currency: 'XTS',
+    currency: 'USD',
     package_version_id: f.p.versionId,
   });
   expect(rows).toEqual(schedule);
@@ -67,7 +67,7 @@ it('T050 flexible RPC delegates exact terms and preserves previously issued rows
         offer_id: f.p.offer.id,
         installment_count: 2,
         price_minor: '1200',
-        currency: 'XTS',
+        currency: 'USD',
       },
     },
   ]);

@@ -63,7 +63,7 @@ it('audits refund, allocation, cancellations and deactivation with allow-listed 
       client_id: ids.client,
       purchase_id: ids.subscription,
       amount_minor: '600',
-      currency: 'XTS',
+      currency: 'USD',
     });
 
     const rows = await tx`

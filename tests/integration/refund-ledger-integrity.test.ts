@@ -31,10 +31,10 @@ async function appendRefund(
     values(${operationId},${f.wsA.id},${f.po.userId},${randomUUID()},'collect',${ids.client},${ids.subscription},${ids.obligation},${ids.event},1,0,decode(repeat('cd',32),'hex'),'{}')`;
   const [refund] =
     await tx`insert into public.refund_operations(workspace_id,client_id,subscription_id,operation_id,actor_user_id,amount_minor,currency,effective_on,expected_revision)
-    values(${f.wsA.id},${ids.client},${ids.subscription},${operationId},${f.po.userId},${amount},'XTS','1900-01-01',0)
+    values(${f.wsA.id},${ids.client},${ids.subscription},${operationId},${f.po.userId},${amount},'USD','1900-01-01',0)
     returning id`;
   await tx`insert into public.refund_allocation_events(workspace_id,subscription_id,obligation_id,refund_operation_id,source_collection_event_id,amount_minor,commission_minor,currency,effective_on,recorded_by)
-    values(${f.wsA.id},${ids.subscription},${ids.obligation},${refund!.id},${ids.event},${-amount},${-commission},'XTS','1900-01-01',${f.po.userId})`;
+    values(${f.wsA.id},${ids.subscription},${ids.obligation},${refund!.id},${ids.event},${-amount},${-commission},'USD','1900-01-01',${f.po.userId})`;
   return refund!.id as string;
 }
 
@@ -163,7 +163,7 @@ it('T012 correction reversal uniqueness rejects duplicate correction successors'
         await inner`insert into app_private.registration_operations(id,workspace_id,actor_user_id,request_key,operation,client_id,subscription_id,obligation_id,event_id,original_event_id,expected_installment_seq,expected_revision,expected_previous_event_id,canonical_args_hash,result_receipt)
           values(${duplicateOperation},${f.wsA.id},${f.po.userId},${randomUUID()},'correct',${ids.client},${ids.subscription},${ids.obligation},${duplicateEvent},${ids.event},1,2,${reversal.id},decode(repeat('ef',32),'hex'),'{}')`;
         await inner`insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,previous_event_id,kind,reverses_event_id,amount_minor,currency,commission_minor,collected_on,effective_on,recorded_by,operation_id)
-          values(${duplicateEvent},${f.wsA.id},${ids.subscription},${ids.obligation},1,2,${ids.event},'correction_reversal',${ids.event},-1200,'XTS',-2,null,'1900-01-02',${f.po.userId},${duplicateOperation})`;
+          values(${duplicateEvent},${f.wsA.id},${ids.subscription},${ids.obligation},1,2,${ids.event},'correction_reversal',${ids.event},-1200,'USD',-2,null,'1900-01-02',${f.po.userId},${duplicateOperation})`;
       }),
     ).rejects.toMatchObject({ code: '23505' });
   });

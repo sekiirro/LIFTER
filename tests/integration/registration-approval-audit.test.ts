@@ -139,7 +139,7 @@ it('T010 signup once, approval once, collection/correction once; exact safe payl
     const payment = rows.find((r) => r.action === 'payment.collected')!.details;
     expect(payment).toMatchObject({
       amount_minor: '1200',
-      currency: 'XTS',
+      currency: 'USD',
       installment_seq: 1,
       revision: 1,
     });

@@ -54,7 +54,7 @@ async function targetOffer(
     await publish(f, f.p.id, {
       tier_rank: 2,
       price_minor: '1600',
-      currency: 'XTS',
+      currency: 'USD',
       commission_rate_bp: 2500,
       ...patch,
     }),
@@ -385,7 +385,7 @@ it('T042 records additional-payment commission at the original subscription rate
         package_price_minor: '1600',
         credit_minor: '1200',
         additional_payment_minor: '400',
-        currency: 'XTS',
+        currency: 'USD',
       },
     });
     const receipt = result.receipt as Record<string, unknown>;
@@ -401,7 +401,7 @@ it('T042 records additional-payment commission at the original subscription rate
       package_price_minor: '1600',
       credit_minor: '1200',
       additional_payment_minor: '400',
-      currency: 'XTS',
+      currency: 'USD',
       service_start_date: expect.any(String),
       service_end_exclusive: expect.any(String),
     });
@@ -1122,7 +1122,7 @@ it('T042 refuses mixed currency and lower-price upgrades before any writes', asy
     duration_days: 90,
   });
   const mixedCurrency = await targetOffer(f, {
-    currency: 'USD',
+    currency: 'EGP',
     tier_rank: 3,
     duration_days: 90,
   });

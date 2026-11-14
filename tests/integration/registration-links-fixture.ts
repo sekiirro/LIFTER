@@ -21,11 +21,21 @@ async function setOfferAvailable(
   f: RegistrationBaseFixture,
   offerId: string,
   available: boolean,
-  workspaceId: string = f.wsA.id,
+  workspaceId?: string,
 ) {
+  const targetWorkspace =
+    workspaceId ??
+    (
+      await f.po.client
+        .from('package_offers')
+        .select('workspace_id')
+        .eq('id', offerId)
+        .single()
+    ).data?.workspace_id;
+  if (!targetWorkspace) throw new Error('Offer workspace fixture missing');
   checked(
     await f.po.client.rpc('set_package_offer_available', {
-      workspace_id: workspaceId,
+      workspace_id: targetWorkspace,
       offer_id: offerId,
       available,
     }),
@@ -62,7 +72,11 @@ export async function pgcryptoCheck() {
 }
 async function offerFixture() {
   const f = await packagesFixture();
-  const p = await publishedFixture(f, { tier_rank: 1, price_minor: '1200' });
+  const p = await publishedFixture(f, {
+    tier_rank: 1,
+    price_minor: '1200',
+    workspace_id: f.wsA.id,
+  });
   return { ...f, p };
 }
 export type RegistrationOfferFixture = Awaited<ReturnType<typeof offerFixture>>;
@@ -79,12 +93,13 @@ export type RegistrationFixture = Awaited<
  * by cross-scope issuance/read/commission parity tests; never mutates wsA.
  */
 export async function crossWorkspaceOffer(f: RegistrationFixture) {
+  const foreign = await publishedFixture(f, {
+    tier_rank: 1,
+    workspace_id: f.wsB.id,
+    price_minor: '1200',
+  });
   const versionId = checked(
-    await publish(f, f.p.id, {
-      tier_rank: 1,
-      workspace_id: f.wsB.id,
-      price_minor: '1200',
-    }),
+    await publish(f, foreign.id, { tier_rank: 1, price_minor: '1200' }),
   ) as string;
   const offer = checked(
     await f.po.client
@@ -112,7 +127,7 @@ export async function missingCurrentVersionFixture() {
   try {
     await db.begin(async (tx) => {
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
-      await tx`update public.package_offers set current_version_id=null where workspace_id=${f.wsA.id} and id=${f.p.offer.id}`;
+      await tx`update public.package_offers set current_version_id=null where workspace_id=${f.p.offer.workspace_id} and id=${f.p.offer.id}`;
     });
   } finally {
     await db.end();
@@ -135,7 +150,7 @@ export function issue(
 ) {
   return assertInsertGuardEnabled().then(() =>
     client.rpc('issue_registration_link', {
-      workspace_id: f.wsA.id,
+      workspace_id: f.p.offer.workspace_id,
       package_version_id: f.p.versionId,
       token_hash: secret().hash,
       installments: null,
@@ -159,7 +174,7 @@ export async function backdated(
       let linkId: string | undefined;
       try {
         const [row] =
-          await tx`insert into public.registration_links(workspace_id,package_version_id,token_hash,created_by,created_at,expires_at,opened_at,consumed_at,price_minor,currency,duration_days,duration_months,commission_rate_bp) values (${f.wsA.id},${f.p.versionId},${s.hash},${f.po.userId},${expires}::timestamptz-interval '24 hours',${expires},${opened},${consumed},1200,'XTS',61,null,17) returning id`;
+          await tx`insert into public.registration_links(workspace_id,package_version_id,token_hash,created_by,created_at,expires_at,opened_at,consumed_at,price_minor,currency,duration_days,duration_months,commission_rate_bp) values (${f.p.offer.workspace_id},${f.p.versionId},${s.hash},${f.po.userId},${expires}::timestamptz-interval '24 hours',${expires},${opened},${consumed},1200,'USD',61,null,17) returning id`;
         linkId = row!.id as string;
         inserted = true;
         await tx`set constraints all immediate`;
