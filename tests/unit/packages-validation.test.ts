@@ -7,7 +7,7 @@ const valid = {
   nameAr: 'test-ar',
   nameEn: 'test-en',
   priceMinor: '9223372036854775807',
-  currency: 'XTS',
+  currency: 'USD',
   commissionRateBp: 0,
 };
 describe('package validation', () => {

@@ -9,7 +9,7 @@ const header = {
   operationId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
   actorUserId: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
   amountMinor: '1500',
-  currency: 'XTS',
+  currency: 'USD',
   effectiveOn: '2026-11-03',
   expectedRevision: 2,
 } as const;
@@ -38,7 +38,7 @@ describe('refund ledger row mapping', () => {
     expect(batch.operation).toMatchObject({
       id: header.id,
       amount_minor: '1500',
-      currency: 'XTS',
+      currency: 'USD',
       expected_revision: 2,
     });
     expect(
