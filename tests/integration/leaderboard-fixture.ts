@@ -37,14 +37,32 @@ export function syntheticUsername(prefix = 'lb') {
   return `${prefix}_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
 }
 
+/**
+ * The shared fixtures are workspace-A shaped: some helpers read `f.wsA`,
+ * others `f.p.offer.workspace_id` (registration-links-fixture since the
+ * market-scoped package categories). A workspace B context must therefore
+ * move BOTH: `wsA` becomes wsB, and `p` becomes the foreign offer's
+ * published fixture shape (its own offer/workspace and version).
+ */
+export function workspaceBContext(f: LeaderboardContext): Context {
+  return {
+    ...f,
+    wsA: f.wsB,
+    p: {
+      ...f.p,
+      versionId: f.offerB.versionId,
+      offer: {
+        ...f.p.offer,
+        id: f.offerB.offerId,
+        workspace_id: f.wsB.id,
+        current_version_id: f.offerB.versionId,
+      },
+    },
+  } as unknown as Context;
+}
+
 function scoped(f: LeaderboardContext, workspace: 'A' | 'B'): Context {
-  return workspace === 'A'
-    ? f
-    : ({
-        ...f,
-        wsA: f.wsB,
-        p: { ...f.p, versionId: f.offerB.versionId },
-      } as Context);
+  return workspace === 'A' ? f : workspaceBContext(f);
 }
 
 /**

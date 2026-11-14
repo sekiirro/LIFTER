@@ -5,6 +5,7 @@ import {
   leaderboardClient,
   leaderboardContext,
   syntheticUsername,
+  workspaceBContext,
   type LeaderboardContext,
 } from './leaderboard-fixture';
 import { anonClient, sql } from './harness';
@@ -18,11 +19,9 @@ beforeAll(async () => {
 afterAll(() => db.end());
 
 function inWorkspaceB(context: LeaderboardContext) {
-  return {
-    ...context,
-    wsA: context.wsB,
-    p: { ...context.p, versionId: context.offerB.versionId },
-  } as unknown as Parameters<typeof signupFixture>[0];
+  return workspaceBContext(context) as unknown as Parameters<
+    typeof signupFixture
+  >[0];
 }
 
 describe('F11 invitation-link signup applies Q14', () => {
