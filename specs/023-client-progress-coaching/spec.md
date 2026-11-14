@@ -248,11 +248,11 @@ PO S57-PO-12 (2026-11-15), copy and placement: "Continue F22/F23/F24 independent
 
 F23 measurement copy approved by S57-PO-12:
 
-| EN | AR |
-| --- | --- |
-| Add measurement | ضيف قياس جديد |
-| Edit measurement | عدّل القياس |
-| Measurement saved | القياس اتسجّل |
+| EN                       | AR                     |
+| ------------------------ | ---------------------- |
+| Add measurement          | ضيف قياس جديد          |
+| Edit measurement         | عدّل القياس            |
+| Measurement saved        | القياس اتسجّل          |
 | No measurements recorded | لسه مفيش قياسات متسجلة |
 
 Applied to: copy-proposal.md (approved rows), Dependencies (Top 5 placement inside Progress, owned by spec 024).
