@@ -129,6 +129,8 @@ S43-PO-1 (2026-11-10) PO words:
 
 **F19 assignment seam — PO S56-PO-3; architect mappings S56-R3 and S56-R6.** The F11 manual assignment model now supplies `app_private.current_assigned_trainer(workspace_id, client_id)`. It returns the current active same-workspace Trainer or NULL. The assigned-Trainer automatic activation recipient case and the shared client-row serialization case pass as real-DB tests on Stack D (S56-R3's pending note is resolved). The existing no-assignment rule remains unchanged: credit the completing delivery Trainer, or refuse when that publisher is not a Trainer. Override behavior is unchanged.
 
+**F19 Override cancellation mapping — PO S56-PO-5 (2026-11-14); architect mapping S56-R8.** The existing `refunded` entitlement status satisfies the FR-006/Q9 refunded/cancelled terminal refusal today. Do not add a separate cancellation check: cancelled payment obligations or installments alone do not make a subscription cancelled. If a subscription-cancel feature is added later, its refusal rule is added with that feature. The test contract is: refunded subscription returns generic `not_permitted` without Override writes; installment cancellation alone is not a refusal reason.
+
 S43-F19-MCQ-1..5 ? resolved by S43-PO-5/6, with each PO quotation separated from architect mapping (S43-R8).
 
 S43-PO-5 (2026-11-10): 2. Upgrade: higher tier (even shorter duration) or same tier with longer duration. Credit FULL previously paid amount, never prorate. Equal price = free; lower price = not an upgrade. Example: EGP 750 → 1,400; charge 650.

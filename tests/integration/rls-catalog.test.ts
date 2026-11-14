@@ -320,6 +320,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_audit_plan_revision',
           'f19_guard_delivery',
           'f19_guard_delivery_operation',
+          'f19_guard_override_operation',
           'f19_guard_plan_draft',
           'f19_guard_plan_revision',
           'f19_guard_plan_root',
@@ -485,6 +486,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_audit_plan_revision',
           'f19_guard_delivery',
           'f19_guard_delivery_operation',
+          'f19_guard_override_operation',
           'f19_guard_plan_draft',
           'f19_guard_plan_revision',
           'f19_guard_plan_root',
@@ -579,6 +581,7 @@ describe('tenancy security catalog (T007)', () => {
               'f19_audit_plan_revision',
               'f19_guard_delivery',
               'f19_guard_delivery_operation',
+              'f19_guard_override_operation',
               'f19_guard_plan_draft',
               'f19_guard_plan_revision',
               'f19_guard_plan_root',
@@ -1738,5 +1741,40 @@ describe('F11 responsible-Trainer assignment catalog', () => {
         expect(grant!.allowed).toBe(role === 'authenticated');
       }
     }
+  });
+});
+
+describe('F19 T022 override catalog', () => {
+  it('forces RLS on the private receipt and hardens the authorized RPC', async () => {
+    const [table] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid='app_private.f19_override_operations'::regclass`;
+    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    const [fn] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+      from pg_catalog.pg_proc p
+      where p.oid='public.override_activate_subscription(uuid,uuid,uuid,uuid)'::regprocedure`;
+    expect(fn).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(fn?.proconfig).toContain('search_path=""');
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+      ]) {
+        const [grant] = await db`select has_table_privilege(${role},
+          'app_private.f19_override_operations',${privilege}) as allowed`;
+        expect(grant!.allowed).toBe(false);
+      }
   });
 });
