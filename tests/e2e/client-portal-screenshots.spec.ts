@@ -243,8 +243,8 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
         await expect(
           page.getByTestId('directory-subscription-status'),
         ).toHaveText([
-          `${m['client.portal.subscriptionStatus']}: ${m['client.portal.subscriptionStatus.active']}`,
-          `${m['client.portal.subscriptionStatus']}: ${m['client.portal.subscriptionStatus.awaitingActivation']}`,
+          `${m['client.portal.subscriptionStatus']}: ${m['staff.clientDirectory.subscriptionStatus.active']}`,
+          `${m['client.portal.subscriptionStatus']}: ${m['staff.clientDirectory.subscriptionStatus.awaitingActivation']}`,
         ]);
         await expect(
           page.getByLabel(m['client.portal.subscriptionStatus']),

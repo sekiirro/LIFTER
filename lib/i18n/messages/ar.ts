@@ -984,4 +984,11 @@ export const ar = {
   'staff.clientDirectory.search': 'دوّر على عميل',
   'staff.clientDirectory.filters': 'فلترة',
   'staff.clientDirectory.plansWaitingForDelivery': 'خطط مستنية تتبعت',
+  'staff.clientDirectory.subscriptionStatus.awaitingActivation':
+    'مستني التفعيل',
+  'staff.clientDirectory.subscriptionStatus.future': 'لسه ما بدأش',
+  'staff.clientDirectory.subscriptionStatus.active': 'شغّال',
+  'staff.clientDirectory.subscriptionStatus.frozen': 'متوقف مؤقتًا',
+  'staff.clientDirectory.subscriptionStatus.expired': 'منتهي',
+  'staff.clientDirectory.subscriptionStatus.refunded': 'تم رد المبلغ',
 } as const;

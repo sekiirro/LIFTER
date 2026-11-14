@@ -14,7 +14,7 @@ import {
 import { loadClientDirectory } from '../../../lib/client-directory/service';
 import {
   SUBSCRIPTION_STATUSES,
-  subscriptionStatusLabelKey,
+  staffSubscriptionStatusLabelKey,
 } from '../../../lib/client-access/portal-projection';
 import { createSessionClient } from '../../../lib/supabase/server';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
@@ -175,7 +175,7 @@ export default async function ClientDirectoryPage({
               <option value="">{m['client.portal.subscriptionStatus']}</option>
               {SUBSCRIPTION_STATUSES.map((status) => {
                 // The Refunded filter matches full refunds only (S57-PO-12).
-                const key = subscriptionStatusLabelKey({
+                const key = staffSubscriptionStatusLabelKey({
                   status,
                   refundScope: 'full',
                 });
@@ -209,7 +209,7 @@ export default async function ClientDirectoryPage({
               </p>
               {row.subscriptionStatus &&
                 (() => {
-                  const key = subscriptionStatusLabelKey({
+                  const key = staffSubscriptionStatusLabelKey({
                     status: row.subscriptionStatus,
                     refundScope: row.refundScope ?? undefined,
                   });

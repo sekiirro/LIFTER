@@ -1,7 +1,7 @@
 # Analyze: Client Portal Delivery
 
-**Date**: 2026-11-15 (full Analyze after the S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11 and S57-PO-12 requirement changes)
-**Inputs**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, `copy-proposal.md`, PO S56-PO-4, S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12
+**Date**: 2026-11-15 (full Analyze after the S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12 and S57-PO-13 requirement and copy changes)
+**Inputs**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, `copy-proposal.md`, PO S56-PO-4, S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12, S57-PO-13
 
 ## Changes analyzed
 
@@ -10,6 +10,7 @@
 - FR-004 encodes S57-PO-9: the plan body uses the F17/F18 shared read-only views, and P4 builds no renderer. T017 and research match.
 - FR-009 encodes S57-PO-10: an F19-owned hook, and a P4 client-recipient extension of the F15 inbox reused by spec 023. Data model (new client notice record), plan storage, contracts, research, T021 and T022 match.
 - A Client navigation reuse boundary records S57-PO-12 "Top 5 belongs inside Progress, not Main Navigation".
+- S57-PO-13: the staff directory uses separate staff status labels (same states, full-refund-only Refunded); the client labels are unchanged. FR-005, the staff directory contract, T035, data-model and copy-proposal.md match. The spec no longer calls any copy proposed or pending: the two copy statements in Assumptions and Clarifications and the empty-state wording in User Story 2 and the edge cases now say approved.
 - tasks.md gains a Slice record section for T005 (task status/traceability only; no requirement text).
 - Quickstart scenario 1 no longer describes a dark-by-default flag (removed under S56-PO-4), and quickstart no longer states that no migration is required. The plan now cites Constitution 1.17.0.
 

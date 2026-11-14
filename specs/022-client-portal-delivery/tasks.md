@@ -128,7 +128,7 @@
 ### Implementation for User Story 5
 
 - [ ] T034 [US5] [FR-011] Build directory query over F11 identity fields in `app/(app)/clients/page.tsx`.
-- [ ] T035 [US5] [FR-011] Add existing account/approval, subscription and assignment filters in `app/(app)/clients/page.tsx`; the subscription filter uses the S57-PO-12 labels and its Refunded option matches full refunds only.
+- [ ] T035 [US5] [FR-011] Add existing account/approval, subscription and assignment filters in `app/(app)/clients/page.tsx`; the subscription filter and row labels use the separate staff labels (S57-PO-13) and its Refunded option matches full refunds only.
 - [ ] T036 [US5] [FR-011] Show three owning-surface indicators in `app/(app)/clients/page.tsx`.
 - [ ] T037 [US5] [FR-011] Link indicators to existing F15/F18/F19 surfaces in `app/(app)/clients/page.tsx`.
 - [ ] T038 [US5] [FR-010, FR-011] [HIGH-RISK: authorization] Enforce workspace authorization for directory reads (independent review + mutation evidence required).

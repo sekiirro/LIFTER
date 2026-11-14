@@ -278,3 +278,23 @@ const STATUS_LABEL: Record<
   frozen: 'client.portal.subscriptionStatus.frozen',
   expired: 'client.portal.subscriptionStatus.expired',
 };
+
+export type StaffSubscriptionStatusLabelKey =
+  `staff.clientDirectory.subscriptionStatus.${'awaitingActivation' | 'future' | 'active' | 'frozen' | 'expired' | 'refunded'}`;
+
+/**
+ * S57-PO-13 staff directory status label. Same states and the same
+ * full-refund-only rule as the client label, with separate staff wording
+ * (the client labels address the client: "your subscription ...").
+ */
+export function staffSubscriptionStatusLabelKey(
+  subscription: Pick<SubscriptionSummary, 'status' | 'refundScope'>,
+): StaffSubscriptionStatusLabelKey | null {
+  const client = subscriptionStatusLabelKey(subscription);
+  return client
+    ? (client.replace(
+        'client.portal.',
+        'staff.clientDirectory.',
+      ) as StaffSubscriptionStatusLabelKey)
+    : null;
+}

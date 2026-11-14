@@ -1017,4 +1017,11 @@ export const en: Record<keyof typeof ar, string> = {
   'staff.clientDirectory.search': 'Search clients',
   'staff.clientDirectory.filters': 'Filters',
   'staff.clientDirectory.plansWaitingForDelivery': 'Plans waiting for delivery',
+  'staff.clientDirectory.subscriptionStatus.awaitingActivation':
+    'Awaiting Activation',
+  'staff.clientDirectory.subscriptionStatus.future': 'Future',
+  'staff.clientDirectory.subscriptionStatus.active': 'Active',
+  'staff.clientDirectory.subscriptionStatus.frozen': 'Frozen',
+  'staff.clientDirectory.subscriptionStatus.expired': 'Expired',
+  'staff.clientDirectory.subscriptionStatus.refunded': 'Refunded',
 };

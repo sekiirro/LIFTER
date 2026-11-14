@@ -27,4 +27,4 @@ This feature composes existing tenant-scoped records and read projections and ad
 - A client projection contains only that client's delivered plans. Draft and foreign-client plans are excluded.
 - Plan access is checked against F13 at each server read/export authorization decision.
 - Search uses only the four approved identity fields; filters use the existing three state dimensions. No new status or assignment state is modeled.
-- The client notice record is the only new table. No enums, lifecycle state transitions, statuses or ownership transfers are introduced; a partially refunded subscription keeps F13's `refunded` state and shows no status label (S57-PO-12).
+- The client notice record is the only new table. No enums, lifecycle state transitions, statuses or ownership transfers are introduced; a partially refunded subscription keeps F13's `refunded` state and shows no status label (S57-PO-12; staff wording S57-PO-13).

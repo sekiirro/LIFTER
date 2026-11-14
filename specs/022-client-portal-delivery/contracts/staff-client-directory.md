@@ -5,7 +5,7 @@
 - Searchable fields: existing client name, email, phone and client code.
 - Filter dimensions: existing account/approval status, subscription status and responsible-trainer assignment state.
 - Indicators: new check-ins, pending food replacements and plans waiting for delivery.
-- Subscription status uses the S57-PO-12 labels. Rows carry the F13 state plus `refund_scope` for `refunded`; the Refunded filter matches full refunds only, and a partially refunded row shows no status label.
+- Subscription status uses the separate staff labels (S57-PO-13). Rows carry the F13 state plus `refund_scope` for `refunded`; the Refunded filter matches full refunds only, and a partially refunded row shows no status label.
 
 ## Authorization and behavior
 
