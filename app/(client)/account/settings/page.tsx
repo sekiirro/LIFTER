@@ -25,7 +25,8 @@ export default async function ClientAccountSettingsPage() {
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
   const self = await readClientLeaderboardSelf(actor);
-  if (self.status !== 'ok') notFound();
+  if (self.status === 'not_permitted') notFound();
+  if (self.status !== 'ok') throw new Error('leaderboard_settings_unavailable');
 
   return (
     <main className={styles.main}>
@@ -36,6 +37,8 @@ export default async function ClientAccountSettingsPage() {
           messages={{
             label: m['clientSignup.username'],
             save: m['clientNotes.saveChanges'],
+            saved: m['clientNotes.editedToast'],
+            failed: m['states.error.description'],
             tooShort: m['accountSettings.username.tooShort'],
             tooLong: m['accountSettings.username.tooLong'],
             invalidChars: m['accountSettings.username.invalidChars'],
@@ -62,6 +65,7 @@ export default async function ClientAccountSettingsPage() {
               action={optOutAction}
               label={m['leaderboard.optOut.turnOffParticipation']}
               successMessage={m['leaderboard.optOut.success']}
+              failedMessage={m['states.error.description']}
             />
           </>
         )}

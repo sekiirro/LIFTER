@@ -5,12 +5,17 @@ import styles from '../../../../components/leaderboard/leaderboard.module.css';
 import { Alert } from '../../../../components/ui/Alert';
 import { Button } from '../../../../components/ui/Button';
 import { Field } from '../../../../components/ui/Field';
+import type { OptOutStatus } from '../../../../lib/leaderboard/service';
 import type { UsernameUpdateStatus } from '../../../../lib/leaderboard/username';
 import type { OptOutActionState, UsernameActionState } from './actions';
 
 export type UsernameFormMessages = {
   label: string;
   save: string;
+  /** Existing approved generic confirmation (reused catalog key). */
+  saved: string;
+  /** Existing approved generic failure (reused catalog key). */
+  failed: string;
   tooShort: string;
   tooLong: string;
   invalidChars: string;
@@ -38,6 +43,18 @@ export function usernameErrorMessage(
   }
 }
 
+/** Form-level feedback: a saved notice, or a failure that is not a field error. */
+export function usernameNotice(
+  status: UsernameUpdateStatus | 'idle',
+  messages: UsernameFormMessages,
+): { tone: 'success' | 'error'; title: string } | null {
+  if (status === 'updated' || status === 'unchanged')
+    return { tone: 'success', title: messages.saved };
+  if (status === 'unavailable' || status === 'not_permitted')
+    return { tone: 'error', title: messages.failed };
+  return null;
+}
+
 export function UsernameForm({
   action,
   currentUsername,
@@ -53,6 +70,7 @@ export function UsernameForm({
   const [state, formAction, pending] = useActionState(action, {
     status: 'idle',
   } satisfies UsernameActionState);
+  const notice = usernameNotice(state.status, messages);
   return (
     <form action={formAction} className={styles.form} noValidate>
       <Field
@@ -70,14 +88,20 @@ export function UsernameForm({
       <Button type="submit" disabled={pending}>
         {messages.save}
       </Button>
+      {notice && <Alert tone={notice.tone} title={notice.title} />}
     </form>
   );
+}
+
+export function optOutFailed(status: OptOutStatus | 'idle'): boolean {
+  return status === 'unavailable' || status === 'not_permitted';
 }
 
 export function OptOutForm({
   action,
   label,
   successMessage,
+  failedMessage,
 }: {
   action: (
     previous: OptOutActionState,
@@ -85,6 +109,7 @@ export function OptOutForm({
   ) => Promise<OptOutActionState>;
   label: string;
   successMessage: string;
+  failedMessage: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {
     status: 'idle',
@@ -96,6 +121,9 @@ export function OptOutForm({
       <Button type="submit" variant="secondary" disabled={pending}>
         {label}
       </Button>
+      {optOutFailed(state.status) && (
+        <Alert tone="error" title={failedMessage} />
+      )}
     </form>
   );
 }

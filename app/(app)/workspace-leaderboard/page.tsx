@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { LeaderboardList } from '../../../components/leaderboard/LeaderboardList';
 import styles from '../../../components/leaderboard/leaderboard.module.css';
@@ -6,7 +7,10 @@ import { EmptyState } from '../../../components/ui/States';
 import { requireActor } from '../../../lib/auth/actor';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
-import { canViewWorkspaceLeaderboard } from '../../../lib/leaderboard/authorization';
+import {
+  canDecideLeaderboard,
+  canViewWorkspaceLeaderboard,
+} from '../../../lib/leaderboard/authorization';
 import { readWorkspaceLeaderboard } from '../../../lib/leaderboard/service';
 import { WorkspacePicker } from './WorkspacePicker';
 import { loadViewableWorkspaces, selectWorkspace } from './workspaces';
@@ -29,6 +33,7 @@ export default async function WorkspaceLeaderboardPage({
     notFound();
   const view = await readWorkspaceLeaderboard(actor, workspace.id);
   if (view.status === 'not_permitted') notFound();
+  if (view.status === 'unavailable') throw new Error('leaderboard_unavailable');
 
   return (
     <main className={styles.main}>
@@ -48,6 +53,15 @@ export default async function WorkspaceLeaderboardPage({
         />
       ) : (
         <EmptyState title={m['leaderboard.empty']} />
+      )}
+      {canDecideLeaderboard(actor) && (
+        <p>
+          <Link
+            href={`/workspace-leaderboard/review?workspace=${encodeURIComponent(workspace.id)}`}
+          >
+            {m['leaderboard.publish.action']}
+          </Link>
+        </p>
       )}
     </main>
   );

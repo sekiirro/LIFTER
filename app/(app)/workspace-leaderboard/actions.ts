@@ -22,7 +22,11 @@ async function decide(
     publicationId,
     decision,
   );
-  if (status === 'approved' || status === 'rejected') {
+  if (
+    status === 'approved' ||
+    status === 'rejected' ||
+    status === 'already_decided'
+  ) {
     revalidatePath('/workspace-leaderboard');
     revalidatePath('/workspace-leaderboard/review');
     revalidatePath('/leaderboard');

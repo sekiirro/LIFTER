@@ -20,6 +20,8 @@ export default async function ClientLeaderboardPage() {
   const messages = getMessages(locale);
   const view = await readClientLeaderboard(actor);
   if (view.status === 'not_permitted') notFound();
+  // A failed read goes to the route error boundary (approved generic copy).
+  if (view.status === 'unavailable') throw new Error('leaderboard_unavailable');
 
   return (
     <main className={styles.main}>
@@ -32,7 +34,6 @@ export default async function ClientLeaderboardPage() {
           messages={messages}
         />
       ) : (
-        // Empty and unavailable share the approved empty copy; no error copy is approved.
         <EmptyState title={messages['leaderboard.empty']} />
       )}
     </main>

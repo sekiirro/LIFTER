@@ -33,6 +33,8 @@ export default async function LeaderboardReviewPage({
   if (!workspace) notFound();
   const pending = await readPendingCandidate(actor, workspace.id);
   if (pending.status === 'not_permitted') notFound();
+  if (pending.status === 'unavailable')
+    throw new Error('leaderboard_review_unavailable');
 
   return (
     <main className={styles.main}>
@@ -56,6 +58,8 @@ export default async function LeaderboardReviewPage({
             publicationId={pending.publicationId}
             label={m['leaderboard.publish.action']}
             approvedMessage={m['leaderboard.publish.approved']}
+            rejectedMessage={m['leaderboard.publish.rejected']}
+            failedMessage={m['states.error.description']}
           />
         </>
       ) : (

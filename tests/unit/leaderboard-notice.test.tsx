@@ -3,9 +3,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
   OptOutForm,
+  optOutFailed,
   usernameErrorMessage,
+  usernameNotice,
   type UsernameFormMessages,
 } from '../../app/(client)/account/settings/LeaderboardSettingsForms';
+import {
+  ApproveForm,
+  decisionNotice,
+} from '../../app/(app)/workspace-leaderboard/review/ApproveForm';
 import { LeaderboardList } from '../../components/leaderboard/LeaderboardList';
 import { getMessages } from '../../lib/i18n';
 import { formatResultsMonth } from '../../lib/leaderboard/format';
@@ -67,6 +73,8 @@ describe('T011/T015 account-settings controls', () => {
   const usernameMessages: UsernameFormMessages = {
     label: m['clientSignup.username'],
     save: m['clientNotes.saveChanges'],
+    saved: m['clientNotes.editedToast'],
+    failed: m['states.error.description'],
     tooShort: m['accountSettings.username.tooShort'],
     tooLong: m['accountSettings.username.tooLong'],
     invalidChars: m['accountSettings.username.invalidChars'],
@@ -99,9 +107,109 @@ describe('T011/T015 account-settings controls', () => {
         action: async () => ({ status: 'opted_out' as const }),
         label: m['leaderboard.optOut.turnOffParticipation'],
         successMessage: m['leaderboard.optOut.success'],
+        failedMessage: m['states.error.description'],
       }),
     );
     expect(html).toContain('Turn off leaderboard participation');
     expect(html).toContain('type="submit"');
+  });
+
+  it('confirms a saved username and surfaces a non-field failure', () => {
+    expect(usernameNotice('updated', usernameMessages)).toEqual({
+      tone: 'success',
+      title: 'Changes saved',
+    });
+    expect(usernameNotice('unchanged', usernameMessages)?.tone).toBe('success');
+    for (const status of ['unavailable', 'not_permitted'] as const)
+      expect(usernameNotice(status, usernameMessages)).toEqual({
+        tone: 'error',
+        title: 'Something went wrong. Please try again.',
+      });
+    for (const status of ['idle', 'too_short', 'taken'] as const)
+      expect(usernameNotice(status, usernameMessages)).toBeNull();
+  });
+
+  it('reports an opt-out failure instead of failing silently', () => {
+    expect(optOutFailed('unavailable')).toBe(true);
+    expect(optOutFailed('not_permitted')).toBe(true);
+    expect(optOutFailed('opted_out')).toBe(false);
+    expect(optOutFailed('idle')).toBe(false);
+  });
+});
+
+describe('T026 PO review decision feedback', () => {
+  const m = getMessages('en');
+  const messages = {
+    approved: m['leaderboard.publish.approved'],
+    rejected: m['leaderboard.publish.rejected'],
+    failed: m['states.error.description'],
+  };
+
+  it('claims an outcome only when the requested decision is recorded', () => {
+    expect(decisionNotice('approved', 'approve', messages)).toEqual({
+      tone: 'success',
+      title: 'Monthly leaderboard approved.',
+      done: true,
+    });
+    expect(decisionNotice('rejected', 'reject', messages)).toEqual({
+      tone: 'success',
+      title: 'Monthly leaderboard rejected.',
+      done: true,
+    });
+    // A replay of the same decision reports that decision.
+    expect(decisionNotice('already_decided', 'approve', messages)?.title).toBe(
+      'Monthly leaderboard approved.',
+    );
+    expect(decisionNotice('already_decided', 'reject', messages)?.title).toBe(
+      'Monthly leaderboard rejected.',
+    );
+    for (const status of [
+      'conflict',
+      'not_found',
+      'invalid_input',
+      'not_permitted',
+      'unavailable',
+    ] as const)
+      expect(decisionNotice(status, 'approve', messages)).toEqual({
+        tone: 'error',
+        title: 'Something went wrong. Please try again.',
+        done: false,
+      });
+    expect(decisionNotice('idle', 'approve', messages)).toBeNull();
+  });
+
+  it('renders the approved approve label and no unapproved reject control', () => {
+    for (const locale of ['en', 'ar'] as const) {
+      const copy = getMessages(locale);
+      const html = renderToStaticMarkup(
+        createElement(ApproveForm, {
+          action: async () => ({ status: 'idle' as const }),
+          publicationId: '11111111-1111-4111-8111-111111111111',
+          label: copy['leaderboard.publish.action'],
+          approvedMessage: copy['leaderboard.publish.approved'],
+          rejectedMessage: copy['leaderboard.publish.rejected'],
+          failedMessage: copy['states.error.description'],
+        }),
+      );
+      expect(html).toContain(copy['leaderboard.publish.action']);
+      expect(html.match(/type="submit"/gu)).toHaveLength(1);
+      expect(html).not.toMatch(/reject/iu);
+    }
+  });
+});
+
+describe('T029 unavailable state', () => {
+  it('renders the existing approved generic error state with a retry, never a payload', async () => {
+    const { LeaderboardError } =
+      await import('../../components/leaderboard/LeaderboardError');
+    const html = renderToStaticMarkup(
+      createElement(LeaderboardError, { reset: () => {} }),
+    );
+    const ar = getMessages('ar');
+    expect(html).toContain('dir="rtl"');
+    expect(html).toContain('role="alert"');
+    expect(html).toContain(ar['states.error.title']);
+    expect(html).toContain(ar['states.error.description']);
+    expect(html).toContain(ar['states.retry']);
   });
 });
