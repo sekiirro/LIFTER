@@ -511,6 +511,8 @@ describe('tenancy security catalog (T007)', () => {
             !registrationPrivate.includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
+            // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
+            !f22Private.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
               'audit_events_immutable',
