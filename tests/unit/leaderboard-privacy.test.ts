@@ -15,13 +15,12 @@ import {
 import { en } from '../../lib/i18n/messages/en';
 import { ar } from '../../lib/i18n/messages/ar';
 
-const migration = readFileSync(
-  resolve(
-    process.cwd(),
-    'supabase/migrations/20261118210000_f24_client_leaderboard.sql',
-  ),
-  'utf8',
-);
+const migration = [
+  'supabase/migrations/20261118210000_f24_client_leaderboard.sql',
+  'supabase/migrations/20261118210100_f24_client_goal_types.sql',
+]
+  .map((file) => readFileSync(resolve(process.cwd(), file), 'utf8'))
+  .join('\n');
 
 describe('T027/T028 display allow-list (FR-022-FR-024, SC-004)', () => {
   it('copies only rank and username even when the payload carries more', () => {
@@ -154,7 +153,7 @@ describe('T004 audit allow-list (FR-036, FR-039, FR-040)', () => {
         /insert into public\.audit_events\(actor_user_id, action, target_table, target_id, workspace_id, details\)\s+values \(([\s\S]*?)\)(?:\s+returning id into event_id)?;/gu,
       ),
     ];
-    expect(inserts.length).toBe(3);
+    expect(inserts.length).toBe(4);
     const actions = new Set(
       [...migration.matchAll(/'((?:leaderboard|client)\.[a-z_]+)'/gu)]
         .map((match) => match[1]!)
@@ -199,20 +198,65 @@ describe('T015/T030 approved copy only (FR-038)', () => {
       approved.set(key, { en: cells[2]!, ar: cells[3]! });
   }
 
-  it('ships every F24 catalog key byte-exact from the approved proposal', () => {
+  // Round-2 keys awaiting PO approval (orchestrator, 2026-11-14). The EN goal
+  // labels come from the PO's own words of 2026-11-14; every Arabic string and
+  // the remaining EN strings are PROPOSED. A key moves to the approved table
+  // above once copy-proposal.md carries it; until then it must match exactly.
+  const pending: Record<string, { en: string; ar: string }> = {
+    'leaderboard.publish.rejectAction': {
+      en: 'Reject monthly leaderboard',
+      ar: 'رفض ترتيب الشهر',
+    },
+    'leaderboard.publish.generateAction': {
+      en: 'Prepare monthly leaderboard',
+      ar: 'جهّز ترتيب الشهر',
+    },
+    'leaderboard.publish.generated': {
+      en: 'The monthly leaderboard is ready for review.',
+      ar: 'ترتيب الشهر جاهز للمراجعة.',
+    },
+    'leaderboard.publish.pendingExists': {
+      en: 'A monthly leaderboard is already waiting for review.',
+      ar: 'فيه ترتيب للشهر مستني المراجعة بالفعل.',
+    },
+    'leaderboard.publish.noEligible': {
+      en: 'No clients qualify yet.',
+      ar: 'لسه مفيش عملاء مؤهلين.',
+    },
+    'accountSettings.title': { en: 'Account settings', ar: 'إعدادات الحساب' },
+    'clientGoals.title': { en: 'Goals', ar: 'الأهداف' },
+    'clientGoals.goalType': { en: 'Goal Type', ar: 'نوع الهدف' },
+    'clientGoals.goalType.fatLoss': { en: 'Fat Loss', ar: 'خسارة دهون' },
+    'clientGoals.goalType.muscleGain': { en: 'Muscle Gain', ar: 'زيادة عضل' },
+    'clientGoals.goalType.maintenance': {
+      en: 'Maintenance',
+      ar: 'تثبيت الوزن',
+    },
+    'clientGoals.notSet': { en: 'Not set', ar: 'لسه متحددش' },
+    'clientGoals.nearTermGoal': { en: 'Near-term goal', ar: 'الهدف القريب' },
+    'clientGoals.nearTermGoalEmpty': {
+      en: 'No answer yet.',
+      ar: 'لسه مفيش إجابة.',
+    },
+    'clientGoals.saved': { en: 'Goal type saved.', ar: 'اتحفظ نوع الهدف.' },
+  };
+
+  it('ships every F24 catalog key byte-exact from the approved or pending proposal', () => {
     const keys = Object.keys(en).filter(
       (key) =>
         key.startsWith('leaderboard.') ||
         key.startsWith('accountSettings.') ||
+        key.startsWith('clientGoals.') ||
         /^clientSignup\.username\./u.test(key),
     ) as (keyof typeof en)[];
     expect(keys.length).toBeGreaterThan(0);
     for (const key of keys) {
-      const row = approved.get(key);
-      expect(row, `${key} must be approved`).toBeDefined();
+      const row = approved.get(key) ?? pending[key];
+      expect(row, `${key} must be approved or listed as pending`).toBeDefined();
       expect(en[key]).toBe(row!.en);
       expect(ar[key]).toBe(row!.ar);
     }
+    for (const key of Object.keys(pending)) expect(keys).toContain(key);
   });
 
   it('never discloses scoring mechanics in client-facing leaderboard copy', () => {

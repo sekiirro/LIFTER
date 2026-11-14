@@ -83,6 +83,23 @@ export const en: Record<keyof typeof ar, string> = {
   'accountSettings.username.reserved': 'This username is reserved.',
   'accountSettings.username.workspaceTaken':
     'This username is already used in your workspace.',
+  'leaderboard.publish.rejectAction': 'Reject monthly leaderboard',
+  'leaderboard.publish.generateAction': 'Prepare monthly leaderboard',
+  'leaderboard.publish.generated':
+    'The monthly leaderboard is ready for review.',
+  'leaderboard.publish.pendingExists':
+    'A monthly leaderboard is already waiting for review.',
+  'leaderboard.publish.noEligible': 'No clients qualify yet.',
+  'accountSettings.title': 'Account settings',
+  'clientGoals.title': 'Goals',
+  'clientGoals.goalType': 'Goal Type',
+  'clientGoals.goalType.fatLoss': 'Fat Loss',
+  'clientGoals.goalType.muscleGain': 'Muscle Gain',
+  'clientGoals.goalType.maintenance': 'Maintenance',
+  'clientGoals.notSet': 'Not set',
+  'clientGoals.nearTermGoal': 'Near-term goal',
+  'clientGoals.nearTermGoalEmpty': 'No answer yet.',
+  'clientGoals.saved': 'Goal type saved.',
   'registration.title': 'Registration links',
   'registration.intro':
     'Issue a registration link using the approved package terms.',

@@ -16,7 +16,7 @@ export type ScoredCandidate = {
   composite: number;
   /** Mean of the two adherence answers, 0-10. */
   adherence: number;
-  achievedOn: string;
+  achievedAt: string;
 };
 
 export function adherenceOf(inputs: LeaderboardScoreInputs): number {
@@ -35,7 +35,7 @@ export function scoreCandidate(
       ADHERENCE_WEIGHT * (adherence / 10) +
       PROGRESS_WEIGHT * inputs.normalizedProgress,
     adherence,
-    achievedOn: inputs.achievedOn,
+    achievedAt: inputs.achievedAt,
   };
 }
 
@@ -60,8 +60,8 @@ export function compareCandidates(
   if (byScore !== 0) return byScore;
   if (left.adherence !== right.adherence)
     return right.adherence - left.adherence;
-  if (left.achievedOn !== right.achievedOn)
-    return left.achievedOn < right.achievedOn ? -1 : 1;
+  if (left.achievedAt !== right.achievedAt)
+    return left.achievedAt < right.achievedAt ? -1 : 1;
   if (left.clientCode !== right.clientCode)
     return left.clientCode < right.clientCode ? -1 : 1;
   return 0;

@@ -3,8 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WeeklyAdherenceRow } from '../../lib/progress-coaching/contract';
 import { buildLeaderboardCandidate } from '../../lib/leaderboard/candidate';
 import {
-  LEADERBOARD_RESOLVERS,
   missingResolvers,
+  productionLeaderboardResolvers,
   type LeaderboardInputResolver,
   type LeaderboardResolverInput,
   type LeaderboardResolvers,
@@ -113,7 +113,10 @@ function fixed<T>(
 
 const resolved = () => ({
   goalProgress: fixed({ [c1]: 0.5 }),
-  achievementDate: fixed({ [c1]: '2026-11-10', [c2]: '2026-11-11' }),
+  achievementDate: fixed({
+    [c1]: '2026-11-10T10:00:00.000Z',
+    [c2]: '2026-11-11T10:00:00.000Z',
+  }),
   clientCode: fixed({ [c1]: 'code-1', [c2]: 'code-2' }),
 });
 const request = {
@@ -122,6 +125,11 @@ const request = {
   clientIds: [c1, c2],
 };
 const now = () => new Date('2026-11-14T12:00:00Z');
+const NONE: LeaderboardResolvers = {
+  goalProgress: null,
+  achievementDate: null,
+  clientCode: null,
+};
 
 describe('spec 023 adherence component', () => {
   it('averages the month’s complete check-ins per client and never zero-fills', () => {
@@ -157,14 +165,11 @@ describe('spec 023 adherence component', () => {
 });
 
 describe('fail-closed adapter (PO-DECISION-NEEDED inputs)', () => {
-  it('keeps every production resolver unregistered until the PO decides', () => {
-    expect(LEADERBOARD_RESOLVERS).toEqual({
-      goalProgress: null,
-      achievementDate: null,
-      clientCode: null,
-    });
-    expect(Object.isFrozen(LEADERBOARD_RESOLVERS)).toBe(true);
-    expect(missingResolvers(LEADERBOARD_RESOLVERS)).toEqual([
+  it('registers all three production resolvers (PO 2026-11-14)', () => {
+    expect(missingResolvers(productionLeaderboardResolvers(new Map()))).toEqual(
+      [],
+    );
+    expect(missingResolvers(NONE)).toEqual([
       'goal_progress_normalization',
       'achievement_date',
       'client_code',
@@ -175,7 +180,7 @@ describe('fail-closed adapter (PO-DECISION-NEEDED inputs)', () => {
     const full: LeaderboardResolvers = resolved();
     const cases: Array<[LeaderboardResolvers, string[]]> = [
       [
-        LEADERBOARD_RESOLVERS,
+        NONE,
         ['goal_progress_normalization', 'achievement_date', 'client_code'],
       ],
       [{ ...full, goalProgress: null }, ['goal_progress_normalization']],
@@ -199,7 +204,7 @@ describe('fail-closed adapter (PO-DECISION-NEEDED inputs)', () => {
     }
   });
 
-  it('generates no candidate through the pipeline with the production registry', async () => {
+  it('generates no candidate through the pipeline without resolvers', async () => {
     const { client, rpc } = spec023();
     await expect(
       buildLeaderboardCandidate({
@@ -212,12 +217,14 @@ describe('fail-closed adapter (PO-DECISION-NEEDED inputs)', () => {
             activeDays: 20,
             optedOut: false,
             hasUsername: true,
+            goalType: 'fat_loss',
+            registrationApprovedAt: '2026-10-01T08:00:00.000Z',
           },
         ],
         incumbentClientIds: [],
         source: createSpec023ScoreInputSource({
           client,
-          resolvers: LEADERBOARD_RESOLVERS,
+          resolvers: NONE,
         }),
       }),
     ).rejects.toBeInstanceOf(LeaderboardInputsUnresolvedError);
@@ -267,7 +274,7 @@ describe('adapter with injected resolvers (contract plumbing only)', () => {
         workoutAdherence: 9,
         dietAdherence: 7,
         normalizedProgress: 0.5,
-        achievedOn: '2026-11-10',
+        achievedAt: '2026-11-10T10:00:00.000Z',
       },
     ]);
   });
@@ -278,7 +285,7 @@ describe('adapter with injected resolvers (contract plumbing only)', () => {
       { ...resolved(), goalProgress: fixed({ [c1]: 1.5 }) },
       { ...resolved(), goalProgress: fixed({ [c1]: -0.1 }) },
       { ...resolved(), goalProgress: fixed({ [c1]: Number.NaN }) },
-      { ...resolved(), achievementDate: fixed({ [c1]: '10/11/2026' }) },
+      { ...resolved(), achievementDate: fixed({ [c1]: '2026-11-10' }) },
       { ...resolved(), clientCode: fixed({ [c1]: '' }) },
     ];
     for (const resolvers of cases) {

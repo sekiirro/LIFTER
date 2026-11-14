@@ -22,6 +22,8 @@ function facts(
     activeDays: 14,
     optedOut: false,
     hasUsername: true,
+    goalType: 'fat_loss',
+    registrationApprovedAt: '2026-10-01T08:00:00.000Z',
     ...patch,
   };
 }
@@ -64,6 +66,31 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
     );
   });
 
+  it('requires a trainer-set goal type (PO 2026-11-14: no goal set -> not eligible)', () => {
+    expect(deriveLeaderboardEligibility(facts({ goalType: null }))).toEqual({
+      eligible: false,
+      reason: 'no_goal_type',
+    });
+    for (const goalType of ['fat_loss', 'muscle_gain', 'maintenance'] as const)
+      expect(deriveLeaderboardEligibility(facts({ goalType }))).toEqual({
+        eligible: true,
+      });
+  });
+
+  it('keeps the goal-type requirement in parity with the database wall', () => {
+    const sql = readFileSync(
+      resolve(
+        process.cwd(),
+        'supabase/migrations/20261118210100_f24_client_goal_types.sql',
+      ),
+      'utf8',
+    );
+    expect(sql).toContain("and f.facts->>'goal_type' is not null");
+    expect(sql).toContain(
+      "check (goal_type in ('fat_loss', 'muscle_gain', 'maintenance'))",
+    );
+  });
+
   it('rejects malformed active-day counts', () => {
     expect(() =>
       deriveLeaderboardEligibility(facts({ activeDays: -1 })),
@@ -99,9 +126,31 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
           active_days: 14,
           opted_out: false,
           has_username: true,
+          goal_type: 'fat_loss',
+          registration_approved_at: '2026-10-01T08:00:00.000Z',
         },
       ]),
     ).toEqual([facts({ clientId: 'c1' })]);
+    for (const patch of [
+      { goal_type: 'bulk' },
+      { goal_type: undefined },
+      { registration_approved_at: 'not-a-time' },
+      { registration_approved_at: 5 },
+    ])
+      expect(
+        parseEligibilityPool([
+          {
+            client_id: 'c1',
+            entitlement_status: 'active',
+            active_days: 14,
+            opted_out: false,
+            has_username: true,
+            goal_type: 'fat_loss',
+            registration_approved_at: null,
+            ...patch,
+          },
+        ]),
+      ).toBeNull();
     expect(
       parseEligibilityPool([
         {
@@ -129,7 +178,7 @@ describe('candidate pipeline filters before requesting spec 023 inputs', () => {
           workoutAdherence: 6,
           dietAdherence: 6,
           normalizedProgress: 0.3,
-          achievedOn: '2026-11-05',
+          achievedAt: '2026-11-05T10:00:00.000Z',
         }));
       },
     };
@@ -141,6 +190,7 @@ describe('candidate pipeline filters before requesting spec 023 inputs', () => {
         facts({ clientId: 'opted-out', optedOut: true }),
         facts({ clientId: 'frozen', entitlementStatus: 'frozen' }),
         facts({ clientId: 'new', activeDays: 3 }),
+        facts({ clientId: 'no-goal', goalType: null }),
       ],
       incumbentClientIds: ['opted-out'],
       source,
@@ -163,7 +213,7 @@ describe('candidate pipeline filters before requesting spec 023 inputs', () => {
             workoutAdherence: 1,
             dietAdherence: 1,
             normalizedProgress: 0,
-            achievedOn: '2026-11-05',
+            achievedAt: '2026-11-05T10:00:00.000Z',
           },
         ];
       },

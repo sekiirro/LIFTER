@@ -16,7 +16,7 @@ function inputs(
     workoutAdherence: 5,
     dietAdherence: 5,
     normalizedProgress: 0.5,
-    achievedOn: '2026-11-10',
+    achievedAt: '2026-11-10T10:00:00.000Z',
     ...patch,
   };
 }
@@ -59,7 +59,7 @@ describe('T017/T019 50/50 composite (FR-015-FR-017)', () => {
       { workoutAdherence: 10.5 },
       { normalizedProgress: 1.01 },
       { normalizedProgress: Number.NaN },
-      { achievedOn: '10/11/2026' },
+      { achievedAt: '10/11/2026' },
       { clientCode: '' },
     ])
       expect(() => scoreCandidate(inputs('a', patch))).toThrow(RangeError);
@@ -85,8 +85,12 @@ describe('T017 FR-021 tie-breaks', () => {
     );
     expect(compareCandidates(highAdherence, lowAdherence)).toBeLessThan(0);
 
-    const earlier = scoreCandidate(inputs('x', { achievedOn: '2026-11-01' }));
-    const later = scoreCandidate(inputs('y', { achievedOn: '2026-11-20' }));
+    const earlier = scoreCandidate(
+      inputs('x', { achievedAt: '2026-11-01T10:00:00.000Z' }),
+    );
+    const later = scoreCandidate(
+      inputs('y', { achievedAt: '2026-11-20T10:00:00.000Z' }),
+    );
     expect(compareCandidates(earlier, later)).toBeLessThan(0);
 
     const codeA = scoreCandidate(inputs('id-2', { clientCode: 'C-001' }));
@@ -129,7 +133,7 @@ describe('T020 current-month ranking with incumbents (S55-PO-6 Q12)', () => {
     // Equal score with better tie-break data still does not displace.
     const equal = inputs('new-equal', {
       normalizedProgress: 0.5,
-      achievedOn: '2026-11-01',
+      achievedAt: '2026-11-01T10:00:00.000Z',
       clientCode: '0000',
     });
     const keep = rankLeaderboard([...winners, equal], incumbents);

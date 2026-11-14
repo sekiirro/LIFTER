@@ -3,8 +3,11 @@
  * entitlement projection supplies the status and the accrued active-day count
  * (frozen days are not active days, so a freeze pauses accrual); this module
  * never re-derives subscription, freeze or renewal lifecycles. A delivered
- * plan is deliberately not an input (FR-014).
+ * plan is deliberately not an input (FR-014). A trainer-set goal type is
+ * required (PO 2026-11-14: no goal set -> not eligible).
  */
+import { isGoalType, type GoalType } from './goals';
+
 export const LEADERBOARD_MIN_ACTIVE_DAYS = 14;
 
 export const F13_ENTITLEMENT_STATUSES = [
@@ -26,6 +29,10 @@ export type LeaderboardEligibilityFacts = {
   optedOut: boolean;
   /** Display identity is the username only (FR-022); none means nothing to display. */
   hasUsername: boolean;
+  /** Trainer-set FR-018 goal type; none means not eligible (PO 2026-11-14). */
+  goalType: GoalType | null;
+  /** Earliest registration approval instant (FR-021 registration order). */
+  registrationApprovedAt: string | null;
 };
 
 export type LeaderboardIneligibleReason =
@@ -33,7 +40,8 @@ export type LeaderboardIneligibleReason =
   | 'no_subscription'
   | 'not_active'
   | 'insufficient_active_days'
-  | 'no_username';
+  | 'no_username'
+  | 'no_goal_type';
 
 export type LeaderboardEligibility =
   { eligible: true } | { eligible: false; reason: LeaderboardIneligibleReason };
@@ -52,6 +60,7 @@ export function deriveLeaderboardEligibility(
   if (facts.activeDays < LEADERBOARD_MIN_ACTIVE_DAYS)
     return { eligible: false, reason: 'insufficient_active_days' };
   if (!facts.hasUsername) return { eligible: false, reason: 'no_username' };
+  if (!facts.goalType) return { eligible: false, reason: 'no_goal_type' };
   return { eligible: true };
 }
 
@@ -75,7 +84,13 @@ export function parseEligibilityPool(
       !Number.isSafeInteger(record.active_days) ||
       record.active_days < 0 ||
       typeof record.opted_out !== 'boolean' ||
-      typeof record.has_username !== 'boolean'
+      typeof record.has_username !== 'boolean' ||
+      !(record.goal_type === null || isGoalType(record.goal_type)) ||
+      !(
+        record.registration_approved_at === null ||
+        (typeof record.registration_approved_at === 'string' &&
+          Number.isFinite(Date.parse(record.registration_approved_at)))
+      )
     )
       return null;
     rows.push({
@@ -84,6 +99,8 @@ export function parseEligibilityPool(
       activeDays: record.active_days,
       optedOut: record.opted_out,
       hasUsername: record.has_username,
+      goalType: record.goal_type as GoalType | null,
+      registrationApprovedAt: record.registration_approved_at as string | null,
     });
   }
   return rows;

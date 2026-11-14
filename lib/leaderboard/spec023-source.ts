@@ -12,10 +12,11 @@ import {
   type LeaderboardResolvers,
   type UnresolvedLeaderboardInput,
 } from './resolvers';
-import type {
-  LeaderboardScoreInputSource,
-  LeaderboardScoreInputs,
-  LeaderboardScoreRequest,
+import {
+  ISO_INSTANT,
+  type LeaderboardScoreInputSource,
+  type LeaderboardScoreInputs,
+  type LeaderboardScoreRequest,
 } from './score-inputs';
 
 /**
@@ -24,11 +25,11 @@ import type {
  * Resolved here: the adherence component, read by name from spec 023's
  * `progress_weekly_adherence` for the current result month.
  *
- * NOT resolved (PO-DECISION-NEEDED): FR-018 normalization per goal type, the
- * FR-021 "achievement date" and the FR-021 client code. Each is one injected
- * resolver (see `resolvers.ts`). While any is missing the source fails
- * closed: it throws `LeaderboardInputsUnresolvedError` before reading any
- * spec 023 data, so no candidate is generated and nothing is guessed.
+ * Injected: FR-018 goal progress, the FR-021 achievement date and the FR-021
+ * client code are one resolver each (production implementations of the PO
+ * decision of 2026-11-14 live in `resolvers.ts`). If any resolver is missing
+ * the source fails closed: it throws `LeaderboardInputsUnresolvedError`
+ * before reading any spec 023 data, so nothing is generated or guessed.
  */
 export type { UnresolvedLeaderboardInput } from './resolvers';
 
@@ -121,8 +122,6 @@ function cairoToday(now: Date): string {
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
-const CAIRO_DATE = /^\d{4}-\d{2}-\d{2}$/u;
-
 /**
  * Runs one resolver and checks its output: only requested clients, only
  * well-formed values. A resolver that widens the client set is a defect and
@@ -150,8 +149,8 @@ const isProgress = (value: unknown): value is number =>
   Number.isFinite(value) &&
   value >= 0 &&
   value <= 1;
-const isCairoDate = (value: unknown): value is string =>
-  typeof value === 'string' && CAIRO_DATE.test(value);
+const isInstant = (value: unknown): value is string =>
+  typeof value === 'string' && ISO_INSTANT.test(value);
 const isCode = (value: unknown): value is string =>
   typeof value === 'string' && value.length > 0;
 
@@ -217,18 +216,18 @@ export function createSpec023ScoreInputSource(options: {
       };
       const [progress, achieved, codes] = await Promise.all([
         resolveAll(goalProgress, input, isProgress),
-        resolveAll(achievementDate, input, isCairoDate),
+        resolveAll(achievementDate, input, isInstant),
         resolveAll(clientCode, input, isCode),
       ]);
       const inputs: LeaderboardScoreInputs[] = [];
       for (const row of monthly) {
         const normalizedProgress = progress.get(row.clientId);
-        const achievedOn = achieved.get(row.clientId);
+        const achievedAt = achieved.get(row.clientId);
         const code = codes.get(row.clientId);
         // A client without every resolved input is omitted, never guessed.
         if (
           normalizedProgress === undefined ||
-          achievedOn === undefined ||
+          achievedAt === undefined ||
           code === undefined
         )
           continue;
@@ -238,7 +237,7 @@ export function createSpec023ScoreInputSource(options: {
           workoutAdherence: row.workoutAdherence,
           dietAdherence: row.dietAdherence,
           normalizedProgress,
-          achievedOn,
+          achievedAt,
         });
       }
       return inputs;

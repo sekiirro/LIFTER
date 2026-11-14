@@ -7,11 +7,12 @@ import {
   canViewWorkspaceLeaderboard,
   isClientSession,
 } from './authorization';
-import { buildLeaderboardCandidate } from './candidate';
 import {
-  parseEligibilityPool,
-  type LeaderboardEligibilityFacts,
-} from './eligibility';
+  generateCandidateWith,
+  spec023SourceFor,
+  type CandidatePool,
+  type CandidateStatus,
+} from './generation';
 import {
   toClientLeaderboardSelf,
   toLeaderboardView,
@@ -20,12 +21,7 @@ import {
   type LeaderboardView,
   type PendingCandidateView,
 } from './projection';
-import { LEADERBOARD_RESOLVERS } from './resolvers';
 import type { LeaderboardScoreInputSource } from './score-inputs';
-import {
-  LeaderboardInputsUnresolvedError,
-  createSpec023ScoreInputSource,
-} from './spec023-source';
 import {
   checkUsername,
   parseUsernameUpdateResult,
@@ -200,100 +196,28 @@ export async function decideLeaderboardCandidate(
   );
 }
 
-type CandidatePool = {
-  periodMonth: string;
-  pool: LeaderboardEligibilityFacts[];
-  incumbentClientIds: string[];
-};
-
-function toCandidatePool(value: unknown): CandidatePool | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const record = value as Record<string, unknown>;
-  const pool = parseEligibilityPool(record.pool);
-  if (
-    record.status !== 'ok' ||
-    typeof record.period_month !== 'string' ||
-    !/^\d{4}-\d{2}-01$/u.test(record.period_month) ||
-    !pool ||
-    !Array.isArray(record.incumbent_client_ids) ||
-    !record.incumbent_client_ids.every((id) => typeof id === 'string')
-  )
-    return null;
-  return {
-    periodMonth: record.period_month,
-    pool,
-    incumbentClientIds: record.incumbent_client_ids as string[],
-  };
-}
-
-export type CandidateStatus =
-  | 'created'
-  | 'replayed'
-  | 'pending_exists'
-  | 'ineligible_client'
-  | 'no_eligible_clients'
-  | 'invalid_input'
-  | 'inputs_unresolved'
-  | 'not_permitted'
-  | 'unavailable';
+export type { CandidateStatus } from './generation';
 
 /**
- * PO-only candidate generation over an injected score source. Fails closed
- * with `inputs_unresolved` when the source cannot compute a score without
- * guessing (see spec023-source.ts).
+ * PO-only candidate generation over an injected score source factory. Fails
+ * closed with `inputs_unresolved` when the source cannot compute a score
+ * without guessing (see spec023-source.ts).
  */
 export async function generateLeaderboardCandidate(
   actor: Actor | null,
   workspaceId: string,
-  source: LeaderboardScoreInputSource,
+  sourceFor: (pool: CandidatePool) => LeaderboardScoreInputSource,
 ): Promise<CandidateStatus> {
   if (!canDecideLeaderboard(actor)) return 'not_permitted';
   const rpc = await sessionRpc();
   if (!rpc) return 'unavailable';
-  try {
-    const pool = toCandidatePool(
-      await rpc('leaderboard_candidate_pool', { p_workspace_id: workspaceId }),
-    );
-    if (!pool) return 'unavailable';
-    const ranked = await buildLeaderboardCandidate({
-      workspaceId,
-      periodMonth: pool.periodMonth,
-      pool: pool.pool,
-      incumbentClientIds: pool.incumbentClientIds,
-      source,
-    });
-    if (ranked.length === 0) return 'no_eligible_clients';
-    const result = await rpc('create_leaderboard_candidate', {
-      p_workspace_id: workspaceId,
-      p_client_ids: ranked.map((entry) => entry.clientId),
-      p_operation_key: globalThis.crypto.randomUUID(),
-    });
-    const status =
-      result && typeof result === 'object' && !Array.isArray(result)
-        ? (result as { status?: unknown }).status
-        : undefined;
-    return [
-      'created',
-      'replayed',
-      'pending_exists',
-      'ineligible_client',
-      'invalid_input',
-      'not_permitted',
-    ].includes(String(status))
-      ? (status as CandidateStatus)
-      : 'unavailable';
-  } catch (error) {
-    if (error instanceof LeaderboardInputsUnresolvedError)
-      return 'inputs_unresolved';
-    return 'unavailable';
-  }
+  return generateCandidateWith({ rpc, workspaceId, sourceFor });
 }
 
 /**
- * PO-only generation from spec 023 data, using the production resolver
- * registry (`resolvers.ts`). Not surfaced in any page: no approved copy
- * exists for a generate button (PO-DECISION-NEEDED). While any registered
- * resolver is `null` it returns `inputs_unresolved` and stores nothing.
+ * PO-only generation from spec 023 data through the production resolvers
+ * (PO decision 2026-11-14: goal type, body weight, last scoring input,
+ * registration order).
  */
 export async function generateLeaderboardCandidateFromSpec023(
   actor: Actor | null,
@@ -305,6 +229,6 @@ export async function generateLeaderboardCandidateFromSpec023(
   return generateLeaderboardCandidate(
     actor,
     workspaceId,
-    createSpec023ScoreInputSource({ client, resolvers: LEADERBOARD_RESOLVERS }),
+    spec023SourceFor(client),
   );
 }

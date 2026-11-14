@@ -2,15 +2,18 @@
  * Typed boundary between F24 ranking and spec 023 progress/check-in data.
  *
  * Spec 023 owns the data; F24 is read-only with respect to it (FR-031). The
- * adapter is `spec023-source.ts`; it fails closed while the goal-progress
- * normalization, achievement date and client code remain undefined.
+ * adapter is `spec023-source.ts`; it fails closed whenever a resolver for the
+ * goal progress, achievement date or client code is missing.
  *
  * These values are server-only. They never cross into a client DTO, an audit
  * payload or a log line (FR-023, FR-024, FR-040).
  */
 export type LeaderboardScoreInputs = {
   clientId: string;
-  /** Final FR-021 tie-break key. Source pending (no client code exists on main). */
+  /**
+   * Final FR-021 tie-break key, compared ordinally ascending. PO 2026-11-14:
+   * registration order (earlier registration approval ranks higher).
+   */
   clientCode: string;
   /**
    * Spec 023 FR-037 `workoutAdherence`, current month, on the 0-10 scale
@@ -24,8 +27,12 @@ export type LeaderboardScoreInputs = {
    * type (FR-018), on the closed interval [0, 1], current month.
    */
   normalizedProgress: number;
-  /** FR-021 "achievement date" as a Cairo calendar date (YYYY-MM-DD). */
-  achievedOn: string;
+  /**
+   * FR-021 "achievement date", PO 2026-11-14 "last scoring input": the
+   * instant of the latest check-in or measurement counted in this month's
+   * score, as a canonical UTC ISO instant. Earlier ranks higher.
+   */
+  achievedAt: string;
 };
 
 export type LeaderboardScoreRequest = {
@@ -46,7 +53,8 @@ export interface LeaderboardScoreInputSource {
   ): Promise<readonly LeaderboardScoreInputs[]>;
 }
 
-const cairoDate = /^\d{4}-\d{2}-\d{2}$/u;
+/** Canonical UTC instant as produced by `Date.prototype.toISOString`. */
+export const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 
 function isAdherence(value: unknown): value is number {
   return (
@@ -72,8 +80,8 @@ export function assertScoreInputs(
     !Number.isFinite(inputs.normalizedProgress) ||
     inputs.normalizedProgress < 0 ||
     inputs.normalizedProgress > 1 ||
-    typeof inputs.achievedOn !== 'string' ||
-    !cairoDate.test(inputs.achievedOn)
+    typeof inputs.achievedAt !== 'string' ||
+    !ISO_INSTANT.test(inputs.achievedAt)
   )
     throw new RangeError('Invalid leaderboard score inputs');
   return inputs;
