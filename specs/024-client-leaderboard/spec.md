@@ -190,7 +190,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 
 ### Copy and localization
 
-- **FR-038**: All user-facing leaderboard strings MUST use professional English and natural Egyptian colloquial Arabic, with exact approved strings in `copy-proposal.md` (S55-PO-10) where approved; new or changed wording (including the separate approved-results-month label) is marked pending verification and must not be shipped until approved. The Top-5 heading and the separate approved-results-month label are distinct strings: the month label MUST identify the month of the approved result and MUST NOT misdescribe older winners kept visible pending approval. Client-facing copy MUST NOT disclose the scoring formula, weights, or input names (S48-PO-4; S55-PO-3 Q2; S55-PO-10 consistency check 1).
+- **FR-038**: All user-facing leaderboard strings MUST use professional English and natural Egyptian colloquial Arabic, with exact approved strings in `copy-proposal.md` (S55-PO-10/S55-PO-11) where approved; new or changed wording is marked pending verification and must not be shipped until approved (the separate approved-results-month label is APPROVED — S55-PO-11). The Top-5 heading and the separate approved-results-month label are distinct strings: the month label MUST identify the month of the approved result and MUST NOT misdescribe older winners kept visible pending approval. Client-facing copy MUST NOT disclose the scoring formula, weights, or input names (S48-PO-4; S55-PO-3 Q2; S55-PO-10 consistency check 1).
 
 ### Audit and compliance
 

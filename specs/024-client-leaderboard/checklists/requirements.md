@@ -31,7 +31,7 @@
 
 ## Open items (PO)
 
-- Approved copy (S55-PO-10) is applied in `copy-proposal.md` for matched rows; unmatched and new wording (including `leaderboard.resultsMonthLabel`) remain PENDING PO VERIFICATION.
+- Approved copy (S55-PO-10) is applied in `copy-proposal.md` for matched rows; unmatched wording remains PENDING PO VERIFICATION; `leaderboard.resultsMonthLabel` is APPROVED — S55-PO-11 (2026-11-14).
 - Spec consistency passes with `tasks.md` present.
 
 ## Notes
