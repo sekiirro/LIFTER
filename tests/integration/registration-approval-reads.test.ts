@@ -239,7 +239,7 @@ it('T023 direct base reads, wildcard and embedding disclose no financial rows', 
 
 it('T023 forced RLS still denies populated rows under controlled direct SELECT grants', async () => {
   await probe(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id) values(${f.wsA.id},${p.sid},now(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source) values(${f.wsA.id},${p.sid},now(),${randomUUID()}, 'po_override')`;
     const tables = [
       'public.subscriptions',
       'public.subscription_installments',

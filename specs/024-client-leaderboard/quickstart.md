@@ -4,7 +4,7 @@ Validation guide for the future implementation. Use synthetic fixtures and the l
 
 ## Prerequisites
 
-- Feature flag mechanism has its own reviewed spec/PR and is server-side default OFF.
+- Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.
 - Local Supabase stack and synthetic workspace/client fixtures are available.
 - F11, F13, F15, F19, spec 023, spec 003 and spec 005 contracts are merged or pinned for the implementation slice.
 - S55-024-Q14 is answered before final username validation is implemented.

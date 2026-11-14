@@ -71,7 +71,7 @@ it('T025 exact custom offsets survive across Cairo date and DST boundaries', asy
     );
     expect(result.status).toBe('ok');
     const activation = new Date('2026-10-24T21:30:00Z');
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id) values(${f.wsA.id},${result.receipt!.subscription_id as string},${activation},${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source) values(${f.wsA.id},${result.receipt!.subscription_id as string},${activation},${randomUUID()}, 'po_override')`;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
     await tx`set local role authenticated`;
     const [projected] =

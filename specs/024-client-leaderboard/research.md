@@ -43,4 +43,4 @@ Research uses the current repository contracts and the read-only F11/F23 source 
 - Principle VII: minimize health data and exclude it from logs and display.
 - Principle VIII: bilingual accessible UI and Design System use.
 - Principle IX: approval, username uniqueness/edit, and opt-out transitions must be concurrency-safe and idempotent.
-- Delivery constraints: feature remains dark behind a server-side default-OFF flag if merged unfinished; the flag mechanism must first be defined in its own small spec/PR.
+- Delivery constraints: Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.

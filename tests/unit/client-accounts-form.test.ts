@@ -157,3 +157,14 @@ it('maps a rejected signup action to retryable localized unavailable and resets 
   );
   expect(form).toMatch(/finally\s*\{\s*submittingRef\.current\s*=\s*false/);
 });
+
+it('runs the signup focus effect only for a submitted result change', () => {
+  const form = source('app/register/[token]/SignupForm.tsx');
+  expect(form).toMatch(
+    /useEffect\(\(\) => \{\s*if \(!submitted \|\| pending \|\| submissionSequence === 0\) return;/,
+  );
+  expect(form).toMatch(
+    /if \(previous\?\.result === result && previous\.sequence === submissionSequence\)\s*return;/,
+  );
+  expect(form).toContain('[pending, result, submitted, submissionSequence]');
+});
