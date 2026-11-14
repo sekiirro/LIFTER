@@ -46,6 +46,12 @@ const signupPrivate = [
   'redeem_signup_admission_ticket',
   'signup_guard_attempt_delete',
 ];
+// Spec 022 private helpers.
+const f22Private = [
+  'f22_delivered_revisions',
+  'f22_portal_client',
+  'f22_subscription_summary',
+];
 const registrationPrivate = [
   'registration_link_is_valid',
   'registration_link_limits',
@@ -268,6 +274,7 @@ describe('tenancy security catalog (T007)', () => {
           'staff_display_name_is_white_space',
           ...signupPrivate,
           ...brandingPrivate,
+          ...f22Private,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
           'audit_events_immutable',

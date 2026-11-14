@@ -38,12 +38,11 @@ export async function portalFixture() {
     const ids = await db.begin(async (tx) => {
       const created = await graph(tx, fixture, { linkId });
       // Synthetic display name so directory searches are unique to this run.
-      await tx`alter table public.clients disable trigger f12_client_transition`;
-      try {
-        await tx`update public.clients set name=${name} where id=${created.client}`;
-      } finally {
-        await tx`alter table public.clients enable trigger f12_client_transition`;
-      }
+      // Bypass the F12 transition guard for this synthetic fixture edit only.
+      // ALTER TABLE cannot run here: graph() leaves pending trigger events.
+      await tx`set local session_replication_role = replica`;
+      await tx`update public.clients set name=${name} where id=${created.client}`;
+      await tx`set local session_replication_role = origin`;
       return created;
     });
     if (options.activate)
