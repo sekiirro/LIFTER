@@ -21,8 +21,8 @@ async function makeScope(tx: postgres.TransactionSql) {
     (${ids.po},${`t003-po-${ids.po}@example.test`}),
     (${ids.trainer},${`t003-trainer-${ids.trainer}@example.test`}),
     (${ids.sales},${`t003-sales-${ids.sales}@example.test`})`;
-  await tx`insert into public.staff_profiles(user_id,role) values
-    (${ids.po},'platform_owner'),(${ids.trainer},'trainer'),(${ids.sales},'sales')`;
+  await tx`insert into public.staff_profiles(user_id,role,display_name) values
+    (${ids.po},'platform_owner','Platform Owner'),(${ids.trainer},'trainer','Trainer'),(${ids.sales},'sales','Sales Staff')`;
   await tx`insert into public.workspaces(id,name,slug,created_by) values
     (${ids.workspaceA},'T003 A',${`t003-a-${ids.workspaceA}`},${ids.po}),
     (${ids.workspaceB},'T003 B',${`t003-b-${ids.workspaceB}`},${ids.po})`;

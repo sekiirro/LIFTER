@@ -23,10 +23,13 @@ beforeAll(async () => {
     if (created.error || !created.data.user)
       throw new Error(created.error?.message ?? 'Catalog fixture user missing');
     checked(
-      await admin().from('staff_profiles').insert({
-        user_id: created.data.user.id,
-        role,
-      }),
+      await admin()
+        .from('staff_profiles')
+        .insert({
+          user_id: created.data.user.id,
+          role,
+          display_name: role.replaceAll('_', ' '),
+        }),
     );
     return { userId: created.data.user.id };
   };

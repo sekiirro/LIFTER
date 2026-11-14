@@ -161,9 +161,11 @@ describe('legacy audit mapping regression', () => {
   it('staff role assignment keeps its pre-F10 shape', async () => {
     const staff = await createStaff(null, 'f10-audit-staff');
     harnessChecked(
-      await f.po.client
-        .from('staff_profiles')
-        .insert({ user_id: staff.userId, role: 'sales' }),
+      await f.po.client.from('staff_profiles').insert({
+        user_id: staff.userId,
+        role: 'sales',
+        display_name: 'Sales Staff',
+      }),
     );
     expect(await events(staff.userId)).toEqual([
       {

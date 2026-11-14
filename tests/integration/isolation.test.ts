@@ -26,8 +26,11 @@ describe('T008 workspace isolation', () => {
         ['workspace_memberships', 'workspace_id', f.wsB.id],
         ['staff_profiles', 'user_id', f.trainerB.userId],
       ] as const) {
+        const columns = table === 'staff_profiles' ? 'user_id' : '*';
         expect(
-          checked(await staff.client.from(table).select('*').eq(column, value)),
+          checked(
+            await staff.client.from(table).select(columns).eq(column, value),
+          ),
         ).toEqual([]);
       }
       await db.begin(async (tx) => {
@@ -148,13 +151,12 @@ describe('T008 workspace isolation', () => {
 
   it('(f) auth-only identity sees no tenancy data', async () => {
     const staff = await createStaff(null, 'no-profile');
-    for (const table of [
-      'workspaces',
-      'workspace_memberships',
-      'staff_profiles',
-    ]) {
+    for (const table of ['workspaces', 'workspace_memberships']) {
       expect(checked(await staff.client.from(table).select('*'))).toEqual([]);
     }
+    expect(
+      checked(await staff.client.from('staff_profiles').select('user_id')),
+    ).toEqual([]);
   });
 
   it('(g) trainer without memberships sees no workspace', async () => {
