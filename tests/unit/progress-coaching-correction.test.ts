@@ -67,6 +67,8 @@ describe('correction input parsing', () => {
       { workspaceId: 'not-a-uuid' },
       { clientId: 7 },
       { measurementId: undefined },
+      { measurementId: 'not-a-uuid' },
+      { clientId: 'not-a-uuid' },
       { value: Number.NaN },
       { value: '91' },
       { value: 1_000_000 },

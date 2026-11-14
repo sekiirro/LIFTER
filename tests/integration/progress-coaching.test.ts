@@ -374,6 +374,17 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
           }),
         ]),
       });
+      // Manual rows have no snapshot; they take the current check-in question text.
+      const manual = (
+        self[0]!.r as {
+          measurements: { source_kind: string; label: unknown }[];
+        }
+      ).measurements.filter((row) => row.source_kind === 'manual');
+      expect(manual).toEqual([
+        expect.objectContaining({
+          label: { en: 'Body weight', ar: 'الوزن' },
+        }),
+      ]);
 
       // FR-008: KPI counts check-ins received.
       const kpi = await asUser(
