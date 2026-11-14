@@ -1,6 +1,32 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  // spec 023 client progress coaching (S55-PO-10 approved copy)
+  'progress.title': 'Progress',
+  'progress.measurements.title': 'Measurements',
+  'progress.measurements.empty': 'No measurements recorded yet.',
+  'progress.measurement.edit': 'Edit measurement',
+  'checkin.completed.notGate': 'Check-ins do not block access to your account.',
+  'checkin.adherence.workout.title': 'Workout adherence',
+  'checkin.adherence.workout.question':
+    'On a scale from 0 to 10, how closely did you follow your workout plan this week?',
+  'checkin.adherence.diet.title': 'Diet adherence',
+  'checkin.adherence.diet.question':
+    'On a scale from 0 to 10, how closely did you follow your nutrition plan this week?',
+  'timeline.title': 'Timeline',
+  'timeline.empty': 'No timeline events yet.',
+  'timeline.event.registration': 'Registration',
+  'timeline.event.renewal': 'Renewal',
+  'timeline.event.firstDelivery': 'First plan delivery',
+  'timeline.event.trainerChange': 'Trainer assignment change',
+  'timeline.event.replacementOpen': 'Replacement request opened',
+  'timeline.event.replacementApproved': 'Replacement approved',
+  'timeline.event.replacementRejected': 'Replacement rejected',
+  'timeline.event.replacementStale':
+    'Replacement request closed (food removed)',
+  'timeline.event.freezeApply': 'Freeze applied',
+  'timeline.event.freezeRemove': 'Freeze removed',
+  'timeline.event.closure': 'Closure',
   'catalog.taxonomy.muscle.spinal_erectors': 'Spinal erectors',
   'catalog.taxonomy.muscle.rear_delts': 'Rear delts',
   'catalog.taxonomy.muscle.hamstrings': 'Hamstrings',
@@ -29,6 +55,34 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.taxonomy.muscle.triceps': 'Triceps',
   'catalog.taxonomy.muscle.biceps': 'Biceps',
   'catalog.taxonomy.equipment.machine': 'Machine',
+  'leaderboard.title': 'Top 5',
+  'leaderboard.empty': 'No leaderboard is available right now.',
+  'leaderboard.fewerThanFive': '{count} clients qualify so far.',
+  'leaderboard.rankLabel': 'Rank {rank}',
+  'leaderboard.resultsMonthLabel': 'Results for {month} {year}',
+  'leaderboard.optOut.mayAppear': 'You may appear in the Top 5',
+  'leaderboard.optOut.mayAppearBody':
+    'Your username may appear in the Top 5. You can turn this off at any time in account settings.',
+  'leaderboard.optOut.turnOffParticipation':
+    'Turn off leaderboard participation',
+  'leaderboard.optOut.success': 'You will no longer appear on the leaderboard.',
+  'leaderboard.optedOut': 'You turned off leaderboard participation.',
+  'leaderboard.publish.action': 'Approve monthly leaderboard',
+  'leaderboard.publish.approved': 'Monthly leaderboard approved.',
+  'leaderboard.publish.rejected': 'Monthly leaderboard rejected.',
+  'leaderboard.ineligible': 'You are not eligible for the leaderboard yet.',
+  'clientSignup.username.tooShort': 'Username must be at least 3 characters.',
+  'clientSignup.username.tooLong': 'Username must be at most 20 characters.',
+  'clientSignup.username.invalidChars':
+    'Username can contain only English letters, digits, underscores and dots.',
+  'accountSettings.username.tooShort':
+    'Username must be at least 3 characters.',
+  'accountSettings.username.tooLong': 'Username must be at most 20 characters.',
+  'accountSettings.username.invalidChars':
+    'Username can contain only English letters, digits, underscores and dots.',
+  'accountSettings.username.reserved': 'This username is reserved.',
+  'accountSettings.username.workspaceTaken':
+    'This username is already used in your workspace.',
   'registration.title': 'Registration links',
   'registration.intro':
     'Issue a registration link using the approved package terms.',

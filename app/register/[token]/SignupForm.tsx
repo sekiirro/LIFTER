@@ -20,6 +20,7 @@ import {
 } from '../../../lib/client-accounts/results';
 import type { PhoneCountryOption } from '../../../lib/client-accounts/phone';
 import { getMessages } from '../../../lib/i18n';
+import { usernameFormatIssue } from '../../../lib/leaderboard/username';
 import { parseSignupIdentity, type SignupIdentityField } from './schema';
 import styles from './signup.module.css';
 
@@ -41,6 +42,28 @@ function newRequestSecret(): string {
     .replaceAll('+', '-')
     .replaceAll('/', '_')
     .replace(/=+$/, '');
+}
+
+/** S55-PO-9 Q14: the approved message for the specific format rule that failed. */
+function usernameFormatMessage(
+  value: string,
+  messages: {
+    usernameTooShort: string;
+    usernameTooLong: string;
+    usernameInvalidChars: string;
+    fieldError: string;
+  },
+): string {
+  switch (usernameFormatIssue(value)) {
+    case 'too_short':
+      return messages.usernameTooShort;
+    case 'too_long':
+      return messages.usernameTooLong;
+    case 'invalid_chars':
+      return messages.usernameInvalidChars;
+    default:
+      return messages.fieldError;
+  }
 }
 
 export async function runValidatedSignupAction(
@@ -126,7 +149,9 @@ export function SignupForm({
     dateOfBirth: allMessages['clientSignup.dateOfBirth'],
     username: allMessages['clientSignup.username'],
     usernameUnavailable: allMessages['clientSignup.usernameUnavailable'],
-    usernameFormatError: allMessages['clientSignup.usernameFormatError'],
+    usernameTooShort: allMessages['clientSignup.username.tooShort'],
+    usernameTooLong: allMessages['clientSignup.username.tooLong'],
+    usernameInvalidChars: allMessages['clientSignup.username.invalidChars'],
     telegramUsername: allMessages['clientSignup.telegramUsername'],
     optional: allMessages['clientSignup.optional'],
     email: allMessages['clientSignup.email'],
@@ -447,7 +472,7 @@ export function SignupForm({
                 {showUsernameServerError
                   ? messages.usernameUnavailable
                   : identityInvalidFields.includes('username')
-                    ? messages.usernameFormatError
+                    ? usernameFormatMessage(username, messages)
                     : messages.fieldError}
               </Bidi>
             </span>

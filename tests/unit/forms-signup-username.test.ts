@@ -15,13 +15,13 @@ it('T080 applies S32-PO-7 to the NFKC-lowercase username without trimming', () =
     'abcd ',
     'abc\u200Bdef',
     'ab',
-    'a'.repeat(31),
+    'a'.repeat(21),
     'abc-def',
     'عربي',
   ]) {
     expect(isValidSignupUsername(value)).toBe(false);
   }
-  expect(isValidSignupUsername('a'.repeat(30))).toBe(true);
+  expect(isValidSignupUsername('a'.repeat(20))).toBe(true);
 });
 
 it('T080 rejects malformed usernames through the signup field boundary', () => {

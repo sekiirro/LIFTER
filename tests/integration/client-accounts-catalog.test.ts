@@ -300,11 +300,37 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           boolean: 'false',
           bytea: "decode('00','hex')",
           'timestamp with time zone': 'now()',
+          date: "'2026-01-01'::date",
           'uuid[]': "'{}'::uuid[]",
         };
         if (!values[typeName])
           throw new Error('Uncovered public RPC argument type');
         args.push(values[typeName]!);
+      }
+      // F24 status-returning RPCs: a pending client is neither an approved
+      // client nor staff/PO, so each returns exactly { status: 'not_permitted' }.
+      if (
+        [
+          'client_update_username',
+          'client_leaderboard_opt_out',
+          'client_leaderboard_read',
+          'client_leaderboard_self',
+          'workspace_leaderboard_read',
+          'leaderboard_candidate_pool',
+          'create_leaderboard_candidate',
+          'leaderboard_pending_read',
+          'decide_leaderboard_candidate',
+        ].includes(fn.proname)
+      ) {
+        await tx.savepoint(async (inner) => {
+          await inner`set local role authenticated`;
+          const [row] = await inner.unsafe(
+            `select public."${fn.proname}"(${args.join(',')}) as result`,
+          );
+          expect(row!.result, fn.proname).toEqual({ status: 'not_permitted' });
+          await inner`reset role`;
+        });
+        continue;
       }
       if (
         [

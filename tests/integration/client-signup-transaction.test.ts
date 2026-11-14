@@ -241,7 +241,7 @@ it('mutation: skipping the approved normalized username character check permits 
     fixture,
     async (definition) =>
       definition.replace(
-        'if normalized_username !~ \'^[a-z0-9_.]{3,30}$\' then return \'{"status":"invalid"}\'::jsonb; end if;',
+        'if normalized_username !~ \'^[a-z0-9_.]{3,20}$\' then return \'{"status":"invalid"}\'::jsonb; end if;',
         'if false then return \'{"status":"invalid"}\'::jsonb; end if;',
       ),
     async (tx) =>
@@ -324,7 +324,7 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
   });
 
   const optionalTelegram = await signupFixture(context);
-  const optionalUsername = `Lifter.Optional.${optionalTelegram.link.replaceAll('-', '').slice(0, 8)}`;
+  const optionalUsername = `Lifter.Opt.${optionalTelegram.link.replaceAll('-', '').slice(0, 8)}`;
   const optionalFields: Record<string, string | null | undefined> = {
     ...optionalTelegram.fields,
     name: 'Heba Sami Nabil',
