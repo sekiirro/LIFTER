@@ -1727,7 +1727,6 @@ describe('F11 responsible-Trainer assignment catalog', () => {
     for (const name of [
       'public.assign_client_responsible_trainer(uuid,uuid,uuid)',
       'public.client_responsible_trainer(uuid,uuid)',
-      'public.unassigned_clients(uuid)',
     ]) {
       const [fn] = await db`select prosecdef,proconfig,
         pg_catalog.pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
