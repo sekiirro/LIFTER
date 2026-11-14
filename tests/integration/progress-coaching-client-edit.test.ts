@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { JSONValue, TransactionSql } from 'postgres';
 import { anonClient } from './harness';
 import { clientContext, graph, probe } from './registration-approval-fixture';
+import { checked, issue } from './registration-links-fixture';
 
 // Spec 023 T026 (PO 2026-11-14 "Add + edit own") and the weekly check-in
 // configuration read. Rolled-back probe; actors are impersonated with JWT claims
@@ -77,10 +78,12 @@ async function activate(
 describe('spec 023 client edit of own measurements and check-in configuration', () => {
   it('lets a client edit only their own manual rows, audited, behind the client wall', async () => {
     const f = await clientContext();
+    // Each client consumes its registration link, so the second needs its own.
+    const otherLink = checked(await issue(f)) as string;
     await probe(async (tx) => {
       const ws = f.wsA.id;
       const own = await graph(tx, f);
-      const other = await graph(tx, f);
+      const other = await graph(tx, f, { linkId: otherLink });
       const users = await tx`select id,auth_user_id from public.clients
         where id in ${tx([own.client, other.client])}`;
       const userOf = (id: string) =>
