@@ -1,0 +1,410 @@
+[
+  {
+    "id": "B02",
+    "en": "Age",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "B03",
+    "en": "Do you have any chronic conditions?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "B03.details",
+    "en": "Please describe your chronic conditions.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "B04",
+    "en": "What is your current weight?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "B04.unit",
+    "en": "kg",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "B05",
+    "en": "What is your occupation?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T01",
+    "en": "What is your near-term goal?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T02",
+    "en": "Do you have any injuries?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T02.details",
+    "en": "Tell us about the injury.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T03",
+    "en": "How many days a week would you like to train?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T04",
+    "en": "How much time can you set aside for a workout?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T04.less_than_90",
+    "en": "Less than an hour and a half",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T04.at_least_90",
+    "en": "An hour and a half or more",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T05",
+    "en": "Do you play a sport in addition to going to the gym?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T05.sport",
+    "en": "Which sport do you play?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T06",
+    "en": "What do you consider your weak points?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T07",
+    "en": "Which exercises do you like most and dislike most?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T07.liked",
+    "en": "Exercises you like",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T07.disliked",
+    "en": "Exercises you dislike",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "T08.system",
+    "en": "What training split would you like to follow?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01",
+    "en": "What is your goal for your nutrition plan?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.cut.title",
+    "en": "Fat loss",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.cut",
+    "en": "Fat loss at a moderate rate while preserving as much muscle mass as possible.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.cut_fast.title",
+    "en": "Fast fat loss",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.cut_fast",
+    "en": "Faster fat loss, with a higher chance of muscle loss or reduced performance.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.bulk.title",
+    "en": "Muscle gain",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.bulk",
+    "en": "Increase muscle mass while limiting fat gain as much as possible.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.bulk_fast.title",
+    "en": "Fast muscle gain",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.bulk_fast",
+    "en": "Increase body weight and muscle mass faster, with a higher chance of gaining fat.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.recomposition.title",
+    "en": "Body recomposition",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N01.recomposition",
+    "en": "Increase muscle mass while reducing body-fat percentage at the same time.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N02",
+    "en": "What is your height in centimeters?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N02.unit",
+    "en": "cm",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N03",
+    "en": "How active are you and how much do you move during the day?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N04",
+    "en": "Are you allergic to any foods?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N04.details",
+    "en": "List the foods you are allergic to.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N05",
+    "en": "Are you currently taking any medications or supplements?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N05.medications",
+    "en": "List the medications and supplements you take.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N05.supplement_suggestion",
+    "en": "Would you like us to suggest dietary supplements?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N06",
+    "en": "Tell us what a typical day of eating looks like for you.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N09",
+    "en": "Which foods do you like most and dislike most?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N09.liked",
+    "en": "Foods you like",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N09.disliked",
+    "en": "Foods you dislike",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N10",
+    "en": "Would you rather weigh food before or after cooking?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11",
+    "en": "How hungry do you feel, from 0 to 10?",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11.feedback.0_2",
+    "en": "Very little hunger",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11.feedback.3_4",
+    "en": "Mild hunger",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11.feedback.5_6",
+    "en": "Moderate hunger",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11.feedback.7_8",
+    "en": "High hunger",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11.feedback.9_10",
+    "en": "Very strong hunger",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N12",
+    "en": "Choose the body-fat reference that most closely resembles your body shape.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N12.disclaimer",
+    "en": "This percentage is an estimate and is not a substitute for measuring body-fat percentage.",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N03.1",
+    "en": "Sitting for most of the day",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N03.2",
+    "en": "Light movement and walking",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N03.3",
+    "en": "Moderate movement and walking",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N03.4",
+    "en": "A lot of movement or physically demanding work",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N08.low",
+    "en": "Low budget",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N08.medium",
+    "en": "Medium budget",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N08.high",
+    "en": "High budget",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N08.low.foods",
+    "en": "Cottage cheese / plant protein / eggs / baladi bread",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N08.medium.foods",
+    "en": "Eggs / chicken / meat / toast / fish",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N08.high.foods",
+    "en": "Salmon / smoked turkey / steak / ribeye",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N10.before",
+    "en": "Before cooking",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N10.after",
+    "en": "After cooking",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N10.no_preference",
+    "en": "No preference",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11.label.0",
+    "en": "I barely feel hungry",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11.label.5",
+    "en": "Moderate hunger",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  },
+  {
+    "id": "N11.label.10",
+    "en": "Very strong hunger",
+    "approval": "S34-PO-6",
+    "source": "s34-pimm-intake-pilot/intake-en-review.md"
+  }
+]

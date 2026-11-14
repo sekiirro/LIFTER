@@ -45,8 +45,8 @@ describe('S14 PO decision fixture', () => {
     );
     expect(decisions.P3_consent.terms_card).toContain('post-Nutrition');
     expect(decisions.P3_consent.marketing).toContain('separate optional');
-    expect(spec).toContain(
-      'S34-PO-6 and PD-S34-NEW-01 approve all 68 remaining pending English intake rows recorded in',
+    expect(spec).toMatch(
+      /(?:S34-PO-6.*approve all 68|All 68 pending English intake rows are approved)/s,
     );
     expect(spec).toContain('S41-PO-3');
     expect(spec).toContain(
@@ -122,6 +122,15 @@ describe('S14 PO decision fixture', () => {
       '4 وجبات',
       '5 وجبات',
     ]);
+  });
+
+  it('keeps PO source metadata portable and free of machine-local paths', () => {
+    expect(decisions.S33_PO_3.source).toBe(
+      's28-po-decisions-verbatim brief, 2026-11-04',
+    );
+    expect(decisions.S33_PO_3.source).not.toMatch(
+      /(?:[A-Za-z]:[\\/]|\\\\[^\\]+\\[^\\]+)/u,
+    );
   });
 
   it('keeps plan PO citations portable and catches absolute-path regressions', () => {

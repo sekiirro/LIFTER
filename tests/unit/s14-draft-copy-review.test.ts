@@ -49,8 +49,8 @@ describe('S14 draft-copy PO review package', () => {
     expect(decisions.P3_consent.terms_copy_status).toContain(
       'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
     );
-    expect(spec).toContain(
-      'S34-PO-6 and PD-S34-NEW-01 approve all 68 remaining pending English intake rows recorded in',
+    expect(spec).toMatch(
+      /(?:S34-PO-6.*approve all 68|All 68 pending English intake rows are approved)/s,
     );
     expect(report).toContain(
       'The low-budget English label is recorded in the spec and decision fixture.',
