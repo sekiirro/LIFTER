@@ -518,7 +518,10 @@ test.describe.serial('spec 023 progress pages (Frontend Design Gate)', () => {
       const messages = getMessages(variant.locale);
       await page.goto(`/forms/${fixture.assignmentId}`);
       await expect(
-        page.getByText(messages['checkin.adherence.workout.question']),
+        // F15 renders the question as the step heading and as the field label.
+        page.getByRole('heading', {
+          name: messages['checkin.adherence.workout.question'],
+        }),
       ).toBeVisible();
       // FR-038: no scoring mechanics, ranks or leaderboard rationale.
       expect(await page.locator('main').innerText()).not.toMatch(scoring);
