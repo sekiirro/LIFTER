@@ -210,7 +210,7 @@ describe('eligibility (PO 2026-11-14: no goal set -> not eligible)', () => {
     try {
       await db.begin(async (tx) => {
         const [row] = await tx`
-          select pg_get_functiondef('app_private.f24_client_eligible(uuid,uuid,date)'::regprocedure) as definition`;
+          select pg_get_functiondef('app_private.f24_client_rankable(uuid,uuid,date)'::regprocedure) as definition`;
         const definition = row!.definition as string;
         const mutated = definition.replace(requirement, '');
         expect(mutated).not.toBe(definition);
@@ -225,7 +225,7 @@ describe('eligibility (PO 2026-11-14: no goal set -> not eligible)', () => {
     }
     expect(mutantEligible).toBe(true);
     const [definition] = await db`
-      select pg_get_functiondef('app_private.f24_client_eligible(uuid,uuid,date)'::regprocedure) as body`;
+      select pg_get_functiondef('app_private.f24_client_rankable(uuid,uuid,date)'::regprocedure) as body`;
     expect(definition?.body).toContain(requirement);
   });
 });

@@ -41,8 +41,8 @@ export function formatQualifyingCount(
   return interpolateNumbers(template, { count }, locale);
 }
 
-/** Private rank line (PO 2026-11-14): own rank and participant total only. */
-export function formatMyRank(
+/** Private rank value (S57-PO-6/-12): own rank and participant total only. */
+export function formatRankOfTotal(
   rank: number,
   total: number,
   template: string,

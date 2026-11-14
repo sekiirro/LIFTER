@@ -36,6 +36,7 @@ const helpers = [
   'app_private.f24_active_days(uuid,uuid,date,integer)',
   'app_private.f24_eligibility_facts(uuid,uuid,date)',
   'app_private.f24_client_eligible(uuid,uuid,date)',
+  'app_private.f24_client_rankable(uuid,uuid,date)',
   'app_private.f24_visible_username(uuid,uuid)',
   'app_private.f24_publication_entries(uuid,uuid)',
   'app_private.f24_current_view(uuid)',

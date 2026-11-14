@@ -78,8 +78,7 @@ export const en: Record<keyof typeof ar, string> = {
   'leaderboard.optOut.mayAppear': 'You may appear in the Top 5',
   'leaderboard.optOut.mayAppearBody':
     'Your username may appear in the Top 5. You can turn this off at any time in account settings.',
-  'leaderboard.optOut.turnOffParticipation':
-    'Turn off leaderboard participation',
+  'leaderboard.optOut.turnOffParticipation': 'Turn off participation',
   'leaderboard.optOut.success': 'You will no longer appear on the leaderboard.',
   'leaderboard.optedOut': 'You turned off leaderboard participation.',
   'leaderboard.publish.action': 'Approve monthly leaderboard',
@@ -98,7 +97,9 @@ export const en: Record<keyof typeof ar, string> = {
   'accountSettings.username.reserved': 'This username is reserved.',
   'accountSettings.username.workspaceTaken':
     'This username is already used in your workspace.',
-  'leaderboard.myRank': 'Your rank this month: {rank} of {total}',
+  'leaderboard.yourRank': 'Your rank',
+  'leaderboard.rankOfTotal': 'Rank {rank} of {total}',
+  'accountSettings.username.unavailable': 'Username unavailable',
   'leaderboard.publish.rejectAction': 'Reject monthly leaderboard',
   'leaderboard.publish.generateAction': 'Prepare monthly leaderboard',
   'leaderboard.publish.generated':

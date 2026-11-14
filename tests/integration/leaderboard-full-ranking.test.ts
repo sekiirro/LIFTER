@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { TransactionSql } from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { anonClient, sql } from './harness';
 import {
@@ -213,5 +214,100 @@ describe('private rank walls', () => {
     const [definition] = await db`
       select pg_get_functiondef('public.client_leaderboard_my_rank()'::regprocedure) as body`;
     expect(definition?.body).toContain(own);
+  });
+});
+
+// S57-PO-12 (PO 2026-11-15): "Every eligible client sees their private full
+// rank; only the public Top 5 is visible to others."
+describe('S57-PO-12 private rank only for eligible clients; public cap', () => {
+  async function inRollback<T>(
+    run: (tx: TransactionSql) => Promise<T>,
+  ): Promise<T> {
+    const rollback = new Error('rollback S57-PO-12 probe');
+    let result: T | undefined;
+    try {
+      await db.begin(async (tx) => {
+        result = await run(tx);
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
+    return result as T;
+  }
+
+  it('gives an ineligible client in the approved ranking nothing', async () => {
+    // Losing the goal type makes the client ineligible (S57-PO-1).
+    const client = ranked[3]!;
+    await db`delete from public.client_goal_types
+      where workspace_id=${f.wsA.id} and client_id=${client.clientId}`;
+    try {
+      expect((await myRank(client)).data).toEqual({ status: 'not_ranked' });
+      // Eligible clients still get their own rank and the full total.
+      expect((await myRank(ranked[0]!)).data).toMatchObject({
+        status: 'ranked',
+        rank: 1,
+        total: 7,
+      });
+    } finally {
+      const restored = await f.po.client.rpc('set_client_goal_type', {
+        p_workspace_id: f.wsA.id,
+        p_client_id: client.clientId,
+        p_goal_type: 'maintenance',
+      });
+      expect(restored.data).toEqual({ status: 'updated' });
+    }
+    expect((await myRank(client)).data).toMatchObject({ rank: 4 });
+  });
+
+  it('mutation: dropping the eligibility check gives an ineligible client a rank (kill evidence)', async () => {
+    const check =
+      'or not app_private.f24_client_rankable(c.workspace_id, c.id, app_private.f24_cairo_today())';
+    const client = ranked[4]!;
+    const mutant = await inRollback(async (tx) => {
+      await tx`delete from public.client_goal_types
+        where workspace_id=${f.wsA.id} and client_id=${client.clientId}`;
+      const [row] = await tx`
+        select pg_get_functiondef('public.client_leaderboard_my_rank()'::regprocedure) as definition`;
+      const definition = row!.definition as string;
+      const mutated = definition.replace(check, '');
+      expect(mutated).not.toBe(definition);
+      await tx.unsafe(mutated);
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
+      const [result] =
+        await tx`select public.client_leaderboard_my_rank() as result`;
+      return result!.result as Record<string, unknown>;
+    });
+    // The live wall returns not_ranked for that state (test above); the mutant leaks the rank.
+    expect(mutant).toMatchObject({ status: 'ranked', rank: 5 });
+    const [definition] = await db`
+      select pg_get_functiondef('public.client_leaderboard_my_rank()'::regprocedure) as body`;
+    expect(definition?.body).toContain(check);
+  });
+
+  it('mutation: removing the public cap exposes ranks beyond the Top 5 (kill evidence)', async () => {
+    const cap = 'where t.public_rank <= 5';
+    const live = (
+      await f.trainerA.client.rpc('workspace_leaderboard_read', {
+        p_workspace_id: f.wsA.id,
+      })
+    ).data;
+    expect(live.entries).toHaveLength(5);
+    const mutant = await inRollback(async (tx) => {
+      const [row] = await tx`
+        select pg_get_functiondef('app_private.f24_public_entries(uuid,uuid)'::regprocedure) as definition`;
+      const definition = row!.definition as string;
+      const mutated = definition.replace(cap, '');
+      expect(mutated).not.toBe(definition);
+      await tx.unsafe(mutated);
+      const [view] =
+        await tx`select app_private.f24_current_view(${f.wsA.id}) as result`;
+      return view!.result as { entries: unknown[] };
+    });
+    // Seven ranked, one opted out: the mutant shows six public rows.
+    expect(mutant.entries.length).toBeGreaterThan(5);
+    const [definition] = await db`
+      select pg_get_functiondef('app_private.f24_public_entries(uuid,uuid)'::regprocedure) as body`;
+    expect(definition?.body).toContain(cap);
   });
 });

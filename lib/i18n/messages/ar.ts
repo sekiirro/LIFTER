@@ -76,7 +76,7 @@ export const ar = {
   'leaderboard.optOut.mayAppear': 'ممكن اليوزرنيم بتاعك يظهر ضمن أفضل 5',
   'leaderboard.optOut.mayAppearBody':
     'ممكن اليوزرنيم بتاعك يظهر ضمن أفضل 5 عملاء. وتقدر توقف ظهوره في أي وقت من إعدادات حسابك.',
-  'leaderboard.optOut.turnOffParticipation': 'وقف ظهوري في أفضل 5',
+  'leaderboard.optOut.turnOffParticipation': 'وقف ظهوري في الترتيب',
   'leaderboard.optOut.success':
     'مش هتظهر في ترتيب أفضل 5 طول ما المشاركة مقفولة.',
   'leaderboard.optedOut': 'إنت موقف ظهورك في ترتيب أفضل 5.',
@@ -95,7 +95,9 @@ export const ar = {
   'accountSettings.username.reserved': 'اليوزرنيم ده محجوز، اختار غيره.',
   'accountSettings.username.workspaceTaken':
     'اليوزرنيم ده مستخدم بالفعل. جرّب واحد تاني.',
-  'leaderboard.myRank': 'ترتيبك الشهر ده: {rank} من {total}',
+  'leaderboard.yourRank': 'ترتيبك',
+  'leaderboard.rankOfTotal': 'إنت في المركز {rank} من {total}',
+  'accountSettings.username.unavailable': 'اليوزرنيم ده مش متاح',
   'leaderboard.publish.rejectAction': 'رفض ترتيب الشهر',
   'leaderboard.publish.generateAction': 'جهّز ترتيب الشهر',
   'leaderboard.publish.generated': 'ترتيب الشهر جاهز للمراجعة.',

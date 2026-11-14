@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { MyRank } from '../../components/leaderboard/MyRank';
 import { getMessages } from '../../lib/i18n';
-import { formatMyRank } from '../../lib/leaderboard/format';
+import { formatRankOfTotal } from '../../lib/leaderboard/format';
 import {
   MAX_RANKED_ENTRIES,
   toLeaderboardView,
@@ -58,14 +58,14 @@ describe('private rank projection', () => {
       expect(toMyRankView(bad)).toEqual({ status: 'unavailable' });
   });
 
-  it('renders the proposed copy with locale digits, and nothing unless ranked', () => {
+  it('renders the approved S57-PO-12 copy with locale digits, and nothing unless ranked', () => {
     const en = getMessages('en');
     const ar = getMessages('ar');
-    expect(formatMyRank(7, 12, en['leaderboard.myRank'], 'en')).toBe(
-      'Your rank this month: 7 of 12',
+    expect(formatRankOfTotal(7, 12, en['leaderboard.rankOfTotal'], 'en')).toBe(
+      'Rank 7 of 12',
     );
-    expect(formatMyRank(7, 12, ar['leaderboard.myRank'], 'ar')).toBe(
-      'ترتيبك الشهر ده: ٧ من ١٢',
+    expect(formatRankOfTotal(7, 12, ar['leaderboard.rankOfTotal'], 'ar')).toBe(
+      'إنت في المركز ٧ من ١٢',
     );
     const html = renderToStaticMarkup(
       createElement(MyRank, {
@@ -75,11 +75,13 @@ describe('private rank projection', () => {
           rank: 7,
           total: 12,
         },
-        template: en['leaderboard.myRank'],
+        label: en['leaderboard.yourRank'],
+        template: en['leaderboard.rankOfTotal'],
         locale: 'en',
       }),
     );
-    expect(html).toContain('Your rank this month: 7 of 12');
+    expect(html).toContain('<dt>Your rank</dt>');
+    expect(html).toContain('<dd>Rank 7 of 12</dd>');
     for (const status of [
       'none',
       'not_ranked',
@@ -90,7 +92,8 @@ describe('private rank projection', () => {
         renderToStaticMarkup(
           createElement(MyRank, {
             view: { status },
-            template: en['leaderboard.myRank'],
+            label: en['leaderboard.yourRank'],
+            template: en['leaderboard.rankOfTotal'],
             locale: 'en',
           }),
         ),

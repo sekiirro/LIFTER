@@ -66,3 +66,18 @@
   max-inline-size: 100%;
   text-overflow: ellipsis;
 }
+.myRank {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+.myRank dt {
+  color: var(--color-text-muted);
+}
+.myRank dd {
+  margin: 0;
+  font-weight: 600;
+}
+.section > h2 {
+  margin: 0;
+}

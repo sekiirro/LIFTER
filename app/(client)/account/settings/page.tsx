@@ -42,8 +42,7 @@ export default async function ClientAccountSettingsPage() {
             tooShort: m['accountSettings.username.tooShort'],
             tooLong: m['accountSettings.username.tooLong'],
             invalidChars: m['accountSettings.username.invalidChars'],
-            reserved: m['accountSettings.username.reserved'],
-            workspaceTaken: m['accountSettings.username.workspaceTaken'],
+            unavailable: m['accountSettings.username.unavailable'],
           }}
         />
       </Card>

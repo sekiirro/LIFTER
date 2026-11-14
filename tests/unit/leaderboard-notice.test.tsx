@@ -80,8 +80,7 @@ describe('T011/T015 account-settings controls', () => {
     tooShort: m['accountSettings.username.tooShort'],
     tooLong: m['accountSettings.username.tooLong'],
     invalidChars: m['accountSettings.username.invalidChars'],
-    reserved: m['accountSettings.username.reserved'],
-    workspaceTaken: m['accountSettings.username.workspaceTaken'],
+    unavailable: m['accountSettings.username.unavailable'],
   };
 
   it('maps every username edit failure to its approved account-settings message', () => {
@@ -94,11 +93,12 @@ describe('T011/T015 account-settings controls', () => {
     expect(usernameErrorMessage('invalid_chars', usernameMessages)).toBe(
       'Username can contain only English letters, digits, underscores and dots.',
     );
+    // S57-PO-12: one approved message for reserved or already-used names.
     expect(usernameErrorMessage('reserved', usernameMessages)).toBe(
-      'This username is reserved.',
+      'Username unavailable',
     );
     expect(usernameErrorMessage('taken', usernameMessages)).toBe(
-      'This username is already used in your workspace.',
+      'Username unavailable',
     );
     expect(usernameErrorMessage('updated', usernameMessages)).toBeUndefined();
   });
@@ -114,7 +114,7 @@ describe('T011/T015 account-settings controls', () => {
         failedMessage: m['states.error.description'],
       }),
     );
-    expect(html).toContain('Turn off leaderboard participation');
+    expect(html).toContain('Turn off participation');
     expect(html).toContain('type="submit"');
   });
 

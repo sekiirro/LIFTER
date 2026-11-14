@@ -86,6 +86,19 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
       'utf8',
     );
     expect(sql).toContain("and f.facts->>'goal_type' is not null");
+    // S57-PO-12: the requirement now lives in f24_client_rankable, which
+    // f24_client_eligible and the private rank both use.
+    const rankable = readFileSync(
+      resolve(
+        process.cwd(),
+        'supabase/migrations/20261118210400_f24_private_rank_eligible.sql',
+      ),
+      'utf8',
+    );
+    expect(rankable).toContain("and f.facts->>'goal_type' is not null");
+    expect(rankable).toContain(
+      'select app_private.f24_client_rankable(ws, cid, as_of)',
+    );
     expect(sql).toContain(
       "check (goal_type in ('fat_loss', 'muscle_gain', 'maintenance'))",
     );

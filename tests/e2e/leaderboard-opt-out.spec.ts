@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
-import { formatMyRank } from '../../lib/leaderboard/format';
+import { formatRankOfTotal } from '../../lib/leaderboard/format';
 import {
   leaderboardClient,
   leaderboardContext,
@@ -42,9 +42,11 @@ test.describe.serial('F24 direct opt-out from account settings', () => {
       const actor = locale === 'en' ? leaving : staying;
       await installLeaderboardSession(context, actor.client);
 
-      await page.goto('/leaderboard');
+      // S57-PO-12: the Top 5 lives inside Progress.
+      await page.goto('/progress');
+      const section = page.locator('#leaderboard');
       await expect(
-        page.getByText(actor.username, { exact: true }),
+        section.getByText(actor.username, { exact: true }),
       ).toBeVisible();
 
       await page.goto('/account/settings');
@@ -76,18 +78,18 @@ test.describe.serial('F24 direct opt-out from account settings', () => {
       ).toHaveCount(0);
 
       // Removed from the currently approved list immediately (FR-008).
-      await page.goto('/leaderboard');
-      await expect(page.getByText(actor.username, { exact: true })).toHaveCount(
-        0,
-      );
+      await page.goto('/progress');
+      await expect(
+        section.getByText(actor.username, { exact: true }),
+      ).toHaveCount(0);
       // PO 2026-11-14: the opted-out client keeps their private rank; the
       // total still counts every ranked client.
       await expect(
-        page.getByText(
-          formatMyRank(
+        section.getByText(
+          formatRankOfTotal(
             locale === 'en' ? 1 : 2,
             2,
-            m['leaderboard.myRank'],
+            m['leaderboard.rankOfTotal'],
             locale,
           ),
           { exact: true },

@@ -71,6 +71,7 @@ const f24Private = [
   'f24_active_days',
   'f24_cairo_today',
   'f24_client_eligible',
+  'f24_client_rankable',
   'f24_current_view',
   'f24_eligibility_facts',
   'f24_guard_current',

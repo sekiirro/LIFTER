@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
-import { formatMyRank } from '../../lib/leaderboard/format';
+import { formatRankOfTotal } from '../../lib/leaderboard/format';
 import {
   leaderboardClient,
   leaderboardContext,
@@ -109,25 +109,32 @@ test.describe.serial('F24 leaderboard design-gate screenshots', () => {
     await installLeaderboardSession(context, listed[0]!.client);
     await forEachVariant(page, async (variant) => {
       const m = getMessages(variant.locale);
+      // S57-PO-12: the old deep link lands on the Top 5 section of Progress.
       await page.goto('/leaderboard');
+      await expect(page).toHaveURL(/\/progress#leaderboard$/u);
+      const section = page.locator('#leaderboard');
       await expect(
-        page.getByRole('heading', { level: 1, name: m['leaderboard.title'] }),
+        section.getByRole('heading', {
+          level: 2,
+          name: m['leaderboard.title'],
+        }),
       ).toBeVisible();
       for (const client of listed)
         await expect(
-          page.getByText(client.username, { exact: true }),
+          section.getByText(client.username, { exact: true }),
         ).toBeVisible();
-      await expect(page.locator('main')).not.toContainText(
-        /score|adherence|progress/iu,
-      );
-      // Private rank (PO 2026-11-14): listed[0] is rank 1 of 3.
+      await expect(section).not.toContainText(/score|adherence|progress/iu);
+      // Private rank (S57-PO-6/-12): listed[0] is rank 1 of 3.
       await expect(
-        page.getByText(
-          formatMyRank(1, 3, m['leaderboard.myRank'], variant.locale),
+        section.getByText(m['leaderboard.yourRank'], { exact: true }),
+      ).toBeVisible();
+      await expect(
+        section.getByText(
+          formatRankOfTotal(1, 3, m['leaderboard.rankOfTotal'], variant.locale),
           { exact: true },
         ),
       ).toBeVisible();
-      await capture(page, 'client-leaderboard', variant);
+      await capture(page, 'client-progress-top5', variant);
     });
   });
 

@@ -19,8 +19,11 @@ export type UsernameFormMessages = {
   tooShort: string;
   tooLong: string;
   invalidChars: string;
-  reserved: string;
-  workspaceTaken: string;
+  /**
+   * S57-PO-12: one approved message for a reserved or already-used name, so
+   * the edit does not reveal which applies.
+   */
+  unavailable: string;
 };
 
 export function usernameErrorMessage(
@@ -35,9 +38,8 @@ export function usernameErrorMessage(
     case 'invalid_chars':
       return messages.invalidChars;
     case 'reserved':
-      return messages.reserved;
     case 'taken':
-      return messages.workspaceTaken;
+      return messages.unavailable;
     default:
       return undefined;
   }
