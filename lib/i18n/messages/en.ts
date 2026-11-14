@@ -99,6 +99,7 @@ export const en: Record<keyof typeof ar, string> = {
   'clientGoals.notSet': 'Not set',
   'clientGoals.nearTermGoal': 'Near-term goal',
   'clientGoals.nearTermGoalEmpty': 'No answer yet.',
+  'clientGoals.save': 'Save goal type',
   'clientGoals.saved': 'Goal type saved.',
   'registration.title': 'Registration links',
   'registration.intro':

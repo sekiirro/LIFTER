@@ -13,9 +13,8 @@ import { OptOutForm, UsernameForm } from './LeaderboardSettingsForms';
 export const dynamic = 'force-dynamic';
 
 /**
- * F24 account-settings surface (FR-005, FR-007, FR-022). Only approved copy is
- * rendered; a page title key is not approved yet (PO-DECISION-NEEDED), so the
- * page is composed of the two approved section headings.
+ * F24 account-settings surface (FR-005, FR-007, FR-022). The page title
+ * `accountSettings.title` is proposed copy pending PO approval (2026-11-14).
  */
 export default async function ClientAccountSettingsPage() {
   const actor = await requireActor();
@@ -30,6 +29,7 @@ export default async function ClientAccountSettingsPage() {
 
   return (
     <main className={styles.main}>
+      <h1>{m['accountSettings.title']}</h1>
       <Card as="section" className={styles.section}>
         <UsernameForm
           action={updateUsernameAction}

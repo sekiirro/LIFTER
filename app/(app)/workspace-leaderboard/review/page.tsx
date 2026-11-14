@@ -8,10 +8,10 @@ import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
 import { getMessages } from '../../../../lib/i18n';
 import { canDecideLeaderboard } from '../../../../lib/leaderboard/authorization';
 import { readPendingCandidate } from '../../../../lib/leaderboard/service';
-import { approveLeaderboardAction } from '../actions';
+import { decideLeaderboardAction, generateLeaderboardAction } from '../actions';
 import { WorkspacePicker } from '../WorkspacePicker';
 import { loadViewableWorkspaces, selectWorkspace } from '../workspaces';
-import { ApproveForm } from './ApproveForm';
+import { ApproveForm, GenerateForm } from './ApproveForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,11 +46,24 @@ export default async function LeaderboardReviewPage({
         label={m['registrationApproval.workspace']}
         submitLabel={m['packages.select']}
       />
+      <GenerateForm
+        action={generateLeaderboardAction}
+        workspaceId={workspace.id}
+        hasPending={reviewable}
+        label={m['leaderboard.publish.generateAction']}
+        messages={{
+          generated: m['leaderboard.publish.generated'],
+          pendingExists: m['leaderboard.publish.pendingExists'],
+          noEligible: m['leaderboard.publish.noEligible'],
+          failed: m['states.error.description'],
+        }}
+      />
       <ApproveForm
-        action={approveLeaderboardAction}
+        action={decideLeaderboardAction}
         publicationId={reviewable ? pending.publicationId : null}
         empty={<EmptyState title={m['leaderboard.empty']} />}
         label={m['leaderboard.publish.action']}
+        rejectLabel={m['leaderboard.publish.rejectAction']}
         approvedMessage={m['leaderboard.publish.approved']}
         rejectedMessage={m['leaderboard.publish.rejected']}
         failedMessage={m['states.error.description']}

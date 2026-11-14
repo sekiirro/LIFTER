@@ -94,6 +94,7 @@ export const ar = {
   'clientGoals.notSet': 'لسه متحددش',
   'clientGoals.nearTermGoal': 'الهدف القريب',
   'clientGoals.nearTermGoalEmpty': 'لسه مفيش إجابة.',
+  'clientGoals.save': 'احفظ نوع الهدف',
   'clientGoals.saved': 'اتحفظ نوع الهدف.',
   'registration.title': 'روابط التسجيل',
   'registration.intro': 'أصدر رابط تسجيل بالشروط المعتمدة للباقة.',

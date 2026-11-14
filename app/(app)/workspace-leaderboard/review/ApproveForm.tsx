@@ -4,8 +4,11 @@ import { useActionState, type ReactNode } from 'react';
 import styles from '../../../../components/leaderboard/leaderboard.module.css';
 import { Alert } from '../../../../components/ui/Alert';
 import { Button } from '../../../../components/ui/Button';
-import type { DecisionStatus } from '../../../../lib/leaderboard/service';
-import type { DecisionActionState } from '../actions';
+import type {
+  CandidateStatus,
+  DecisionStatus,
+} from '../../../../lib/leaderboard/service';
+import type { DecisionActionState, GenerateActionState } from '../actions';
 
 export type DecisionMessages = {
   approved: string;
@@ -40,13 +43,11 @@ export function decisionNotice(
 }
 
 /**
- * FR-003/FR-028 PO approval control. The reject control is not rendered:
- * its button label is not approved copy (PO-DECISION-NEEDED); the reject
- * action and its result message already exist.
- *
- * The page renders this component whether or not a candidate is pending, so
- * the decision confirmation survives the revalidated re-render in which the
- * candidate is no longer pending. `children` is the server-rendered list.
+ * FR-003/FR-020/FR-028 PO decision control: approve or reject the pending
+ * candidate. The page renders this component whether or not a candidate is
+ * pending, so the decision confirmation survives the revalidated re-render
+ * in which the candidate is no longer pending. `children` is the
+ * server-rendered list; `empty` is shown when nothing is pending.
  */
 export function ApproveForm({
   action,
@@ -54,6 +55,7 @@ export function ApproveForm({
   children,
   empty,
   label,
+  rejectLabel,
   approvedMessage,
   rejectedMessage,
   failedMessage,
@@ -67,14 +69,16 @@ export function ApproveForm({
   children?: ReactNode;
   empty: ReactNode;
   label: string;
+  rejectLabel: string;
   approvedMessage: string;
   rejectedMessage: string;
   failedMessage: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {
     status: 'idle',
+    decision: 'approve',
   } satisfies DecisionActionState);
-  const notice = decisionNotice(state.status, 'approve', {
+  const notice = decisionNotice(state.status, state.decision, {
     approved: approvedMessage,
     rejected: rejectedMessage,
     failed: failedMessage,
@@ -86,11 +90,93 @@ export function ApproveForm({
       {children}
       <form action={formAction} className={styles.form}>
         <input type="hidden" name="publicationId" value={publicationId} />
-        <Button type="submit" disabled={pending}>
-          {label}
-        </Button>
+        <div className={styles.actions}>
+          <Button
+            type="submit"
+            name="decision"
+            value="approve"
+            disabled={pending}
+          >
+            {label}
+          </Button>
+          <Button
+            type="submit"
+            name="decision"
+            value="reject"
+            variant="secondary"
+            disabled={pending}
+          >
+            {rejectLabel}
+          </Button>
+        </div>
         {notice && <Alert tone={notice.tone} title={notice.title} />}
       </form>
     </>
+  );
+}
+
+export type GenerateMessages = {
+  generated: string;
+  pendingExists: string;
+  noEligible: string;
+  failed: string;
+};
+
+export function generateNotice(
+  status: CandidateStatus | 'idle',
+  messages: GenerateMessages,
+): { tone: 'success' | 'error' | 'info'; title: string } | null {
+  switch (status) {
+    case 'idle':
+      return null;
+    case 'created':
+    case 'replayed':
+      return { tone: 'success', title: messages.generated };
+    case 'pending_exists':
+      return { tone: 'info', title: messages.pendingExists };
+    case 'no_eligible_clients':
+      return { tone: 'info', title: messages.noEligible };
+    default:
+      return { tone: 'error', title: messages.failed };
+  }
+}
+
+/**
+ * PO-only "Prepare monthly leaderboard". Stays mounted (hidden while a
+ * candidate is pending and nothing was just generated) so its confirmation
+ * survives the revalidated re-render that shows the new pending candidate.
+ */
+export function GenerateForm({
+  action,
+  workspaceId,
+  hasPending,
+  label,
+  messages,
+}: {
+  action: (
+    previous: GenerateActionState,
+    formData: FormData,
+  ) => Promise<GenerateActionState>;
+  workspaceId: string;
+  hasPending: boolean;
+  label: string;
+  messages: GenerateMessages;
+}) {
+  const [state, formAction, pending] = useActionState(action, {
+    status: 'idle',
+  } satisfies GenerateActionState);
+  const notice = generateNotice(state.status, messages);
+  if (hasPending)
+    return notice?.tone === 'success' ? (
+      <Alert tone="success" title={notice.title} />
+    ) : null;
+  return (
+    <form action={formAction} className={styles.form}>
+      <input type="hidden" name="workspaceId" value={workspaceId} />
+      <Button type="submit" disabled={pending}>
+        {label}
+      </Button>
+      {notice && <Alert tone={notice.tone} title={notice.title} />}
+    </form>
   );
 }

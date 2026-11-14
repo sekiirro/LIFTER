@@ -10,7 +10,9 @@ import {
 } from '../../app/(client)/account/settings/LeaderboardSettingsForms';
 import {
   ApproveForm,
+  GenerateForm,
   decisionNotice,
+  generateNotice,
 } from '../../app/(app)/workspace-leaderboard/review/ApproveForm';
 import { LeaderboardList } from '../../components/leaderboard/LeaderboardList';
 import { getMessages } from '../../lib/i18n';
@@ -195,17 +197,21 @@ describe('T026 PO review decision feedback', () => {
     expect(decisionNotice('idle', 'approve', messages)).toBeNull();
   });
 
-  it('renders the approved approve label and no unapproved reject control', () => {
+  it('renders approve and reject controls, both submitting their own decision', () => {
     for (const locale of ['en', 'ar'] as const) {
       const copy = getMessages(locale);
       const html = renderToStaticMarkup(
         createElement(
           ApproveForm,
           {
-            action: async () => ({ status: 'idle' as const }),
+            action: async () => ({
+              status: 'idle' as const,
+              decision: 'approve' as const,
+            }),
             publicationId: '11111111-1111-4111-8111-111111111111',
             empty: createElement('p', null, 'EMPTY'),
             label: copy['leaderboard.publish.action'],
+            rejectLabel: copy['leaderboard.publish.rejectAction'],
             approvedMessage: copy['leaderboard.publish.approved'],
             rejectedMessage: copy['leaderboard.publish.rejected'],
             failedMessage: copy['states.error.description'],
@@ -214,8 +220,17 @@ describe('T026 PO review decision feedback', () => {
         ),
       );
       expect(html).toContain(copy['leaderboard.publish.action']);
-      expect(html.match(/type="submit"/gu)).toHaveLength(1);
-      expect(html).not.toMatch(/reject/iu);
+      expect(html).toContain(copy['leaderboard.publish.rejectAction']);
+      expect(html.match(/type="submit"/gu)).toHaveLength(2);
+      for (const decision of ['approve', 'reject'])
+        expect(
+          html.match(/<button [^>]*>/gu)?.some(
+            (button) =>
+              button.includes('name="decision"') &&
+              button.includes(`value="${decision}"`),
+          ),
+          decision,
+        ).toBe(true);
       expect(html).toContain('LIST');
       expect(html).not.toContain('EMPTY');
     }
@@ -225,10 +240,14 @@ describe('T026 PO review decision feedback', () => {
     const copy = getMessages('en');
     const html = renderToStaticMarkup(
       createElement(ApproveForm, {
-        action: async () => ({ status: 'idle' as const }),
+        action: async () => ({
+          status: 'idle' as const,
+          decision: 'approve' as const,
+        }),
         publicationId: null,
         empty: createElement('p', null, 'EMPTY'),
         label: copy['leaderboard.publish.action'],
+        rejectLabel: copy['leaderboard.publish.rejectAction'],
         approvedMessage: copy['leaderboard.publish.approved'],
         rejectedMessage: copy['leaderboard.publish.rejected'],
         failedMessage: copy['states.error.description'],
@@ -236,6 +255,64 @@ describe('T026 PO review decision feedback', () => {
     );
     expect(html).toContain('EMPTY');
     expect(html).not.toContain('type="submit"');
+  });
+
+  it('maps generation results to the proposed copy, never claiming success on failure', () => {
+    const copy = getMessages('en');
+    const messages = {
+      generated: copy['leaderboard.publish.generated'],
+      pendingExists: copy['leaderboard.publish.pendingExists'],
+      noEligible: copy['leaderboard.publish.noEligible'],
+      failed: copy['states.error.description'],
+    };
+    expect(generateNotice('idle', messages)).toBeNull();
+    for (const status of ['created', 'replayed'] as const)
+      expect(generateNotice(status, messages)).toEqual({
+        tone: 'success',
+        title: 'The monthly leaderboard is ready for review.',
+      });
+    expect(generateNotice('pending_exists', messages)?.title).toBe(
+      'A monthly leaderboard is already waiting for review.',
+    );
+    expect(generateNotice('no_eligible_clients', messages)?.title).toBe(
+      'No clients qualify yet.',
+    );
+    for (const status of [
+      'inputs_unresolved',
+      'ineligible_client',
+      'invalid_input',
+      'not_permitted',
+      'unavailable',
+    ] as const)
+      expect(generateNotice(status, messages)).toEqual({
+        tone: 'error',
+        title: 'Something went wrong. Please try again.',
+      });
+  });
+
+  it('shows the generate control only when nothing is pending', () => {
+    const copy = getMessages('ar');
+    const props = {
+      action: async () => ({ status: 'idle' as const }),
+      workspaceId: '11111111-1111-4111-8111-111111111111',
+      label: copy['leaderboard.publish.generateAction'],
+      messages: {
+        generated: copy['leaderboard.publish.generated'],
+        pendingExists: copy['leaderboard.publish.pendingExists'],
+        noEligible: copy['leaderboard.publish.noEligible'],
+        failed: copy['states.error.description'],
+      },
+    };
+    const idle = renderToStaticMarkup(
+      createElement(GenerateForm, { ...props, hasPending: false }),
+    );
+    expect(idle).toContain(copy['leaderboard.publish.generateAction']);
+    expect(idle).toContain('name="workspaceId"');
+    expect(
+      renderToStaticMarkup(
+        createElement(GenerateForm, { ...props, hasPending: true }),
+      ),
+    ).toBe('');
   });
 });
 

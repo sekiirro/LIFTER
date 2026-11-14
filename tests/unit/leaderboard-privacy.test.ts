@@ -238,6 +238,7 @@ describe('T015/T030 approved copy only (FR-038)', () => {
       en: 'No answer yet.',
       ar: 'لسه مفيش إجابة.',
     },
+    'clientGoals.save': { en: 'Save goal type', ar: 'احفظ نوع الهدف' },
     'clientGoals.saved': { en: 'Goal type saved.', ar: 'اتحفظ نوع الهدف.' },
   };
 
