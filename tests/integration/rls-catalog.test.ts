@@ -51,10 +51,18 @@ const f23Private = [
   'f23_adherence_question_valid',
   'f23_adherence_value',
   'f23_checkin_definition_valid',
+  'f23_checkin_due_index',
+  'f23_client_checkin_anchor',
+  'f23_client_frozen_on',
   'f23_client_progress_visible',
+  'f23_extract_checkin_measurements',
   'f23_measurement_question',
   'f23_measurement_value_fits',
   'f23_unit_text',
+  'f23_weekly_checkin_run',
+  'f23_weekly_checkin_schedule_activate',
+  'f23_weekly_checkin_schedule_deactivate',
+  'f23_write_measurement_correction',
 ];
 const registrationPrivate = [
   'registration_link_is_valid',
@@ -413,6 +421,9 @@ describe('tenancy security catalog (T007)', () => {
     for (const row of rows) {
       const expectedDefiner = ![
         // Union of F15/F16 and client-notes intentionally invoker-mode functions.
+        'f23_weekly_checkin_run',
+        'f23_weekly_checkin_schedule_activate',
+        'f23_weekly_checkin_schedule_deactivate',
         'audit_events_immutable',
         'branding_actor_id',
         'catalog_assert_exercise_text_limits',
