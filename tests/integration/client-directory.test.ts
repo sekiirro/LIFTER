@@ -64,6 +64,7 @@ describe('F22 staff directory search (T031)', () => {
       name: active.name,
       approval_state: 'approved',
       subscription_status: 'active',
+      refund_scope: null,
       plans_waiting_for_delivery: 0,
     });
   });
