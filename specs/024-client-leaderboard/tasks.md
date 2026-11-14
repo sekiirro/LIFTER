@@ -78,9 +78,9 @@ Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work pr
 
 ### Implementation for User Story 1
 
-- [ ] T024 [P] [US1] [FR-003, FR-026, FR-028, FR-030] Add PO-only candidate approve/reject action and result boundary in `app/(app)/leaderboard/actions.ts`; WhatsApp verification remains external.
+- [ ] T024 [P] [US1] [FR-003, FR-026, FR-028, FR-030] Add PO-only candidate approve/reject action and result boundary in `app/(app)/workspace-leaderboard/actions.ts`; WhatsApp verification remains external.
 - [ ] T025 [US1] [FR-003, FR-026, FR-029, FR-030, FR-039] Implement transactional approve/reject state change and audit reference in `lib/leaderboard/publication.ts`; swap current publication only on approval.
-- [ ] T026 [P] [US1] [FR-003, FR-004, FR-027-FR-030] Add localized PO review/decision screen in `app/(app)/leaderboard/page.tsx`, exposing no health inputs.
+- [ ] T026 [P] [US1] [FR-003, FR-004, FR-027-FR-030] Add localized PO review/decision screen for the full ranking in `app/(app)/workspace-leaderboard/review/page.tsx`, exposing no health inputs.
 
 ## Phase 6: User Story 4 - Privacy projection (Priority P1)
 
@@ -95,7 +95,7 @@ Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work pr
 ### Implementation for User Story 4
 
 - [ ] T028 [US4] [FR-022-FR-024, FR-027, FR-038, FR-040] Create server-side display DTO and explicit field allow-list in `lib/leaderboard/projection.ts`; include rank and username only.
-- [ ] T029 [US4] [FR-022-FR-024, FR-027, FR-038] Add authorized leaderboard read page in `app/(client)/leaderboard/page.tsx` and shared workspace viewer surface in `app/(app)/leaderboard/`; preserve localized empty/unavailable states.
+- [ ] T029 [US4] [FR-022-FR-024, FR-027, FR-038, FR-042] Add the authorized client Top 5 section inside `app/(client)/progress/page.tsx` (one F24 component), redirect `app/(client)/leaderboard/page.tsx` to it, and add the shared workspace viewer surface in `app/(app)/workspace-leaderboard/`; preserve localized empty/unavailable states.
 - [ ] T030 [US4] [FR-005, FR-038] Validate AR-RTL/EN-LTR, mobile/desktop, light/dark, keyboard and error/empty states against `docs/09-frontend-design-gate.md`; use only exact proposal-table strings until separately approved.
 
 ## Phase 7: User Story 5 - Workspace isolation (Priority P1)
@@ -119,6 +119,16 @@ Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work pr
 - [ ] T033 [P] [FR-001-FR-040] Update `specs/024-client-leaderboard/traceability.md` only after each mapped test passes; keep any unimplemented evidence marked NOT-IMPLEMENTED.
 - [ ] T034 [FR-001-FR-040] Run full local lint, typecheck, unit, touched integration/e2e, format and security gates for the final feature head; record outcomes in `specs/024-client-leaderboard/traceability.md`.
 - [ ] T035 [HIGH-RISK: RLS/authorization] [FR-001-FR-040] CANCELLED (PO S56-PO-4): remove the leaderboard feature flag after completion.
+
+## Phase 9: PO decisions S57-PO-1 to S57-PO-12 (2026-11-14/15)
+
+**Purpose**: Apply the decided progress formula, tie-breaks, full ranking, private rank and placement.
+
+- [ ] T036 [P] [US3] [FR-014, FR-018, FR-035, FR-036, FR-043] [HIGH-RISK: RLS/authorization] Add the workspace-scoped goal-type store with coaching-staff set/read RPCs and audit in `supabase/migrations/<timestamp>_f24_client_goal_types.sql`, and the Client Details Goals section in `components/client-goals/ClientGoals.tsx`; prove trainer/owner/PO access and Sales, foreign-workspace, client and anonymous denial in `tests/integration/leaderboard-goal-types.test.ts`.
+- [ ] T037 [P] [US3] [FR-016-FR-018, FR-021] Implement the S57-PO-1 formula, S57-PO-4 monthly mean, S57-PO-2 last scoring input and S57-PO-3 registration order as resolvers in `lib/leaderboard/goals.ts` and `lib/leaderboard/resolvers.ts`, with boundary and tie-break tests in `tests/unit/leaderboard-goal-progress.test.ts` and end-to-end generation in `tests/integration/leaderboard-generation.test.ts`.
+- [ ] T038 [US1] [FR-002, FR-008, FR-019, FR-020, FR-029] [HIGH-RISK: RLS/authorization] Store the full ranking, derive the public Top 5 at read time, promote on opt-out without reapproval, and keep past winners at the Top 5 boundary in `supabase/migrations/<timestamp>_f24_full_ranking.sql` and `lib/leaderboard/ranking.ts`; prove it in `tests/integration/leaderboard-full-ranking.test.ts` with kill/restore/diff mutation evidence for the public cap.
+- [ ] T039 [US4] [FR-041] [HIGH-RISK: RLS/authorization] Add the own-only private rank (rank and participant total, eligible callers only, opted-out kept) in `supabase/migrations/<timestamp>_f24_private_rank_eligible.sql` and `components/leaderboard/MyRank.tsx`; prove own-only, ineligible-nothing, staff/anonymous/foreign denial and kill/restore/diff mutation evidence in `tests/integration/leaderboard-full-ranking.test.ts`.
+- [ ] T040 [US4] [FR-038, FR-042] Place the Top 5 and private rank inside the client Progress page, apply the S57-PO-12 approved copy, and verify AR-RTL/EN-LTR, mobile/desktop and the redirect in `tests/e2e/leaderboard-screenshots.spec.ts` and `tests/e2e/leaderboard-opt-out.spec.ts`.
 
 ## Dependencies and execution order
 
