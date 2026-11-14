@@ -39,6 +39,12 @@ export default async function HomePage() {
           {m['registrationApproval.clientStatus']}
         </Link>
       )}
+      {actor.role && roleHasCapability(actor.role, 'coaching_work') && (
+        <Link href="/clients">{m['staff.clientDirectory.title']}</Link>
+      )}
+      {actor.role === null && (
+        <Link href="/plans">{m['client.portal.nav']}</Link>
+      )}
       <SignOutForm
         label={m['auth.signOut']}
         failureLabel={m['states.error.description']}
