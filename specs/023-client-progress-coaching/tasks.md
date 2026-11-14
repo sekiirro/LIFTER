@@ -11,7 +11,7 @@
 **Purpose**: Feature module skeleton and shared contracts that unblock all stories.
 
 - [ ] T001 [P] Create the progress-coaching module skeleton and shared types/constants in `lib/progress-coaching/types.ts`, `lib/progress-coaching/constants.ts`, and `lib/progress-coaching/index.ts`.
-- [ ] T002 [P] Add copy key scaffolding only (no approved strings) in `lib/i18n/messages/en.ts` and `lib/i18n/messages/ar.ts`, keyed to `specs/023-client-progress-coaching/copy-proposal.md` (status PROPOSED — PENDING PO APPROVAL).
+- [ ] T002 [P] Add copy key scaffolding only (no approved strings) in `lib/i18n/messages/en.ts` and `lib/i18n/messages/ar.ts`, keyed to `specs/023-client-progress-coaching/copy-proposal.md` (each row carries its approval status; all rows are approved).
 - [ ] T003 [P] Add shared validation schemas for F15 text limits and identifiers in `lib/progress-coaching/validation.ts` and `tests/unit/progress-coaching-validation.test.ts`.
 
 **Checkpoint**: Shared module and validation scaffolding ready.

@@ -1,6 +1,6 @@
 # Analyze: 023 Client Progress Coaching (P5 Progress)
 
-Date: 2026-11-15. Scope: `specs/023-client-progress-coaching/`. This full Analyze follows the S57-PO-8, S57-PO-10 and S57-PO-12 spec changes:
+Date: 2026-11-15 (re-run after S57-PO-13). Scope: `specs/023-client-progress-coaching/`. This full Analyze follows the S57-PO-8, S57-PO-10, S57-PO-12 and S57-PO-13 spec changes (S57-PO-13 changes only copy status and the `checkin.config.saved` AR text; no FR, SC or acceptance text):
 
 - FR-006, FR-012, FR-013, FR-036 and SC-006 were changed;
 - Story 2 gained acceptance scenario 4;
@@ -17,7 +17,7 @@ The previous Analyze (2026-11-14) covered the tasks restructuring and the S56-PO
   - S54-PO-5, S54-PO-9, S54-PO-11, S54-PO-12, S48-PO-4;
   - S55-PO-3 (Q1=A, Q2=A, cross-spec spec 024 Q2), S55-PO-5 (S55-023-Q3 = A);
   - S56-PO-4;
-  - S57-PO-8, S57-PO-10 and S57-PO-12, each under its own dated heading with the PO words verbatim.
+  - S57-PO-8, S57-PO-10, S57-PO-12 and S57-PO-13, each under its own dated heading with the PO words verbatim.
 
   No open PO question blocks the spec: PASS.
 
@@ -30,14 +30,14 @@ The previous Analyze (2026-11-14) covered the tasks restructuring and the S56-PO
 - Open CRITICAL: 0.
 - Open HIGH: 0.
 - MEDIUM, resolved in this pass: FR-012 "direct the user to edit the existing record" conflicted with FR-013's trainer-only correction. S57-PO-8 resolves it: clients edit their own manual entries, and trainers correct everything. FR-012, FR-013, SC-006 and Story 2 now agree. Check-in-extracted measurements stay trainer-only, which is consistent with FR-013 "trainers correct everything".
-- LOW, recorded: copy rows marked PROPOSED (client entry value/date/save, the weekly check-in configuration strings, and the 2026-11-14 duplicate-message replacement) await PO approval. The S55-PO-10 approved duplicate text stays in force per S57-PO-12 ("Preserve all other approved copy").
+- LOW, resolved: the copy rows that were PROPOSED (client entry value/date/save, the weekly check-in configuration strings) are approved by S57-PO-13, with `checkin.config.saved` AR changed by the PO. The S55-PO-10 duplicate message stays final. No copy is pending.
 - Dependency, recorded: check-in reminder delivery (FR-006, FR-036; T010, T014) depends on the spec 022 client inbox (S57-PO-10). Food replacement (US3) still depends on F18 contracts.
 
 ## Cross-reference sweep
 
 - FR-001..FR-038 and SC-001..SC-011 occur in `spec.md` and are referenced by `tasks.md` and `traceability.md`.
 - T001..T054 occur in `tasks.md`.
-- S57-PO-8, S57-PO-10 and S57-PO-12 are recorded verbatim in `spec.md`. The register items they resolve are not marked open anywhere in tasks, traceability or this file.
+- S57-PO-8, S57-PO-10, S57-PO-12 and S57-PO-13 are recorded verbatim in `spec.md`. The register items they resolve are not marked open anywhere in tasks, traceability or this file.
 - Top 5 placement inside Progress (S57-PO-12) is recorded as a spec 024 dependency. This spec defines no leaderboard scoring (FR-038 unchanged).
 - Reuse-not-duplicate preserved with F13/F15/F17/F18/F19/F20/F21 and specs 022/024.
 - No copy outside `copy-proposal.md`.

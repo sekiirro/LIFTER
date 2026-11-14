@@ -28,7 +28,7 @@ export default async function ClientProgressPage() {
   const store = await cookies();
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
   const messages = getMessages(locale);
-  // PO 2026-11-14 proposed copy plus approved progress/dialog/error keys.
+  // Approved copy: S55-PO-10, S57-PO-12 and S57-PO-13.
   const failed = messages['states.error.description'];
   const addLabels = {
     add: messages['progress.measurement.add'],

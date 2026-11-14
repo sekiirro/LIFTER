@@ -18,17 +18,18 @@ const approved: Copy = {
     en: 'No measurements recorded',
     ar: 'لسه مفيش قياسات متسجلة',
   },
-  // S55-PO-10 approved text, preserved per S57-PO-12 ("Preserve all other
-  // approved copy"). The PO's 2026-11-14 replacement proposal stays pending.
+  // S55-PO-10 approved text, final: S57-PO-12 "Preserve all other approved
+  // copy" and S57-PO-13 "Preserve the previously approved duplicate-measurement
+  // message".
   'progress.measurement.duplicateSameDay': {
     en: 'A measurement already exists for this day. Edit the existing record instead.',
     ar: 'فيه قياس متسجل لليوم ده. عدّل القياس الموجود بدل ما تضيف واحد جديد.',
   },
 };
 
-// Proposed by the PO on 2026-11-14 and NOT yet approved. Pinned so any change
-// is a deliberate, reviewed catalog edit.
-const proposed: Copy = {
+// Proposed on 2026-11-14 and approved as proposed by S57-PO-13 (2026-11-15),
+// except checkin.config.saved AR, which the PO changed to the text below.
+const approvedS57PO13: Copy = {
   'progress.measurement.value': { en: 'Value', ar: 'القيمة' },
   'progress.measurement.date': { en: 'Date', ar: 'التاريخ' },
   'progress.measurement.save': { en: 'Save measurement', ar: 'احفظ القياس' },
@@ -43,7 +44,7 @@ const proposed: Copy = {
   'checkin.config.save': { en: 'Use this form', ar: 'استخدم الفورم ده' },
   'checkin.config.saved': {
     en: 'Weekly check-in form saved.',
-    ar: 'اتحفظ فورم المتابعة الأسبوعية.',
+    ar: 'اتحدد فورم المتابعة الأسبوعية.',
   },
   'checkin.config.invalid': {
     en: 'This form needs the workout and diet adherence questions (0–10).',
@@ -64,8 +65,8 @@ describe('spec 023 copy', () => {
     },
   );
 
-  it.each(Object.entries(proposed))(
-    'pins still-proposed %s in EN and AR',
+  it.each(Object.entries(approvedS57PO13))(
+    'pins S57-PO-13 approved %s in EN and AR',
     (key, copy) => {
       expect(en[key as keyof typeof en]).toBe(copy.en);
       expect(ar[key as keyof typeof ar]).toBe(copy.ar);

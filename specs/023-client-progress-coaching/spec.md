@@ -208,7 +208,8 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 14. **S55-PO-5** (2026-11-13): S55-023-Q3 = A — 0–10 integer scale for `workoutAdherence` and `dietAdherence` (same as the existing F15 N11 hunger score), so the same form handling and copy patterns can be reused. Verbatim: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-5.verbatim.txt`, SHA-256 8bc5d5621bfd6e231fad6f6c25904a17bee4472fa7e6de8c0447ddac93be8cf6. Rewrites FR-037, SC-011, Key Entities (WeeklyCheckIn), Assumptions and Edge cases; S55-023-Q3 removed from Open questions.
 15. **S57-PO-8** (2026-11-14): clients add measurements and edit their own manual entries; trainers correct everything (FR-012, FR-013, SC-006). Recorded verbatim below.
 16. **S57-PO-10** (2026-11-14): 023 check-in reminders reuse the spec 022 client inbox (FR-006, FR-036). Recorded verbatim below.
-17. **S57-PO-12** (2026-11-15): approved F23 measurement copy; the public Top 5 belongs inside Progress (spec 024). Recorded verbatim below.
+17. **S57-PO-13** (2026-11-15): approves the remaining reviewed F23 copy, changes `checkin.config.saved` AR, and keeps the approved duplicate-measurement message as final. Recorded verbatim below.
+18. **S57-PO-12** (2026-11-15): approved F23 measurement copy; the public Top 5 belongs inside Progress (spec 024). Recorded verbatim below.
 
 ### Open questions for the PO
 
@@ -224,7 +225,7 @@ None. All PO questions for this spec are resolved (S54-023-Q1, S54-023-Q2 by S55
 
 ## Copy
 
-Rows in `copy-proposal.md` marked APPROVED are approved copy (S55-PO-10, amended by S57-PO-12); rows marked PROPOSED remain pending PO approval.
+All rows in `copy-proposal.md` are approved copy (S55-PO-10, amended by S57-PO-12 and S57-PO-13).
 
 ### S56-PO-4 - 2026-11-14
 
@@ -256,3 +257,25 @@ F23 measurement copy approved by S57-PO-12:
 | No measurements recorded | لسه مفيش قياسات متسجلة |
 
 Applied to: copy-proposal.md (approved rows), Dependencies (Top 5 placement inside Progress, owned by spec 024).
+
+### S57-PO-13 - 2026-11-15
+
+PO S57-PO-13 (2026-11-15), copy approval: "Approve the reviewed EN/Arabic UI copy for F22/F23/F24, with these changes: Check-in saved: "اتحدد فورم المتابعة الأسبوعية." Preserve the previously approved duplicate-measurement message. ... Approve the remaining reviewed Measurement, Check-in, Leaderboard, Account Settings and Goals copy. Finish all independent tasks and tests in #108–#110. Don't implement blocked dependencies or change F17/F18/F19-owned code."
+
+F23 copy approved by S57-PO-13, as proposed on 2026-11-14 except `checkin.config.saved` AR:
+
+| Key                          | EN                                                               | AR                                                                     |
+| ---------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `progress.measurement.value` | Value                                                            | القيمة                                                                 |
+| `progress.measurement.date`  | Date                                                             | التاريخ                                                                |
+| `progress.measurement.save`  | Save measurement                                                 | احفظ القياس                                                            |
+| `checkin.config.title`       | Weekly check-in form                                             | فورم المتابعة الأسبوعية                                                |
+| `checkin.config.select`      | Choose the weekly check-in form                                  | اختار فورم المتابعة الأسبوعية                                          |
+| `checkin.config.save`        | Use this form                                                    | استخدم الفورم ده                                                       |
+| `checkin.config.saved`       | Weekly check-in form saved.                                      | اتحدد فورم المتابعة الأسبوعية.                                         |
+| `checkin.config.invalid`     | This form needs the workout and diet adherence questions (0–10). | الفورم ده لازم يكون فيه سؤالين الالتزام بالتمرين والدايت (من 0 لـ 10). |
+| `checkin.config.conflict`    | Another form is already the weekly check-in.                     | فيه فورم تاني متحدد كمتابعة أسبوعية.                                   |
+
+The previously approved S55-PO-10 `progress.measurement.duplicateSameDay` text is final.
+
+Applied to: copy-proposal.md. No FR, SC or acceptance text changes; blocked dependencies (F18, spec 022 client inbox) are unchanged.
