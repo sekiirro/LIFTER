@@ -624,10 +624,11 @@ export function QuestionFlow({
             <Button
               variant="secondary"
               disabled={locked || !progression.previousQuestionId}
-              onClick={() => (
-                void saveRef.current(),
-                setQuestionId(progression.previousQuestionId ?? undefined)
-              )}
+              onClick={(event) => {
+                event.preventDefault();
+                void saveRef.current();
+                setQuestionId(progression.previousQuestionId ?? undefined);
+              }}
             >
               {messages['forms.previous']}
             </Button>
@@ -635,10 +636,11 @@ export function QuestionFlow({
               <Button
                 type="button"
                 disabled={locked}
-                onClick={() => (
-                  void saveRef.current(),
-                  setQuestionId(progression.nextQuestionId ?? undefined)
-                )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void saveRef.current();
+                  setQuestionId(progression.nextQuestionId ?? undefined);
+                }}
               >
                 {messages['forms.next']}
               </Button>

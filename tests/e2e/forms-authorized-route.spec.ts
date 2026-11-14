@@ -527,6 +527,7 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
         const submitButton = page.getByRole('button', {
           name: getMessages(locale)['forms.submit'],
         });
+        await expect(submitButton).toBeEnabled();
         const submittedResponse = page.waitForResponse(
           (response) =>
             response.url().endsWith('/submit') &&
