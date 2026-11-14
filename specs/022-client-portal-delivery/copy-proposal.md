@@ -1,38 +1,42 @@
 # Client Portal Delivery — Copy Proposal
 
-**Status: PROPOSED — PENDING PO APPROVAL**
+**Status: APPROVED — S55-PO-10 (2026-11-14)**
 
-Every string below is a proposal. No proposed string is approved for implementation. Existing F15 event copy and any already-approved F19 expiry copy are reused under their existing approvals and are not duplicated here.
+Approved strings source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-10-approved-copy.md` (SHA-256 `1636510f8578e681db88a51b4f69b9ab4c5732f22150d6c5409eb6b52b4d3858`). Matched rows carry approved English/Arabic byte-for-byte; unmatched rows remain proposed and pending PO approval.
 
-| Key                                             | EN professional                                                             | Egyptian colloquial Arabic                           | Status                         |
-| ----------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------ |
-| `client.portal.nav`                             | Client Portal                                                               | بوابة العميل                                         | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.title`                           | Your plans                                                                  | خططك                                                 | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.deliveredPlans`                  | Delivered plans                                                             | الخطط اللي اتبعتتلك                                  | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.workout`                         | Workout plan                                                                | خطة التمرين                                          | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.nutrition`                       | Nutrition plan                                                              | خطة الأكل                                            | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.subscriptionStatus`              | Subscription status                                                         | حالة اشتراكك                                         | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.subscriptionEndDate`             | Subscription ends                                                           | اشتراكك بينتهي يوم                                   | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.emptyPlans`                      | No plans have been delivered yet.                                           | لسه ما اتبعتلكش خطط.                                 | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.restricted`                      | Plans are unavailable while your subscription does not include plan access. | مش هتقدر تفتح خططك دلوقتي عشان اشتراكك مش شاملها.    | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.viewPlan`                        | View plan                                                                   | افتح الخطة                                           | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.revision`                        | Published revision                                                          | النسخة المنشورة                                      | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.exportPdf`                       | Download PDF                                                                | نزّل PDF                                             | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.exportExcel`                     | Download Excel                                                              | نزّل Excel                                           | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.exportSuccess`                   | Your plan export is ready.                                                  | ملف خطتك بقى جاهز.                                   | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.exportUnavailable`               | This plan cannot be exported right now.                                     | مش هينفع تنزّل الخطة دي دلوقتي.                      | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.notice.workoutDelivered`         | Your workout plan is ready to view.                                         | خطة التمرين بتاعتك جاهزة، تقدر تشوفها دلوقتي.        | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.notice.nutritionDelivered`       | Your nutrition plan is ready to view.                                       | خطة الأكل بتاعتك جاهزة، تقدر تشوفها دلوقتي.          | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.notice.workoutAndActivated`      | Your workout plan is ready, and your subscription is now active.            | خطة التمرين بتاعتك جاهزة، واشتراكك بقى شغال دلوقتي.  | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.notice.nutritionAndActivated`    | Your nutrition plan is ready, and your subscription is now active.          | خطة الأكل بتاعتك جاهزة، واشتراكك بقى شغال دلوقتي.    | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.inbox.markRead`                  | Mark as read                                                                | علّمها إنها اتقرت                                    | PROPOSED — PENDING PO APPROVAL |
-| `client.portal.inbox.empty`                     | You are all caught up.                                                      | مفيش إشعارات جديدة.                                  | PROPOSED — PENDING PO APPROVAL |
-| `staff.clientDirectory.title`                   | Clients                                                                     | العملاء                                              | PROPOSED — PENDING PO APPROVAL |
-| `staff.clientDirectory.search`                  | Search clients                                                              | دوّر على عميل                                        | PROPOSED — PENDING PO APPROVAL |
-| `staff.clientDirectory.searchPlaceholder`       | Search by name, email, phone or client code                                 | دوّر بالاسم أو الإيميل أو رقم التليفون أو كود العميل | PROPOSED — PENDING PO APPROVAL |
-| `staff.clientDirectory.filters`                 | Filters                                                                     | فلترة                                                | PROPOSED — PENDING PO APPROVAL |
-| `staff.clientDirectory.newCheckIns`             | New check-ins                                                               | في استمارات متابعة جديدة                             | PROPOSED — PENDING PO APPROVAL |
-| `staff.clientDirectory.pendingFoodReplacements` | Pending food replacements                                                   | طلبات تبديل أكل لسه مستنية                           | PROPOSED — PENDING PO APPROVAL |
-| `staff.clientDirectory.plansWaitingForDelivery` | Plans waiting for delivery                                                  | خطط مستنية تتبعت                                     | PROPOSED — PENDING PO APPROVAL |
+Every string below is a proposal or approved copy. Existing F15 event copy and any already-approved F19 expiry copy are reused under their existing approvals and are not duplicated here.
+
+| Key                                             | EN professional                                                             | Egyptian colloquial Arabic                           | Status                            |
+| ----------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------- |
+| `client.portal.nav`                             | Client Portal                                                               | صفحتي                                                | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.title`                           | Your plans                                                                  | خططك                                                 | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.deliveredPlans`                  | Delivered plans                                                             | الخطط اللي وصلتك                                     | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.workout`                         | Workout plan                                                                | خطة التمرين                                          | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.nutrition`                       | Nutrition plan                                                              | خطة الأكل                                            | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.subscriptionStatus`              | Subscription status                                                         | حالة الاشتراك                                        | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.subscriptionEndDate`             | Subscription ends                                                           | ميعاد انتهاء الاشتراك                                | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.emptyPlans`                      | No plans have been delivered yet.                                           | لسه ماوصلكش أي خطط.                                  | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.restricted`                      | Plans are unavailable while your subscription does not include plan access. | مش هتقدر تفتح خططك دلوقتي عشان اشتراكك مش شاملها.    | PROPOSED — PENDING PO APPROVAL    |
+| `client.portal.plansUnavailableBySubscription`  | Plans are currently unavailable due to your subscription status.            | مش هتقدر تفتح خططك دلوقتي بسبب حالة اشتراكك.         | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.viewPlan`                        | View plan                                                                   | افتح الخطة                                           | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.revision`                        | Published revision                                                          | النسخة المنشورة                                      | PROPOSED — PENDING PO APPROVAL    |
+| `client.portal.exportPdf`                       | Download PDF                                                                | نزّل PDF                                             | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.exportExcel`                     | Download Excel                                                              | نزّل Excel                                           | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.exportSuccess`                   | Your plan export is ready.                                                  | ملف خطتك جاهز للتنزيل.                               | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.exportUnavailable`               | This plan cannot be exported right now.                                     | مش متاح تنزّل الخطة دي دلوقتي.                       | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.notice.workoutDelivered`         | Your workout plan is ready to view.                                         | خطة تمرينك جاهزة، تقدر تفتحها دلوقتي.                | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.notice.nutritionDelivered`       | Your nutrition plan is ready to view.                                       | خطة أكلك جاهزة، تقدر تفتحها دلوقتي.                  | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.notice.subscriptionActivated`    | Your subscription is now active.                                            | اشتراكك اتفعّل.                                      | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.notice.workoutAndActivated`      | Your workout plan is ready, and your subscription is now active.            | خطة تمرينك جاهزة، واشتراكك اتفعّل.                   | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.notice.nutritionAndActivated`    | Your nutrition plan is ready, and your subscription is now active.          | خطة أكلك جاهزة، واشتراكك اتفعّل.                     | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.inbox.markRead`                  | Mark as read                                                                | اعتبره مقروء                                         | APPROVED — S55-PO-10 (2026-11-14) |
+| `client.portal.inbox.empty`                     | You are all caught up.                                                      | مفيش إشعارات جديدة.                                  | APPROVED — S55-PO-10 (2026-11-14) |
+| `staff.clientDirectory.title`                   | Clients                                                                     | العملاء                                              | PROPOSED — PENDING PO APPROVAL    |
+| `staff.clientDirectory.search`                  | Search clients                                                              | دوّر على عميل                                        | PROPOSED — PENDING PO APPROVAL    |
+| `staff.clientDirectory.searchPlaceholder`       | Search by name, email, phone or client code                                 | دوّر بالاسم أو الإيميل أو رقم التليفون أو كود العميل | PROPOSED — PENDING PO APPROVAL    |
+| `staff.clientDirectory.filters`                 | Filters                                                                     | فلترة                                                | PROPOSED — PENDING PO APPROVAL    |
+| `staff.clientDirectory.newCheckIns`             | New check-ins                                                               | في استمارات متابعة جديدة                             | PROPOSED — PENDING PO APPROVAL    |
+| `staff.clientDirectory.pendingFoodReplacements` | Pending food replacements                                                   | طلبات تبديل أكل لسه مستنية                           | PROPOSED — PENDING PO APPROVAL    |
+| `staff.clientDirectory.plansWaitingForDelivery` | Plans waiting for delivery                                                  | خطط مستنية تتبعت                                     | PROPOSED — PENDING PO APPROVAL    |
 
 Directory search and filter behavior follows the resolved S55-022-Q6 decision and uses existing account/approval status, subscription status and responsible-trainer assignment state. No new statuses or assignment rules are introduced.

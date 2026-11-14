@@ -32,4 +32,4 @@
 ## Notes
 
 - S55-PO-3 and S55-PO-7 decisions are recorded in Clarifications. Directory search and filter behavior is defined using existing F11/F13/F20 contracts; Plan, Tasks and Analyze may proceed.
-- Copy proposals in `../copy-proposal.md` are all marked `PROPOSED — PENDING PO APPROVAL`.
+- Copy proposals in `../copy-proposal.md`: matched rows are `APPROVED — S55-PO-10 (2026-11-14)`; unmatched rows remain `PROPOSED — PENDING PO APPROVAL`.
