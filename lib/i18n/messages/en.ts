@@ -735,4 +735,20 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.intake.n11.feedback.5_6': 'Moderate hunger',
   'forms.intake.n11.feedback.7_8': 'High hunger',
   'forms.intake.n11.feedback.9_10': 'Very strong hunger',
+  // F22 client portal + staff directory: approved S55-PO-10/S55-PO-11 (specs/022-client-portal-delivery/copy-proposal.md).
+  'client.portal.nav': 'Client Portal',
+  'client.portal.title': 'Your plans',
+  'client.portal.deliveredPlans': 'Delivered plans',
+  'client.portal.workout': 'Workout plan',
+  'client.portal.nutrition': 'Nutrition plan',
+  'client.portal.subscriptionEndDate': 'Subscription ends',
+  'client.portal.emptyPlans': 'No plans have been delivered yet.',
+  'client.portal.restricted':
+    'Plans are currently unavailable due to your subscription status.',
+  'client.portal.viewPlan': 'View plan',
+  'client.portal.revision': 'Published revision',
+  'staff.clientDirectory.title': 'Clients',
+  'staff.clientDirectory.search': 'Search clients',
+  'staff.clientDirectory.filters': 'Filters',
+  'staff.clientDirectory.plansWaitingForDelivery': 'Plans waiting for delivery',
 };
