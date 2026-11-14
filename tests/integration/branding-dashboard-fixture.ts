@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { admin, anonClient, checked, sql } from './harness';
+import { testStaffDisplayName } from '../helpers/staff-display-name';
 
 async function createWorkspaceOwner(label: string, workspaceCount: number) {
   const email = `f14-dashboard-${label}-${randomUUID()}@example.test`;
@@ -16,6 +17,7 @@ async function createWorkspaceOwner(label: string, workspaceCount: number) {
     await admin().from('staff_profiles').insert({
       user_id: userId,
       role: 'workspace_owner',
+      display_name: testStaffDisplayName(),
     }),
   );
   const workspaces = [];

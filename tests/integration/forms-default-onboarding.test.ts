@@ -33,8 +33,8 @@ async function workspace(tx: postgres.TransactionSql) {
   const workspaceId = randomUUID();
   await tx`insert into auth.users(id,email) values
     (${actor},${`f15-default-${actor}@example.test`})`;
-  await tx`insert into public.staff_profiles(user_id,role)
-    values(${actor},'workspace_owner')`;
+  await tx`insert into public.staff_profiles(user_id,role,display_name)
+    values(${actor},'workspace_owner','Workspace Owner')`;
   await tx`insert into public.workspaces(id,name,slug,created_by)
     values(${workspaceId},'Default form fixture',${`f15-default-${workspaceId}`},${actor})`;
   await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
@@ -49,8 +49,8 @@ it('returns forbidden when an authorized trainer cannot select the default form'
       const trainer = randomUUID();
       await tx`insert into auth.users(id,email) values
         (${trainer},${`f15-default-trainer-${trainer}@example.test`})`;
-      await tx`insert into public.staff_profiles(user_id,role)
-        values(${trainer},'trainer')`;
+      await tx`insert into public.staff_profiles(user_id,role,display_name)
+        values(${trainer},'trainer','Trainer')`;
       await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
         values(${fixture.workspaceId},${trainer},${fixture.actor})`;
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: trainer, role: 'authenticated' })},true)`;
@@ -445,8 +445,8 @@ describe('T006/T009 persisted onboarding default', () => {
         const platformOwner = randomUUID();
         await tx`insert into auth.users(id,email) values
           (${platformOwner},${`f15-default-po-${platformOwner}@example.test`})`;
-        await tx`insert into public.staff_profiles(user_id,role)
-          values(${platformOwner},'platform_owner')`;
+        await tx`insert into public.staff_profiles(user_id,role,display_name)
+          values(${platformOwner},'platform_owner','Platform Owner')`;
         await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
           values(${fixture.workspaceId},${platformOwner},${fixture.actor})`;
         const replacement = randomUUID();

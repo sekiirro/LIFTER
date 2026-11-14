@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
 import type { Role } from '../../lib/auth/capabilities';
+import { testStaffDisplayName } from '../helpers/staff-display-name';
 import {
   assertLocalStackTarget,
   loadSelectedStackEnv,
@@ -75,7 +76,11 @@ export async function createStaff(role: Role | null, label: string) {
   if (!user) throw new Error('Staff fixture auth user missing');
   if (role !== null)
     checked(
-      await admin().from('staff_profiles').insert({ user_id: user.id, role }),
+      await admin().from('staff_profiles').insert({
+        user_id: user.id,
+        role,
+        display_name: testStaffDisplayName(),
+      }),
     );
   const client = anonClient();
   const signedIn = await client.auth.signInWithPassword({ email, password });

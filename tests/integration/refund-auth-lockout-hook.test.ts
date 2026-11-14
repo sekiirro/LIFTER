@@ -154,6 +154,7 @@ it('does not change staff sign-in and restricts hook execution to supabase_auth_
   const profile = await admin().from('staff_profiles').insert({
     user_id: created.data.user!.id,
     role: 'platform_owner',
+    display_name: 'Platform Owner',
   });
   expect(profile.error).toBeNull();
   const signed = await anonClient().auth.signInWithPassword({
