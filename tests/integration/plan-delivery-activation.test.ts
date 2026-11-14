@@ -179,4 +179,48 @@ describe('F22 first-plan delivery and activation (T007)', () => {
       units: 1,
     });
   });
+
+  it('PO override gives an eligible new client its one unit; later deliveries add none (US1 #4, S57-PO-11)', async () => {
+    const client = await p.makeClient({ activate: false, label: 'override' });
+    const overridden = await p.fixture.po.client.rpc(
+      'override_activate_subscription',
+      {
+        p_workspace_id: p.fixture.wsA.id,
+        p_subscription_id: client.subscriptionId,
+        p_recipient_trainer_user_id: p.fixture.trainerA.userId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(overridden.error).toBeNull();
+    expect(overridden.data).toMatchObject({
+      status: 'ok',
+      activation_source: 'po_override',
+    });
+    expect(await counts(client)).toEqual({
+      deliveries: 0,
+      activations: 1,
+      units: 1,
+    });
+    // The portal reflects the override activation on the next read.
+    const overview = await clientRead(p.db, client.authUserId, 'overview');
+    expect(overview).toMatchObject({
+      status: 'ok',
+      subscription: { status: 'active' },
+      plans: [],
+    });
+    for (const kind of ['workout', 'nutrition'] as const) {
+      const plan = await p.createDraft(client.clientId, kind, `F22 o ${kind}`);
+      expect(
+        await readyAndPublishPlan(
+          p.fixture.trainerA.client,
+          publishRequest(plan),
+        ),
+      ).toMatchObject({ status: 'ok' });
+    }
+    expect(await counts(client)).toEqual({
+      deliveries: 2,
+      activations: 1,
+      units: 1,
+    });
+  });
 });

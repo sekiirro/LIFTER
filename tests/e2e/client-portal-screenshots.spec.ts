@@ -194,6 +194,9 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
       await expect(
         page.getByText(m['client.portal.notice.workoutDelivered']),
       ).toBeVisible();
+      await expect(
+        page.getByTestId('client-portal-subscription-status'),
+      ).toHaveText(m['client.portal.subscriptionStatus.active']);
     });
     await capture(
       page,
@@ -213,8 +216,11 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
   test('client restricted state before activation', async ({ page }) => {
     test.skip(!local, 'Requires the selected local Supabase stack.');
     await signIn(page, awaitingClient);
-    await capture(page, '/plans', 'plans-restricted', async () => {
+    await capture(page, '/plans', 'plans-restricted', async (m) => {
       await expect(page.getByTestId('client-portal-restricted')).toBeVisible();
+      await expect(
+        page.getByTestId('client-portal-subscription-status'),
+      ).toHaveText(m['client.portal.subscriptionStatus.awaitingActivation']);
       await expect(page.getByTestId('client-portal-plans')).toHaveCount(0);
       await expect(page.getByTestId('client-notices')).toHaveCount(0);
     });
@@ -234,6 +240,15 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
         await expect(
           page.getByTestId('client-directory-results').locator('li'),
         ).toHaveCount(2);
+        await expect(
+          page.getByTestId('directory-subscription-status'),
+        ).toHaveText([
+          `${m['client.portal.subscriptionStatus']}: ${m['client.portal.subscriptionStatus.active']}`,
+          `${m['client.portal.subscriptionStatus']}: ${m['client.portal.subscriptionStatus.awaitingActivation']}`,
+        ]);
+        await expect(
+          page.getByLabel(m['client.portal.subscriptionStatus']),
+        ).toBeVisible();
       },
     );
   });
