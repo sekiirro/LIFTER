@@ -5,8 +5,10 @@
 }
 .form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   justify-items: start;
+  min-inline-size: 0;
   max-inline-size: 24rem;
 }
 .reference {

@@ -333,3 +333,40 @@ describe('T029 unavailable state', () => {
     expect(html).toContain(ar['states.retry']);
   });
 });
+
+describe('T030 mobile layout guard (no horizontal overflow at 390px)', () => {
+  it('lets leaderboard content shrink below its longest item', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const css = readFileSync(
+      resolve(process.cwd(), 'components/leaderboard/leaderboard.module.css'),
+      'utf8',
+    );
+    const rule = (selector: string) =>
+      css.slice(
+        css.indexOf(`${selector} {`),
+        css.indexOf('}', css.indexOf(`${selector} {`)),
+      );
+    expect(rule('.main')).toContain('grid-template-columns: minmax(0, 1fr)');
+    expect(rule('.form')).toContain('min-inline-size: 0');
+    expect(rule('.picker select')).toContain('max-inline-size: 100%');
+  });
+
+  it('renders the workspace picker as a design-system field', async () => {
+    const { WorkspacePicker } =
+      await import('../../app/(app)/workspace-leaderboard/WorkspacePicker');
+    const html = renderToStaticMarkup(
+      createElement(WorkspacePicker, {
+        workspaces: [
+          { id: 'a', name: 'A very long synthetic workspace name '.repeat(4) },
+          { id: 'b', name: 'B' },
+        ],
+        selectedId: 'a',
+        label: 'Workspace',
+        submitLabel: 'Select',
+      }),
+    );
+    expect(html).toMatch(/<div class="[^"]*picker[^"]*">/u);
+    expect(html).toMatch(/<select[^>]*class="[^"]*input[^"]*"/u);
+  });
+});

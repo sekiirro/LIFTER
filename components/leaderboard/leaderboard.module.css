@@ -1,5 +1,8 @@
 .main {
   display: grid;
+  /* Grid items default to min-content width; minmax(0, 1fr) lets long
+     content (workspace names, usernames) shrink instead of overflowing. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-6);
   max-inline-size: 40rem;
   margin-inline: auto;
@@ -44,6 +47,8 @@
 }
 .form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-inline-size: 0;
   gap: var(--space-3);
   justify-items: start;
 }
@@ -51,4 +56,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+}
+.picker {
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+.picker select {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  text-overflow: ellipsis;
 }
