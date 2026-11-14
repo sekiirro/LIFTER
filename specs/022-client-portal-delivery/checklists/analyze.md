@@ -10,6 +10,7 @@
 - FR-004 encodes S57-PO-9: the plan body uses the F17/F18 shared read-only views, and P4 builds no renderer. T017 and research match.
 - FR-009 encodes S57-PO-10: an F19-owned hook, and a P4 client-recipient extension of the F15 inbox reused by spec 023. Data model (new client notice record), plan storage, contracts, research, T021 and T022 match.
 - A Client navigation reuse boundary records S57-PO-12 "Top 5 belongs inside Progress, not Main Navigation".
+- tasks.md gains a Slice record section for T005 (task status/traceability only; no requirement text).
 - Quickstart scenario 1 no longer describes a dark-by-default flag (removed under S56-PO-4), and quickstart no longer states that no migration is required. The plan now cites Constitution 1.17.0.
 
 ## Specification Analysis Report
