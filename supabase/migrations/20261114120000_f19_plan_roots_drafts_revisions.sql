@@ -197,15 +197,16 @@ declare
   fingerprint bytea;
   prior app_private.plan_operation_keys%rowtype;
 begin
-  if actor is null
-    or p_workspace_id is null
-    or p_client_id is null
+  if actor is null or p_workspace_id is null
+    or not app_private.has_workspace_access(p_workspace_id, 'coaching_work') then
+    raise exception 'not_permitted' using errcode = '42501';
+  end if;
+  if p_client_id is null
     or p_operation_key is null
     or p_plan_kind is null
     or p_plan_kind not in ('workout', 'nutrition')
     or p_content is null
-    or jsonb_typeof(p_content) <> 'object'
-    or not app_private.has_workspace_access(p_workspace_id, 'coaching_work') then
+    or jsonb_typeof(p_content) <> 'object' then
     raise exception 'not_permitted' using errcode = '42501';
   end if;
   perform 1 from public.clients c
@@ -263,14 +264,17 @@ declare
   fingerprint bytea;
   prior app_private.plan_operation_keys%rowtype;
 begin
-  if actor is null or p_plan_id is null or p_expected_draft_version is null
-    or p_expected_draft_version < 1 or p_content is null or p_operation_key is null
-    or jsonb_typeof(p_content) <> 'object' then
-    raise exception 'invalid_input' using errcode = '22023';
+  if actor is null then
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   select * into root from public.plan_roots p where p.id = p_plan_id;
   if not found or not app_private.has_workspace_access(root.workspace_id, 'coaching_work') then
     raise exception 'not_permitted' using errcode = '42501';
+  end if;
+  if p_expected_draft_version is null or p_expected_draft_version < 1
+    or p_content is null or p_operation_key is null
+    or jsonb_typeof(p_content) <> 'object' then
+    raise exception 'invalid_input' using errcode = '22023';
   end if;
 
   fingerprint := extensions.digest(convert_to(jsonb_build_object(
