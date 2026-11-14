@@ -72,7 +72,7 @@ describe('staff display-name normalization', () => {
     const migration = readFileSync(
       resolve(
         process.cwd(),
-        'supabase/migrations/20261114000000_staff_display_names.sql',
+        'supabase/migrations/20261114130000_staff_display_names.sql',
       ),
       'utf8',
     );

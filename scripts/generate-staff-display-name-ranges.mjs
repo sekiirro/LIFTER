@@ -9,7 +9,7 @@ const generatedPath = path.join(
 );
 const migrationPath = path.join(
   root,
-  'supabase/migrations/20261114000000_staff_display_names.sql',
+  'supabase/migrations/20261114130000_staff_display_names.sql',
 );
 const unicodeEscape = String.fromCharCode(92);
 const letterOrMark = new RegExp(
