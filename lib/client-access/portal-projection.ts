@@ -8,6 +8,8 @@
  * content, whatever the transport returned.
  */
 
+import { addCairoDays } from '../time/cairo-calendar';
+
 export type PlanKind = 'workout' | 'nutrition';
 
 /** F13 projected states (lib/subscriptions/entitlement.ts). */
@@ -209,4 +211,13 @@ export function parseRevisionParam(
   if (typeof value !== 'string' || !/^[1-9][0-9]{0,8}$/u.test(value))
     return 'invalid';
   return Number(value);
+}
+
+/**
+ * PO 2026-11-14 (PO-2 "Last covered day"): the portal shows the last covered
+ * Cairo calendar day, i.e. F13's exclusive end boundary minus one day. Display
+ * only: F13 data and every authorization decision keep the exclusive boundary.
+ */
+export function lastCoveredDay(effectiveEndExclusive: string): string {
+  return addCairoDays(effectiveEndExclusive, -1);
 }
