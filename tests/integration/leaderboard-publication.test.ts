@@ -255,4 +255,47 @@ describe('PO-only authorization (FR-028)', () => {
       select pg_get_functiondef('public.decide_leaderboard_candidate(uuid,text)'::regprocedure) as body`;
     expect(definition?.body).toContain(swap);
   });
+
+  it('mutation: removing the PO-only check lets a trainer create and approve (kill evidence, T007/T023)', async () => {
+    const wall = 'if actor is null or not app_private.is_platform_owner() then';
+    const rollback = new Error('rollback PO-wall mutation');
+    const mutantOutcomes: unknown[] = [];
+    try {
+      await db.begin(async (tx) => {
+        for (const signature of [
+          'public.create_leaderboard_candidate(uuid,uuid[],uuid)',
+          'public.decide_leaderboard_candidate(uuid,text)',
+        ]) {
+          const [row] = await tx`
+            select pg_get_functiondef(${signature}::regprocedure) as definition`;
+          const definition = row!.definition as string;
+          const mutated = definition.replace(wall, 'if actor is null then');
+          expect(mutated).not.toBe(definition);
+          await tx.unsafe(mutated);
+        }
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+        const [created] = await tx`
+          select public.create_leaderboard_candidate(${f.wsA.id}, ${[eligible[0]!.clientId]}::uuid[], ${randomUUID()}) as result`;
+        mutantOutcomes.push(created?.result);
+        const [decided] = await tx`
+          select public.decide_leaderboard_candidate(${created?.result.publication_id ?? randomUUID()}, 'approve') as result`;
+        mutantOutcomes.push(decided?.result);
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
+    // Under the mutant the FR-028 invariant (non-PO callers get not_permitted) fails.
+    expect(mutantOutcomes).toHaveLength(2);
+    expect(mutantOutcomes[0]).toMatchObject({ status: 'created' });
+    expect(mutantOutcomes[1]).toEqual({ status: 'approved' });
+    for (const signature of [
+      'public.create_leaderboard_candidate(uuid,uuid[],uuid)',
+      'public.decide_leaderboard_candidate(uuid,text)',
+    ]) {
+      const [definition] = await db`
+        select pg_get_functiondef(${signature}::regprocedure) as body`;
+      expect(definition?.body).toContain(wall);
+    }
+  });
 });
