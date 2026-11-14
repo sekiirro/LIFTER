@@ -55,11 +55,18 @@ async function authUser(label: string): Promise<Credentials & { id: string }> {
 
 async function signIn(page: Page, credentials: Credentials) {
   await page.context().clearCookies();
+  // The app defaults to Arabic without a locale cookie; sign in on the English
+  // form (as client-welcome.spec.ts does). capture() then sets each locale.
+  await page
+    .context()
+    .addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
   await page.goto('/login');
-  await page.getByLabel('Email').fill(credentials.email);
-  await page.getByLabel('Password').fill(credentials.password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/$/u);
+  const m = getMessages('en');
+  await page.getByLabel(m['auth.email']).fill(credentials.email);
+  await page.getByLabel(m['auth.password']).fill(credentials.password);
+  await page.getByRole('button', { name: m['auth.signIn'] }).click();
+  // Leave the login page; the home route may forward a client elsewhere.
+  await expect(page).not.toHaveURL(/\/login(?:[?#]|$)/u);
 }
 
 async function capture(
