@@ -6,6 +6,10 @@
 **Requirements**: 40 FRs, 8 SCs  
 **Tasks**: 35
 
+## S56-PO-4 update
+
+Feature flags are cancelled while LIFTER is not live. The flag-mechanism prerequisite task T001 and completion flag-removal task T035 are marked cancelled; the prerequisite was removed from task ordering and FR-004 traceability. Security, authorization and RLS requirements remain mandatory.
+
 ## Findings
 
 No open CRITICAL, HIGH or MEDIUM findings. S55-024-Q14 is resolved by S55-PO-9 and reflected in FR-022, FR-037, the Clarifications section, the edge cases, the copy proposal, and the task/traceability mappings.
@@ -16,7 +20,7 @@ All 40 functional requirements have at least one task reference (40/40, 100%). A
 
 ## Constitution Alignment
 
-No CRITICAL or HIGH constitution conflicts found. The plan retains workspace isolation and both authorization walls, PO-only approval, privacy allow-lists, reuse of canonical F11 identity, bilingual UI requirements, and the separate server-side default-OFF flag prerequisite. The feature flag is not an authorization or RLS boundary.
+No CRITICAL or HIGH constitution conflicts found. The plan retains workspace isolation and both authorization walls, PO-only approval, privacy allow-lists, reuse of canonical F11 identity, bilingual UI requirements, and PO S56-PO-4 cancellation of the feature-flag prerequisite. Work proceeds without a flag; authorization and RLS remain mandatory.
 
 ## Duplication and Inconsistency
 

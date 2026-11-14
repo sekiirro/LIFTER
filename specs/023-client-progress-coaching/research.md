@@ -13,7 +13,7 @@ Spec-only. Decisions recorded for plan/design; no implementation.
 - **D-07 Timeline scope**: fixed meaningful set only; reuse existing audit retention; no duplicate audit rows. Rationale: BRD-06, BRD-09, F20.
 - **D-08 Trainer notes**: reuse F20 entirely; no new notes FRs. Rationale: S54-PO-11, p5-audit P5-D.
 - **D-09 Plan PDF/Excel exports**: owned by spec 022 / F17 / F18, not this spec. Rationale: S54-PO-12 returned client exports to v1; architect review fix.
-- **D-10 Feature flag**: unfinished slices merge behind server-side default-OFF flag; flag never gates security/authorization/RLS. Rationale: constitution 1.16.0 (S54-PO-14).
+- **D-10 Feature flags**: cancelled while LIFTER is not live (PO S56-PO-4); unfinished work proceeds without a flag and flags are reconsidered before production. Security/authorization/RLS remain mandatory.
 
 ## Alternatives considered
 

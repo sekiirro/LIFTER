@@ -146,23 +146,23 @@
       "optionLabels": [
         {
           "en": "2 days",
-          "ar": ""
+          "ar": "2"
         },
         {
           "en": "3 days",
-          "ar": ""
+          "ar": "3"
         },
         {
           "en": "4 days",
-          "ar": ""
+          "ar": "4"
         },
         {
           "en": "5 days",
-          "ar": ""
+          "ar": "5"
         },
         {
           "en": "6 days",
-          "ar": ""
+          "ar": "6"
         }
       ]
     },
@@ -216,6 +216,27 @@
       "label": {
         "en": "Training split",
         "ar": "عايز نظام تمرين معين؟"
+      }
+    },
+    {
+      "id": "T08.system",
+      "sectionId": "training",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "What training split would you like to follow?",
+        "ar": "إيه نظام التمرين اللي حابب تمشي عليه؟"
+      },
+      "when": {
+        "mode": "all",
+        "conditions": [
+          {
+            "questionId": "T08",
+            "operator": "equals",
+            "value": true
+          }
+        ]
       }
     },
     {
@@ -339,23 +360,23 @@
       "optionLabels": [
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "Before the first meal",
@@ -532,9 +553,18 @@
         "step": 1
       },
       "labels": {
-        "minimum": "مش بجوع تقريبًا",
-        "middle": "جوع متوسط",
-        "maximum": "جوع شديد جدًا"
+        "minimum": {
+          "en": "I barely feel hungry",
+          "ar": "مش بجوع تقريبًا"
+        },
+        "middle": {
+          "en": "Moderate hunger",
+          "ar": "جوع متوسط"
+        },
+        "maximum": {
+          "en": "Very strong hunger",
+          "ar": "جوع شديد جدًا"
+        }
       },
       "feedbackBands": [
         {

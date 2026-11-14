@@ -1133,5 +1133,370 @@
     "key": "forms.yes",
     "ar": "نعم",
     "en": "Yes"
+  },
+  {
+    "key": "intake.B02",
+    "en": "Age",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.B03",
+    "en": "Do you have any chronic conditions?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.B03.details",
+    "en": "Please describe your chronic conditions.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.B04",
+    "en": "What is your current weight?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.B04.unit",
+    "en": "kg",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.B05",
+    "en": "What is your occupation?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T01",
+    "en": "What is your near-term goal?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T02",
+    "en": "Do you have any injuries?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T02.details",
+    "en": "Tell us about the injury.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T03",
+    "en": "How many days a week would you like to train?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T04",
+    "en": "How much time can you set aside for a workout?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T04.less_than_90",
+    "en": "Less than an hour and a half",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T04.at_least_90",
+    "en": "An hour and a half or more",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T05",
+    "en": "Do you play a sport in addition to going to the gym?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T05.sport",
+    "en": "Which sport do you play?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T06",
+    "en": "What do you consider your weak points?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T07",
+    "en": "Which exercises do you like most and dislike most?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T07.liked",
+    "en": "Exercises you like",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T07.disliked",
+    "en": "Exercises you dislike",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.T08.system",
+    "en": "What training split would you like to follow?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01",
+    "en": "What is your goal for your nutrition plan?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.cut.title",
+    "en": "Fat loss",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.cut",
+    "en": "Fat loss at a moderate rate while preserving as much muscle mass as possible.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.cut_fast.title",
+    "en": "Fast fat loss",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.cut_fast",
+    "en": "Faster fat loss, with a higher chance of muscle loss or reduced performance.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.bulk.title",
+    "en": "Muscle gain",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.bulk",
+    "en": "Increase muscle mass while limiting fat gain as much as possible.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.bulk_fast.title",
+    "en": "Fast muscle gain",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.bulk_fast",
+    "en": "Increase body weight and muscle mass faster, with a higher chance of gaining fat.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.recomposition.title",
+    "en": "Body recomposition",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N01.recomposition",
+    "en": "Increase muscle mass while reducing body-fat percentage at the same time.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N02",
+    "en": "What is your height in centimeters?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N02.unit",
+    "en": "cm",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N03",
+    "en": "How active are you and how much do you move during the day?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N04",
+    "en": "Are you allergic to any foods?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N04.details",
+    "en": "List the foods you are allergic to.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N05",
+    "en": "Are you currently taking any medications or supplements?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N05.medications",
+    "en": "List the medications and supplements you take.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N05.supplement_suggestion",
+    "en": "Would you like us to suggest dietary supplements?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N06",
+    "en": "Tell us what a typical day of eating looks like for you.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N09",
+    "en": "Which foods do you like most and dislike most?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N09.liked",
+    "en": "Foods you like",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N09.disliked",
+    "en": "Foods you dislike",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N10",
+    "en": "Would you rather weigh food before or after cooking?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11",
+    "en": "How hungry do you feel, from 0 to 10?",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11.feedback.0_2",
+    "en": "Very little hunger",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11.feedback.3_4",
+    "en": "Mild hunger",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11.feedback.5_6",
+    "en": "Moderate hunger",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11.feedback.7_8",
+    "en": "High hunger",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11.feedback.9_10",
+    "en": "Very strong hunger",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N12",
+    "en": "Choose the body-fat reference that most closely resembles your body shape.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N12.disclaimer",
+    "en": "This percentage is an estimate and is not a substitute for measuring body-fat percentage.",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N03.1",
+    "en": "Sitting for most of the day",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N03.2",
+    "en": "Light movement and walking",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N03.3",
+    "en": "Moderate movement and walking",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N03.4",
+    "en": "A lot of movement or physically demanding work",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N08.low",
+    "en": "Low budget",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N08.medium",
+    "en": "Medium budget",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N08.high",
+    "en": "High budget",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N08.low.foods",
+    "en": "Cottage cheese / plant protein / eggs / baladi bread",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N08.medium.foods",
+    "en": "Eggs / chicken / meat / toast / fish",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N08.high.foods",
+    "en": "Salmon / smoked turkey / steak / ribeye",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N10.before",
+    "en": "Before cooking",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N10.after",
+    "en": "After cooking",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N10.no_preference",
+    "en": "No preference",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11.label.0",
+    "en": "I barely feel hungry",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11.label.5",
+    "en": "Moderate hunger",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N11.label.10",
+    "en": "Very strong hunger",
+    "approvedBy": "S34-PO-6"
+  },
+  {
+    "key": "intake.N07",
+    "en": "How many meals would you like to eat per day?",
+    "approvedBy": "S34-PO-4"
+  },
+  {
+    "key": "intake.N07.2",
+    "en": "2 meals",
+    "approvedBy": "S34-PO-4"
+  },
+  {
+    "key": "intake.N07.3",
+    "en": "3 meals",
+    "approvedBy": "S34-PO-4"
+  },
+  {
+    "key": "intake.N07.4",
+    "en": "4 meals",
+    "approvedBy": "S34-PO-4"
+  },
+  {
+    "key": "intake.N07.5",
+    "en": "5 meals",
+    "approvedBy": "S34-PO-4"
   }
 ]

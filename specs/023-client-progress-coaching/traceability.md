@@ -39,6 +39,6 @@
 | FR-035 | T050                         | SC-010 | UNVERIFIED |
 | FR-036 | T014, T033, T040             | SC-003 | UNVERIFIED |
 | FR-037 | T012, T016                   | SC-011 | UNVERIFIED |
-| FR-038 | T012, T016, T052             | SC-011 | UNVERIFIED |
+| FR-038 | T012, T016                   | SC-011 | UNVERIFIED |
 
-No task is ticked. All PO questions resolved (S54-023-Q1, S54-023-Q2 by S55-PO-3; S55-023-Q3 by S55-PO-5). This spec-only commit is not implementation evidence. SC-001..SC-011 are mapped to the task(s) that implement their primary FR. Feature flag default OFF for unfinished slices per constitution 1.16.0.
+No task is ticked. All PO questions resolved (S54-023-Q1, S54-023-Q2 by S55-PO-3; S55-023-Q3 by S55-PO-5). This spec-only commit is not implementation evidence. SC-001..SC-011 are mapped to the task(s) that implement their primary FR. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.
