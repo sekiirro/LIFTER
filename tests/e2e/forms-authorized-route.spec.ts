@@ -524,11 +524,21 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
           'displayOnly',
           locale === 'en' ? 'About your health data' : 'عن بياناتك الصحية',
         );
-        await page
-          .getByRole('button', {
-            name: getMessages(locale)['forms.submit'],
-          })
-          .click();
+        const submitButton = page.getByRole('button', {
+          name: getMessages(locale)['forms.submit'],
+        });
+        const submittedResponse = page.waitForResponse(
+          (response) =>
+            response.url().endsWith('/submit') &&
+            response.request().method() === 'POST',
+          { timeout: 15_000 },
+        );
+        // Submission disables the button synchronously. Trigger its native
+        // activation, then assert the successful API result and UI state.
+        await submitButton.evaluate((button: HTMLButtonElement) =>
+          button.click(),
+        );
+        expect((await submittedResponse).status()).toBe(200);
         await expect(
           page
             .getByRole('status')
@@ -849,7 +859,7 @@ test('real route supports keyboard progression and presents the same safe not-fo
   expect(saveResponse.status()).toBe(200);
   await page.keyboard.press('Enter');
   await expect(
-    page.getByRole('region', { name: 'Nutrition preferences' }),
+    page.getByRole('region', { name: 'Training experience' }),
   ).toBeVisible();
 
   await page.goto('/forms/13eba9f4-1551-48ae-bfd2-8c21076533b8');
@@ -1197,6 +1207,7 @@ test('submitted answer edits wait for explicit correction and use the latest rev
   await expect(page.getByRole('status')).toHaveText('Draft saved.', {
     timeout: 10_000,
   });
+  await page.getByRole('button', { name: 'Next question' }).click();
   const trainingQuestion = page.getByRole('region', {
     name: 'Training experience',
   });
@@ -1205,6 +1216,7 @@ test('submitted answer edits wait for explicit correction and use the latest rev
   await expect(page.getByRole('status')).toHaveText('Draft saved.', {
     timeout: 10_000,
   });
+  await page.getByRole('button', { name: 'Next question' }).click();
   const nutritionQuestion = page.getByRole('region', {
     name: 'Nutrition preferences',
   });

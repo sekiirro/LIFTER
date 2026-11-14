@@ -32,7 +32,7 @@ it('restores an abandoned committed function mutant from its migration and fails
         identity === 'app_private.ensure_default_onboarding_form(uuid,uuid)',
     )?.migration,
   ).toEqual([
-    '20261113130000_f15_default_n11_slider_reconciliation.sql',
+    '20261114120100_f15_default_n11_slider_reconciliation.sql',
     '20261112021700_f15_default_provisioning_configuration.sql',
   ]);
   for (const item of guardedFunctions) {
