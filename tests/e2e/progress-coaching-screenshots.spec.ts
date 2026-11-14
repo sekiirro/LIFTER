@@ -484,7 +484,7 @@ test.describe.serial('spec 023 progress pages (Frontend Design Gate)', () => {
       await page
         .getByRole('button', { name: messages['checkin.config.save'] })
         .click();
-      await expect(page.getByRole('alert')).toHaveText(
+      await expect(page.locator('main').getByRole('alert')).toHaveText(
         messages['checkin.config.invalid'],
       );
       await page.screenshot({
