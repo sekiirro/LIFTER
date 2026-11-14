@@ -3,6 +3,7 @@ import { getActor } from '../auth/actor';
 import { authorize } from '../auth/authorize';
 import { createSessionClient } from '../supabase/server';
 import { isUuid } from '../client-notes/validation';
+import { parseCorrectionInput } from './correction-input';
 import {
   parseList,
   parseMeasurement,
@@ -108,19 +109,12 @@ export async function readClientSelfProgress(): Promise<ClientProgressResult> {
   };
 }
 
-export async function correctMeasurement(input: {
-  workspaceId: string;
-  clientId: string;
-  measurementId: string;
-  value: number;
-  expectedUpdatedAt: string;
-}): Promise<CorrectionResult> {
-  if (
-    !isUuid(input.measurementId) ||
-    !Number.isFinite(input.value) ||
-    Number.isNaN(Date.parse(input.expectedUpdatedAt))
-  )
-    return { status: 'invalid' };
+/** FR-013 trainer correction; `raw` is untrusted server-action input. */
+export async function correctMeasurement(
+  raw: unknown,
+): Promise<CorrectionResult> {
+  const input = parseCorrectionInput(raw);
+  if (!input) return { status: 'invalid' };
   const session = await staffSession(input);
   if (!session) return { status: 'denied' };
   const result = await session.rpc('correct_progress_measurement', {

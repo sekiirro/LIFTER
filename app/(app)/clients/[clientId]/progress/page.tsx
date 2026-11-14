@@ -1,9 +1,12 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { MeasurementCorrection } from '../../../../../components/progress-coaching/MeasurementCorrection';
 import {
   MeasurementsSection,
   TimelineSection,
+  measurementFieldLabel,
 } from '../../../../../components/progress-coaching/ProgressView';
+import { ToastProvider } from '../../../../../components/ui/Toast';
 import styles from '../../../../../components/progress-coaching/ProgressView.module.css';
 import { getActor } from '../../../../../lib/auth/actor';
 import { roleHasCapability } from '../../../../../lib/auth/capabilities';
@@ -16,6 +19,7 @@ import {
 import { getMessages } from '../../../../../lib/i18n';
 import { readStaffClientProgress } from '../../../../../lib/progress-coaching/service';
 import { createSessionClient } from '../../../../../lib/supabase/server';
+import { correctMeasurementAction } from './actions';
 
 export default async function StaffClientProgressPage({
   params,
@@ -44,19 +48,42 @@ export default async function StaffClientProgressPage({
   const store = await cookies();
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
   const messages = getMessages(locale);
+  // Approved copy only: S55-PO-10 edit label plus approved design-system dialog,
+  // toast and error strings.
+  const correctionLabels = {
+    edit: messages['progress.measurement.edit'],
+    confirm: messages['dialog.confirm'],
+    cancel: messages['dialog.cancel'],
+    saved: messages['toast.success'],
+    failed: messages['states.error.description'],
+  };
   return (
-    <main className={styles.page}>
-      <h1 className={styles.title}>{messages['progress.title']}</h1>
-      <MeasurementsSection
-        measurements={result.measurements}
-        locale={locale}
-        messages={messages}
-      />
-      <TimelineSection
-        events={result.timeline}
-        locale={locale}
-        messages={messages}
-      />
-    </main>
+    <ToastProvider dismissLabel={messages['toast.dismiss']}>
+      <main className={styles.page}>
+        <h1 className={styles.title}>{messages['progress.title']}</h1>
+        <MeasurementsSection
+          measurements={result.measurements}
+          locale={locale}
+          messages={messages}
+          rowAction={(m) => (
+            <MeasurementCorrection
+              workspaceId={target.workspaceId}
+              clientId={target.clientId}
+              measurementId={m.id}
+              value={m.value}
+              updatedAt={m.updatedAt}
+              fieldLabel={measurementFieldLabel(m, locale)}
+              labels={correctionLabels}
+              correct={correctMeasurementAction}
+            />
+          )}
+        />
+        <TimelineSection
+          events={result.timeline}
+          locale={locale}
+          messages={messages}
+        />
+      </main>
+    </ToastProvider>
   );
 }
