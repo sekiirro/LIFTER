@@ -1670,3 +1670,26 @@ Preserve all other approved copy. Update specs, UI strings, and affected tests. 
 ```
 
 Implementation mapping (not PO words): each decision is recorded in the affected spec (specs 022, 023, 024) in implementation PRs #108, #109 and #110. Proposed copy not listed in S57-PO-12 remains pending PO approval.
+
+### S57-PO-13 - PO words, verbatim (2026-11-15)
+
+Source: Claude Code session https://claude.ai/code/session_014udyWnahqjLL8vfwQacqMc.
+
+<!-- prettier-ignore -->
+```text
+Approve the reviewed EN/Arabic UI copy for F22/F23/F24, with these changes:
+
+Check-in saved: "اتحدد فورم المتابعة الأسبوعية."
+
+Preserve the previously approved duplicate-measurement message.
+
+Use separate staff subscription status labels: شغّال، متوقف مؤقتًا، منتهي، مستني التفعيل، لسه ما بدأش، تم رد المبلغ.
+
+F24 monthly approval: "اعتماد ترتيب الشهر" (full ranking, not just Top 5).
+
+Approve the remaining reviewed Measurement, Check-in, Leaderboard, Account Settings and Goals copy.
+
+Finish all independent tasks and tests in #108–#110. Don't implement blocked dependencies or change F17/F18/F19-owned code.
+```
+
+Implementation mapping (not PO words): the proposed strings recorded in the spec copy proposals of #108, #109 and #110 become approved, with the changes above.
