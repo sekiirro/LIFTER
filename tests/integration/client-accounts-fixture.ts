@@ -455,6 +455,7 @@ export async function pendingHttpAccess(
             'record_subscription_upgrade',
             'record_subscription_date_adjustment',
             'close_client',
+            'ready_and_publish_plan',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
