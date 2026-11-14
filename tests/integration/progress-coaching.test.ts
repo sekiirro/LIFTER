@@ -267,18 +267,21 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
       );
 
       // FR-013: a second staff member corrects in place; background audit only.
+      // The expected version is sent as text: postgres.js would serialize a
+      // timestamptz parameter through a JS Date and drop the microseconds, which
+      // the optimistic-concurrency check correctly treats as a stale version.
       const corrected = await asUser(
         tx,
         f.woA.userId,
         (sp) =>
-          sp`select public.correct_progress_measurement(${ws},${measurement!.id},91,${measurement!.updated_at}) as r`,
+          sp`select public.correct_progress_measurement(${ws},${measurement!.id},91,${measurement!.updated_at}::text::timestamptz) as r`,
       );
       expect(corrected[0]!.r).toMatchObject({ status: 'corrected' });
       const stale = await asUser(
         tx,
         f.trainerA.userId,
         (sp) =>
-          sp`select public.correct_progress_measurement(${ws},${measurement!.id},90,${measurement!.updated_at}) as r`,
+          sp`select public.correct_progress_measurement(${ws},${measurement!.id},90,${measurement!.updated_at}::text::timestamptz) as r`,
       );
       expect(stale[0]!.r).toEqual({ status: 'conflict' });
       await denied(
