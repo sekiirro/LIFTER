@@ -83,6 +83,7 @@ export const en: Record<keyof typeof ar, string> = {
   'accountSettings.username.reserved': 'This username is reserved.',
   'accountSettings.username.workspaceTaken':
     'This username is already used in your workspace.',
+  'leaderboard.myRank': 'Your rank this month: {rank} of {total}',
   'leaderboard.publish.rejectAction': 'Reject monthly leaderboard',
   'leaderboard.publish.generateAction': 'Prepare monthly leaderboard',
   'leaderboard.publish.generated':

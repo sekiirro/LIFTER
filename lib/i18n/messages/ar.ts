@@ -80,6 +80,7 @@ export const ar = {
   'accountSettings.username.reserved': 'اليوزرنيم ده محجوز، اختار غيره.',
   'accountSettings.username.workspaceTaken':
     'اليوزرنيم ده مستخدم بالفعل. جرّب واحد تاني.',
+  'leaderboard.myRank': 'ترتيبك الشهر ده: {rank} من {total}',
   'leaderboard.publish.rejectAction': 'رفض ترتيب الشهر',
   'leaderboard.publish.generateAction': 'جهّز ترتيب الشهر',
   'leaderboard.publish.generated': 'ترتيب الشهر جاهز للمراجعة.',

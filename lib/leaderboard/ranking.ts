@@ -11,11 +11,18 @@ export const LEADERBOARD_SIZE = 5;
 export type RankedCandidate = { rank: number; clientId: string };
 
 /**
- * FR-002, FR-019, S55-PO-6 Q12. Every input row is an eligible client scored
- * on current-month data, incumbents included. A past winner (an entry of the
- * currently approved list that is still eligible) keeps a slot until a new
+ * Full monthly ranking (PO 2026-11-14: "Rank ALL eligible clients monthly";
+ * FR-002, FR-019, S55-PO-6 Q12). Every input row is an eligible client
+ * scored on current-month data, incumbents included.
+ *
+ * FR-019 reconciled with a full ranking: the past-winner rule governs the
+ * public Top 5 boundary. A past winner (a client currently shown in the
+ * public Top 5 who is still eligible) keeps a Top 5 slot until a new
  * candidate's current score is strictly higher; equal scores never displace
- * a past winner. Selected clients are then ordered by the full FR-021 order.
+ * a past winner. The selected five are ordered by the full FR-021 order and
+ * take ranks 1-5; every other eligible client follows from rank 6 in FR-021
+ * order. A displaced past winner therefore ranks just below the Top 5 in
+ * score order, never out of the ranking.
  *
  * Only `{ rank, clientId }` leaves this function: scores stay server-side.
  */
@@ -55,7 +62,11 @@ export function rankLeaderboard(
     selected.splice(selected.indexOf(weakestIncumbent), 1, challenger);
   }
 
-  return selected.sort(compareCandidates).map((candidate, index) => ({
+  const top = new Set(selected.map((candidate) => candidate.clientId));
+  return [
+    ...selected.sort(compareCandidates),
+    ...ordered.filter((candidate) => !top.has(candidate.clientId)),
+  ].map((candidate, index) => ({
     rank: index + 1,
     clientId: candidate.clientId,
   }));

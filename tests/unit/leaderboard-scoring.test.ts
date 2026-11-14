@@ -100,21 +100,23 @@ describe('T017 FR-021 tie-breaks', () => {
 });
 
 describe('T020 current-month ranking with incumbents (S55-PO-6 Q12)', () => {
-  it('returns at most five rank/client rows and nothing else (FR-002, FR-024)', () => {
+  it('ranks ALL eligible clients 1..n with rank/client rows only (PO 2026-11-14, FR-024)', () => {
     const ranked = rankLeaderboard(
       ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((id, index) =>
         inputs(id, { normalizedProgress: index / 10 }),
       ),
       [],
     );
-    expect(ranked).toHaveLength(5);
-    expect(ranked.map((row) => row.rank)).toEqual([1, 2, 3, 4, 5]);
+    expect(ranked).toHaveLength(7);
+    expect(ranked.map((row) => row.rank)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(ranked.map((row) => row.clientId)).toEqual([
       'g',
       'f',
       'e',
       'd',
       'c',
+      'b',
+      'a',
     ]);
     for (const row of ranked)
       expect(Object.keys(row).sort()).toEqual(['clientId', 'rank']);
@@ -137,9 +139,14 @@ describe('T020 current-month ranking with incumbents (S55-PO-6 Q12)', () => {
       clientCode: '0000',
     });
     const keep = rankLeaderboard([...winners, equal], incumbents);
-    expect(keep.map((row) => row.clientId).sort()).toEqual(
-      [...incumbents].sort(),
-    );
+    expect(
+      keep
+        .slice(0, 5)
+        .map((row) => row.clientId)
+        .sort(),
+    ).toEqual([...incumbents].sort());
+    // The challenger stays in the full ranking, just below the Top 5.
+    expect(keep[5]).toEqual({ rank: 6, clientId: 'new-equal' });
 
     const higher = inputs('new-higher', { normalizedProgress: 0.9 });
     const weaker = winners.map((row, index) =>
@@ -147,8 +154,10 @@ describe('T020 current-month ranking with incumbents (S55-PO-6 Q12)', () => {
     );
     const replaced = rankLeaderboard([...weaker, higher], incumbents);
     expect(replaced[0]).toEqual({ rank: 1, clientId: 'new-higher' });
-    expect(replaced.map((row) => row.clientId)).not.toContain('w5');
-    expect(replaced).toHaveLength(5);
+    expect(replaced.slice(0, 5).map((row) => row.clientId)).not.toContain('w5');
+    // The displaced past winner is still ranked, first below the Top 5.
+    expect(replaced).toHaveLength(6);
+    expect(replaced[5]).toEqual({ rank: 6, clientId: 'w5' });
   });
 
   it('re-scores incumbents on current-month data and re-orders them', () => {
@@ -163,6 +172,29 @@ describe('T020 current-month ranking with incumbents (S55-PO-6 Q12)', () => {
       { rank: 1, clientId: 'w2' },
       { rank: 2, clientId: 'w1' },
     ]);
+  });
+
+  it('keeps past winners in the Top 5 over higher-ranked tie-breaks below it', () => {
+    // Six equal scores: the five past winners hold ranks 1-5 even though the
+    // challenger would win the FR-021 tie-break (earlier input, smaller code).
+    const incumbents = ['w1', 'w2', 'w3', 'w4', 'w5'];
+    const ranked = rankLeaderboard(
+      [
+        inputs('aaa-challenger', {
+          achievedAt: '2026-11-01T10:00:00.000Z',
+          clientCode: '0000',
+        }),
+        ...incumbents.map((id) => inputs(id)),
+      ],
+      incumbents,
+    );
+    expect(
+      ranked
+        .map((row) => row.clientId)
+        .slice(0, 5)
+        .sort(),
+    ).toEqual(incumbents);
+    expect(ranked.at(-1)).toEqual({ rank: 6, clientId: 'aaa-challenger' });
   });
 
   it('rejects duplicate candidates instead of double-ranking a client', () => {

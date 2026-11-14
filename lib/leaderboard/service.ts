@@ -16,8 +16,10 @@ import {
 import {
   toClientLeaderboardSelf,
   toLeaderboardView,
+  toMyRankView,
   toPendingCandidateView,
   type ClientLeaderboardSelf,
+  type MyRankView,
   type LeaderboardView,
   type PendingCandidateView,
 } from './projection';
@@ -92,6 +94,19 @@ export async function readClientLeaderboardSelf(
 ): Promise<ClientLeaderboardSelf> {
   if (!isClientSession(actor)) return { status: 'not_permitted' };
   return call('client_leaderboard_self', undefined, toClientLeaderboardSelf, {
+    status: 'unavailable',
+  });
+}
+
+/**
+ * Private rank (PO 2026-11-14): the session's own client only. The RPC takes
+ * no client argument, so no caller can ask for another client's rank.
+ */
+export async function readClientMyRank(
+  actor: Actor | null,
+): Promise<MyRankView> {
+  if (!isClientSession(actor)) return { status: 'not_permitted' };
+  return call('client_leaderboard_my_rank', undefined, toMyRankView, {
     status: 'unavailable',
   });
 }

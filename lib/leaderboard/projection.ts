@@ -13,6 +13,14 @@ export const LEADERBOARD_VIEW_FIELDS = [
 
 export type LeaderboardEntryView = { rank: number; username: string };
 
+/** Public Top 5 (client and staff viewers). */
+export const PUBLIC_LEADERBOARD_SIZE = 5;
+/**
+ * PO review of the full ranking (PO 2026-11-14). The database bounds a
+ * candidate at 5000 clients.
+ */
+export const MAX_RANKED_ENTRIES = 5000;
+
 export type LeaderboardView =
   | {
       status: 'available';
@@ -27,14 +35,17 @@ export type LeaderboardView =
 const monthStart = /^\d{4}-(0[1-9]|1[0-2])-01$/u;
 const username = /^[a-z0-9_.]{3,20}$/u;
 
-function entryFrom(value: unknown): LeaderboardEntryView | null {
+function entryFrom(
+  value: unknown,
+  maxRank: number,
+): LeaderboardEntryView | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
   if (
     typeof record.rank !== 'number' ||
     !Number.isInteger(record.rank) ||
     record.rank < 1 ||
-    record.rank > 5 ||
+    record.rank > maxRank ||
     typeof record.username !== 'string' ||
     !username.test(record.username)
   )
@@ -42,7 +53,10 @@ function entryFrom(value: unknown): LeaderboardEntryView | null {
   return { rank: record.rank, username: record.username };
 }
 
-export function toLeaderboardView(value: unknown): LeaderboardView {
+export function toLeaderboardView(
+  value: unknown,
+  maxEntries: number = PUBLIC_LEADERBOARD_SIZE,
+): LeaderboardView {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     return { status: 'unavailable' };
   const record = value as Record<string, unknown>;
@@ -53,12 +67,12 @@ export function toLeaderboardView(value: unknown): LeaderboardView {
     typeof record.period_month !== 'string' ||
     !monthStart.test(record.period_month) ||
     !Array.isArray(record.entries) ||
-    record.entries.length > 5
+    record.entries.length > maxEntries
   )
     return { status: 'unavailable' };
   const entries: LeaderboardEntryView[] = [];
   for (const raw of record.entries) {
-    const entry = entryFrom(raw);
+    const entry = entryFrom(raw, maxEntries);
     if (!entry) return { status: 'unavailable' };
     entries.push(entry);
   }
@@ -84,7 +98,10 @@ export type PendingCandidateView =
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-/** PO review DTO: the same rank/username allow-list plus the decision handle. */
+/**
+ * PO review DTO: the full ranking (PO 2026-11-14) with the same rank/username
+ * allow-list, plus the decision handle.
+ */
 export function toPendingCandidateView(value: unknown): PendingCandidateView {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     return { status: 'unavailable' };
@@ -94,7 +111,10 @@ export function toPendingCandidateView(value: unknown): PendingCandidateView {
   if (record.status !== 'pending' || typeof record.publication_id !== 'string')
     return { status: 'unavailable' };
   if (!uuid.test(record.publication_id)) return { status: 'unavailable' };
-  const view = toLeaderboardView({ ...record, status: 'available' });
+  const view = toLeaderboardView(
+    { ...record, status: 'available' },
+    MAX_RANKED_ENTRIES,
+  );
   if (view.status === 'empty')
     return {
       status: 'pending',
@@ -139,4 +159,40 @@ export function toClientLeaderboardSelf(value: unknown): ClientLeaderboardSelf {
     optedOut: record.opted_out,
     eligible: record.eligible,
   };
+}
+
+/**
+ * Private rank (PO 2026-11-14): the caller's own approved rank and the
+ * participant total of the current approved ranking. Nothing about any other
+ * client is ever part of this shape.
+ */
+export type MyRankView =
+  | { status: 'ranked'; periodMonth: string; rank: number; total: number }
+  | { status: 'none' | 'not_ranked' | 'not_permitted' | 'unavailable' };
+
+export function toMyRankView(value: unknown): MyRankView {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    return { status: 'unavailable' };
+  const record = value as Record<string, unknown>;
+  if (
+    record.status === 'none' ||
+    record.status === 'not_ranked' ||
+    record.status === 'not_permitted'
+  )
+    return { status: record.status };
+  const { rank, total } = record;
+  if (
+    record.status !== 'ranked' ||
+    typeof record.period_month !== 'string' ||
+    !monthStart.test(record.period_month) ||
+    typeof rank !== 'number' ||
+    typeof total !== 'number' ||
+    !Number.isSafeInteger(rank) ||
+    !Number.isSafeInteger(total) ||
+    rank < 1 ||
+    total < rank ||
+    total > MAX_RANKED_ENTRIES
+  )
+    return { status: 'unavailable' };
+  return { status: 'ranked', periodMonth: record.period_month, rank, total };
 }

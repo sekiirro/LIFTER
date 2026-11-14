@@ -203,6 +203,10 @@ describe('T015/T030 approved copy only (FR-038)', () => {
   // the remaining EN strings are PROPOSED. A key moves to the approved table
   // above once copy-proposal.md carries it; until then it must match exactly.
   const pending: Record<string, { en: string; ar: string }> = {
+    'leaderboard.myRank': {
+      en: 'Your rank this month: {rank} of {total}',
+      ar: 'ترتيبك الشهر ده: {rank} من {total}',
+    },
     'leaderboard.publish.rejectAction': {
       en: 'Reject monthly leaderboard',
       ar: 'رفض ترتيب الشهر',
