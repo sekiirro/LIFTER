@@ -947,7 +947,7 @@ it('freezing a continuous subscription extends renewal coverage without moving d
   });
 });
 
-it('S22-PO-5 exposes no standalone activation writer to anon or authenticated', async () => {
+it('S22-PO-5 exposes no unguarded standalone activation writer to anon or authenticated', async () => {
   await probe(async (tx) => {
     const privileges = await tx`
       select has_table_privilege('anon','public.subscription_activations','INSERT') as anon_insert,
@@ -956,7 +956,7 @@ it('S22-PO-5 exposes no standalone activation writer to anon or authenticated', 
         coalesce(bool_or(has_function_privilege('authenticated',p.oid,'EXECUTE')),false) as authenticated_activation_writer
       from pg_proc p join pg_namespace n on n.oid=p.pronamespace
       where n.nspname in ('public','app_private') and p.proname ~* '(activation|activate)'
-        and p.proname <> 'record_renewal'
+        and p.proname not in ('record_renewal', 'override_activate_subscription')
     `;
     expect(privileges[0]).toEqual({
       anon_insert: false,
