@@ -1,6 +1,32 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  // spec 023 client progress coaching (S55-PO-10 approved copy)
+  'progress.title': 'Progress',
+  'progress.measurements.title': 'Measurements',
+  'progress.measurements.empty': 'No measurements recorded yet.',
+  'progress.measurement.edit': 'Edit measurement',
+  'checkin.completed.notGate': 'Check-ins do not block access to your account.',
+  'checkin.adherence.workout.title': 'Workout adherence',
+  'checkin.adherence.workout.question':
+    'On a scale from 0 to 10, how closely did you follow your workout plan this week?',
+  'checkin.adherence.diet.title': 'Diet adherence',
+  'checkin.adherence.diet.question':
+    'On a scale from 0 to 10, how closely did you follow your nutrition plan this week?',
+  'timeline.title': 'Timeline',
+  'timeline.empty': 'No timeline events yet.',
+  'timeline.event.registration': 'Registration',
+  'timeline.event.renewal': 'Renewal',
+  'timeline.event.firstDelivery': 'First plan delivery',
+  'timeline.event.trainerChange': 'Trainer assignment change',
+  'timeline.event.replacementOpen': 'Replacement request opened',
+  'timeline.event.replacementApproved': 'Replacement approved',
+  'timeline.event.replacementRejected': 'Replacement rejected',
+  'timeline.event.replacementStale':
+    'Replacement request closed (food removed)',
+  'timeline.event.freezeApply': 'Freeze applied',
+  'timeline.event.freezeRemove': 'Freeze removed',
+  'timeline.event.closure': 'Closure',
   'catalog.taxonomy.muscle.spinal_erectors': 'Spinal erectors',
   'catalog.taxonomy.muscle.rear_delts': 'Rear delts',
   'catalog.taxonomy.muscle.hamstrings': 'Hamstrings',
