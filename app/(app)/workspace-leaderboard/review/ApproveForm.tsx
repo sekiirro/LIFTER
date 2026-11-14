@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, type ReactNode } from 'react';
 import styles from '../../../../components/leaderboard/leaderboard.module.css';
 import { Alert } from '../../../../components/ui/Alert';
 import { Button } from '../../../../components/ui/Button';
@@ -43,10 +43,16 @@ export function decisionNotice(
  * FR-003/FR-028 PO approval control. The reject control is not rendered:
  * its button label is not approved copy (PO-DECISION-NEEDED); the reject
  * action and its result message already exist.
+ *
+ * The page renders this component whether or not a candidate is pending, so
+ * the decision confirmation survives the revalidated re-render in which the
+ * candidate is no longer pending. `children` is the server-rendered list.
  */
 export function ApproveForm({
   action,
   publicationId,
+  children,
+  empty,
   label,
   approvedMessage,
   rejectedMessage,
@@ -56,7 +62,10 @@ export function ApproveForm({
     previous: DecisionActionState,
     formData: FormData,
   ) => Promise<DecisionActionState>;
-  publicationId: string;
+  /** `null` when no candidate is pending. */
+  publicationId: string | null;
+  children?: ReactNode;
+  empty: ReactNode;
   label: string;
   approvedMessage: string;
   rejectedMessage: string;
@@ -71,13 +80,17 @@ export function ApproveForm({
     failed: failedMessage,
   });
   if (notice?.done) return <Alert tone={notice.tone} title={notice.title} />;
+  if (!publicationId) return empty;
   return (
-    <form action={formAction} className={styles.form}>
-      <input type="hidden" name="publicationId" value={publicationId} />
-      <Button type="submit" disabled={pending}>
-        {label}
-      </Button>
-      {notice && <Alert tone={notice.tone} title={notice.title} />}
-    </form>
+    <>
+      {children}
+      <form action={formAction} className={styles.form}>
+        <input type="hidden" name="publicationId" value={publicationId} />
+        <Button type="submit" disabled={pending}>
+          {label}
+        </Button>
+        {notice && <Alert tone={notice.tone} title={notice.title} />}
+      </form>
+    </>
   );
 }

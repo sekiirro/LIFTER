@@ -106,12 +106,29 @@ describe('T011/T015 account-settings controls', () => {
       createElement(OptOutForm, {
         action: async () => ({ status: 'opted_out' as const }),
         label: m['leaderboard.optOut.turnOffParticipation'],
+        optedOut: false,
         successMessage: m['leaderboard.optOut.success'],
+        optedOutMessage: m['leaderboard.optedOut'],
         failedMessage: m['states.error.description'],
       }),
     );
     expect(html).toContain('Turn off leaderboard participation');
     expect(html).toContain('type="submit"');
+  });
+
+  it('shows the approved opted-out state instead of the control once opted out', () => {
+    const html = renderToStaticMarkup(
+      createElement(OptOutForm, {
+        action: async () => ({ status: 'idle' as const }),
+        label: m['leaderboard.optOut.turnOffParticipation'],
+        optedOut: true,
+        successMessage: m['leaderboard.optOut.success'],
+        optedOutMessage: m['leaderboard.optedOut'],
+        failedMessage: m['states.error.description'],
+      }),
+    );
+    expect(html).toContain('You turned off leaderboard participation.');
+    expect(html).not.toContain('type="submit"');
   });
 
   it('confirms a saved username and surfaces a non-field failure', () => {
@@ -182,19 +199,43 @@ describe('T026 PO review decision feedback', () => {
     for (const locale of ['en', 'ar'] as const) {
       const copy = getMessages(locale);
       const html = renderToStaticMarkup(
-        createElement(ApproveForm, {
-          action: async () => ({ status: 'idle' as const }),
-          publicationId: '11111111-1111-4111-8111-111111111111',
-          label: copy['leaderboard.publish.action'],
-          approvedMessage: copy['leaderboard.publish.approved'],
-          rejectedMessage: copy['leaderboard.publish.rejected'],
-          failedMessage: copy['states.error.description'],
-        }),
+        createElement(
+          ApproveForm,
+          {
+            action: async () => ({ status: 'idle' as const }),
+            publicationId: '11111111-1111-4111-8111-111111111111',
+            empty: createElement('p', null, 'EMPTY'),
+            label: copy['leaderboard.publish.action'],
+            approvedMessage: copy['leaderboard.publish.approved'],
+            rejectedMessage: copy['leaderboard.publish.rejected'],
+            failedMessage: copy['states.error.description'],
+          },
+          createElement('ol', null, 'LIST'),
+        ),
       );
       expect(html).toContain(copy['leaderboard.publish.action']);
       expect(html.match(/type="submit"/gu)).toHaveLength(1);
       expect(html).not.toMatch(/reject/iu);
+      expect(html).toContain('LIST');
+      expect(html).not.toContain('EMPTY');
     }
+  });
+
+  it('shows the empty state and no control when nothing is pending', () => {
+    const copy = getMessages('en');
+    const html = renderToStaticMarkup(
+      createElement(ApproveForm, {
+        action: async () => ({ status: 'idle' as const }),
+        publicationId: null,
+        empty: createElement('p', null, 'EMPTY'),
+        label: copy['leaderboard.publish.action'],
+        approvedMessage: copy['leaderboard.publish.approved'],
+        rejectedMessage: copy['leaderboard.publish.rejected'],
+        failedMessage: copy['states.error.description'],
+      }),
+    );
+    expect(html).toContain('EMPTY');
+    expect(html).not.toContain('type="submit"');
   });
 });
 

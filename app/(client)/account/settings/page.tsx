@@ -56,19 +56,17 @@ export default async function ClientAccountSettingsPage() {
           {m['leaderboard.optOut.mayAppear']}
         </h2>
         <p>{m['leaderboard.optOut.mayAppearBody']}</p>
-        {self.optedOut ? (
-          <p>{m['leaderboard.optedOut']}</p>
-        ) : (
-          <>
-            {!self.eligible && <p>{m['leaderboard.ineligible']}</p>}
-            <OptOutForm
-              action={optOutAction}
-              label={m['leaderboard.optOut.turnOffParticipation']}
-              successMessage={m['leaderboard.optOut.success']}
-              failedMessage={m['states.error.description']}
-            />
-          </>
+        {!self.optedOut && !self.eligible && (
+          <p>{m['leaderboard.ineligible']}</p>
         )}
+        <OptOutForm
+          action={optOutAction}
+          optedOut={self.optedOut}
+          label={m['leaderboard.optOut.turnOffParticipation']}
+          successMessage={m['leaderboard.optOut.success']}
+          optedOutMessage={m['leaderboard.optedOut']}
+          failedMessage={m['states.error.description']}
+        />
       </Card>
     </main>
   );

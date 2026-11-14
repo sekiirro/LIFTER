@@ -35,6 +35,7 @@ export default async function LeaderboardReviewPage({
   if (pending.status === 'not_permitted') notFound();
   if (pending.status === 'unavailable')
     throw new Error('leaderboard_review_unavailable');
+  const reviewable = pending.status === 'pending' && pending.entries.length > 0;
 
   return (
     <main className={styles.main}>
@@ -45,26 +46,24 @@ export default async function LeaderboardReviewPage({
         label={m['registrationApproval.workspace']}
         submitLabel={m['packages.select']}
       />
-      {pending.status === 'pending' && pending.entries.length > 0 ? (
-        <>
+      <ApproveForm
+        action={approveLeaderboardAction}
+        publicationId={reviewable ? pending.publicationId : null}
+        empty={<EmptyState title={m['leaderboard.empty']} />}
+        label={m['leaderboard.publish.action']}
+        approvedMessage={m['leaderboard.publish.approved']}
+        rejectedMessage={m['leaderboard.publish.rejected']}
+        failedMessage={m['states.error.description']}
+      >
+        {reviewable && (
           <LeaderboardList
             periodMonth={pending.periodMonth}
             entries={pending.entries}
             locale={locale}
             messages={m}
           />
-          <ApproveForm
-            action={approveLeaderboardAction}
-            publicationId={pending.publicationId}
-            label={m['leaderboard.publish.action']}
-            approvedMessage={m['leaderboard.publish.approved']}
-            rejectedMessage={m['leaderboard.publish.rejected']}
-            failedMessage={m['states.error.description']}
-          />
-        </>
-      ) : (
-        <EmptyState title={m['leaderboard.empty']} />
-      )}
+        )}
+      </ApproveForm>
     </main>
   );
 }

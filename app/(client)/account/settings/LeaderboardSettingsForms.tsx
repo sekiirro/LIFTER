@@ -97,18 +97,27 @@ export function optOutFailed(status: OptOutStatus | 'idle'): boolean {
   return status === 'unavailable' || status === 'not_permitted';
 }
 
+/**
+ * Stays mounted before and after the opt-out so the success confirmation
+ * survives the revalidated re-render; a client already opted out on load
+ * sees the approved opted-out state instead of the control.
+ */
 export function OptOutForm({
   action,
+  optedOut,
   label,
   successMessage,
+  optedOutMessage,
   failedMessage,
 }: {
   action: (
     previous: OptOutActionState,
     formData: FormData,
   ) => Promise<OptOutActionState>;
+  optedOut: boolean;
   label: string;
   successMessage: string;
+  optedOutMessage: string;
   failedMessage: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {
@@ -116,6 +125,7 @@ export function OptOutForm({
   } satisfies OptOutActionState);
   if (state.status === 'opted_out' || state.status === 'already_opted_out')
     return <Alert tone="success" title={successMessage} />;
+  if (optedOut) return <p>{optedOutMessage}</p>;
   return (
     <form action={formAction} className={styles.form}>
       <Button type="submit" variant="secondary" disabled={pending}>
