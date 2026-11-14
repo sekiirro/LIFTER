@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { admin, checked, sql } from '../integration/harness';
+import { testStaffDisplayName } from '../helpers/staff-display-name';
 
 const screenshotDir = join(tmpdir(), 'lifter-s26-f15-forms-route-r3');
 const runTag = `f15-route-${randomUUID()}`;
@@ -32,6 +33,7 @@ test.beforeAll(async () => {
     await admin().from('staff_profiles').insert({
       user_id: userId,
       role: 'workspace_owner',
+      display_name: testStaffDisplayName(),
     }),
   );
   const workspace = checked(
@@ -239,6 +241,7 @@ test('anonymous and Sales users receive no production Forms content', async ({
     await admin().from('staff_profiles').insert({
       user_id: created.data.user.id,
       role: 'sales',
+      display_name: testStaffDisplayName(),
     }),
   );
   const origin = test.info().project.use.baseURL;
