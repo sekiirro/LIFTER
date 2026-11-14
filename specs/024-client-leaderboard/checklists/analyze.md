@@ -1,7 +1,7 @@
 ﻿# Specification Analysis: F24 Client Leaderboard
 
 **Date**: 2026-11-15  
-**Run**: full re-run after the S57-PO-1, S57-PO-2, S57-PO-3, S57-PO-4, S57-PO-6, S57-PO-7 and S57-PO-12 decisions changed requirement, acceptance, success-criteria, data-model, contract, plan and task text.  
+**Run**: full re-run after S57-PO-13 (approved copy; monthly approval label "اعتماد ترتيب الشهر" approving the full ranking), following the S57-PO-1, S57-PO-2, S57-PO-3, S57-PO-4, S57-PO-6, S57-PO-7 and S57-PO-12 decisions that changed requirement, acceptance, success-criteria, data-model, contract, plan and task text.  
 **Inputs**: `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`, `research.md`, `traceability.md`, `copy-proposal.md`, `.specify/memory/constitution.md`  
 **Requirements**: 43 FRs, 10 SCs  
 **Tasks**: 40
@@ -15,6 +15,8 @@
 - S57-PO-7 (signup keeps the generic message): FR-022 and the contract.
 - S57-PO-12 (Top 5 inside Progress; private rank for eligible clients only; approved copy): FR-022, FR-027, FR-041, the new FR-042, `copy-proposal.md`, the plan structure and tasks T029 and T040.
 
+- S57-PO-13 (approved copy): `copy-proposal.md` now marks every F24 row APPROVED; FR-020, FR-029 and FR-038 are consistent with the Arabic approval label that names the full ranking.
+
 ## Findings
 
 No open CRITICAL, HIGH, MEDIUM or LOW findings.
@@ -23,7 +25,7 @@ No open CRITICAL, HIGH, MEDIUM or LOW findings.
 - The FR-019 past-winner rule is reconciled with the full ranking: past winners are the clients currently shown in the public Top 5, and the rule governs the Top 5 boundary only.
 - The private rank (FR-041) and placement (FR-042) are new requirements; both are mapped to tasks and success criteria. FR-041 states the total-participants reading (all ranked clients, opted-out included) and that ineligible clients see no private rank.
 - The plan route list now matches the implemented routes, including the staff/PO surfaces under `app/(app)/workspace-leaderboard/` (which avoid colliding with the client route) and the Progress placement.
-- Copy: the S57-PO-12 strings are recorded as APPROVED. Earlier proposals that the decision does not change stay marked PROPOSED (awaiting the PO's edits) and are not shipped as approved.
+- Copy: the S57-PO-12 and S57-PO-13 strings are recorded as APPROVED; no F24 string remains proposed. The Arabic monthly approval label names the full ranking, not the Top 5.
 
 ## Coverage Summary
 
@@ -53,4 +55,5 @@ PASS for Plan/Tasks/Analyze after the S57 decisions. Spec consistency passes. Tr
 
 ## History
 
+- 2026-11-15: S57-PO-12 placement and copy; S57-PO-13 approved the remaining reviewed copy. No open findings.
 - 2026-11-14: S55-PO-10 approved copy; S55-PO-11 month label; S56-PO-4 cancelled the feature-flag tasks T001 and T035. No open findings at that time.

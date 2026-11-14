@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * F24 account-settings surface (FR-005, FR-007, FR-022). The page title
- * `accountSettings.title` is proposed copy pending PO approval (2026-11-14).
+ * `accountSettings.title` is approved copy (S57-PO-13, 2026-11-15).
  */
 export default async function ClientAccountSettingsPage() {
   const actor = await requireActor();

@@ -80,7 +80,7 @@ export const ar = {
   'leaderboard.optOut.success':
     'مش هتظهر في ترتيب أفضل 5 طول ما المشاركة مقفولة.',
   'leaderboard.optedOut': 'إنت موقف ظهورك في ترتيب أفضل 5.',
-  'leaderboard.publish.action': 'اعتماد أفضل 5 للشهر',
+  'leaderboard.publish.action': 'اعتماد ترتيب الشهر',
   'leaderboard.publish.approved': 'اتعتمد ترتيب الشهر.',
   'leaderboard.publish.rejected': 'اترفض ترتيب الشهر.',
   'leaderboard.ineligible': 'لسه مش مستوفي شروط الدخول في ترتيب أفضل 5.',

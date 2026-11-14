@@ -2,7 +2,7 @@
 
 **Feature Branch**: `024-client-leaderboard`
 **Spec directory**: `specs/024-client-leaderboard`
-**Status**: Clarify complete (S55-024-Q14; S57-PO-1, S57-PO-2, S57-PO-3, S57-PO-4, S57-PO-6, S57-PO-7, S57-PO-12). Implementation is authorized under the S56/S57 PO instructions; merges still require PO authorization.
+**Status**: Clarify complete (S55-024-Q14; S57-PO-1, S57-PO-2, S57-PO-3, S57-PO-4, S57-PO-6, S57-PO-7, S57-PO-12, S57-PO-13). Implementation is authorized under the S56/S57 PO instructions; merges still require PO authorization.
 **MCQ ID prefix**: `S55-024-Q`
 **Lane**: s55-luna-spec024c (SPEC LANE)
 
@@ -323,3 +323,9 @@ PO (S57-PO-7, F24 signup username messages) selected "Keep generic": "Keep the s
 PO (S57-PO-12, 2026-11-15): "Top 5 belongs inside Progress, not Main Navigation. Every eligible client sees their private full rank; only the public Top 5 is visible to others. Preserve all other approved copy. Update specs, UI strings, and affected tests."
 
 Approved F24 copy (S57-PO-12): "Top 5" / "أفضل 5"; "Your rank" / "ترتيبك"; "Rank {rank} of {total}" / "إنت في المركز {rank} من {total}"; "Username unavailable" / "اليوزرنيم ده مش متاح"; "Turn off participation" / "وقف ظهوري في الترتيب". See FR-022, FR-027, FR-038, FR-041, FR-042 and `copy-proposal.md`.
+
+### S57-PO-13 - 2026-11-15
+
+PO (S57-PO-13, 2026-11-15): "Approve the reviewed EN/Arabic UI copy for F22/F23/F24, with these changes: ... F24 monthly approval: "اعتماد ترتيب الشهر" (full ranking, not just Top 5). Approve the remaining reviewed Measurement, Check-in, Leaderboard, Account Settings and Goals copy. Finish all independent tasks and tests in #108–#110. Don't implement blocked dependencies or change F17/F18/F19-owned code."
+
+The PO's monthly approval action reads "اعتماد ترتيب الشهر" in Arabic (EN stays "Approve monthly leaderboard") and approves the FULL ranking, not only the Top 5 (FR-020, FR-029, FR-038). The remaining reviewed Leaderboard, Account Settings and Goals strings are approved as proposed; see `copy-proposal.md`.

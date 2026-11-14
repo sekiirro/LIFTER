@@ -198,51 +198,7 @@ describe('T015/T030 approved copy only (FR-038)', () => {
       approved.set(key, { en: cells[2]!, ar: cells[3]! });
   }
 
-  // Round-2 keys awaiting PO approval (orchestrator, 2026-11-14). The EN goal
-  // labels come from the PO's own words of 2026-11-14; every Arabic string and
-  // the remaining EN strings are PROPOSED. A key moves to the approved table
-  // above once copy-proposal.md carries it; until then it must match exactly.
-  const pending: Record<string, { en: string; ar: string }> = {
-    'leaderboard.publish.rejectAction': {
-      en: 'Reject monthly leaderboard',
-      ar: 'رفض ترتيب الشهر',
-    },
-    'leaderboard.publish.generateAction': {
-      en: 'Prepare monthly leaderboard',
-      ar: 'جهّز ترتيب الشهر',
-    },
-    'leaderboard.publish.generated': {
-      en: 'The monthly leaderboard is ready for review.',
-      ar: 'ترتيب الشهر جاهز للمراجعة.',
-    },
-    'leaderboard.publish.pendingExists': {
-      en: 'A monthly leaderboard is already waiting for review.',
-      ar: 'فيه ترتيب للشهر مستني المراجعة بالفعل.',
-    },
-    'leaderboard.publish.noEligible': {
-      en: 'No clients qualify yet.',
-      ar: 'لسه مفيش عملاء مؤهلين.',
-    },
-    'accountSettings.title': { en: 'Account settings', ar: 'إعدادات الحساب' },
-    'clientGoals.title': { en: 'Goals', ar: 'الأهداف' },
-    'clientGoals.goalType': { en: 'Goal Type', ar: 'نوع الهدف' },
-    'clientGoals.goalType.fatLoss': { en: 'Fat Loss', ar: 'خسارة دهون' },
-    'clientGoals.goalType.muscleGain': { en: 'Muscle Gain', ar: 'زيادة عضل' },
-    'clientGoals.goalType.maintenance': {
-      en: 'Maintenance',
-      ar: 'تثبيت الوزن',
-    },
-    'clientGoals.notSet': { en: 'Not set', ar: 'لسه متحددش' },
-    'clientGoals.nearTermGoal': { en: 'Near-term goal', ar: 'الهدف القريب' },
-    'clientGoals.nearTermGoalEmpty': {
-      en: 'No answer yet.',
-      ar: 'لسه مفيش إجابة.',
-    },
-    'clientGoals.save': { en: 'Save goal type', ar: 'احفظ نوع الهدف' },
-    'clientGoals.saved': { en: 'Goal type saved.', ar: 'اتحفظ نوع الهدف.' },
-  };
-
-  it('ships every F24 catalog key byte-exact from the approved or pending proposal', () => {
+  it('ships every F24 catalog key byte-exact from the approved proposal', () => {
     const keys = Object.keys(en).filter(
       (key) =>
         key.startsWith('leaderboard.') ||
@@ -252,12 +208,11 @@ describe('T015/T030 approved copy only (FR-038)', () => {
     ) as (keyof typeof en)[];
     expect(keys.length).toBeGreaterThan(0);
     for (const key of keys) {
-      const row = approved.get(key) ?? pending[key];
-      expect(row, `${key} must be approved or listed as pending`).toBeDefined();
+      const row = approved.get(key);
+      expect(row, `${key} must be approved`).toBeDefined();
       expect(en[key]).toBe(row!.en);
       expect(ar[key]).toBe(row!.ar);
     }
-    for (const key of Object.keys(pending)) expect(keys).toContain(key);
   });
 
   it('never discloses scoring mechanics in client-facing leaderboard copy', () => {
