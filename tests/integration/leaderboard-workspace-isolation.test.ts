@@ -100,8 +100,10 @@ describe('two-workspace isolation', () => {
         'active_days',
         'client_id',
         'entitlement_status',
+        'goal_type',
         'has_username',
         'opted_out',
+        'registration_approved_at',
       ]);
     const self = (await clientA.client.rpc('client_leaderboard_self')).data;
     expect(Object.keys(self).sort()).toEqual([

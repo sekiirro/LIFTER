@@ -15,6 +15,7 @@ const tables = [
   'public.leaderboard_entries',
   'public.leaderboard_current_publications',
   'app_private.client_username_changes',
+  'public.client_goal_types',
 ] as const;
 const rpcs = [
   'public.client_update_username(text)',
@@ -26,6 +27,8 @@ const rpcs = [
   'public.create_leaderboard_candidate(uuid,uuid[],uuid)',
   'public.leaderboard_pending_read(uuid)',
   'public.decide_leaderboard_candidate(uuid,text)',
+  'public.set_client_goal_type(uuid,uuid,text)',
+  'public.client_goal_read(uuid,uuid)',
 ] as const;
 const helpers = [
   'app_private.f24_username_issue(text,uuid)',
@@ -76,9 +79,10 @@ describe('catalog: deny-by-default storage', () => {
       from pg_constraint
       where contype='f' and conrelid in (
         'public.client_leaderboard_opt_outs'::regclass, 'public.leaderboard_entries'::regclass,
-        'public.leaderboard_current_publications'::regclass, 'app_private.client_username_changes'::regclass)
+        'public.leaderboard_current_publications'::regclass, 'app_private.client_username_changes'::regclass,
+        'public.client_goal_types'::regclass)
         and pg_get_constraintdef(oid) like '%(workspace_id, %'`;
-    expect(fks.length).toBeGreaterThanOrEqual(5);
+    expect(fks.length).toBeGreaterThanOrEqual(6);
   });
 
   it('exposes only SECURITY DEFINER RPCs with a pinned search_path, to authenticated only', async () => {

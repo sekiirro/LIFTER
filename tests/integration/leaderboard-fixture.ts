@@ -57,6 +57,8 @@ export async function leaderboardClient(
     workspace?: 'A' | 'B';
     activatedDaysAgo?: number | null;
     username?: string | null;
+    /** FR-018 goal type (PO 2026-11-14); null leaves it unset (not eligible). */
+    goalType?: 'fat_loss' | 'muscle_gain' | 'maintenance' | null;
   } = {},
 ): Promise<LeaderboardClient> {
   const workspace = options.workspace ?? 'A';
@@ -108,6 +110,19 @@ export async function leaderboardClient(
     if (result.error || result.data?.status !== 'updated')
       throw new Error(
         `F24 username fixture failed: ${String(result.data?.status ?? 'error')}`,
+      );
+  }
+  const goalType =
+    options.goalType === undefined ? 'maintenance' : options.goalType;
+  if (goalType !== null) {
+    const set = await f.po.client.rpc('set_client_goal_type', {
+      p_workspace_id: ctx.wsA.id,
+      p_client_id: ids.client,
+      p_goal_type: goalType,
+    });
+    if (set.error || set.data?.status !== 'updated')
+      throw new Error(
+        `F24 goal-type fixture failed: ${String(set.data?.status ?? 'error')}`,
       );
   }
   return {

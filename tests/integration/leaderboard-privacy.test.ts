@@ -184,13 +184,15 @@ describe('T027 leaderboard privacy allow-list', () => {
     const audits = await db`
       select action, details from public.audit_events
       where workspace_id=${f.wsA.id}
-        and (action like 'leaderboard.%' or action='client.username_changed')`;
+        and (action like 'leaderboard.%'
+          or action in ('client.username_changed', 'client.goal_type_changed'))`;
     const actions = new Set(audits.map((audit) => audit.action as string));
     for (const action of [
       'leaderboard.publication_approved',
       'leaderboard.publication_rejected',
       'leaderboard.client_opted_out',
       'client.username_changed',
+      'client.goal_type_changed',
     ])
       expect(actions.has(action), action).toBe(true);
     for (const audit of audits) {

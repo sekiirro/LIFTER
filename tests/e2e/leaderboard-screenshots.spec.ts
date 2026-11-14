@@ -170,10 +170,55 @@ test.describe.serial('F24 leaderboard design-gate screenshots', () => {
         page.getByRole('button', { name: m['leaderboard.publish.action'] }),
       ).toBeVisible();
       await expect(
+        page.getByRole('button', {
+          name: m['leaderboard.publish.rejectAction'],
+        }),
+      ).toBeVisible();
+      await expect(
         page.getByText(listed[1]!.username, { exact: true }),
       ).toBeVisible();
       await capture(page, 'po-review', variant);
     });
+  });
+
+  test('staff Client Details Goals section (PO 2026-11-14)', async ({
+    page,
+    context,
+  }) => {
+    test.setTimeout(240_000);
+    await installLeaderboardSession(context, f.trainerA.client);
+    const path = `/clients/${listed[0]!.clientId}`;
+    await forEachVariant(page, async (variant) => {
+      const m = getMessages(variant.locale);
+      await page.goto(path);
+      await expect(
+        page.getByRole('heading', { name: m['clientGoals.title'] }),
+      ).toBeVisible();
+      // Fixture default goal type is Maintenance.
+      await expect(
+        page.getByLabel(m['clientGoals.goalType'], { exact: true }),
+      ).toHaveValue('maintenance');
+      await expect(
+        page.getByText(m['clientGoals.nearTermGoalEmpty'], { exact: true }),
+      ).toBeVisible();
+      await capture(page, 'client-details-goals', variant);
+    });
+    const m = getMessages('en');
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+    ]);
+    await page.goto(path);
+    await page
+      .getByLabel(m['clientGoals.goalType'], { exact: true })
+      .selectOption('fat_loss');
+    await page.getByRole('button', { name: m['clientGoals.save'] }).click();
+    await expect(
+      page.getByRole('status').filter({ hasText: m['clientGoals.saved'] }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByLabel(m['clientGoals.goalType'], { exact: true }),
+    ).toHaveValue('fat_loss');
   });
 
   test.afterAll(async () => {

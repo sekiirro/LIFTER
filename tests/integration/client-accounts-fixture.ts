@@ -468,6 +468,8 @@ export async function pendingHttpAccess(
             'create_leaderboard_candidate',
             'leaderboard_pending_read',
             'decide_leaderboard_candidate',
+            'set_client_goal_type',
+            'client_goal_read',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
