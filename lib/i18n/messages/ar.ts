@@ -32,7 +32,7 @@ export const ar = {
   'progress.measurement.save': 'احفظ القياس',
   'progress.measurement.saved': 'القياس اتسجّل',
   'progress.measurement.duplicateSameDay':
-    'فيه قياس متسجل لليوم ده. عدّله بدل ما تضيف جديد.',
+    'فيه قياس متسجل لليوم ده. عدّل القياس الموجود بدل ما تضيف واحد جديد.',
   'checkin.config.title': 'فورم المتابعة الأسبوعية',
   'checkin.config.select': 'اختار فورم المتابعة الأسبوعية',
   'checkin.config.save': 'استخدم الفورم ده',

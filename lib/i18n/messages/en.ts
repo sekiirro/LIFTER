@@ -34,7 +34,7 @@ export const en: Record<keyof typeof ar, string> = {
   'progress.measurement.save': 'Save measurement',
   'progress.measurement.saved': 'Measurement saved',
   'progress.measurement.duplicateSameDay':
-    'A measurement already exists for this day. Edit it instead.',
+    'A measurement already exists for this day. Edit the existing record instead.',
   'checkin.config.title': 'Weekly check-in form',
   'checkin.config.select': 'Choose the weekly check-in form',
   'checkin.config.save': 'Use this form',

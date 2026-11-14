@@ -18,6 +18,12 @@ const approved: Copy = {
     en: 'No measurements recorded',
     ar: 'لسه مفيش قياسات متسجلة',
   },
+  // S55-PO-10 approved text, preserved per S57-PO-12 ("Preserve all other
+  // approved copy"). The PO's 2026-11-14 replacement proposal stays pending.
+  'progress.measurement.duplicateSameDay': {
+    en: 'A measurement already exists for this day. Edit the existing record instead.',
+    ar: 'فيه قياس متسجل لليوم ده. عدّل القياس الموجود بدل ما تضيف واحد جديد.',
+  },
 };
 
 // Proposed by the PO on 2026-11-14 and NOT yet approved. Pinned so any change
@@ -26,10 +32,6 @@ const proposed: Copy = {
   'progress.measurement.value': { en: 'Value', ar: 'القيمة' },
   'progress.measurement.date': { en: 'Date', ar: 'التاريخ' },
   'progress.measurement.save': { en: 'Save measurement', ar: 'احفظ القياس' },
-  'progress.measurement.duplicateSameDay': {
-    en: 'A measurement already exists for this day. Edit it instead.',
-    ar: 'فيه قياس متسجل لليوم ده. عدّله بدل ما تضيف جديد.',
-  },
   'checkin.config.title': {
     en: 'Weekly check-in form',
     ar: 'فورم المتابعة الأسبوعية',

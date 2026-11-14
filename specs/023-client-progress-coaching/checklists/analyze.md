@@ -1,48 +1,54 @@
 # Analyze: 023 Client Progress Coaching (P5 Progress)
 
-Date: 2026-11-14. Scope: spec-only artifacts for `specs/023-client-progress-coaching/`. This analysis follows the tasks refinement in this pass: spec.md and plan.md requirement text is unchanged; tasks.md was restructured into Setup, Foundational, one phase per user story (US1-US4), and Polish, with test-first ordering, S56-PO-4 cancellation of feature-flag tasks T004 and T052, high-risk markers, and updated traceability.
+Date: 2026-11-15. Scope: `specs/023-client-progress-coaching/`. This full Analyze follows the S57-PO-8, S57-PO-10 and S57-PO-12 spec changes:
+
+- FR-006, FR-012, FR-013, FR-036 and SC-006 were changed;
+- Story 2 gained acceptance scenario 4;
+- the Assumptions, Dependencies and Clarifications register were updated;
+- `copy-proposal.md` gained the approved and proposed rows;
+- the T014, T026 and T027 descriptions were updated in `tasks.md`.
+
+The previous Analyze (2026-11-14) covered the tasks restructuring and the S56-PO-4 flag cancellation.
 
 ## Entry check
 
-- `specs/023-client-progress-coaching/spec.md` has numbered FRs (FR-001..FR-038), measurable SCs (SC-001..SC-011), and Given/When/Then acceptance scenarios for weekly check-ins, measurements, food replacement requests, and client timeline: PASS.
-- PO clarifications recorded: S54-PO-5, S54-PO-9, S54-PO-11, S54-PO-12, S48-PO-4, S55-PO-3 (Q1=A, Q2=A, cross-spec spec 024 Q2), S55-PO-5 (S55-023-Q3 = A, 0-10 integer). All resolved; no open PO questions remain: PASS.
-- `specs/023-client-progress-coaching/plan.md` covers the scope; `tasks.md` has task IDs T001..T054 tagged with FR/SC IDs; migration/RLS/SECURITY DEFINER/audit work marked `[HIGH-RISK: migration/RLS]`: PASS.
-- `specs/023-client-progress-coaching/traceability.md` has a row for every FR in FR-001..FR-038, maps SC-001..SC-011, and claims no ticked task and no implementation evidence: PASS.
+- `spec.md` has numbered FRs (FR-001..FR-038), measurable SCs (SC-001..SC-011), and Given/When/Then acceptance scenarios: PASS.
+- PO clarifications recorded:
+  - S54-PO-5, S54-PO-9, S54-PO-11, S54-PO-12, S48-PO-4;
+  - S55-PO-3 (Q1=A, Q2=A, cross-spec spec 024 Q2), S55-PO-5 (S55-023-Q3 = A);
+  - S56-PO-4;
+  - S57-PO-8, S57-PO-10 and S57-PO-12, each under its own dated heading with the PO words verbatim.
+
+  No open PO question blocks the spec: PASS.
+- `plan.md` covers the scope unchanged. Client edit of own manual entries reuses the US2 measurement store and audit, and reminders reuse the spec 022 client inbox, so no plan design change is needed: PASS.
+- `tasks.md` has T001..T054 tagged with FR/SC IDs; migration/RLS work is marked `[HIGH-RISK: migration/RLS]`: PASS.
+- `traceability.md` maps FR-001..FR-038 and SC-001..SC-011: PASS.
 
 ## Findings
 
 - Open CRITICAL: 0.
 - Open HIGH: 0.
-- Open product decisions: none. S54-023-Q1 and S54-023-Q2 resolved by S55-PO-3; S55-023-Q3 resolved by S55-PO-5. No MCQ remains open.
-- No code, migration, schema, or database changes are part of this pass.
-
-## Tasks refinement applied
-
-- Restructured 13 coarse one-line tasks into Setup (T001-T003), Foundational (T004-T007), US1 (T008-T018), US2 (T019-T029), US3 (T030-T041), US4 (T042-T050), and Polish (T051-T054).
-- Each story phase starts with failing unit, integration, RLS/authorization, and mutation-evidence tests before implementation tasks.
-- Removed agent-roster labels; retained `[HIGH-RISK: migration/RLS]` markers with independent-review and mutation-evidence notes.
-- Marked feature-flag setup task T004 and removal task T052 cancelled; removed T052 from FR-038 traceability.
-- Corrected the Analyze re-run rule: re-run only when FR/SC/requirement text changes; code/test-only rounds do not require re-dating (T053).
-- Updated `traceability.md` to the new task IDs.
+- MEDIUM, resolved in this pass: FR-012 "direct the user to edit the existing record" conflicted with FR-013's trainer-only correction. S57-PO-8 resolves it: clients edit their own manual entries, and trainers correct everything. FR-012, FR-013, SC-006 and Story 2 now agree. Check-in-extracted measurements stay trainer-only, which is consistent with FR-013 "trainers correct everything".
+- LOW, recorded: copy rows marked PROPOSED (client entry value/date/save, the weekly check-in configuration strings, and the 2026-11-14 duplicate-message replacement) await PO approval. The S55-PO-10 approved duplicate text stays in force per S57-PO-12 ("Preserve all other approved copy").
+- Dependency, recorded: check-in reminder delivery (FR-006, FR-036; T010, T014) depends on the spec 022 client inbox (S57-PO-10). Food replacement (US3) still depends on F18 contracts.
 
 ## Cross-reference sweep
 
-- FR-001..FR-038 occur in `spec.md` and are mapped by `tasks.md` and `traceability.md`; SC-001..SC-011 occur in `spec.md` and are referenced by `tasks.md` and `traceability.md`.
-- T001..T054 occur in `tasks.md` and are referenced by `traceability.md` where applicable.
-- S55-PO-3 and S55-PO-5 are recorded in the Clarifications register with verbatim source paths and SHA-256 values.
-- No stale "pending PO" status remains for S54-023-Q1, S54-023-Q2 or S55-023-Q3 in tasks/traceability/analyze.
-- Reuse-not-duplicate preserved with F13/F15/F17/F18/F19/F20/F21 and specs 022/023/024.
-- No invented copy outside `copy-proposal.md`; status stays PROPOSED — PENDING PO APPROVAL.
+- FR-001..FR-038 and SC-001..SC-011 occur in `spec.md` and are referenced by `tasks.md` and `traceability.md`.
+- T001..T054 occur in `tasks.md`.
+- S57-PO-8, S57-PO-10 and S57-PO-12 are recorded verbatim in `spec.md`. The register items they resolve are not marked open anywhere in tasks, traceability or this file.
+- Top 5 placement inside Progress (S57-PO-12) is recorded as a spec 024 dependency. This spec defines no leaderboard scoring (FR-038 unchanged).
+- Reuse-not-duplicate preserved with F13/F15/F17/F18/F19/F20/F21 and specs 022/024.
+- No copy outside `copy-proposal.md`.
 
 ## Constitution check
 
-- Principle I: PASS for spec scope (workspace isolation, two authorization walls, foreign-workspace negative tests).
-- Principle IV: PASS (all FRs trace to BRD/PRD or approved PO decisions; PRD-12 exclusions respected).
-- Principle V: PASS (versioned content; submitted forms remain readable).
-- Principle VII: PASS (health data least-privilege; audit append-only; timeline is curated projection).
-- Principle IX: PASS (idempotent reminders/check-ins/SLA timers).
-- Development workflow: Analyze dated 2026-11-14, after the latest spec/plan/tasks change; zero open CRITICAL/HIGH.
+- Principle I: PASS. A client edit is limited to the client's own manual rows, behind client and database walls, with foreign-client, foreign-workspace, staff-as-client and anon denials.
+- Principle IV: PASS. Every changed FR traces to S57-PO-8, S57-PO-10 or S57-PO-12.
+- Principle VII: PASS. The background audit is append-only for client edits too, with no correction-history UI.
+- Principle IX: PASS. Reminders stay idempotent through the inbox dedupe key.
+- Development workflow: Analyze dated 2026-11-15, after the latest spec/tasks change, with zero open CRITICAL/HIGH findings.
 
 ## Result
 
-Analyze passes for this spec-only change with 0 open CRITICAL/HIGH findings. All PO questions resolved. No product decision is open, and no implementation is authorized by this change. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); work proceeds without a flag and flags are reconsidered before production. Security, authorization and RLS safeguards remain mandatory.
+Analyze passes with 0 open CRITICAL/HIGH findings. Feature flags stay cancelled while LIFTER is not live (PO S56-PO-4). Security, authorization and RLS safeguards remain mandatory.
