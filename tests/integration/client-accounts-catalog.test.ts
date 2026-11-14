@@ -345,6 +345,8 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                           value.status === 'not_permitted') ||
                         (fn.proname === 'ready_and_publish_plan' &&
                           value.status === 'not_permitted') ||
+                        (fn.proname === 'override_activate_subscription' &&
+                          value.status === 'not_permitted') ||
                         (fn.proname === 'read_client_form_draft' &&
                           value.status === 'not_found') ||
                         ([
