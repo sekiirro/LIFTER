@@ -90,8 +90,9 @@ export async function leaderboardClient(
     const activatedDaysAgo =
       options.activatedDaysAgo === undefined ? 20 : options.activatedDaysAgo;
     if (activatedDaysAgo !== null)
-      await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-        values(${ctx.wsA.id},${ids.subscription},clock_timestamp()-make_interval(days=>${activatedDaysAgo}),${randomUUID()})`;
+      // F19 T021: a direct fixture activation is a PO override.
+      await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id,activation_source)
+        values(${ctx.wsA.id},${ids.subscription},clock_timestamp()-make_interval(days=>${activatedDaysAgo}),${randomUUID()},'po_override')`;
   } finally {
     await db.end();
   }

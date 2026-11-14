@@ -65,9 +65,9 @@ describe('F24 spec 023 score-input adapter contract', () => {
         await tx`select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as today`;
       const today = clock!.today as string;
       await tx`select set_config('request.jwt.claims','{}',true)`;
-      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id,activation_source)
         values(${ws},${ids.subscription},
-          ((${today}::date - 7)::timestamp + interval '9 hours') at time zone 'Africa/Cairo',${randomUUID()})`;
+          ((${today}::date - 7)::timestamp + interval '9 hours') at time zone 'Africa/Cairo',${randomUUID()},'po_override')`;
       const terms = `f24-${randomUUID()}`;
       const formId = randomUUID();
       await tx`insert into app_private.terms_policy_versions(version,policy_kind,status) values(${terms},'terms','published')`;
