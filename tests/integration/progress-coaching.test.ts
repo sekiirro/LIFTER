@@ -60,11 +60,22 @@ const checkinDefinition = {
   ],
 };
 
-async function publishedForm(tx: Tx, workspaceId: string, definition: object) {
+// Both forms share one published terms version: publishing a newer terms version
+// makes every older one non-current, and F15 then treats those forms as not found.
+async function currentTerms(tx: Tx) {
   const terms = `f23-${randomUUID()}`;
-  const formId = randomUUID();
   await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
     values(${terms},'terms','published')`;
+  return terms;
+}
+
+async function publishedForm(
+  tx: Tx,
+  workspaceId: string,
+  terms: string,
+  definition: object,
+) {
+  const formId = randomUUID();
   await tx`insert into public.forms(id,workspace_id,name) values(${formId},${workspaceId},'F23 weekly check-in')`;
   await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
     values(${workspaceId},${formId},1,${terms},${tx.json(definition as JSONValue)},'published')`;
@@ -91,8 +102,9 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
           ((${today}::date - 7)::timestamp + interval '9 hours') at time zone 'Africa/Cairo',${randomUUID()})`;
 
       // Configuration: invalid definition, foreign/Sales denial, then success.
-      const badForm = await publishedForm(tx, ws, { questions: [] });
-      const formId = await publishedForm(tx, ws, checkinDefinition);
+      const terms = await currentTerms(tx);
+      const badForm = await publishedForm(tx, ws, terms, { questions: [] });
+      const formId = await publishedForm(tx, ws, terms, checkinDefinition);
       const bad = await asUser(
         tx,
         f.trainerA.userId,
@@ -183,6 +195,16 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
           (sp) =>
             sp`select * from public.progress_weekly_adherence(${ws},${today}::date,${today}::date)`,
         );
+      // A later F15 answer revision (correction) refreshes the stored values.
+      await tx`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
+        values(${ws},${assignmentId},2,${tx.json({ workoutAdherence: 9, dietAdherence: 6, bodyWeight: 92.5 })})`;
+      const refreshed = await asUser(
+        tx,
+        f.trainerA.userId,
+        (sp) =>
+          sp`select "workoutAdherence" from public.progress_weekly_adherence(${ws},${today}::date,${today}::date)`,
+      );
+      expect(refreshed).toEqual([{ workoutAdherence: 9 }]);
       const [readAudit] = await tx`select details from public.audit_events
         where workspace_id=${ws} and action='progress.adherence_read' order by id desc limit 1`;
       expect(readAudit!.details).toEqual({ from: today, to: today, rows: 1 });
@@ -401,13 +423,19 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
         has_function_privilege('authenticated','app_private.f23_weekly_checkin_run(date)','execute') as run,
         has_table_privilege('authenticated','app_private.progress_measurement_corrections','select') as corrections,
         has_table_privilege('authenticated','public.progress_measurements','insert') as insert_measurements,
-        has_table_privilege('authenticated','public.progress_measurements','update') as update_measurements`;
+        has_table_privilege('authenticated','public.progress_measurements','update') as update_measurements,
+        has_table_privilege('authenticated','app_private.progress_checkin_adherence','select') as adherence_store,
+        has_function_privilege('service_role','public.progress_weekly_adherence(uuid,date,date)','execute') as service_adherence,
+        has_function_privilege('service_role','public.progress_measurement_baselines(uuid,date)','execute') as service_baselines`;
       expect(grants).toEqual({
         writer: false,
         run: false,
         corrections: false,
         insert_measurements: false,
         update_measurements: false,
+        adherence_store: false,
+        service_adherence: false,
+        service_baselines: false,
       });
       await denied(
         tx,
