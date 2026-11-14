@@ -27,7 +27,7 @@ describe('exact money', () => {
     ));
   it.each(['0', '-1', '1.1', '9223372036854775808', 'x'])(
     'rejects price %s',
-    (price) => expect(() => formatMinorUnits(price, 'XTS', 'en')).toThrow(),
+    (price) => expect(() => formatMinorUnits(price, 'USD', 'en')).toThrow(),
   );
   it('rejects invalid currency and exact commission', () => {
     expect(() => formatMinorUnits('1', 'xts', 'en')).toThrow();

@@ -20,7 +20,7 @@ const version = (id: string, offerId: string) => ({
   name_ar: 'same-name',
   name_en: 'same-name',
   price_minor: '1200',
-  currency: 'XTS',
+  currency: 'USD',
   duration_days: 90,
   duration_months: 3,
   published_at: '2026-01-01T00:00:00Z',

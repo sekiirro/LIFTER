@@ -32,7 +32,7 @@ it('T009 valid initial graph, exact original reversal and recollection preserve 
       event = randomUUID();
     await tx`set constraints all deferred`;
     await tx`insert into app_private.registration_operations(id,workspace_id,actor_user_id,request_key,operation,client_id,subscription_id,obligation_id,event_id,expected_installment_seq,expected_revision,expected_previous_event_id,canonical_args_hash,result_receipt) values(${operation},${f.wsA.id},${f.po.userId},${randomUUID()},'collect',${ids.client},${ids.subscription},${ids.obligation},${event},1,2,${reversal.id},decode(repeat('ab',32),'hex'),'{}')`;
-    await tx`insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,previous_event_id,kind,amount_minor,currency,commission_minor,collected_on,effective_on,recorded_by,operation_id) values(${event},${f.wsA.id},${ids.subscription},${ids.obligation},1,3,${reversal.id},'collection',1200,'XTS',2,'1900-01-02','1900-01-02',${f.po.userId},${operation})`;
+    await tx`insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,previous_event_id,kind,amount_minor,currency,commission_minor,collected_on,effective_on,recorded_by,operation_id) values(${event},${f.wsA.id},${ids.subscription},${ids.obligation},1,3,${reversal.id},'collection',1200,'USD',2,'1900-01-02','1900-01-02',${f.po.userId},${operation})`;
     await tx`set constraints all immediate`;
     expect(
       await tx`select * from public.payment_events where id=${ids.event}`,
@@ -47,7 +47,7 @@ it.each([
   { installment: '1199' },
   { commission: '1' },
   { amount: '1199' },
-  { currency: 'USD' },
+  { currency: 'EGP' },
   { offset: 1 },
 ])(
   'T009 rejects snapshot, total, money and commission drift %#',
@@ -246,7 +246,7 @@ it('T009 only one initial subscription per client, independently of operation ke
     probe(async (tx) => {
       const ids = await graph(tx, f);
       await tx`insert into public.subscriptions(id,workspace_id,client_id,registration_link_id,package_version_id,price_minor,currency,commission_rate_bp,duration_days,duration_months,created_by)
-    values(${randomUUID()},${f.wsA.id},${ids.client},${f.link},${f.p.versionId},1200,'XTS',17,61,null,${f.po.userId})`;
+    values(${randomUUID()},${f.wsA.id},${ids.client},${f.link},${f.p.versionId},1200,'USD',17,61,null,${f.po.userId})`;
     }),
   ).rejects.toMatchObject({ code: '23505' });
 });

@@ -32,7 +32,7 @@ const terms = {
   nameAr: 'test-ar',
   nameEn: 'test-en',
   priceMinor: '9007199254740993',
-  currency: 'XTS',
+  currency: 'USD',
   commissionRateBp: 0,
 };
 const calls = () => [
@@ -114,7 +114,7 @@ describe('package actions two walls', () => {
       name_ar: 'test-ar',
       name_en: 'test-en',
       price_minor: '9007199254740993',
-      currency: 'XTS',
+      currency: 'USD',
       commission_rate_bp: 0,
     });
     expect(mocks.revalidate).toHaveBeenCalledExactlyOnceWith('/packages');

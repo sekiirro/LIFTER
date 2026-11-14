@@ -57,7 +57,7 @@ const baseRow = (overrides: Record<string, unknown> = {}) => ({
   opened_at: null,
   consumed_at: null,
   price_minor: '9007199254740993',
-  currency: 'XTS',
+  currency: 'USD',
   duration_days: 61,
   duration_months: null,
   token_hash: 'secret',
