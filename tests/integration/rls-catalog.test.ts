@@ -195,7 +195,9 @@ describe('tenancy security catalog (T007)', () => {
         const [authenticated] =
           await db`select has_table_privilege('authenticated', ${`public.${table}`}, ${privilege}) as allowed`;
         expect(authenticated?.allowed).toBe(
-          table !== 'workspaces' || privilege !== 'UPDATE',
+          (table !== 'staff_profiles' ||
+            (privilege !== 'SELECT' && privilege !== 'UPDATE')) &&
+            (table !== 'workspaces' || privilege !== 'UPDATE'),
         );
       }
       const [row] =
@@ -203,6 +205,25 @@ describe('tenancy security catalog (T007)', () => {
       expect(row?.allowed).toBe(false);
     },
   );
+
+  it('staff profile identity columns remain readable while names use the scoped RPC', async () => {
+    for (const column of ['user_id', 'role', 'created_at']) {
+      const [row] = await db`
+        select has_column_privilege('authenticated', 'public.staff_profiles', ${column}, 'SELECT') as allowed`;
+      expect(row?.allowed).toBe(true);
+    }
+    for (const column of ['display_name', 'display_name_version']) {
+      const [row] = await db`
+        select has_column_privilege('authenticated', 'public.staff_profiles', ${column}, 'SELECT') as allowed`;
+      expect(row?.allowed).toBe(false);
+    }
+    const [roleUpdate] = await db`
+      select has_column_privilege('authenticated', 'public.staff_profiles', 'role', 'UPDATE') as allowed`;
+    expect(roleUpdate?.allowed).toBe(true);
+    const [nameUpdate] = await db`
+      select has_column_privilege('authenticated', 'public.staff_profiles', 'display_name', 'UPDATE') as allowed`;
+    expect(nameUpdate?.allowed).toBe(false);
+  });
 
   it.each(['id', 'created_by', 'created_at'])(
     'authenticated cannot update workspaces.%s',
@@ -237,8 +258,14 @@ describe('tenancy security catalog (T007)', () => {
           ...approvalFunctions.map((signature) => signature.split('(')[0]!),
           'client_has_access',
           'client_note_trim_whitespace',
+          'can_read_staff_display_name',
+          'can_write_staff_display_name',
           'guard_client_note_update',
+          'guard_staff_display_name',
+          'normalize_staff_display_name',
           'require_client_note_create_key',
+          'staff_display_name_is_valid',
+          'staff_display_name_is_white_space',
           ...signupPrivate,
           ...brandingPrivate,
           'apply_food_default_alternatives',
@@ -390,6 +417,7 @@ describe('tenancy security catalog (T007)', () => {
         'jobs_updated_at',
         'normalize_ar_en_v1',
         'normalize_catalog_food_identity_v1',
+        'normalize_staff_display_name',
         'operation_key_fields_immutable',
         'purge_f11_retained_data',
         'purge_schedule_activate',
@@ -399,6 +427,8 @@ describe('tenancy security catalog (T007)', () => {
         'registration_link_limits',
         'require_client_note_create_key',
         'client_note_trim_whitespace',
+        'staff_display_name_is_valid',
+        'staff_display_name_is_white_space',
         'reject_catalog_provenance_change',
         'reject_catalog_version_mutation',
         'validate_food_request',
@@ -417,6 +447,11 @@ describe('tenancy security catalog (T007)', () => {
           'signup_auth_identity_column',
           'catalog_assert_exercise_text_limits',
           'guard_exercise_version_retired_fields',
+          'can_read_staff_display_name',
+          'can_write_staff_display_name',
+          'guard_staff_display_name',
+          'normalize_staff_display_name',
+          'staff_display_name_is_white_space',
         ].includes(row.proname)
       ) {
         // These internal helpers revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -428,6 +463,9 @@ describe('tenancy security catalog (T007)', () => {
       if (row.proname === 'f13_validate_productivity_point') {
         expect(row.service_role_execute, row.proname).toBe(false);
       }
+      if (row.proname === 'staff_display_name_is_valid') {
+        expect(row.service_role_execute, row.proname).toBe(true);
+      }
       expect(row.authenticated_execute, row.proname).toBe(
         [
           'branding_upload_begin',
@@ -437,6 +475,7 @@ describe('tenancy security catalog (T007)', () => {
           'branding_current_read',
           'branding_draft_read',
           'branding_staging_upload_allowed',
+          'staff_display_name_is_valid',
         ].includes(row.proname) ||
           (!row.proname.startsWith('f12_') &&
             !row.proname.startsWith('f13_') &&
@@ -458,6 +497,8 @@ describe('tenancy security catalog (T007)', () => {
               'claim_catalog_operation',
               'client_has_access',
               'client_note_trim_whitespace',
+              'can_read_staff_display_name',
+              'can_write_staff_display_name',
               'copy_workspace_form',
               'cutover_identity_guard',
               'enqueue_job',
@@ -478,6 +519,7 @@ describe('tenancy security catalog (T007)', () => {
               'guard_form_legal_hold',
               'guard_form_retention_window',
               'guard_client_note_update',
+              'guard_staff_display_name',
               'prevent_consent_receipt_mutation',
               'signup_reserved_usernames',
               'f15_current_terms_policy',
@@ -523,6 +565,7 @@ describe('tenancy security catalog (T007)', () => {
               'jobs_updated_at',
               'lock_catalog_food_request',
               'normalize_catalog_food_identity_v1',
+              'normalize_staff_display_name',
               'operation_key_fields_immutable',
               'operation_key_result',
               'operation_key_retention_days',
@@ -537,6 +580,7 @@ describe('tenancy security catalog (T007)', () => {
               'require_food_version_serving',
               'require_client_note_create_key',
               'reserve_catalog_food_keys',
+              'staff_display_name_is_white_space',
               'set_catalog_operation_result',
               'sync_catalog_addition_limits',
               'validate_exercise_override_alternative',

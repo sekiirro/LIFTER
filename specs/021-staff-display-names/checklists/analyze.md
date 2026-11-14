@@ -1,6 +1,6 @@
 # Analyze: F21 Staff Display Names
 
-Date: 2026-11-13. Scope: spec-only artifacts for `specs/021-staff-display-names/`. This analysis follows the final spec, plan, and task edits in this pass, which encode architect ruling S52-R10 (post-purge retry path) and resolve the Greptile review thread `PRRT_kwDOVYgYQ8623T4y` on `specs/021-staff-display-names/spec.md:100` (FR-016). It also carries forward the PO S52-PO-2 encoding of NAME-17..NAME-20 and the two earlier thread fixes.
+Date: 2026-11-14. Date update only: task status/traceability; no requirement text changed (constitution 1.16.0). Scope: spec-only artifacts for `specs/021-staff-display-names/`. This analysis follows the final spec, plan, and task edits in this pass, which encode architect ruling S52-R10 (post-purge retry path) and resolve the Greptile review thread `PRRT_kwDOVYgYQ8623T4y` on `specs/021-staff-display-names/spec.md:100` (FR-016). It also carries forward the PO S52-PO-2 encoding of NAME-17..NAME-20 and the two earlier thread fixes.
 
 ## Entry check
 
