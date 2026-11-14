@@ -208,3 +208,7 @@ This is a gap audit of the checked-out LIFTER source and committed specs; no YBS
 ## Open questions for the PO
 
 None.
+
+### S56-PO-4 - 2026-11-14
+
+PO S56-PO-4 (2026-11-14): "LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from other specs, and continue development normally. Reconsider flags before production. Keep tests and regression safeguards."

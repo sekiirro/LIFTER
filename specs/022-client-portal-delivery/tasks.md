@@ -2,16 +2,16 @@
 
 **Input**: Design documents from `/specs/022-client-portal-delivery/`
 **Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
-**Task format**: `[ID] [P?] [USn] Description` with exact target paths. `[HIGH-RISK: authorization]` marks authorization, entitlement, export-authorization or workspace-authorization work requiring independent review plus mutation evidence. Group work into vertical slices of approximately 400 to 800 changed lines; merge `origin/main` before each slice. No feature slice may gate authorization/RLS behind the flag. The prerequisite flag-mechanism spec/PR must establish the approved integration point before portal implementation starts. Each user-story phase lists its failing tests first; they must fail before any implementation task in that phase is started.
+**Task format**: `[ID] [P?] [USn] Description` with exact target paths. `[HIGH-RISK: authorization]` marks authorization, entitlement, export-authorization or workspace-authorization work requiring independent review plus mutation evidence. Group work into vertical slices of approximately 400 to 800 changed lines; merge `origin/main` before each slice. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. Authorization/RLS remain mandatory. Each user-story phase lists its failing tests first; they must fail before any implementation task in that phase is started.
 
 ## Phase 1: Setup
 
 **Purpose**: Feature module skeleton and shared contracts that unblock all stories.
 
-- [ ] T001 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013] Complete the prerequisite feature-flag mechanism spec/PR, then configure the server-side portal flag with default OFF in `specs/feature-flags/plan.md`.
-- [ ] T002 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013] Wire the default-OFF flag into portal server routes and services in `lib/feature-flags/client-portal.ts`.
+- [ ] T001 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013] CANCELLED (PO S56-PO-4): configure the server-side portal feature flag.
+- [ ] T002 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013] CANCELLED (PO S56-PO-4): wire the portal feature flag into server routes and services.
 
-**Checkpoint**: Shared module and flag scaffolding ready.
+**Checkpoint**: Shared module and portal setup tasks are complete.
 
 ---
 
@@ -143,14 +143,14 @@
 - [ ] T040 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013] Run required local validation on the final feature slice as documented in `specs/022-client-portal-delivery/quickstart.md`.
 - [ ] T041 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013] Complete one cumulative feature AI review and resolve blockers as recorded in `specs/022-client-portal-delivery/tasks.md`.
 - [ ] T042 [FR-012, FR-013] Verify per-plan exports remain within the approved boundary and no YBS access/sync enters the feature scope in `specs/022-client-portal-delivery/spec.md`.
-- [ ] T043 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013] Remove the default-OFF flag after feature completion in `lib/feature-flags/client-portal.ts`.
+- [ ] T043 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013] CANCELLED (PO S56-PO-4): remove the portal feature flag after feature completion.
 
 ## Dependencies and slice order
 
-1. Setup and foundational authorization mapping precede all user stories. The flag remains OFF until deliberately enabled for implementation validation.
+1. Setup and foundational authorization mapping precede all user stories. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.
 2. User Story 1 uses existing F19/F13 behavior. User Stories 2 and 4 depend on its delivered-plan projections and F13 authorization. User Story 3 consumes F19 delivery completion via F15. User Story 5 uses F11/F13/F15/F18/F19 data and can proceed after foundation.
 3. Slice the above phases into reviewable vertical slices near 400 to 800 changed lines, merge current `origin/main` before each, and complete the required local validation before one push per slice.
-4. The feature is not complete until all stories are implemented, one cumulative AI review has passed its blocking-finding gate, and the default-OFF flag is removed in the completion slice.
+4. The feature is not complete until all stories are implemented, one cumulative AI review has passed its blocking-finding gate, and its approved completion requirements are satisfied.
 
 ## Parallel opportunities
 
@@ -158,4 +158,4 @@ After shared authorization contracts are mapped, directory work (US5) can procee
 
 ## Implementation strategy
 
-Ship vertical slices with a default-OFF server flag. Complete independent first-plan delivery as the first user-facing slice; then add client projection, notices, exports and directory slices in dependency order. Keep all authorization active for flagged code. Run local CI-equivalent validation before each push. Obtain one AI review when the cumulative feature diff is complete; remove the flag in the final completion slice.
+Ship vertical slices without a feature flag while LIFTER is not live (PO S56-PO-4); reconsider flags before production. Complete independent first-plan delivery as the first user-facing slice; then add client projection, notices, exports and directory slices in dependency order. Keep all authorization active. Run local CI-equivalent validation before each push. Obtain one AI review when the cumulative feature diff is complete; follow the approved feature-completion requirements.
