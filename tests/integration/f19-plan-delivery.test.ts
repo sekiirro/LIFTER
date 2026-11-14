@@ -12,8 +12,9 @@ beforeAll(async () => {
   fixture = await clientContext();
   db = sql();
   seeded = await db.begin((tx) => graph(tx, fixture));
-  await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-    values(${fixture.wsA.id},${seeded.subscription},clock_timestamp(),${randomUUID()})`;
+  await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,
+    delivery_event_id,activation_source)
+    values(${fixture.wsA.id},${seeded.subscription},clock_timestamp(),${randomUUID()},'po_override')`;
 });
 afterAll(async () => db?.end());
 
