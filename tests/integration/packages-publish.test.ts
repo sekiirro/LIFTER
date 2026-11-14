@@ -275,7 +275,9 @@ describe('package publication', () => {
     ...[null, '0', '-1', '1.1', '9223372036854775808'].map((price_minor) => ({
       price_minor,
     })),
-    ...[null, 'xts', 'XT', 'XTSX', ' XTS'].map((currency) => ({ currency })),
+    ...[null, 'XTS', 'xts', 'XT', 'XTSX', ' XTS'].map((currency) => ({
+      currency,
+    })),
     ...[null, -1, 10001, 1.5].map((commission_rate_bp) => ({
       commission_rate_bp,
     })),

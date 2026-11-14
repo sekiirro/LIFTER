@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { packagesFixture, sql, type PackagesFixture } from './packages-fixture';
+import {
+  createLegacySynthetic,
+  packagesFixture,
+  sql,
+  type PackagesFixture,
+} from './packages-fixture';
 import { admin } from './harness';
 
 const db = sql();
@@ -163,6 +168,31 @@ describe('package market and type identity', () => {
       }
     },
   );
+
+  it('preserves publication for unclassified legacy packages without inferring market or type', async () => {
+    const legacy = await createLegacySynthetic(f);
+    const result = await publish(f.wsA.id, legacy.id, 'EGP');
+    expect(result.error).toBeNull();
+    expect(typeof result.data).toBe('string');
+    const snapshot = await db`
+      select p.workspace_id, p.market as package_market, p.type as package_type,
+        v.market as version_market, v.type as version_type, v.currency
+      from public.package_versions v
+      join public.package_offers o on o.id=v.offer_id
+      join public.packages p on p.id=o.package_id
+      where v.id=${result.data}
+    `;
+    expect(snapshot).toEqual([
+      {
+        workspace_id: null,
+        package_market: null,
+        package_type: null,
+        version_market: null,
+        version_type: null,
+        currency: 'EGP',
+      },
+    ]);
+  });
 
   it('does not rewrite existing package version identifiers or terms', async () => {
     const before =
