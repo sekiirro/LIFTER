@@ -49,6 +49,8 @@ const signupPrivate = [
 // Spec 022 private helpers.
 const f22Private = [
   'f22_delivered_revisions',
+  'f22_enqueue_client_notice',
+  'f22_guard_client_notice',
   'f22_portal_client',
   'f22_subscription_summary',
 ];
