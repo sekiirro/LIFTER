@@ -27,7 +27,7 @@ export const en: Record<keyof typeof ar, string> = {
   'timeline.event.freezeApply': 'Freeze applied',
   'timeline.event.freezeRemove': 'Freeze removed',
   'timeline.event.closure': 'Closure',
-  // spec 023: add/saved approved by S57-PO-12; the rest PROPOSED (pinned in progress-coaching-copy test)
+  // spec 023: approved by S57-PO-12 and S57-PO-13 (pinned in progress-coaching-copy test)
   'progress.measurement.add': 'Add measurement',
   'progress.measurement.value': 'Value',
   'progress.measurement.date': 'Date',

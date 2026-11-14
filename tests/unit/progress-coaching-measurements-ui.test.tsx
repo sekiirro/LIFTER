@@ -117,7 +117,7 @@ describe('measurement surfaces (FR-013, FR-016, FR-017)', () => {
   });
 
   it.each(['en', 'ar'] as const)(
-    'gives the client the proposed add dialog with value and date (%s)',
+    'gives the client the approved add dialog with value and date (%s)',
     (locale) => {
       const m = getMessages(locale);
       const html = renderToStaticMarkup(

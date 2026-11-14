@@ -25,7 +25,7 @@ export const ar = {
   'timeline.event.freezeApply': 'تجميد الاشتراك',
   'timeline.event.freezeRemove': 'فك تجميد الاشتراك',
   'timeline.event.closure': 'الإغلاق',
-  // spec 023: add/saved approved by S57-PO-12; the rest PROPOSED (pinned in progress-coaching-copy test)
+  // spec 023: approved by S57-PO-12 and S57-PO-13 (pinned in progress-coaching-copy test)
   'progress.measurement.add': 'ضيف قياس جديد',
   'progress.measurement.value': 'القيمة',
   'progress.measurement.date': 'التاريخ',
@@ -36,7 +36,7 @@ export const ar = {
   'checkin.config.title': 'فورم المتابعة الأسبوعية',
   'checkin.config.select': 'اختار فورم المتابعة الأسبوعية',
   'checkin.config.save': 'استخدم الفورم ده',
-  'checkin.config.saved': 'اتحفظ فورم المتابعة الأسبوعية.',
+  'checkin.config.saved': 'اتحدد فورم المتابعة الأسبوعية.',
   'checkin.config.invalid':
     'الفورم ده لازم يكون فيه سؤالين الالتزام بالتمرين والدايت (من 0 لـ 10).',
   'checkin.config.conflict': 'فيه فورم تاني متحدد كمتابعة أسبوعية.',
