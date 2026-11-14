@@ -111,6 +111,14 @@ const brandingPrivate = [
 const brandingFunctionOwners: Record<string, string> = {
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
 };
+const assignmentPrivate = [
+  'current_assigned_trainer',
+  'end_assignments_on_membership_revocation',
+  'end_assignments_on_trainer_role_change',
+  'end_client_trainer_assignments',
+  'guard_client_trainer_assignment',
+  'guard_client_trainer_assignment_truncate',
+];
 afterAll(async () => {
   await db.end();
 });
@@ -255,6 +263,7 @@ describe('tenancy security catalog (T007)', () => {
       [
         ...new Set([
           ...registrationPrivate,
+          ...assignmentPrivate,
           ...approvalFunctions.map((signature) => signature.split('(')[0]!),
           'client_has_access',
           'client_note_trim_whitespace',
@@ -292,6 +301,9 @@ describe('tenancy security catalog (T007)', () => {
           'copy_workspace_form',
           'current_staff_role',
           'cutover_identity_guard',
+          'end_assignments_on_membership_revocation',
+          'end_assignments_on_trainer_role_change',
+          'end_client_trainer_assignments',
           'enforce_form_revision_snapshot_keys',
           'enforce_n08_budget_answer_consistency',
           'enqueue_job',
@@ -345,6 +357,8 @@ describe('tenancy security catalog (T007)', () => {
           'f15_valid_builder_definition',
           'f15_valid_slider_label',
           'forbid_delete',
+          'guard_client_trainer_assignment',
+          'guard_client_trainer_assignment_truncate',
           'guard_exercise_version_retired_fields',
           'guard_f15_assignment_fact',
           'guard_f15_form_assignment',
@@ -510,6 +524,7 @@ describe('tenancy security catalog (T007)', () => {
           (!row.proname.startsWith('f12_') &&
             !row.proname.startsWith('f13_') &&
             !registrationPrivate.includes(row.proname) &&
+            !assignmentPrivate.includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
             ![
@@ -1656,5 +1671,72 @@ describe('F19 T021 activation catalog', () => {
         proname: 'f19_guard_activation_source',
       },
     ]);
+  });
+});
+
+describe('F11 responsible-Trainer assignment catalog', () => {
+  it('forces RLS, exposes only scoped reads, and grants no table writes', async () => {
+    const [table] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid='public.client_trainer_assignments'::regclass`;
+    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    const policies = await db`select policyname,cmd,roles from pg_policies
+      where schemaname='public' and tablename='client_trainer_assignments'`;
+    expect(policies).toEqual([
+      {
+        policyname: 'client_trainer_assignments_select_workspace_owner',
+        cmd: 'SELECT',
+        roles: ['authenticated'],
+      },
+    ]);
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+      ]) {
+        const [grant] = await db`select has_table_privilege(${role},
+          'public.client_trainer_assignments', ${privilege}) as allowed`;
+        expect(grant!.allowed, `${role} ${privilege}`).toBe(
+          role === 'authenticated' && privilege === 'SELECT',
+        );
+      }
+  });
+
+  it('hardens every private function and grants only the authenticated public RPCs', async () => {
+    const privateFunctions = [
+      'app_private.guard_client_trainer_assignment()',
+      'app_private.guard_client_trainer_assignment_truncate()',
+      'app_private.current_assigned_trainer(uuid,uuid)',
+      'app_private.end_client_trainer_assignments(uuid,uuid,uuid)',
+      'app_private.end_assignments_on_membership_revocation()',
+      'app_private.end_assignments_on_trainer_role_change()',
+    ];
+    for (const name of privateFunctions) {
+      const [fn] = await db`select prosecdef,proconfig,
+        pg_catalog.pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn!.proconfig).toContain('search_path=""');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
+        expect(grant!.allowed).toBe(false);
+      }
+    }
+    for (const name of [
+      'public.assign_client_responsible_trainer(uuid,uuid,uuid)',
+      'public.client_responsible_trainer(uuid,uuid)',
+    ]) {
+      const [fn] = await db`select prosecdef,proconfig,
+        pg_catalog.pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn!.proconfig).toContain('search_path=""');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
+        expect(grant!.allowed).toBe(role === 'authenticated');
+      }
+    }
   });
 });

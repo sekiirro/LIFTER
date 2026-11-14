@@ -58,6 +58,22 @@ async function counts(
   return row!;
 }
 
+async function waitForLockWait(queryText: string) {
+  const observer = sql();
+  try {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const [row] = await observer`
+        select count(*)::int as count from pg_stat_activity
+        where wait_event_type='Lock' and query ilike ${`%${queryText}%`}`;
+      if ((row?.count as number) > 0) return;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(`RPC did not reach the client-row lock: ${queryText}`);
+  } finally {
+    await observer.end();
+  }
+}
+
 async function addReturningHistory(
   context: Context,
   clientId: string,
@@ -446,5 +462,91 @@ describe('F19 T021 automatic initial activation', () => {
       p_operation_key: null,
     });
     expect(denied.data).toMatchObject({ status: 'not_permitted' });
+  });
+
+  it('credits the assigned Trainer when a non-Trainer publishes the completing delivery', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    const assignment = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: seeded.client,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignment.data).toMatchObject({ status: 'ok' });
+    await deliver(
+      context.trainerA.client,
+      context.wsA.id,
+      seeded.client,
+      'workout',
+    );
+    const completed = await deliver(
+      context.po.client,
+      context.wsA.id,
+      seeded.client,
+      'nutrition',
+    );
+    expect(completed.data).toMatchObject({ status: 'ok' });
+    const [unit] = await db`
+      select recipient_trainer_user_id from public.productivity_units
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(unit!.recipient_trainer_user_id).toBe(context.trainerA.userId);
+    expect(unit!.recipient_trainer_user_id).not.toBe(context.po.userId);
+  });
+
+  it('serializes a concurrent assignment ahead of activation on the client row', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    await deliver(
+      context.trainerA.client,
+      context.wsA.id,
+      seeded.client,
+      'workout',
+    );
+    const draft = await context.po.client.rpc('create_plan_draft', {
+      p_workspace_id: context.wsA.id,
+      p_client_id: seeded.client,
+      p_plan_kind: 'nutrition',
+      p_content: { schemaVersion: 2, document: { title: 'F11 lock ordering' } },
+      p_operation_key: randomUUID(),
+    });
+    expect(draft.error).toBeNull();
+    let assignment!: Promise<void>;
+    let activation!: Promise<void>;
+    let assignedResult: unknown;
+    let publishedResult: unknown;
+    await db.begin(async (tx) => {
+      await tx`select id from public.clients where workspace_id=${context.wsA.id} and id=${seeded.client} for update`;
+      assignment = Promise.resolve().then(async () => {
+        assignedResult = await context.po.client.rpc(
+          'assign_client_responsible_trainer',
+          {
+            p_workspace_id: context.wsA.id,
+            p_client_id: seeded.client,
+            p_trainer_user_id: context.trainerA.userId,
+          },
+        );
+      });
+      await waitForLockWait('assign_client_responsible_trainer');
+      activation = Promise.resolve().then(async () => {
+        publishedResult = await context.po.client.rpc(
+          'ready_and_publish_plan',
+          {
+            p_plan_id: draft.data,
+            p_expected_draft_version: 1,
+            p_expected_published_version: 0,
+            p_operation_key: randomUUID(),
+          },
+        );
+      });
+      await waitForLockWait('ready_and_publish_plan');
+    });
+    await Promise.all([assignment, activation]);
+    expect(assignedResult).toMatchObject({ data: { status: 'ok' } });
+    expect(publishedResult).toMatchObject({ data: { status: 'ok' } });
+    const [unit] = await db`
+      select recipient_trainer_user_id from public.productivity_units
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(unit!.recipient_trainer_user_id).toBe(context.trainerA.userId);
   });
 });
