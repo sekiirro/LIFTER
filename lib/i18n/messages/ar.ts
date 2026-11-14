@@ -1,4 +1,30 @@
 export const ar = {
+  // spec 023 client progress coaching (S55-PO-10 approved copy)
+  'progress.title': 'التقدم',
+  'progress.measurements.title': 'القياسات',
+  'progress.measurements.empty': 'لسه مفيش قياسات متسجلة.',
+  'progress.measurement.edit': 'تعديل القياس',
+  'checkin.completed.notGate':
+    'تقدر تدخل حسابك عادي حتى لو ما بعتّش المتابعة الأسبوعية.',
+  'checkin.adherence.workout.title': 'التزامك بالتمرين',
+  'checkin.adherence.workout.question':
+    'من 0 لـ 10، شايف إنك التزمت بتمرينك قد إيه الأسبوع ده؟',
+  'checkin.adherence.diet.title': 'التزامك بالدايت',
+  'checkin.adherence.diet.question':
+    'من 0 لـ 10، شايف إنك التزمت بالدايت قد إيه الأسبوع ده؟',
+  'timeline.title': 'سجل النشاط',
+  'timeline.empty': 'لسه مفيش أي أحداث هنا.',
+  'timeline.event.registration': 'التسجيل',
+  'timeline.event.renewal': 'تجديد الاشتراك',
+  'timeline.event.firstDelivery': 'استلام أول خطة',
+  'timeline.event.trainerChange': 'تغيير الكابتن المسؤول',
+  'timeline.event.replacementOpen': 'طلب بديل جديد',
+  'timeline.event.replacementApproved': 'الموافقة على البديل',
+  'timeline.event.replacementRejected': 'رفض طلب البديل',
+  'timeline.event.replacementStale': 'إغلاق طلب البديل بعد حذف الأكلة',
+  'timeline.event.freezeApply': 'تجميد الاشتراك',
+  'timeline.event.freezeRemove': 'فك تجميد الاشتراك',
+  'timeline.event.closure': 'الإغلاق',
   'catalog.taxonomy.muscle.spinal_erectors': 'ناصبات العمود الفقري',
   'catalog.taxonomy.muscle.rear_delts': 'الدالية الخلفية',
   'catalog.taxonomy.muscle.hamstrings': 'أوتار الركبة',
