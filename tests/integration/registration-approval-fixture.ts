@@ -65,7 +65,7 @@ export async function graph(
     { package_version_id: versionId, registration_link_id: linkId },
     options.authUserId,
   );
-  const currency = options.currency ?? 'XTS';
+  const currency = options.currency ?? 'USD';
   const collectedAmount =
     options.amount ??
     options.issuedRows?.find((row) => row.seq === 1)?.amount_minor ??
@@ -92,7 +92,7 @@ export async function graph(
       values(${row.seq === 1 ? ids.obligation : randomUUID()},${f.wsA.id},${ids.subscription},${row.seq},${row.amount_minor},${currency},${row.due_offset_days},'issued_schedule')`;
   } else {
     await tx`insert into public.subscription_installments(id,workspace_id,subscription_id,seq,amount_minor,currency,issued_day_offset,source_kind)
-    values(${ids.obligation},${f.wsA.id},${ids.subscription},1,${options.installment ?? '1200'},${options.currency ?? 'XTS'},${options.offset ?? 0},'single_payment')`;
+    values(${ids.obligation},${f.wsA.id},${ids.subscription},1,${options.installment ?? '1200'},${options.currency ?? 'USD'},${options.offset ?? 0},'single_payment')`;
   }
   await tx`insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,kind,amount_minor,currency,commission_minor,collected_on,effective_on,recorded_by,operation_id)
     values(${ids.event},${f.wsA.id},${ids.subscription},${ids.obligation},1,1,'collection',${collectedAmount},${currency},${options.commission ?? '2'},'1900-01-01','1900-01-01',${f.po.userId},${ids.operation})`;
@@ -110,6 +110,6 @@ export async function append(
     id = randomUUID();
   await tx`insert into app_private.registration_operations(id,workspace_id,actor_user_id,request_key,operation,client_id,subscription_id,obligation_id,event_id,original_event_id,expected_installment_seq,expected_revision,expected_previous_event_id,canonical_args_hash,result_receipt)
     values(${operation},${f.wsA.id},${f.po.userId},${randomUUID()},'correct',${ids.client},${ids.subscription},${ids.obligation},${id},${ids.event},1,1,${ids.event},decode(repeat('ab',32),'hex'),'{}')`;
-  await tx`insert into public.payment_events ${tx({ id, workspace_id: f.wsA.id, subscription_id: ids.subscription, obligation_id: ids.obligation, installment_seq: 1, revision: 2, previous_event_id: ids.event, kind: 'correction_reversal', reverses_event_id: ids.event, amount_minor: '-1200', currency: 'XTS', commission_minor: '-2', collected_on: null, effective_on: new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' }), recorded_by: f.po.userId, operation_id: operation, ...patch })}`;
+  await tx`insert into public.payment_events ${tx({ id, workspace_id: f.wsA.id, subscription_id: ids.subscription, obligation_id: ids.obligation, installment_seq: 1, revision: 2, previous_event_id: ids.event, kind: 'correction_reversal', reverses_event_id: ids.event, amount_minor: '-1200', currency: 'USD', commission_minor: '-2', collected_on: null, effective_on: new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' }), recorded_by: f.po.userId, operation_id: operation, ...patch })}`;
   return { id, operation };
 }

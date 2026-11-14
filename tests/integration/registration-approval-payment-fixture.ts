@@ -61,7 +61,7 @@ export function paymentRequest(
     ...(kind === 'collect'
       ? {
           expected_amount_minor: '400',
-          currency: 'XTS',
+          currency: 'USD',
           collected_on: '1900-01-01',
           payment_confirmed: true,
         }

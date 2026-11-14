@@ -28,7 +28,7 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
       due_offset_days: number;
     }[],
   ) => {
-    const packageFixture = await createSynthetic(f);
+    const packageFixture = await createSynthetic(f, f.wsA.id);
     const versionId = checkedLink(
       await publish(f, packageFixture.id, {
         tier_rank: 1,
@@ -225,7 +225,7 @@ it('records an atomic capped refund and replays its exact authorized receipt', a
       client_id: ids.client,
       purchase_id: ids.subscription,
       amount_minor: '600',
-      currency: 'XTS',
+      currency: 'USD',
     });
     expect(Object.keys(first.receipt ?? {}).sort()).toEqual(
       [

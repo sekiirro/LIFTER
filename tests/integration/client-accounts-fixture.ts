@@ -307,7 +307,7 @@ export function approvalDenialRequest(
         ? { original_event_id: randomUUID(), correction_confirmed: true }
         : {
             expected_amount_minor: '1200',
-            currency: 'XTS',
+            currency: 'USD',
             collected_on: '1900-01-01',
             payment_confirmed: true,
           }),
@@ -323,7 +323,7 @@ export function approvalDenialRequest(
       : {
           expected_installment_seq: 1,
           expected_amount_minor: '1200',
-          currency: 'XTS',
+          currency: 'USD',
           collected_on: '1900-01-01',
           payment_confirmed: true,
         }),

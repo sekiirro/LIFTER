@@ -40,7 +40,7 @@ it.each(['po', 'woA'] as const)(
       await db`select price_minor::text,currency,duration_days,commission_rate_bp from public.subscriptions where client_id=${t.id}`;
     expect(row).toEqual({
       price_minor: '1200',
-      currency: 'XTS',
+      currency: 'USD',
       duration_days: 61,
       commission_rate_bp: 17,
     });
@@ -80,7 +80,7 @@ it.each([
   { expected_amount_minor: '1199' },
   { expected_amount_minor: '9223372036854775808' },
   { expected_amount_minor: '1e3' },
-  { currency: 'USD' },
+  { currency: 'EGP' },
   { collected_on: '2999-01-01' },
   { collected_on: '2026-02-30' },
   { collected_on: '0000-01-01' },
