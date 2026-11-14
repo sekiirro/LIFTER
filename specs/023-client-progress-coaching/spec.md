@@ -220,3 +220,7 @@ None. All PO questions for this spec are resolved (S54-023-Q1, S54-023-Q2 by S55
 ## Copy
 
 Matched rows in `copy-proposal.md` are approved copy (S55-PO-10); unmatched rows remain proposed and pending PO approval.
+
+### S56-PO-4 - 2026-11-14
+
+PO S56-PO-4 (2026-11-14): "LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from other specs, and continue development normally. Reconsider flags before production. Keep tests and regression safeguards."
