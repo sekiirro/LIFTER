@@ -252,15 +252,19 @@ describe('F11 responsible-Trainer assignment T050', () => {
     });
   });
 
-  it('serializes an assignment before concurrent Trainer membership departure', async () => {
+  it('refuses an assignment waiting behind a concurrent Trainer membership departure', async () => {
     const context = await clientContext();
     const clientId = (await approvedClient(context)).client;
     const revoker = sql();
     let assignment!: Promise<unknown>;
-    let revoke!: Promise<unknown>;
     try {
       await db.begin(async (tx) => {
         await tx`select id from public.clients where workspace_id=${context.wsA.id} and id=${clientId} for update`;
+        await revoker.begin(async (revokeTx) => {
+          await revokeTx`select set_config('request.jwt.claims',${JSON.stringify({ sub: context.po.userId, role: 'authenticated' })},true)`;
+          await revokeTx`update public.workspace_memberships set revoked_at=statement_timestamp(), revoked_by=${context.po.userId}
+            where workspace_id=${context.wsA.id} and user_id=${context.trainerA.userId} and revoked_at is null`;
+        });
         assignment = Promise.resolve(
           context.po.client.rpc('assign_client_responsible_trainer', {
             p_workspace_id: context.wsA.id,
@@ -269,29 +273,13 @@ describe('F11 responsible-Trainer assignment T050', () => {
           }),
         );
         await waitForLockWait('assign_client_responsible_trainer');
-        revoke = Promise.resolve(
-          revoker.begin(async (tx) => {
-            await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: context.po.userId, role: 'authenticated' })},true)`;
-            await tx`update public.workspace_memberships set revoked_at=statement_timestamp(), revoked_by=${context.po.userId}
-            where workspace_id=${context.wsA.id} and user_id=${context.trainerA.userId} and revoked_at is null`;
-          }),
-        );
-        await waitForLockWait('update public.workspace_memberships');
       });
-      const [assigned] = await Promise.all([assignment, revoke]);
-      expect(assigned).toMatchObject({ data: { status: 'ok' } });
-      const lookup = await context.po.client.rpc('client_responsible_trainer', {
-        p_workspace_id: context.wsA.id,
-        p_client_id: clientId,
-      });
-      expect(lookup.data).toMatchObject({
-        status: 'ok',
-        trainer_user_id: null,
-      });
+      const assigned = await assignment;
+      expect(assigned).toMatchObject({ data: { status: 'not_permitted' } });
       const [rows] = await db`
         select count(*)::int as total, count(*) filter(where ended_at is null)::int as active
         from public.client_trainer_assignments where workspace_id=${context.wsA.id} and client_id=${clientId}`;
-      expect(rows).toEqual({ total: 1, active: 0 });
+      expect(rows).toEqual({ total: 0, active: 0 });
     } finally {
       await revoker.end();
     }
