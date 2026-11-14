@@ -1,10 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import type { JSONValue, TransactionSql } from 'postgres';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createRecoveryClientTarget } from './client-accounts-fixture';
+import { anonClient } from './harness';
 import { clientContext, graph, probe } from './registration-approval-fixture';
 
-// Spec 023 US1/US2/US4 + the spec 024 read contract. Every scenario runs inside a
-// rolled-back probe transaction; actors are impersonated with signed JWT claims.
+// Spec 023 US1/US2/US4 + the spec 024 read contract. Data scenarios run inside a
+// rolled-back probe transaction with actors impersonated by signed JWT claims
+// (SET ROLE authenticated). No f23 wall trusts session_user, so those denials reach
+// the wall; the API-session test below exercises the same walls through PostgREST.
 
 type Tx = TransactionSql;
 
@@ -413,6 +418,91 @@ describe('spec 023 progress coaching (database walls and behavior)', () => {
           (sp) => sp`select public.client_progress_timeline(${ws},${clientId})`,
         );
     });
+  });
+
+  it('denies the spec 024 readers and progress RPCs to real Sales, foreign-trainer, client and anon API sessions', async () => {
+    const f = await clientContext();
+    const ws = f.wsA.id;
+    const pendingClient = await createRecoveryClientTarget(f);
+    const someId = randomUUID();
+    const window = {
+      p_workspace_id: ws,
+      p_from: '2026-11-01',
+      p_to: '2026-11-30',
+    };
+    const readers: [string, Record<string, unknown>][] = [
+      ['progress_weekly_adherence', window],
+      ['progress_measurement_history', window],
+      [
+        'progress_measurement_baselines',
+        { p_workspace_id: ws, p_as_of: '2026-11-30' },
+      ],
+    ];
+    const staffRpcs: [string, Record<string, unknown>][] = [
+      ...readers,
+      ['progress_checkins_received_count', window],
+      [
+        'list_progress_measurements',
+        { p_workspace_id: ws, p_client_id: pendingClient.clientId },
+      ],
+      [
+        'client_progress_timeline',
+        { p_workspace_id: ws, p_client_id: pendingClient.clientId },
+      ],
+      [
+        'correct_progress_measurement',
+        {
+          p_workspace_id: ws,
+          p_measurement_id: someId,
+          p_value: 1,
+          p_expected_updated_at: new Date().toISOString(),
+        },
+      ],
+      [
+        'configure_weekly_checkin_form',
+        { p_workspace_id: ws, p_form_id: someId, p_version_number: 1 },
+      ],
+    ];
+    const expectDenied = async (
+      label: string,
+      client: SupabaseClient,
+      name: string,
+      args: Record<string, unknown>,
+    ) => {
+      const result = await client.rpc(name, args);
+      expect(result.error?.code, `${label} ${name}`).toBe('42501');
+      expect(result.data, `${label} ${name}`).toBeNull();
+    };
+    const actors: [string, SupabaseClient][] = [
+      ['Sales', f.salesA.client],
+      ['foreign trainer', f.trainerB.client],
+      ['client', pendingClient.client],
+      ['anon', anonClient()],
+    ];
+    for (const [label, client] of actors)
+      for (const [name, args] of staffRpcs)
+        await expectDenied(label, client, name, args);
+    // Client-only writer and self surface: staff and non-approved sessions are denied.
+    const record = {
+      p_workspace_id: ws,
+      p_client_id: pendingClient.clientId,
+      p_measurement_type: 'bodyWeight',
+      p_value: 80,
+      p_recorded_on: '2026-11-01',
+    };
+    for (const [label, client] of [
+      ...actors,
+      ['trainer', f.trainerA.client] as [string, SupabaseClient],
+    ]) {
+      await expectDenied(label, client, 'record_progress_measurement', record);
+      await expectDenied(label, client, 'client_self_progress', {});
+    }
+    // The same walls admit real coaching staff of the workspace.
+    for (const [name, args] of readers) {
+      const allowed = await f.trainerA.client.rpc(name, args);
+      expect(allowed.error, `trainer ${name}`).toBeNull();
+      expect(Array.isArray(allowed.data), `trainer ${name}`).toBe(true);
+    }
   });
 
   it('keeps helper functions private and the correction table unreadable', async () => {

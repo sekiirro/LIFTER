@@ -1,11 +1,12 @@
 /**
  * Spec 023 -> spec 024 read-only data contract.
  *
- * Database objects (all workspace-scoped, read-only, SECURITY DEFINER with an
- * explicit wall: database-owner (postgres) jobs, or staff holding
- * `coaching_work` with membership in the workspace; everyone else, including
- * service_role, gets 42501 or has no EXECUTE). Adherence is read from the
- * private store app_private.progress_checkin_adherence, never raw F15 answers):
+ * Database objects (all workspace-scoped, read-only, SECURITY DEFINER with a
+ * single wall: app_private.has_workspace_access(workspace, 'coaching_work'), i.e.
+ * a platform owner, workspace owner or trainer with an active membership. There is
+ * no database-owner or service_role bypass; everyone else gets 42501 or has no
+ * EXECUTE. Adherence comes from the private store
+ * app_private.progress_checkin_adherence, never from raw F15 answers):
  *   - public.progress_weekly_adherence(p_workspace_id uuid, p_from date, p_to date)
  *   - public.progress_measurement_history(p_workspace_id uuid, p_from date, p_to date)
  *   - public.progress_measurement_baselines(p_workspace_id uuid, p_as_of date)
