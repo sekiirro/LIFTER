@@ -87,6 +87,20 @@ describe('measurement surfaces (FR-013, FR-016, FR-017)', () => {
     },
   );
 
+  it.each([
+    ['en', 'No measurements recorded'],
+    ['ar', 'لسه مفيش قياسات متسجلة'],
+  ] as const)('shows the S57-PO-12 empty state (%s)', (locale, text) => {
+    const html = renderToStaticMarkup(
+      <MeasurementsSection
+        measurements={[]}
+        locale={locale}
+        messages={getMessages(locale)}
+      />,
+    );
+    expect(html).toContain(text);
+  });
+
   it('renders no controls when none are passed', () => {
     const messages = getMessages('en');
     const html = renderToStaticMarkup(

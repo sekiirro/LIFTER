@@ -2,22 +2,36 @@ import { describe, expect, it } from 'vitest';
 import { ar } from '../../lib/i18n/messages/ar';
 import { en } from '../../lib/i18n/messages/en';
 
-// PO 2026-11-14 PROPOSED copy for client measurement entry/edit and the weekly
-// check-in configuration screen. The PO is still editing these strings: this test
-// pins them so any change is a deliberate, reviewed catalog edit.
-const proposed: Record<string, { en: string; ar: string }> = {
-  'progress.measurement.add': { en: 'Add measurement', ar: 'ضيف قياس' },
+type Copy = Record<string, { en: string; ar: string }>;
+
+// S57-PO-12 (2026-11-15) approved F23 measurement copy. EN is the PO wording
+// exactly; no trailing period, matching the catalog's toast convention
+// ("Changes saved", "Saved successfully").
+const approved: Copy = {
+  'progress.measurement.add': { en: 'Add measurement', ar: 'ضيف قياس جديد' },
+  'progress.measurement.edit': { en: 'Edit measurement', ar: 'عدّل القياس' },
+  'progress.measurement.saved': {
+    en: 'Measurement saved',
+    ar: 'القياس اتسجّل',
+  },
+  'progress.measurements.empty': {
+    en: 'No measurements recorded',
+    ar: 'لسه مفيش قياسات متسجلة',
+  },
+  // S55-PO-10 approved text, preserved per S57-PO-12 ("Preserve all other
+  // approved copy"). The PO's 2026-11-14 replacement proposal stays pending.
+  'progress.measurement.duplicateSameDay': {
+    en: 'A measurement already exists for this day. Edit the existing record instead.',
+    ar: 'فيه قياس متسجل لليوم ده. عدّل القياس الموجود بدل ما تضيف واحد جديد.',
+  },
+};
+
+// Proposed by the PO on 2026-11-14 and NOT yet approved. Pinned so any change
+// is a deliberate, reviewed catalog edit.
+const proposed: Copy = {
   'progress.measurement.value': { en: 'Value', ar: 'القيمة' },
   'progress.measurement.date': { en: 'Date', ar: 'التاريخ' },
   'progress.measurement.save': { en: 'Save measurement', ar: 'احفظ القياس' },
-  'progress.measurement.saved': {
-    en: 'Measurement saved.',
-    ar: 'القياس اتحفظ.',
-  },
-  'progress.measurement.duplicateSameDay': {
-    en: 'A measurement already exists for this day. Edit it instead.',
-    ar: 'فيه قياس متسجل لليوم ده. عدّله بدل ما تضيف جديد.',
-  },
   'checkin.config.title': {
     en: 'Weekly check-in form',
     ar: 'فورم المتابعة الأسبوعية',
@@ -41,14 +55,30 @@ const proposed: Record<string, { en: string; ar: string }> = {
   },
 };
 
-describe('spec 023 PO-proposed copy (2026-11-14)', () => {
-  it.each(Object.entries(proposed))('pins %s in EN and AR', (key, copy) => {
-    expect(en[key as keyof typeof en]).toBe(copy.en);
-    expect(ar[key as keyof typeof ar]).toBe(copy.ar);
-  });
+describe('spec 023 copy', () => {
+  it.each(Object.entries(approved))(
+    'pins S57-PO-12 approved %s in EN and AR',
+    (key, copy) => {
+      expect(en[key as keyof typeof en]).toBe(copy.en);
+      expect(ar[key as keyof typeof ar]).toBe(copy.ar);
+    },
+  );
 
-  it('keeps the S55-PO-10 approved edit label', () => {
-    expect(en['progress.measurement.edit']).toBe('Edit measurement');
-    expect(ar['progress.measurement.edit']).toBe('تعديل القياس');
+  it.each(Object.entries(proposed))(
+    'pins still-proposed %s in EN and AR',
+    (key, copy) => {
+      expect(en[key as keyof typeof en]).toBe(copy.en);
+      expect(ar[key as keyof typeof ar]).toBe(copy.ar);
+    },
+  );
+
+  it('preserves the other S55-PO-10 approved progress copy', () => {
+    expect(en['progress.title']).toBe('Progress');
+    expect(ar['progress.title']).toBe('التقدم');
+    expect(en['progress.measurements.title']).toBe('Measurements');
+    expect(ar['progress.measurements.title']).toBe('القياسات');
+    expect(en['checkin.completed.notGate']).toBe(
+      'Check-ins do not block access to your account.',
+    );
   });
 });

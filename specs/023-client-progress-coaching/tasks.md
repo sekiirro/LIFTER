@@ -50,7 +50,7 @@
 ### Implementation for User Story 1
 
 - [ ] T013 [US1] Implement freeze-aware weekly check-in scheduling by configuring F15 recurring assignments and anchor shifting in `lib/progress-coaching/checkins/schedule.ts` and `lib/progress-coaching/checkins/service.ts` (FR-001, FR-002, FR-003, FR-004, SC-001, SC-002).
-- [ ] T014 [US1] Implement reminder creation and deduplication through the F15 notification inbox at 10:00 AM workspace time in `lib/progress-coaching/checkins/reminders.ts` and `app/api/progress-coaching/checkins/reminders/route.ts` (FR-006, FR-007, FR-009, SC-003).
+- [ ] T014 [US1] Implement reminder creation and deduplication through the F15 notification inbox, via the spec 022 client inbox (S57-PO-10), at 10:00 AM workspace time in `lib/progress-coaching/checkins/reminders.ts` and `app/api/progress-coaching/checkins/reminders/route.ts` (FR-006, FR-007, FR-009, SC-003).
 - [ ] T015 [US1] Implement check-in read/status APIs and the explicit login non-gate in `lib/progress-coaching/checkins/repository.ts` and `app/api/progress-coaching/checkins/route.ts` (FR-005, FR-009).
 - [ ] T016 [US1] Add `workoutAdherence` and `dietAdherence` as F15 typed answers on a 0–10 integer scale, with neutral self-report copy keys and value-only exposure to spec 024, in `lib/progress-coaching/adherence.ts` and `lib/progress-coaching/checkins/form-mapping.ts` (FR-037, FR-038, SC-011).
 - [ ] T017 [US1] Implement KPI counting for check-ins received rather than sent in `lib/progress-coaching/kpi.ts` (FR-008).
@@ -78,8 +78,8 @@
 
 - [ ] T024 [US2] [HIGH-RISK: migration/RLS] Create the `progress_measurements` table, unique `(client, type, recorded_date)` constraint, RLS policies, and background correction audit table in `supabase/migrations/<timestamp>_023_progress_measurements.sql` (FR-010, FR-012, FR-013, SC-005, SC-006).
 - [ ] T025 [US2] Implement auto-extraction from F15 weekly form answers into the Progress store in `lib/progress-coaching/measurements/extraction.ts` and `lib/progress-coaching/measurements/repository.ts` (FR-010, FR-011, FR-014, SC-004).
-- [ ] T026 [US2] Implement duplicate manual-entry rejection and edit-existing redirection in `lib/progress-coaching/measurements/service.ts` and `app/api/progress-coaching/measurements/route.ts` (FR-012, FR-015, SC-005).
-- [ ] T027 [US2] Implement authorized trainer correction as a direct in-place update recorded only in the background audit log in `lib/progress-coaching/measurements/corrections.ts` and `app/api/progress-coaching/measurements/[measurementId]/route.ts` (FR-013, SC-006).
+- [ ] T026 [US2] Implement client manual entry, client edit of own manual entries (S57-PO-8; check-in-extracted rows stay trainer-only), duplicate manual-entry rejection and edit-existing redirection in `lib/progress-coaching/measurements/service.ts` and `app/api/progress-coaching/measurements/route.ts` (FR-012, FR-015, SC-005).
+- [ ] T027 [US2] Implement authorized trainer correction of any measurement as a direct in-place update recorded only in the background audit log in `lib/progress-coaching/measurements/corrections.ts` and `app/api/progress-coaching/measurements/[measurementId]/route.ts` (FR-013, SC-006).
 - [ ] T028 [US2] Enforce F13 plan-access visibility restrictions on measurements in `lib/progress-coaching/measurements/access.ts` (FR-016).
 - [ ] T029 [US2] Keep progress photos on Telegram by explicitly excluding web upload and automatic ingestion from the measurement UI and APIs in `components/progress-coaching/Measurements.tsx` and `app/api/progress-coaching/measurements/route.ts` (FR-017).
 
