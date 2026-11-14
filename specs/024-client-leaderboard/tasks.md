@@ -45,7 +45,7 @@
 - [ ] T012 [US2] [FR-022, FR-037] Reuse/add the username field within `app/register/[token]/SignupForm.tsx` and `app/register/[token]/schema.ts`; preserve F11 route and `client_signup` transaction; apply Q14 format and reserved-name validation.
 - [ ] T013 [US2] [FR-022, FR-037] Add client-owned username edit at `app/(client)/account/settings/actions.ts` and `lib/leaderboard/username.ts`; enforce case-insensitive workspace uniqueness at the database boundary in `supabase/migrations/<timestamp>_client_leaderboard.sql`.
 - [ ] T014 [US2] [FR-007-FR-009, FR-025, FR-039] Add idempotent self-service opt-out action to `app/(client)/account/settings/actions.ts`; resolve own client/workspace server-side and write the spec 005 audit event.
-- [ ] T015 [US2] [FR-005-FR-009, FR-013, FR-025, FR-038] Add account-settings notice and direct opt-out control in `app/(client)/account/settings/page.tsx`, using proposed copy from `specs/024-client-leaderboard/copy-proposal.md`.
+- [ ] T015 [US2] [FR-005-FR-009, FR-013, FR-025, FR-038] Add account-settings notice and direct opt-out control in `app/(client)/account/settings/page.tsx`, using approved copy (S55-PO-10) from `specs/024-client-leaderboard/copy-proposal.md` where approved; new wording pending verification.
 
 ## Phase 4: User Story 3 - Ranking uses current-month inputs (Priority P1)
 

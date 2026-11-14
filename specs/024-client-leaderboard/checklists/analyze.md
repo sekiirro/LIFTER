@@ -1,7 +1,7 @@
 ﻿# Specification Analysis: F24 Client Leaderboard
 
 **Date**: 2026-11-14  
-**Run**: after final spec, plan, task, and traceability formatting (Q14 resolved)
+**Run**: re-run after S55-PO-10 approved-copy apply and PO consistency checks (month label, stale PR list, username/opt-out wording); requirement text changed (FR-038, edge case) -> Analyze re-run.
 **Inputs**: `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`, `research.md`, `.specify/memory/constitution.md`  
 **Requirements**: 40 FRs, 8 SCs  
 **Tasks**: 35
@@ -35,3 +35,7 @@ No unresolved contradiction found across the clarified FRs, scenarios, success c
 ## Result
 
 PASS for Plan/Tasks/Analyze. S55-024-Q11 through S55-024-Q14 are resolved. Spec consistency passes. This record does not claim implementation or test completion.
+
+## Re-run — S55-PO-10 (2026-11-14)
+
+Re-run triggered by requirement-text changes: FR-038 and edge case now require a separate approved-results-month label (heading "أفضل 5" plus month label; new wording pending verification); stale PR list corrected to merged contracts F16/F13/F20 with open PR #58 (F15-B); username/opt-out wording aligned with approved copy. Findings: 0 CRITICAL, 0 HIGH, 0 MEDIUM, 0 LOW. All 40 FRs and 8 SCs still covered; copy-proposal status updated to APPROVED (S55-PO-10); unmatched/new rows remain PENDING. Spec consistency passes.

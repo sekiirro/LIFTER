@@ -54,7 +54,7 @@ This feature consumes; it does not redefine:
 - **Spec 020 client notes** (`specs/020-client-notes`): internal-only notes boundary; leaderboard must never expose notes.
 - **Spec 021 staff display names** (`specs/021-staff-display-names`): server-owned staff identity; staff names are not client identities.
 - **Spec 023 client progress/coaching** (`specs/023-client-progress-coaching`): measurements, check-ins, progress visibility. **This spec references spec 023 by name and does not redefine its data.** Goal-relative progress inputs are consumed from spec 023's approved model; adherence is read by the field names `workoutAdherence` and `dietAdherence`, each a 0?10 integer per FR-037. This spec is read-only with respect to 023.
-- **Open PRs**: #58 (F15 UI), #86 (F16 catalog), #88 (F13), #90 (F20). Coordinate; do not clone.
+- **Merged contracts**: F16 (#86), F13 (#88), F20 (#90); coordinate with open PR #58 (F15-B). Do not clone.
 
 Out of scope (deferred/not owned): finance reporting, exports, P4 client portal implementation, Telegram bot, full P8 hardening. Leaderboard is optional and post-MVP gating applies.
 
@@ -120,7 +120,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 ### Edge cases
 
 - Fewer than 5 eligible clients: list only eligible (FR-002).
-- Past winners and new candidates are re-scored using the current month's data. A past winner remains on the list until a new candidate's current score is higher; the current approved list stays visible until the PO approves its successor (S55-PO-6 Q12).
+- Past winners and new candidates are re-scored using the current month's data. A past winner remains on the list until a new candidate's current score is higher; the current approved list stays visible until the PO approves its successor (S55-PO-6 Q12). The displayed Top-5 heading remains "أفضل 5" with a separate label identifying the approved results month; a current-month label must never misdescribe older winners kept visible pending approval.
 - A client who opts out in account settings is removed immediately from the visible list and excluded from later results, and the action is audited (S55-PO-6 Q13; FR-007-FR-009, FR-025, FR-039).
 - Client becomes ineligible (subscription ends, freeze): no longer eligible under FR-010–FR-012.
 - Tie scores: per approved tie-break (FR-021).
@@ -190,7 +190,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 
 ### Copy and localization
 
-- **FR-038**: All user-facing leaderboard strings MUST use professional English and natural Egyptian colloquial Arabic, with exact proposed strings in `copy-proposal.md` pending PO approval. Client-facing copy MUST NOT disclose the scoring formula, weights, or input names (S48-PO-4; S55-PO-3 Q2).
+- **FR-038**: All user-facing leaderboard strings MUST use professional English and natural Egyptian colloquial Arabic, with exact approved strings in `copy-proposal.md` (S55-PO-10) where approved; new or changed wording (including the separate approved-results-month label) is marked pending verification and must not be shipped until approved. The Top-5 heading and the separate approved-results-month label are distinct strings: the month label MUST identify the month of the approved result and MUST NOT misdescribe older winners kept visible pending approval. Client-facing copy MUST NOT disclose the scoring formula, weights, or input names (S48-PO-4; S55-PO-3 Q2; S55-PO-10 consistency check 1).
 
 ### Audit and compliance
 
