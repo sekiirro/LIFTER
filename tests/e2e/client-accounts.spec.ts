@@ -426,7 +426,7 @@ async function fillSignup(
     .fill('1990-04-12');
   await page
     .getByLabel(m['clientSignup.username'], { exact: true })
-    .fill(`client${randomUUID().replaceAll('-', '').slice(0, 24)}`);
+    .fill(`client${randomUUID().replaceAll('-', '').slice(0, 14)}`);
   await page
     .getByLabel(m['clientSignup.email'], { exact: true })
     .fill(values.email);

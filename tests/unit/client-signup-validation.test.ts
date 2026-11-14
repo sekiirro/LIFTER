@@ -53,14 +53,14 @@ describe('approved signup profile contract', () => {
     ).not.toContain('username');
   });
 
-  it('accepts only normalized 3–30 ASCII letters, digits, underscores, and periods', () => {
-    for (const username of ['Ab_', 'a'.repeat(29) + '.', 'A_b.9']) {
+  it('accepts only normalized 3–20 ASCII letters, digits, underscores, and periods (S55-PO-9 Q14)', () => {
+    for (const username of ['Ab_', 'a'.repeat(19) + '.', 'A_b.9']) {
       expect(
         validateSignupIdentity({ ...valid, username }, { now }).invalidFields,
       ).not.toContain('username');
     }
 
-    for (const username of ['ab', 'a'.repeat(31), 'abc-def', 'café', 'ábc']) {
+    for (const username of ['ab', 'a'.repeat(21), 'abc-def', 'café', 'ábc']) {
       expect(
         validateSignupIdentity({ ...valid, username }, { now }).invalidFields,
       ).toContain('username');

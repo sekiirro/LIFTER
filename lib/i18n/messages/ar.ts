@@ -53,6 +53,33 @@ export const ar = {
   'catalog.taxonomy.muscle.triceps': 'ثلاثية الرؤوس',
   'catalog.taxonomy.muscle.biceps': 'ذات الرأسين',
   'catalog.taxonomy.equipment.machine': 'آلة',
+  'leaderboard.title': 'أفضل 5',
+  'leaderboard.empty': 'مفيش ترتيب متاح دلوقتي.',
+  'leaderboard.fewerThanFive': 'لحد دلوقتي فيه {count} عميل مؤهل.',
+  'leaderboard.rankLabel': 'المركز {rank}',
+  'leaderboard.resultsMonthLabel': 'نتائج {month} {year}',
+  'leaderboard.optOut.mayAppear': 'ممكن اليوزرنيم بتاعك يظهر ضمن أفضل 5',
+  'leaderboard.optOut.mayAppearBody':
+    'ممكن اليوزرنيم بتاعك يظهر ضمن أفضل 5 عملاء. وتقدر توقف ظهوره في أي وقت من إعدادات حسابك.',
+  'leaderboard.optOut.turnOffParticipation': 'وقف ظهوري في أفضل 5',
+  'leaderboard.optOut.success':
+    'مش هتظهر في ترتيب أفضل 5 طول ما المشاركة مقفولة.',
+  'leaderboard.optedOut': 'إنت موقف ظهورك في ترتيب أفضل 5.',
+  'leaderboard.publish.action': 'اعتماد أفضل 5 للشهر',
+  'leaderboard.publish.approved': 'اتعتمد ترتيب الشهر.',
+  'leaderboard.publish.rejected': 'اترفض ترتيب الشهر.',
+  'leaderboard.ineligible': 'لسه مش مستوفي شروط الدخول في ترتيب أفضل 5.',
+  'clientSignup.username.tooShort': 'اليوزرنيم لازم يكون 3 خانات على الأقل.',
+  'clientSignup.username.tooLong': 'اليوزرنيم مايزيدش عن 20 خانة.',
+  'clientSignup.username.invalidChars':
+    'استخدم حروف إنجليزي وأرقام و (_) أو (.) بس.',
+  'accountSettings.username.tooShort': 'اليوزرنيم لازم يكون 3 خانات على الأقل.',
+  'accountSettings.username.tooLong': 'اليوزرنيم مايزيدش عن 20 خانة.',
+  'accountSettings.username.invalidChars':
+    'استخدم حروف إنجليزي وأرقام و (_) أو (.) بس.',
+  'accountSettings.username.reserved': 'اليوزرنيم ده محجوز، اختار غيره.',
+  'accountSettings.username.workspaceTaken':
+    'اليوزرنيم ده مستخدم بالفعل. جرّب واحد تاني.',
   'registration.title': 'روابط التسجيل',
   'registration.intro': 'أصدر رابط تسجيل بالشروط المعتمدة للباقة.',
   'registration.workspace': 'مساحة العمل',

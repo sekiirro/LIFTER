@@ -101,8 +101,8 @@ test.describe.serial('S35 Hero error-border design evidence', () => {
           );
           await expect(page.locator('#signup-username-error')).toHaveText(
             locale === 'en'
-              ? 'Use 3–30 characters: English letters, numbers, periods, or underscores.'
-              : 'استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.',
+              ? 'Username must be at least 3 characters.'
+              : 'اليوزرنيم لازم يكون 3 خانات على الأقل.',
           );
           await expect(
             page.locator('#signup-username-error bdi'),

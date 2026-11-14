@@ -55,6 +55,34 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.taxonomy.muscle.triceps': 'Triceps',
   'catalog.taxonomy.muscle.biceps': 'Biceps',
   'catalog.taxonomy.equipment.machine': 'Machine',
+  'leaderboard.title': 'Top 5',
+  'leaderboard.empty': 'No leaderboard is available right now.',
+  'leaderboard.fewerThanFive': '{count} clients qualify so far.',
+  'leaderboard.rankLabel': 'Rank {rank}',
+  'leaderboard.resultsMonthLabel': 'Results for {month} {year}',
+  'leaderboard.optOut.mayAppear': 'You may appear in the Top 5',
+  'leaderboard.optOut.mayAppearBody':
+    'Your username may appear in the Top 5. You can turn this off at any time in account settings.',
+  'leaderboard.optOut.turnOffParticipation':
+    'Turn off leaderboard participation',
+  'leaderboard.optOut.success': 'You will no longer appear on the leaderboard.',
+  'leaderboard.optedOut': 'You turned off leaderboard participation.',
+  'leaderboard.publish.action': 'Approve monthly leaderboard',
+  'leaderboard.publish.approved': 'Monthly leaderboard approved.',
+  'leaderboard.publish.rejected': 'Monthly leaderboard rejected.',
+  'leaderboard.ineligible': 'You are not eligible for the leaderboard yet.',
+  'clientSignup.username.tooShort': 'Username must be at least 3 characters.',
+  'clientSignup.username.tooLong': 'Username must be at most 20 characters.',
+  'clientSignup.username.invalidChars':
+    'Username can contain only English letters, digits, underscores and dots.',
+  'accountSettings.username.tooShort':
+    'Username must be at least 3 characters.',
+  'accountSettings.username.tooLong': 'Username must be at most 20 characters.',
+  'accountSettings.username.invalidChars':
+    'Username can contain only English letters, digits, underscores and dots.',
+  'accountSettings.username.reserved': 'This username is reserved.',
+  'accountSettings.username.workspaceTaken':
+    'This username is already used in your workspace.',
   'registration.title': 'Registration links',
   'registration.intro':
     'Issue a registration link using the approved package terms.',

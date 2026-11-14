@@ -241,7 +241,7 @@ it('mutation: skipping the approved normalized username character check permits 
     fixture,
     async (definition) =>
       definition.replace(
-        'if normalized_username !~ \'^[a-z0-9_.]{3,30}$\' then return \'{"status":"invalid"}\'::jsonb; end if;',
+        'if normalized_username !~ \'^[a-z0-9_.]{3,20}$\' then return \'{"status":"invalid"}\'::jsonb; end if;',
         'if false then return \'{"status":"invalid"}\'::jsonb; end if;',
       ),
     async (tx) =>
