@@ -69,4 +69,4 @@ S55-R20 directs that invalid synthetic successor IDs resolve through an immutabl
 
 The projector extension preserves the latest F13 body from `20261113130300_f13_freeze_removal_no_renewal_floor.sql` and adds subscription-ID resolution to its reads. It does not replace manual-date, freeze, upgrade, or renewal calculations. The Stack A `freeze-lifecycle` and `subscription-manual-dates` regression suites pass with this implementation.
 
-S55-R21 rules that this slice implements database contracts only, so it adds no routes or UI and requires no flag. Record in the eventual PR that the server-side flag mechanism must precede any F19 UI slice. T020 is complete on this branch; see `specs/019-plan-core/tasks.md` and `runs/s55-luna-f19s3e/report.md` for tests and mutation evidence.
+S55-R21 rules that this slice implements database contracts only, so it adds no routes or UI. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. T020 is complete on this branch; see `specs/019-plan-core/tasks.md` and `runs/s55-luna-f19s3e/report.md` for tests and mutation evidence.

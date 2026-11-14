@@ -7,7 +7,7 @@
 - **Decision**: F15 owns inbox events and read state. **Rationale**: Existing inbox/event contract and PR #58. P4 extends client reach only as required. **Alternatives considered**: A separate portal inbox; rejected.
 - **Decision**: F17/F18 own export rendering/content and safety; P4 authorizes the client's selected revision. **Rationale**: Existing export tasks and nutrition selection rules. **Alternatives considered**: New export renderer; rejected.
 - **Decision**: Directory search fields are name, email, phone and client code; facets use existing account/approval status, subscription status and responsible-trainer assignment state. **Rationale**: S55-PO-7, recorded in Clarifications; existing F11/F13/F20 data only, no new statuses.
-- **Decision**: Use a server-side feature flag defaulting OFF for an unfinished feature. It must never gate authorization or RLS. **Rationale**: Constitution 1.16.0.
+- **Decision**: Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); unfinished work proceeds without a flag and flags are reconsidered before production. Authorization/RLS remain mandatory.
 
 ## Resolved unknowns
 
