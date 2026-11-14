@@ -95,7 +95,8 @@ CRITICAL 0; HIGH 0; open MCQ 0. The plan-identity cache-key criterion is carried
 
 ## Analyze — merge of main, no PR content change
 
-**Analyzed:** 2026-11-11 11:15 UTC
+**Analyzed:** 2026-11-14 00:00 UTC
+**Date update only:** T010 status/traceability; no requirement text changed (constitution 1.16.0).
 **Scope:** Sync rebase/merge of `origin/main` (8a846340) into PR #81 branch; no PR content change. Merge commit 1ce5570b4e16353b260ad5179761cf279ca62dec.
 
 ## Entry check
