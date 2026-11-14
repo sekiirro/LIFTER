@@ -44,7 +44,7 @@ describe('F19 T020 continuity and delivery contracts', () => {
       await db`insert into public.subscriptions(id,workspace_id,client_id,kind,registration_link_id,package_version_id,
         price_minor,currency,commission_rate_bp,duration_days,duration_months,created_by,predecessor_subscription_id)
         values(${successor},${fixture.wsA.id},${seeded.client},'renewal',null,${fixture.p.versionId},
-          1200,'XTS',17,30,null,${fixture.po.userId},${seeded.subscription})`;
+          1200,'USD',17,30,null,${fixture.po.userId},${seeded.subscription})`;
     } finally {
       await db`alter table public.subscriptions enable trigger f12_subscription_insert`;
       await db`alter table public.subscriptions enable trigger f12_subscription_integrity`;

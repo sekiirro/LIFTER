@@ -171,7 +171,7 @@ it('first open at expiry is refused and strictly-before-expiry is accepted at mi
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
       await tx`alter table public.registration_links disable trigger registration_links_insert_guard`;
       const [row] =
-        await tx`insert into public.registration_links(workspace_id,package_version_id,token_hash,created_by,created_at,expires_at,price_minor,currency,duration_days,duration_months,commission_rate_bp) values(${f.wsA.id},${f.p.versionId},${s.hash},${f.po.userId},now()+${offset}::interval-interval '24 hours',now()+${offset}::interval,1200,'XTS',61,null,17) returning id`;
+        await tx`insert into public.registration_links(workspace_id,package_version_id,token_hash,created_by,created_at,expires_at,price_minor,currency,duration_days,duration_months,commission_rate_bp) values(${f.wsA.id},${f.p.versionId},${s.hash},${f.po.userId},now()+${offset}::interval-interval '24 hours',now()+${offset}::interval,1200,'USD',61,null,17) returning id`;
       await tx`set constraints all immediate`;
       await tx`alter table public.registration_links enable trigger registration_links_insert_guard`;
       const [opened] =
