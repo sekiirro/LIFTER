@@ -424,8 +424,8 @@ it('replays an exact renewal stored with the legacy canonical hash unchanged', a
 it('treats refund deactivation as terminal across another renewal purchase and freeze', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()}, 'po_override')`;
     const firstRenewal = await renewal(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
@@ -611,8 +611,8 @@ it('T010 refuses pre-activation renewal, then accepts the next current revision'
 it('renews an expired continuous subscription from today and preserves one activation', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()}, 'po_override')`;
     const first = await renewal(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
@@ -787,8 +787,8 @@ it('serializes concurrent renewals at one revision so only one renewal is record
 it('keeps sequential renewal terms on the continuous subscription', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()}, 'po_override')`;
     const started = await renewal(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
@@ -894,8 +894,8 @@ it('refuses renewal while the continuous subscription is frozen without extra wr
 it('freezing a continuous subscription extends renewal coverage without moving dues', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()}, 'po_override')`;
     const renewed = await renewal(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
@@ -1032,8 +1032,8 @@ it('T010 shifts an unstarted renewal after predecessor Freeze without moving rec
 it('freezing a started continuous renewal keeps its start and due dates immutable', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()}, 'po_override')`;
     const renewed = await renewal(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,

@@ -125,6 +125,10 @@ S43-PO-1 (2026-11-10) PO words:
 
 **F19-MCQ-17 — RESOLVED by S45-PO-2.** The byte-exact PO answer and the separate S45-R4 architect mapping are recorded above under Clarifications. F19-FR-002, SC-003, T020, and traceability encode the deployment prerequisite, cleanup test intent, and fail-closed rule; no production reconciliation or selection rule is specified.
 
+**F19-MCQ-1 — RESOLVED by S56-PO-2 (2026-11-14); implementation mapping S56-R2.** The PO decision is: “a client is eligible for the productivity unit only if the client has NO earlier subscription or activation in the workspace AND no existing unit; a returning client who never earned a unit still gets none.” Architect mapping S56-R2 defines earlier history as any other subscription or activation row for the same workspace/client, with subscription identities resolved through `app_private.subscription_reattachments`; evaluate eligibility inside the activation transaction under the exactly-once lock. Do not change FR text.
+
+**F19 assignment fallback — PO S56-PO-3 (2026-11-14); implementation mapping S56-R3.** The F11 assignment feature is separate and later. Until its authoritative model lands, automatic activation calls private `app_private.current_assigned_trainer(workspace_id, client_id)`, which returns NULL; apply the FR-007 no-assignment rule to the completing publisher. Do not add an assignment table, lock, or UI. The assigned-Trainer recipient case remains pending F11 P-S40-2; do not infer or fake an assignment.
+
 S43-F19-MCQ-1..5 ? resolved by S43-PO-5/6, with each PO quotation separated from architect mapping (S43-R8).
 
 S43-PO-5 (2026-11-10): 2. Upgrade: higher tier (even shorter duration) or same tier with longer duration. Credit FULL previously paid amount, never prorate. Equal price = free; lower price = not an upgrade. Example: EGP 750 → 1,400; charge 650.

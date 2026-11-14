@@ -510,8 +510,8 @@ it('kills approval cutoff, future eligibility, and transition-only renewal mutan
       const futureDate = await dateOffset(tx, today, 5);
       await tx`insert into public.subscription_activations(
       workspace_id,subscription_id,activated_at,delivery_event_id
-    ) values(${f.wsA.id},${subscriptionId},
-      (${futureDate}::date::timestamp at time zone 'Africa/Cairo'),${randomUUID()})`;
+    , activation_source) values(${f.wsA.id},${subscriptionId},
+      (${futureDate}::date::timestamp at time zone 'Africa/Cairo'),${randomUUID()}, 'po_override')`;
       const [cutoffFacts] = await tx`
       select c.created_at<p.configured_at as created_before_policy,
         a.approved_at>=p.configured_at as approved_after_policy

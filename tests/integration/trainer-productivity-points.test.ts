@@ -145,8 +145,8 @@ it('T044 freeze operations write zero point rows', async () => {
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
     await tx`set local role authenticated`;
     try {
