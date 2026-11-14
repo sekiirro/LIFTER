@@ -29,6 +29,8 @@ export async function portalFixture() {
   async function makeClient(options: {
     activate: boolean;
     label: string;
+    // Existing auth user (e2e sign-in); default: a fresh synthetic identity.
+    authUserId?: string;
   }): Promise<PortalClient> {
     const linkId = firstLinkUsed
       ? (checked(await issue(fixture)) as string)
@@ -36,7 +38,10 @@ export async function portalFixture() {
     firstLinkUsed = true;
     const name = `${run} ${options.label}`;
     const ids = await db.begin(async (tx) => {
-      const created = await graph(tx, fixture, { linkId });
+      const created = await graph(tx, fixture, {
+        linkId,
+        ...(options.authUserId ? { authUserId: options.authUserId } : {}),
+      });
       // Synthetic display name so directory searches are unique to this run.
       // Bypass the F12 transition guard for this synthetic fixture edit only.
       // ALTER TABLE cannot run here: graph() leaves pending trigger events.
@@ -46,8 +51,9 @@ export async function portalFixture() {
       return created;
     });
     if (options.activate)
-      await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-        values(${fixture.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+      // F19 T021 guard: a synthetic activation without deliveries is a PO override.
+      await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id,activation_source)
+        values(${fixture.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()},'po_override')`;
     const [row] =
       await db`select auth_user_id,email_normalized,phone_e164 from public.clients where id=${ids.client}`;
     return {
