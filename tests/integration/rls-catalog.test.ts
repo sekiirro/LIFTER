@@ -277,6 +277,12 @@ describe('tenancy security catalog (T007)', () => {
           'f13_project_entitlement',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
+          'f19_audit_plan_change',
+          'f19_audit_plan_revision',
+          'f19_guard_plan_draft',
+          'f19_guard_plan_revision',
+          'f19_guard_plan_root',
+          'f19_immutable_plan_audit',
           'f15_alert_schedule_activate',
           'f15_alert_schedule_deactivate',
           'f15_alert_schedule_immutable',
@@ -417,9 +423,15 @@ describe('tenancy security catalog (T007)', () => {
           'signup_auth_identity_column',
           'catalog_assert_exercise_text_limits',
           'guard_exercise_version_retired_fields',
+          'f19_audit_plan_change',
+          'f19_audit_plan_revision',
+          'f19_guard_plan_draft',
+          'f19_guard_plan_revision',
+          'f19_guard_plan_root',
+          'f19_immutable_plan_audit',
         ].includes(row.proname)
       ) {
-        // These internal helpers revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
+        // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
         expect(row.service_role_execute, row.proname).toBe(false);
       }
       if (row.proname === 'archive_f15_selection_update') {
@@ -488,6 +500,12 @@ describe('tenancy security catalog (T007)', () => {
               'f15_client_alert_schedule_insert',
               'register_f15_trainer_alert_schedule',
               'evaluate_forms_alerts_core',
+              'f19_audit_plan_change',
+              'f19_audit_plan_revision',
+              'f19_guard_plan_draft',
+              'f19_guard_plan_revision',
+              'f19_guard_plan_root',
+              'f19_immutable_plan_audit',
               'materialize_intake_assignment_occurrence_core',
               'f15_answer_is_present',
               'f15_answer_values_valid',
