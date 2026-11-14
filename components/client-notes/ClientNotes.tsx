@@ -1138,7 +1138,9 @@ export function ClientNotes(props: ClientNotesProps) {
             <ul className={styles.list}>
               {notes.map((note) => {
                 const editing = editingId === note.id;
-                const authorLabel = m['clientNotes.unavailableAuthor'];
+                const authorLabel = note.author_display_name
+                  ? `${note.author_display_name}${note.author_deactivated ? (locale === 'ar' ? ' (متوقف)' : ' (deactivated)') : ''}`
+                  : m['clientNotes.unavailableAuthor'];
                 return (
                   <li key={note.id} className={styles.note}>
                     <div className={styles.metadata}>
