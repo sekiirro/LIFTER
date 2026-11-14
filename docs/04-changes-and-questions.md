@@ -1612,3 +1612,61 @@ LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from ot
 ```
 
 Architect mapping S56-R7 (not PO words): no feature-flag mechanism is built; unfinished features merge without a flag; no task or slice waits for a flag; the topic is tracked as a pre-production readiness item. Security, RLS, authorization, tests, CI gates and every other safeguard stay as they are.
+
+### S57-PO-1 to S57-PO-11 - PO answers, verbatim (2026-11-14)
+
+Source: Claude Code session https://claude.ai/code/session_014udyWnahqjLL8vfwQacqMc (multiple-choice answers on specs 022-024). Each entry quotes the PO's free-text answer or the selected option label, with the option text the PO saw.
+
+<!-- prettier-ignore -->
+```text
+S57-PO-1 (024 FR-018 goal-relative progress): "i choose A + Add a Goals section under Client Details with a Goal Type dropdown: Fat Loss, Muscle Gain, Maintenance. Show the client's F15 Near-term Goal as reference. Trainers can update Goal Type."
+  Option A as presented: Trainers pick a goal type per client: fat loss, muscle gain or maintain. Progress uses body weight from 023 baselines (first value vs this month's latest). Fat loss: % lost / 10%, capped at 1. Gain: % gained / 5%, capped at 1. Maintain: 1 - |% change| / 3%, floored at 0. No goal set means the client isn't eligible.
+S57-PO-2 (024 FR-021 achievement date): selected "Last scoring input" - the timestamp of the client's latest check-in or measurement counted in this month's score, so whoever reached the score first ranks higher.
+S57-PO-3 (024 FR-021 client code): selected "Registration order" - earlier registration approval ranks higher.
+S57-PO-4 (024 FR-017 monthly adherence): selected "Monthly mean" - mean of (workout + diet) / 2 across all of the month's check-ins that have both answers.
+S57-PO-5 (022 subscription end display): selected "Last covered day" - display-only shift; F13 data is unchanged.
+S57-PO-6 (024 ranking and opt-out): "Rank ALL eligible clients monthly. Each client sees their private rank and total participants; public Leaderboard shows Top 5 only. Opt-out hides the client publicly, preserves their private rank, and automatically promotes the next eligible client (#6 → #5). PO approves the full ranking; promotions require no reapproval."
+S57-PO-7 (024 signup username messages): selected "Keep generic" - keep the single generic 'unavailable' message.
+S57-PO-8 (023 FR-012/FR-013 client measurements): selected "Add + edit own" - clients can also edit their own manual entries; trainers correct everything.
+S57-PO-9 (022 client plan viewer): selected "F17/F18 shared view" - F17 and F18 each build one read-only plan view that their print/export and the client portal both reuse.
+S57-PO-10 (022/023 client notices): selected "F19 hook + F22 inbox" - F19 adds a delivery/activation hook as its own task; F22 extends the F15 inbox to client recipients and sends the approved notices; 023 reminders reuse that client inbox.
+S57-PO-11 (022 FR-003 PO-override productivity unit): selected "F19 is right" - override still gives the one new-client unit; fix F22 FR-003, US1 #4 and SC-003 to match.
+```
+
+### S57-PO-12 - PO words, verbatim (2026-11-15)
+
+Source: same session as S57-PO-1.
+
+<!-- prettier-ignore -->
+```text
+Continue F22/F23/F24 independent tasks in parallel. Do not wait for F17/F18/F19 completion.
+Pause only blocked integrations. Do not modify F17/F18/F19-owned code or duplicate their functionality.
+Focus on UI, approved copy, full ranking, measurements, tests, and security. Keep PRs updated, clearly report blockers, and coordinate shared files.
+No merge without my authorization.
+Apply these approved Egyptian Arabic copy changes to F22/F23/F24:
+**F22 — Subscription Status**
+- Active: اشتراكك شغّال
+- Frozen: اشتراكك متوقف مؤقتًا
+- Expired: اشتراكك انتهى
+- Awaiting Activation: اشتراكك لسه ما اتفعّلش
+- Future: اشتراكك لسه ما بدأش
+- Refunded: فلوس الاشتراك اترجعت (only if fully refunded)
+
+**F23 — Measurements**
+- Add measurement: ضيف قياس جديد
+- Edit measurement: عدّل القياس
+- Measurement saved: القياس اتسجّل
+- No measurements recorded: لسه مفيش قياسات متسجلة
+
+**F24 — Leaderboard**
+- Top 5: أفضل 5
+- Your rank: ترتيبك
+- Rank {rank} of {total}: إنت في المركز {rank} من {total}
+- Username unavailable: اليوزرنيم ده مش متاح
+- Turn off participation: وقف ظهوري في الترتيب
+
+Top 5 belongs inside Progress, not Main Navigation. Every eligible client sees their private full rank; only the public Top 5 is visible to others.
+Preserve all other approved copy. Update specs, UI strings, and affected tests. No merge without authorization.
+```
+
+Implementation mapping (not PO words): each decision is recorded in the affected spec (specs 022, 023, 024) in implementation PRs #108, #109 and #110. Proposed copy not listed in S57-PO-12 remains pending PO approval.
