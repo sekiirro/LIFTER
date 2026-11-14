@@ -4,8 +4,8 @@ This feature composes existing tenant-scoped records and read projections and ad
 
 ## New record
 
-| Record | Fields | Constraints | Ownership |
-| --- | --- | --- | --- |
+| Record                                             | Fields                                                                    | Constraints                                                                                                                                                                                                                                                                                                                                                                 | Ownership                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Client notice (`app_private.client_inbox_notices`) | id, workspace_id, client_id, notice_kind, source_key, created_at, read_at | Composite FK `(workspace_id, client_id)` to F11 clients; unique `(workspace_id, client_id, notice_kind, source_key)`; kinds: workout/nutrition delivered, subscription activated, workout/nutrition delivered and activated, spec 023 check-in reminder day-of and follow-up; IDs-only (no free text); only `read_at` may change, once; forced RLS, no API table privileges | P4; producers are the F19 hook and spec 023 through `app_private.f22_enqueue_client_notice` |
 
 ## Existing records/projections consumed
