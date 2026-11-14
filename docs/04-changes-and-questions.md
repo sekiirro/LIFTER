@@ -1601,3 +1601,14 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s54-po/s54-po-14.verbatim.txt`; 8 bytes; 
 ```text
 approve
 ```
+
+### S56-PO-4 - PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s56-po/s56-po-4.verbatim.txt`.
+
+<!-- prettier-ignore -->
+```text
+LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from other specs, and continue development normally. Reconsider flags before production. Keep tests and regression safeguards.
+```
+
+Architect mapping S56-R7 (not PO words): no feature-flag mechanism is built; unfinished features merge without a flag; no task or slice waits for a flag; the topic is tracked as a pre-production readiness item. Security, RLS, authorization, tests, CI gates and every other safeguard stay as they are.
