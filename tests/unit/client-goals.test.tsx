@@ -176,3 +176,22 @@ describe('Goals section rendering', () => {
       expect(goalNotice(status, m)?.tone).toBe('error');
   });
 });
+
+describe('F15 T048 privacy guard parity', () => {
+  it('keeps the live client_goal_read definition off F15 raw answer tables', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const sql = readFileSync(
+      resolve(
+        process.cwd(),
+        'supabase/migrations/20261118210300_f24_goal_read_no_answer_tables.sql',
+      ),
+      'utf8',
+    );
+    const body = sql.slice(
+      sql.indexOf('create or replace function public.client_goal_read'),
+    );
+    expect(body).toContain('app_private.form_submissions');
+    expect(body).not.toMatch(/form_answer_revisions|form_answer_drafts/u);
+  });
+});
