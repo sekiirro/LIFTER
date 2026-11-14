@@ -20,7 +20,7 @@ beforeAll(async () => {
   checked(
     await admin()
       .from('staff_profiles')
-      .insert({ user_id: creatorId, role: 'trainer' }),
+      .insert({ user_id: creatorId, role: 'trainer', display_name: 'Trainer' }),
   );
 });
 

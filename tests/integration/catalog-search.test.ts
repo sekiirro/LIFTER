@@ -20,6 +20,7 @@ beforeAll(async () => {
     await admin().from('staff_profiles').insert({
       user_id: actorId,
       role: 'platform_owner',
+      display_name: 'Platform Owner',
     }),
   );
 });

@@ -640,7 +640,7 @@ it('both classification directions reject a staff/client identity', async () => 
   await expect(
     probe(async (tx) => {
       const c = await pending(tx, context);
-      await tx`insert into public.staff_profiles(user_id,role) values(${c.auth_user_id},'trainer')`;
+      await tx`insert into public.staff_profiles(user_id,role,display_name) values(${c.auth_user_id},'trainer','Trainer')`;
     }),
   ).rejects.toMatchObject({ code: '23514' });
 });
@@ -753,7 +753,7 @@ it('two real connections serialize staff insert versus client insert on the same
         await pending(tx, context, {}, user.id);
       }),
       other.begin(async (tx) => {
-        await tx`insert into public.staff_profiles(user_id,role) values(${user.id},'trainer')`;
+        await tx`insert into public.staff_profiles(user_id,role,display_name) values(${user.id},'trainer','Trainer')`;
       }),
     ]);
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);

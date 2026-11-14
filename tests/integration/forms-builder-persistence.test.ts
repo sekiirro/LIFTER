@@ -160,7 +160,7 @@ async function workspace(tx: postgres.TransactionSql) {
   const workspaceId = randomUUID();
   await tx`insert into auth.users(id,email) values
     (${actor},${`f15-builder-${actor}@example.test`})`;
-  await tx`insert into public.staff_profiles(user_id,role) values(${actor},'workspace_owner')`;
+  await tx`insert into public.staff_profiles(user_id,role,display_name) values(${actor},'workspace_owner','Workspace Owner')`;
   await tx`insert into public.workspaces(id,name,slug,created_by)
     values(${workspaceId},'Builder fixture',${`f15-builder-${workspaceId}`},${actor})`;
   await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
@@ -756,7 +756,7 @@ describe('T006/T009 persisted Builder writes', () => {
         const formId = randomUUID();
         const policy = `builder-snapshot-${workspaceId}`;
         await tx`insert into auth.users(id,email) values(${actor},${`f15-builder-snapshot-${actor}@example.test`})`;
-        await tx`insert into public.staff_profiles(user_id,role) values(${actor},'workspace_owner')`;
+        await tx`insert into public.staff_profiles(user_id,role,display_name) values(${actor},'workspace_owner','Workspace Owner')`;
         await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
           values(${workspaceId},${actor},${actor})`;
         await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
@@ -920,7 +920,7 @@ describe('T006/T009 persisted Builder writes', () => {
           if (role !== 'workspace_owner') {
             const userId = randomUUID();
             await tx`insert into auth.users(id,email) values(${userId},${`f15-builder-${role}-${userId}@example.test`})`;
-            await tx`insert into public.staff_profiles(user_id,role) values(${userId},${role})`;
+            await tx`insert into public.staff_profiles(user_id,role,display_name) values(${userId},${role},'Fixture Staff')`;
             await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
             values(${fixture.workspaceId},${userId},${fixture.actor})`;
             fixture.actor = userId;

@@ -16,6 +16,7 @@ import {
 import { scanSensitiveLogLines } from './server-log-privacy';
 import { parsePhoneNumber } from 'libphonenumber-js';
 import { generateEgyptianMobile } from './egyptian-mobile';
+import { testStaffDisplayName } from '../helpers/staff-display-name';
 
 const origin = 'http://localhost:3000';
 const local = Boolean(
@@ -1223,7 +1224,7 @@ for (const locale of ['ar', 'en'] as const) {
         await database.begin(async (tx) => {
           await tx`insert into auth.users(id,email,phone,email_confirmed_at,deleted_at) values(${userId},${email},${phoneE164},clock_timestamp(),${kind === 'archived' ? new Date() : null})`;
           if (kind === 'staff') {
-            await tx`insert into public.staff_profiles(user_id,role) values(${userId},'trainer')`;
+            await tx`insert into public.staff_profiles(user_id,role,display_name) values(${userId},'trainer',${testStaffDisplayName()})`;
             await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by) values(${fixture.wsA.id},${userId},${fixture.po.userId})`;
           }
         });

@@ -20,9 +20,11 @@ async function createActor(role: 'platform_owner' | 'trainer') {
   if (created.error || !created.data.user)
     throw new Error(created.error?.message ?? 'Catalog exercise actor missing');
   checked(
-    await admin()
-      .from('staff_profiles')
-      .insert({ user_id: created.data.user.id, role }),
+    await admin().from('staff_profiles').insert({
+      user_id: created.data.user.id,
+      role,
+      display_name: 'Catalog Staff',
+    }),
   );
   return created.data.user.id;
 }
