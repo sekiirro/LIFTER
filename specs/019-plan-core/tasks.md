@@ -1,16 +1,16 @@
 # F19 Shared Plan Core Tasks
 
-**Planning status:** All implementation tasks are unstarted. This PR performs documentation only. No code, migration, workflow/config, or test file is created here.
+**Planning status:** T001-spec and T010 are complete. Remaining implementation tasks are unstarted. T010 evidence is recorded in the slice verification report and traceability rows.
 
 Task ownership is by implementation skill/risk, not by agent/model name. Every task names its FR scope and depends on accepted Spec Kit analysis. Any implementation task stays blocked by its listed MCQ where noted.
 
 ## Phase 0 — Spec Kit documentation
 
-- [ ] **T001-spec - Rebuild and analyze the F19 Spec Kit artifacts.** `OWNER=product-specification / cross-feature contract`. Create spec, clarification register, plan, tasks, data model, client/delivery contracts, traceability, and Analyze checklist for FR-001-FR-015 and SC-001-SC-013. Validate source authority, PO copy bytes, cross-references, supersessions, and docs formatting. This task records no implementation/test completion; docs validation evidence is in the run report.
+- [x] **T001-spec - Rebuild and analyze the F19 Spec Kit artifacts.** `OWNER=product-specification / cross-feature contract`. Create spec, clarification register, plan, tasks, data model, client/delivery contracts, traceability, and Analyze checklist for FR-001-FR-015 and SC-001-SC-013. Validate source authority, PO copy bytes, cross-references, supersessions, and docs formatting. This task records no implementation/test completion; docs validation evidence is in the run report.
 
 ## Phase 1 — F16-aligned plan lifecycle
 
-- [ ] **T010 — Plan root, private draft, and immutable revisions.** `OWNER=database integrity / authorization`. Implement stable workspace/client Plan ID, private mutable draft, immutable revisions, audit, and restrictive authorship references. **FR:** FR-001, FR-009, FR-010, FR-012. **Depends:** F16 contracts; retain non-login author ID per pending F11 deletion policy. **Evidence required:** real-DB persistence, CAS, append-only, role/workspace negative tests.
+- [x] **T010 — Plan root, private draft, and immutable revisions.** `OWNER=database integrity / authorization`. Implement stable workspace/client Plan ID, private mutable draft, immutable revisions, audit, and restrictive authorship references. **FR:** FR-001, FR-009, FR-010, FR-012. **Depends:** F16 contracts; retain non-login author ID per pending F11 deletion policy. **Evidence required:** real-DB persistence, CAS, append-only, role/workspace negative tests.
 - [ ] **T011 — Shared client request and response boundary.** `OWNER=typed API / domain contract`. Implement explicit create modes, draft CAS, Ready & Publish response, stable result/error contract, and F16 `ExerciseSnapshotV2`/food-version references. **FR:** FR-001, FR-008, FR-009, FR-010. **Depends:** T010, F16 FR-020/026/027. **Evidence required:** contract tests plus DB-backed integration where state is persisted.
 - [ ] **T012 — Template and plan copy.** `OWNER=domain content integrity`. Copy latest published plan revision or immutable template version, preserving content fields and planner-entry settings while excluding ownership/history/subscription/delivery/Video. **FR:** FR-008. **Depends:** T010, T011, F16 snapshot contract. **Evidence required:** source-vs-copy value assertions and independent-destination persistence test.
 
