@@ -345,7 +345,8 @@ create table public.client_leaderboard_opt_outs (
   client_id uuid not null,
   actor_user_id uuid not null,
   opted_out_at timestamptz not null default clock_timestamp() check (isfinite(opted_out_at)),
-  audit_event_id bigint not null references public.audit_events(id) on delete restrict,
+  -- spec 005 audit_events.id; no FK so the audit table's own guards stay authoritative.
+  audit_event_id bigint not null,
   primary key (workspace_id, client_id),
   foreign key (workspace_id, client_id) references public.clients(workspace_id, id) on delete restrict
 );
@@ -471,7 +472,8 @@ create table public.leaderboard_publications (
   created_at timestamptz not null default clock_timestamp() check (isfinite(created_at)),
   decided_by uuid references public.staff_profiles(user_id) on delete restrict,
   decided_at timestamptz check (decided_at is null or isfinite(decided_at)),
-  decision_audit_event_id bigint references public.audit_events(id) on delete restrict,
+  -- spec 005 audit_events.id (no FK; see client_leaderboard_opt_outs.audit_event_id).
+  decision_audit_event_id bigint,
   unique (workspace_id, id),
   unique (workspace_id, operation_key),
   check ((state = 'pending' and decided_by is null and decided_at is null and decision_audit_event_id is null)
@@ -819,3 +821,8 @@ grant execute on function
   public.leaderboard_pending_read(uuid),
   public.decide_leaderboard_candidate(uuid, text)
   to authenticated;
+
+comment on column public.client_leaderboard_opt_outs.audit_event_id is
+  'public.audit_events.id of the opt-out event. Intentionally no FK: audit_events keeps its own immutability/TRUNCATE guards authoritative.';
+comment on column public.leaderboard_publications.decision_audit_event_id is
+  'public.audit_events.id of the PO decision event. Intentionally no FK: audit_events keeps its own immutability/TRUNCATE guards authoritative.';

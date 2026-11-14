@@ -457,6 +457,16 @@ export async function pendingHttpAccess(
             'record_subscription_date_adjustment',
             'close_client',
             'ready_and_publish_plan',
+            // F24: a pending client is neither an approved client nor staff/PO.
+            'client_update_username',
+            'client_leaderboard_opt_out',
+            'client_leaderboard_read',
+            'client_leaderboard_self',
+            'workspace_leaderboard_read',
+            'leaderboard_candidate_pool',
+            'create_leaderboard_candidate',
+            'leaderboard_pending_read',
+            'decide_leaderboard_candidate',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&

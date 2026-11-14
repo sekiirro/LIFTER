@@ -56,7 +56,7 @@ const checkinDefinition = {
 };
 
 describe('F24 spec 023 score-input adapter contract', () => {
-  it('reads current-month adherence and baselines by name for the PO and denies others', async () => {
+  it('reads current-month adherence and baselines by name for the PO (owner-session probe)', async () => {
     const f = await clientContext();
     await probe(async (tx) => {
       const ids = await graph(tx, f);
@@ -147,15 +147,6 @@ describe('F24 spec 023 score-input adapter contract', () => {
         }),
       ]);
 
-      for (const actor of [f.salesA.userId, f.trainerB.userId])
-        await expect(
-          asUser(
-            tx,
-            actor,
-            (sp) =>
-              sp`select * from public.progress_weekly_adherence(${ws},${monthStart}::date,${today}::date)`,
-          ),
-        ).rejects.toMatchObject({ code: '42501' });
       await expect(
         asUser(
           tx,
@@ -165,5 +156,33 @@ describe('F24 spec 023 score-input adapter contract', () => {
         ),
       ).rejects.toMatchObject({ code: '22023' });
     });
+  });
+
+  it('enforces the 023 wall for real API sessions: PO allowed, Sales and foreign staff 42501', async () => {
+    // The 023 readers trust the database-owner session (session_user), so the
+    // non-owner wall is only observable through PostgREST JWT sessions.
+    const f = await clientContext();
+    const args = {
+      p_workspace_id: f.wsA.id,
+      p_from: '2026-01-01',
+      p_to: '2026-01-31',
+    };
+    const allowed = await f.po.client.rpc('progress_weekly_adherence', args);
+    expect(allowed.error).toBeNull();
+    expect(Array.isArray(allowed.data)).toBe(true);
+    for (const actor of [f.salesA, f.trainerB]) {
+      const denied = await actor.client.rpc('progress_weekly_adherence', args);
+      expect(denied.error?.code).toBe('42501');
+      const baselines = await actor.client.rpc(
+        'progress_measurement_baselines',
+        { p_workspace_id: f.wsA.id, p_as_of: '2026-01-31' },
+      );
+      expect(baselines.error?.code).toBe('42501');
+    }
+    const reversed = await f.po.client.rpc('progress_weekly_adherence', {
+      ...args,
+      p_from: '2026-02-01',
+    });
+    expect(reversed.error?.code).toBe('22023');
   });
 });

@@ -324,7 +324,7 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
   });
 
   const optionalTelegram = await signupFixture(context);
-  const optionalUsername = `Lifter.Optional.${optionalTelegram.link.replaceAll('-', '').slice(0, 8)}`;
+  const optionalUsername = `Lifter.Opt.${optionalTelegram.link.replaceAll('-', '').slice(0, 8)}`;
   const optionalFields: Record<string, string | null | undefined> = {
     ...optionalTelegram.fields,
     name: 'Heba Sami Nabil',
