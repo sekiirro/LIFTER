@@ -7,7 +7,7 @@ Plan-time mapping only. Evidence status remains `NOT-IMPLEMENTED`; traceability 
 | FR-001        | T003, T005, T006, T007, T031, T032       | NOT-IMPLEMENTED |
 | FR-002        | T020, T027, T028                         | NOT-IMPLEMENTED |
 | FR-003        | T021, T022, T023, T024, T025, T026       | NOT-IMPLEMENTED |
-| FR-004        | T026, T029                         | NOT-IMPLEMENTED |
+| FR-004        | T026, T029                               | NOT-IMPLEMENTED |
 | FR-005        | T011, T015, T030                         | NOT-IMPLEMENTED |
 | FR-006        | T012, T015                               | NOT-IMPLEMENTED |
 | FR-007-FR-009 | T004, T009, T010, T014                   | NOT-IMPLEMENTED |

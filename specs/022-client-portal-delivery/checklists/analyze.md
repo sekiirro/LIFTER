@@ -13,19 +13,19 @@
 
 | Requirement Key | Has Task? | Task IDs                                               | Notes                                                                |
 | --------------- | --------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
-| FR-001          | Yes       | T003, T006-T011                                   | Independent F19 delivery and idempotency                             |
-| FR-002          | Yes       | T003, T006-T008, T011                             | Exactly-once activation                                              |
-| FR-003          | Yes       | T003, T006-T008, T011                             | Productivity point transaction and recipient                         |
-| FR-004          | Yes       | T003, T012-T018                                   | Client plan projection and revision choice                           |
-| FR-005          | Yes       | T003, T012-T016                                   | Authoritative subscription summary                                   |
-| FR-006          | Yes       | T003, T013-T015, T018, T023-T027                  | Entitlement for reads and exports                                    |
-| FR-007          | Yes       | T003, T013-T015, T018                             | Fresh lifecycle authorization                                        |
-| FR-008          | Yes       | T003, T023-T029                                   | Selected-revision exports                                            |
-| FR-009          | Yes       | T003, T019-T022                                   | F15 inbox notices                                                    |
+| FR-001          | Yes       | T003, T006-T011                                        | Independent F19 delivery and idempotency                             |
+| FR-002          | Yes       | T003, T006-T008, T011                                  | Exactly-once activation                                              |
+| FR-003          | Yes       | T003, T006-T008, T011                                  | Productivity point transaction and recipient                         |
+| FR-004          | Yes       | T003, T012-T018                                        | Client plan projection and revision choice                           |
+| FR-005          | Yes       | T003, T012-T016                                        | Authoritative subscription summary                                   |
+| FR-006          | Yes       | T003, T013-T015, T018, T023-T027                       | Entitlement for reads and exports                                    |
+| FR-007          | Yes       | T003, T013-T015, T018                                  | Fresh lifecycle authorization                                        |
+| FR-008          | Yes       | T003, T023-T029                                        | Selected-revision exports                                            |
+| FR-009          | Yes       | T003, T019-T022                                        | F15 inbox notices                                                    |
 | FR-010          | Yes       | T003-T004, T013-T014, T018, T023-T027, T032-T033, T038 | Identity, privacy and workspace boundaries                           |
 | FR-011          | Yes       | T003-T004, T030-T038                                   | Approved directory fields, filters and indicators                    |
-| FR-012          | Yes       | T003, T023-T027, T042                             | Client exports remain per-plan; comprehensive export remains PO-only |
-| FR-013          | Yes       | T003, T042                                  | No YBS access, migration or synchronization                          |
+| FR-012          | Yes       | T003, T023-T027, T042                                  | Client exports remain per-plan; comprehensive export remains PO-only |
+| FR-013          | Yes       | T003, T042                                             | No YBS access, migration or synchronization                          |
 
 ## Constitution Alignment Issues
 
