@@ -41,17 +41,21 @@ export function MeasurementsSection({
   locale,
   messages,
   rowAction,
+  actions,
 }: {
   measurements: readonly ProgressMeasurement[];
   locale: Locale;
   messages: Messages;
   rowAction?: (measurement: ProgressMeasurement) => ReactNode;
+  /** Rendered under the heading, e.g. the client add controls. */
+  actions?: ReactNode;
 }) {
   return (
     <Card as="section" aria-labelledby="progress-measurements-title">
       <h2 id="progress-measurements-title" className={styles.heading}>
         {messages['progress.measurements.title']}
       </h2>
+      {actions}
       {measurements.length === 0 ? (
         <EmptyState title={messages['progress.measurements.empty']} />
       ) : (

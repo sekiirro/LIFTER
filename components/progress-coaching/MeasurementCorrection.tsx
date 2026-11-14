@@ -7,15 +7,15 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { Field } from '../ui/Field';
 import { useToast } from '../ui/Toast';
 import { parseMeasurementValue } from '../../lib/progress-coaching/correction-input';
-import type { CorrectionResult } from '../../lib/progress-coaching/service';
+import type { MeasurementWriteResult } from '../../lib/progress-coaching/correction-input';
 
 export type MeasurementCorrectionLabels = {
   /** progress.measurement.edit (S55-PO-10). */
   edit: string;
-  /** dialog.confirm / dialog.cancel (approved design-system dialog copy). */
+  /** Confirm button: dialog.confirm (staff) or progress.measurement.save (client). */
   confirm: string;
   cancel: string;
-  /** toast.success (approved design-system copy). */
+  /** toast.success (staff) or progress.measurement.saved (client). */
   saved: string;
   /** states.error.description (approved design-system copy). */
   failed: string;
@@ -36,12 +36,13 @@ export type MeasurementCorrectionProps = {
     measurementId: string;
     value: number;
     expectedUpdatedAt: string;
-  }) => Promise<CorrectionResult>;
+  }) => Promise<MeasurementWriteResult>;
 };
 
 /**
- * FR-013 staff correction: a direct in-place update. There is deliberately no
- * correction-history surface; the change is recorded in the background audit only.
+ * Direct in-place measurement edit: FR-013 staff correction, and the client edit of
+ * an own manual row (PO 2026-11-14). There is deliberately no correction-history
+ * surface; every change is recorded in the background audit only.
  */
 export function MeasurementCorrection({
   workspaceId,
@@ -81,7 +82,11 @@ export function MeasurementCorrection({
         value: parsed,
         expectedUpdatedAt: updatedAt,
       });
-      if (result.status === 'corrected' || result.status === 'unchanged') {
+      if (
+        result.status === 'corrected' ||
+        result.status === 'updated' ||
+        result.status === 'unchanged'
+      ) {
         close();
         toast.success(labels.saved);
         router.refresh();
