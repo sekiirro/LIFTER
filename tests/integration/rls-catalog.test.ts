@@ -77,6 +77,7 @@ const f24Private = [
   'f24_guard_entry',
   'f24_guard_publication',
   'f24_initial_subscription',
+  'f24_public_entries',
   'f24_publication_entries',
   'f24_username_issue',
   'f24_visible_username',

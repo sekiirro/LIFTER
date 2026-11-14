@@ -30,6 +30,7 @@ const ALLOWED_KEYS = new Set([
   'state',
   'eligible',
   'opted_out',
+  'total',
 ]);
 const FORBIDDEN =
   /score|adherence|workout|diet|progress|weight|body.?fat|measurement|circumference|check.?in|answer|note|photo|plan|email|phone|birth|subscription|client_id|achiev|client_code/iu;
@@ -58,6 +59,11 @@ beforeAll(async () => {
 
   record('client read', await listed.client.rpc('client_leaderboard_read'));
   record('client self', await listed.client.rpc('client_leaderboard_self'));
+  record('private rank', await listed.client.rpc('client_leaderboard_my_rank'));
+  record(
+    'staff private rank',
+    await f.trainerA.client.rpc('client_leaderboard_my_rank'),
+  );
   for (const [label, actor] of [
     ['po', f.po],
     ['owner', f.woA],

@@ -148,9 +148,13 @@ describe('publication lifecycle', () => {
     expect(
       (await candidate([eligible[0]!.clientId, eligible[0]!.clientId])).data,
     ).toEqual({ status: 'invalid_input' });
+    // Full ranking (PO 2026-11-14): more than five is allowed; 5000 is the sanity bound.
+    expect(
+      (await candidate(Array.from({ length: 5001 }, () => randomUUID()))).data,
+    ).toEqual({ status: 'invalid_input' });
     expect(
       (await candidate(Array.from({ length: 6 }, () => randomUUID()))).data,
-    ).toEqual({ status: 'invalid_input' });
+    ).toEqual({ status: 'ineligible_client' });
     for (const client of [newcomer, unactivated, noUsername])
       expect((await candidate([client.clientId])).data).toEqual({
         status: 'ineligible_client',

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
+import { formatMyRank } from '../../lib/leaderboard/format';
 import {
   leaderboardClient,
   leaderboardContext,
@@ -79,5 +80,18 @@ test.describe.serial('F24 direct opt-out from account settings', () => {
       await expect(page.getByText(actor.username, { exact: true })).toHaveCount(
         0,
       );
+      // PO 2026-11-14: the opted-out client keeps their private rank; the
+      // total still counts every ranked client.
+      await expect(
+        page.getByText(
+          formatMyRank(
+            locale === 'en' ? 1 : 2,
+            2,
+            m['leaderboard.myRank'],
+            locale,
+          ),
+          { exact: true },
+        ),
+      ).toBeVisible();
     });
 });

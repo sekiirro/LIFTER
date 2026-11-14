@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
+import { formatMyRank } from '../../lib/leaderboard/format';
 import {
   leaderboardClient,
   leaderboardContext,
@@ -119,6 +120,13 @@ test.describe.serial('F24 leaderboard design-gate screenshots', () => {
       await expect(page.locator('main')).not.toContainText(
         /score|adherence|progress/iu,
       );
+      // Private rank (PO 2026-11-14): listed[0] is rank 1 of 3.
+      await expect(
+        page.getByText(
+          formatMyRank(1, 3, m['leaderboard.myRank'], variant.locale),
+          { exact: true },
+        ),
+      ).toBeVisible();
       await capture(page, 'client-leaderboard', variant);
     });
   });

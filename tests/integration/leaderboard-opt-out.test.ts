@@ -44,8 +44,9 @@ describe('direct opt-out', () => {
         p_workspace_id: f.wsA.id,
       }),
     ])
+      // PO 2026-11-14: the next eligible entry moves up, no reapproval.
       expect((await read).data.entries).toEqual([
-        { rank: 2, username: other.username },
+        { rank: 1, username: other.username },
       ]);
     expect(
       (await listed.client.rpc('client_leaderboard_self')).data,
@@ -134,7 +135,7 @@ describe('direct opt-out', () => {
     } catch (error) {
       if (error !== rollback) throw error;
     }
-    // The FR-008 assertion above ([rank 2 only]) fails under the mutant.
-    expect(mutantEntries).not.toEqual([{ rank: 2, username: other.username }]);
+    // The FR-008 assertion above ([other promoted to rank 1]) fails under the mutant.
+    expect(mutantEntries).not.toEqual([{ rank: 1, username: other.username }]);
   });
 });

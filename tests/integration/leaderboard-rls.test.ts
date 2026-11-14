@@ -29,6 +29,7 @@ const rpcs = [
   'public.decide_leaderboard_candidate(uuid,text)',
   'public.set_client_goal_type(uuid,uuid,text)',
   'public.client_goal_read(uuid,uuid)',
+  'public.client_leaderboard_my_rank()',
 ] as const;
 const helpers = [
   'app_private.f24_username_issue(text,uuid)',
@@ -38,6 +39,7 @@ const helpers = [
   'app_private.f24_visible_username(uuid,uuid)',
   'app_private.f24_publication_entries(uuid,uuid)',
   'app_private.f24_current_view(uuid)',
+  'app_private.f24_public_entries(uuid,uuid)',
 ] as const;
 
 let f: LeaderboardContext;
