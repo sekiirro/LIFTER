@@ -224,11 +224,13 @@ describe('T026 PO review decision feedback', () => {
       expect(html.match(/type="submit"/gu)).toHaveLength(2);
       for (const decision of ['approve', 'reject'])
         expect(
-          html.match(/<button [^>]*>/gu)?.some(
-            (button) =>
-              button.includes('name="decision"') &&
-              button.includes(`value="${decision}"`),
-          ),
+          html
+            .match(/<button [^>]*>/gu)
+            ?.some(
+              (button) =>
+                button.includes('name="decision"') &&
+                button.includes(`value="${decision}"`),
+            ),
           decision,
         ).toBe(true);
       expect(html).toContain('LIST');
