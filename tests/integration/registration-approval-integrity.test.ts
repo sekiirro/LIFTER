@@ -147,7 +147,7 @@ it.each(tables)(
         await expect(
           probe(async (tx) => {
             const ids = await graph(tx, f);
-            await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id) values(${f.wsA.id},${ids.subscription},now(),${randomUUID()})`;
+            await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source) values(${f.wsA.id},${ids.subscription},now(),${randomUUID()}, 'po_override')`;
             await tx`set constraints all immediate`;
             // Remove incoming FKs only within this rolled-back probe to avoid FK masking.
             if (op === 'truncate') {

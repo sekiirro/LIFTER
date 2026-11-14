@@ -51,8 +51,8 @@ it('T011 derives awaiting, future, frozen and exclusive-expiry states directly f
       status: 'awaiting_activation',
     });
 
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},'2026-11-01 10:00:00+02',${ids.event})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},'2026-11-01 10:00:00+02',${ids.event}, 'po_override')`;
     const [future] = await tx`
       select app_private.f13_project_entitlement(${f.wsA.id},${ids.subscription},'2026-10-31'::date) as projection
     `;
@@ -79,8 +79,8 @@ it('T011 materializes the derived exclusive expiry idempotently and does not gat
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},'2026-11-01 10:00:00+02',${ids.event})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},'2026-11-01 10:00:00+02',${ids.event}, 'po_override')`;
     const [fresh] = await tx`
       select app_private.f13_project_entitlement(${f.wsA.id},${ids.subscription},'2026-11-01'::date) as projection
     `;

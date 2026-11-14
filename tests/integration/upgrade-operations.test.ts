@@ -802,8 +802,8 @@ it('T042 reuses the original start after a higher-rank shorter upgrade', async (
   });
   await probe(async (tx) => {
     const historicalActivation = new Date(Date.now() - 10 * 86400000);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},${historicalActivation},${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},${historicalActivation},${randomUUID()}, 'po_override')`;
     await fullyPayInitial(tx, f, purchase);
     const first = await upgrade(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
@@ -1005,8 +1005,8 @@ it('T042 carries only unconsumed counted-freeze extension into the upgraded proj
       ((clock_timestamp() at time zone 'Africa/Cairo')::date - 3)::date as original_end,
       ((clock_timestamp() at time zone 'Africa/Cairo')::date - s.duration_days - 3 + s.duration_days)::date as base_end
       from public.subscriptions s where s.workspace_id=${f.wsA.id} and s.id=${purchase.sid}`;
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},(${dates!.activated_on}::date::timestamp + interval '12 hours') at time zone 'Africa/Cairo',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},(${dates!.activated_on}::date::timestamp + interval '12 hours') at time zone 'Africa/Cairo',${randomUUID()}, 'po_override')`;
     const [terms] = await tx`select s.duration_days::integer,
         (a.activated_at at time zone 'Africa/Cairo')::date::text as activated_on from public.subscriptions s
       join public.subscription_activations a on a.workspace_id=s.workspace_id and a.subscription_id=s.id
@@ -1436,8 +1436,8 @@ it('F13 counts successive nonoverlapping freezes in the growing coverage window'
   const f = await clientContext();
   const purchase = await bought(f);
   await probe(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '100 days',${randomUUID()}, 'po_override')`;
     const [dates] = await tx`select
       (((clock_timestamp()-interval '100 days') at time zone 'Africa/Cairo')::date+61)::text as base_end`;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
@@ -1467,8 +1467,8 @@ it('T042 freeze reflows an unstarted renewal from the effective upgraded term', 
     duration_days: 30,
   });
   await probe(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '10 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '10 days',${randomUUID()}, 'po_override')`;
     await fullyPayInitial(tx, f, purchase);
     const upgraded = await upgrade(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
@@ -1534,8 +1534,8 @@ it('T049 recomputes the upgraded projection after removing a counted freeze', as
     const ids = await graph(tx, f);
     const purchase = { t: { id: ids.client }, sid: ids.subscription };
     const activation = new Date(Date.now() - 10 * 86400000);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()}, 'po_override')`;
     const freezeId = randomUUID();
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
     const [freezeDates] = await tx`select
@@ -1598,8 +1598,8 @@ it('T049 subtracts only unconsumed freeze coverage and reflows a later renewal',
     const ids = await graph(tx, f);
     const purchase = { t: { id: ids.client }, sid: ids.subscription };
     const activation = new Date(Date.now() - 81 * 86400000);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()}, 'po_override')`;
     const [dates] = await tx`select
       (((${activation} at time zone 'Africa/Cairo')::date+61)::text) as base_end,
       ((clock_timestamp() at time zone 'Africa/Cairo')::date-1)::text as stop_on`;
@@ -1693,8 +1693,8 @@ async function seedFreezeRemovalRenewalTimeline(
 ) {
   const ids = await graph(tx, f);
   const purchase = { t: { id: ids.client }, sid: ids.subscription };
-  await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-    values(${f.wsA.id},${purchase.sid},clock_timestamp(),${randomUUID()})`;
+  await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+    values(${f.wsA.id},${purchase.sid},clock_timestamp(),${randomUUID()}, 'po_override')`;
   const [dates] = await tx`select
     ((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::date as day_zero`;
   const dayZero = dates!.day_zero as string;
@@ -2027,8 +2027,8 @@ it('T049 preserves a newer manual date when a freeze is removed after upgrade', 
     const ids = await graph(tx, f);
     const purchase = { t: { id: ids.client }, sid: ids.subscription };
     const activation = new Date(Date.now() - 62 * 86400000);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${purchase.sid},${activation},${randomUUID()}, 'po_override')`;
     const [dates] = await tx`select
       (((${activation} at time zone 'Africa/Cairo')::date+61)::text) as base_end,
       ((clock_timestamp() at time zone 'Africa/Cairo')::date)::text as today,
