@@ -44,7 +44,7 @@
 
 - [ ] T009 [US1] [FR-001] Wire eligible workout Ready & Publish to F19 delivery/idempotency in `app/(app)/clients/[clientId]/actions.ts`.
 - [ ] T010 [US1] [FR-001] Wire eligible nutrition Ready & Publish to F19 delivery/idempotency in `app/(app)/clients/[clientId]/actions.ts`.
-- [ ] T011 [US1] [FR-002, FR-003] Reuse F19 activation and F13 T044 productivity behavior in `lib/productivity/points.ts`.
+- [ ] T011 [US1] [FR-002, FR-003] Reuse F19 activation and F13 T044 productivity behavior in `lib/productivity/points.ts`. Per S57-PO-11 the F19 normal and PO override activations each give an eligible new client its one unit; P4 adds no unit writer and verifies the override case against F19.
 
 **Checkpoint**: User Story 1 is independently functional and testable.
 
@@ -64,8 +64,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] [FR-004, FR-005] Build client-safe delivered-plan projection using F19/F13 in `app/(client)/plans/page.tsx`.
-- [ ] T017 [US2] [FR-004] Add own-plan published-revision selection in `app/(client)/plans/[planId]/page.tsx`.
+- [ ] T016 [US2] [FR-004, FR-005] Build client-safe delivered-plan projection using F19/F13 in `app/(client)/plans/page.tsx`, with the S57-PO-12 status labels (Refunded only for a full refund) and the S57-PO-5 last covered day.
+- [ ] T017 [US2] [FR-004] Add own-plan published-revision selection in `app/(client)/plans/[planId]/page.tsx`. The plan body embeds the F17/F18 shared read-only views once they merge (S57-PO-9); P4 builds no renderer.
 - [ ] T018 [US2] [FR-004, FR-005, FR-006, FR-007] [HIGH-RISK: authorization] Enforce fresh F13 entitlement and restricted projection in `lib/client-access/authorize.ts` (independent review + mutation evidence required).
 
 **Checkpoint**: User Story 2 is independently functional and testable.
@@ -84,8 +84,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] [FR-009] Extend F15 inbox delivery for client recipients in `lib/forms/alert-inbox.ts`.
-- [ ] T022 [US3] [FR-009] Emit one notice per delivery and activation text on the completing delivery in `lib/forms/alert-inbox.ts`.
+- [ ] T021 [US3] [FR-009] Extend F15 inbox delivery for client recipients (S57-PO-10): a client notice record beside the unchanged F15 staff inbox, client-only read/mark-read, the enqueue seam and the client notices surface, in `lib/client-access/notices.ts` (F15 `lib/forms/alert-inbox.ts` stays staff-only).
+- [ ] T022 [US3] [FR-009] Emit one notice per delivery and activation text on the completing delivery through the F19 delivery/activation hook (an F19 task under S57-PO-10) calling the T021 enqueue seam.
 
 **Checkpoint**: User Story 3 is independently functional and testable.
 
@@ -128,7 +128,7 @@
 ### Implementation for User Story 5
 
 - [ ] T034 [US5] [FR-011] Build directory query over F11 identity fields in `app/(app)/clients/page.tsx`.
-- [ ] T035 [US5] [FR-011] Add existing account/approval, subscription and assignment filters in `app/(app)/clients/page.tsx`.
+- [ ] T035 [US5] [FR-011] Add existing account/approval, subscription and assignment filters in `app/(app)/clients/page.tsx`; the subscription filter uses the S57-PO-12 labels and its Refunded option matches full refunds only.
 - [ ] T036 [US5] [FR-011] Show three owning-surface indicators in `app/(app)/clients/page.tsx`.
 - [ ] T037 [US5] [FR-011] Link indicators to existing F15/F18/F19 surfaces in `app/(app)/clients/page.tsx`.
 - [ ] T038 [US5] [FR-010, FR-011] [HIGH-RISK: authorization] Enforce workspace authorization for directory reads (independent review + mutation evidence required).
