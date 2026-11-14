@@ -2,7 +2,7 @@
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/](contracts/), [quickstart.md](quickstart.md)
 
-**Prerequisite**: The shared server-side default-OFF feature-flag mechanism must be specified and merged in its own small PR before this feature can merge unfinished.
+Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.
 
 **Organization**: Five independently verifiable P1 stories, with each vertical slice targeted at approximately 400-800 changed lines. No implementation or test execution is authorized by this specification PR. Every task names FR coverage and target file(s).
 
@@ -14,7 +14,7 @@
 
 **Purpose**: Establish the safe feature boundary and confirm reused contracts.
 
-- [ ] T001 [FR-004, FR-029] Complete the separate feature-flag mechanism spec/PR before implementation; add a server-only default-OFF leaderboard gate in `lib/feature-flags/server.ts` only after that prerequisite exists.
+- [ ] T001 [FR-004, FR-029] CANCELLED (PO S56-PO-4): complete the separate feature-flag mechanism prerequisite and add a server-only leaderboard flag gate.
 - [ ] T002 [FR-031-FR-037] Verify the pinned F11, F13, F15, F19, F21, spec 022, spec 023, spec 003 and spec 005 contracts in `specs/024-client-leaderboard/research.md`; update dependency notes if any source contract moved.
 
 ## Phase 2: Foundational authorization and audit
@@ -118,14 +118,14 @@
 
 - [ ] T033 [P] [FR-001-FR-040] Update `specs/024-client-leaderboard/traceability.md` only after each mapped test passes; keep any unimplemented evidence marked NOT-IMPLEMENTED.
 - [ ] T034 [FR-001-FR-040] Run full local lint, typecheck, unit, touched integration/e2e, format and security gates for the final feature head; record outcomes in `specs/024-client-leaderboard/traceability.md`.
-- [ ] T035 [HIGH-RISK: RLS/authorization] [FR-001-FR-040] Remove the default-OFF flag only after all feature gates and the cumulative feature review pass, in `lib/feature-flags/server.ts`.
+- [ ] T035 [HIGH-RISK: RLS/authorization] [FR-001-FR-040] CANCELLED (PO S56-PO-4): remove the leaderboard feature flag after completion.
 
 ## Dependencies and execution order
 
-- T001 is a separate prerequisite PR and blocks any unfinished merge. T002 confirms upstream contract versions.
+- T002 confirms upstream contract versions.
 - T003-T007 are foundational; story work starts after authorization/RLS foundations.
 - US2 uses the established F11 signup and client settings boundaries. US3 builds candidate ranking after foundational adapters. US1 depends on T020 ranking output. US4 consumes approved publications. US5 is a cross-story negative-proof slice.
-- T008-T015 depend on T003-T005. T016-T020 depend on read-only F13/F15/F19/spec 023 adapters. T021-T026 depend on T020 candidate output plus T003-T005. T027-T030 depend on the publication/read boundary. T031-T032 exercise all workspace-owned relations. T033-T035 are final gates.
+- T008-T015 depend on T003-T005. T016-T020 depend on read-only F13/F15/F19/spec 023 adapters. T021-T026 depend on T020 candidate output plus T003-T005. T027-T030 depend on the publication/read boundary. T031-T032 exercise all workspace-owned relations. T033-T034 are final gates.
 - Username validation follows S55-PO-9 Q14; no implementation may expand beyond those rules.
 
 ## Parallel opportunities
@@ -136,4 +136,4 @@
 
 ## Implementation strategy
 
-Start with the separate flag prerequisite and authorization foundations. Deliver one small story slice at a time, keeping each PR near 400-800 changed lines. Candidate ranking and display remain inaccessible until PO approval. Keep incomplete work dark behind the server-side default-OFF flag. Complete each slice with local CI-equivalent evidence before its one push; remove the flag only after cumulative feature gates pass.
+Start with authorization foundations. Deliver one small story slice at a time, keeping each PR near 400-800 changed lines. Candidate ranking and display remain inaccessible until PO approval. Proceed without a feature flag while LIFTER is not live (PO S56-PO-4); reconsider flags before production. Complete each slice with local CI-equivalent evidence before its one push; complete the feature review and gates.
