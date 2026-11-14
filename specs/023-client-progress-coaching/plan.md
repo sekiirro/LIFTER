@@ -4,7 +4,7 @@
 
 ## Summary
 
-P5 Progress coaching loop: weekly check-ins (P5-A), measurements (P5-B), food replacement requests (P5-C), client timeline (P5-E), with trainer notes reused from F20 (P5-D). Reuses F13 freeze, F15 forms/scheduler/notifications, F18 alternatives, F19 publish, F20 notes/audit, F21 bylines. Client leaderboard is a separate spec (024) that consumes `workoutAdherence` and `dietAdherence`. All work is spec-only in this lane; implementation requires a future lane and a server-side default-OFF feature flag for unfinished slices.
+P5 Progress coaching loop: weekly check-ins (P5-A), measurements (P5-B), food replacement requests (P5-C), client timeline (P5-E), with trainer notes reused from F20 (P5-D). Reuses F13 freeze, F15 forms/scheduler/notifications, F18 alternatives, F19 publish, F20 notes/audit, F21 bylines. Client leaderboard is a separate spec (024) that consumes `workoutAdherence` and `dietAdherence`. All work is spec-only in this lane; implementation requires a future lane. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.
 
 ## Technical context
 
@@ -14,7 +14,7 @@ P5 Progress coaching loop: weekly check-ins (P5-A), measurements (P5-B), food re
 - F15 forms machinery is the single source for weekly check-in form answers, including the two adherence questions on a 0-10 integer scale.
 - Audit retention inherited from F11/F20; no new retention rule.
 - Migrations forward-only, expand/contract; unique versions chosen after an all-origin scan (no versions assigned here; spec-only).
-- Unfinished slices merge behind a server-side feature flag default OFF; flags never gate security/authorization/RLS.
+- Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. Security/authorization/RLS remain mandatory.
 
 ## Design
 
@@ -81,7 +81,7 @@ P5 Progress coaching loop: weekly check-ins (P5-A), measurements (P5-B), food re
 - F15 reuse: P5-A must not define a separate scheduler or occurrence table.
 - F18 reuse: P5-C owns request workflow only; approval prepares draft, manual publish.
 - F20 reuse: no duplicate notes spec.
-- Feature flag: unfinished slices merge behind server-side default-OFF flag; flag never gates security/RLS.
+- Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.
 
 ## Complexity tracking
 

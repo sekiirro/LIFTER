@@ -272,3 +272,7 @@ None. S55-024-Q11 through S55-024-Q14 are resolved (see Clarifications above).
 - Consume merged F13/F16/F20 contracts; coordinate with open PR #58 (F15-B).
 - Reuse the F11 invitation-link signup surface and `client_signup` contract; do not redesign signup. Reuse account-settings patterns from spec 022 where available, F11/F21 identity ownership boundaries, and spec 023 progress/adherence fields by name.
 - Leaderboard is optional; gated by legal review (assessment C4) before Full Launch.
+
+### S56-PO-4 - 2026-11-14
+
+PO S56-PO-4 (2026-11-14): "LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from other specs, and continue development normally. Reconsider flags before production. Keep tests and regression safeguards."

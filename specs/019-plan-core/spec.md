@@ -205,3 +205,7 @@ Until the F13 continuity change is merged and deployed, F19 delivery stays disab
 - PO authority: the two run files and hash listed under Clarifications.
 - Architect gap sweep: `C:/Users/NEW LAP/.lifter/runs/s42-po/s42-architect-rulings.md`, S42-R6. It identifies obsolete projection, retry/outbox, catalog reference, migration-range, readiness, and F11-authorship assumptions; it is analysis rather than PO decision.
 - Current approved references on `origin/main` at `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`: `specs/012-registration-approval/data-model.md:107-113` and `contracts/feature-handoffs.md`; `specs/013-freeze-renewal-refunds/spec.md` FR-005/013/028/033, scenario 3 at :106 and SC-012 at :211; `specs/016-exercise-food-catalogs/spec.md` FR-020/026/027, SC-009/011, `ExerciseSnapshotV2`, and live Video semantics; `docs/01-traceability.md:28`; `docs/02-architecture.md:88`; `docs/03-roadmap.md:63-65`; migrations `20261101120000_registration_approval_model.sql:165-174` and `20261103130300_f13_renewal_activation_freeze_seam.sql:100-145`; `lib/auth/capabilities.ts`. F11 FR-018/020/027/028 and S41-PO-11 are on open PR #73 and are pending, not a fact this spec depends on.
+
+### S56-PO-4 - 2026-11-14
+
+PO S56-PO-4 (2026-11-14): "LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from other specs, and continue development normally. Reconsider flags before production. Keep tests and regression safeguards."
