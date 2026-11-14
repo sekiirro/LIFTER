@@ -994,6 +994,18 @@ export const en: Record<keyof typeof ar, string> = {
     'Plans are currently unavailable due to your subscription status.',
   'client.portal.viewPlan': 'View plan',
   'client.portal.revision': 'Published revision',
+  'client.portal.notice.workoutDelivered':
+    'Your workout plan is ready to view.',
+  'client.portal.notice.nutritionDelivered':
+    'Your nutrition plan is ready to view.',
+  'client.portal.notice.subscriptionActivated':
+    'Your subscription is now active.',
+  'client.portal.notice.workoutAndActivated':
+    'Your workout plan is ready, and your subscription is now active.',
+  'client.portal.notice.nutritionAndActivated':
+    'Your nutrition plan is ready, and your subscription is now active.',
+  'client.portal.inbox.markRead': 'Mark as read',
+  'client.portal.inbox.empty': 'You are all caught up.',
   'staff.clientDirectory.title': 'Clients',
   'staff.clientDirectory.search': 'Search clients',
   'staff.clientDirectory.filters': 'Filters',

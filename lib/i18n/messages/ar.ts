@@ -961,6 +961,17 @@ export const ar = {
   'client.portal.restricted': 'مش هتقدر تفتح خططك دلوقتي بسبب حالة اشتراكك.',
   'client.portal.viewPlan': 'افتح الخطة',
   'client.portal.revision': 'النسخة المنشورة',
+  'client.portal.notice.workoutDelivered':
+    'خطة تمرينك جاهزة، تقدر تفتحها دلوقتي.',
+  'client.portal.notice.nutritionDelivered':
+    'خطة أكلك جاهزة، تقدر تفتحها دلوقتي.',
+  'client.portal.notice.subscriptionActivated': 'اشتراكك اتفعّل.',
+  'client.portal.notice.workoutAndActivated':
+    'خطة تمرينك جاهزة، واشتراكك اتفعّل.',
+  'client.portal.notice.nutritionAndActivated':
+    'خطة أكلك جاهزة، واشتراكك اتفعّل.',
+  'client.portal.inbox.markRead': 'اعتبره مقروء',
+  'client.portal.inbox.empty': 'مفيش إشعارات جديدة.',
   'staff.clientDirectory.title': 'العملاء',
   'staff.clientDirectory.search': 'دوّر على عميل',
   'staff.clientDirectory.filters': 'فلترة',

@@ -3,12 +3,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireActor } from '../../../lib/auth/actor';
 import { readClientPortalOverview } from '../../../lib/client-access/portal';
+import { readClientNotices } from '../../../lib/client-access/notices';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import { Alert } from '../../../components/ui/Alert';
 import { Bidi } from '../../../components/ui/Bidi';
 import { EmptyState } from '../../../components/ui/States';
 import { SubscriptionFacts } from '../../../components/client-portal/SubscriptionFacts';
+import { ClientNotices } from '../../../components/client-portal/ClientNotices';
 import {
   formatCount,
   formatPublishedAt,
@@ -18,9 +20,10 @@ import styles from '../../../components/client-portal/client-portal.module.css';
 export default async function ClientPlansPage() {
   const actor = await requireActor();
   if (actor.role !== null) notFound();
-  const [store, overview] = await Promise.all([
+  const [store, overview, notices] = await Promise.all([
     cookies(),
     readClientPortalOverview(),
+    readClientNotices(),
   ]);
   if (overview.status === 'denied') notFound();
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
@@ -34,6 +37,10 @@ export default async function ClientPlansPage() {
         locale={locale}
         messages={m}
       />
+      {/* FR-004: the restricted dashboard shows only status, end date and the restricted state. */}
+      {overview.status === 'ok' && (
+        <ClientNotices result={notices} locale={locale} messages={m} />
+      )}
       {overview.status === 'restricted' ? (
         <Alert
           tone="warning"
