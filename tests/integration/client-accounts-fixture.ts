@@ -454,6 +454,7 @@ export async function pendingHttpAccess(
             'record_renewal',
             'record_subscription_upgrade',
             'record_subscription_date_adjustment',
+            'override_activate_subscription',
             'close_client',
             'ready_and_publish_plan',
           ].includes(fn.proname)
