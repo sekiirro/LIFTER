@@ -88,7 +88,7 @@ async function addReturningHistory(
     await db`insert into public.subscriptions(id,workspace_id,client_id,kind,registration_link_id,package_version_id,
       price_minor,currency,commission_rate_bp,duration_days,duration_months,created_by,predecessor_subscription_id)
       values(${priorSubscriptionId},${context.wsA.id},${clientId},'renewal',null,${context.p.versionId},
-        1200,'XTS',17,30,null,${context.po.userId},
+        1200,'USD',17,30,null,${context.po.userId},
         (select id from public.subscriptions where workspace_id=${context.wsA.id} and client_id=${clientId} and kind='initial'))`;
   } finally {
     await db`alter table public.subscriptions enable trigger f12_subscription_insert`;

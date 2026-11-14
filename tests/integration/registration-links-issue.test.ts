@@ -14,7 +14,7 @@ import {
   secret,
   type RegistrationFixture,
 } from './registration-links-fixture';
-import { syntheticTerms } from './packages-fixture';
+import { publishedFixture, syntheticTerms } from './packages-fixture';
 let f: RegistrationFixture;
 const db = sql();
 beforeAll(async () => {
@@ -205,7 +205,7 @@ it('PO issues cross-scope without a workspace membership', async () => {
         offer_id: foreign.offerId,
         installment_count: 2,
         price_minor: '1200',
-        currency: 'XTS',
+        currency: 'USD',
       },
     },
   ]);
@@ -283,20 +283,13 @@ it('duplicate hash fails generically and concurrent distinct requests commit onc
 });
 it('global actor limit serializes concurrent calls across workspaces', async () => {
   const fresh = await registrationFixture();
-  const version = checked(
-    await publish(fresh, fresh.p.id, {
-      tier_rank: 1,
-      workspace_id: fresh.wsB.id,
-      price_minor: '1200',
-    }),
-  );
-  const offer = checked(
-    await fresh.po.client
-      .from('package_offers')
-      .select('id')
-      .eq('current_version_id', version)
-      .single(),
-  );
+  const foreign = await publishedFixture(fresh, {
+    tier_rank: 1,
+    workspace_id: fresh.wsB.id,
+    price_minor: '1200',
+  });
+  const version = foreign.versionId;
+  const offer = foreign.offer;
   checked(
     await fresh.po.client.rpc('set_package_offer_available', {
       workspace_id: fresh.wsB.id,

@@ -115,18 +115,18 @@ describe('registration approval controls', () => {
           ...item,
           approval_state: 'pending-approval',
           price_minor: '1200',
-          currency: 'XTS',
+          currency: 'USD',
           installments: [
             {
               seq: 1,
               amount_minor: '400',
-              currency: 'XTS',
+              currency: 'USD',
               issued_day_offset: 7,
             },
             {
               seq: 2,
               amount_minor: '800',
-              currency: 'XTS',
+              currency: 'USD',
               issued_day_offset: 37,
             },
           ],
@@ -136,8 +136,8 @@ describe('registration approval controls', () => {
         messages: getMessages('en'),
       }),
     );
-    expect(html).toContain('400 XTS');
-    expect(html).not.toContain('1200 XTS');
+    expect(html).toContain('400 USD');
+    expect(html).not.toContain('1200 USD');
   });
   it('hides correction and reconsideration controls from non-PO staff', () => {
     const html = renderToStaticMarkup(

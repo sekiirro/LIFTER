@@ -509,7 +509,7 @@ it('closes an open dialog on workspace and package switches', () => {
         name_ar: 'A',
         name_en: 'A',
         price_minor: '1200',
-        currency: 'XTS',
+        currency: 'USD',
         duration_days: 30,
         duration_months: null,
         published_at: '2026-01-01T00:00:00Z',

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   anonClient,
+  admin,
   checked as harnessChecked,
   createStaff,
   sql,
@@ -23,7 +24,7 @@ export const syntheticTerms = {
   name_ar: 'test-authored-ar',
   name_en: 'test-authored-en',
   price_minor: '9007199254740993',
-  currency: 'XTS',
+  currency: 'USD',
   commission_rate_bp: 17,
 };
 export async function packagesFixture() {
@@ -68,12 +69,51 @@ export async function packagesFixture() {
   return { ...f, actors };
 }
 export type PackagesFixture = Awaited<ReturnType<typeof packagesFixture>>;
-export async function createSynthetic(f: PackagesFixture) {
+export async function createSynthetic(
+  f: PackagesFixture,
+  workspaceId?: string,
+) {
+  const code = `test-pkg-${randomUUID()}`;
+  const workspace = workspaceId
+    ? { id: workspaceId }
+    : checked(
+        await admin()
+          .from('workspaces')
+          .insert({
+            name: `Fixture ${code}`,
+            slug: `f3-${code}`,
+            created_by: f.po.userId,
+          })
+          .select('id')
+          .single(),
+      );
+  if (!workspaceId) {
+    const membershipInsert = await admin()
+      .from('workspace_memberships')
+      .insert(
+        [f.actors.woA, f.actors.salesA, f.actors.trainerA].map((actor) => ({
+          workspace_id: workspace.id,
+          user_id: actor.userId,
+          granted_by: f.po.userId,
+        })),
+      );
+    if (membershipInsert.error) throw new Error(membershipInsert.error.message);
+  }
+  const id = checked(
+    await f.po.client.rpc('create_package_category', {
+      workspace_id: workspace.id,
+      market: 'International',
+      category_type: 'Year-round',
+    }),
+  ) as string;
+  return { id, code, workspace_id: workspace.id };
+}
+export async function createLegacySynthetic(f: PackagesFixture) {
   const code = `test-pkg-${randomUUID()}`;
   const id = checked(
     await f.po.client.rpc('create_package', { code }),
   ) as string;
-  return { id, code };
+  return { id, code, workspace_id: f.wsA.id };
 }
 export async function publish(
   f: PackagesFixture,
@@ -86,7 +126,14 @@ export async function publish(
       'Every package fixture publication requires an explicit tier_rank',
     );
   return client.rpc('publish_package_version', {
-    workspace_id: f.wsA.id,
+    workspace_id:
+      (
+        await f.po.client
+          .from('packages')
+          .select('workspace_id')
+          .eq('id', packageId)
+          .single()
+      ).data?.workspace_id ?? f.wsA.id,
     package_id: packageId,
     ...syntheticTerms,
     ...patch,
@@ -96,7 +143,10 @@ export async function publishedFixture(
   f: PackagesFixture,
   patch: Record<string, unknown>,
 ) {
-  const p = await createSynthetic(f);
+  const p = await createSynthetic(
+    f,
+    typeof patch.workspace_id === 'string' ? patch.workspace_id : undefined,
+  );
   const versionId = checked(await publish(f, p.id, patch)) as string;
   const offer = checked(
     await f.po.client
@@ -124,8 +174,10 @@ export async function independentPublish(
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
       if (startAt)
         await tx`select pg_sleep(greatest(0,extract(epoch from (${startAt}::timestamptz-clock_timestamp()))))`;
+      const category =
+        await tx`select workspace_id from public.packages where id=${packageId}`;
       const [row] =
-        await tx`select public.publish_package_version(${f.wsA.id}::uuid,${packageId}::uuid,null::smallint,61,${tierRank}::smallint,${syntheticTerms.name_ar},${syntheticTerms.name_en},${price}::bigint,'XTS',17) as id`;
+        await tx`select public.publish_package_version(${category[0]!.workspace_id}::uuid,${packageId}::uuid,null::smallint,61,${tierRank}::smallint,${syntheticTerms.name_ar},${syntheticTerms.name_en},${price}::bigint,'USD',17) as id`;
       return row!.id as string;
     });
   } finally {

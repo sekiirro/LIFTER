@@ -224,7 +224,7 @@ it('T015 replay key is bound to canonical date, amount, currency, operation and 
   for (const extra of [
     { collected_on: '1900-01-02' },
     { expected_amount_minor: '1201' },
-    { currency: 'USD' },
+    { currency: 'EGP' },
     { client_id: other.id },
     { payment_confirmed: false },
     { expected_installment_seq: 2 },

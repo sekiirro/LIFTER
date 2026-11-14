@@ -20,7 +20,7 @@ describe('package availability', () => {
   it('denies non-PO x workspace; missing and foreign offers are generic', async () => {
     const p = await publishedFixture(f, { tier_rank: 1 });
     for (const [name, actor] of Object.entries(f.actors))
-      for (const workspace_id of [f.wsA.id, f.wsB.id])
+      for (const workspace_id of [p.offer.workspace_id, f.wsB.id])
         if (name !== 'po') {
           expect(
             (
@@ -35,7 +35,7 @@ describe('package availability', () => {
         }
     for (const [workspace_id, offer_id] of [
       [f.wsB.id, p.offer.id],
-      [f.wsA.id, randomUUID()],
+      [p.offer.workspace_id, randomUUID()],
       [randomUUID(), p.offer.id],
     ])
       expect(
@@ -58,7 +58,7 @@ describe('package availability', () => {
       await db`select * from public.package_versions where offer_id=${p.offer.id}`;
     const toggle = (available: boolean) =>
       f.po.client.rpc('set_package_offer_available', {
-        workspace_id: f.wsA.id,
+        workspace_id: p.offer.workspace_id,
         offer_id: p.offer.id,
         available,
       });
@@ -70,7 +70,7 @@ describe('package availability', () => {
       [true, false].map((available) => ({
         action: 'package_offer.availability_changed',
         actor_user_id: f.po.userId,
-        workspace_id: f.wsA.id,
+        workspace_id: p.offer.workspace_id,
         details: { available },
       })),
     );
@@ -91,7 +91,7 @@ describe('package availability', () => {
     expect(
       (
         await f.po.client.rpc('set_package_offer_available', {
-          workspace_id: f.wsA.id,
+          workspace_id: p.offer.workspace_id,
           offer_id: p.offer.id,
           available: null,
         })
@@ -100,7 +100,7 @@ describe('package availability', () => {
     for (const available of [true, false]) {
       checked(
         await f.po.client.rpc('set_package_offer_available', {
-          workspace_id: f.wsA.id,
+          workspace_id: p.offer.workspace_id,
           offer_id: p.offer.id,
           available,
         }),
@@ -121,7 +121,7 @@ describe('package availability', () => {
     const results = await Promise.all([
       publish(f, p.id, { tier_rank: 1, price_minor: '22' }),
       f.po.client.rpc('set_package_offer_available', {
-        workspace_id: f.wsA.id,
+        workspace_id: p.offer.workspace_id,
         offer_id: p.offer.id,
         available: true,
       }),
@@ -141,7 +141,7 @@ describe('package availability', () => {
         await tx`create function pg_temp.reject_availability_audit() returns trigger language plpgsql as $$ begin raise exception 'test_audit_failure'; end $$`;
         await tx`create trigger test_availability_audit_failure before insert on public.audit_events for each row execute function pg_temp.reject_availability_audit()`;
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId })},true)`;
-        await tx`select public.set_package_offer_available(${f.wsA.id}::uuid,${p.offer.id}::uuid,true)`;
+        await tx`select public.set_package_offer_available(${p.offer.workspace_id}::uuid,${p.offer.id}::uuid,true)`;
         throw new Error('audit_trigger_missing');
       }),
     ).rejects.toMatchObject({ message: 'test_audit_failure' });
