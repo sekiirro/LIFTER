@@ -25,8 +25,8 @@ async function fixture(tx: postgres.TransactionSql) {
   await tx`insert into auth.users(id,email) values
     (${owner},${`f15-mutant-owner-${owner}@example.test`}),
     (${sales},${`f15-mutant-sales-${sales}@example.test`})`;
-  await tx`insert into public.staff_profiles(user_id,role) values
-    (${owner},'workspace_owner'),(${sales},'sales')`;
+  await tx`insert into public.staff_profiles(user_id,role,display_name) values
+    (${owner},'workspace_owner','Workspace Owner'),(${sales},'sales','Sales Staff')`;
   await tx`insert into public.workspaces(id,name,slug,created_by) values
     (${wsA},'Mutation A',${`f15-mutant-a-${wsA}`},${owner}),
     (${wsB},'Mutation B',${`f15-mutant-b-${wsB}`},${owner})`;

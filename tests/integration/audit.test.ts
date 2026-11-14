@@ -113,9 +113,11 @@ describe('emission (T002)', () => {
 
     const staff = await createStaff(null, 'f5-assigned');
     checked(
-      await f.po.client
-        .from('staff_profiles')
-        .insert({ user_id: staff.userId, role: 'sales' }),
+      await f.po.client.from('staff_profiles').insert({
+        user_id: staff.userId,
+        role: 'sales',
+        display_name: 'Sales Staff',
+      }),
     );
     expect(await events(staff.userId)).toHaveLength(1);
     checked(

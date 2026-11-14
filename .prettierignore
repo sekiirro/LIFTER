@@ -12,3 +12,4 @@ coverage
 package-lock.json
 vendor/glisse
 DESIGN.md
+lib/staff/display-name-unicode-ranges.ts

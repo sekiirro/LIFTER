@@ -75,7 +75,13 @@ export async function createStaff(role: Role | null, label: string) {
   if (!user) throw new Error('Staff fixture auth user missing');
   if (role !== null)
     checked(
-      await admin().from('staff_profiles').insert({ user_id: user.id, role }),
+      await admin()
+        .from('staff_profiles')
+        .insert({
+          user_id: user.id,
+          role,
+          display_name: role.replaceAll('_', ' '),
+        }),
     );
   const client = anonClient();
   const signedIn = await client.auth.signInWithPassword({ email, password });

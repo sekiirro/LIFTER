@@ -1008,7 +1008,7 @@ for (const kind of ['pending', 'active', 'staff', 'archived'] as const)
           } else {
             await tx`insert into auth.users(id,email,phone,email_confirmed_at,deleted_at) values(${id},${email},${phone},clock_timestamp(),${kind === 'archived' ? new Date() : null})`;
             if (kind === 'staff') {
-              await tx`insert into public.staff_profiles(user_id,role) values(${id},'trainer')`;
+              await tx`insert into public.staff_profiles(user_id,role,display_name) values(${id},'trainer','Trainer')`;
               await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by) values(${scope === 'same' ? f.wsA.id : foreign.wsA.id},${id},${f.po.userId})`;
             }
           }

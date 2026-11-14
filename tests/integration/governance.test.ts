@@ -98,8 +98,12 @@ describe('T009 governance', () => {
 
       const profile = await client
         .from('staff_profiles')
-        .insert({ user_id: unprofiled.userId, role: 'platform_owner' })
-        .select();
+        .insert({
+          user_id: unprofiled.userId,
+          role: 'platform_owner',
+          display_name: 'Platform Owner',
+        })
+        .select('user_id, role, created_at');
       expect(profile.error?.code).toBe('42501');
       expect(
         await db`select user_id from public.staff_profiles where user_id = ${unprofiled.userId}`,
@@ -145,8 +149,12 @@ describe('T009 governance', () => {
     checked(
       await f.po.client
         .from('staff_profiles')
-        .insert({ user_id: staff.userId, role: 'sales' })
-        .select()
+        .insert({
+          user_id: staff.userId,
+          role: 'sales',
+          display_name: 'Sales Staff',
+        })
+        .select('user_id, role, created_at')
         .single(),
     );
     checked(
@@ -154,7 +162,7 @@ describe('T009 governance', () => {
         .from('staff_profiles')
         .update({ role: 'trainer' })
         .eq('user_id', staff.userId)
-        .select()
+        .select('user_id, role, created_at')
         .single(),
     );
     const [profile] =
