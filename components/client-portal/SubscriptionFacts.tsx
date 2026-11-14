@@ -1,5 +1,6 @@
 import {
   lastCoveredDay,
+  subscriptionStatusLabelKey,
   type SubscriptionSummary,
 } from '../../lib/client-access/portal-projection';
 import type { Locale } from '../../lib/design/preferences';
@@ -9,9 +10,9 @@ import { formatCalendarDate } from './format';
 import styles from './client-portal.module.css';
 
 /**
- * F13 end date shown as the last covered day (PO-2, 2026-11-14). The status
- * value is not rendered until its labels are approved (PO-1); F13 remains the
- * authority.
+ * F13 subscription status (S57-PO-12 labels; Refunded only for a full
+ * refund) and the end date as the last covered day (S57-PO-5). F13 remains
+ * the authority for both.
  */
 export function SubscriptionFacts({
   subscription,
@@ -22,21 +23,36 @@ export function SubscriptionFacts({
   locale: Locale;
   messages: Messages;
 }) {
-  if (!subscription.effectiveEndExclusive) return null;
-  let lastDay: string;
-  try {
-    lastDay = lastCoveredDay(subscription.effectiveEndExclusive);
-  } catch {
-    return null;
+  const statusKey = subscriptionStatusLabelKey(subscription);
+  let lastDay: string | null = null;
+  if (subscription.effectiveEndExclusive) {
+    try {
+      lastDay = lastCoveredDay(subscription.effectiveEndExclusive);
+    } catch {
+      lastDay = null;
+    }
   }
+  if (!statusKey && !lastDay) return null;
   return (
     <dl className={styles.facts} data-testid="client-portal-subscription">
-      <dt>{m['client.portal.subscriptionEndDate']}</dt>
-      <dd>
-        <time dateTime={lastDay}>
-          <Bidi>{formatCalendarDate(lastDay, locale)}</Bidi>
-        </time>
-      </dd>
+      {statusKey && (
+        <>
+          <dt>{m['client.portal.subscriptionStatus']}</dt>
+          <dd data-testid="client-portal-subscription-status">
+            {m[statusKey]}
+          </dd>
+        </>
+      )}
+      {lastDay && (
+        <>
+          <dt>{m['client.portal.subscriptionEndDate']}</dt>
+          <dd>
+            <time dateTime={lastDay}>
+              <Bidi>{formatCalendarDate(lastDay, locale)}</Bidi>
+            </time>
+          </dd>
+        </>
+      )}
     </dl>
   );
 }

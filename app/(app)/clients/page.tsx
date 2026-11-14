@@ -12,6 +12,10 @@ import {
   type ApprovalState,
 } from '../../../lib/client-directory/query';
 import { loadClientDirectory } from '../../../lib/client-directory/service';
+import {
+  SUBSCRIPTION_STATUSES,
+  subscriptionStatusLabelKey,
+} from '../../../lib/client-access/portal-projection';
 import { createSessionClient } from '../../../lib/supabase/server';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages, type MessageKey } from '../../../lib/i18n';
@@ -32,8 +36,8 @@ type SearchValue = string | string[] | undefined;
 
 /**
  * F22 US5 staff client directory. Search: F11 name/email/phone. Filters:
- * F11 approval state in the UI; F13 subscription status is accepted by the
- * query contract but has no control until its labels are approved. Client
+ * F11 approval state and F13 subscription status (S57-PO-12 labels; the
+ * Refunded option matches full refunds only). Client
  * code search, responsible-trainer filter and the check-in / food
  * replacement indicators are BLOCKED on facts that do not exist on main.
  */
@@ -159,13 +163,30 @@ export default async function ClientDirectoryPage({
               ))}
             </select>
           </div>
-          {query.subscriptionStatus && (
-            <input
-              type="hidden"
+          <div className={styles.control}>
+            <label htmlFor="directory-subscription">
+              {m['client.portal.subscriptionStatus']}
+            </label>
+            <select
+              id="directory-subscription"
               name="subscription"
-              value={query.subscriptionStatus}
-            />
-          )}
+              defaultValue={query.subscriptionStatus ?? ''}
+            >
+              <option value="">{m['client.portal.subscriptionStatus']}</option>
+              {SUBSCRIPTION_STATUSES.map((status) => {
+                // The Refunded filter matches full refunds only (S57-PO-12).
+                const key = subscriptionStatusLabelKey({
+                  status,
+                  refundScope: 'full',
+                });
+                return key ? (
+                  <option key={status} value={status}>
+                    {m[key]}
+                  </option>
+                ) : null;
+              })}
+            </select>
+          </div>
           <Button type="submit">{m['catalog.searchSubmit']}</Button>
         </fieldset>
       </form>
@@ -186,6 +207,21 @@ export default async function ClientDirectoryPage({
                 {m['registrationApproval.clientStatus']}:{' '}
                 {m[approvalLabel[row.approvalState]]}
               </p>
+              {row.subscriptionStatus &&
+                (() => {
+                  const key = subscriptionStatusLabelKey({
+                    status: row.subscriptionStatus,
+                    refundScope: row.refundScope ?? undefined,
+                  });
+                  return key ? (
+                    <p
+                      className={styles.meta}
+                      data-testid="directory-subscription-status"
+                    >
+                      {m['client.portal.subscriptionStatus']}: {m[key]}
+                    </p>
+                  ) : null;
+                })()}
               {row.plansWaitingForDelivery > 0 && (
                 <p
                   className={styles.indicator}

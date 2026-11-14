@@ -8,10 +8,14 @@
  */
 import { authorize, type Actor } from '../auth/authorize';
 import {
+  REFUND_SCOPES,
   SUBSCRIPTION_STATUSES,
   isUuid,
 } from '../client-access/portal-projection';
-import type { SubscriptionStatus } from '../client-access/portal-projection';
+import type {
+  RefundScope,
+  SubscriptionStatus,
+} from '../client-access/portal-projection';
 
 export const APPROVAL_STATES = [
   'pending-approval',
@@ -36,6 +40,8 @@ export type DirectoryRow = {
   name: string;
   approvalState: ApprovalState;
   subscriptionStatus: SubscriptionStatus | null;
+  /** Only with `refunded`: F13 full vs partial refund (S57-PO-12). */
+  refundScope: RefundScope | null;
   plansWaitingForDelivery: number;
 };
 
@@ -117,11 +123,12 @@ function parseRow(value: unknown): DirectoryRow | null {
     name,
     approval_state,
     subscription_status,
+    refund_scope,
     plans_waiting_for_delivery,
   } = value;
   if (
     Object.keys(value).sort().join(',') !==
-      'approval_state,client_id,name,plans_waiting_for_delivery,subscription_status' ||
+      'approval_state,client_id,name,plans_waiting_for_delivery,refund_scope,subscription_status' ||
     !isUuid(client_id) ||
     typeof name !== 'string' ||
     !(APPROVAL_STATES as readonly unknown[]).includes(approval_state) ||
@@ -131,6 +138,9 @@ function parseRow(value: unknown): DirectoryRow | null {
         subscription_status,
       )
     ) ||
+    !(subscription_status === 'refunded'
+      ? (REFUND_SCOPES as readonly unknown[]).includes(refund_scope)
+      : refund_scope === null) ||
     typeof plans_waiting_for_delivery !== 'number' ||
     !Number.isSafeInteger(plans_waiting_for_delivery) ||
     plans_waiting_for_delivery < 0
@@ -141,6 +151,7 @@ function parseRow(value: unknown): DirectoryRow | null {
     name,
     approvalState: approval_state as ApprovalState,
     subscriptionStatus: subscription_status as SubscriptionStatus | null,
+    refundScope: refund_scope as RefundScope | null,
     plansWaitingForDelivery: plans_waiting_for_delivery,
   };
 }

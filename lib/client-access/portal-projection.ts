@@ -27,7 +27,16 @@ export type SubscriptionSummary = {
   status: SubscriptionStatus;
   /** F13 exclusive Cairo end boundary, `YYYY-MM-DD`, or null before activation. */
   effectiveEndExclusive: string | null;
+  /**
+   * Only with `refunded`: whether every collected F13 obligation was refunded
+   * in full (F13 per-obligation refund_state). S57-PO-12 shows the Refunded
+   * label for `full` only.
+   */
+  refundScope?: RefundScope;
 };
+
+export const REFUND_SCOPES = ['full', 'partial'] as const;
+export type RefundScope = (typeof REFUND_SCOPES)[number];
 
 export type DeliveredPlanSummary = {
   planId: string;
@@ -89,6 +98,17 @@ function parseSubscription(value: unknown): SubscriptionSummary | null {
     return null;
   if (end !== null && !(typeof end === 'string' && datePattern.test(end)))
     return null;
+  const scope = value.refund_scope;
+  if (status === 'refunded') {
+    // A refunded summary without a known scope fails closed to `partial`
+    // (no Refunded label), never to `full`.
+    return {
+      status,
+      effectiveEndExclusive: end,
+      refundScope: scope === 'full' ? 'full' : 'partial',
+    };
+  }
+  if (scope !== undefined && scope !== null) return null;
   return {
     status: status as SubscriptionStatus,
     effectiveEndExclusive: end,
@@ -134,6 +154,9 @@ function restricted(subscription: SubscriptionSummary): {
     subscription: {
       status: subscription.status,
       effectiveEndExclusive: subscription.effectiveEndExclusive,
+      ...(subscription.refundScope
+        ? { refundScope: subscription.refundScope }
+        : {}),
     },
   };
 }
@@ -221,3 +244,37 @@ export function parseRevisionParam(
 export function lastCoveredDay(effectiveEndExclusive: string): string {
   return addCairoDays(effectiveEndExclusive, -1);
 }
+
+/**
+ * S57-PO-12 approved status label for a projected F13 state, or null when no
+ * label applies: a partial refund shows no status (Refunded is for full
+ * refunds only, and F13 has no other state for it).
+ */
+export function subscriptionStatusLabelKey(
+  subscription: Pick<SubscriptionSummary, 'status' | 'refundScope'>,
+): SubscriptionStatusLabelKey | null {
+  if (subscription.status === 'refunded')
+    return subscription.refundScope === 'full'
+      ? 'client.portal.subscriptionStatus.refunded'
+      : null;
+  return STATUS_LABEL[subscription.status];
+}
+
+export type SubscriptionStatusLabelKey =
+  | 'client.portal.subscriptionStatus.awaitingActivation'
+  | 'client.portal.subscriptionStatus.future'
+  | 'client.portal.subscriptionStatus.active'
+  | 'client.portal.subscriptionStatus.frozen'
+  | 'client.portal.subscriptionStatus.expired'
+  | 'client.portal.subscriptionStatus.refunded';
+
+const STATUS_LABEL: Record<
+  Exclude<SubscriptionStatus, 'refunded'>,
+  SubscriptionStatusLabelKey
+> = {
+  awaiting_activation: 'client.portal.subscriptionStatus.awaitingActivation',
+  future: 'client.portal.subscriptionStatus.future',
+  active: 'client.portal.subscriptionStatus.active',
+  frozen: 'client.portal.subscriptionStatus.frozen',
+  expired: 'client.portal.subscriptionStatus.expired',
+};

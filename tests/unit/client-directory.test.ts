@@ -24,6 +24,7 @@ const row = {
   name: 'Synthetic client',
   approval_state: 'approved',
   subscription_status: 'active',
+  refund_scope: null,
   plans_waiting_for_delivery: 2,
 };
 
@@ -152,6 +153,7 @@ describe('F22 directory result and indicator parsing (T030; SC-008)', () => {
           name: 'Synthetic client',
           approvalState: 'approved',
           subscriptionStatus: 'active',
+          refundScope: null,
           plansWaitingForDelivery: 2,
         },
       ],
@@ -169,6 +171,25 @@ describe('F22 directory result and indicator parsing (T030; SC-008)', () => {
         null,
       ),
     ).toMatchObject({ status: 'ok', rows: [{ subscriptionStatus: null }] });
+  });
+
+  it('carries the F13 full/partial refund scope for refunded rows (S57-PO-12)', () => {
+    for (const scope of ['full', 'partial'] as const)
+      expect(
+        parseDirectoryResult(
+          {
+            status: 'ok',
+            clients: [
+              { ...row, subscription_status: 'refunded', refund_scope: scope },
+            ],
+            has_more: false,
+          },
+          null,
+        ),
+      ).toMatchObject({
+        status: 'ok',
+        rows: [{ subscriptionStatus: 'refunded', refundScope: scope }],
+      });
   });
 
   it('rejects rows carrying unexpected fields such as contact data', () => {
@@ -190,6 +211,10 @@ describe('F22 directory result and indicator parsing (T030; SC-008)', () => {
       { plans_waiting_for_delivery: 1.5 },
       { approval_state: 'deleted' },
       { subscription_status: 'overdue' },
+      // refund_scope only accompanies refunded, and only full/partial.
+      { refund_scope: 'full' },
+      { subscription_status: 'refunded', refund_scope: null },
+      { subscription_status: 'refunded', refund_scope: 'some' },
     ])
       expect(
         parseDirectoryResult(

@@ -137,7 +137,11 @@ describe('F22 restricted projection (T015/T018 control; FR-004/006/007, SC-006)'
       });
       expect(result, status).toEqual({
         status: 'restricted',
-        subscription: { status, effectiveEndExclusive: null },
+        subscription:
+          status === 'refunded'
+            ? // No refund_scope from the transport fails closed to partial.
+              { status, effectiveEndExclusive: null, refundScope: 'partial' }
+            : { status, effectiveEndExclusive: null },
       });
     }
   });

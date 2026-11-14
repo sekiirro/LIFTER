@@ -988,6 +988,13 @@ export const en: Record<keyof typeof ar, string> = {
   'client.portal.deliveredPlans': 'Delivered plans',
   'client.portal.workout': 'Workout plan',
   'client.portal.nutrition': 'Nutrition plan',
+  'client.portal.subscriptionStatus': 'Subscription status',
+  'client.portal.subscriptionStatus.awaitingActivation': 'Awaiting Activation',
+  'client.portal.subscriptionStatus.future': 'Future',
+  'client.portal.subscriptionStatus.active': 'Active',
+  'client.portal.subscriptionStatus.frozen': 'Frozen',
+  'client.portal.subscriptionStatus.expired': 'Expired',
+  'client.portal.subscriptionStatus.refunded': 'Refunded',
   'client.portal.subscriptionEndDate': 'Subscription ends',
   'client.portal.emptyPlans': 'No plans have been delivered yet.',
   'client.portal.restricted':
