@@ -1,6 +1,7 @@
 import { TIMELINE_EVENT_TYPES, type TimelineEventType } from './constants';
 import type {
   LocalizedText,
+  MeasurementEntryType,
   ProgressMeasurement,
   TimelineEvent,
 } from './types';
@@ -52,6 +53,24 @@ export function parseMeasurement(raw: unknown): ProgressMeasurement | null {
     sourceKind,
     updatedAt,
     label: localized(raw.label),
+  };
+}
+
+const num = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
+
+export function parseEntryType(raw: unknown): MeasurementEntryType | null {
+  if (!isRecord(raw)) return null;
+  const id = str(raw.id);
+  if (!id || !/^[A-Za-z0-9_.-]{1,64}$/.test(id)) return null;
+  return {
+    id,
+    label: localized(raw.label),
+    unitEn: str(raw.unit_en),
+    unitAr: str(raw.unit_ar),
+    min: num(raw.min),
+    max: num(raw.max),
+    step: num(raw.step),
   };
 }
 

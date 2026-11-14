@@ -27,6 +27,21 @@ export const en: Record<keyof typeof ar, string> = {
   'timeline.event.freezeApply': 'Freeze applied',
   'timeline.event.freezeRemove': 'Freeze removed',
   'timeline.event.closure': 'Closure',
+  // spec 023 PO 2026-11-14 PROPOSED copy (pinned in progress-coaching-copy test)
+  'progress.measurement.add': 'Add measurement',
+  'progress.measurement.value': 'Value',
+  'progress.measurement.date': 'Date',
+  'progress.measurement.save': 'Save measurement',
+  'progress.measurement.saved': 'Measurement saved.',
+  'progress.measurement.duplicateSameDay':
+    'A measurement already exists for this day. Edit it instead.',
+  'checkin.config.title': 'Weekly check-in form',
+  'checkin.config.select': 'Choose the weekly check-in form',
+  'checkin.config.save': 'Use this form',
+  'checkin.config.saved': 'Weekly check-in form saved.',
+  'checkin.config.invalid':
+    'This form needs the workout and diet adherence questions (0–10).',
+  'checkin.config.conflict': 'Another form is already the weekly check-in.',
   'catalog.taxonomy.muscle.spinal_erectors': 'Spinal erectors',
   'catalog.taxonomy.muscle.rear_delts': 'Rear delts',
   'catalog.taxonomy.muscle.hamstrings': 'Hamstrings',

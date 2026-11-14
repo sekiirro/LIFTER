@@ -23,3 +23,14 @@ export type TimelineEvent = {
 };
 
 export type ProgressStatus = 'denied' | 'not_found' | 'unavailable';
+
+/** A measurement type the client may enter: a current check-in question (FR-014). */
+export type MeasurementEntryType = {
+  id: string;
+  label: LocalizedText | null;
+  unitEn: string | null;
+  unitAr: string | null;
+  min: number | null;
+  max: number | null;
+  step: number | null;
+};

@@ -25,6 +25,21 @@ export const ar = {
   'timeline.event.freezeApply': 'تجميد الاشتراك',
   'timeline.event.freezeRemove': 'فك تجميد الاشتراك',
   'timeline.event.closure': 'الإغلاق',
+  // spec 023 PO 2026-11-14 PROPOSED copy (pinned in progress-coaching-copy test)
+  'progress.measurement.add': 'ضيف قياس',
+  'progress.measurement.value': 'القيمة',
+  'progress.measurement.date': 'التاريخ',
+  'progress.measurement.save': 'احفظ القياس',
+  'progress.measurement.saved': 'القياس اتحفظ.',
+  'progress.measurement.duplicateSameDay':
+    'فيه قياس متسجل لليوم ده. عدّله بدل ما تضيف جديد.',
+  'checkin.config.title': 'فورم المتابعة الأسبوعية',
+  'checkin.config.select': 'اختار فورم المتابعة الأسبوعية',
+  'checkin.config.save': 'استخدم الفورم ده',
+  'checkin.config.saved': 'اتحفظ فورم المتابعة الأسبوعية.',
+  'checkin.config.invalid':
+    'الفورم ده لازم يكون فيه سؤالين الالتزام بالتمرين والدايت (من 0 لـ 10).',
+  'checkin.config.conflict': 'فيه فورم تاني متحدد كمتابعة أسبوعية.',
   'catalog.taxonomy.muscle.spinal_erectors': 'ناصبات العمود الفقري',
   'catalog.taxonomy.muscle.rear_delts': 'الدالية الخلفية',
   'catalog.taxonomy.muscle.hamstrings': 'أوتار الركبة',
