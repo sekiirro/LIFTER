@@ -1,6 +1,6 @@
 # Tasks: 023 Client Progress Coaching (P5 Progress)
 
-**Spec**: [spec.md](spec.md) | **Plan**: [plan.md](plan.md) | **Status**: Spec-only. No task is ticked; no implementation is authorized. Unfinished slices merge behind a server-side default-OFF feature flag (constitution 1.16.0).
+**Spec**: [spec.md](spec.md) | **Plan**: [plan.md](plan.md) | **Status**: Spec-only. No task is ticked; no implementation is authorized. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.
 
 ## Format
 
@@ -24,7 +24,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 [HIGH-RISK: migration/RLS] Add the server-side default-OFF feature flag `progress_coaching_enabled`: migration in `supabase/migrations/<timestamp>_023_progress_coaching_feature_flag.sql`, reader/writer in `lib/progress-coaching/feature-flag.ts`, and tests in `tests/unit/progress-coaching-feature-flag.test.ts` and `tests/integration/progress-coaching-feature-flag-rls.test.ts`. Flag defaults to false, never gates security/authorization/RLS, and is removable without data loss.
+- [ ] T004 [HIGH-RISK: migration/RLS] CANCELLED (PO S56-PO-4): add the `progress_coaching_enabled` feature flag, its migration, reader/writer and flag-specific tests.
 - [ ] T005 [P] Add authorization capabilities for progress coaching using the existing `authorize()` and `app_private.has_workspace_access` walls in `lib/progress-coaching/authorization.ts`, with parity tests in `tests/unit/progress-coaching-authorization.test.ts` and `tests/integration/progress-coaching-authorization-rls.test.ts`.
 - [ ] T006 [P] Add background audit event constants and the append-only writer helper in `lib/progress-coaching/audit.ts`, with tests in `tests/unit/progress-coaching-audit.test.ts` and `tests/integration/progress-coaching-audit.test.ts`.
 - [ ] T007 [P] Define the fixed client-timeline event-type contract and emission interfaces in `lib/progress-coaching/timeline/events.ts`, with tests in `tests/unit/progress-coaching-timeline-events.test.ts`.
@@ -145,7 +145,7 @@
 **Purpose**: Improvements and completion gates affecting multiple stories.
 
 - [ ] T051 [P] Validate quickstart and integration commands against the final implementation in `specs/023-client-progress-coaching/quickstart.md` and `docs/` (FR-001, FR-029, FR-034).
-- [ ] T052 [HIGH-RISK: migration/RLS] Remove the `progress_coaching_enabled` feature flag and all conditional branches after all slices are complete, with tests proving no residual flag reads in `lib/progress-coaching/feature-flag.ts` and `supabase/migrations/<timestamp>_023_remove_progress_coaching_feature_flag.sql` (FR-001, FR-038).
+- [ ] T052 [HIGH-RISK: migration/RLS] CANCELLED (PO S56-PO-4): remove the `progress_coaching_enabled` feature flag and its conditional branches.
 - [ ] T053 Re-run Analyze only when FR/SC/requirement text changes; code-only or test-only review rounds do not require re-dating. Record the date update in `specs/023-client-progress-coaching/checklists/analyze.md` (FR-001, FR-038).
 - [ ] T054 Run independent UI/security review, repository checks, format gates, and required PR gates on the implementation head; record mutation evidence with tested SHA and tool versions in `specs/023-client-progress-coaching/traceability.md`. Runs last (FR-001, FR-038).
 
@@ -182,5 +182,5 @@
 
 - No agent-roster labels are used; high-risk work is marked `[HIGH-RISK: migration/RLS]` and requires independent review plus mutation evidence.
 - No task is ticked. Evidence must be recorded in `traceability.md` before ticking.
-- Unfinished slices merge behind the server-side default-OFF feature flag; the flag never gates security, authorization, or RLS.
+- Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. Security/authorization/RLS remain mandatory.
 - Spec-only lane: no implementation, migrations, tests, or merges are authorized by this task list.

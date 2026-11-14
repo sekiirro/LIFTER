@@ -4,7 +4,7 @@
 
 ## Summary
 
-Deliver independent workout/nutrition plans through F19, expose the client's own delivered plans and authoritative subscription/entitlement state, reuse F15 notifications and F17/F18 exports, and add an authorized staff directory with defined existing-data search/filter fields. Implementation is a sequence of vertical slices; unfinished slices stay behind a server-side feature flag defaulting OFF. The feature gets one AI review on the cumulative completed-feature diff.
+Deliver independent workout/nutrition plans through F19, expose the client's own delivered plans and authoritative subscription/entitlement state, reuse F15 notifications and F17/F18 exports, and add an authorized staff directory with defined existing-data search/filter fields. Implementation is a sequence of vertical slices; Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. The feature gets one AI review on the cumulative completed-feature diff.
 
 ## Technical Context
 
@@ -15,7 +15,7 @@ Deliver independent workout/nutrition plans through F19, expose the client's own
 **Target Platform**: Web application and server-side services.
 **Project Type**: Web application.
 **Performance Goals**: No numeric target specified in source requirements; directory and portal interactions must return authorized results correctly.
-**Constraints**: Server-side authorization and database RLS remain mandatory. Feature flag defaults OFF and cannot gate authorization/RLS. Reuse existing contracts; no duplicate lifecycle, delivery, inbox, export, identity, or notes systems. Approximately 400 to 800 changed lines per vertical slice; merge origin/main before each slice. No implementation-time invention of product behavior or copy.
+**Constraints**: Server-side authorization and database RLS remain mandatory. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. Reuse existing contracts; no duplicate lifecycle, delivery, inbox, export, identity, or notes systems. Approximately 400 to 800 changed lines per vertical slice; merge origin/main before each slice. No implementation-time invention of product behavior or copy.
 **Scale/Scope**: Five user stories; 13 functional requirements; one feature with multiple independently reviewable slices.
 
 ## Constitution Check
@@ -26,7 +26,7 @@ Deliver independent workout/nutrition plans through F19, expose the client's own
 - Privacy and sensitive export audit: PASS; use existing F13/F17/F18 policies and audit contracts.
 - Approved scope and reuse: PASS; directory facets are now explicit; no new states or duplicate owners.
 - Vertical slices: PASS; tasks are grouped by user journey and sized as small slices.
-- Unfinished feature behavior: PASS; the prerequisite flag-mechanism spec/PR must land before implementation, then a server-side default-OFF flag is used; it never gates authorization/RLS. Flag removal is completion work.
+- Unfinished feature behavior: PASS. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. Authorization/RLS remain mandatory.
 - AI review: PASS; exactly one AI review on the cumulative feature diff at completion, with blocking findings handled under Constitution 1.16.0.
 - Finance, migrations, and security: PASS; no new finance rules or migration is specified. Existing controls remain active.
 
@@ -51,12 +51,12 @@ specs/022-client-portal-delivery/
 
 ```text
 app/                       # Existing Next.js routes and UI
-lib/                       # Existing server policies, Supabase access and feature flags
+lib/                       # Existing server policies and Supabase access
 supabase/                  # Existing schema/RLS; no new migrations specified here
  tests/                    # Existing unit, integration and e2e suites
 ````
 
-**Structure Decision**: Extend the existing web app, server policy and feature-flag modules and tests in their current locations. Do not establish another project or duplicate F11/F13/F15/F17/F18/F19/F20 ownership.
+**Structure Decision**: Extend the existing web app, server policy modules and tests in their current locations. Do not establish another project or duplicate F11/F13/F15/F17/F18/F19/F20 ownership.
 
 ## Constitution Check after design
 

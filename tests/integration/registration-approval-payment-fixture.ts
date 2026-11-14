@@ -107,5 +107,5 @@ export async function activate(
   p: Purchase,
 ) {
   // P4-owned seam: synthetic activation exists only in a rolled-back probe.
-  await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id) values(${f.wsA.id},${p.sid},clock_timestamp(),${randomUUID()})`;
+  await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source) values(${f.wsA.id},${p.sid},clock_timestamp(),${randomUUID()}, 'po_override')`;
 }

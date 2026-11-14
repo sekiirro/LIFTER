@@ -39,7 +39,7 @@ Deliver an optional monthly Top-5 leaderboard isolated per workspace. Derive eli
 - **VII Privacy / Health Data**: PASS in design intent. Score inputs stay server-side; projection and logs use allow-lists; opt-out is audited.
 - **VIII Bilingual Accessible UI**: PASS subject to frontend design gate; copy is only proposed in `copy-proposal.md`, English professional and Arabic Egyptian colloquial.
 - **IX Reliable Operations**: PASS in design intent. Unique workspace username, opt-out, current publication replacement and decision recording require transaction-safe/idempotent handling.
-- **Feature flag**: Constitution 1.16.0 requires unfinished merged work to stay dark behind a server-side default-OFF flag. The shared flag mechanism needs its own small spec/PR before this feature uses it.
+- Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production.
 
 ## Research and Design Outputs
 
@@ -73,7 +73,7 @@ app/(client)/leaderboard/              # client leaderboard and settings opt-out
 app/(client)/account/settings/         # reuse existing account-settings route if present
 app/register/[token]/                  # F11 signup field reuse/addition only
 lib/leaderboard/                       # eligibility, scoring, publication and DTO boundaries
-lib/feature-flags/                     # server-side default-OFF flag mechanism, separate prerequisite spec/PR
+lib/                                   # existing application modules; no feature-flag prerequisite
 supabase/migrations/                   # forward-only workspace-scoped schema/policies
 tests/unit/                            # pure score, eligibility and mapping tests
 tests/integration/                     # real RLS, approval, opt-out, signup and workspace tests
@@ -84,9 +84,9 @@ specs/024-client-leaderboard/          # requirements and design artifacts
 
 ## Delivery Slices
 
-Target one user-story vertical slice per PR, approximately 400?800 changed lines as permitted by S54 R3/R8. Merge origin/main before a push and run the local CI-equivalent before that push. Any incomplete slice is gated by the separate server-side default-OFF feature-flag mechanism; the flag never gates authorization/RLS. Perform one cumulative AI review when the feature is complete.
+Target one user-story vertical slice per PR, approximately 400?800 changed lines as permitted by S54 R3/R8. Merge origin/main before a push and run the local CI-equivalent before that push. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. Authorization/RLS remain mandatory. Perform one cumulative AI review when the feature is complete.
 
-1. Flag mechanism prerequisite (separate small spec/PR): server-side default-OFF flag and fail-closed read behavior.
+1. Feature-flag mechanism prerequisite is cancelled under PO S56-PO-4.
 2. Client identity/settings slice: F11 invitation-link username, workspace uniqueness, later client edit, and direct opt-out; apply the S55-PO-9 Q14 format, case-insensitive uniqueness and reserved-name rules.
 3. Read-only leaderboard slice: eligibility, current-month score, privacy projection, workspace isolation.
 4. PO publication slice: candidate result, audit decision, approved-list swap only on approval.

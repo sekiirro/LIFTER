@@ -1,5 +1,12 @@
 export type LocalizedFormText = { en: string; ar: string };
 
+export function resolveFormLabel(
+  label: string | LocalizedFormText,
+  locale: 'en' | 'ar',
+): string {
+  return typeof label === 'string' ? label : label[locale];
+}
+
 export type FormAnswerType =
   | 'shortText'
   | 'longText'

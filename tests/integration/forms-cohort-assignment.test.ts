@@ -72,9 +72,9 @@ async function setFutureActivation(
 ) {
   await db`insert into public.subscription_activations(
     workspace_id,subscription_id,activated_at,delivery_event_id
-  ) select ${workspaceId},${subscriptionId},
+  , activation_source) select ${workspaceId},${subscriptionId},
     (((clock_timestamp() at time zone 'Africa/Cairo')::date+5)::timestamp at time zone 'Africa/Cairo'),
-    ${randomUUID()}`;
+    ${randomUUID()}, 'po_override'`;
 }
 
 async function setCurrentActivation(
@@ -83,9 +83,9 @@ async function setCurrentActivation(
 ) {
   await db`insert into public.subscription_activations(
     workspace_id,subscription_id,activated_at,delivery_event_id
-  ) values(
+  , activation_source) values(
     ${workspaceId},${subscriptionId},clock_timestamp(),${randomUUID()}
-  )`;
+  , 'po_override')`;
 }
 
 describe('T010/T023 per-form assignment policy', () => {

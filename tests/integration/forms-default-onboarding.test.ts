@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
 import { loadEnv } from './harness';
 import postgres from 'postgres';
+import starter from '../../lib/forms/s14-starter-content.json';
 
 const db = postgres(loadEnv().dbUrl, { max: 4, connect_timeout: 10 });
 afterAll(() => db.end());
@@ -41,6 +42,27 @@ async function workspace(tx: postgres.TransactionSql) {
     values(${workspaceId},${actor},${actor})`;
   return { actor, workspaceId };
 }
+
+it('provisions the approved localized N11 slider in the default starter', async () => {
+  await expect(
+    db.begin(async (tx) => {
+      const fixture = await workspace(tx);
+      const [provisioned] = await tx`
+        select app_private.ensure_default_onboarding_form(
+          ${fixture.workspaceId},${fixture.actor}
+        ) as form_id
+      `;
+      const [version] = await tx`
+        select definition from public.form_versions
+        where workspace_id=${fixture.workspaceId} and form_id=${provisioned!.form_id}
+          and version_number=1 and status='draft'
+      `;
+      const definition = version!.definition as typeof starter;
+      expect(definition).toEqual(starter);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
 
 it('returns forbidden when an authorized trainer cannot select the default form', async () => {
   await expect(

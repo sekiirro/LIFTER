@@ -95,8 +95,9 @@ it('T050 returns workspace-wide queue totals on every page without combining cur
     });
 
     await tx`insert into public.subscription_activations(
-      workspace_id,subscription_id,activated_at,delivery_event_id)
+      workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
       select ${f.wsA.id},s.id,clock_timestamp(),${randomUUID()}
+        , 'po_override'
       from public.subscriptions s where s.workspace_id=${f.wsA.id}
         and s.registration_link_id=${egp.linkId}
         and not exists(select 1 from public.subscription_activations a

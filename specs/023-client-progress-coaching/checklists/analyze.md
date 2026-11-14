@@ -1,6 +1,6 @@
 # Analyze: 023 Client Progress Coaching (P5 Progress)
 
-Date: 2026-11-14. Scope: spec-only artifacts for `specs/023-client-progress-coaching/`. This analysis follows the tasks refinement in this pass: spec.md and plan.md requirement text is unchanged; tasks.md was restructured into Setup, Foundational, one phase per user story (US1-US4), and Polish, with test-first ordering, feature-flag tasks, high-risk markers, and updated traceability.
+Date: 2026-11-14. Scope: spec-only artifacts for `specs/023-client-progress-coaching/`. This analysis follows the tasks refinement in this pass: spec.md and plan.md requirement text is unchanged; tasks.md was restructured into Setup, Foundational, one phase per user story (US1-US4), and Polish, with test-first ordering, S56-PO-4 cancellation of feature-flag tasks T004 and T052, high-risk markers, and updated traceability.
 
 ## Entry check
 
@@ -21,7 +21,7 @@ Date: 2026-11-14. Scope: spec-only artifacts for `specs/023-client-progress-coac
 - Restructured 13 coarse one-line tasks into Setup (T001-T003), Foundational (T004-T007), US1 (T008-T018), US2 (T019-T029), US3 (T030-T041), US4 (T042-T050), and Polish (T051-T054).
 - Each story phase starts with failing unit, integration, RLS/authorization, and mutation-evidence tests before implementation tasks.
 - Removed agent-roster labels; retained `[HIGH-RISK: migration/RLS]` markers with independent-review and mutation-evidence notes.
-- Added the server-side default-OFF feature flag as a Foundational task (T004) and flag removal as the final task (T052).
+- Marked feature-flag setup task T004 and removal task T052 cancelled; removed T052 from FR-038 traceability.
 - Corrected the Analyze re-run rule: re-run only when FR/SC/requirement text changes; code/test-only rounds do not require re-dating (T053).
 - Updated `traceability.md` to the new task IDs.
 
@@ -45,4 +45,4 @@ Date: 2026-11-14. Scope: spec-only artifacts for `specs/023-client-progress-coac
 
 ## Result
 
-Analyze passes for this spec-only change with 0 open CRITICAL/HIGH findings. All PO questions resolved. No product decision is open, and no implementation is authorized by this change. Feature flag default OFF for unfinished slices per constitution 1.16.0.
+Analyze passes for this spec-only change with 0 open CRITICAL/HIGH findings. All PO questions resolved. No product decision is open, and no implementation is authorized by this change. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); work proceeds without a flag and flags are reconsidered before production. Security, authorization and RLS safeguards remain mandatory.

@@ -134,8 +134,8 @@ it('T008 committed-style freeze facts feed the existing entitlement projection w
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},now(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},now(),${randomUUID()}, 'po_override')`;
     const request = {
       action: 'apply',
       workspace_id: f.wsA.id,
@@ -231,8 +231,8 @@ it('T008 Remove preserves the Cairo day on which its fact is recorded', async ()
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()}, 'po_override')`;
     const apply = tx.json({
       action: 'apply',
       workspace_id: f.wsA.id,
@@ -284,8 +284,8 @@ it('mutation: removing the standalone removal floor is caught', async () => {
       try {
         await probe(async (tx) => {
           const ids = await graph(tx, f);
-          await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-            values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+          await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+            values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()}, 'po_override')`;
           const apply = tx.json({
             action: 'apply',
             workspace_id: f.wsA.id,
@@ -331,8 +331,8 @@ it('T008 rejects Stop after a freeze has been Removed', async () => {
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()}, 'po_override')`;
     const apply = tx.json({
       action: 'apply',
       workspace_id: f.wsA.id,
@@ -389,8 +389,8 @@ it('T008 bounds Stop at the planned end but permits a late Remove', async () => 
     const ids = await graph(tx, f);
     const appliedOn = '2026-10-01';
     const freezeId = randomUUID();
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()}, 'po_override')`;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
     await tx`insert into public.subscription_freezes(id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
       values(${freezeId},${f.wsA.id},${ids.subscription},${appliedOn}::date,3,${f.trainerA.userId},clock_timestamp())`;
@@ -422,8 +422,8 @@ it('T008 rejects Apply, Stop and Remove facts after a terminal refund', async ()
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
     const freezeId = randomUUID();
     await tx`insert into public.subscription_freezes(id,workspace_id,subscription_id,applied_on,duration_days,applied_by)
@@ -474,8 +474,8 @@ it('T008 audit failure rolls back the Apply fact and idempotency receipt', async
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},now(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},now(),${randomUUID()}, 'po_override')`;
     const request = tx.json({
       action: 'apply',
       workspace_id: f.wsA.id,
@@ -640,8 +640,8 @@ it('T047 ten counted freeze days extend projected expiry by ten days', async () 
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
     const applied = await freezeTx(tx, f.trainerA.userId, {
       action: 'apply',
       workspace_id: f.wsA.id,
@@ -670,8 +670,8 @@ it('T047 concurrent freeze applies serialize on one revision', async () => {
   const f = await clientContext();
   const ids = await db.begin((tx) => graph(tx, f));
   await db.begin(async (tx) => {
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
   });
   const request = () => ({
     action: 'apply',
@@ -708,8 +708,8 @@ it('T047 apply, stop and remove audits count exactly once and replay is silent',
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
     const applyKey = randomUUID();
     const first = await freezeTx(tx, f.trainerA.userId, {
       action: 'apply',

@@ -49,10 +49,10 @@ async function renewal(
     if (activationDate) {
       await tx`insert into public.subscription_activations(
         workspace_id,subscription_id,activated_at,delivery_event_id
-      ) values(
+      , activation_source) values(
         ${f.wsA.id},${purchase.sid},
         (${activationDate}::date::timestamp at time zone 'Africa/Cairo'),${randomUUID()}
-      )`;
+      , 'po_override')`;
     } else {
       await activate(tx, f, purchase);
     }
@@ -303,7 +303,7 @@ export async function withFormsPolicyF13Fixtures(
     `;
     await tx`insert into public.subscription_activations(
       workspace_id,subscription_id,activated_at,delivery_event_id
-    ) values(${f.wsA.id},${purchases[7]!.sid},${futureDate!.activated_at},${randomUUID()})`;
+    , activation_source) values(${f.wsA.id},${purchases[7]!.sid},${futureDate!.activated_at},${randomUUID()}, 'po_override')`;
     const [futureProjection] = await tx`
       select app_private.f13_project_entitlement(${f.wsA.id},${purchases[7]!.sid},${calendar!.today}::date)->>'status' as status
     `;
@@ -318,8 +318,8 @@ export async function withFormsPolicyF13Fixtures(
     `;
     await tx`insert into public.subscription_activations(
       workspace_id,subscription_id,activated_at,delivery_event_id
-    ) values(${f.wsA.id},${purchases[3]!.sid},
-      (${expiredActivation[0]!.date}::date::timestamp at time zone 'Africa/Cairo'),${randomUUID()})`;
+    , activation_source) values(${f.wsA.id},${purchases[3]!.sid},
+      (${expiredActivation[0]!.date}::date::timestamp at time zone 'Africa/Cairo'),${randomUUID()}, 'po_override')`;
     const [expired] = await tx`
       select app_private.f13_project_entitlement(${f.wsA.id},${purchases[3]!.sid},${calendar!.today}::date)->>'status' as status
     `;

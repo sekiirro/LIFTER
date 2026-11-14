@@ -557,3 +557,8 @@ it('uses the Vite runner config loader for integration tests', () => {
     '--configLoader=runner',
   );
 });
+
+it('reuses a healthy local Playwright server but never reuses one in CI', () => {
+  const config = readFileSync('playwright.config.ts', 'utf8');
+  expect(config).toContain('reuseExistingServer: !process.env.CI');
+});

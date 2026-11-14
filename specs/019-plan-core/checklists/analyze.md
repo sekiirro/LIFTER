@@ -1,7 +1,7 @@
 # Spec Kit Analyze — F19 Shared Plan Core
 
-**Analyzed:** 2026-11-10 21:40 UTC
-**Scope:** Spec-only Greptile round on PR #76 (F13 pending-reference clarity and new-client eligibility in the activation data model); no implementation or test execution is claimed.
+**Analyzed:** 2026-11-14
+**Scope:** Existing analysis re-dated after the S56-PO-4 clarification removed the feature-flag prerequisite from T020; FR/SC/task dependency mappings are otherwise unchanged. No implementation or test execution is claimed.
 
 ## Entry check
 

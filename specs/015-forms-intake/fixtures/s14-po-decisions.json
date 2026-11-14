@@ -1,7 +1,7 @@
 {
   "session": "14",
   "date": "2026-10-30",
-  "authority": "binding PO decisions; canonical Arabic fixture remains unchanged",
+  "authority": "binding PO decisions; S33-PO-3 Arabic copy is recorded below",
   "P1_sex": {
     "classification": "personal data",
     "purpose": "select N12 image series",
@@ -61,5 +61,12 @@
     "n11_motion": "150-250ms with prefers-reduced-motion",
     "reserved_usernames": "platform/system/role words plus workspace identifiers",
     "terms_copy": "Approved verbatim by PO S30-PO-1 Q2 at 5084916"
+  },
+  "S33_PO_3": {
+    "source": "s28-po-decisions-verbatim brief, 2026-11-04",
+    "T03": "Digits only: `2`, `3`, `4`, `5`, `6`.",
+    "N07": "Use `الوجبة رقم {number}`, dynamically based on the selected meal count.",
+    "decision": "Both approved. Implement accordingly.",
+    "scope": "Arabic only; English T03/N07 unchanged per S32-PO-8 Q5/Q6."
   }
 }
