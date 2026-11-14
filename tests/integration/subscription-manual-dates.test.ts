@@ -102,8 +102,8 @@ it('T043 PO commits a date adjustment with immutable audit and zero revenue', as
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
     const [before] = await tx`
       select (select count(*)::int from public.payment_events where subscription_id=${ids.subscription}) as payments,
         (select count(*)::int from public.subscription_installments where subscription_id=${ids.subscription}) as installments,
@@ -166,8 +166,8 @@ it('T043 holds platform-owner authorization until transaction end and denies a l
       const ids = await graph(tx, f);
       const input = adjustmentInput(f, ids);
       replayInput = input;
-      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-        values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+        values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
       const result = await adjustTx(tx, f.po.userId, input);
       expect(result.status).toBe('ok');
       revocation = pending.begin(async (workerTx) => {
@@ -200,8 +200,8 @@ it('T043 PO adjustment commits after expiry with no expiry gate', async () => {
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()}, 'po_override')`;
     const [term] = await tx`
       select (((clock_timestamp()-interval '100 days') at time zone 'Africa/Cairo')::date+61
         < (clock_timestamp() at time zone 'Africa/Cairo')::date) as ended`;
@@ -220,8 +220,8 @@ it('T043 non-PO attempts are refused before any write', async () => {
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
     const result = await adjustTx(
       tx,
       f.trainerA.userId,
@@ -239,8 +239,8 @@ it('T043 exact replay is identical and changed intent conflicts without extra ro
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
     const key = randomUUID();
     const first = await adjustTx(
       tx,
@@ -306,8 +306,8 @@ it('T043 projected entitlement uses the latest PO-adjusted effective dates', asy
   const f = await clientContext();
   await probe(async (tx) => {
     const ids = await graph(tx, f);
-    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
     const result = await adjustTx(
       tx,
       f.po.userId,
@@ -336,8 +336,8 @@ it.each(['frozen', 'deactivated'] as const)(
     const f = await clientContext();
     await probe(async (tx) => {
       const ids = await graph(tx, f);
-      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
-        values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id, activation_source)
+        values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()}, 'po_override')`;
       if (state === 'frozen') {
         const freeze = await freezeForT043(tx, f.trainerA.userId, {
           action: 'apply',

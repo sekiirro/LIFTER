@@ -315,6 +315,10 @@ describe('tenancy security catalog (T007)', () => {
           'f19_immutable_reattachment',
           'f19_reattachment_candidates',
           'f19_resolve_subscription_id',
+          'current_assigned_trainer',
+          'f19_client_unit_eligible',
+          'f19_guard_activation_source',
+          'f19_guard_productivity_unit',
           'f15_alert_schedule_activate',
           'f15_alert_schedule_deactivate',
           'f15_alert_schedule_immutable',
@@ -474,6 +478,10 @@ describe('tenancy security catalog (T007)', () => {
           'f19_immutable_reattachment',
           'f19_reattachment_candidates',
           'f19_resolve_subscription_id',
+          'current_assigned_trainer',
+          'f19_client_unit_eligible',
+          'f19_guard_activation_source',
+          'f19_guard_productivity_unit',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -563,6 +571,10 @@ describe('tenancy security catalog (T007)', () => {
               'f19_immutable_reattachment',
               'f19_reattachment_candidates',
               'f19_resolve_subscription_id',
+              'current_assigned_trainer',
+              'f19_client_unit_eligible',
+              'f19_guard_activation_source',
+              'f19_guard_productivity_unit',
               'materialize_intake_assignment_occurrence_core',
               'f15_answer_is_present',
               'f15_answer_values_valid',
@@ -1592,5 +1604,57 @@ describe('catalog workspace library read catalog', () => {
       service_role: false,
     });
     expect(fn?.proconfig).toContain('search_path=""');
+  });
+});
+
+describe('F19 T021 activation catalog', () => {
+  it('forces RLS, grants no direct access, and installs the append-only guards', async () => {
+    const [table] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid='public.productivity_units'::regclass`;
+    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    const policies = await db`select * from pg_policies
+      where schemaname='public' and tablename='productivity_units'`;
+    expect(policies).toHaveLength(0);
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] =
+          await db`select has_table_privilege(${role}, 'public.productivity_units', ${privilege}) as allowed`;
+        expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
+      }
+    const triggers = await db`select tgname, tgtype::int as type, p.proname
+      from pg_trigger t join pg_proc p on p.oid=t.tgfoid
+      where tgrelid='public.productivity_units'::regclass and not tgisinternal order by tgname`;
+    expect(triggers).toEqual([
+      {
+        tgname: 'productivity_units_immutable',
+        type: 31,
+        proname: 'f19_guard_productivity_unit',
+      },
+      {
+        tgname: 'productivity_units_no_truncate',
+        type: 34,
+        proname: 'f19_guard_productivity_unit',
+      },
+    ]);
+    const activationTriggers =
+      await db`select tgname, tgtype::int as type, p.proname
+      from pg_trigger t join pg_proc p on p.oid=t.tgfoid
+      where tgrelid='public.subscription_activations'::regclass
+        and tgname='subscription_activations_source_guard'`;
+    expect(activationTriggers).toEqual([
+      {
+        tgname: 'subscription_activations_source_guard',
+        type: 7,
+        proname: 'f19_guard_activation_source',
+      },
+    ]);
   });
 });
