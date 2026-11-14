@@ -1,11 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
 import type { JSONValue, TransactionSql } from 'postgres';
-import {
-  activate,
-  bought,
-  sql,
-} from './registration-approval-payment-fixture';
+import { activate, bought, sql } from './registration-approval-payment-fixture';
 import {
   clientContext,
   probe,
@@ -91,8 +87,9 @@ it('extends the continuous subscription in place and records the full renewal pr
       (select count(*)::int from public.subscription_renewals
         where workspace_id=${f.wsA.id} and id=${receipt.renewal_id as string}
           and subscription_id=${purchase.sid}) as renewal_events`;
-    const beforeEnd = (before!.entitlement as { effective_end_exclusive: string })
-      .effective_end_exclusive;
+    const beforeEnd = (
+      before!.entitlement as { effective_end_exclusive: string }
+    ).effective_end_exclusive;
     const afterEnd = (after!.entitlement as { effective_end_exclusive: string })
       .effective_end_exclusive;
     expect(afterEnd).toBe(
@@ -168,14 +165,19 @@ it('preserves a historical renewal activation and rejects a new renewal activati
     );
     expect(result.status).toBe('ok');
     await expect(
-      tx.savepoint((inner) => inner`
+      tx.savepoint(
+        (inner) => inner`
         insert into public.subscription_activations(
           workspace_id,subscription_id,activated_at,delivery_event_id,activation_source
-        ) values(${f.wsA.id},${purchase.sid},clock_timestamp(),${randomUUID()},'renewal')`),
+        ) values(${f.wsA.id},${purchase.sid},clock_timestamp(),${randomUUID()},'renewal')`,
+      ),
     ).rejects.toMatchObject({ code: '23514' });
     const [activation] = await tx`
       select id,activation_source from public.subscription_activations where subscription_id=${purchase.sid}`;
-    expect(activation).toEqual({ id: activationId!, activation_source: 'renewal' });
+    expect(activation).toEqual({
+      id: activationId!,
+      activation_source: 'renewal',
+    });
   });
 });
 
@@ -213,13 +215,19 @@ it('resolves a reattached legacy successor to the continuous subscription before
       request(f, purchase.t.id, successor, offerId, 1),
     );
     expect(result).toMatchObject({ status: 'ok' });
-    expect((result.receipt as Record<string, unknown>).subscription_id).toBe(purchase.sid);
+    expect((result.receipt as Record<string, unknown>).subscription_id).toBe(
+      purchase.sid,
+    );
     const [counts] = await tx`
       select (select count(*)::int from public.subscriptions where client_id=${purchase.t.id}) as subscriptions,
         (select count(*)::int from public.subscription_renewals
           where client_id=${purchase.t.id} and subscription_id=${purchase.sid}) as continuous_renewals,
         (select count(*)::int from public.subscription_activations a join public.subscriptions s
           on s.workspace_id=a.workspace_id and s.id=a.subscription_id where s.client_id=${purchase.t.id}) as activations`;
-    expect(counts).toEqual({ subscriptions: 2, continuous_renewals: 1, activations: 1 });
+    expect(counts).toEqual({
+      subscriptions: 2,
+      continuous_renewals: 1,
+      activations: 1,
+    });
   });
 });
