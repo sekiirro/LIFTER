@@ -4,7 +4,8 @@
  * F19 `ready_and_publish_plan` owns the revision + delivery transaction,
  * idempotency, CAS and subscription binding. This adapter only validates the
  * request shape and maps the closed F19 results. Activation and the
- * productivity unit are F19 T021 and are not implemented or simulated here.
+ * productivity unit are committed by F19 T021 inside the same RPC; this
+ * adapter neither implements nor simulates them.
  */
 import {
   mapPlanRpcError,
@@ -16,7 +17,7 @@ import { isUuid } from '../client-access/portal-projection';
 
 /**
  * F19 returns the stored receipt for an exact replay without a replay marker,
- * so this result carries no `replayed` flag (see PR open questions).
+ * so this result carries no `replayed` marker (see PR implementation notes).
  */
 export type ReadyAndPublishResult =
   { status: 'ok'; receipt: ReadyAndPublishReceipt } | PlanOperationError;

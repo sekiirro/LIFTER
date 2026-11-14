@@ -16,7 +16,7 @@ const request = {
   operationKey,
 };
 
-describe('F22 US1 Ready & Publish adapter over F19 (T006 partial; FR-001, SC-001)', () => {
+describe('F22 US1 Ready & Publish adapter over F19 (T006; FR-001, SC-001)', () => {
   it('accepts only the F19 ReadyAndPublishRequest shape', () => {
     expect(parseReadyAndPublishRequest(request)).toEqual(request);
     for (const input of [
