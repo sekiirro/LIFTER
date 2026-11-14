@@ -1,55 +1,58 @@
 # Copy Proposal — 023 Client Progress Coaching (P5 Progress)
 
-**Status**: PROPOSED — PENDING PO APPROVAL
-**Source**: S54-PO-11 (propose EN/Egyptian Arabic copy); S48-PO-4 (Egyptian colloquial Arabic, not MSA).
+**Status**: APPROVED — S55-PO-10 (2026-11-14)
+**Source**: S54-PO-11 (propose EN/Egyptian Arabic copy); S48-PO-4 (Egyptian colloquial Arabic, not MSA). Approved strings source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-10-approved-copy.md` (SHA-256 `1636510f8578e681db88a51b4f69b9ab4c5732f22150d6c5409eb6b52b4d3858`). Matched rows carry approved English/Arabic byte-for-byte; unmatched rows remain proposed and pending PO approval.
 **Scope**: User-visible strings introduced by P5 Progress: weekly check-in reminders, measurements, food replacement requests, client timeline. Trainer notes copy is governed by F20 and is not re-proposed here.
 
-| Key                          | EN (professional)             | Egyptian colloquial Arabic | Status                         |
-| ---------------------------- | ----------------------------- | -------------------------- | ------------------------------ |
-| progress.title               | Progress                      | التقدم                     | PROPOSED — PENDING PO APPROVAL |
-| progress.measurements.title  | Measurements                  | القياسات                   | PROPOSED — PENDING PO APPROVAL |
-| progress.measurements.empty  | No measurements recorded yet. | ماكو قياسات مسجلة بعد.     | PROPOSED — PENDING PO APPROVAL |
-| progress.measurement.correct | Correct measurement           | تصحيح القياس               | PROPOSED — PENDING PO APPROVAL |
-
-| progress.measurement.duplicateSameDay | A measurement already exists for this day. Edit the existing record instead. | يوجد قياس لهذا اليوم. عدّل القياس الموجود. | PROPOSED — PENDING PO APPROVAL |
-| checkin.reminder.dayOf.title | Weekly check-in reminder | تذكير: حان وقت التقييم الأسبوعي | PROPOSED — PENDING PO APPROVAL |
-| checkin.reminder.dayOf.body | Your weekly check-in is due today. | تقييمك الأسبوعي مستحق اليوم. | PROPOSED — PENDING PO APPROVAL |
-| checkin.reminder.followup.title | Check-in still pending | مرّ 24 ساعة ولم تُرسل تقييمك | PROPOSED — PENDING PO APPROVAL |
-| checkin.reminder.followup.body | You have not submitted your weekly check-in yet. | ما أرسلت تقييمك الأسبوعي بعد. | PROPOSED — PENDING PO APPROVAL |
-| checkin.completed.notGate | Check-ins do not block access to your account. | التقييمات لا تمنع دخولك للحساب. | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.request.title | Request a new food alternative | طلب بديل طعام جديد | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.request.placeholder | Describe the alternative you would like… | اشرح البديل الذي تريده… | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.request.submit | Submit request | إرسال الطلب | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.request.cancel | Cancel request | إلغاء الطلب | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.request.cancelConfirm | Cancel this open request? | إلغاء هذا الطلب المفتوح؟ | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.status.open | Open | مفتوح | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.status.rejected | Rejected | مرفوض | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.status.approved | Approved (in published revision) | تمت الموافقة (في النسخة المنشورة) | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.status.stale | Closed (food removed) | مغلق (تم حذف الطعام) | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.notification.open | A client requested a food replacement. | طلب عميل بديل طعام. | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.notification.resolved | Your food replacement request was updated. | تم تحديث طلب بديل الطعام. | PROPOSED — PENDING PO APPROVAL |
-| foodReplacement.existingAlternativesVisible | Existing approved alternatives remain available. | البدائل المعتمدة الحالية ما زالت متاحة. | PROPOSED — PENDING PO APPROVAL |
-| timeline.title | Timeline | الجدول الزمني | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.registration | Registration | التسجيل | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.renewal | Renewal | التجديد | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.firstDelivery | First plan delivery | تسليم أول خطة | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.trainerChange | Trainer assignment change | تغيير المدرب المكلف | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.replacementOpen | Replacement request opened | فتح طلب بديل | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.replacementApproved | Replacement approved | تمت الموافقة على البديل | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.replacementRejected | Replacement rejected | رُفض طلب البديل | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.replacementStale | Replacement request closed (food removed) | أُغلق طلب البديل (حُذف الطعام) | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.freezeApply | Freeze applied | تطبيق التجميد | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.freezeRemove | Freeze removed | إلغاء التجميد | PROPOSED — PENDING PO APPROVAL |
-| timeline.event.closure | Closure | الإغلاق | PROPOSED — PENDING PO APPROVAL |
-| timeline.empty | No timeline events yet. | ماكو أحداث بعد. | PROPOSED — PENDING PO APPROVAL |
-| checkin.adherence.workout.title | Workout adherence | التزامك بالتمارين | PROPOSED — PENDING PO APPROVAL |
-| checkin.adherence.workout.question | How well did you follow your workout plan this week? | إلى أي درجة التزمت بخطة تمارينك هذا الأسبوع؟ | PROPOSED — PENDING PO APPROVAL |
-| checkin.adherence.diet.title | Diet adherence | التزامك بالحمية | PROPOSED — PENDING PO APPROVAL |
-| checkin.adherence.diet.question | How well did you follow your nutrition plan this week? | إلى أي درجة التزمت بخطة تغذيتك هذا الأسبوع؟ | PROPOSED — PENDING PO APPROVAL |
+| Key                                         | EN (professional)                                                                  | Egyptian colloquial Arabic                                          | Status                            |
+| ------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------- |
+| progress.title                              | Progress                                                                           | التقدم                                                              | APPROVED — S55-PO-10 (2026-11-14) |
+| progress.measurements.title                 | Measurements                                                                       | القياسات                                                            | APPROVED — S55-PO-10 (2026-11-14) |
+| progress.measurements.empty                 | No measurements recorded yet.                                                      | لسه مفيش قياسات متسجلة.                                             | APPROVED — S55-PO-10 (2026-11-14) |
+| progress.measurement.edit                   | Edit measurement                                                                   | تعديل القياس                                                        | APPROVED — S55-PO-10 (2026-11-14) |
+| progress.measurement.correct                | Correct measurement                                                                | تصحيح القياس                                                        | PROPOSED — PENDING PO APPROVAL    |
+| progress.measurement.duplicateSameDay       | A measurement already exists for this day. Edit the existing record instead.       | فيه قياس متسجل لليوم ده. عدّل القياس الموجود بدل ما تضيف واحد جديد. | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.reminder.dayOf.title                | Weekly check-in reminder                                                           | تذكير بالمتابعة الأسبوعية                                           | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.reminder.dayOf.body                 | Your weekly check-in is due today.                                                 | النهارده معاد متابعتك الأسبوعية.                                    | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.reminder.followup.title             | Check-in still pending                                                             | المتابعة الأسبوعية لسه ناقصة                                        | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.reminder.followup.body              | You have not submitted your weekly check-in yet.                                   | ما أرسلت تقييمك الأسبوعي بعد.                                       | PROPOSED — PENDING PO APPROVAL    |
+| checkin.reminder.followup.bodyAlt           | You haven't submitted your weekly check-in yet.                                    | لسه ما بعتّش متابعتك الأسبوعية.                                     | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.completed.notGate                   | Check-ins do not block access to your account.                                     | تقدر تدخل حسابك عادي حتى لو ما بعتّش المتابعة الأسبوعية.            | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.request.title               | Request a new food alternative                                                     | اطلب بديل أكل جديد                                                  | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.request.placeholder         | Describe the alternative you would like…                                           | اكتب البديل اللي عايزه...                                           | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.request.submit              | Submit request                                                                     | ابعت الطلب                                                          | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.request.cancel              | Cancel request                                                                     | إلغاء الطلب                                                         | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.request.cancelConfirm       | Cancel this open request?                                                          | متأكد إنك عايز تلغي الطلب ده؟                                       | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.status.open                 | Open                                                                               | مفتوح                                                               | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.status.rejected             | Rejected                                                                           | مرفوض                                                               | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.status.approved             | Approved (in published revision)                                                   | اتوافق عليه واتضاف للنسخة المنشورة                                  | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.status.stale                | Closed (food removed)                                                              | اتقفل الطلب لأن الأكلة اتمسحت من الخطة                              | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.notification.open           | A client requested a food replacement.                                             | فيه عميل طلب بديل أكل جديد.                                         | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.notification.resolved       | Your food replacement request was updated.                                         | فيه تحديث على طلب بديل الأكل بتاعك.                                 | APPROVED — S55-PO-10 (2026-11-14) |
+| foodReplacement.existingAlternativesVisible | Existing approved alternatives remain available.                                   | تقدر تفضل تستخدم البدائل الموجودة حاليًا.                           | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.title                              | Timeline                                                                           | سجل النشاط                                                          | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.registration                 | Registration                                                                       | التسجيل                                                             | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.renewal                      | Renewal                                                                            | تجديد الاشتراك                                                      | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.firstDelivery                | First plan delivery                                                                | استلام أول خطة                                                      | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.trainerChange                | Trainer assignment change                                                          | تغيير الكابتن المسؤول                                               | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.replacementOpen              | Replacement request opened                                                         | طلب بديل جديد                                                       | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.replacementApproved          | Replacement approved                                                               | الموافقة على البديل                                                 | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.replacementRejected          | Replacement rejected                                                               | رفض طلب البديل                                                      | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.replacementStale             | Replacement request closed (food removed)                                          | إغلاق طلب البديل بعد حذف الأكلة                                     | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.freezeApply                  | Freeze applied                                                                     | تجميد الاشتراك                                                      | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.freezeRemove                 | Freeze removed                                                                     | فك تجميد الاشتراك                                                   | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.event.closure                      | Closure                                                                            | الإغلاق                                                             | APPROVED — S55-PO-10 (2026-11-14) |
+| timeline.empty                              | No timeline events yet.                                                            | لسه مفيش أي أحداث هنا.                                              | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.adherence.workout.title             | Workout adherence                                                                  | التزامك بالتمرين                                                    | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.adherence.workout.question          | How well did you follow your workout plan this week?                               | إلى أي درجة التزمت بخطة تمارينك هذا الأسبوع؟                        | PROPOSED — PENDING PO APPROVAL    |
+| checkin.adherence.workout.questionFull      | On a scale from 0 to 10, how closely did you follow your workout plan this week?   | من 0 لـ 10، شايف إنك التزمت بتمرينك قد إيه الأسبوع ده؟              | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.adherence.diet.title                | Diet adherence                                                                     | التزامك بالدايت                                                     | APPROVED — S55-PO-10 (2026-11-14) |
+| checkin.adherence.diet.question             | How well did you follow your nutrition plan this week?                             | إلى أي درجة التزمت بخطة تغذيتك هذا الأسبوع؟                         | PROPOSED — PENDING PO APPROVAL    |
+| checkin.adherence.diet.questionFull         | On a scale from 0 to 10, how closely did you follow your nutrition plan this week? | من 0 لـ 10، شايف إنك التزمت بالدايت قد إيه الأسبوع ده؟              | APPROVED — S55-PO-10 (2026-11-14) |
 
 **Notes**:
 
-- All Arabic strings above are proposed for PO approval and are NOT approved. Per S48-PO-4 they use natural Egyptian colloquial Arabic.
+- Matched rows are approved copy (S55-PO-10); unmatched rows remain proposed and pending PO approval.
 - Trainer notes copy is governed by F20 and is not duplicated here.
 - Reminder time-of-day value is resolved to 10:00 AM workspace time (S55-PO-3 Q1=A); not a copy string.
 - The two adherence questions use a 0–10 integer scale (same as the F15 N11 hunger score); rating labels reuse F15's existing 0–10 handling and copy patterns (S55-PO-5 Q3=A). No new rating-label strings are proposed here.

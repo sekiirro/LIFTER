@@ -183,7 +183,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - F20 notes — P5-D = F20; no duplicate.
 - F21 bylines — P5-D depends on F21.
 - F15 notification inbox — P5-A/P5-C reuse.
-- Open PRs #58, #86, #88, #90 — touchpoints; coordinate, no duplicate.
+- Open PR #58 and merged PRs #86, #88, #90 — touchpoints; coordinate, no duplicate.
 - Spec 024 leaderboard — consumes adherence values by name; no duplicate scoring logic.
 
 ## Clarifications
@@ -219,4 +219,4 @@ None. All PO questions for this spec are resolved (S54-023-Q1, S54-023-Q2 by S55
 
 ## Copy
 
-All user-visible strings for this feature are proposed in `copy-proposal.md` (status PROPOSED — PENDING PO APPROVAL). No copy is approved by this spec.
+Matched rows in `copy-proposal.md` are approved copy (S55-PO-10); unmatched rows remain proposed and pending PO approval.

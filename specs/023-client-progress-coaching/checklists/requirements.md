@@ -32,4 +32,4 @@
 ## Notes
 
 - All PO questions resolved (S54-023-Q1, S54-023-Q2 by S55-PO-3; S55-023-Q3 by S55-PO-5). No open PO questions remain. `## Open questions for the PO` now reads "None". Clarify can end with zero ambiguities; Plan/Tasks/Analyze to be written in STEP 2.
-- Copy is proposed in `copy-proposal.md` with status PROPOSED — PENDING PO APPROVAL; no copy is approved.
+- Copy in `copy-proposal.md`: matched rows are `APPROVED — S55-PO-10 (2026-11-14)`; unmatched rows remain `PROPOSED — PENDING PO APPROVAL`.
