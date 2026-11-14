@@ -59,7 +59,8 @@ describe('T004 single audited answer reader', () => {
         )
         and p.prosrc ilike '%form_answer_revisions%'
         and (p.prosrc ilike '%answer_values%' or p.prosrc ilike '%form_answer_drafts%')
-        and p.proname not in ('save_form_draft', 'submit_form_assignment', 'correct_form_answer')
+        -- progress_weekly_adherence (spec 023) audits every read and returns only the two 0-10 values.
+        and p.proname not in ('save_form_draft', 'submit_form_assignment', 'correct_form_answer', 'progress_weekly_adherence')
         and has_function_privilege('authenticated',p.oid,'execute')
     `;
 

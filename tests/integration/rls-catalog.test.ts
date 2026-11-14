@@ -46,6 +46,16 @@ const signupPrivate = [
   'redeem_signup_admission_ticket',
   'signup_guard_attempt_delete',
 ];
+// Spec 023 private helpers.
+const f23Private = [
+  'f23_adherence_question_valid',
+  'f23_adherence_value',
+  'f23_checkin_definition_valid',
+  'f23_client_progress_visible',
+  'f23_measurement_question',
+  'f23_measurement_value_fits',
+  'f23_unit_text',
+];
 const registrationPrivate = [
   'registration_link_is_valid',
   'registration_link_limits',
@@ -268,6 +278,7 @@ describe('tenancy security catalog (T007)', () => {
           'staff_display_name_is_white_space',
           ...signupPrivate,
           ...brandingPrivate,
+          ...f23Private,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
           'audit_events_immutable',
@@ -487,6 +498,13 @@ describe('tenancy security catalog (T007)', () => {
       }
       if (row.proname === 'staff_display_name_is_valid') {
         expect(row.service_role_execute, row.proname).toBe(true);
+      }
+      if (row.proname.startsWith('f23_')) {
+        // Spec 023: only the RLS visibility predicate is executable by authenticated.
+        expect(row.authenticated_execute, row.proname).toBe(
+          row.proname === 'f23_client_progress_visible',
+        );
+        continue;
       }
       expect(row.authenticated_execute, row.proname).toBe(
         [
