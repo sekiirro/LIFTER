@@ -33,12 +33,12 @@ describe('scoped package reads and commission secrecy', () => {
   it('covers every identity x workspace on offers, safe/base versions, packages, rate RPC and audit', async () => {
     for (const [name, actor] of Object.entries(f.actors))
       for (const [workspace, p] of [
-        [f.wsA, a],
+        [{ id: a.workspace_id }, a],
         [f.wsB, b],
       ] as const) {
         const allowed =
           name === 'po' ||
-          (workspace.id === f.wsA.id
+          (workspace.id === a.workspace_id
             ? ['woA', 'salesA', 'trainerA']
             : ['woB', 'salesB', 'trainerB']
           ).includes(name);
@@ -65,9 +65,9 @@ describe('scoped package reads and commission secrecy', () => {
           ['packages', 'id,code', 'id', p.id],
         ]) {
           const result = await actor.client
-            .from(table!)
-            .select(columns!)
-            .eq(filter!, value!);
+            .from(table as never)
+            .select(columns as string)
+            .eq(filter as string, value as string);
           if (name === 'anon') expect(result.error?.code).toBe('42501');
           else {
             expect(result.error, `${name}/${table}`).toBeNull();
@@ -172,7 +172,7 @@ describe('scoped package reads and commission secrecy', () => {
     expect(result[0]?.id).toBe(a.id);
     expect(
       result[0]?.package_offers.every(
-        (o: { workspace_id: string }) => o.workspace_id === f.wsA.id,
+        (o: { workspace_id: string }) => o.workspace_id === a.workspace_id,
       ),
     ).toBe(true);
   });

@@ -270,6 +270,7 @@ describe('tenancy security catalog (T007)', () => {
           ...brandingPrivate,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
+          'audit_package_created',
           'audit_events_immutable',
           'audit_row_change',
           'cancel_f15_client_alerts',
@@ -353,7 +354,9 @@ describe('tenancy security catalog (T007)', () => {
           'guard_form_retention_window',
           'guard_membership_update',
           'guard_package_offer_update',
+          'guard_package_offer_category',
           'guard_package_version_insert',
+          'guard_package_version_market',
           'has_workspace_access',
           'is_platform_owner',
           'jobs_updated_at',
@@ -591,10 +594,13 @@ describe('tenancy security catalog (T007)', () => {
               'signup_auth_identity_column',
               'stamp_form_purge_deadline',
               'f13_audit_client_deactivation',
+              'audit_package_created',
               'forbid_delete',
               'guard_exercise_version_retired_fields',
               'guard_package_offer_update',
+              'guard_package_offer_category',
               'guard_package_version_insert',
+              'guard_package_version_market',
               'jobs_updated_at',
               'lock_catalog_food_request',
               'normalize_catalog_food_identity_v1',
@@ -712,7 +718,7 @@ describe('audit security catalog (T005)', () => {
       join pg_catalog.pg_namespace n on n.oid = c.relnamespace
       join pg_catalog.pg_proc p on p.oid = t.tgfoid
       where n.nspname = 'public' and not t.tgisinternal
-        and p.proname in ('audit_row_change', 'audit_events_immutable')
+        and p.proname in ('audit_row_change', 'audit_package_created', 'audit_events_immutable')
       order by t.tgname,c.relname`;
     expect(triggers).toEqual([
       {
@@ -769,7 +775,7 @@ describe('audit security catalog (T005)', () => {
         relname: 'packages',
         type: 5,
         tgenabled: 'O',
-        proname: 'audit_row_change',
+        proname: 'audit_package_created',
       },
       {
         tgname: 'audit_payment_events',
@@ -1048,6 +1054,11 @@ describe('package security catalog', () => {
       if (table === 'package_offers')
         expected.push(
           { tgname: 'package_offers_guard', type: 19, tgenabled: 'O' },
+          {
+            tgname: 'package_offers_z_category_guard',
+            type: 23,
+            tgenabled: 'O',
+          },
           { tgname: 'audit_package_offers', type: 17, tgenabled: 'O' },
         );
       else {
@@ -1056,11 +1067,18 @@ describe('package security catalog', () => {
           { tgname: `audit_${table}`, type: 5, tgenabled: 'O' },
         );
         if (table === 'package_versions')
-          expected.push({
-            tgname: 'package_versions_insert_guard',
-            type: 7,
-            tgenabled: 'O',
-          });
+          expected.push(
+            {
+              tgname: 'package_versions_insert_guard',
+              type: 7,
+              tgenabled: 'O',
+            },
+            {
+              tgname: 'package_versions_market_guard',
+              type: 7,
+              tgenabled: 'O',
+            },
+          );
       }
       expect(triggers).toEqual(
         expected.sort((a, b) => a.tgname.localeCompare(b.tgname)),
@@ -1076,7 +1094,9 @@ describe('package security catalog', () => {
           await db`select has_column_privilege(${role},'public.package_versions',${column.column_name},'SELECT') as allowed`;
         expect(grant?.allowed).toBe(
           role === 'authenticated' &&
-            column.column_name !== 'commission_rate_bp',
+            !['commission_rate_bp', 'market', 'type'].includes(
+              column.column_name,
+            ),
         );
       }
     const [view] =
@@ -1108,24 +1128,29 @@ describe('package security catalog', () => {
   it('has all restrictive foreign keys including workspace pair and same-offer triple', async () => {
     const fks =
       await db`select conrelid::regclass::text as tbl,pg_get_constraintdef(oid) as definition from pg_constraint where contype='f' and conrelid in ('public.packages'::regclass,'public.package_offers'::regclass,'public.package_versions'::regclass)`;
-    expect(fks).toHaveLength(8);
+    expect(fks).toHaveLength(9);
     for (const fk of fks) expect(fk.definition).toContain('ON DELETE RESTRICT');
     for (const definition of [
       'FOREIGN KEY (workspace_id, offer_id) REFERENCES package_offers(workspace_id, id) ON DELETE RESTRICT',
       'FOREIGN KEY (workspace_id, current_version_id) REFERENCES package_versions(workspace_id, id) ON DELETE RESTRICT',
       'FOREIGN KEY (workspace_id, current_version_id, id) REFERENCES package_versions(workspace_id, id, offer_id) ON DELETE RESTRICT',
+      'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE RESTRICT',
     ])
       expect(fks.map((f) => f.definition)).toContain(definition);
   });
-  it('hardens all four package RPCs and two private guards', async () => {
+  it('hardens package RPCs and private guards', async () => {
     for (const name of [
       'public.create_package(text)',
+      'public.create_package_category(uuid,text,text)',
       'public.publish_package_version(uuid,uuid,smallint,integer,text,text,bigint,text,integer)',
       'public.publish_package_version(uuid,uuid,smallint,integer,smallint,text,text,bigint,text,integer)',
       'public.set_package_offer_available(uuid,uuid,boolean)',
       'public.get_package_version_commissions(uuid)',
       'app_private.guard_package_offer_update()',
+      'app_private.guard_package_offer_category()',
       'app_private.guard_package_version_insert()',
+      'app_private.guard_package_version_market()',
+      'app_private.audit_package_created()',
     ]) {
       const [fn] =
         await db`select prosecdef,proconfig,provolatile,pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
@@ -1558,7 +1583,7 @@ describe('registration security catalog', () => {
         await tx`select set_config('role','authenticated',true)`;
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.actors[name].userId, role: 'authenticated' })},true)`;
         const rows =
-          await tx`select id from public.registration_links_safe where workspace_id=${fixture.wsA.id}`;
+          await tx`select id from public.registration_links_safe where workspace_id=${fixture.p.offer.workspace_id}`;
         expect(rows).toHaveLength(expected);
         if (expected) expect(rows[0]!.id).toBe(linkId);
       });

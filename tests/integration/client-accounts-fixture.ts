@@ -88,7 +88,7 @@ export async function pending(
   const user = userId ? { id: userId } : await identity(tx);
   await tx`select set_config('request.jwt.claims','{}',true)`;
   const [row] = await tx`insert into public.clients ${tx({
-    workspace_id: f.wsA.id,
+    workspace_id: f.p.offer.workspace_id,
     auth_user_id: user.id,
     registration_link_id: registrationLinkId,
     package_version_id: f.p.versionId,
@@ -117,7 +117,7 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
   try {
     const [t] =
       await executor`insert into app_private.signup_admission_tickets(link_key,request_secret_hash,workspace_id,link_id)
-      select extensions.hmac(convert_to('lifter.f11.link.v1','UTF8')||decode('00','hex')||int4send(octet_length(${hash}::text))||convert_to(${hash},'UTF8'),decode(decrypted_secret,'hex'),'sha256'),extensions.digest(${request},'sha256'),${f.wsA.id},${link}
+      select extensions.hmac(convert_to('lifter.f11.link.v1','UTF8')||decode('00','hex')||int4send(octet_length(${hash}::text))||convert_to(${hash},'UTF8'),decode(decrypted_secret,'hex'),'sha256'),extensions.digest(${request},'sha256'),${f.p.offer.workspace_id},${link}
       from vault.decrypted_secrets where name='SIGNUP_RATE_KEY' returning id`;
     if (!t) throw new Error('Synthetic admission unavailable');
     return {
@@ -188,7 +188,7 @@ export async function createRecoveryClientTarget(
       await connection`select id,auth_user_id,workspace_id,approval_state from public.clients where registration_link_id=${fixture.link}`;
     if (
       !row ||
-      row.workspace_id !== context.wsA.id ||
+      row.workspace_id !== context.p.offer.workspace_id ||
       row.approval_state !== 'pending-approval'
     )
       throw new Error('Committed recovery client fixture was not found');
@@ -295,7 +295,7 @@ export function approvalDenialRequest(
 ) {
   if (name === 'installment_collect' || name === 'collection_correct')
     return {
-      workspace_id: context.wsA.id,
+      workspace_id: context.p.offer.workspace_id,
       client_id: clientId,
       request_key: randomUUID(),
       subscription_id: randomUUID(),
@@ -313,7 +313,7 @@ export function approvalDenialRequest(
           }),
     };
   return {
-    workspace_id: context.wsA.id,
+    workspace_id: context.p.offer.workspace_id,
     client_id: clientId,
     request_key: randomUUID(),
     expected_state:
@@ -346,7 +346,7 @@ export async function pendingHttpAccess(
           await client
             .from('audit_events')
             .select('*')
-            .eq('workspace_id', context.wsA.id)
+            .eq('workspace_id', context.p.offer.workspace_id)
             .limit(5),
         );
         probes.push(
@@ -390,7 +390,7 @@ export async function pendingHttpAccess(
       }
       if ((approvalRpcNames as readonly string[]).includes(fn.proname)) {
         const [target] =
-          await db`select id from public.clients where workspace_id=${context.wsA.id} order by created_at,id limit 1`;
+          await db`select id from public.clients where workspace_id=${context.p.offer.workspace_id} order by created_at,id limit 1`;
         if (!target)
           throw new Error(
             'Pending HTTP approval probe needs a committed target',
@@ -414,7 +414,8 @@ export async function pendingHttpAccess(
       ) {
         const args: Record<string, unknown> = {};
         fn.types.forEach((type: string, i: number) => {
-          args[fn.proargnames[i]] = type === 'integer' ? 1 : context.wsA.id;
+          args[fn.proargnames[i]] =
+            type === 'integer' ? 1 : context.p.offer.workspace_id;
         });
         const result = await client.rpc(fn.proname, args);
         assert.equal(result.error, null, fn.proname);
@@ -424,7 +425,7 @@ export async function pendingHttpAccess(
       const args: Record<string, unknown> = {};
       fn.types.forEach((type: string, i: number) => {
         const values: Record<string, unknown> = {
-          uuid: context.wsA.id,
+          uuid: context.p.offer.workspace_id,
           text: 'synthetic-invalid',
           jsonb: null,
           integer: 1,

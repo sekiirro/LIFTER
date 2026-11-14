@@ -19,18 +19,24 @@ afterAll(async () => {
   await db.end();
 });
 describe('package publication', () => {
-  it('creates once and audits exact code with global PO attribution', async () => {
+  it('creates an idempotent workspace category and audits its exact identity', async () => {
     const p = await createSynthetic(f);
     expect(
-      checked(await f.po.client.rpc('create_package', { code: p.code })),
+      checked(
+        await f.po.client.rpc('create_package_category', {
+          workspace_id: p.workspace_id,
+          market: 'International',
+          category_type: 'Year-round',
+        }),
+      ),
     ).toBe(p.id);
     const events =
       await db`select actor_user_id,workspace_id,details from public.audit_events where target_id=${p.id}`;
     expect(events).toEqual([
       {
         actor_user_id: f.po.userId,
-        workspace_id: null,
-        details: { code: p.code },
+        workspace_id: p.workspace_id,
+        details: { market: 'International', type: 'Year-round' },
       },
     ]);
   });
@@ -46,14 +52,15 @@ describe('package publication', () => {
   it('enforces role x own/foreign publication before target lookup', async () => {
     const p = await createSynthetic(f);
     for (const [name, actor] of Object.entries(f.actors))
-      for (const workspace_id of [f.wsA.id, f.wsB.id]) {
+      for (const workspace_id of [p.workspace_id, f.wsB.id]) {
         const r = await publish(
           f,
           p.id,
           { tier_rank: 1, workspace_id },
           actor.client,
         );
-        if (name === 'po') expect(r.error).toBeNull();
+        if (name === 'po' && workspace_id === p.workspace_id)
+          expect(r.error).toBeNull();
         else expect(r.error?.code, `${name}/${workspace_id}`).toBe('42501');
       }
     for (const patch of [
@@ -107,7 +114,7 @@ describe('package publication', () => {
           package_id: p.id,
           version: n + 1,
           price_minor: versions[n]!.price_minor,
-          currency: 'XTS',
+          currency: 'USD',
           commission_rate_bp: 17,
           duration_days: 61,
         },
@@ -127,7 +134,7 @@ describe('package publication', () => {
     const values = {
       name_ar: 'test-revised-ar',
       name_en: 'test-revised-en',
-      currency: 'XXX',
+      currency: 'SAR',
       commission_rate_bp: 0,
       price_minor: '1',
     };
@@ -254,7 +261,7 @@ describe('package publication', () => {
     for (const tier_rank of [null, 0, 4])
       expect((await publish(f, p.id, { tier_rank })).error?.code).toBe('22023');
     await expect(
-      db`select public.publish_package_version(${f.wsA.id}::uuid,${p.id}::uuid,null::smallint,61,'test-ar','test-en',2,'XTS',0)`,
+      db`select public.publish_package_version(${p.workspace_id}::uuid,${p.id}::uuid,null::smallint,61,'test-ar','test-en',2,'USD',0)`,
     ).rejects.toMatchObject({ message: 'tier_rank_required' });
     expect(
       await db`select id from public.package_offers where package_id=${p.id}`,
@@ -407,12 +414,12 @@ describe('package publication', () => {
       ).rejects.toMatchObject({ code: '23503' });
     for (const patch of [
       { workspace: f.wsB.id, days: 61 },
-      { workspace: f.wsA.id, days: 62 },
+      { workspace: f.wsB.id, days: 62 },
     ])
       await expect(
         db.begin(async (tx) => {
           await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId })},true)`;
-          await tx`insert into public.package_versions(workspace_id,offer_id,version,name_ar,name_en,price_minor,currency,commission_rate_bp,duration_days,duration_months,published_by) values (${patch.workspace},${p.offer.id},99,'test-ar','test-en',1,'XTS',0,${patch.days},null,${f.po.userId})`;
+          await tx`insert into public.package_versions(workspace_id,offer_id,version,name_ar,name_en,price_minor,currency,commission_rate_bp,duration_days,duration_months,published_by) values (${patch.workspace},${p.offer.id},99,'test-ar','test-en',1,'USD',0,${patch.days},null,${f.po.userId})`;
           throw new Error('snapshot_guard_missing');
         }),
       ).rejects.toMatchObject({ code: '23514' });
@@ -441,7 +448,7 @@ describe('package publication', () => {
           await tx`create function pg_temp.reject_package_audit() returns trigger language plpgsql as $$ begin raise exception 'test_audit_failure'; end $$`;
           await tx`create trigger test_package_audit_failure before insert on public.audit_events for each row execute function pg_temp.reject_package_audit()`;
           await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId })},true)`;
-          await tx`select public.publish_package_version(${f.wsA.id}::uuid,${packageId}::uuid,null::smallint,61,1::smallint,'test-ar','test-en',2,'XTS',0)`;
+          await tx`select public.publish_package_version(${packageId === p.id ? p.workspace_id : q.workspace_id}::uuid,${packageId}::uuid,null::smallint,61,1::smallint,'test-ar','test-en',2,'USD',0)`;
           throw new Error('audit_trigger_missing');
         }),
       ).rejects.toMatchObject({ message: 'test_audit_failure' });
