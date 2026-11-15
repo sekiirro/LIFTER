@@ -47,11 +47,12 @@
 
 - **Base `origin/main` SHA**: `848e5436`
 - **Stack**: A (`LIFTER_SUPABASE_STACK=a`, API port 54321, DB port 54322)
-- **Migration**: `supabase/migrations/20261119140000_f18_nutrition_alternative_selections.sql`
+- **Migrations**: `supabase/migrations/20261119140000_f18_nutrition_alternative_selections.sql`, `supabase/migrations/20261119140100_f18_selection_self_read_policy_definer.sql`
 - **Integration suites**:
   - `tests/integration/nutrition-selection.test.ts` (3 tests)
-  - `tests/integration/rls-catalog.test.ts` (42 tests; `app_private.f18_guard_nutrition_selection`, `app_private.f18_selection_audit`, `public.select_nutrition_alternative(uuid,text,text,uuid)` registered)
+  - `tests/integration/rls-catalog.test.ts` (42 tests; `app_private.f18_guard_nutrition_selection`, `app_private.f18_selection_audit`, `app_private.f18_is_self_approved_client`, `app_private.f18_is_self_approved_plan_client`, `public.select_nutrition_alternative(uuid,text,text,uuid)` registered)
   - `tests/integration/nutrition-publish.test.ts` (7 tests)
+  - `tests/integration/client-accounts-catalog.test.ts` (22 tests), `tests/integration/client-accounts-auth.test.ts`, `tests/integration/client-accounts-recovery.test.ts`
 - **RED**: `tests/integration/nutrition-selection.test.ts` failed 3/3 (`PGRST202`: `Could not find the function public.select_nutrition_alternative` in schema cache).
 - **GREEN**: 3/3 passed (`nutrition-selection.test.ts`), 42/42 passed (`rls-catalog.test.ts`), 7/7 passed (`nutrition-publish.test.ts`) after clean Stack A reset and provisioning (`tests/integration/client-accounts-provision.mjs`).
 
