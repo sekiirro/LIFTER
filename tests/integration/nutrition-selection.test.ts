@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { TransactionSql } from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { NutritionDocumentV1 } from '../../lib/plans/nutrition/types';
+import type {
+  NutritionAlternative,
+  NutritionDocumentV1,
+} from '../../lib/plans/nutrition/types';
 import { admin, anonClient, checked } from './harness';
-import {
-  clientContext,
-  graph,
-  sql,
-} from './registration-approval-fixture';
+import { clientContext, graph, sql } from './registration-approval-fixture';
 import { issue } from './registration-links-fixture';
 import type { Context } from './registration-approval-fixture';
 
@@ -43,26 +43,28 @@ async function createAuthClientUser(): Promise<{
 }
 
 function makeDocWithAlternatives(includeSecondAlt = true): NutritionDocumentV1 {
-  const alts = [
+  const alts: NutritionAlternative[] = [
     {
       id: 'alt-1',
       foodId: altFood1Id,
       foodVersion: 1,
-      quantity: { value: '200', unit: { kind: 'basis', value: 'g' } },
-      note: null,
+      quantity: {
+        value: '200',
+        unit: { kind: 'basis', value: 'g' },
+      },
     },
-    ...(includeSecondAlt
-      ? [
-          {
-            id: 'alt-2',
-            foodId: altFood2Id,
-            foodVersion: 1,
-            quantity: { value: '180', unit: { kind: 'basis', value: 'g' } },
-            note: null,
-          },
-        ]
-      : []),
   ];
+  if (includeSecondAlt) {
+    alts.push({
+      id: 'alt-2',
+      foodId: altFood2Id,
+      foodVersion: 1,
+      quantity: {
+        value: '180',
+        unit: { kind: 'basis', value: 'g' },
+      },
+    });
+  }
 
   return {
     schemaVersion: 1,
@@ -103,7 +105,6 @@ function makeDocWithAlternatives(includeSecondAlt = true): NutritionDocumentV1 {
                 foodId: altFood1Id,
                 foodVersion: 1,
                 quantity: { value: '120', unit: { kind: 'basis', value: 'g' } },
-                note: null,
               },
             ],
           },
@@ -116,7 +117,7 @@ function makeDocWithAlternatives(includeSecondAlt = true): NutritionDocumentV1 {
 }
 
 async function seedFood(
-  tx: Parameters<Parameters<ReturnType<typeof sql>['begin']>[0]>[0],
+  tx: TransactionSql,
   nameAr: string,
   nameEn: string,
   kcal: number,
@@ -176,7 +177,10 @@ async function publishNutritionPlan(
   };
 }
 
-async function activateSubscription(subscriptionId: string, activatedAt?: string) {
+async function activateSubscription(
+  subscriptionId: string,
+  activatedAt?: string,
+) {
   await db.begin(async (tx) => {
     await tx`alter table public.subscription_activations disable trigger user`;
     await tx`
@@ -352,15 +356,12 @@ describe('F18 T010 select_nutrition_alternative', () => {
     expect(auditAfterNoopSel!.c).toBe(auditBeforeNoopSel[0]!.c);
 
     // 6. Clear deletes selection row, retains and increments durable counter to 2
-    const clear1 = await clientAuth.client.rpc(
-      'select_nutrition_alternative',
-      {
-        p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: null,
-        p_operation_key: randomUUID(),
-      },
-    );
+    const clear1 = await clientAuth.client.rpc('select_nutrition_alternative', {
+      p_plan_version_id: revisionId,
+      p_item_id: 'item-1',
+      p_alternative_id: null,
+      p_operation_key: randomUUID(),
+    });
     expect(clear1.error).toBeNull();
     expect(clear1.data).toEqual({
       status: 'ok',
