@@ -335,6 +335,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_immutable_reattachment',
           'f19_reattachment_candidates',
           'f19_resolve_subscription_id',
+          'f19_sanitize_copied_content',
           'current_assigned_trainer',
           'f19_client_unit_eligible',
           'f19_guard_activation_source',
@@ -441,6 +442,8 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_template_write_audit',
           'nutrition_template_collect_ids',
           'nutrition_template_remap_ids',
+          'nutrition_template_assign_guard',
+          'nutrition_template_private_fields',
         ]),
       ].sort(),
     );
@@ -491,6 +494,8 @@ describe('tenancy security catalog (T007)', () => {
         'nutrition_template_version_immutable',
         'nutrition_template_collect_ids',
         'nutrition_template_remap_ids',
+        'nutrition_template_assign_guard',
+        'nutrition_template_private_fields',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -525,6 +530,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_immutable_reattachment',
           'f19_reattachment_candidates',
           'f19_resolve_subscription_id',
+          'f19_sanitize_copied_content',
           'current_assigned_trainer',
           'f19_client_unit_eligible',
           'f19_guard_activation_source',
@@ -633,6 +639,7 @@ describe('tenancy security catalog (T007)', () => {
               'f19_immutable_reattachment',
               'f19_reattachment_candidates',
               'f19_resolve_subscription_id',
+              'f19_sanitize_copied_content',
               'current_assigned_trainer',
               'unassigned_clients',
               'f19_client_unit_eligible',
@@ -717,6 +724,8 @@ describe('tenancy security catalog (T007)', () => {
               'nutrition_template_write_audit',
               'nutrition_template_collect_ids',
               'nutrition_template_remap_ids',
+              'nutrition_template_assign_guard',
+              'nutrition_template_private_fields',
             ].includes(row.proname)),
       );
     }
