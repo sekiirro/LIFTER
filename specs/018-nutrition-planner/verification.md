@@ -69,3 +69,16 @@
    - **Mutation**: Removed the durable `client_nutrition_selection_revision_counters` upsert/increment and derived `v_sel_rev` from the deletable `client_nutrition_alternative_selections` row count (returning `0` on clear).
    - **Result**: KILLED — `tests/integration/nutrition-selection.test.ts` failed 2/3 (`enforces self-only upsert/delete, no-op silence, durable revision counter, idempotency, and audit allowlist` at line 340: `selection_revision` returned `0` instead of `1`, and `refuses selection and replay when subscription is expired and blocks direct DML` at line 678).
    - **Restore**: Reverted mutation (`git diff --exit-code -- supabase/migrations` = 0); clean Stack A reset + provision.
+
+## Slice 4: T011 — Selection carry-forward in publish
+
+- **Base `origin/main` SHA after required sync**: `68f62a2d`; initial slice base: `5616c2633debd66d760bc716b3dca8aa35e2c330`.
+- **Stack**: A (`LIFTER_SUPABASE_STACK=a`, API port 54321, DB port 54322).
+- **Migration**: `supabase/migrations/20261119150000_f18_nutrition_selection_carry_forward.sql` (`CREATE OR REPLACE public.publish_nutrition_revision`).
+- **Integration suite**: `tests/integration/nutrition-carry-forward.test.ts` (4 tests): stable-ID carry, removed/replaced item refusal, deauthorized-client refusal, and lock-ordered concurrent publish/selection.
+- **RED**: `nutrition-carry-forward.test.ts` failed because publishing the next revision omitted the prior stable-ID selection. The removed/replaced and deauthorized guards also have dedicated assertions.
+- **GREEN**: 4/4 passed after applying the migration on Stack A.
+- **Mutation**: changed the target item/alternative eligibility from matching stable IDs to accepting any populated item/alternative in the target document (position-style carry). KILLED: replacement-reference case failed because an old selection appeared on the next revision. Restored the migration; `git diff --exit-code` exited 0; clean Stack A reset + provisioning; restored suite passed 4/4.
+- **Design**: the publish transaction retains F19's plan-root serialization; eligibility rechecks approved/non-deactivated client, active current subscription, delivery binding, source/target stable item+alternative IDs, and matching plan client. Carried rows preserve source `created_by`; one per-revision counter row is created; the single publish audit adds `selection` only when rows carried.
+- **Migration scan**: all 312 current origin refs scanned before migration creation, zero lane-range hits. The reserved `20261119150000–20261119155959` registry row was already present (S59-R51).
+- **Function body diff**: `C:/Users/NEW LAP/.lifter/runs/s59-hy-f18t011/body.diff`.
