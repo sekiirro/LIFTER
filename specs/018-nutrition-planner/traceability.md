@@ -16,9 +16,9 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 | F18-FR-004  | PRD-05 acceptance, F16 FR-005 (DIRECT)                            | T001, T002, T008, T022             | `nutrition-document.md` §2.5           | SPECIFIED                                                                                                          |
 | F18-FR-005  | F16 FR-020, retained F18 FR-005 (DIRECT)                          | T003, T009, T022                   | data-model §1-2, contract §4           | SPECIFIED                                                                                                          |
 | F18-FR-006  | PRD-05, S20-11/S20-13, PRD-12 (DIRECT)                            | T001, T005, T023, T025             | `nutrition-document.md` §1             | SPECIFIED                                                                                                          |
-| F18-FR-007  | S20-17/D18-1, A2, A5 Q1=A (DIRECT)                                | T012, T013, T015                   | `template-assignment.md` §1, §3        | SPECIFIED                                                                                                          |
+| F18-FR-007  | S20-17/D18-1, A2, A5 Q1=A (DIRECT)                                | T012, T013, T015                   | `template-assignment.md` §1, §3        | PARTIAL: T012/T013 implemented; T015 remains open                                                                  |
 | F18-FR-008  | A5 Q1=A + A2 (DIRECT)                                             | T006, T014                         | `template-assignment.md` §2            | SPECIFIED (held copies skipped/reported; zero-copy race rejected)                                                  |
-| F18-FR-009  | S20-17, F19-FR-008, A2 (DIRECT)                                   | T006, T012, T013                   | `template-assignment.md` §1            | SPECIFIED                                                                                                          |
+| F18-FR-009  | S20-17, F19-FR-008, A2 (DIRECT)                                   | T006, T012, T013                   | `template-assignment.md` §1            | IMPLEMENTED                                                                                                        |
 | F18-FR-010  | PRD-05, A6, F19-FR-003 (DIRECT/DELEGATED)                         | T026                               | plan §1                                | SPECIFIED                                                                                                          |
 | F18-FR-011  | A5 Q2=A, S20-19, S42-PO-3 Q9 (DIRECT)                             | T004, T010                         | `nutrition-api.md` §4, data-model §3   | SPECIFIED                                                                                                          |
 | F18-FR-012  | A5 Q2=A, D18-9=A (DIRECT)                                         | T004, T011                         | data-model §2-3                        | SPECIFIED                                                                                                          |
@@ -101,3 +101,12 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 | Resolved S43-MCQ-B (S43-PO-2)      | F18-SC-005; per-item prompt note and client-selection totals, T005/T023/T024                                          |
 | Resolved S43-F18-MCQ-7 (S43-PO-8)  | F18-FR-014 / F18-SC-005; T023 exports the last valid selection for the requested historical revision; task unblocked. |
 | S44-MCQ-F18-1 (closed by S44-PO-7) | F18-FR-002; T001: each meal visible and counted only on its containing day; no day-type meal blocker                  |
+
+## 4c. S58 T012/T013 verification
+
+| FR                                 | Task | Test                                                    | Evidence                                                                                                                |
+| ---------------------------------- | ---- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| F18-FR-007, F18-FR-009             | T012 | `tests/integration/nutrition-templates.test.ts` (3)     | RED absent tables; GREEN 3 passing; workspace SELECT policy mutation killed by policy-count and global-read assertions. |
+| F18-FR-007, F18-FR-009, F18-FR-019 | T013 | `tests/integration/nutrition-template-rpcs.test.ts` (2) | RED missing RPCs; GREEN 2 passing; empty ID-map mutation killed by deep-copy assertion.                                 |
+
+Full local verification and mutation restoration details: `C:/Users/NEW LAP/.lifter/runs/s58-luna-f18tpl/report.md`.
