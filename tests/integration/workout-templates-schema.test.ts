@@ -163,6 +163,50 @@ describe('F17 T013/T016/T017 template identities, immutable versions, RLS and DM
       `;
     });
 
+    // Duplicate (workspace_id, template_id, version) rejected
+    await expect(
+      db`
+        insert into public.workout_workspace_template_versions (
+          workspace_id, template_id, version, title, schema_version, document, created_by
+        )
+        values (${wsA.id}, ${wsTemplateId}, 1, 'Dup WS Version', 1, ${db.json(doc)}, ${po.userId})
+      `,
+    ).rejects.toThrow();
+
+    // Deferrable current_version FK rejects pointing to non-existent version
+    await expect(
+      db`
+        update public.workout_workspace_templates
+        set current_version = 99
+        where workspace_id = ${wsA.id} and id = ${wsTemplateId}
+      `,
+    ).rejects.toThrow();
+
+    // CAS update: append version 2 and advance current_version from 1 -> 2, then reject regression
+    await db.begin(async (tx) => {
+      await tx`
+        insert into public.workout_workspace_template_versions (
+          workspace_id, template_id, version, title, schema_version, document, created_by
+        )
+        values (${wsA.id}, ${wsTemplateId}, 2, 'Copied Template v2', 1, ${tx.json(doc)}, ${po.userId})
+      `;
+      const updated = await tx`
+        update public.workout_workspace_templates
+        set current_version = 2, updated_at = now()
+        where workspace_id = ${wsA.id} and id = ${wsTemplateId} and current_version = 1
+        returning current_version
+      `;
+      expect(updated).toHaveLength(1);
+    });
+
+    await expect(
+      db`
+        update public.workout_workspace_templates
+        set current_version = 1
+        where workspace_id = ${wsA.id} and id = ${wsTemplateId}
+      `,
+    ).rejects.toThrow(/template_version_regression/);
+
     // At most one copy per (workspace_id, origin_global_template_id), regardless of source version
     await expect(
       db.begin(async (tx) => {
