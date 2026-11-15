@@ -18,6 +18,7 @@ T012 stores F17 workout documents directly in F19 `plan_drafts.content` and `pla
 
 - Initial TDD run: 1 passed, 2 failed because F19 accepted unknown workout schema versions.
 - Final post-merge Stack B integration run: F17 plus dependent F19 plan suites, 5 files / 40 tests passed. Stack B had been safely reset and provisioned after the last schema change.
+- The shared RLS catalog now includes both F17 trigger functions in its private-function inventory and checks their authenticated/service-role execute revocations. Final affected integration run: 6 files / 81 tests passed.
 - Final post-merge full unit suite: 268 files / 3,166 tests passed.
 - Final local validate group passed: lint, typecheck, format checks, spec consistency, edge build, secrets check, cron build, size check, Unicode policy check, and migration checks. The remote migration collision scan passed across 273 refs before the final required fetch.
 
@@ -32,6 +33,6 @@ All mutations ran against assigned Stack B via `supabase-safe.mjs` and were rest
 
 ## Remaining gates
 
-Exact-head PR CI and architect exact-SHA full-diff review are pending. No template tables were created. Local CI summary: `C:/Users/NEW LAP/.lifter/runs/s58-luna-f17plan/ci-local-summary-final.json`.
+PR #130's first exact-head CI run (`43718567107`) found the missing RLS catalog entries; the entries were added and the affected local suites pass. Updated exact-head CI and architect exact-SHA full-diff review are pending. No template tables were created. Local CI summaries: `C:/Users/NEW LAP/.lifter/runs/s58-luna-f17plan/ci-local-summary-final.json` and `ci-local-summary-fix.json`.
 
 \n
