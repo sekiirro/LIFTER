@@ -12,8 +12,17 @@ const workoutContent = (notes: string) => ({
 });
 
 const nutritionContent = (title: string) => ({
-  schemaVersion: 2,
-  document: { title },
+  schemaVersion: 1,
+  structure: 'single_day',
+  implicitDayTypeId: 'dt-1',
+  dayTypes: [
+    {
+      id: 'dt-1',
+      trainingDay: false,
+      name: { ar: 'يوم', en: title },
+    },
+  ],
+  meals: [],
 });
 
 beforeAll(() => {
@@ -166,6 +175,9 @@ describe('F19 T031 trainer deletion retention integration', () => {
       p_operation_key: randomUUID(),
     });
     expect(workoutDelivery.error).toBeNull();
+    expect((workoutDelivery.data as { status?: string } | null)?.status).toBe(
+      'ok',
+    );
 
     const nutritionDraft = checked(
       await trainer.client.rpc('create_plan_draft', {
@@ -178,7 +190,7 @@ describe('F19 T031 trainer deletion retention integration', () => {
     ) as string;
 
     const nutritionDelivery = await trainer.client.rpc(
-      'ready_and_publish_plan',
+      'publish_nutrition_revision',
       {
         p_plan_id: nutritionDraft,
         p_expected_draft_version: 1,
@@ -187,6 +199,9 @@ describe('F19 T031 trainer deletion retention integration', () => {
       },
     );
     expect(nutritionDelivery.error).toBeNull();
+    expect((nutritionDelivery.data as { status?: string } | null)?.status).toBe(
+      'ok',
+    );
 
     const before = await snapshotCounts(
       context.wsA.id,
