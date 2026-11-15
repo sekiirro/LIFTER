@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F18 nutrition planner
 
-**Analyzed:** 2026-11-11 05:40 UTC
+**Analyzed:** 2026-11-15 (date-only re-date: T024 evidence; requirement text unchanged)
 **Method:** Rechecked spec.md, plan.md, tasks.md, nutrition API/document and template-assignment contracts, data-model.md, traceability.md, research decision matrix/conflicts/Section B assessment, and S43-PO-5 / S44-PO-7 / architect mappings S43-R6, S43-R10 and S44-R7. This pass follows the Greptile P2 thread `PRRT_kwDOVYgYQ862AhVE` on head `d742eb5a` (template-assignment test 11) and reconciles the concurrent Assign single-pair race with the existing zero-copy rejection; it also retains the earlier CodeRabbit PR #79 fixes (`PRR_kwDOVYgYQ88AAAABXM9hLA`, head `f588e222`).
 
 ## Entry check
@@ -139,5 +139,6 @@
 - AR output uses approved labels from `runs/s49-arch/f18-label-table-approved.md` (SHA-256 `972df3d75cb24bc3f9af2c8647b9d07c8db38a77964e8d05501e6d69d4648888`), Node byte compare verified for the 18-row table.
 - Mutation evidence: swapping one AR label changes the payload and fails the assertion.
 - No production renderer touched (Phase 0); labels live in the contract test only -> #85 not blocked.
+- T024 (2026-11-15): production prompt builder `lib/plans/nutrition/prompt.ts` + `tests/unit/nutrition-prompt.test.ts` (6/6) implement F18-FR-015 against the unchanged approved P3/P4 bodies; requirement/acceptance text is unchanged, so this is a date-only re-Analyze.
 
 **Analyze result:** CRITICAL 0; HIGH 0. Ready for commit/PR.
