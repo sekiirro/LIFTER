@@ -108,3 +108,10 @@ CRITICAL 0; HIGH 0; open MCQ 0. The plan-identity cache-key criterion is carried
 ## Analyze result
 
 CRITICAL 0; HIGH 0. Merge of main, no PR content change.
+
+
+## Analyze — T030 evidence-only re-date (2026-11-15)
+
+**Analyzed:** 2026-11-15
+**Date update only:** T030 status/traceability; no requirement, plan, or behavior text changed (constitution 1.17.0).
+**CRITICAL:** 0 open; **HIGH:** 0 open.
