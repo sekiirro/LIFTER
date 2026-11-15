@@ -142,14 +142,14 @@
 
 **Analyze result:** CRITICAL 0; HIGH 0. Ready for commit/PR.
 
-## Consistency freshness — T012/T013 implementation bookkeeping (2026-11-15)
+## Consistency freshness ï¿½ T012/T013 implementation bookkeeping (2026-11-15)
 
 **Analyzed:** 2026-11-15
 **Scope:** Consistency update for the T012/T013 implementation evidence in tasks.md and traceability.md. Those changes tick completed tasks and record executed evidence only. No FR, SC, or other requirement text changed, so this is not a requirement re-analysis under the Spec Kit gate.
 
-- PASS — T012/T013 schema and RPC behavior follow the existing F18 template data model and contracts; S43-PO-1 rulings remain controlling.
-- PASS — T014 assignment and T015 make-global remain unimplemented and unchecked.
-- PASS — traceability records the covered FRs and RED/GREEN/mutation evidence; no new product decision or copy was introduced.
-- PASS — consistency check date is current with the task evidence commit.
+- PASS ï¿½ T012/T013 schema and RPC behavior follow the existing F18 template data model and contracts; S43-PO-1 rulings remain controlling.
+- PASS ï¿½ T014 assignment and T015 make-global remain unimplemented and unchecked.
+- PASS ï¿½ traceability records the covered FRs and RED/GREEN/mutation evidence; no new product decision or copy was introduced.
+- PASS ï¿½ consistency check date is current with the task evidence commit.
 
 **Result:** no requirement change or open product decision; implementation bookkeeping is consistent with the approved spec.
