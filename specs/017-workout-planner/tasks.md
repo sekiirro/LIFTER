@@ -32,7 +32,7 @@
 
 ## Phase 2 — plan lifecycle integration
 
-- [ ] **T018 (50m) — Create plan (blank / template / existing plan).** `[APP/API][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-001, FR-014; SC-006). F19 creation lock + operation key. RED: duplicate submit creates a second root. Mutation: remove lock/ledger check and prove failure.
+- [x] **T018 (50m) — Create plan (blank / template / existing plan).** `[APP/API][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-001, FR-014; SC-006). F19 creation lock + operation key. RED: duplicate submit creates a second root. Mutation: remove lock/ledger check and prove failure.
 - [ ] **T019 (50m) — Autosave and Save as Draft with CAS.** `[APP/API][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-002, FR-015; SC-006, SC-012). Private draft, ongoing autosave, stale revision conflict, no-op autosave never clears readiness. Acceptance test: adding or moving an item to a rest day is rejected with `invalid_document` before persistence; the draft is unchanged and a rejected move leaves the item on its source day. RED first. Mutation: remove the revision or rest-day validation check and prove conflict/rejection failure.
 - [ ] **T020 (50m) — Ready & Publish gates.** `[APP/API][RISK: HIGH][NEEDS-STACK][NEEDS-PLAN-CORE][NEEDS-F13]` (FR-015; SC-006). Intake + current subscription gates, explicit revision selection, refusal writes zero revision/delivery, publish without prior Save as Draft. RED first. Mutation: remove a gate and prove the refusal test fails.
 - [ ] **T021 (50m) — Immutable revisions and newest-first listing.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-001, FR-015). Trigger + grants prevent mutation; no auto-archive. RED first. Mutation: remove the trigger/grant and prove failure.
