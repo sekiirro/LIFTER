@@ -8,8 +8,12 @@ test('Arabic print sample hides screen controls and exports its PDF', async ({
   context,
 }, testInfo) => {
   await context.addCookies([
-    { name: LOCALE_COOKIE, value: 'ar', url: 'http://localhost:3000' },
-    { name: THEME_COOKIE, value: 'dark', url: 'http://localhost:3000' },
+    { name: LOCALE_COOKIE, value: 'ar', url: process.env.PLAYWRIGHT_BASE_URL! },
+    {
+      name: THEME_COOKIE,
+      value: 'dark',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
+    },
   ]);
   const response = await page.goto('/print-sample');
   expect(response?.status()).toBe(200);

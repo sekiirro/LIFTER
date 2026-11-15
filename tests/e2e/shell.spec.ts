@@ -60,7 +60,7 @@ test.describe('client-side shell navigation', () => {
 
 // Both navigation variants and role selection must work without client JavaScript.
 test.use({ javaScriptEnabled: false });
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const trainerMobileKeys = [
   'home',
   'clients',

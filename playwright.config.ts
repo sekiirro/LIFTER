@@ -11,6 +11,11 @@ import {
   selectStack,
 } from './scripts/local-stack.mjs';
 import { getSupabaseStatusCommand } from './scripts/playwright-stack-command.mjs';
+import {
+  resolvePlaywrightBaseUrl,
+  resolvePlaywrightPort,
+  shouldReusePlaywrightServer,
+} from './scripts/playwright-port.mjs';
 
 function loadPlaywrightStackEnvironment() {
   if (!process.env.LIFTER_SUPABASE_STACK) return;
@@ -60,7 +65,10 @@ const isFirstEvaluation = !process.env.U8_SERVER_LOG_RUN_ID;
 const serverLogRunId =
   process.env.U8_SERVER_LOG_RUN_ID ??
   (process.env.U8_SERVER_LOG_RUN_ID = randomUUID());
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const baseURL = resolvePlaywrightBaseUrl();
+process.env.PLAYWRIGHT_BASE_URL ??= baseURL;
+if (process.env.PLAYWRIGHT_PORT !== undefined)
+  process.env.APP_ORIGIN = new URL(baseURL).origin;
 const serverLogManifestPath = join(
   tmpdir(),
   `lftr-u8-${serverLogRunId}.manifest.json`,
@@ -125,13 +133,16 @@ export default defineConfig({
     url: new URL('/api/health', baseURL).toString(),
     env: {
       ...process.env,
-      PORT: process.env.PORT ?? (new URL(baseURL).port || '3000'),
+      PORT:
+        process.env.PLAYWRIGHT_PORT !== undefined
+          ? String(resolvePlaywrightPort())
+          : (process.env.PORT ?? (new URL(baseURL).port || '3000')),
       LIFTER_SHOWCASE: '1',
       APP_ORIGIN: process.env.APP_ORIGIN ?? new URL(baseURL).origin,
       U8_SERVER_LOG_MANIFEST_PATH: serverLogManifestPath,
       U8_SERVER_LOG_RAW_PATH: serverLogRawPath,
       U8_SERVER_LOG_SUMMARY_PATH: serverLogSummaryPath,
     },
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: shouldReusePlaywrightServer(),
   },
 });
