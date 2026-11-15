@@ -129,6 +129,6 @@ Full local verification and mutation restoration details: `C:/Users/NEW LAP/.lif
 
 ## 4e. S60 T016 verification
 
-| FR / SC | Task | Test | Evidence |
-| --- | --- | --- | --- |
+| FR / SC                | Task | Test                                                                                                          | Evidence                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------- | ---- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | F18-FR-016, F18-SC-010 | T016 | `nutrition-audit.test.ts` plus F18 nutrition RPC suites and `rls-catalog.test.ts` (11 files, 81 tests passed) | Migration `20261120110100_f18_nutrition_audit_allowlist.sql`; RED forbidden-field assertion failed before migration (1 failed, 2 passed); GREEN 81/81; mutation added `food_name` to template audit payload and scrub test failed with `nutrition_audit_field_not_allowlisted`; mutation restored and clean reset replayed. See `verification.md` and `runs/s60-luna-f18t016/report.md`. |
