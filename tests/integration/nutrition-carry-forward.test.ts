@@ -269,8 +269,8 @@ describe('F18 T011 publish selection carry-forward', () => {
     await selectAlternative(clientAuth, revisionId);
 
     const nextDoc = makeDoc();
-    nextDoc.meals[0]!.items[0]!.quantity.value = '175';
-    nextDoc.meals[0]!.items[0]!.note = 'Updated quantity and note';
+    nextDoc.meals![0]!.items[0]!.quantity.value = '175';
+    nextDoc.meals![0]!.items[0]!.note = 'Updated quantity and note';
     const nextRevisionId = await publishRevision(planId, nextDoc);
 
     expect(await readSelection(nextRevisionId)).toMatchObject({
