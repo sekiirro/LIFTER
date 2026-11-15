@@ -256,11 +256,8 @@ describe('F19 T020 continuity and delivery contracts', () => {
       {
         p_workspace_id: fixture.wsA.id,
         p_client_id: seeded.client,
-        p_plan_kind: 'nutrition',
-        p_content: {
-          schemaVersion: 2,
-          document: { title: 'Concurrent delivery' },
-        },
+        p_plan_kind: 'workout',
+        p_content: workoutDocument('Concurrent delivery'),
         p_operation_key: randomUUID(),
       },
     );
@@ -306,7 +303,15 @@ describe('F19 T020 continuity and delivery contracts', () => {
       p_workspace_id: fixture.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'nutrition',
-      p_content: { schemaVersion: 2, document: { title: 'Undelivered draft' } },
+      p_content: {
+        schemaVersion: 1,
+        structure: 'single_day',
+        implicitDayTypeId: 'dt-1',
+        dayTypes: [
+          { id: 'dt-1', trainingDay: false, name: { ar: 'يوم', en: 'Day' } },
+        ],
+        meals: [],
+      },
       p_operation_key: randomUUID(),
     });
     expect(draftOnly.error).toBeNull();
