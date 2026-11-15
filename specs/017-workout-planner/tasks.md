@@ -27,8 +27,8 @@
 - [x] **T013 (60m) — Migration: template identities and versions.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-008, FR-013; SC-005). Global + workspace identities, immutable versions, `(template_id, version)` uniqueness, current-version CAS pointer, provenance columns. RED first. Mutation: remove uniqueness/CAS and prove failure.
 - [x] **T014 (60m) — Migration: assignment runs, items and distribution state.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-010, FR-011; SC-003, SC-004). Run/item/copy ledgers and per-workspace flag with uniqueness keys from `data-model.md` §5. RED first. Mutation: remove copy uniqueness and prove duplicate-on-retry failure.
 - [x] **T015 (45m) — Migration: schema version and size checks.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-022). Registry-compatible version check and provisional cap check. RED: unknown/oversized rejected. Mutation: drop each check and prove its test fails.
-- [ ] **T016 (60m) — RLS policies for F17 tables.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-020; SC-010). Workspace isolation; PO-only global and assignment; Sales/client denial; foreign indistinguishable. RED: negative matrix before policy change. Mutation: remove each predicate and prove its row fails.
-- [ ] **T017 (50m) — Definer grants and direct-DML denial.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-020). `search_path = ''`, qualified names, narrow EXECUTE, no base-table DML for client roles. RED first. Mutation: grant direct DML or widen EXECUTE and prove denial tests fail.
+- [x] **T016 (60m) — RLS policies for F17 tables.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-020; SC-010). Workspace isolation; PO-only global and assignment; Sales/client denial; foreign indistinguishable. RED: negative matrix before policy change. Mutation: remove each predicate and prove its row fails.
+- [x] **T017 (50m) — Definer grants and direct-DML denial.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-020). `search_path = ''`, qualified names, narrow EXECUTE, no base-table DML for client roles. RED first. Mutation: grant direct DML or widen EXECUTE and prove denial tests fail.
 
 ## Phase 2 — plan lifecycle integration
 
