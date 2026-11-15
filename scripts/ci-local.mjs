@@ -323,11 +323,6 @@ export function dirtySpecTree(input) {
   return lines.filter(Boolean).some((line) => !isIgnoredSpecLine(line));
 }
 
-// Compatibility aliases for callers/tests that name the filter differently.
-export const isDirtySpecTree = dirtySpecTree;
-export const isSpecTreeDirty = dirtySpecTree;
-export const specTreeIsDirty = dirtySpecTree;
-export const checkDirtySpecTree = dirtySpecTree;
 export const dirtySpecLines = (input) => {
   const src =
     input === undefined
@@ -339,10 +334,6 @@ export const dirtySpecLines = (input) => {
           : [];
   return src.filter(Boolean).filter((line) => !isIgnoredSpecLine(line));
 };
-export const filterDirtySpecLines = dirtySpecLines;
-export const getDirtySpecLines = dirtySpecLines;
-export const isIgnoredPorcelainLine = isIgnoredSpecLine;
-export const isIgnoredSpec = isIgnoredSpecLine;
 function wrapperPath() {
   const paths = [
     process.env.SUPABASE_SAFE_WRAPPER,
