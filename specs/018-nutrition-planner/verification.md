@@ -1,6 +1,7 @@
 # F18 Nutrition Planner — Verification Report
 
 ## Environment
+
 - **Base `origin/main` SHA**: `9995e5b7`
 - **Stack**: D (`LIFTER_SUPABASE_STACK=d`, API port 45421, DB port 45422)
 - **Node**: `v24.19.0`
@@ -8,6 +9,7 @@
 - **PostgreSQL image**: `public.ecr.aws/supabase/postgres:17.11.0.006`
 
 ## Slice 2: T014 (`assign_nutrition_templates`) & T015 (`make_nutrition_template_global`)
+
 - **Migration**: `supabase/migrations/20261119070000_f18_template_assignment_promotion.sql`
 - **Integration suites**:
   - `tests/integration/nutrition-assign.test.ts` (6 tests)
@@ -16,6 +18,7 @@
 - **GREEN**: 3 test files passed, 49/49 tests passed after clean Stack D reset and provisioning (`tests/integration/client-accounts-provision.mjs`).
 
 ### Mutation Evidence (all killed, restored, `git diff --exit-code` 0)
+
 1. **T014 — `All` tops up a partial workspace**
    - **Target**: `supabase/migrations/20261119070000_f18_template_assignment_promotion.sql:124-126,133-140`
    - **Mutation**: Removed the `not exists (... nutrition_template_assignment_items ... outcome='assigned')` filters for `p_workspace_mode='all'`.

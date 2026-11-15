@@ -36,20 +36,20 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 
 ## 2. Success criteria → task
 
-| Criterion  | Task(s)                | Evidence expected                                             | Status                                                              |
-| ---------- | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------- |
-| F18-SC-001 | T002, T008, T022, T027 | identical TS/SQL golden run (500 cases)                       | SPECIFIED                                                           |
-| F18-SC-002 | T018, T019, T027       | full negative/concurrency matrix                              | SPECIFIED                                                           |
-| F18-SC-003 | T026                   | multi-plan projection fixture                                 | SPECIFIED                                                           |
-| F18-SC-004 | T001, T008, T027       | invalid-unit matrix                                           | SPECIFIED                                                           |
-| F18-SC-005 | T005, T023, T024       | Current and historical AR/EN export goldens + prompt fidelity | Current revision specified; historical export specified by S43-PO-8 |
-| F18-SC-006 | T021                   | recorded envelope + benchmark report                          | SPECIFIED                                                           |
+| Criterion  | Task(s)                | Evidence expected                                             | Status                                                                                     |
+| ---------- | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| F18-SC-001 | T002, T008, T022, T027 | identical TS/SQL golden run (500 cases)                       | SPECIFIED                                                                                  |
+| F18-SC-002 | T018, T019, T027       | full negative/concurrency matrix                              | SPECIFIED                                                                                  |
+| F18-SC-003 | T026                   | multi-plan projection fixture                                 | SPECIFIED                                                                                  |
+| F18-SC-004 | T001, T008, T027       | invalid-unit matrix                                           | SPECIFIED                                                                                  |
+| F18-SC-005 | T005, T023, T024       | Current and historical AR/EN export goldens + prompt fidelity | Current revision specified; historical export specified by S43-PO-8                        |
+| F18-SC-006 | T021                   | recorded envelope + benchmark report                          | SPECIFIED                                                                                  |
 | F18-SC-007 | T006, T014             | assignment state-machine fixtures                             | IMPLEMENTED (held copies skipped/reported; zero-copy race rejected; see `verification.md`) |
 | F18-SC-008 | T004, T010, T011       | selection/carry-forward fixtures                              | SPECIFIED                                                                                  |
 | F18-SC-009 | T012, T015             | template isolation + Make it Global fixtures                  | IMPLEMENTED (see `verification.md`)                                                        |
-| F18-SC-010 | T016                   | log-scrub report                                              | SPECIFIED                                                           |
-| F18-SC-011 | T002, T025             | display fixtures                                              | SPECIFIED (half-up)                                                 |
-| F18-SC-012 | T001, T005, T025       | separate-field schema/editor contract tests                   | SPECIFIED                                                           |
+| F18-SC-010 | T016                   | log-scrub report                                              | SPECIFIED                                                                                  |
+| F18-SC-011 | T002, T025             | display fixtures                                              | SPECIFIED (half-up)                                                                        |
+| F18-SC-012 | T001, T005, T025       | separate-field schema/editor contract tests                   | SPECIFIED                                                                                  |
 
 ## 3. Delegated and excluded
 
@@ -113,7 +113,7 @@ Full local verification and mutation restoration details: `C:/Users/NEW LAP/.lif
 
 ## 4d. S59 T014/T015 verification
 
-| FR / SC                                      | Task | Test                                                                                | Evidence                                                                                                                                                                    |
-| -------------------------------------------- | ---- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F18-FR-008, F18-FR-019, F18-SC-007           | T014 | `tests/integration/nutrition-assign.test.ts` (6), `rls-catalog.test.ts` (42)        | Migration `20261119070000_f18_template_assignment_promotion.sql`; GREEN 49/49; mutations (All tops up partial workspace; overwrite held copy) killed; see `verification.md`. |
-| F18-FR-007, F18-SC-009                       | T015 | `tests/integration/nutrition-make-global.test.ts` (1), `rls-catalog.test.ts` (42)   | Migration `20261119070000_f18_template_assignment_promotion.sql`; GREEN 49/49; mutation (non-PO make-global) killed; see `verification.md`.                                 |
+| FR / SC                            | Task | Test                                                                              | Evidence                                                                                                                                                                     |
+| ---------------------------------- | ---- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F18-FR-008, F18-FR-019, F18-SC-007 | T014 | `tests/integration/nutrition-assign.test.ts` (6), `rls-catalog.test.ts` (42)      | Migration `20261119070000_f18_template_assignment_promotion.sql`; GREEN 49/49; mutations (All tops up partial workspace; overwrite held copy) killed; see `verification.md`. |
+| F18-FR-007, F18-SC-009             | T015 | `tests/integration/nutrition-make-global.test.ts` (1), `rls-catalog.test.ts` (42) | Migration `20261119070000_f18_template_assignment_promotion.sql`; GREEN 49/49; mutation (non-PO make-global) killed; see `verification.md`.                                  |
