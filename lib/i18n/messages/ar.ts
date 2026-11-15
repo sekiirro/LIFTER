@@ -977,4 +977,7 @@ export const ar = {
   'forms.staffD03Deadline': 'مهلة تسليم {deadline}',
   'forms.staffSyntheticOnly':
     'معاينة تجريبية فقط. لا يبدأ التنبيه الفعلي قبل توافر بيانات التسليم والمدرّب المعتمدة.',
+  'plans.expiredTitle': 'اشتراكك انتهي',
+  'plans.expiredBody':
+    'اشتراكك خلص، بس رحلتنا لسه مكملة! تواصل مع كابتنك وجدّد اشتراكك عشان تكمل تقدمك.',
 } as const;
