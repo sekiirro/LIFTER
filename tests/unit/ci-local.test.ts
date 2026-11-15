@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildPlan,
+  dirtySpecTree,
+  isIgnoredSpecLine,
   parseArgs,
   parseWorkflowSteps,
   safeStackArgs,
@@ -145,5 +147,44 @@ describe('local CI parity planning', () => {
       '--local',
     ]);
     expect(spawned).toBe(false);
+  });
+});
+
+describe('ci-local dirty spec tree guard', () => {
+  const ignoredUntracked = [
+    'npx-cli.js',
+    'supabase-stack-a/npx-cli.js',
+    'supabase-stack-b/npx-cli.js',
+    'supabase-stack-c/npx-cli.js',
+    'supabase-stack-d/npx-cli.js',
+  ];
+
+  it('ignores each untracked stack/root npx-cli.js path', () => {
+    for (const p of ignoredUntracked) {
+      expect(isIgnoredSpecLine(`?? ${p}`)).toBe(true);
+      expect(dirtySpecTree([`?? ${p}`])).toBe(false);
+    }
+  });
+
+  it('is still dirty for a modified tracked npx-cli.js', () => {
+    for (const p of ignoredUntracked) {
+      expect(dirtySpecTree([` M ${p}`])).toBe(true);
+      expect(dirtySpecTree([`M  ${p}`])).toBe(true);
+    }
+  });
+
+  it('is still dirty for any other untracked file', () => {
+    expect(dirtySpecTree(['?? other-untracked.txt'])).toBe(true);
+    expect(dirtySpecTree(['?? src/foo.ts'])).toBe(true);
+  });
+
+  it('keeps ignoring untracked report-artifacts', () => {
+    expect(dirtySpecTree(['?? report-artifacts/x.json'])).toBe(false);
+  });
+
+  it('is not dirty when there are no changes', () => {
+    expect(dirtySpecTree([])).toBe(false);
+    expect(dirtySpecTree('')).toBe(false);
+    expect(dirtySpecTree([''])).toBe(false);
   });
 });

@@ -317,6 +317,9 @@ describe('tenancy security catalog (T007)', () => {
           'f13_project_entitlement',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
+          'f17_guard_template_identity_update',
+          'f17_reject_template_identity_delete',
+          'f17_reject_template_version_mutation',
           'f19_audit_plan_change',
           'f19_audit_plan_revision',
           'f19_guard_delivery',
@@ -333,6 +336,13 @@ describe('tenancy security catalog (T007)', () => {
           'f19_client_unit_eligible',
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
+          'f18_guard_plan_version_content',
+          'nutrition_parse_exact_decimal',
+          'nutrition_percent_encode_unit_key',
+          'nutrition_snapshot_map_key',
+          'nutrition_display_calories',
+          'nutrition_display_macro_grams',
+          'nutrition_compute_values',
           'f15_alert_schedule_activate',
           'f15_alert_schedule_deactivate',
           'f15_alert_schedule_immutable',
@@ -418,6 +428,13 @@ describe('tenancy security catalog (T007)', () => {
           'validate_food_request',
           'validate_workspace_exercise_payload',
           'validate_workspace_exercise_version_alternative',
+          'nutrition_template_guard_identity',
+          'nutrition_template_version_immutable',
+          'nutrition_template_start_operation',
+          'nutrition_template_finish_operation',
+          'nutrition_template_write_audit',
+          'nutrition_template_collect_ids',
+          'nutrition_template_remap_ids',
         ]),
       ].sort(),
     );
@@ -465,6 +482,9 @@ describe('tenancy security catalog (T007)', () => {
         'reject_catalog_provenance_change',
         'reject_catalog_version_mutation',
         'validate_food_request',
+        'nutrition_template_version_immutable',
+        'nutrition_template_collect_ids',
+        'nutrition_template_remap_ids',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -501,6 +521,13 @@ describe('tenancy security catalog (T007)', () => {
           'f19_client_unit_eligible',
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
+          'f18_guard_plan_version_content',
+          'nutrition_parse_exact_decimal',
+          'nutrition_percent_encode_unit_key',
+          'nutrition_snapshot_map_key',
+          'nutrition_display_calories',
+          'nutrition_display_macro_grams',
+          'nutrition_compute_values',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -528,6 +555,7 @@ describe('tenancy security catalog (T007)', () => {
         ].includes(row.proname) ||
           (!row.proname.startsWith('f12_') &&
             !row.proname.startsWith('f13_') &&
+            !row.proname.startsWith('f17_') &&
             !registrationPrivate.includes(row.proname) &&
             !assignmentPrivate.includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
@@ -597,6 +625,13 @@ describe('tenancy security catalog (T007)', () => {
               'f19_client_unit_eligible',
               'f19_guard_activation_source',
               'f19_guard_productivity_unit',
+              'f18_guard_plan_version_content',
+              'nutrition_parse_exact_decimal',
+              'nutrition_percent_encode_unit_key',
+              'nutrition_snapshot_map_key',
+              'nutrition_display_calories',
+              'nutrition_display_macro_grams',
+              'nutrition_compute_values',
               'materialize_intake_assignment_occurrence_core',
               'f15_answer_is_present',
               'f15_answer_values_valid',
@@ -659,6 +694,13 @@ describe('tenancy security catalog (T007)', () => {
               'validate_food_request',
               'validate_workspace_exercise_payload',
               'validate_workspace_exercise_version_alternative',
+              'nutrition_template_guard_identity',
+              'nutrition_template_version_immutable',
+              'nutrition_template_start_operation',
+              'nutrition_template_finish_operation',
+              'nutrition_template_write_audit',
+              'nutrition_template_collect_ids',
+              'nutrition_template_remap_ids',
             ].includes(row.proname)),
       );
     }
@@ -1803,5 +1845,76 @@ describe('F19 T022 override catalog', () => {
           'app_private.f19_override_operations',${privilege}) as allowed`;
         expect(grant!.allowed).toBe(false);
       }
+  });
+});
+
+describe('F17 T013/T016/T017 workout templates catalog', () => {
+  it('forces RLS, revokes direct DML, protects provenance columns, and hardens guards', async () => {
+    const tables = [
+      'public.workout_global_templates',
+      'public.workout_global_template_versions',
+      'public.workout_workspace_templates',
+      'public.workout_workspace_template_versions',
+    ];
+    for (const rel of tables) {
+      const [row] = await db`select relrowsecurity, relforcerowsecurity
+        from pg_class where oid = ${rel}::regclass`;
+      expect(row, rel).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'service_role']) {
+        const [sel] =
+          await db`select has_table_privilege(${role}, ${rel}, 'SELECT') as allowed`;
+        expect(sel!.allowed, `${role} SELECT ${rel}`).toBe(false);
+      }
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const priv of [
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+          expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+        }
+      }
+    }
+
+    for (const col of [
+      'origin_global_template_id',
+      'origin_global_template_version',
+      'origin_assignment_id',
+    ]) {
+      const [grant] = await db`select has_column_privilege(
+        'authenticated', 'public.workout_workspace_templates', ${col}, 'SELECT'
+      ) as allowed`;
+      expect(grant!.allowed, `authenticated SELECT ${col}`).toBe(false);
+    }
+
+    const fns = [
+      'app_private.f17_reject_template_version_mutation()',
+      'app_private.f17_reject_template_identity_delete()',
+      'app_private.f17_guard_template_identity_update()',
+    ];
+    for (const sig of fns) {
+      const [fn] = await db`select p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        owner: 'postgres',
+        authenticated: false,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
   });
 });
