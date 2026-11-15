@@ -1,0 +1,20 @@
+Plan	البرنامج
+Day	اليوم
+Rest day	يوم راحة
+Exercise	التمرين
+Description	الوصف
+Sets	المجموعات
+Set type	نوع المجموعة
+Warm-up	إحماء
+Working	أساسية
+Repetitions	التكرارات
+Load	الوزن
+Bodyweight	وزن الجسم
+Added weight	وزن زيادة
+Assisted	بمساعدة
+Rest (sec)	الراحة (ثانية)
+RIR	RIR (عدّات فاضلة)
+Notes	ملاحظات
+Alternatives	البدائل
+Video	الفيديو
+kg / lb	kg / lb
