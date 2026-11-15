@@ -7,7 +7,7 @@ import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { createPendingClient } from './registration-approval-fixture';
 
-const origin = 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const local = Boolean(process.env.DB_URL || process.env.SUPABASE_DB_URL);
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'];
 

@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:secrets": "node scripts/check-client-secrets.mjs",
+    "ci:local": "node scripts/ci-local.mjs",
     "test": "vitest run",
     "test:unit": "vitest run",
     "e2e": "playwright test",
@@ -62,7 +63,8 @@
     "vitest": "5.1.0",
     "wrangler": "4.153.0",
     "@types/jsdom": "30.0.0",
-    "jsdom": "29.1.1"
+    "jsdom": "29.1.1",
+    "yaml": "2.9.1"
   },
   "overrides": {
     "@opennextjs/cloudflare": {
