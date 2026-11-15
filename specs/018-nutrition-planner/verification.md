@@ -69,3 +69,32 @@
    - **Mutation**: Removed the durable `client_nutrition_selection_revision_counters` upsert/increment and derived `v_sel_rev` from the deletable `client_nutrition_alternative_selections` row count (returning `0` on clear).
    - **Result**: KILLED — `tests/integration/nutrition-selection.test.ts` failed 2/3 (`enforces self-only upsert/delete, no-op silence, durable revision counter, idempotency, and audit allowlist` at line 340: `selection_revision` returned `0` instead of `1`, and `refuses selection and replay when subscription is expired and blocks direct DML` at line 678).
    - **Restore**: Reverted mutation (`git diff --exit-code -- supabase/migrations` = 0); clean Stack A reset + provision.
+
+## Slice 4 (Security Matrix): T018 (`Authorization and security matrix`)
+
+- **Base `origin/main` SHA**: `e7440066`
+- **Stack**: B (`LIFTER_SUPABASE_STACK=b`, API port 25421, DB port 25422)
+- **Node**: `v24.19.0`
+- **Vitest**: `vitest/5.1.0`
+- **Target Suite**: `tests/integration/nutrition-security-matrix.test.ts` (21 tests)
+- **GREEN**: 21/21 tests passed covering all 21 rows of `contracts/nutrition-api.md §8` on clean Stack B reset and provisioning (`tests/integration/client-accounts-provision.mjs`).
+
+### Mutation Evidence (all killed, restored, `git diff --exit-code` 0)
+
+1. **T018 — Remove PO guard in `create_nutrition_global_template` (`M1`)**
+   - **Target**: `supabase/migrations/20261119030000_f18_nutrition_templates.sql:258,273,276` (`app_private.is_platform_owner()`)
+   - **Mutation**: Removed `app_private.is_platform_owner()` checks so non-PO callers can create global templates.
+   - **Result**: KILLED — `tests/integration/nutrition-security-matrix.test.ts` failed 2/21 (Row 19 & Row 20 failed: `trainerWrite.error` and `globalTpl.error` were `null` instead of rejecting with code `42501`).
+   - **Restore**: Reverted mutation; clean restored state verified 21/21 passed.
+
+2. **T018 — Remove `private_nutrition_template_fields` check in `make_nutrition_template_global` (`M2`)**
+   - **Target**: `supabase/migrations/20261119070000_f18_template_assignment_promotion.sql:255-256`
+   - **Mutation**: Removed the `if cardinality(fields)>0 then raise exception 'private_nutrition_template_fields'...` check.
+   - **Result**: KILLED — `tests/integration/nutrition-security-matrix.test.ts` failed 1/21 (Row 18 failed: `makeGlobalRes.error` was `null` instead of rejecting with `22023` and message containing `private_nutrition_template_fields`).
+   - **Restore**: Reverted mutation; clean restored state verified 21/21 passed.
+
+3. **T018 — Remove `v_alt_valid` approved alternative check in `select_nutrition_alternative` (`M3`)**
+   - **Target**: `supabase/migrations/20261119140000_f18_nutrition_alternative_selections.sql:271`
+   - **Mutation**: Replaced `if not v_item_found or not v_alt_valid then` with `if not v_item_found then`, bypassing alternative validity check.
+   - **Result**: KILLED — `tests/integration/nutrition-security-matrix.test.ts` failed 1/21 (Row 3 failed: `unapprovedSel.data` returned `{ status: 'ok', selection_revision: 1 }` instead of `{ status: 'invalid_selection' }`).
+   - **Restore**: Reverted mutation; clean restored state verified 21/21 passed (`git diff --exit-code -- supabase/migrations` = 0).
