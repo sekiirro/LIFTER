@@ -341,6 +341,8 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
           'f18_guard_plan_version_content',
+          'f18_guard_nutrition_selection',
+          'f18_selection_audit',
           'nutrition_parse_exact_decimal',
           'nutrition_percent_encode_unit_key',
           'nutrition_snapshot_map_key',
@@ -444,6 +446,7 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_template_remap_ids',
           'nutrition_template_assign_guard',
           'nutrition_template_private_fields',
+        'f18_guard_nutrition_selection',
         ]),
       ].sort(),
     );
@@ -496,6 +499,7 @@ describe('tenancy security catalog (T007)', () => {
         'nutrition_template_remap_ids',
         'nutrition_template_assign_guard',
         'nutrition_template_private_fields',
+        'f18_guard_nutrition_selection',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -536,6 +540,8 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
           'f18_guard_plan_version_content',
+          'f18_guard_nutrition_selection',
+          'f18_selection_audit',
           'nutrition_parse_exact_decimal',
           'nutrition_percent_encode_unit_key',
           'nutrition_snapshot_map_key',
@@ -646,6 +652,10 @@ describe('tenancy security catalog (T007)', () => {
               'f19_guard_activation_source',
               'f19_guard_productivity_unit',
               'f18_guard_plan_version_content',
+              'f18_guard_nutrition_selection',
+              'f18_selection_audit',
+          'f18_guard_nutrition_selection',
+          'f18_selection_audit',
               'nutrition_parse_exact_decimal',
               'nutrition_percent_encode_unit_key',
               'nutrition_snapshot_map_key',
@@ -726,6 +736,7 @@ describe('tenancy security catalog (T007)', () => {
               'nutrition_template_remap_ids',
               'nutrition_template_assign_guard',
               'nutrition_template_private_fields',
+        'f18_guard_nutrition_selection',
             ].includes(row.proname)),
       );
     }
@@ -1467,6 +1478,9 @@ describe('registration security catalog', () => {
       'public.ready_and_publish_plan(uuid,bigint,bigint,uuid)',
       'app_private.ready_and_publish_plan_impl(uuid,bigint,bigint,uuid)',
       'public.publish_nutrition_revision(uuid,bigint,bigint,uuid,jsonb)',
+      'public.select_nutrition_alternative(uuid,text,text,uuid)',
+      'app_private.f18_guard_nutrition_selection()',
+      'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
       'app_private.f15_alert_occurrence_authorize_insert()',
       'app_private.f15_alert_recipient_authorized(uuid,uuid,text)',
