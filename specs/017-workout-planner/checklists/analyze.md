@@ -327,7 +327,6 @@ cells are stored as text.
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
-
 ## Slice 1 Date Update (2026-11-15 12:37 UTC)
 
 - Updated `tasks.md` (ticked `T013` only; `T016`/`T017` remain unticked), `traceability.md` (recorded slice-1 evidence and partial `T016`/`T017` coverage for `workout_global_templates`, `workout_global_template_versions`, `workout_workspace_templates`, `workout_workspace_template_versions`), and `verification.md`.
