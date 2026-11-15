@@ -315,3 +315,8 @@ Revalidated T155 against existing F15 FR-003/FR-031 and F13 continuous-renewal p
 ### T155 completion and traceability refresh (2026-11-13)
 
 After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/identity mutation tests on that exact code tree. The `[x]` task state and traceability row cite those passing Stack C tests and the full 35-file F15 forms/intake suite. No FR/SC/spec text changed; **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+## 2026-11-15 Analyze - v1 deferral record (date update only)
+
+- Scope: `tasks.md` status-only change; T104, T138 and T149 record the PO-approved v1 deferrals (S54-PO-8). No requirement text changed; all three tasks stay unchecked.
+- CRITICAL: 0 open; HIGH: 0 open.
