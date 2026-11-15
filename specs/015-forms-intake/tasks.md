@@ -43,14 +43,14 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [x] T077 [FR-024/025] Document the exact fresh-checkout command that creates the ignored Stack D migrations junction.
 - [x] T078 [FR-026/036/037] Update the F15 copy inventory for S33-PO-3: remove Arabic T03/N07 from pending approval and retain unrelated pending copy as-is. Evidence: `specs/015-forms-intake/traceability.md` and commit `fb18c1a`.
 - [x] T079 [FR-025] Make the T005 dead-job audit test seed a provider-diagnostic canary through the job failure input, verify only allow-listed error codes can persist, and prove the leak mutant is detected. Evidence: `specs/015-forms-intake/traceability.md` and commit `cf5ca5f`.
-- [ ] T080 [FR-038/039] Apply NFKC then lowercase, then enforce the S32-PO-7 username set (3–30 English letters, digits, underscore, or period) consistently before persistence; reject leading/trailing whitespace and Unicode format characters rather than trimming or compacting them. Add RED-first SQL/TypeScript parity tests. Apply SQL corrections only through a new forward migration; include security mutation evidence.
+- [x] T080 [FR-038/039] Apply NFKC then lowercase, then enforce the S32-PO-7 username set (3–30 English letters, digits, underscore, or period) consistently before persistence; reject leading/trailing whitespace and Unicode format characters rather than trimming or compacting them. Add RED-first SQL/TypeScript parity tests. Apply SQL corrections only through a new forward migration; include security mutation evidence.
 - [ ] T081 [FR-004/006/008] Make server validation reject derived answers that contradict the submitted parent and treat absent selector/derived fields as mismatches in SQL and TypeScript. Add RED-first parity tests, preserve the drift guard, and use a forward migration for SQL changes.
 - [ ] T082 [FR-008/013/020] Require correction RPC validation to use the current authorized snapshot and reject stale/unauthorized revision context; prove the regression and drift mutants on Stack D.
 - [ ] T083 [FR-017/019/024/025] Retry only approved transient Telegram preparation failures using the existing allow-listed job error contract; prove safe dead-letter output with synthetic fault data and a raw-error mutation.
 - [ ] T084 [FR-024/025/026] Replace obsolete quickstart integration commands and refresh stale T012 task evidence with current file/test references; do not change scope or decision records.
 - [ ] T085 [FR-002/003/026/036/037] Restore default-onboarding regression coverage and establish the R3 draft mutation baseline before mutation-specific assertions; tests must prove existing behavior without weakening assertions.
 - [ ] T086 [FR-004/006/007] Under S34-PO-5=B, require a nonblank English draft title (`forms.name`) and reject Arabic-only drafts using an existing approved message key; if no existing key fits, stop and record PO-DECISION-NEEDED.
-- [ ] T087 [FR-008/013] Return the existing non-retryable submitted/business status when a draft save races with or follows submission; do not retry a permanent state conflict as a transient outage.
+- [x] T087 [FR-008/013] Return the existing non-retryable submitted/business status when a draft save races with or follows submission; do not retry a permanent state conflict as a transient outage.
 - [ ] T088 [FR-039] Run Terms policy fixture inserts and dependent assertions in the same rollback-scoped transaction so append-only test rows cannot contaminate later current-policy lookups.
 - [x] T089 [FR-026/036/037] Remove developer-local S34 PO source paths from the plan and Analyze artifacts; add a regression check for those path citations. Evidence: commit `0adb43a`; `tests/unit/forms-s14-decision-fixture.test.ts::keeps plan PO citations portable and catches absolute-path regressions` passed.
 - [x] T090 [FR-008/013/020] Authorize correction-history GET through the staff-capable correction-context reader and filter returned answers to the current assignment snapshot; test valid and missing synthetic contexts with generic denial behavior.
@@ -349,7 +349,7 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [x] T122 [FR-024/025] Keep task identifiers unique and trace the restack task under T129; verified no duplicate IDs.
 - [ ] T123 [FR-008/013] Apply a successfully saved revision to the staff console before attempting publish and preserve it on publish failure.
 - [ ] T124 [FR-008/013] Return the accepted draft revision when the client submission request fails after autosave.
-- [ ] T125 [FR-024/025] Let local Playwright reuse an already healthy server without allowing CI to reuse an unrelated server.
+- [x] T125 [FR-024/025] Let local Playwright reuse an already healthy server without allowing CI to reuse an unrelated server.
 - [ ] T126 [FR-038/039] Set preference cookies on the configured Playwright base origin and cover a non-default hostname.
 - [ ] T127 [FR-026/036/037] Restore valid UTF-8 punctuation in the scoped F15 Analyze, plan, and traceability records without changing approved Arabic copy.
 
