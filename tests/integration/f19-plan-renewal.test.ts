@@ -188,7 +188,9 @@ it('resolves a reattached legacy successor to the continuous subscription before
   await probe(async (tx) => {
     await activate(tx, f, purchase);
     const [packageVersion] = await tx`
-      select current_version_id from public.package_offers where workspace_id=${f.wsA.id} and id=${offerId}`;
+      select o.current_version_id, s.currency from public.package_offers o
+      join public.subscriptions s on s.id=${purchase.sid} and s.workspace_id=o.workspace_id
+      where o.workspace_id=${f.wsA.id} and o.id=${offerId}`;
     const successor = randomUUID();
     const renewalId = randomUUID();
     await tx`set local session_replication_role = replica`;
@@ -196,7 +198,7 @@ it('resolves a reattached legacy successor to the continuous subscription before
       id,workspace_id,client_id,kind,registration_link_id,package_version_id,
       price_minor,currency,commission_rate_bp,duration_days,duration_months,created_by,predecessor_subscription_id
     ) values(${successor},${f.wsA.id},${purchase.t.id},'renewal',null,${packageVersion!.current_version_id},
-      1200,'XTS',17,30,null,${f.po.userId},${purchase.sid})`;
+      1200,${packageVersion!.currency},17,30,null,${f.po.userId},${purchase.sid})`;
     await tx`
       insert into public.subscription_renewals(
         id,workspace_id,client_id,predecessor_subscription_id,subscription_id,package_offer_id,
