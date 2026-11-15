@@ -287,16 +287,62 @@ const git = (args) => {
   if (r.status) throw new Error(`git ${args[0]} failed`);
   return r.stdout.trim();
 };
-function dirtySpecTree() {
-  return git(['status', '--porcelain'])
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .some(
-      (s) =>
-        !s.endsWith('supabase-stack-c/npx-cli.js') &&
-        !(s.startsWith('??') && s.slice(3).startsWith('report-artifacts/')),
-    );
+const IGNORED_UNTRACKED_SPEC_PATHS = new Set([
+  'npx-cli.js',
+  'supabase-stack-a/npx-cli.js',
+  'supabase-stack-b/npx-cli.js',
+  'supabase-stack-c/npx-cli.js',
+  'supabase-stack-d/npx-cli.js',
+]);
+
+/** Returns true when a single git porcelain line is ignored by the spec guard. */
+export function isIgnoredSpecLine(line) {
+  if (typeof line !== 'string') return false;
+  const trimmed = line.replace(/\r$/, '').trimEnd();
+  if (!trimmed) return false;
+  const status = trimmed.slice(0, 2);
+  if (status !== '??') return false;
+  const filePath = trimmed.slice(3).trim();
+  if (!filePath) return false;
+  if (filePath.startsWith('report-artifacts/')) return true;
+  return IGNORED_UNTRACKED_SPEC_PATHS.has(filePath);
 }
+
+/** Pure porcelain-line filter: true when the spec tree has unignored changes. */
+export function dirtySpecTree(input) {
+  let lines;
+  if (input === undefined) {
+    lines = git(['status', '--porcelain']).split(/\r?\n/);
+  } else if (Array.isArray(input)) {
+    lines = input;
+  } else if (typeof input === 'string') {
+    lines = input.split(/\r?\n/);
+  } else {
+    lines = [];
+  }
+  return lines.filter(Boolean).some((line) => !isIgnoredSpecLine(line));
+}
+
+// Compatibility aliases for callers/tests that name the filter differently.
+export const isDirtySpecTree = dirtySpecTree;
+export const isSpecTreeDirty = dirtySpecTree;
+export const specTreeIsDirty = dirtySpecTree;
+export const checkDirtySpecTree = dirtySpecTree;
+export const dirtySpecLines = (input) => {
+  const src =
+    input === undefined
+      ? git(['status', '--porcelain']).split(/\r?\n/)
+      : Array.isArray(input)
+        ? input
+        : typeof input === 'string'
+          ? input.split(/\r?\n/)
+          : [];
+  return src.filter(Boolean).filter((line) => !isIgnoredSpecLine(line));
+};
+export const filterDirtySpecLines = dirtySpecLines;
+export const getDirtySpecLines = dirtySpecLines;
+export const isIgnoredPorcelainLine = isIgnoredSpecLine;
+export const isIgnoredSpec = isIgnoredSpecLine;
 function wrapperPath() {
   const paths = [
     process.env.SUPABASE_SAFE_WRAPPER,
