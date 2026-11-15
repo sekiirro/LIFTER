@@ -499,4 +499,60 @@ describe('F18 T009 publish_nutrition_revision', () => {
     `;
     expect(revs!.n).toBe(1);
   });
+
+  it('refuses direct ready_and_publish_plan on a nutrition plan with zero writes while publish_nutrition_revision still succeeds', async () => {
+    const doc = makeDoc(foodId, 1);
+    const created = await fixture.trainerA.client.rpc('create_plan_draft', {
+      p_workspace_id: fixture.wsA.id,
+      p_client_id: seeded.client,
+      p_plan_kind: 'nutrition',
+      p_content: doc,
+      p_operation_key: randomUUID(),
+    });
+    expect(created.error).toBeNull();
+    const planId = created.data as string;
+
+    const snapshotCounts = async () => {
+      const [row] = await db`
+        select
+          (select count(*)::int from public.plan_revisions where workspace_id = ${fixture.wsA.id} and plan_id = ${planId}) as revisions,
+          (select count(*)::int from public.plan_deliveries where workspace_id = ${fixture.wsA.id} and plan_id = ${planId}) as deliveries,
+          (select count(*)::int from public.nutrition_plan_version_contents where workspace_id = ${fixture.wsA.id} and plan_id = ${planId}) as contents,
+          (select count(*)::int from public.subscription_activations where workspace_id = ${fixture.wsA.id}) as activations,
+          (select count(*)::int from public.productivity_units where workspace_id = ${fixture.wsA.id}) as units,
+          (select count(*)::int from app_private.plan_delivery_operations where workspace_id = ${fixture.wsA.id} and plan_id = ${planId}) as operations,
+          (select count(*)::int from public.audit_events where workspace_id = ${fixture.wsA.id}) as audits
+      `;
+      return row!;
+    };
+
+    const before = await snapshotCounts();
+
+    const refused = await fixture.trainerA.client.rpc(
+      'ready_and_publish_plan',
+      {
+        p_plan_id: planId,
+        p_expected_draft_version: 1,
+        p_expected_published_version: 0,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(refused.error).toBeNull();
+    expect(refused.data).toEqual({ status: 'not_permitted' });
+
+    const after = await snapshotCounts();
+    expect(after).toEqual(before);
+
+    const published = await fixture.trainerA.client.rpc(
+      'publish_nutrition_revision',
+      {
+        p_plan_id: planId,
+        p_expected_draft_version: 1,
+        p_expected_published_version: 0,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(published.error).toBeNull();
+    expect(published.data).toMatchObject({ status: 'ok' });
+  });
 });

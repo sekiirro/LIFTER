@@ -251,7 +251,7 @@ describe('F19 T020 continuity and delivery contracts', () => {
       {
         p_workspace_id: fixture.wsA.id,
         p_client_id: seeded.client,
-        p_plan_kind: 'nutrition',
+        p_plan_kind: 'workout',
         p_content: {
           schemaVersion: 2,
           document: { title: 'Concurrent delivery' },

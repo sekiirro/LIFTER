@@ -113,23 +113,40 @@ async function deliver(
   kind: 'workout' | 'nutrition',
   clientId: string,
 ) {
+  const content =
+    kind === 'nutrition'
+      ? {
+          schemaVersion: 1,
+          structure: 'single_day',
+          implicitDayTypeId: 'dt-1',
+          dayTypes: [
+            {
+              id: 'dt-1',
+              trainingDay: false,
+              name: { ar: 'يوم', en: 'Day' },
+            },
+          ],
+          meals: [],
+        }
+      : { schemaVersion: 2, document: { title: `T022 ${kind}` } };
   const created = await context.trainerA.client.rpc('create_plan_draft', {
     p_workspace_id: context.wsA.id,
     p_client_id: clientId,
     p_plan_kind: kind,
-    p_content: { schemaVersion: 2, document: { title: `T022 ${kind}` } },
+    p_content: content,
     p_operation_key: randomUUID(),
   });
   expect(created.error).toBeNull();
-  const published = await context.trainerA.client.rpc(
-    'ready_and_publish_plan',
-    {
-      p_plan_id: created.data,
-      p_expected_draft_version: 1,
-      p_expected_published_version: 0,
-      p_operation_key: randomUUID(),
-    },
-  );
+  const rpcName =
+    kind === 'nutrition'
+      ? 'publish_nutrition_revision'
+      : 'ready_and_publish_plan';
+  const published = await context.trainerA.client.rpc(rpcName, {
+    p_plan_id: created.data,
+    p_expected_draft_version: 1,
+    p_expected_published_version: 0,
+    p_operation_key: randomUUID(),
+  });
   expect(published.error).toBeNull();
   expect(published.data).toMatchObject({ status: 'ok' });
 }

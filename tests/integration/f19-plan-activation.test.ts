@@ -23,18 +23,38 @@ async function deliver(
   kind: 'workout' | 'nutrition',
   operationKey = randomUUID(),
 ) {
+  const content =
+    kind === 'nutrition'
+      ? {
+          schemaVersion: 1,
+          structure: 'single_day',
+          implicitDayTypeId: 'dt-1',
+          dayTypes: [
+            {
+              id: 'dt-1',
+              trainingDay: false,
+              name: { ar: 'يوم', en: 'Day' },
+            },
+          ],
+          meals: [],
+        }
+      : { schemaVersion: 2, document: { title: `T021 ${kind}` } };
   const created = await client.rpc('create_plan_draft', {
     p_workspace_id: workspaceId,
     p_client_id: clientId,
     p_plan_kind: kind,
-    p_content: { schemaVersion: 2, document: { title: `T021 ${kind}` } },
+    p_content: content,
     p_operation_key: randomUUID(),
   });
   if (created.error || typeof created.data !== 'string')
     throw new Error(
       `Plan draft failed: ${created.error?.code ?? 'missing id'}`,
     );
-  return client.rpc('ready_and_publish_plan', {
+  const rpcName =
+    kind === 'nutrition'
+      ? 'publish_nutrition_revision'
+      : 'ready_and_publish_plan';
+  return client.rpc(rpcName, {
     p_plan_id: created.data,
     p_expected_draft_version: 1,
     p_expected_published_version: 0,
@@ -249,12 +269,20 @@ describe('F19 T021 automatic initial activation', () => {
       p_workspace_id: context.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'nutrition',
-      p_content: { schemaVersion: 2, document: { title: 'T021 replay' } },
+      p_content: {
+        schemaVersion: 1,
+        structure: 'single_day',
+        implicitDayTypeId: 'dt-1',
+        dayTypes: [
+          { id: 'dt-1', trainingDay: false, name: { ar: 'يوم', en: 'Day' } },
+        ],
+        meals: [],
+      },
       p_operation_key: randomUUID(),
     });
     const planId = created.data as string;
     const publish = () =>
-      context.trainerA.client.rpc('ready_and_publish_plan', {
+      context.trainerA.client.rpc('publish_nutrition_revision', {
         p_plan_id: planId,
         p_expected_draft_version: 1,
         p_expected_published_version: 0,
@@ -507,7 +535,15 @@ describe('F19 T021 automatic initial activation', () => {
       p_workspace_id: context.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'nutrition',
-      p_content: { schemaVersion: 2, document: { title: 'F11 lock ordering' } },
+      p_content: {
+        schemaVersion: 1,
+        structure: 'single_day',
+        implicitDayTypeId: 'dt-1',
+        dayTypes: [
+          { id: 'dt-1', trainingDay: false, name: { ar: 'يوم', en: 'Day' } },
+        ],
+        meals: [],
+      },
       p_operation_key: randomUUID(),
     });
     expect(draft.error).toBeNull();
@@ -530,7 +566,7 @@ describe('F19 T021 automatic initial activation', () => {
       await waitForLockWait('assign_client_responsible_trainer');
       activation = Promise.resolve().then(async () => {
         publishedResult = await context.po.client.rpc(
-          'ready_and_publish_plan',
+          'publish_nutrition_revision',
           {
             p_plan_id: draft.data,
             p_expected_draft_version: 1,
@@ -539,7 +575,7 @@ describe('F19 T021 automatic initial activation', () => {
           },
         );
       });
-      await waitForLockWait('ready_and_publish_plan');
+      await waitForLockWait('publish_nutrition_revision');
     });
     await Promise.all([assignment, activation]);
     expect(assignedResult).toMatchObject({ data: { status: 'ok' } });

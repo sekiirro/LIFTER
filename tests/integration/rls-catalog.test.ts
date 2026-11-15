@@ -345,6 +345,7 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_compute_values',
           'nutrition_validate_document',
           'nutrition_build_snapshot_map',
+          'ready_and_publish_plan_impl',
           'f15_alert_schedule_activate',
           'f15_alert_schedule_deactivate',
           'f15_alert_schedule_immutable',
@@ -522,6 +523,7 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_compute_values',
           'nutrition_validate_document',
           'nutrition_build_snapshot_map',
+          'ready_and_publish_plan_impl',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -628,6 +630,7 @@ describe('tenancy security catalog (T007)', () => {
               'nutrition_compute_values',
               'nutrition_validate_document',
               'nutrition_build_snapshot_map',
+              'ready_and_publish_plan_impl',
               'materialize_intake_assignment_occurrence_core',
               'f15_answer_is_present',
               'f15_answer_values_valid',
@@ -1429,6 +1432,7 @@ describe('registration security catalog', () => {
       'app_private.f13_validate_refund_ledger(uuid,uuid)',
       'public.f19_cleanup_subscription_reattachments(boolean,text)',
       'public.ready_and_publish_plan(uuid,bigint,bigint,uuid)',
+      'app_private.ready_and_publish_plan_impl(uuid,bigint,bigint,uuid)',
       'public.publish_nutrition_revision(uuid,bigint,bigint,uuid,jsonb)',
       'public.client_plan_projection()',
       'app_private.f15_alert_occurrence_authorize_insert()',
