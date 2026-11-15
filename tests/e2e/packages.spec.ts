@@ -6,9 +6,7 @@ import { getMessages } from '../../lib/i18n';
 import { tierLabel } from '../../lib/packages/tier-label';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = new URL(
-  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-).origin;
+const origin = new URL(process.env.PLAYWRIGHT_BASE_URL!).origin;
 for (const locale of ['ar', 'en'] as const)
   test(`${locale}: anonymous package route redirects safely and login passes axe`, async ({
     page,
