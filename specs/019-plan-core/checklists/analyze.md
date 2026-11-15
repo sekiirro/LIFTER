@@ -1,7 +1,7 @@
 # Spec Kit Analyze — F19 Shared Plan Core
 
 **Analyzed:** 2026-11-15
-**Scope:** Evidence-only re-date after T022 completion updated task status and traceability. No requirement, plan, or behavior text changed; the existing FR/SC analysis and findings remain unchanged.
+**Scope:** Evidence-only re-date after T012 completion updated task status and traceability. No requirement, plan, or behavior text changed; the existing FR/SC analysis and findings remain unchanged.
 
 ## Entry check
 

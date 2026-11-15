@@ -17,6 +17,7 @@ export type CreatePlanRequest =
   | (CreatePlanRequestBase & {
       createMode: 'template';
       templateId: string;
+      templateVersion?: number;
       sourcePlanId?: never;
     })
   | (CreatePlanRequestBase & {
