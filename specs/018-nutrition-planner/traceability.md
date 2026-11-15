@@ -25,7 +25,7 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 | F18-FR-013  | A5 Q2=A, PRD-05 (DIRECT)                                          | T004, T010, T023                   | plan §5, contract §6                   | SPECIFIED (selected primary; per-item coach note; S43-PO-2 for prompt note and totals representation)              |
 | F18-FR-014  | PRD-05, D18-6, S20-16 pattern (DIRECT)                            | T005, T023                         | contract §6                            | Current-revision export specified; historical-revision export specified by S43-PO-8                                |
 | F18-FR-015  | A5 Q3=A (DIRECT)                                                  | T005, T024                         | contract §6, plan §7                   | SPECIFIED prompt body resolved by S43-PO-5                                                                         |
-| F18-FR-016  | Constitution VII, retained F18 FR-010a (DIRECT)                   | T010, T016                         | contract §4, §7                        | SPECIFIED                                                                                                          |
+| F18-FR-016  | Constitution VII, retained F18 FR-010a (DIRECT)                   | T010, T016                         | contract §4, §7                        | IMPLEMENTED (T010, T016 verified; see `verification.md`)                                                           |
 | F18-FR-017  | Constitution I/III, F16 FR-012/033 (DIRECT)                       | T018                               | data-model §6, contract §2             | SPECIFIED                                                                                                          |
 | F18-FR-018  | PRD-06:188, retained F18 FR-010b (DIRECT/OPEN-TECH)               | T017                               | data-model §1 note, conflicts C-11     | SPECIFIED (ownership to reconcile with F19)                                                                        |
 | F18-FR-019  | Constitution IX, F16 FR-016, F19-FR-010 (DIRECT)                  | T003, T009, T010, T013, T014, T019 | contract §3, template-assignment.md §4 | SPECIFIED                                                                                                          |
@@ -47,7 +47,7 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 | F18-SC-007 | T006, T014             | assignment state-machine fixtures                             | IMPLEMENTED (held copies skipped/reported; zero-copy race rejected; see `verification.md`) |
 | F18-SC-008 | T004, T010, T011       | selection/carry-forward fixtures                              | SPECIFIED                                                                                  |
 | F18-SC-009 | T012, T015             | template isolation + Make it Global fixtures                  | IMPLEMENTED (see `verification.md`)                                                        |
-| F18-SC-010 | T016                   | log-scrub report                                              | SPECIFIED                                                                                  |
+| F18-SC-010 | T016                   | log-scrub report                                              | IMPLEMENTED (see `verification.md`)                                                        |
 | F18-SC-011 | T002, T025             | display fixtures                                              | SPECIFIED (half-up)                                                                        |
 | F18-SC-012 | T001, T005, T025       | separate-field schema/editor contract tests                   | SPECIFIED                                                                                  |
 
@@ -126,3 +126,9 @@ Full local verification and mutation restoration details: `C:/Users/NEW LAP/.lif
 | ---------------------------------- | ---- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | F18-FR-008, F18-FR-019, F18-SC-007 | T014 | `tests/integration/nutrition-assign.test.ts` (6), `rls-catalog.test.ts` (42)      | Migration `20261119070000_f18_template_assignment_promotion.sql`; GREEN 49/49; mutations (All tops up partial workspace; overwrite held copy) killed; see `verification.md`.                       |
 | F18-FR-007, F18-SC-009             | T015 | `tests/integration/nutrition-make-global.test.ts` (1), `rls-catalog.test.ts` (42) | Migration `20261119070000_f18_template_assignment_promotion.sql`; GREEN 49/49; mutations (non-PO make-global; M4 strip private fields silently instead of refusing) killed; see `verification.md`. |
+
+## 4e. S60 T016 verification
+
+| FR / SC | Task | Test | Evidence |
+| --- | --- | --- | --- |
+| F18-FR-016, F18-SC-010 | T016 | `nutrition-audit.test.ts` plus F18 nutrition RPC suites and `rls-catalog.test.ts` (11 files, 81 tests passed) | Migration `20261120110100_f18_nutrition_audit_allowlist.sql`; RED forbidden-field assertion failed before migration (1 failed, 2 passed); GREEN 81/81; mutation added `food_name` to template audit payload and scrub test failed with `nutrition_audit_field_not_allowlisted`; mutation restored and clean reset replayed. See `verification.md` and `runs/s60-luna-f18t016/report.md`. |

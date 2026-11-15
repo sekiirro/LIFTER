@@ -1,5 +1,13 @@
 # F18 Nutrition Planner — Verification Report
 
+## Slice 4: T016 audit allowlist and log scrub
+
+- **RED:** On Stack C after safe reset/provision without the new migration, `nutrition-audit.test.ts` had 2 passing cases and failed the forbidden `food_name` insert case because it was accepted by `public.audit_events`.
+- **GREEN:** After the allowlist migration was added and Stack C reset/provisioned, `nutrition-audit.test.ts` passed 3/3.
+- **Mutation:** Temporarily added `food_name: "Forbidden Mutation Food"` to `app_private.nutrition_template_write_audit` payload. The successful template mutation test failed because the database guard rejected the event with `nutrition_audit_field_not_allowlisted`. Restored the migration and reset Stack C.
+- **F18 RPC regression:** 11 integration files passed, 81 tests total: audit, Assign, Make it Global, templates, template RPCs, publish, selection/carry-forward, snapshots, parity, content, and `rls-catalog.test.ts`.
+- **Other local gates:** typecheck, lint, formatting, migration timestamp check, and full unit suite (277 files / 3,206 tests) passed. Local checks and logs are recorded in `C:/Users/NEW LAP/.lifter/runs/s60-luna-f18t016/report.md`.
+
 ## Environment
 
 - **Base `origin/main` SHA**: `9995e5b7`
