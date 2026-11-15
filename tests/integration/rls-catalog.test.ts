@@ -593,6 +593,7 @@ describe('tenancy security catalog (T007)', () => {
               'f19_reattachment_candidates',
               'f19_resolve_subscription_id',
               'current_assigned_trainer',
+              'unassigned_clients',
               'f19_client_unit_eligible',
               'f19_guard_activation_source',
               'f19_guard_productivity_unit',
@@ -1755,6 +1756,7 @@ describe('F11 responsible-Trainer assignment catalog', () => {
     for (const name of [
       'public.assign_client_responsible_trainer(uuid,uuid,uuid)',
       'public.client_responsible_trainer(uuid,uuid)',
+      'public.unassigned_clients(uuid)',
     ]) {
       const [fn] = await db`select prosecdef,proconfig,
         pg_catalog.pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
