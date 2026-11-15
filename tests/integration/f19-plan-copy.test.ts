@@ -80,6 +80,7 @@ async function seedWorkspaceTemplate(
   workspaceId: string,
   v1Doc: Record<string, JSONValue>,
   v2Doc: Record<string, JSONValue>,
+  lifecycleState: 'active' | 'retired' = 'active',
 ) {
   const templateId = randomUUID();
   const actorId = fixture.context.woA.userId;
@@ -88,9 +89,12 @@ async function seedWorkspaceTemplate(
     await tx`set constraints all deferred`;
     await tx`
       insert into public.workout_workspace_templates (
-        workspace_id, id, lifecycle_state, current_version, created_by
+        workspace_id, id, lifecycle_state, current_version, created_by,
+        retired_at, retired_by
       ) values (
-        ${workspaceId}, ${templateId}, 'active', 2, ${actorId}
+        ${workspaceId}, ${templateId}, ${lifecycleState}, 2, ${actorId},
+        ${lifecycleState === 'retired' ? new Date().toISOString() : null},
+        ${lifecycleState === 'retired' ? actorId : null}
       )
     `;
     await tx`
@@ -105,51 +109,80 @@ async function seedWorkspaceTemplate(
   return templateId;
 }
 
+async function seedGlobalTemplate(
+  v1Doc: Record<string, JSONValue>,
+  lifecycleState: 'active' | 'retired' = 'active',
+) {
+  const templateId = randomUUID();
+  const actorId = fixture.context.po.userId;
+
+  await db().begin(async (tx) => {
+    await tx`set constraints all deferred`;
+    await tx`
+      insert into public.workout_global_templates (
+        id, lifecycle_state, current_version, created_by,
+        retired_at, retired_by
+      ) values (
+        ${templateId}, ${lifecycleState}, 1, ${actorId},
+        ${lifecycleState === 'retired' ? new Date().toISOString() : null},
+        ${lifecycleState === 'retired' ? actorId : null}
+      )
+    `;
+    await tx`
+      insert into public.workout_global_template_versions (
+        template_id, version, title, schema_version, document, created_by
+      ) values
+      (${templateId}, 1, 'Global Tpl v1', 1, ${tx.json(v1Doc)}, ${actorId})
+    `;
+  });
+
+  return templateId;
+}
+
 describe('F19 T012 template and plan copy', () => {
   it('copies latest published workout revision (excluding draft, video, ownership, history, delivery) into an independent destination draft', async () => {
     const targetClientId = await fixture.createSiblingClient();
+    const dayId = randomUUID();
+    const itemId = randomUUID();
+    const setId = randomUUID();
     const rev1Content = {
-      kind: 'workout',
-      schemaVersion: 1,
-      document: { schema_version: 1, notes: 'rev1', days: [] },
+      schema_version: 1,
+      notes: 'rev1',
+      days: [],
     };
     const rev2Content = {
-      kind: 'workout',
-      schemaVersion: 1,
-      document: {
-        schema_version: 1,
-        notes: 'Latest published custom notes',
-        videoUrl: 'https://cdn.example.com/must-not-copy.mp4',
-        days: [
-          {
-            id: randomUUID(),
-            name: 'Lower A',
-            items: [
-              {
-                id: randomUUID(),
-                name: 'Back Squat',
-                reps: { min: 5, max: 7 },
-                restSec: 180,
-                rir: 2,
-                notes: 'Custom tempo 3010',
-                video: 'must-not-copy',
-                sets: [
-                  {
-                    id: randomUUID(),
-                    type: 'working',
-                    load: { mode: 'added_weight', value: '120', unit: 'kg' },
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
+      schema_version: 1,
+      notes: 'Latest published custom notes',
+      videoUrl: 'https://cdn.example.com/must-not-copy.mp4',
+      days: [
+        {
+          id: dayId,
+          name: 'Lower A',
+          items: [
+            {
+              id: itemId,
+              name: 'Back Squat',
+              reps: { min: 5, max: 7 },
+              restSec: 180,
+              rir: 2,
+              notes: 'Custom tempo 3010',
+              video: 'must-not-copy',
+              sets: [
+                {
+                  id: setId,
+                  type: 'working',
+                  load: { mode: 'added_weight', value: '120', unit: 'kg' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
     const draft3Content = {
-      kind: 'workout',
-      schemaVersion: 1,
-      document: { schema_version: 1, notes: 'UNPUBLISHED DRAFT 3', days: [] },
+      schema_version: 1,
+      notes: 'UNPUBLISHED DRAFT 3',
+      days: [],
     };
 
     const sourcePlanId = await seedPublishedPlan(
@@ -220,15 +253,36 @@ describe('F19 T012 template and plan copy', () => {
     expect(destDraft?.updated_by).toBe(fixture.context.woA.userId);
 
     const copiedContent = destDraft?.content as Record<string, unknown>;
-    const copiedDoc = copiedContent.document as Record<string, unknown>;
-    expect(copiedDoc.notes).toBe('Latest published custom notes');
-    expect(copiedDoc.videoUrl).toBeUndefined();
-    const days = copiedDoc.days as Array<Record<string, unknown>>;
+    expect(copiedContent).toEqual({
+      schema_version: 1,
+      notes: 'Latest published custom notes',
+      days: [
+        {
+          id: dayId,
+          name: 'Lower A',
+          items: [
+            {
+              id: itemId,
+              name: 'Back Squat',
+              reps: { min: 5, max: 7 },
+              restSec: 180,
+              rir: 2,
+              notes: 'Custom tempo 3010',
+              sets: [
+                {
+                  id: setId,
+                  type: 'working',
+                  load: { mode: 'added_weight', value: '120', unit: 'kg' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(copiedContent.videoUrl).toBeUndefined();
+    const days = copiedContent.days as Array<Record<string, unknown>>;
     const items = days[0]?.items as Array<Record<string, unknown>>;
-    expect(items[0]?.reps).toEqual({ min: 5, max: 7 });
-    expect(items[0]?.restSec).toBe(180);
-    expect(items[0]?.rir).toBe(2);
-    expect(items[0]?.notes).toBe('Custom tempo 3010');
     expect(items[0]?.video).toBeUndefined();
 
     // No revisions, deliveries, or source audit events copied
@@ -247,13 +301,9 @@ describe('F19 T012 template and plan copy', () => {
         p_plan_id: destPlanId,
         p_expected_draft_version: 1,
         p_content: {
-          kind: 'workout',
-          schemaVersion: 1,
-          document: {
-            schema_version: 1,
-            notes: 'Edited destination only',
-            days: [],
-          },
+          schema_version: 1,
+          notes: 'Edited destination only',
+          days: [],
         },
         p_operation_key: randomUUID(),
       },
@@ -265,10 +315,9 @@ describe('F19 T012 template and plan copy', () => {
       select draft_version, content from public.plan_drafts where plan_id = ${sourcePlanId}
     `;
     expect(Number(sourceDraftAfter?.draft_version)).toBe(3);
-    expect(
-      (sourceDraftAfter?.content as { document: { notes: string } }).document
-        .notes,
-    ).toBe('UNPUBLISHED DRAFT 3');
+    expect((sourceDraftAfter?.content as { notes: string }).notes).toBe(
+      'UNPUBLISHED DRAFT 3',
+    );
   });
 
   it('copies latest published nutrition revision preserving nutrition content independently', async () => {
@@ -328,6 +377,8 @@ describe('F19 T012 template and plan copy', () => {
 
   it('copies an immutable workout template version (pinned or current_version) without video', async () => {
     const targetClientId = await fixture.createSiblingClient();
+    const dayId = randomUUID();
+    const itemId = randomUUID();
     const v1Doc = {
       schema_version: 1,
       notes: 'Template v1 immutable',
@@ -339,11 +390,11 @@ describe('F19 T012 template and plan copy', () => {
       video_url: 'https://cdn.example.com/tpl-video.mp4',
       days: [
         {
-          id: randomUUID(),
+          id: dayId,
           name: 'Push',
           items: [
             {
-              id: randomUUID(),
+              id: itemId,
               name: 'OHP',
               reps: { value: 8 },
               restSec: 120,
@@ -360,7 +411,7 @@ describe('F19 T012 template and plan copy', () => {
       v2Doc,
     );
 
-    // Pinned version 1
+    // Pinned version 1: stores the schema-v1 document itself (not wrapped)
     const copyV1 = await fixture.context.trainerA.client.rpc(
       'copy_plan_to_draft',
       {
@@ -376,13 +427,9 @@ describe('F19 T012 template and plan copy', () => {
     const [draftV1] = await db()`
       select content from public.plan_drafts where plan_id = ${copyV1.data as string}
     `;
-    expect(draftV1?.content).toEqual({
-      kind: 'workout',
-      schemaVersion: 1,
-      document: v1Doc,
-    });
+    expect(draftV1?.content).toEqual(v1Doc);
 
-    // Current version (2) with video_url stripped
+    // Current version (2) with video_url stripped, matching field-for-field
     const copyCurrent = await fixture.context.po.client.rpc(
       'copy_plan_to_draft',
       {
@@ -397,10 +444,107 @@ describe('F19 T012 template and plan copy', () => {
     const [draftV2] = await db()`
       select content from public.plan_drafts where plan_id = ${copyCurrent.data as string}
     `;
-    const docV2 = (draftV2?.content as { document: Record<string, unknown> })
-      .document;
-    expect(docV2.notes).toBe('Template v2 current');
-    expect(docV2.video_url).toBeUndefined();
+    expect(draftV2?.content).toEqual({
+      schema_version: 1,
+      notes: 'Template v2 current',
+      days: [
+        {
+          id: dayId,
+          name: 'Push',
+          items: [
+            {
+              id: itemId,
+              name: 'OHP',
+              reps: { value: 8 },
+              restSec: 120,
+              rir: 2,
+              notes: 'Strict',
+            },
+          ],
+        },
+      ],
+    });
+    expect(
+      (draftV2?.content as Record<string, unknown>).video_url,
+    ).toBeUndefined();
+  });
+
+  it('refuses retired workspace and global workout templates with zero rows written while active templates copy', async () => {
+    const targetClientId = await fixture.createSiblingClient();
+    const doc = {
+      schema_version: 1,
+      notes: 'Lifecycle test template',
+      days: [],
+    };
+    const retiredWsTplId = await seedWorkspaceTemplate(
+      fixture.workspaceId,
+      doc,
+      doc,
+      'retired',
+    );
+    const retiredGlobalTplId = await seedGlobalTemplate(doc, 'retired');
+    const activeGlobalTplId = await seedGlobalTemplate(doc, 'active');
+
+    const [beforeCounts] = await db()`
+      select
+        (select count(*)::int from public.plan_roots where client_id = ${targetClientId}) as roots,
+        (select count(*)::int from public.plan_drafts where workspace_id = ${fixture.workspaceId}) as drafts
+    `;
+
+    const wsOpKey = randomUUID();
+    const retiredWsRes = await fixture.context.trainerA.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: retiredWsTplId,
+        p_operation_key: wsOpKey,
+      },
+    );
+    expect(retiredWsRes.error?.code).toBe('42501');
+
+    const globalOpKey = randomUUID();
+    const retiredGlobalRes = await fixture.context.po.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: retiredGlobalTplId,
+        p_operation_key: globalOpKey,
+      },
+    );
+    expect(retiredGlobalRes.error?.code).toBe('42501');
+
+    const [afterRefusalCounts] = await db()`
+      select
+        (select count(*)::int from public.plan_roots where client_id = ${targetClientId}) as roots,
+        (select count(*)::int from public.plan_drafts where workspace_id = ${fixture.workspaceId}) as drafts,
+        (select count(*)::int from app_private.plan_operation_keys where operation_key in (${wsOpKey}, ${globalOpKey})) as op_keys
+    `;
+    expect(afterRefusalCounts).toEqual({
+      roots: beforeCounts?.roots,
+      drafts: beforeCounts?.drafts,
+      op_keys: 0,
+    });
+
+    // Active global template still copies for PO
+    const activeGlobalRes = await fixture.context.po.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: activeGlobalTplId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(activeGlobalRes.error).toBeNull();
+    const [activeDraft] = await db()`
+      select content from public.plan_drafts where plan_id = ${activeGlobalRes.data as string}
+    `;
+    expect(activeDraft?.content).toEqual(doc);
   });
 
   it('denies draft-only source plans, Sales, and cross-workspace actors/sources', async () => {
@@ -411,7 +555,7 @@ describe('F19 T012 template and plan copy', () => {
         p_workspace_id: fixture.workspaceId,
         p_client_id: fixture.clientId,
         p_plan_kind: 'workout',
-        p_content: { kind: 'workout', schemaVersion: 1, document: {} },
+        p_content: { schema_version: 1, days: [] },
         p_operation_key: randomUUID(),
       },
     );
