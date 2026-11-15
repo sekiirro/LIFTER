@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parse } from 'yaml';
 import { getStackConfig } from './local-stack.mjs';
 import {
@@ -326,18 +326,27 @@ function prepareStack(wrapper, stack, start) {
       LIFTER_SUPABASE_STACK: stack,
       SUPABASE_SAFE_CLI: 'node npx-cli.js',
     };
-  for (const args of [
-    ['node', 'tests/integration/client-accounts-provision.mjs'],
-    ['node', 'scripts/wait-storage-ready.mjs'],
-  ])
+  for (const file of [
+    'tests/integration/client-accounts-provision.mjs',
+    'scripts/wait-storage-ready.mjs',
+  ]) {
+    const url = pathToFileURL(path.join(root, file)).href;
+    const code = `process.chdir(${JSON.stringify(root)});import(${JSON.stringify(url)});`;
     if (
       run(
         process.execPath,
-        safeStackArgs(wrapper, stack, config.workdir, ['exec', '--', ...args]),
+        safeStackArgs(wrapper, stack, config.workdir, [
+          'exec',
+          '--',
+          'node',
+          '-e',
+          code,
+        ]),
         env,
       ).code
     )
       return 1;
+  }
   return 0;
 }
 
@@ -426,14 +435,17 @@ export function main(argv = process.argv.slice(2)) {
         /^(npm|npx)$/i.test(bin) && process.platform === 'win32'
           ? `${bin}.cmd`
           : bin;
+    const stackArgs = /^(npm|npx)(\.cmd)?$/i.test(command)
+      ? ['--prefix', root, ...args]
+      : args;
     const actual = step.stack
       ? safeStackArgs(wrapper, o.stack, getStackConfig(o.stack, root).workdir, [
           'exec',
           '--',
           command,
-          ...args,
+          ...stackArgs,
         ])
-      : args;
+      : stackArgs;
     if (step.stack) env.SUPABASE_SAFE_CLI = 'node npx-cli.js';
     const display = step.command.replace(
       /(ANON_KEY|SERVICE_ROLE_KEY|SUPABASE_[A-Z_]*KEY)=\S+/g,
