@@ -1,11 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  anonClient,
-  createStaff,
-  sql,
-  twoWorkspaceFixture,
-} from './harness';
+import { anonClient, createStaff, sql, twoWorkspaceFixture } from './harness';
 
 let db: ReturnType<typeof sql>;
 
@@ -295,7 +290,14 @@ describe('F17 T013/T016/T017 template identities, immutable versions, RLS and DM
     expect(poGlobalVer.error).toBeNull();
     expect(poGlobalVer.data).toHaveLength(1);
 
-    for (const actor of [woA, trainerA, salesA, trainerB, clientUser, revokedTrainer]) {
+    for (const actor of [
+      woA,
+      trainerA,
+      salesA,
+      trainerB,
+      clientUser,
+      revokedTrainer,
+    ]) {
       const res = await actor.client
         .from('workout_global_templates')
         .select('id')
