@@ -8,11 +8,6 @@ import { admin, createStaff } from './harness';
 
 let db: ReturnType<typeof sql>;
 let mutationOriginal: { definition: string; hash: string } | undefined;
-const planContent = (kind: 'workout' | 'nutrition', notes: string) =>
-  kind === 'workout'
-    ? { schema_version: 1, days: [], notes }
-    : { schemaVersion: 2, document: { title: notes } };
-
 async function applyOverrideMutation(mode: string) {
   const [row] = await db<{ definition: string; hash: string }[]>`
     select pg_get_functiondef('public.override_activate_subscription(uuid,uuid,uuid,uuid)'::regprocedure) as definition,
@@ -117,23 +112,40 @@ async function deliver(
   kind: 'workout' | 'nutrition',
   clientId: string,
 ) {
+  const content =
+    kind === 'nutrition'
+      ? {
+          schemaVersion: 1,
+          structure: 'single_day',
+          implicitDayTypeId: 'dt-1',
+          dayTypes: [
+            {
+              id: 'dt-1',
+              trainingDay: false,
+              name: { ar: 'يوم', en: 'Day' },
+            },
+          ],
+          meals: [],
+        }
+      : { schema_version: 1, days: [], notes: `T022 ${kind}` };
   const created = await context.trainerA.client.rpc('create_plan_draft', {
     p_workspace_id: context.wsA.id,
     p_client_id: clientId,
     p_plan_kind: kind,
-    p_content: planContent(kind, `T022 ${kind}`),
+    p_content: content,
     p_operation_key: randomUUID(),
   });
   expect(created.error).toBeNull();
-  const published = await context.trainerA.client.rpc(
-    'ready_and_publish_plan',
-    {
-      p_plan_id: created.data,
-      p_expected_draft_version: 1,
-      p_expected_published_version: 0,
-      p_operation_key: randomUUID(),
-    },
-  );
+  const rpcName =
+    kind === 'nutrition'
+      ? 'publish_nutrition_revision'
+      : 'ready_and_publish_plan';
+  const published = await context.trainerA.client.rpc(rpcName, {
+    p_plan_id: created.data,
+    p_expected_draft_version: 1,
+    p_expected_published_version: 0,
+    p_operation_key: randomUUID(),
+  });
   expect(published.error).toBeNull();
   expect(published.data).toMatchObject({ status: 'ok' });
 }

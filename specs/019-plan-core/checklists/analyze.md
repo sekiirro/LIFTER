@@ -1,7 +1,7 @@
 # Spec Kit Analyze — F19 Shared Plan Core
 
 **Analyzed:** 2026-11-15
-**Scope:** Evidence-only re-date after T022 completion updated task status and traceability. No requirement, plan, or behavior text changed; the existing FR/SC analysis and findings remain unchanged.
+**Scope:** Evidence-only re-date after T012 fix round 1 updated task status and traceability. No requirement, plan, or behavior text changed; the existing FR/SC analysis and findings remain unchanged.
 
 ## Entry check
 
@@ -108,3 +108,9 @@ CRITICAL 0; HIGH 0; open MCQ 0. The plan-identity cache-key criterion is carried
 ## Analyze result
 
 CRITICAL 0; HIGH 0. Merge of main, no PR content change.
+
+## Analyze — T030 evidence-only re-date (2026-11-15)
+
+**Analyzed:** 2026-11-15
+**Date update only:** T030 status/traceability; no requirement, plan, or behavior text changed (constitution 1.17.0).
+**CRITICAL:** 0 open; **HIGH:** 0 open.
