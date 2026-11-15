@@ -317,6 +317,9 @@ describe('tenancy security catalog (T007)', () => {
           'f13_project_entitlement',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
+          // F17 workout content validation triggers (20261119040000).
+          'f17_validate_workout_schema_version',
+          'f17_validate_workout_document_size',
           'f17_guard_template_identity_update',
           'f17_reject_template_identity_delete',
           'f17_reject_template_version_mutation',
@@ -518,6 +521,8 @@ describe('tenancy security catalog (T007)', () => {
           'guard_staff_display_name',
           'normalize_staff_display_name',
           'staff_display_name_is_white_space',
+          'f17_validate_workout_schema_version',
+          'f17_validate_workout_document_size',
           'f19_audit_plan_change',
           'f19_audit_plan_revision',
           'f19_guard_delivery',
@@ -629,6 +634,8 @@ describe('tenancy security catalog (T007)', () => {
               'f15_client_alert_schedule_insert',
               'register_f15_trainer_alert_schedule',
               'evaluate_forms_alerts_core',
+              'f17_validate_workout_schema_version',
+              'f17_validate_workout_document_size',
               'f19_audit_plan_change',
               'f19_audit_plan_revision',
               'f19_guard_delivery',
