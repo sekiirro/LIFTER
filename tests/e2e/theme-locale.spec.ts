@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { modes } from '../../lib/design/tokens';
 
-const url = 'http://localhost:3000';
+const url = process.env.PLAYWRIGHT_BASE_URL!;
 function rgb(hex: string) {
   return `rgb(${[1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16)).join(', ')})`;
 }

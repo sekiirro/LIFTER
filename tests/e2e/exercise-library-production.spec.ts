@@ -9,7 +9,7 @@ import { getMessages } from '../../lib/i18n';
 import { assertLocalStackTarget } from '../../scripts/local-stack.mjs';
 import { isDisposableStackC } from './disposable-stack';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3437';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const screenshotDir =
   process.env.LIFTER_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s32-f16-lib15');
 const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;

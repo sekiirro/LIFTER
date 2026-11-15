@@ -210,12 +210,12 @@ async function signIn(page: Page) {
     {
       name: 'lifter_locale',
       value: 'en',
-      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
     },
     {
       name: 'lifter_theme',
       value: 'light',
-      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
     },
   ]);
   await page.goto('/login');
@@ -368,12 +368,12 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           {
             name: 'lifter_locale',
             value: locale,
-            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+            url: process.env.PLAYWRIGHT_BASE_URL!,
           },
           {
             name: 'lifter_theme',
             value: theme,
-            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+            url: process.env.PLAYWRIGHT_BASE_URL!,
           },
         ]);
         await page.goto(`/forms/${iterationAssignmentId}`);
@@ -460,12 +460,12 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
           {
             name: 'lifter_locale',
             value: locale,
-            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+            url: process.env.PLAYWRIGHT_BASE_URL!,
           },
           {
             name: 'lifter_theme',
             value: theme,
-            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+            url: process.env.PLAYWRIGHT_BASE_URL!,
           },
         ]);
         const routeResponse = await page.goto(
@@ -578,12 +578,12 @@ test('approved F15 controls render in both locales, themes, and widths', async (
           {
             name: 'lifter_locale',
             value: locale,
-            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+            url: process.env.PLAYWRIGHT_BASE_URL!,
           },
           {
             name: 'lifter_theme',
             value: theme,
-            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+            url: process.env.PLAYWRIGHT_BASE_URL!,
           },
         ]);
         await page.goto(`/forms/${freshId}`);
@@ -832,12 +832,12 @@ test('real route supports keyboard progression and presents the same safe not-fo
     {
       name: 'lifter_locale',
       value: 'en',
-      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
     },
     {
       name: 'lifter_theme',
       value: 'light',
-      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
     },
   ]);
   const keyboardAssignmentId = await createFreshAssignment();
@@ -882,12 +882,12 @@ test('sample workspace brand scope leaves semantic status tokens intact in light
       {
         name: 'lifter_locale',
         value: 'en',
-        url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+        url: process.env.PLAYWRIGHT_BASE_URL!,
       },
       {
         name: 'lifter_theme',
         value: theme,
-        url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+        url: process.env.PLAYWRIGHT_BASE_URL!,
       },
     ]);
     await page.goto(`/forms/${assignmentId}`);
@@ -1018,12 +1018,12 @@ test('real route autosave exposes each state, retries failures, and records save
       {
         name: 'lifter_locale',
         value: locale,
-        url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+        url: process.env.PLAYWRIGHT_BASE_URL!,
       },
       {
         name: 'lifter_theme',
         value: theme,
-        url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+        url: process.env.PLAYWRIGHT_BASE_URL!,
       },
     ]);
     for (const width of [390, 1440] as const) {
@@ -1137,12 +1137,12 @@ test('real route autosave exposes each state, retries failures, and records save
     {
       name: 'lifter_locale',
       value: 'en',
-      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
     },
     {
       name: 'lifter_theme',
       value: 'light',
-      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
     },
   ]);
   const latencyAssignmentId = await createFreshAssignment();
@@ -1186,12 +1186,12 @@ test('submitted answer edits wait for explicit correction and use the latest rev
     {
       name: 'lifter_locale',
       value: 'en',
-      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
     },
     {
       name: 'lifter_theme',
       value: 'light',
-      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      url: process.env.PLAYWRIGHT_BASE_URL!,
     },
   ]);
   await advanceToGoal(page, correctionAssignmentId, 'en');
