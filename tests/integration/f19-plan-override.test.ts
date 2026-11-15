@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { clientContext } from './client-accounts-fixture';
 import { graph, sql } from './registration-approval-fixture';
 import { checked, issue } from './registration-links-fixture';
+import { admin, createStaff } from './harness';
 
 let db: ReturnType<typeof sql>;
 let mutationOriginal: { definition: string; hash: string } | undefined;
@@ -30,6 +31,10 @@ async function applyOverrideMutation(mode: string) {
     no_duplicate_unit: [
       /if not app_private\.f19_client_unit_eligible\(p_workspace_id, client_id, root_id\) then\s*assigned_trainer := null;\s*end if;/,
       '-- mutation removed the client-level eligibility guard',
+    ],
+    assigned_recipient: [
+      /assigned_trainer := app_private\.current_assigned_trainer\(p_workspace_id, client_id\);/,
+      'assigned_trainer := null;',
     ],
   };
   const replacement = replacements[mode];
@@ -172,6 +177,50 @@ describe('F19 T022 Platform Owner Override Activate', () => {
         (select count(*)::int from public.plan_deliveries
           where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as deliveries`;
     expect(counts).toEqual({ activations: 1, units: 1, deliveries: 0 });
+  });
+
+  it('credits the assigned Trainer instead of the selected recipient', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    const selectedTrainer = await createStaff('trainer', 'override-selected');
+    const membership = await admin().from('workspace_memberships').insert({
+      workspace_id: context.wsA.id,
+      user_id: selectedTrainer.userId,
+      granted_by: context.po.userId,
+    });
+    if (membership.error) throw new Error(membership.error.message);
+
+    const assignment = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: seeded.client,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignment.error).toBeNull();
+    expect(assignment.data).toMatchObject({ status: 'ok' });
+
+    const result = await context.po.client.rpc(
+      'override_activate_subscription',
+      {
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: selectedTrainer.userId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(result.error).toBeNull();
+    expect(result.data).toMatchObject({ status: 'ok' });
+
+    const [unit] =
+      await db`select recipient_trainer_user_id from public.productivity_units
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(unit!.recipient_trainer_user_id).toBe(context.trainerA.userId);
+    expect(unit!.recipient_trainer_user_id).not.toBe(selectedTrainer.userId);
+    const [assignments] =
+      await db`select count(*)::int as count from public.client_trainer_assignments
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(assignments!.count).toBe(1);
   });
 
   it('does not replay a receipt when its operation key is rebound to another subscription', async () => {
