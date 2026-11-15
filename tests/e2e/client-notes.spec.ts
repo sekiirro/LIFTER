@@ -10,9 +10,7 @@ import {
   type ClientNotesFixture,
 } from '../integration/client-notes-fixture';
 
-const origin = new URL(
-  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-).origin;
+const origin = new URL(process.env.PLAYWRIGHT_BASE_URL!).origin;
 const screenshotDir =
   process.env.F20_SCREENSHOT_DIR ??
   join(tmpdir(), 'lifter', 's49-luna-f20-page', 'client-notes');

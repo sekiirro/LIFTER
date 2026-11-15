@@ -7,7 +7,7 @@ import { assertLocalStackTarget } from '../../scripts/local-stack.mjs';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const screenshotDir =
   process.env.LIFTER_SCREENSHOT_DIR ??
   join(process.cwd(), 'lifter-s47-t040-screens');

@@ -16,7 +16,7 @@ import {
  * the shipped textured artwork. Every capture is asserted axe-clean. Screenshots
  * and `INDEX.md` are written to the OS temp directory, never into the repo.
  */
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const heroPath = '/showcase/f14-hero';
 
 type ThemeName = 'Light' | 'Dark' | 'Follow OS light' | 'Follow OS dark';
