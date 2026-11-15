@@ -164,3 +164,8 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## 2026-11-15 Analyze - v1 deferral record (date update only)
+
+- Scope: `tasks.md` status-only change; T047 records the PO-approved v1 deferral (S54-PO-8). No requirement text changed; T047 stays unchecked.
+- CRITICAL: 0 open; HIGH: 0 open.
