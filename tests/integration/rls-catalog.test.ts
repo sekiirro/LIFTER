@@ -428,6 +428,14 @@ describe('tenancy security catalog (T007)', () => {
           'validate_food_request',
           'validate_workspace_exercise_payload',
           'validate_workspace_exercise_version_alternative',
+          'f17_workout_has_private_reference',
+          'f17_workout_json_keys_allowed',
+          'f17_workout_uuid_valid',
+          'f17_workout_reference_valid',
+          'f17_workout_document_valid',
+          'f17_workout_template_start_operation',
+          'f17_workout_template_finish_operation',
+          'f17_workout_template_write_audit',
         ]),
       ].sort(),
     );
@@ -475,6 +483,11 @@ describe('tenancy security catalog (T007)', () => {
         'reject_catalog_provenance_change',
         'reject_catalog_version_mutation',
         'validate_food_request',
+        'f17_workout_has_private_reference',
+        'f17_workout_json_keys_allowed',
+        'f17_workout_uuid_valid',
+        'f17_workout_reference_valid',
+        'f17_workout_document_valid',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -518,6 +531,14 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_display_calories',
           'nutrition_display_macro_grams',
           'nutrition_compute_values',
+          'f17_workout_has_private_reference',
+          'f17_workout_json_keys_allowed',
+          'f17_workout_uuid_valid',
+          'f17_workout_reference_valid',
+          'f17_workout_document_valid',
+          'f17_workout_template_start_operation',
+          'f17_workout_template_finish_operation',
+          'f17_workout_template_write_audit',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
