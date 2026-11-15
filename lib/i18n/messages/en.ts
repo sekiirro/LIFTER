@@ -1009,4 +1009,7 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.staffD03Deadline': '{deadline} delivery deadline',
   'forms.staffSyntheticOnly':
     'Synthetic preview only. Real-data alerting waits for authoritative delivery and Trainer facts.',
+  'plans.expiredTitle': 'Subscription Expired',
+  'plans.expiredBody':
+    "Your subscription has ended, but your journey isn't over! Contact your coach to renew and keep making progress.",
 };
