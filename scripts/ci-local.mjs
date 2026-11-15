@@ -435,9 +435,10 @@ export function main(argv = process.argv.slice(2)) {
         /^(npm|npx)$/i.test(bin) && process.platform === 'win32'
           ? `${bin}.cmd`
           : bin;
-    const stackArgs = /^(npm|npx)(\.cmd)?$/i.test(command)
-      ? ['--prefix', root, ...args]
-      : args;
+    const stackArgs =
+      step.stack && /^(npm|npx)(\.cmd)?$/i.test(command)
+        ? ['--prefix', '..', ...args]
+        : args;
     const actual = step.stack
       ? safeStackArgs(wrapper, o.stack, getStackConfig(o.stack, root).workdir, [
           'exec',
@@ -445,7 +446,7 @@ export function main(argv = process.argv.slice(2)) {
           command,
           ...stackArgs,
         ])
-      : stackArgs;
+      : args;
     if (step.stack) env.SUPABASE_SAFE_CLI = 'node npx-cli.js';
     const display = step.command.replace(
       /(ANON_KEY|SERVICE_ROLE_KEY|SUPABASE_[A-Z_]*KEY)=\S+/g,
