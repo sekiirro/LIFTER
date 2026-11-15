@@ -62,6 +62,11 @@ describe('local CI parity planning', () => {
       ['integration', 3],
     ]);
     expect(plan[0]!.command).toContain('--shard=1/3');
+    const outputArg = plan[0]!.args.find((arg: string) =>
+      arg.startsWith('--outputFile='),
+    );
+    expect(outputArg).toBeDefined();
+    expect(outputArg).not.toContain('"');
   });
 
   it('summarizes command outcome and test counts without environment values', () => {

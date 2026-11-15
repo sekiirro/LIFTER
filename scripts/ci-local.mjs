@@ -72,7 +72,9 @@ const lineOf = (source, marker) => {
 };
 const split = (s) =>
   (s.match(/"(?:\\.|[^"\\])*"|'[^']*'|\S+/g) ?? []).map((v) =>
-    v.replace(/^(?:"([\s\S]*)"|'([\s\S]*)')$/, '$1$2'),
+    v
+      .replace(/(--outputFile=)"([^"]*)"/g, '$1$2')
+      .replace(/^(?:"([\s\S]*)"|'([\s\S]*)')$/, '$1$2'),
   );
 const add = (p, group, command, extra = {}) =>
   p.push({ group, command, args: split(command), ...extra });
