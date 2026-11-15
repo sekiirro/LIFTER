@@ -307,7 +307,7 @@ describe('F18 T009 publish_nutrition_revision', () => {
         p_workspace_id: fixture.wsA.id,
         p_client_id: seeded.client,
         p_plan_kind: 'workout',
-        p_content: { schemaVersion: 2, document: { title: 'Workout' } },
+        p_content: { schema_version: 1, days: [] },
         p_operation_key: randomUUID(),
       },
     );

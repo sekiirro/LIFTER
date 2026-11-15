@@ -8,7 +8,6 @@ import { admin, createStaff } from './harness';
 
 let db: ReturnType<typeof sql>;
 let mutationOriginal: { definition: string; hash: string } | undefined;
-
 async function applyOverrideMutation(mode: string) {
   const [row] = await db<{ definition: string; hash: string }[]>`
     select pg_get_functiondef('public.override_activate_subscription(uuid,uuid,uuid,uuid)'::regprocedure) as definition,
@@ -128,7 +127,7 @@ async function deliver(
           ],
           meals: [],
         }
-      : { schemaVersion: 2, document: { title: `T022 ${kind}` } };
+      : { schema_version: 1, days: [], notes: `T022 ${kind}` };
   const created = await context.trainerA.client.rpc('create_plan_draft', {
     p_workspace_id: context.wsA.id,
     p_client_id: clientId,

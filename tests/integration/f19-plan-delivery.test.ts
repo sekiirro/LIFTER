@@ -7,6 +7,11 @@ let fixture: Context;
 let db: ReturnType<typeof sql>;
 let seeded: Awaited<ReturnType<typeof graph>>;
 let planId: string;
+const workoutDocument = (notes: string) => ({
+  schema_version: 1,
+  days: [],
+  notes,
+});
 
 beforeAll(async () => {
   fixture = await clientContext();
@@ -65,7 +70,7 @@ describe('F19 T020 continuity and delivery contracts', () => {
       p_workspace_id: fixture.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'workout',
-      p_content: { schemaVersion: 2, document: { title: 'T020 synthetic' } },
+      p_content: workoutDocument('T020 synthetic'),
       p_operation_key: randomUUID(),
     });
     expect(created.error).toBeNull();
@@ -221,7 +226,7 @@ describe('F19 T020 continuity and delivery contracts', () => {
     const saved = await fixture.trainerA.client.rpc('save_plan_draft', {
       p_plan_id: planId,
       p_expected_draft_version: 1,
-      p_content: { schemaVersion: 2, document: { title: 'T020 revised' } },
+      p_content: workoutDocument('T020 revised'),
       p_operation_key: randomUUID(),
     });
     expect(saved.data).toBe(2);
@@ -252,10 +257,7 @@ describe('F19 T020 continuity and delivery contracts', () => {
         p_workspace_id: fixture.wsA.id,
         p_client_id: seeded.client,
         p_plan_kind: 'workout',
-        p_content: {
-          schemaVersion: 2,
-          document: { title: 'Concurrent delivery' },
-        },
+        p_content: workoutDocument('Concurrent delivery'),
         p_operation_key: randomUUID(),
       },
     );
@@ -280,7 +282,7 @@ describe('F19 T020 continuity and delivery contracts', () => {
         p_workspace_id: fixture.wsA.id,
         p_client_id: seeded.client,
         p_plan_kind: 'workout',
-        p_content: { schemaVersion: 2, document: { title: `Plan ${index}` } },
+        p_content: workoutDocument(`Plan ${index}`),
         p_operation_key: randomUUID(),
       });
       expect(created.error).toBeNull();
@@ -301,7 +303,15 @@ describe('F19 T020 continuity and delivery contracts', () => {
       p_workspace_id: fixture.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'nutrition',
-      p_content: { schemaVersion: 2, document: { title: 'Undelivered draft' } },
+      p_content: {
+        schemaVersion: 1,
+        structure: 'single_day',
+        implicitDayTypeId: 'dt-1',
+        dayTypes: [
+          { id: 'dt-1', trainingDay: false, name: { ar: 'يوم', en: 'Day' } },
+        ],
+        meals: [],
+      },
       p_operation_key: randomUUID(),
     });
     expect(draftOnly.error).toBeNull();
@@ -340,7 +350,7 @@ describe('F19 T020 continuity and delivery contracts', () => {
       projectedPlans.find((plan) => plan.plan_id === planId),
     ).toMatchObject({
       revision_number: 2,
-      content: { schemaVersion: 2, document: { title: 'T020 revised' } },
+      content: workoutDocument('T020 revised'),
     });
     expect(projectedPlans.map((plan) => plan.plan_id)).not.toContain(
       draftOnly.data,

@@ -4,7 +4,6 @@ import { clientContext, sql, graph } from './registration-approval-fixture';
 import type { Context } from './registration-approval-fixture';
 
 let db: ReturnType<typeof sql>;
-
 beforeAll(async () => {
   db = sql();
 });
@@ -38,7 +37,7 @@ async function deliver(
           ],
           meals: [],
         }
-      : { schemaVersion: 2, document: { title: `T021 ${kind}` } };
+      : { schema_version: 1, days: [], notes: `T021 ${kind}` };
   const created = await client.rpc('create_plan_draft', {
     p_workspace_id: workspaceId,
     p_client_id: clientId,
@@ -480,7 +479,7 @@ describe('F19 T021 automatic initial activation', () => {
       p_workspace_id: context.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'workout',
-      p_content: { schemaVersion: 2, document: {} },
+      p_content: { schema_version: 1, days: [] },
       p_operation_key: randomUUID(),
     });
     const denied = await context.salesA.client.rpc('ready_and_publish_plan', {
