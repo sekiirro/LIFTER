@@ -7,6 +7,11 @@ import {
 
 let fixture: ClientNotesFixture;
 const db = () => fixture.db;
+const workoutDocument = (notes = '') => ({
+  schema_version: 1,
+  days: [],
+  notes,
+});
 
 beforeAll(async () => {
   fixture = await clientNotesFixture();
@@ -20,7 +25,7 @@ async function seedPlan(operationKey = randomUUID()) {
       p_workspace_id: fixture.workspaceId,
       p_client_id: fixture.clientId,
       p_plan_kind: 'workout',
-      p_content: { schemaVersion: 2, document: {} },
+      p_content: workoutDocument(),
       p_operation_key: operationKey,
     },
   );
@@ -107,7 +112,7 @@ describe('F19 T010 plan lifecycle schema', () => {
       {
         p_plan_id: id,
         p_expected_draft_version: 1,
-        p_content: { schemaVersion: 2, document: { x: 1 } },
+        p_content: workoutDocument('x1'),
         p_operation_key: saveKey,
       },
     );
@@ -118,7 +123,7 @@ describe('F19 T010 plan lifecycle schema', () => {
       {
         p_plan_id: id,
         p_expected_draft_version: 1,
-        p_content: { schemaVersion: 2, document: { x: 1 } },
+        p_content: workoutDocument('x1'),
         p_operation_key: saveKey,
       },
     );
@@ -129,7 +134,7 @@ describe('F19 T010 plan lifecycle schema', () => {
       {
         p_plan_id: id,
         p_expected_draft_version: 1,
-        p_content: { schemaVersion: 2, document: { x: 2 } },
+        p_content: workoutDocument('x2'),
         p_operation_key: saveKey,
       },
     );
@@ -137,7 +142,7 @@ describe('F19 T010 plan lifecycle schema', () => {
     const stale = await fixture.context.trainerA.client.rpc('save_plan_draft', {
       p_plan_id: id,
       p_expected_draft_version: 1,
-      p_content: { schemaVersion: 2, document: { x: 2 } },
+      p_content: workoutDocument('x2'),
       p_operation_key: randomUUID(),
     });
     expect(stale.error?.code).toBe('40001');
@@ -159,7 +164,7 @@ describe('F19 T010 plan lifecycle schema', () => {
       fixture.context.trainerA.client.rpc('save_plan_draft', {
         p_plan_id: id,
         p_expected_draft_version: 1,
-        p_content: { schemaVersion: 2, document: { value } },
+        p_content: workoutDocument(String(value)),
         p_operation_key: randomUUID(),
       });
     const results = await Promise.all([save(1), save(2)]);
@@ -193,7 +198,7 @@ describe('F19 T010 plan lifecycle schema', () => {
       insert into public.plan_revisions (
         workspace_id, plan_id, revision_number, source_draft_version, plan_kind, content, authored_by
       ) values (
-        ${fixture.workspaceId}, ${id}, 1, 1, 'workout', '{"schemaVersion":2,"document":{}}'::jsonb,
+        ${fixture.workspaceId}, ${id}, 1, 1, 'workout', '{"schema_version":1,"days":[]}'::jsonb,
         ${fixture.context.trainerA.userId}
       ) returning id
     `;
@@ -234,7 +239,7 @@ describe('F19 T010 plan lifecycle schema', () => {
         p_workspace_id: fixture.workspaceId,
         p_client_id: fixture.clientId,
         p_plan_kind: 'workout',
-        p_content: { schemaVersion: 2, document: {} },
+        p_content: workoutDocument(),
         p_operation_key: replayKey,
       },
     );
@@ -243,7 +248,7 @@ describe('F19 T010 plan lifecycle schema', () => {
       p_workspace_id: fixture.workspaceId,
       p_client_id: fixture.clientId,
       p_plan_kind: 'workout',
-      p_content: { schemaVersion: 2, document: {} },
+      p_content: workoutDocument(),
       p_operation_key: replayKey,
     });
     const foreign = await fixture.context.trainerB.client.rpc(
@@ -252,7 +257,7 @@ describe('F19 T010 plan lifecycle schema', () => {
         p_workspace_id: fixture.workspaceId,
         p_client_id: fixture.clientId,
         p_plan_kind: 'workout',
-        p_content: { schemaVersion: 2, document: {} },
+        p_content: workoutDocument(),
         p_operation_key: randomUUID(),
       },
     );
@@ -265,7 +270,7 @@ describe('F19 T010 plan lifecycle schema', () => {
       {
         p_plan_id: created.data,
         p_expected_draft_version: 1,
-        p_content: { schemaVersion: 2, document: { denied: true } },
+        p_content: workoutDocument('denied'),
         p_operation_key: randomUUID(),
       },
     );

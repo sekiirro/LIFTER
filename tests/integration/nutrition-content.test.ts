@@ -28,6 +28,7 @@ const SAMPLE_DOCUMENT = {
   notes: null,
 };
 
+const SAMPLE_WORKOUT_DOCUMENT = { schema_version: 1, days: [] };
 const SAMPLE_SNAPSHOT_MAP = {};
 const SAMPLE_COMPUTED_VALUES = {
   schemaVersion: 1,
@@ -73,7 +74,7 @@ beforeAll(async () => {
       p_workspace_id: fixture.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'workout',
-      p_content: { schemaVersion: 2, document: { title: 'Workout' } },
+      p_content: SAMPLE_WORKOUT_DOCUMENT,
       p_operation_key: randomUUID(),
     },
   );
@@ -86,7 +87,7 @@ beforeAll(async () => {
       plan_kind, content, authored_by
     ) values (
       ${fixture.wsA.id}, ${workoutPlanId}, 1, 1,
-      'workout', ${db.json({ schemaVersion: 2, document: { title: 'Workout' } })}, ${fixture.trainerA.userId}
+      'workout', ${db.json(SAMPLE_WORKOUT_DOCUMENT)}, ${fixture.trainerA.userId}
     )
     returning id
   `;
