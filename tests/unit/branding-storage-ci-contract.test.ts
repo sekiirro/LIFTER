@@ -53,9 +53,10 @@ describe('F14 Storage CI lane contract', () => {
     expect(runner).not.toContain('service_role');
   });
 
-  it('derives the Next.js listener port from a custom Playwright origin', () => {
+  it('derives the Next.js listener port from PLAYWRIGHT_PORT', () => {
     const config = readFileSync('playwright.config.ts', 'utf8');
-    expect(config).toMatch(/PORT:\s*process\.env\.PORT\s*\?\?/);
+    expect(config).toContain('resolvePlaywrightPort()');
+    expect(config).toContain('process.env.PLAYWRIGHT_PORT !== undefined');
     expect(config).toMatch(/new URL\(baseURL\)\.port/);
   });
 

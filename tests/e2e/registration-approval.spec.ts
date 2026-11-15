@@ -9,7 +9,7 @@ import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
 import { createPendingClient } from './registration-approval-fixture';
 
-const origin = 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 
 async function signIn(
   context: BrowserContext,

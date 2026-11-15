@@ -26,8 +26,16 @@ for (const locale of ['ar', 'en'] as const) {
       const m = getMessages(locale);
       test.beforeEach(async ({ context, page }) => {
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
-          { name: THEME_COOKIE, value: theme, url: 'http://localhost:3000' },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: process.env.PLAYWRIGHT_BASE_URL!,
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: process.env.PLAYWRIGHT_BASE_URL!,
+          },
         ]);
         await page.goto('/showcase');
       });

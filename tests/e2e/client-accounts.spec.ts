@@ -18,7 +18,7 @@ import { parsePhoneNumber } from 'libphonenumber-js';
 import { generateEgyptianMobile } from './egyptian-mobile';
 import { testStaffDisplayName } from '../helpers/staff-display-name';
 
-const origin = 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
