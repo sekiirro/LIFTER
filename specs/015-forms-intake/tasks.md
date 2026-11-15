@@ -347,8 +347,8 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [ ] T120 [FR-008/013] Make the correction-matrix cross-tenant mutant probe fail only when its named assertion is violated.
 - [x] T121 [FR-024/025] Correct evidence links to point at tracked repository artifacts; all 50 PNG targets resolve.
 - [x] T122 [FR-024/025] Keep task identifiers unique and trace the restack task under T129; verified no duplicate IDs.
-- [ ] T123 [FR-008/013] Apply a successfully saved revision to the staff console before attempting publish and preserve it on publish failure.
-- [ ] T124 [FR-008/013] Return the accepted draft revision when the client submission request fails after autosave.
+- [x] T123 [FR-008/013] Apply a successfully saved revision to the staff console before attempting publish and preserve it on publish failure.
+- [x] T124 [FR-008/013] Return the accepted draft revision when the client submission request fails after autosave.
 - [x] T125 [FR-024/025] Let local Playwright reuse an already healthy server without allowing CI to reuse an unrelated server.
 - [ ] T126 [FR-038/039] Set preference cookies on the configured Playwright base origin and cover a non-default hostname.
 - [ ] T127 [FR-026/036/037] Restore valid UTF-8 punctuation in the scoped F15 Analyze, plan, and traceability records without changing approved Arabic copy.
