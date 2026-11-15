@@ -320,7 +320,6 @@ describe('tenancy security catalog (T007)', () => {
           // F17 workout content validation triggers (20261119040000).
           'f17_validate_workout_schema_version',
           'f17_validate_workout_document_size',
-          'f17_workout_has_foreign_private_reference',
           'f17_guard_workout_references',
           'f17_guard_template_identity_update',
           'f17_reject_template_identity_delete',
@@ -541,7 +540,6 @@ describe('tenancy security catalog (T007)', () => {
           'staff_display_name_is_white_space',
           'f17_validate_workout_schema_version',
           'f17_validate_workout_document_size',
-          'f17_workout_has_foreign_private_reference',
           'f17_guard_workout_references',
           'f19_audit_plan_change',
           'f19_audit_plan_revision',
@@ -665,7 +663,6 @@ describe('tenancy security catalog (T007)', () => {
               'evaluate_forms_alerts_core',
               'f17_validate_workout_schema_version',
               'f17_validate_workout_document_size',
-              'f17_workout_has_foreign_private_reference',
               'f17_guard_workout_references',
               'f19_audit_plan_change',
               'f19_audit_plan_revision',
