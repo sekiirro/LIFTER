@@ -284,4 +284,216 @@ describe('F11 responsible-Trainer assignment T050', () => {
       await revoker.end();
     }
   });
+
+  it('refuses a service-role Trainer departure with an active assignment, but allows an unassigned departure', async () => {
+    const context = await clientContext();
+    const clientId = (await approvedClient(context)).client;
+    const assigned = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientId,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assigned.data).toMatchObject({ status: 'ok' });
+
+    // The service-role grant on staff_profiles.role is a real NULL-auth.uid path.
+    const departure = await admin()
+      .from('staff_profiles')
+      .update({ role: 'sales' })
+      .eq('user_id', context.trainerA.userId);
+    expect(departure.error?.message).toBe(
+      'client_trainer_assignment_immutable',
+    );
+
+    const [state] = await db`
+      select p.role,
+        count(a.id)::int as total,
+        count(a.id) filter(where a.ended_at is null)::int as active,
+        count(a.id) filter(where a.ended_at is not null)::int as ended
+      from public.staff_profiles p
+      left join public.client_trainer_assignments a
+        on a.workspace_id=${context.wsA.id} and a.client_id=${clientId}
+          and a.trainer_user_id=p.user_id
+      where p.user_id=${context.trainerA.userId}
+      group by p.role`;
+    expect(state).toEqual({ role: 'trainer', total: 1, active: 1, ended: 0 });
+
+    const unassignedDeparture = await admin()
+      .from('staff_profiles')
+      .update({ role: 'sales' })
+      .eq('user_id', context.trainerB.userId);
+    expect(unassignedDeparture.error).toBeNull();
+    const [unassignedRole] = await db`
+      select role from public.staff_profiles where user_id=${context.trainerB.userId}`;
+    expect(unassignedRole?.role).toBe('sales');
+  });
+
+  it('serializes an in-flight assignment before a same-workspace membership revocation', async () => {
+    const context = await clientContext();
+    const clientId = (await approvedClient(context)).client;
+    const initial = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientId,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(initial.data).toMatchObject({ status: 'ok' });
+    const trainerC = await createStaff('trainer', 'assignment-race-membership');
+    const granted = await admin().from('workspace_memberships').insert({
+      workspace_id: context.wsA.id,
+      user_id: trainerC.userId,
+      granted_by: context.po.userId,
+    });
+    if (granted.error) throw new Error(granted.error.message);
+
+    const blocker = sql();
+    const departureDb = sql();
+    let assignment: Promise<unknown> | undefined;
+    let departure: Promise<unknown> | undefined;
+    let departureWaited = false;
+    try {
+      await blocker.begin(async (tx) => {
+        await tx`select id from public.client_trainer_assignments
+          where workspace_id=${context.wsA.id} and client_id=${clientId}
+            and trainer_user_id=${context.trainerA.userId} and ended_at is null
+          for update`;
+        assignment = Promise.resolve(
+          context.po.client.rpc('assign_client_responsible_trainer', {
+            p_workspace_id: context.wsA.id,
+            p_client_id: clientId,
+            p_trainer_user_id: trainerC.userId,
+          }),
+        );
+        await waitForLockWait('assign_client_responsible_trainer');
+        departure = departureDb.begin(async (departureTx) => {
+          await departureTx`select set_config('request.jwt.claims',${JSON.stringify({ sub: context.po.userId, role: 'authenticated' })},true)`;
+          await departureTx`update public.workspace_memberships
+            set revoked_at=statement_timestamp(), revoked_by=${context.po.userId}
+            where workspace_id=${context.wsA.id} and user_id=${trainerC.userId} and revoked_at is null`;
+        });
+        try {
+          await waitForLockWait('update public.workspace_memberships');
+          departureWaited = true;
+        } catch {
+          departureWaited = false;
+        }
+      });
+
+      const assigned = await assignment;
+      expect(assigned).toMatchObject({ data: { status: 'ok' } });
+      await departure;
+      const [history] = await db`
+        select count(*)::int as total,
+          count(*) filter(where ended_at is null)::int as active,
+          count(*) filter(where ended_at is not null)::int as ended
+        from public.client_trainer_assignments
+        where workspace_id=${context.wsA.id} and client_id=${clientId}
+          and trainer_user_id=${trainerC.userId}`;
+      expect(history).toEqual({ total: 1, active: 0, ended: 1 });
+      const lookup = await context.po.client.rpc('client_responsible_trainer', {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientId,
+      });
+      expect(lookup.data).toMatchObject({
+        status: 'ok',
+        trainer_user_id: null,
+      });
+      expect(departureWaited).toBe(true);
+    } finally {
+      await blocker.end();
+      await assignment?.catch(() => undefined);
+      await departure?.catch(() => undefined);
+      await departureDb.end();
+    }
+  });
+
+  it('serializes an in-flight assignment before global role departure and does not reactivate after restoration', async () => {
+    const context = await clientContext();
+    const clientId = (await approvedClient(context)).client;
+    const initial = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientId,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(initial.data).toMatchObject({ status: 'ok' });
+    const trainerC = await createStaff('trainer', 'assignment-race-role');
+    const granted = await admin().from('workspace_memberships').insert({
+      workspace_id: context.wsA.id,
+      user_id: trainerC.userId,
+      granted_by: context.po.userId,
+    });
+    if (granted.error) throw new Error(granted.error.message);
+
+    const blocker = sql();
+    const departureDb = sql();
+    let assignment: Promise<unknown> | undefined;
+    let departure: Promise<unknown> | undefined;
+    let departureWaited = false;
+    try {
+      await blocker.begin(async (tx) => {
+        await tx`select id from public.client_trainer_assignments
+          where workspace_id=${context.wsA.id} and client_id=${clientId}
+            and trainer_user_id=${context.trainerA.userId} and ended_at is null
+          for update`;
+        assignment = Promise.resolve(
+          context.po.client.rpc('assign_client_responsible_trainer', {
+            p_workspace_id: context.wsA.id,
+            p_client_id: clientId,
+            p_trainer_user_id: trainerC.userId,
+          }),
+        );
+        await waitForLockWait('assign_client_responsible_trainer');
+        departure = departureDb.begin(async (departureTx) => {
+          await departureTx`select set_config('request.jwt.claims',${JSON.stringify({ sub: context.po.userId, role: 'authenticated' })},true)`;
+          await departureTx`update public.staff_profiles set role='sales'
+            where user_id=${trainerC.userId}`;
+        });
+        try {
+          await waitForLockWait('update public.staff_profiles');
+          departureWaited = true;
+        } catch {
+          departureWaited = false;
+        }
+      });
+
+      const assigned = await assignment;
+      expect(assigned).toMatchObject({ data: { status: 'ok' } });
+      await departure;
+      const [history] = await db`
+        select count(*)::int as total,
+          count(*) filter(where ended_at is null)::int as active,
+          count(*) filter(where ended_at is not null)::int as ended
+        from public.client_trainer_assignments
+        where workspace_id=${context.wsA.id} and client_id=${clientId}
+          and trainer_user_id=${trainerC.userId}`;
+      expect(history).toEqual({ total: 1, active: 0, ended: 1 });
+
+      await db.begin(async (tx) => {
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: context.po.userId, role: 'authenticated' })},true)`;
+        await tx`update public.staff_profiles set role='trainer'
+          where user_id=${trainerC.userId}`;
+      });
+      const lookup = await context.po.client.rpc('client_responsible_trainer', {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientId,
+      });
+      expect(lookup.data).toMatchObject({
+        status: 'ok',
+        trainer_user_id: null,
+      });
+      expect(departureWaited).toBe(true);
+    } finally {
+      await blocker.end();
+      await assignment?.catch(() => undefined);
+      await departure?.catch(() => undefined);
+      await departureDb.end();
+    }
+  });
 });
