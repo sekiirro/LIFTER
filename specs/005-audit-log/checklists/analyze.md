@@ -13,11 +13,11 @@
 
 ## Findings
 
-| ID | Category | Severity | Location | Finding | Recommendation |
-|---|---|---|---|---|---|
-| A1 | PO retention policy | MEDIUM | `plan.md` ND-F5-1 | Audit retention remains open under B4. | PO to decide; keep real-client production blocked as D20 requires. |
-| A2 | PO role scope | MEDIUM | `plan.md` ND-F5-2 | Trainer contextual audit slice deferred. | Preserve current no-Trainer access. |
-| A3 | Test coverage | LOW | `spec.md` FR-004 / SC-004 | Phone/person-name classes not asserted. | Keep gap visible. |
+| ID  | Category            | Severity | Location                  | Finding                                  | Recommendation                                                     |
+| --- | ------------------- | -------- | ------------------------- | ---------------------------------------- | ------------------------------------------------------------------ |
+| A1  | PO retention policy | MEDIUM   | `plan.md` ND-F5-1         | Audit retention remains open under B4.   | PO to decide; keep real-client production blocked as D20 requires. |
+| A2  | PO role scope       | MEDIUM   | `plan.md` ND-F5-2         | Trainer contextual audit slice deferred. | Preserve current no-Trainer access.                                |
+| A3  | Test coverage       | LOW      | `spec.md` FR-004 / SC-004 | Phone/person-name classes not asserted.  | Keep gap visible.                                                  |
 
 ## Coverage and constitution
 
@@ -26,3 +26,8 @@ FR-to-task mapping is 8/8 (100%). T010 bounded the unfiltered `audit_events` rea
 ## Verdict
 
 **PASS — 0 CRITICAL, 0 HIGH, 2 MEDIUM, 1 LOW.** Medium/low findings are pre-existing and outside S34 scope. S34-PO-1 clarification recorded; no open ambiguities in scope.
+
+## 2026-11-15 Analyze - v1 deferral record (date update only)
+
+- Scope: `tasks.md` status-only change; T011 records the PO-approved v1 deferral (S54-PO-8). No requirement text changed; T011 stays unchecked.
+- CRITICAL: 0 open; HIGH: 0 open.
