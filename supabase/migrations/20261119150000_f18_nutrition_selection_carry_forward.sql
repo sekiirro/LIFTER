@@ -133,6 +133,7 @@ begin
           from public.client_nutrition_alternative_selections s
           where s.workspace_id = root.workspace_id
             and s.plan_id = root.id
+            and s.client_id = root.client_id
             and s.plan_version_id = v_source_revision_id
             and exists (
               select 1
