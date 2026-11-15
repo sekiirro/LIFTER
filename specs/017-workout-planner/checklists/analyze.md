@@ -334,3 +334,9 @@ cells are stored as text.
 - Updated `tasks.md` (ticked `T013` only; `T016`/`T017` remain unticked), `traceability.md` (recorded slice-1 evidence and partial `T016`/`T017` coverage for `workout_global_templates`, `workout_global_template_versions`, `workout_workspace_templates`, `workout_workspace_template_versions`), and `verification.md`.
 - No FR, SC, acceptance criteria, or plan design text changed (Constitution 1.17.0 date update).
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## T023/T024 Date Update (2026-11-15)
+
+- T023/T024 task status and traceability now cite the Stack B RPC, governance, and mutation evidence in `verification.md`.
+- No FR, SC, acceptance criteria, or plan design text changed; promoted-template loading remains T028/T029 scope.
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
