@@ -21,6 +21,10 @@ const EXCLUDED_COPY_KEYS = new Set([
   'plan_deliveries',
   'activation',
   'activation_id',
+  'selection',
+  'selections',
+  'selection_id',
+  'client_nutrition_alternative_selections',
 ]);
 
 /** Recursively clone a JSON value while omitting excluded metadata/video keys. */
@@ -121,6 +125,21 @@ export function copyFromTemplateVersion(
   return copyPlanContent<WorkoutDocumentV1>(
     {
       kind: 'workout',
+      schemaVersion: template.schemaVersion,
+      document: template.document,
+    },
+    newId,
+  );
+}
+
+/** Copy an immutable nutrition template version into a new plan content payload. */
+export function copyFromNutritionTemplateVersion(
+  template: { schemaVersion: number; document: NutritionDocumentV1 },
+  newId: () => string = () => crypto.randomUUID(),
+): PlanContent<NutritionDocumentV1> {
+  return copyPlanContent<NutritionDocumentV1>(
+    {
+      kind: 'nutrition',
       schemaVersion: template.schemaVersion,
       document: template.document,
     },

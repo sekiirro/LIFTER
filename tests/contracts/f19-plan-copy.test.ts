@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  copyFromNutritionTemplateVersion,
   copyFromPublishedRevision,
   copyFromTemplateVersion,
   copyPlanContent,
@@ -226,5 +227,25 @@ describe('F19 T012 pure plan/template copy', () => {
         content: { kind: 'workout', schemaVersion: 1, document: doc },
       }),
     ).toThrow('invalid_plan_kind_mismatch');
+
+    const nutDoc = makeNutritionDoc();
+    const fromNutTpl = copyFromNutritionTemplateVersion(
+      {
+        schemaVersion: 1,
+        document: {
+          ...nutDoc,
+          selection: { itemId: 'item-1' },
+        } as unknown as NutritionDocumentV1,
+      },
+      seqUuid(),
+    );
+    expect(fromNutTpl.kind).toBe('nutrition');
+    expect(fromNutTpl.document.dayTypes[0]?.id).not.toBe('dt-1');
+    expect(fromNutTpl.document.implicitDayTypeId).toBe(
+      fromNutTpl.document.dayTypes[0]?.id,
+    );
+    expect(
+      (fromNutTpl.document as unknown as Record<string, unknown>).selection,
+    ).toBeUndefined();
   });
 });
