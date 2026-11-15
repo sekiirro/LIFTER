@@ -206,15 +206,22 @@ export function summarizeCommand({
   durationMs,
 }) {
   const counts = {},
-    start = stdout.indexOf('{"config"');
+    start = stdout.indexOf('{');
   if (start >= 0)
     try {
-      const stats = JSON.parse(stdout.slice(start)).stats ?? {};
+      const report = JSON.parse(stdout.slice(start)),
+        stats = report.stats ?? report;
       for (const [key, value] of Object.entries({
-        passed: stats.expected,
-        failed: stats.unexpected,
-        skipped: stats.skipped,
+        passed: stats.expected ?? report.numPassedTests ?? report.passed,
+        failed: stats.unexpected ?? report.numFailedTests ?? report.failed,
+        skipped: stats.skipped ?? report.skipped,
         flaky: stats.flaky,
+        pending:
+          report.numPendingTests === undefined &&
+          report.numTodoTests === undefined
+            ? undefined
+            : Number(report.numPendingTests ?? 0) +
+              Number(report.numTodoTests ?? 0),
       }))
         if (Number.isFinite(Number(value))) counts[key] = Number(value);
     } catch {
@@ -226,6 +233,12 @@ export function summarizeCommand({
     skipped: /(\d+) skipped/gi,
     pending: /(\d+) pending/gi,
   })) {
+    const vitestPassed =
+      key === 'passed' && stdout.match(/^\s*Tests\s+(\d+)\s+passed\b/im);
+    if (vitestPassed && counts[key] === undefined) {
+      counts[key] = Number(vitestPassed[1]);
+      continue;
+    }
     const values = [...stdout.matchAll(re)].map((m) => Number(m[1]));
     if (values.length && counts[key] === undefined)
       counts[key] = values.reduce((a, b) => a + b, 0);
@@ -457,11 +470,13 @@ export function main(argv = process.argv.slice(2)) {
     console.log(`\n[${step.group}] ${display}`);
     const t = Date.now(),
       result = run(step.stack ? process.execPath : command, actual, env);
-    const output =
-      env.PLAYWRIGHT_JSON_OUTPUT_NAME &&
-      existsSync(env.PLAYWRIGHT_JSON_OUTPUT_NAME)
-        ? readFileSync(env.PLAYWRIGHT_JSON_OUTPUT_NAME, 'utf8')
-        : result.out;
+    const outputFile = step.args
+        .find((arg) => arg.startsWith('--outputFile='))
+        ?.slice('--outputFile='.length),
+      reportFile = [env.PLAYWRIGHT_JSON_OUTPUT_NAME, outputFile].find(
+        (file) => file && existsSync(file),
+      );
+    const output = reportFile ? readFileSync(reportFile, 'utf8') : result.out;
     summary.push(
       summarizeCommand({
         group: step.group,

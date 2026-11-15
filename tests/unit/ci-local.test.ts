@@ -94,6 +94,36 @@ describe('local CI parity planning', () => {
         durationMs: 17,
       }).counts,
     ).toEqual({ passed: 9, failed: 1, skipped: 2, flaky: 1 });
+    expect(
+      summarizeCommand({
+        group: 'integration',
+        command: 'npm run test:integration',
+        exitCode: 0,
+        stdout:
+          '{"numTotalTestSuites":3,"numTotalTests":12,"numPassedTests":10,"numFailedTests":1,"numPendingTests":1,"numTodoTests":0}',
+        durationMs: 17,
+      }).counts,
+    ).toEqual({ passed: 10, failed: 1, pending: 1 });
+    expect(
+      summarizeCommand({
+        group: 'validate',
+        command: 'npm test',
+        exitCode: 0,
+        stdout:
+          ' Test Files  265 passed (265)\n      Tests  3150 passed (3150)\n',
+        durationMs: 17,
+      }).counts,
+    ).toEqual({ passed: 3150 });
+    expect(
+      summarizeCommand({
+        group: 'storage',
+        command: 'node scripts/assert-storage-suite-zero-skips.mjs integration',
+        exitCode: 0,
+        stdout:
+          '{"acceptable":true,"files":7,"passed":42,"skipped":0,"failed":0}',
+        durationMs: 17,
+      }).counts,
+    ).toEqual({ passed: 42, failed: 0, skipped: 0 });
   });
 
   it('constructs stack commands through the fake safe wrapper without spawning a CLI', () => {
