@@ -7,6 +7,10 @@ import { admin, createStaff } from './harness';
 
 let db: ReturnType<typeof sql>;
 let mutationOriginal: { definition: string; hash: string } | undefined;
+const planContent = (kind: 'workout' | 'nutrition', notes: string) =>
+  kind === 'workout'
+    ? { schema_version: 1, days: [], notes }
+    : { schemaVersion: 2, document: { title: notes } };
 
 async function applyOverrideMutation(mode: string) {
   const [row] = await db<{ definition: string; hash: string }[]>`
@@ -83,7 +87,7 @@ async function deliver(
     p_workspace_id: context.wsA.id,
     p_client_id: clientId,
     p_plan_kind: kind,
-    p_content: { schemaVersion: 2, document: { title: `T022 ${kind}` } },
+    p_content: planContent(kind, `T022 ${kind}`),
     p_operation_key: randomUUID(),
   });
   expect(created.error).toBeNull();
