@@ -436,6 +436,13 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_template_start_operation',
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
+          'nutrition_template_guard_identity',
+          'nutrition_template_version_immutable',
+          'nutrition_template_start_operation',
+          'nutrition_template_finish_operation',
+          'nutrition_template_write_audit',
+          'nutrition_template_collect_ids',
+          'nutrition_template_remap_ids',
         ]),
       ].sort(),
     );
@@ -488,6 +495,9 @@ describe('tenancy security catalog (T007)', () => {
         'f17_workout_uuid_valid',
         'f17_workout_reference_valid',
         'f17_workout_document_valid',
+        'nutrition_template_version_immutable',
+        'nutrition_template_collect_ids',
+        'nutrition_template_remap_ids',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -705,6 +715,13 @@ describe('tenancy security catalog (T007)', () => {
               'validate_food_request',
               'validate_workspace_exercise_payload',
               'validate_workspace_exercise_version_alternative',
+              'nutrition_template_guard_identity',
+              'nutrition_template_version_immutable',
+              'nutrition_template_start_operation',
+              'nutrition_template_finish_operation',
+              'nutrition_template_write_audit',
+              'nutrition_template_collect_ids',
+              'nutrition_template_remap_ids',
             ].includes(row.proname)),
       );
     }
