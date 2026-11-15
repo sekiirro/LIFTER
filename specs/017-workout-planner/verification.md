@@ -1,38 +1,36 @@
-﻿# F17 Plan-content Slice Verification
+# F17 Verification Report — Slice 1 (T013 + partial T016/T017)
 
-**Lane**: `s58-luna-f17plan`
+- **Branch**: `017-slice-1`
+- **Stack**: Stack C (`lifter-stack-c`)
+- **Runtime**: Node `v24.19.0`, Vitest `5.1.0`, PostgreSQL `public.ecr.aws/supabase/postgres:17.11.0.006`
+- **Migration**: `supabase/migrations/20261119020000_f17_workout_templates_identities_versions.sql`
 
-**Branch**: `017-plan-slice-1`
+## Scope
 
-**Base**: `origin/main` at lane entry, `e14e1b41`; latest origin/main merged through PR #125 (`17f5f31f`)
+- **T013 (complete)**: `public.workout_global_templates`, `public.workout_global_template_versions`, `public.workout_workspace_templates`, `public.workout_workspace_template_versions`, `(template_id, version)` and `(workspace_id, template_id, version)` uniqueness, deferrable `current_version` FKs, monotonic `current_version` CAS guard, immutable versions/provenance triggers, and single-copy-per-origin index `workout_workspace_templates_origin_global_uidx`.
+- **T016 (partial — slice 1 tables only)**: `FORCE ROW LEVEL SECURITY` on all four template tables; PO-only read on global template tables; `coaching_work` workspace isolation on workspace template tables; Sales, client, foreign workspace, and revoked membership denied generically.
+- **T017 (partial — slice 1 tables and guards only)**: `REVOKE ALL` from `public, anon, authenticated, service_role`; `SELECT`-only grant to `authenticated` with `origin_*` provenance columns withheld on `workout_workspace_templates`; `SECURITY DEFINER`, `OWNER TO postgres`, `SET search_path = ''`, and `EXECUTE` revoked from all client roles on `app_private.f17_*` guard functions.
 
-**Migration**: `20261119040000_f17_workout_plan_content.sql`
+## TDD & Mutation Evidence
 
-**Stack**: Stack B, project `lifter-stack-b`, API 25421, DB 25422
+1. **RED**: Executed `tests/integration/workout-templates-schema.test.ts` (3 failed: `relation "public.workout_global_templates" does not exist`) and `tests/integration/rls-catalog.test.ts -t "F17 T013"` (1 failed) before applying the migration.
+2. **GREEN**: Applied `20261119020000_f17_workout_templates_identities_versions.sql` on Stack C, provisioned accounts, and ran `tests/integration/workout-templates-schema.test.ts` (4/4 passed) + `tests/integration/rls-catalog.test.ts` (42/42 passed), total 46/46 passed.
+3. **Mutation (kill -> restore -> diff exit 0)**:
+   - `supabase/migrations/20261119020000_f17_workout_templates_identities_versions.sql:222`: widened `workout_global_templates_po_read` policy from `((select app_private.is_platform_owner()))` to `true` -> `tests/integration/workout-templates-schema.test.ts` failed (`enforces RLS isolation ... expected [ Array(1) ] to have a length of +0 but got 1`).
+   - `supabase/migrations/20261119020000_f17_workout_templates_identities_versions.sql:246`: added `grant insert on public.workout_global_templates to authenticated;` -> `tests/integration/rls-catalog.test.ts` failed (`authenticated INSERT public.workout_global_templates: expected true to be false`).
+   - Restored both lines, reset Stack C, re-ran `workout-templates-schema.test.ts` + `rls-catalog.test.ts` (46/46 passed), and verified clean restore.
+4. **T013 Uniqueness & CAS/FK Mutation Evidence (live Stack C DB only; committed migration `20261119020000_f17_workout_templates_identities_versions.sql` untouched, `git diff --exit-code` = 0)**:
+   - **(a1) Global `(template_id, version)` uniqueness**: dropped `workout_global_template_versions_pkey` (and dependent FKs `workout_global_templates_current_version_fk`, `workout_workspace_templates_origin_global_version_fk`) on Stack C -> `tests/integration/workout-templates-schema.test.ts` failed (`enforces global template identity, (template_id, version) uniqueness, CAS pointer, and immutability` at line 46: `promise resolved "[]" instead of rejecting`). Restored via safe `db reset --local` + provisioning -> 4/4 passed.
+   - **(a2) Workspace `(workspace_id, template_id, version)` uniqueness**: dropped `workout_workspace_template_versions_pkey` (and dependent FKs `workout_workspace_templates_current_version_fk`, `workout_global_templates_origin_workspace_version_fk`) on Stack C -> initially survived (4/4 passed); added real-DB duplicate `(workspace_id, template_id, version)` assertion (plus workspace `current_version` FK and `template_version_regression` assertions) in `tests/integration/workout-templates-schema.test.ts` -> RED with mutant (`enforces workspace template composite keys, provenance immutability, single-copy-per-origin, and version immutability` at line 174: `promise resolved "[]" instead of rejecting`). Restored via safe `db reset --local` + provisioning -> GREEN (4/4 passed).
+   - **(b1) Monotonic `current_version` CAS guard (`template_version_regression`)**: replaced `app_private.f17_guard_template_identity_update()` on Stack C without `if new.current_version < old.current_version` -> `tests/integration/workout-templates-schema.test.ts` failed both `enforces global template identity, (template_id, version) uniqueness, CAS pointer, and immutability` (line 88) and `enforces workspace template composite keys, provenance immutability, single-copy-per-origin, and version immutability` (line 208). Restored function -> GREEN (4/4 passed).
+   - **(b2-global) Global deferrable `current_version` FK**: dropped `workout_global_templates_current_version_fk` on Stack C -> `tests/integration/workout-templates-schema.test.ts` failed (`enforces global template identity, (template_id, version) uniqueness, CAS pointer, and immutability` at line 55). Restored via safe `db reset --local` + provisioning -> GREEN (4/4 passed).
+   - **(b2-workspace) Workspace deferrable `current_version` FK**: dropped `workout_workspace_templates_current_version_fk` on Stack C -> `tests/integration/workout-templates-schema.test.ts` failed (`enforces workspace template composite keys, provenance immutability, single-copy-per-origin, and version immutability` at line 183). Restored via safe `db reset --local` + provisioning and verified `git diff --exit-code supabase/migrations/20261119020000_f17_workout_templates_identities_versions.sql` = 0.
 
-## Scope and result
+## S58 T012/T015 Slice Evidence
 
-T012 stores F17 workout documents directly in F19 `plan_drafts.content` and `plan_revisions.content`. It creates no duplicate plan lifecycle/delivery tables and asserts the two existing composite workspace foreign keys remain. T015 accepts only schema v1 with a `days` array and applies the historical 512 KiB guard as provisional, unbenchmarked behavior per the task wording; SC-014 remains open. This slice creates no tables, and does not change F19 table RLS or grants; T016/T017 remain unticked.
-
-## RED / GREEN
-
-- Initial TDD run: 1 passed, 2 failed because F19 accepted unknown workout schema versions.
-- Final post-merge Stack B integration run: F17 plus dependent F19 plan suites, 5 files / 40 tests passed. Stack B had been safely reset and provisioned after the last schema change.
-- The shared RLS catalog now includes both F17 trigger functions in its private-function inventory and checks their authenticated/service-role execute revocations. Final affected integration run: 6 files / 81 tests passed.
-- Final post-merge full unit suite: 268 files / 3,166 tests passed.
-- Final local validate group passed: lint, typecheck, format checks, spec consistency, edge build, secrets check, cron build, size check, Unicode policy check, and migration checks. The remote migration collision scan passed across 273 refs before the final required fetch.
-
-## Mutation evidence
-
-All mutations ran against assigned Stack B via `supabase-safe.mjs` and were restored before the final clean reset and provisioning.
-
-- Disabled the draft/revision schema-version triggers: F17 integration suite failed in the unknown/missing-version and revision validation assertions (exit 1).
-- Disabled the draft/revision size triggers: oversized-document assertion failed (exit 1).
-- Dropped F19 `plan_drafts_workspace_id_plan_id_fkey`: composite-key assertion failed (exit 1).
-- Re-enabled triggers, restored the FK, then safely reset and reprovisioned Stack B. Final dependent integration suites passed.
-
-## Remaining gates
-
-PR #130's first exact-head CI run (`43718567107`) found the missing RLS catalog entries; the entries were added and the affected local suites pass. Updated exact-head CI and architect exact-SHA full-diff review are pending. No template tables were created. Local CI summaries: `C:/Users/NEW LAP/.lifter/runs/s58-luna-f17plan/ci-local-summary-final.json` and `ci-local-summary-fix.json`.
-
-\n
+- Branch `017-plan-slice-1`; Stack B only (`lifter-stack-b`, API 25421, DB 25422), through `supabase-safe.mjs`. T012 attaches workout content to F19 draft/revision rows without creating plan lifecycle or template tables.
+- T015 accepts schema v1 with a `days` array and applies the historical 512 KiB size guard as provisional only; SC-014 re-benchmark remains open.
+- Initial RED: 1 passed / 2 failed because F19 accepted unknown schema versions. Mutation checks: disabling schema triggers broke schema/revision assertions; disabling size triggers broke oversized rejection; dropping `plan_drafts_workspace_id_plan_id_fkey` broke the composite-key assertion. Restored, safely reset, and reprovisioned Stack B.
+- After merging origin/main through PR #124 and safely resetting/reprovisioning Stack B, final affected integration suites passed: 7 files / 86 tests, including F17 plan content, F19 plan behavior, T013 template schema, and the shared RLS catalog checks. Full unit suite: 268 files / 3,166 tests passed.
+- Final merged-tree local validate group passed: typecheck, lint, formatting, spec consistency, full unit, edge/cron builds, secrets, size, and migration timestamp checks (263 migrations). The remote migration scan passed across 280 refs. A separate concurrent validate attempt hit a 5s timeout in `playwright-server-log-config.test.ts`; standalone full-unit reruns passed, and the flake is recorded in the lane backlog.
+- PR #130 first CI run `43718567107` failed because the RLS catalog lacked the two F17 trigger functions. Both functions are now included in inventory and execute-grant checks. Updated exact-head CI for the current head is pending. Local validate summary: `C:/Users/NEW LAP/.lifter/runs/s58-luna-f17plan/ci-local-summary-final-merged.json`.
