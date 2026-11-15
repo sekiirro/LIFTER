@@ -459,6 +459,7 @@ export async function pendingHttpAccess(
             'close_client',
             'ready_and_publish_plan',
             'publish_nutrition_revision',
+            'select_nutrition_alternative',
             'assign_client_responsible_trainer',
             'client_responsible_trainer',
             'unassigned_clients',
