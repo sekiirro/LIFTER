@@ -1,5 +1,9 @@
 # Analyze — F11 client accounts
 
+## S57 Luna slice 2 date-only status — 2026-11-15 UTC
+
+T061 implementation, task status and traceability evidence changed; FR/SC requirement text did not. The completed-deletion exclusion remains a T048 dependency because its lifecycle states are not present. No full Analyze rerun was needed.
+
 ## S57 date-only status update - 2026-11-15 UTC
 
 Tasks/traceability dependency notes changed: the S57-PO-1 refusal dependency for T048/T058 and S57-R2 serialization evidence. FR/SC requirement text is unchanged; no full Analyze rerun was needed under S55-R8 / fast-track R6.
