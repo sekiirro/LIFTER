@@ -9,7 +9,7 @@ import { expectHeroAxeClean } from './registration-hero-evidence';
 const origin =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.APP_ORIGIN ??
-  'http://localhost:3000';
+  process.env.PLAYWRIGHT_BASE_URL!;
 const screenshotDirectory =
   process.env.HERO_S35_ERROR_SCREENSHOT_DIR ??
   process.env.HERO_R22_USERNAME_SCREENSHOT_DIR ??

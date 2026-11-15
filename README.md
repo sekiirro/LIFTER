@@ -17,6 +17,7 @@ The body-fat media unit test also needs ffmpeg (libaom-av1 and libwebp encoders)
 | `npm run format:check` | Check formatting without changing files.                                                                                                                                                                          |
 | `npm test`             | Run the Vitest unit tests in `tests/unit`.                                                                                                                                                                        |
 | `npm run e2e`          | Run Playwright health, design-system, shell, and print tests in Chromium, plus shell tests on Pixel 7. Builds and starts the production server automatically; reuses an existing healthy local server outside CI. |
+| `npm run ci:local`     | Run local CI-parity validation, integration, Playwright, and Storage groups for a named Supabase stack.                                                                                                           |
 | `npm run build:edge`   | Build the Cloudflare Worker bundle in Linux CI only.                                                                                                                                                              |
 | `npm run size`         | Check uncompressed Worker size against 64 MiB in Linux CI; override with `WORKER_SIZE_LIMIT_KIB`.                                                                                                                 |
 
@@ -106,6 +107,14 @@ directory and stop if the ACL change fails. After parsing, delete the raw file
 (`rm -- tail.jsonl` in Bash or `Remove-Item -LiteralPath tail.jsonl` in PowerShell).
 
 ## Local database & isolation tests
+
+Run the CI-equivalent local gates with `npm run ci:local -- --stack c --port 3437`.
+The default Playwright port remains 3000; a non-default `PLAYWRIGHT_PORT` disables
+server reuse and is applied to the app origin and every e2e URL. Select a subset
+with repeated `--group validate|integration|playwright|storage` flags. The command
+uses the installed Stack-safe wrapper for start, reset, test execution, and stop;
+its JSON summary path can be set with `--summary <path>`. Spec consistency requires
+a committed clean tree (the lane's local CLI shim is ignored by that check).
 
 For local integration and browser runs, explicitly set `LIFTER_SUPABASE_STACK`
 to `a`, `b`, `c`, or `d`. Endpoint variables provide connection
