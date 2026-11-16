@@ -99,3 +99,13 @@
 - **Migration scan**: all 312 current origin refs scanned before migration creation, zero lane-range hits. The reserved `20261119150000–20261119155959` registry row was already present (S59-R51).
 - **Function body diff**: `C:/Users/NEW LAP/.lifter/runs/s59-hy-f18t011/body.diff`.
 - **Final local CI-equivalent**: lint, typecheck, changed-file and repo-wide format checks, and migration timestamp checks passed. Full unit suite: 3,206/3,206 across 277 files. Final Stack A reset + provisioning; touched integration suites: 56/56 across carry-forward (4), selection (3), publish (7), and `rls-catalog` (42).
+
+## Slice 5: T019 — Concurrency and idempotency matrix
+
+- **Branch/base**: `20261120160000–20261120165959`, fresh from `origin/main` at `08a6dcc73167bc1d5e984abdeb983d6c1a991532`.
+- **Stack**: A, safe reset and `tests/integration/client-accounts-provision.mjs` completed before integration.
+- **Test**: `tests/integration/nutrition-concurrency.test.ts` uses Promise.all with independent database transactions (bounded pool, 12 simultaneous sessions) for 100 publish, selection, template-load, and Assign calls sharing each operation key.
+- **Coverage**: one receipt/revision/delivery/audit after publish replays; simulated ambiguous-commit retry returns the committed receipt; selection counter/audit and template-load draft/audit remain single-write; Assign returns one batch/item/copy with no partial batch when a target workspace is invalid. A concurrent publish/selection race verifies the selected alternative carries to the next revision.
+- **RED / mutation**: temporarily removed `FOR UPDATE` from the installed `public.select_nutrition_alternative` plan-root query. The race test failed at `RPC did not wait behind the competing transaction: select_nutrition_alternative`. Restored the original function and verified its installed definition matched byte-for-byte. `git diff --exit-code -- supabase/migrations` returned 0; no migration was needed.
+- **GREEN**: targeted integration file passed 5/5 tests after restore on Stack A.
+- **Harness correction**: an initial run at 100 physical connections exceeded the local Postgres connection cap; the test retains 100 parallel attempts using a 12-session pool, preserving independent concurrent database transactions within the stack limit.
