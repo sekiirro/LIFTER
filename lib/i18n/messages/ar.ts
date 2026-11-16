@@ -158,6 +158,8 @@ export const ar = {
   'workout.export.alternatives': 'البدائل',
   'workout.export.video': 'الفيديو',
   'workout.export.loadUnit': 'kg / lb',
+  'workout.copyPrompt.action': 'نسخ برومبت الذكاء الاصطناعي',
+  'workout.copyPrompt.copied': 'تم النسخ.',
   'workout.volume.title': 'الحجم',
   'workout.volume.muscle': 'العضلة',
   'workout.volume.session': 'الجلسة',
