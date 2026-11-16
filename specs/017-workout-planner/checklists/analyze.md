@@ -346,6 +346,11 @@ cells are stored as text.
 - No FR, SC, acceptance criteria, or plan design text changed; promoted-template loading remains T028/T029 scope.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
+## T033 Date Update (2026-11-16)
+
+- T033 is ticked with evidence in `tasks.md`; `traceability.md` records the new UI test for FR-004/FR-005/SC-001 and `verification.md` records RED/GREEN/mutation.
+- No FR, SC, acceptance criteria, or plan design text changed.
+
 ## T034 Date Update (2026-11-16)
 
 - Updated `tasks.md` (ticked `T034` only), `traceability.md` (FR-002/FR-003/SC-011 cite the T034 unit evidence; T034 verified, remaining UI/integration tasks open), and `verification.md` (T034 RED/GREEN/mutation/design-gate evidence).
