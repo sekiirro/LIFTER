@@ -30,10 +30,12 @@ export function formatWorkoutPromptContent(
   const lines = [
     `${messages['workout.export.plan']}: ${payload.planTitle} (${payload.planIdentity})`,
   ];
+  const field = (label: string, value: string | number, indent = 2) =>
+    lines.push(`${' '.repeat(indent)}${label}: ${value}`);
   if (payload.planNotes !== undefined)
-    lines.push(`${messages['workout.export.notes']}: ${payload.planNotes}`);
+    field(messages['workout.export.notes'], payload.planNotes, 0);
   if (payload.documentNotes !== undefined)
-    lines.push(`${messages['workout.export.notes']}: ${payload.documentNotes}`);
+    field(messages['workout.export.notes'], payload.documentNotes, 0);
   payload.days.forEach((day, index) => {
     const dayTitle =
       day.title ?? `${messages['workout.export.day']} ${index + 1}`;
@@ -43,43 +45,37 @@ export function formatWorkoutPromptContent(
         : dayTitle,
     );
     if (day.notes !== undefined)
-      lines.push(`  ${messages['workout.export.notes']}: ${day.notes}`);
+      field(messages['workout.export.notes'], day.notes);
     for (const item of day.items) {
-      lines.push(`  ${messages['print.exercise']}: ${item.name}`);
+      field(messages['print.exercise'], item.name);
       if (item.description !== undefined)
-        lines.push(
-          `    ${messages['workout.export.description']}: ${item.description}`,
-        );
+        field(messages['workout.export.description'], item.description, 4);
       if (item.reps !== undefined)
-        lines.push(`    ${messages['print.reps']}: ${repsText(item.reps)}`);
+        field(messages['print.reps'], repsText(item.reps), 4);
       if (item.restSec !== undefined)
-        lines.push(
-          `    ${messages['workout.export.restSec']}: ${item.restSec}`,
-        );
+        field(messages['workout.export.restSec'], item.restSec, 4);
       if (item.rir !== undefined)
-        lines.push(`    ${messages['workout.export.rir']}: ${item.rir}`);
+        field(messages['workout.export.rir'], item.rir, 4);
       item.sets.forEach((set, setIndex) => {
         const type =
           set.type === 'warmup'
             ? messages['workout.export.warmUp']
             : messages['workout.export.working'];
-        lines.push(
-          `    ${messages['workout.export.setType']} ${setIndex + 1} (${type}): ${loadText(set.load, messages)}`,
+        field(
+          `${messages['workout.export.setType']} ${setIndex + 1} (${type})`,
+          loadText(set.load, messages),
+          4,
         );
       });
       if (item.notes !== undefined)
-        lines.push(`    ${messages['workout.export.notes']}: ${item.notes}`);
+        field(messages['workout.export.notes'], item.notes, 4);
       item.alternatives.forEach((alternative) => {
-        lines.push(
-          `    ${messages['workout.export.alternatives']}: ${alternative.name}`,
-        );
+        field(messages['workout.export.alternatives'], alternative.name, 4);
         if (alternative.videoUrl !== undefined)
-          lines.push(
-            `      ${messages['workout.export.video']}: ${alternative.videoUrl}`,
-          );
+          field(messages['workout.export.video'], alternative.videoUrl, 6);
       });
       if (item.videoUrl !== undefined)
-        lines.push(`    ${messages['workout.export.video']}: ${item.videoUrl}`);
+        field(messages['workout.export.video'], item.videoUrl, 4);
     }
   });
   return lines.join('\n');

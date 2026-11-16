@@ -1,80 +1,57 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const m = vi.hoisted(() => ({
-  create: vi.fn(),
-  actor: vi.fn(),
-  from: vi.fn(),
-  getUser: vi.fn(),
-  filters: [] as unknown[][],
-  revision: {
-    id: 'b1111111-1111-4111-8111-111111111111',
-    workspace_id: 'a1111111-1111-4111-8111-111111111111',
-    plan_id: 'c1111111-1111-4111-8111-111111111111',
-    revision_number: 4,
-    plan_kind: 'workout',
-    content: {
-      schema_version: 1,
-      notes: 'Published note',
-      days: [
-        {
-          id: 'd1111111-1111-4111-8111-111111111111',
-          kind: 'rest',
-          items: [],
-        },
-      ],
+const m = vi.hoisted(() => {
+  const query = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn() };
+  return {
+    create: vi.fn(),
+    actor: vi.fn(),
+    from: vi.fn(),
+    getUser: vi.fn(),
+    query,
+    filters: [] as unknown[][],
+    revision: {
+      id: 'b1111111-1111-4111-8111-111111111111',
+      workspace_id: 'a1111111-1111-4111-8111-111111111111',
+      plan_id: 'c1111111-1111-4111-8111-111111111111',
+      revision_number: 4,
+      plan_kind: 'workout',
+      content: { schema_version: 1, notes: 'Published note', days: [] },
     },
-  },
-}));
-vi.mock('../../lib/supabase/server', () => ({
-  createSessionClient: m.create,
-}));
+  };
+});
+vi.mock('../../lib/supabase/server', () => ({ createSessionClient: m.create }));
 vi.mock('../../lib/auth/actor', () => ({ loadActorRows: m.actor }));
 import { GET } from '../../app/api/workouts/copy-prompt/route';
 import { getMessages } from '../../lib/i18n';
 
-const wsA = m.revision.workspace_id;
-const req = (locale = 'en') =>
-  new Request(
-    `http://localhost/api/workouts/copy-prompt?revision=${m.revision.id}&locale=${locale}`,
-  );
+const ws = m.revision.workspace_id;
+const request = () =>
+  new Request(`http://local/api?revision=${m.revision.id}&locale=en`);
 
 describe('T040 Copy AI Prompt API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     m.filters = [];
-    const client = {
-      auth: { getUser: m.getUser },
-      from: m.from,
-      rpc: vi.fn(),
-    };
-    m.create.mockResolvedValue(client);
-    m.getUser.mockResolvedValue({
-      data: { user: { id: 'u1111111-1111-4111-8111-111111111111' } },
-      error: null,
+    m.query.select.mockReturnValue(m.query);
+    m.query.eq.mockImplementation((key: string, value: unknown) => {
+      m.filters.push([key, value]);
+      return m.query;
     });
+    m.query.maybeSingle.mockResolvedValue({ data: m.revision, error: null });
+    m.from.mockReturnValue(m.query);
+    m.create.mockResolvedValue({ auth: { getUser: m.getUser }, from: m.from });
+    m.getUser.mockResolvedValue({ data: { user: { id: 'u' } }, error: null });
     m.actor.mockResolvedValue({
-      userId: 'u1111111-1111-4111-8111-111111111111',
+      userId: 'u',
       role: 'trainer',
-      activeWorkspaceIds: [wsA],
-    });
-    m.from.mockImplementation((table: string) => {
-      const q = {
-        select: vi.fn(() => q),
-        eq: vi.fn((field: string, value: unknown) => {
-          m.filters.push([field, value]);
-          return q;
-        }),
-        maybeSingle: vi.fn(async () => ({ data: m.revision, error: null })),
-      };
-      expect(table).toBe('plan_revisions');
-      return q;
+      activeWorkspaceIds: [ws],
     });
   });
 
-  it('returns only the requested published workout prompt with no-store', async () => {
-    const res = await GET(req());
-    const body = await res.json();
-    expect(res.status).toBe(200);
+  it('returns only the selected published prompt with approved copy and no-store', async () => {
+    const response = await GET(request());
+    const body = await response.json();
+    expect(response.status).toBe(200);
     expect(body).toMatchObject({ status: 'ok' });
     expect(body.prompt).toContain('Published note');
     expect(body.prompt).toContain('clickable link to its video URL');
@@ -84,30 +61,28 @@ describe('T040 Copy AI Prompt API', () => {
         ['plan_kind', 'workout'],
       ]),
     );
-    expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(getMessages('en')['workout.copyPrompt.action']).toBe(
-      'Copy AI Prompt',
-    );
-    expect(getMessages('en')['workout.copyPrompt.copied']).toBe('Copied.');
-    expect(getMessages('ar')['workout.copyPrompt.action']).toBe(
-      'نسخ برومبت الذكاء الاصطناعي',
-    );
-    expect(getMessages('ar')['workout.copyPrompt.copied']).toBe('تم النسخ.');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    for (const [locale, key, value] of [
+      ['en', 'action', 'Copy AI Prompt'],
+      ['en', 'copied', 'Copied.'],
+      ['ar', 'action', 'نسخ برومبت الذكاء الاصطناعي'],
+      ['ar', 'copied', 'تم النسخ.'],
+    ] as const)
+      expect(getMessages(locale)[`workout.copyPrompt.${key}`]).toBe(value);
   });
 
   it.each([
-    ['Sales', 'sales', [wsA]],
+    ['Sales', 'sales', [ws]],
     ['unaffiliated', null, []],
     ['foreign workspace', 'trainer', ['a2222222-2222-4222-8222-222222222222']],
   ])(
-    'returns generic denial without content for %s',
-    async (_label, role, activeWorkspaceIds) => {
+    'returns generic no-content denial for %s',
+    async (_name, role, activeWorkspaceIds) => {
       m.actor.mockResolvedValue({ userId: 'u', role, activeWorkspaceIds });
-      const res = await GET(req());
-      expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({ status: 'unavailable' });
-      if (role === 'sales' || role === null)
-        expect(m.from).not.toHaveBeenCalled();
+      const response = await GET(request());
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ status: 'unavailable' });
+      if (role !== 'trainer') expect(m.from).not.toHaveBeenCalled();
     },
   );
 });
