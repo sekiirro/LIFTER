@@ -349,4 +349,3 @@
   `if false and workspace_assigned then`
   collapsing `intentionally partial` (workspace previously assigned) into `never-assigned` under All Workspaces assignment. After `db reset --local` on Stack B and provisioning, ran `tests/integration/workout-assignment-state-visibility.test.ts`: line 130 failed with `AssertionError: expected 'no_copies' to be 'skipped_already_assigned'`, proving intentional partiality is distinguished in run receipts from never-assigned workspaces.
   Restored the migration file; `git diff --exit-code supabase/migrations/20261120170000_f17_workout_template_assign_run.sql` exited 0; executed clean `db reset --local` and reprovisioned Stack B; re-ran integration suite and confirmed 5/5 GREEN.
-
