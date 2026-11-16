@@ -110,8 +110,3 @@ T001–T006 fix the contracts. T007–T015 build persistence and RPCs after F19 
 | F18-SC-010  | T016                               |
 | F18-SC-011  | T002, T025 (half-up tie fixtures)  |
 | F18-SC-012  | T001, T005, T025                   |
-
-<!-- Origin-main pre-slice task rows retained verbatim for the documentation union:
-- [ ] **T020 (45m) — Schema/algorithm version freeze.** `SKILL=TS/DOMAIN`, `RISK=MEDIUM`. `[NEEDS-STACK]`. Files: `tests/integration/nutrition-versioning.test.ts`. RED: a new algorithm relabels an old revision; an unknown schema version is rendered. GREEN: frozen per revision; unknown version refused. **Mutation**: reinterpret a v1 document with v2 rules; the test must fail. Covers F18-FR-020.
-- [ ] **T021 (45m) — Benchmark envelope.** `SKILL=TEST`, `RISK=MEDIUM`. `[NEEDS-STACK]`. Files: `tests/integration/nutrition-benchmark.test.ts` + recorded envelope. RED: envelope undefined. GREEN: maximum document/request mix measured; provisional targets replaced with evidence-backed numbers; every recorded threshold is an assertion that fails when the measured result exceeds it. **Mutation**: tighten a recorded maximum-document threshold below the measured result; the benchmark must fail. Covers F18-SC-006.
--->
