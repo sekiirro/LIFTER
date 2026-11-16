@@ -301,9 +301,9 @@ describe('F18 T011 publish selection carry-forward', () => {
         old: makeDoc(),
         // Replacing either food reference receives new stable item/alternative ids.
         next: makeDoc({
-          itemId: 'item-replacement',
+          itemId: '33333333-3333-4333-8333-333333333333',
           itemName: 'Item 1',
-          altId: 'alt-replacement',
+          altId: '44444444-4444-4444-8444-444444444444',
           altName: 'Alternative 1',
           itemFoodId: altFood2Id,
           altFoodId: altFood2Id,

@@ -77,7 +77,7 @@ T001–T006 fix the original contracts. T007–T015 build persistence and RPCs a
 | Requirement | Tasks                              |
 | ----------- | ---------------------------------- |
 | F18-FR-001  | T009, T026                         |
-| F18-FR-002  | T001, T007, T022, T025, T029      |
+| F18-FR-002  | T001, T007, T022, T025, T029       |
 | F18-FR-003  | T002, T008, T022                   |
 | F18-FR-004  | T001, T002, T008, T022             |
 | F18-FR-005  | T003, T009, T022                   |
