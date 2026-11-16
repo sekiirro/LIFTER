@@ -158,3 +158,23 @@
   - Substituted unavailable rows with the first candidate -> 2/9 failed (never-substitute list assertions).
   - Restored the component from backup, verified byte-identical, re-ran GREEN 9/9.
 - **Design gate**: tokens-only CSS, native label/select/buttons, AR RTL + EN LTR asserted; Playwright/Chromium shots of the real render (component markup + actual module CSS + `tokensToCss`): `en/ar x light/dark x 390/1440` populated + `en/ar` empty + `en` 768 (11 files under the run temp dir). Fixed and re-shot: empty-select 192px artifact (row `flex-basis` became column height; `flex: none` under 600px) and 14px select text (now inherits 16px like `Field` inputs).
+
+## F17 Verification — T041 (s61-fl-f17t041)
+
+- **Branch / stack**: `017-export-goldens-slice-1` (stacked on PR #160 `origin/017-pdf-print-slice-1`) / no DB stack (renderer goldens).
+- **Scope**:
+  - Export goldens for renderers that exist: Excel export (`buildWorkoutWorkbook`, #160), Copy AI Prompt (`buildAiPrompt` + `formatWorkoutPromptContent`, T040), and print view (`WorkoutPrintView`, #160).
+  - Revision N while N+1 exists: isolated export of Revision N without leaking Revision N+1 content; dynamic live video URL resolution from current library.
+  - AR/EN exact byte equality for Copy AI Prompt after single `{{PLAN_CONTENT}}` substitution against `tests/fixtures/f17/workout-prompt-golden-{en,ar}.txt` and `specs/017-workout-planner/contracts/copy-ai-prompt.md`.
+  - AR/EN exact row-for-row and cell-for-cell equality for Excel export against `tests/fixtures/f17/workout-excel-golden-{en,ar}.json`.
+  - SC-008 formula injection protection: 100% of cells stored as text (`@` format, `ValueType.String`, no formula evaluation) across all coach-authored fields.
+  - Print view renderer layout checks: AR RTL (`dir="rtl"`, Bidi isolation) vs EN LTR (`dir="ltr"`), S58-PO-5 approved labels in UI language, exercise names English, authored text preserved verbatim.
+  - Route goldens status: noted Remaining (PARTIAL pending authorized revision read route).
+- **RED**: Initial RED assertion in `tests/unit/workout-export-goldens.test.tsx` failed with expected mismatch (`R/red.txt`).
+- **GREEN**: 12/12 unit tests pass in `tests/unit/workout-export-goldens.test.tsx` (`R/green.txt`).
+- **Mutation Evidence (killed -> restored -> `git diff --exit-code` = 0)**:
+  1. **Prompt byte mutation**: Mutated 1 byte in English prompt golden -> `tests/unit/workout-export-goldens.test.tsx` failed with prompt byte mismatch (`R/mutation-prompt-byte.txt`); restored clean.
+  2. **Excel cell mutation**: Mutated cell value in English Excel golden row 0 (`Plan` -> `MutatedPlan`) -> `tests/unit/workout-export-goldens.test.tsx` failed with cell mismatch (`R/mutation-excel-cell.txt`); restored clean.
+  3. **Print layout mutation**: Mutated `WorkoutPrintView.tsx` line 223 to force `dir="ltr"` on Arabic locale -> `tests/unit/workout-export-goldens.test.tsx` failed with layout assertion mismatch (`R/mutation-print-layout.txt`); restored clean.
+  4. **Formula injection mutation**: Mutated `excel-export.ts` to assign formula to cells starting with `=` -> `tests/unit/workout-export-goldens.test.tsx` failed with formula detection failure (`R/mutation-formula.txt`); restored clean.
+  - `git diff --exit-code` on all pre-existing code is 0.
