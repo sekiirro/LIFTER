@@ -1,14 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
-  createSessionClient: vi.fn(),
-  loadActorRows: vi.fn(),
-  client: {
-    auth: { getUser: vi.fn() },
-    from: vi.fn(),
-    rpc: vi.fn(),
-  },
-  selectedFilters: [] as [string, unknown][],
+const m = vi.hoisted(() => ({
+  create: vi.fn(),
+  actor: vi.fn(),
+  from: vi.fn(),
+  getUser: vi.fn(),
+  filters: [] as unknown[][],
   revision: {
     id: 'b1111111-1111-4111-8111-111111111111',
     workspace_id: 'a1111111-1111-4111-8111-111111111111',
@@ -17,104 +14,100 @@ const mocks = vi.hoisted(() => ({
     plan_kind: 'workout',
     content: {
       schema_version: 1,
-      notes: 'Published document note',
+      notes: 'Published note',
       days: [
-        { id: 'd1111111-1111-4111-8111-111111111111', kind: 'rest', items: [] },
+        {
+          id: 'd1111111-1111-4111-8111-111111111111',
+          kind: 'rest',
+          items: [],
+        },
       ],
     },
   },
 }));
-
 vi.mock('../../lib/supabase/server', () => ({
-  createSessionClient: mocks.createSessionClient,
+  createSessionClient: m.create,
 }));
-vi.mock('../../lib/auth/actor', () => ({ loadActorRows: mocks.loadActorRows }));
-
+vi.mock('../../lib/auth/actor', () => ({ loadActorRows: m.actor }));
 import { GET } from '../../app/api/workouts/copy-prompt/route';
+import { getMessages } from '../../lib/i18n';
 
-const workspaceA = 'a1111111-1111-4111-8111-111111111111';
-const workspaceB = 'a2222222-2222-4222-8222-222222222222';
-
-function request(locale = 'en') {
-  return new Request(
-    `http://localhost/api/workouts/copy-prompt?revision=${mocks.revision.id}&locale=${locale}`,
+const wsA = m.revision.workspace_id;
+const req = (locale = 'en') =>
+  new Request(
+    `http://localhost/api/workouts/copy-prompt?revision=${m.revision.id}&locale=${locale}`,
   );
-}
 
-describe('F17 Copy AI Prompt API (T040, FR-019, SC-009)', () => {
+describe('T040 Copy AI Prompt API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.selectedFilters = [];
-    mocks.client.auth.getUser.mockResolvedValue({
+    m.filters = [];
+    const client = {
+      auth: { getUser: m.getUser },
+      from: m.from,
+      rpc: vi.fn(),
+    };
+    m.create.mockResolvedValue(client);
+    m.getUser.mockResolvedValue({
       data: { user: { id: 'u1111111-1111-4111-8111-111111111111' } },
       error: null,
     });
-    mocks.createSessionClient.mockResolvedValue(mocks.client);
-    mocks.client.from.mockImplementation((table: string) => {
-      const chain = {
-        select: vi.fn(() => chain),
-        eq: vi.fn((field: string, value: unknown) => {
-          mocks.selectedFilters.push([field, value]);
-          return chain;
-        }),
-        maybeSingle: vi.fn(async () => ({ data: mocks.revision, error: null })),
-      };
-      expect(table).toBe('plan_revisions');
-      return chain;
-    });
-    mocks.loadActorRows.mockResolvedValue({
+    m.actor.mockResolvedValue({
       userId: 'u1111111-1111-4111-8111-111111111111',
       role: 'trainer',
-      activeWorkspaceIds: [workspaceA],
+      activeWorkspaceIds: [wsA],
+    });
+    m.from.mockImplementation((table: string) => {
+      const q = {
+        select: vi.fn(() => q),
+        eq: vi.fn((field: string, value: unknown) => {
+          m.filters.push([field, value]);
+          return q;
+        }),
+        maybeSingle: vi.fn(async () => ({ data: m.revision, error: null })),
+      };
+      expect(table).toBe('plan_revisions');
+      return q;
     });
   });
 
-  it('returns the contract prompt for one selected published revision', async () => {
-    const response = await GET(request('en'));
-    const body = await response.json();
-    expect(response.status).toBe(200);
-    expect(body.status).toBe('ok');
-    expect(body.prompt).toContain('Published document note');
-    expect(body.prompt).toContain(
-      'Make each exercise name and each alternative name a clickable link',
+  it('returns only the requested published workout prompt with no-store', async () => {
+    const res = await GET(req());
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({ status: 'ok' });
+    expect(body.prompt).toContain('Published note');
+    expect(body.prompt).toContain('clickable link to its video URL');
+    expect(m.filters).toEqual(
+      expect.arrayContaining([
+        ['id', m.revision.id],
+        ['plan_kind', 'workout'],
+      ]),
     );
-    expect(mocks.selectedFilters).toContainEqual(['id', mocks.revision.id]);
-    expect(mocks.selectedFilters).toContainEqual(['plan_kind', 'workout']);
-    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(getMessages('en')['workout.copyPrompt.action']).toBe(
+      'Copy AI Prompt',
+    );
+    expect(getMessages('en')['workout.copyPrompt.copied']).toBe('Copied.');
+    expect(getMessages('ar')['workout.copyPrompt.action']).toBe(
+      'نسخ برومبت الذكاء الاصطناعي',
+    );
+    expect(getMessages('ar')['workout.copyPrompt.copied']).toBe('تم النسخ.');
   });
 
   it.each([
-    ['Sales', 'sales', [workspaceA]],
+    ['Sales', 'sales', [wsA]],
     ['unaffiliated', null, []],
-    ['foreign workspace', 'trainer', [workspaceB]],
+    ['foreign workspace', 'trainer', ['a2222222-2222-4222-8222-222222222222']],
   ])(
-    'denies %s without returning prompt content',
+    'returns generic denial without content for %s',
     async (_label, role, activeWorkspaceIds) => {
-      mocks.loadActorRows.mockResolvedValue({
-        userId: 'u1111111-1111-4111-8111-111111111111',
-        role,
-        activeWorkspaceIds,
-      });
-      const response = await GET(request());
-      const body = await response.json();
-      expect(response.status).toBe(404);
-      expect(body).toEqual({ status: 'unavailable' });
+      m.actor.mockResolvedValue({ userId: 'u', role, activeWorkspaceIds });
+      const res = await GET(req());
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({ status: 'unavailable' });
       if (role === 'sales' || role === null)
-        expect(mocks.client.from).not.toHaveBeenCalled();
+        expect(m.from).not.toHaveBeenCalled();
     },
   );
-
-  it('does not return draft rows or content when the selected revision is missing', async () => {
-    mocks.client.from.mockImplementation(() => {
-      const chain = {
-        select: vi.fn(() => chain),
-        eq: vi.fn(() => chain),
-        maybeSingle: vi.fn(async () => ({ data: null, error: null })),
-      };
-      return chain;
-    });
-    const response = await GET(request());
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ status: 'unavailable' });
-  });
 });

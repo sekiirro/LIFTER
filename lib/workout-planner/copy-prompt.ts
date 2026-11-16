@@ -1,24 +1,6 @@
-import { roleHasCapability } from '../auth/capabilities';
 import { getMessages } from '../i18n';
 import type { Locale } from '../design/preferences';
-import type { Actor } from '../auth/authorize';
 import type { WorkoutExportPayload } from './export-payload';
-
-export type WorkoutPromptActor = Pick<Actor, 'role' | 'activeWorkspaceIds'>;
-
-/** Only staff with coaching/export access in the revision workspace may copy. */
-export function canCopyWorkoutPrompt(
-  actor: WorkoutPromptActor,
-  workspaceId: string,
-): boolean {
-  return (
-    workspaceId.trim().length > 0 &&
-    actor.role !== null &&
-    (actor.role === 'platform_owner' ||
-      actor.activeWorkspaceIds.includes(workspaceId)) &&
-    roleHasCapability(actor.role, 'coaching_work')
-  );
-}
 
 function repsText(
   reps: NonNullable<

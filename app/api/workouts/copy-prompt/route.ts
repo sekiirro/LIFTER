@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
+import { authorize } from '../../../../lib/auth/authorize';
 import { loadActorRows } from '../../../../lib/auth/actor';
 import {
   buildAiPrompt,
   containsProhibitedInstruction,
 } from '../../../../lib/workout-planner/ai-prompt';
 import { buildWorkoutExportPayload } from '../../../../lib/workout-planner/export-payload';
-import {
-  canCopyWorkoutPrompt,
-  formatWorkoutPromptContent,
-} from '../../../../lib/workout-planner/copy-prompt';
+import { formatWorkoutPromptContent } from '../../../../lib/workout-planner/copy-prompt';
 import {
   parseWorkoutDocumentV1,
   parseWorkoutReference,
@@ -90,7 +88,7 @@ export async function GET(request: Request) {
   if (
     selected.error ||
     !revision ||
-    !canCopyWorkoutPrompt(actor, revision.workspace_id)
+    !authorize(actor, 'coaching_work', revision.workspace_id)
   )
     return denied();
 
@@ -110,7 +108,7 @@ export async function GET(request: Request) {
           reference.source === 'global'
             ? (reference.overrideWorkspaceId ?? revision.workspace_id)
             : revision.workspace_id;
-        if (!canCopyWorkoutPrompt(actor, libraryWorkspaceId)) return null;
+        if (!authorize(actor, 'coaching_work', libraryWorkspaceId)) return null;
         const result =
           reference.source === 'global'
             ? await rpc.rpc('catalog_exercise_detail', {
