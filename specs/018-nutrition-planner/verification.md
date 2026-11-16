@@ -145,3 +145,47 @@
 | 19  | `nutrition_global_templates_po_read` policy (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:83-84`)              | Change policy using clause to `true`                                                                    | `Row 19: enforces generic denial on non-PO global template read and write`                                                                                                                     |
 | 20  | `public.create_nutrition_global_template` (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:258,362`)              | Remove PO authorization check                                                                           | `Row 20: enforces generic denial for Sales role across all plan, template, and export surfaces`, `Row 19: enforces generic denial on non-PO global template read and write`                    |
 | 21  | `app_private.f18_guard_plan_version_content` (`supabase/migrations/20261119010000_f18_nutrition_plan_version_contents.sql:22-24`) | Remove `if tg_op <> 'INSERT'` immutability exception                                                    | `Row 21: rejects UPDATE, DELETE, and TRUNCATE on immutable tables and selections`                                                                                                              |
+
+## Slice 6: T023 (`PDF and Excel export`)
+
+- **Base `origin/main` SHA**: `2739a4d973f30478afcdaa75f9d2d52bbc8b6669`
+- **Stack**: B (`LIFTER_SUPABASE_STACK=b`, API port 25421, DB port 25422)
+- **Node**: `v24.19.0`
+- **Vitest**: `vitest/5.1.0`
+- **Migration**: `supabase/migrations/20261120210000_f18_nutrition_export_audit.sql` (in reserved range `20261120210000–20261120215959`)
+- **Key Files**:
+  - `lib/plans/nutrition/export.ts`
+  - `tests/golden/nutrition-export-ar-en.test.ts`
+  - `tests/integration/nutrition-export.test.ts`
+  - `tests/integration/rls-catalog.test.ts` (registered `public.record_nutrition_export_audit`)
+- **RED Evidence**:
+  - Golden test `tests/golden/nutrition-export-ar-en.test.ts` initially authored and executed prior to implementation; asserted all 9 RED requirements:
+    1. Frozen food names and serving labels when no selection exists.
+    2. Comprehensive plan content (meals, items, quantities/units, macros, alternatives, notes, recipe link).
+    3. Formula injection resistance: cells beginning with `=+\-@\t\r` stored as text with `@` format, preventing spreadsheet execution.
+    4. Two-wall authorization: application authorization check (`canExportNutritionPlan`) + database RLS check on authenticated session client.
+    5. Current-revision selection as primary with recalculated totals.
+    6. Historical-revision export uses that revision's last valid selection (S43-PO-8; S43-R10).
+    7. Displays coach original as labelled per-item side note for selected items only.
+    8. Totals rows carry client-selection totals only (no coach original in totals; S43-PO-2).
+    9. Audit event emission on both success and denial (`plan.nutrition_export`).
+- **GREEN Evidence**:
+  - `tests/golden/nutrition-export-ar-en.test.ts`: 13/13 tests passed (canonical AR/EN goldens, all 9 RED cases, mutation test).
+  - `tests/integration/nutrition-export.test.ts`: 4/4 tests passed against live Stack B Supabase:
+    - Denies export for unpermitted actor (Sales) and logs denial audit.
+    - Denies export for non-existent revision and logs `not_found` denial audit.
+    - Allows authorized export on published revision under real RLS and logs success audit with strict allowlist.
+    - Historical-revision export reads that specific revision selection (S43-PO-8; S43-R10).
+  - `tests/integration/nutrition-audit.test.ts`: 3/3 tests passed.
+  - `tests/integration/rls-catalog.test.ts`: 43/43 tests passed.
+- **Mutation Evidence (KILLED, restored, `git diff --exit-code` 0)**:
+  - **Mutation target**: `tests/golden/nutrition-export-ar-en.test.ts:779-804`
+  - **Mutant**: Substituted current revision selection (`Egg 2 piece`, 355 kcal total) into historical revision 1 export projection (which expected `Grilled Chicken 150 g`, 800 kcal total).
+  - **Result**: KILLED — historical golden assertion threw `AssertionError: expected '... Egg 2 piece ... 355 ...' to contain 'Grilled Chicken 150 g'` / `expected '... Egg 2 piece ...' not to contain 'Egg 2 piece'`.
+  - **Restore**: Mutation test wrapper asserted `.toThrow()`, golden projection cleanly preserved. Tracked baseline clean.
+- **Local Gates**:
+  - Full unit test suite: 281 files / 3,241 tests passed.
+  - TypeScript typecheck (`tsc --noEmit`): clean, 0 errors.
+  - ESLint (`eslint . --max-warnings=0`): clean, 0 errors, 0 warnings.
+  - Prettier format check (`prettier --check .` and `format-check-changed.mjs`): 100% formatted.
+  - Migration timestamp check: 284 migrations validated, valid timestamp strictly within reserved range.

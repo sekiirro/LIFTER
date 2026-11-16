@@ -1526,6 +1526,7 @@ describe('registration security catalog', () => {
       'app_private.f18_guard_nutrition_selection()',
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
+      'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'app_private.f15_alert_occurrence_authorize_insert()',
       'app_private.f15_alert_recipient_authorized(uuid,uuid,text)',
       'app_private.f15_alert_schedule_audit()',
