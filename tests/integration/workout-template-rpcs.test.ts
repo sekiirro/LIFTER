@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type postgres from 'postgres';
+import type { JSONValue } from 'postgres';
 import { sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
@@ -143,6 +144,210 @@ describe('F17 T023/T024 workout template RPCs', () => {
         title: 'Promote me',
         document: sourceDocument,
       });
+    });
+  });
+
+  it('reports resolved and unresolved promotion references and keeps source errors generic', async () => {
+    const makeDocument = (refs: Record<string, unknown>[]) => ({
+      schema_version: 1,
+      days: [
+        {
+          id: randomUUID(),
+          kind: 'session',
+          items: refs.map((exercise, index) => ({
+            id: randomUUID(),
+            exercise,
+            name: `Reference ${index + 1}`,
+            alternatives: [],
+            sets: [],
+          })),
+        },
+      ],
+    });
+    const makePrivateRef = (
+      identityId: string,
+      version: number,
+      workspaceId: string,
+    ) => ({
+      source: 'workspace_private',
+      identity_id: identityId,
+      version,
+      workspace_id: workspaceId,
+    });
+    const seedSource = async (
+      tx: Tx,
+      sourceDocument: ReturnType<typeof makeDocument>,
+    ) => {
+      const templateId = randomUUID();
+      await tx`select set_config('role', 'postgres', true)`;
+      await tx`
+        insert into public.workout_workspace_templates(workspace_id, id, current_version, created_by)
+        values (${f.wsA.id}, ${templateId}, 1, ${f.trainerA.userId})
+      `;
+      await tx`
+        insert into public.workout_workspace_template_versions(workspace_id, template_id, version, title, document, created_by)
+        values (${f.wsA.id}, ${templateId}, 1, 'Promotion refs', ${tx.json(sourceDocument as JSONValue)}, ${f.trainerA.userId})
+      `;
+      return templateId;
+    };
+    const promote = async (tx: Tx, templateId: string, expectedVersion = 1) => {
+      const rows = await asActor(
+        tx,
+        f.po.userId,
+        () =>
+          tx`select public.promote_workout_workspace_template(${f.wsA.id}, ${templateId}, ${expectedVersion}, ${randomUUID()}) as result`,
+      );
+      return rows[0]?.result as {
+        template_id: string;
+        version: number;
+        unresolved_references: { path: string; status: string }[];
+      };
+    };
+
+    await db.begin(async (tx) => {
+      const globalRows = await asActor(
+        tx,
+        f.po.userId,
+        () =>
+          tx`select public.catalog_create_exercise(${randomUUID()}, ${tx.json({
+            name_en: 'Promotion reference global',
+            name_ar: 'تمرين',
+            primary_muscle_code: 'chest',
+            equipment_codes: ['barbell'],
+          } as JSONValue)}) as result`,
+      );
+      const globalId = (globalRows[0]?.result as { exercise_id: string })
+        .exercise_id;
+      const privateRows = await asActor(
+        tx,
+        f.trainerA.userId,
+        () =>
+          tx`select public.catalog_write_workspace_exercise(${f.wsA.id}, null, null, ${randomUUID()}, ${tx.json(
+            {
+              name_en: 'Promotion reference private',
+              name_ar: 'تمرين خاص',
+              primary_muscle_code: 'chest',
+              equipment_codes: ['barbell'],
+            } as JSONValue,
+          )}) as result`,
+      );
+      const privateId = (privateRows[0]?.result as { exercise_id: string })
+        .exercise_id;
+      const foreignRows = await asActor(
+        tx,
+        f.trainerB.userId,
+        () =>
+          tx`select public.catalog_write_workspace_exercise(${f.wsB.id}, null, null, ${randomUUID()}, ${tx.json(
+            {
+              name_en: 'Promotion reference foreign',
+              name_ar: 'تمرين خاص',
+              primary_muscle_code: 'chest',
+              equipment_codes: ['barbell'],
+            } as JSONValue,
+          )}) as result`,
+      );
+      const foreignId = (foreignRows[0]?.result as { exercise_id: string })
+        .exercise_id;
+
+      const resolvedSource = await seedSource(
+        tx,
+        makeDocument([
+          { source: 'global', identity_id: globalId, version: 1 },
+          makePrivateRef(privateId, 1, f.wsA.id),
+        ]),
+      );
+      expect((await promote(tx, resolvedSource)).unresolved_references).toEqual(
+        [],
+      );
+
+      const unresolvedSource = await seedSource(
+        tx,
+        makeDocument([
+          { source: 'global', identity_id: randomUUID(), version: 1 },
+          { source: 'global', identity_id: globalId, version: 99 },
+          makePrivateRef(foreignId, 1, f.wsB.id),
+        ]),
+      );
+      expect(
+        (await promote(tx, unresolvedSource)).unresolved_references,
+      ).toEqual([
+        { path: '$.days[0].items[0].exercise', status: 'RED' },
+        { path: '$.days[0].items[1].exercise', status: 'RED' },
+        { path: '$.days[0].items[2].exercise', status: 'RED' },
+      ]);
+
+      const staleSource = await seedSource(tx, makeDocument([]));
+      await expectRejected(
+        tx,
+        (sp) =>
+          asActor(
+            sp,
+            f.po.userId,
+            () =>
+              sp`select public.promote_workout_workspace_template(${f.wsA.id}, ${staleSource}, 2, ${randomUUID()})`,
+          ),
+        { code: '40001' },
+      );
+
+      const retiredRows = await asActor(
+        tx,
+        f.trainerA.userId,
+        () =>
+          tx`select public.create_workout_workspace_template(${f.wsA.id}, 'Retired source', ${tx.json(makeDocument([]) as JSONValue)}, ${randomUUID()}) as result`,
+      );
+      const retiredSourceId = (
+        retiredRows[0]?.result as { template_id: string }
+      ).template_id;
+      await asActor(
+        tx,
+        f.trainerA.userId,
+        () =>
+          tx`select public.retire_workout_workspace_template(${f.wsA.id}, ${retiredSourceId}, 1, ${randomUUID()})`,
+      );
+      await expectRejected(
+        tx,
+        (sp) =>
+          asActor(
+            sp,
+            f.trainerA.userId,
+            () =>
+              sp`select public.promote_workout_workspace_template(${f.wsA.id}, ${retiredSourceId}, 1, ${randomUUID()})`,
+          ),
+        { code: '42501' },
+      );
+      await expectRejected(
+        tx,
+        (sp) =>
+          asActor(
+            sp,
+            f.po.userId,
+            () =>
+              sp`select public.promote_workout_workspace_template(${f.wsA.id}, ${retiredSourceId}, 1, ${randomUUID()})`,
+          ),
+        { code: '42501' },
+      );
+      await expectRejected(
+        tx,
+        (sp) =>
+          asActor(
+            sp,
+            f.trainerA.userId,
+            () =>
+              sp`select public.promote_workout_workspace_template(${f.wsA.id}, ${randomUUID()}, 1, ${randomUUID()})`,
+          ),
+        { code: '42501' },
+      );
+      await expectRejected(
+        tx,
+        (sp) =>
+          asActor(
+            sp,
+            f.po.userId,
+            () =>
+              sp`select public.promote_workout_workspace_template(${f.wsA.id}, ${randomUUID()}, 1, ${randomUUID()})`,
+          ),
+        { code: '42501' },
+      );
     });
   });
 
