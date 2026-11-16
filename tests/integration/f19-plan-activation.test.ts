@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { clientContext, sql, graph } from './registration-approval-fixture';
 import type { Context } from './registration-approval-fixture';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 
 let db: ReturnType<typeof sql>;
 beforeAll(async () => {
@@ -53,6 +54,8 @@ async function deliver(
     kind === 'nutrition'
       ? 'publish_nutrition_revision'
       : 'ready_and_publish_plan';
+  if (kind === 'workout')
+    await db.begin((tx) => seedSubmittedIntake(tx, workspaceId, clientId));
   return client.rpc(rpcName, {
     p_plan_id: created.data,
     p_expected_draft_version: 1,

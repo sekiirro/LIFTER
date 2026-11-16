@@ -120,6 +120,18 @@
 - The first parallel full-unit attempt had three default 5-second timeouts while local gates and integrations ran concurrently; the standalone full-unit rerun passed 282/3,240. Recorded in `C:/Users/NEW LAP/.lifter/backlog/flakes.md`; exact-head CI remains required.
 - Detailed run record: `C:/Users/NEW LAP/.lifter/runs/s60-luna-f17t019/report.md`.
 
+## S61 T020 Ready & Publish gates
+
+- **Branch / stack**: `017-publish-gates-slice-1` stacked on PR #185 / T019; Stack C. All database resets used `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` with the assigned Stack C workdir, then `tests/integration/client-accounts-provision.mjs`.
+- **Implementation**: Added `publishWorkoutPlan` and `publishWorkoutPlanAction`. The API checks the authenticated actor and workout-plan workspace, validates the caller's explicit `expectedDraftVersion` and `expectedPublishedRevision`, and calls F19 `ready_and_publish_plan` exactly once. Migration `20261121000000_f17_workout_publish_intake_gate.sql` extends only the F19 public RPC entry point: it locks/rechecks the client, requires an F15 assigned form submission for workout delivery, then delegates to the unchanged F19 implementation. Subscription eligibility, CAS, operation-key replay, revision/delivery writes, and activation remain F19-owned.
+- **RED**: `tests/unit/plan-publish.test.ts` first failed because `lib/plans/publish` did not exist. Before the gate migration, `f17-plan-publish.test.ts` failed at the intake refusal assertion: an approved client with no submitted form returned `status: ok` and wrote revision/delivery rows.
+- **GREEN**: After safe reset + provision on Stack C, eight touched integration suites passed: `f17-plan-publish`, `f19-plan-delivery`, `f19-plan-activation`, `f19-plan-override`, `f17-add-exercise-rpc`, `f19-plan-expiry`, `f19-trainer-deletion`, and `rls-catalog` — 8 files / 79 tests. T020 proves missing intake and expired subscription each return a generic refusal with zero revision/delivery rows; with submitted intake and a current subscription, direct publish creates exactly one revision and delivery and preserves the latest draft content without an explicit Save as Draft. Unit publish contract tests pass 4/4.
+- **Mutation evidence (restored on Stack C)**:
+  1. Disabled the new intake predicate in the migration, safely reset/provisioned, and ran the focused T020 integration test. It failed because the missing-intake publish returned `status: ok` instead of `not_permitted`. Restored the predicate and reset Stack C.
+  2. In a DB-only scratch mutation, bypassed both F19 subscription-eligibility checks for expired subscriptions. `f17-plan-publish.test.ts -t 'expired subscription'` failed because the expired plan returned `status: ok` instead of `not_permitted`. Restored F19 state with safe `db reset --local` and reprovisioned Stack C; no F19 migration or implementation file was changed.
+- **Local gates**: Full unit suite 283 files / 3,243 tests; touched integration 8 files / 79 tests; lint, typecheck, changed-file format gate, full format check, `check:secrets`, and migration timestamp validation passed. The all-origin timestamp scan passed across 387 refs; exact-head CI and architect review are pending.
+- Detailed run record: `C:/Users/NEW LAP/.lifter/runs/s61-luna-f17t020/report.md`.
+
 ## F17 Verification — T044 slices 1+2 (template manager + assignment wizard UI)
 
 - **Branch / stack**: slice 1 `017-template-manager-slice-1` (merged as PR #173) + slice 2 `017-assign-wizard-slice-2` / no DB stack (UI-only, mocked props; T025 RPC not called).
