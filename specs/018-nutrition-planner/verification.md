@@ -156,8 +156,8 @@ PR #178) is not in this slice. **T025 remains unticked**; this section records
 `PARTIAL` evidence for the template-manager clauses only.
 
 - **RED:** `tests/unit/NutritionTemplateManager.test.tsx` created first; `npx
-  vitest run` failed at collection (`Failed to resolve import ...
-  NutritionTemplateManager.tsx`, 1 failed file, no tests).
+vitest run` failed at collection (`Failed to resolve import ...
+NutritionTemplateManager.tsx`, 1 failed file, no tests).
 - **GREEN:** after the component + CSS + showcase, the suite passes 11/11:
   PO-approved EN/AR headings with `dir`/`lang`, version isolation via
   `<bdi dir="ltr">`, active/retired distinction with no Load entry on retired
@@ -171,7 +171,7 @@ PR #178) is not in this slice. **T025 remains unticked**; this section records
 - **Mutation:** removed the `!item.retired` guard in
   `NutritionTemplateManager.tsx` (retired rows exposed Load actions).
   KILLED — `lists items with isolated version numbers and active/retired
-  distinction` failed (1 failed / 10 passed; Load count 5, not 3). Restored
+distinction` failed (1 failed / 10 passed; Load count 5, not 3). Restored
   the file from backup (SHA-256 identical on both sides) and re-ran 11/11.
 - **Design gate:** `app/(dev)/showcase/f18-template-manager/` renders one
   manager variant per page load (role/status from search params) with static
@@ -190,4 +190,4 @@ PR #178) is not in this slice. **T025 remains unticked**; this section records
   approved visible label as their accessible name.
 - **Local gates:** `npm run lint` clean, `npm run typecheck` clean,
   `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node
-  scripts/format-check-changed.mjs` passed, `npm run format:check` clean.
+scripts/format-check-changed.mjs` passed, `npm run format:check` clean.
