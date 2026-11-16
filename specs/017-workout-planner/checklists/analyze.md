@@ -62,18 +62,18 @@ Eight technical findings fixed within current PO decisions; two behavior choices
 
 **Analyze result: CRITICAL 0; HIGH 0; MEDIUM 2 PO-blocked; LOW 0.**
 
-## S44 PO-decision and formatting update â€” 2026-11-10 12:47 UTC
+## S44 PO-decision and formatting update — 2026-11-10 12:47 UTC
 
-This section supersedes the earlier S44 entry's two-open-MCQ status. S44-PO-2 (2026-11-10) resolves MCQ-1=A and MCQ-2=A; architect mapping S44-R2 is recorded beside the verbatim answers in `spec.md` Â§8.6.
+This section supersedes the earlier S44 entry's two-open-MCQ status. S44-PO-2 (2026-11-10) resolves MCQ-1=A and MCQ-2=A; architect mapping S44-R2 is recorded beside the verbatim answers in `spec.md` §8.6.
 
 ### Scope and cross-artifact review
 
-- PASS â€” `spec.md` FR-003, FR-010/011, SC-004/011 and Â§8.6 encode both decisions. No open MCQs remain.
-- PASS â€” `workout-plan-document.md`, `data-model.md`, `plan.md`, T011/T031, and traceability encode add-time effective global/override version and value capture, persistence across draft reload, and publication from captured values; Video remains live.
-- PASS â€” `template-assignment.md`, `data-model.md`, `plan.md`, T009/T025, and traceability encode per-workspace `no_copies` in a committed mixed-result batch and preserve rejection when total copies would be zero.
-- PASS â€” hostile post-push review caught and corrected an unescaped union separator in the `data-model.md` exercise-reference table; it now renders as one table row and retains the pinned source semantics.
-- PASS â€” task tags remain aligned: T009/T025 â†’ FR-010/011 and SC-003/004; T011/T031 â†’ FR-003 and SC-011 (T031 also FR-004/023 and SC-001). Every referenced ID exists in spec, plan, tasks, traceability and research.
-- PASS â€” analyze is dated after these spec/plan/tasks changes; task checkboxes remain unticked because implementation tests have not run.
+- PASS — `spec.md` FR-003, FR-010/011, SC-004/011 and §8.6 encode both decisions. No open MCQs remain.
+- PASS — `workout-plan-document.md`, `data-model.md`, `plan.md`, T011/T031, and traceability encode add-time effective global/override version and value capture, persistence across draft reload, and publication from captured values; Video remains live.
+- PASS — `template-assignment.md`, `data-model.md`, `plan.md`, T009/T025, and traceability encode per-workspace `no_copies` in a committed mixed-result batch and preserve rejection when total copies would be zero.
+- PASS — hostile post-push review caught and corrected an unescaped union separator in the `data-model.md` exercise-reference table; it now renders as one table row and retains the pinned source semantics.
+- PASS — task tags remain aligned: T009/T025 → FR-010/011 and SC-003/004; T011/T031 → FR-003 and SC-011 (T031 also FR-004/023 and SC-001). Every referenced ID exists in spec, plan, tasks, traceability and research.
+- PASS — analyze is dated after these spec/plan/tasks changes; task checkboxes remain unticked because implementation tests have not run.
 
 ### Findings
 
@@ -86,21 +86,21 @@ This section supersedes the earlier S44 entry's two-open-MCQ status. S44-PO-2 (2
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
-## S45 PR #78 CodeRabbit fixes Analyze â€” 2026-11-10 21:16 UTC
+## S45 PR #78 CodeRabbit fixes Analyze — 2026-11-10 21:16 UTC
 
 Scope: six unresolved inline findings and one review-body nitpick on exact head `07c16f519b9a2c6deddb68d6ff0ec04ffccaa976`. This is an existing-PR documentation correction round. No implementation task is authorized or marked complete.
 
 ### Entry and cross-artifact checks
 
-- PASS â€” `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios. Its Clarifications and PO decision register state that no open product ambiguities remain in F17. `plan.md` covers exercise add/publication, template assignment, volume and exports. `tasks.md` retains FR-tagged T031 and rest-day task coverage; no task checkbox was ticked.
-- PASS â€” entry check applies the existing-PR CodeRabbit/CI-fix exception: the prior Analyze was not after the current review fixes, so this record is dated after the final `spec.md`, `plan.md` and `tasks.md` edits.
-- PASS â€” T031â€™s F16 runtime dependency gates only live integration/publication acceptance; contract-based mock and RED work remain allowed as explicitly described by the review finding. The requirement remains FR-003/FR-004/FR-023 and SC-001/SC-011.
-- PASS â€” SC-012 crosswalk now includes T019, whose existing FR-002/FR-015 and SC-006/SC-012 tags and acceptance checks cover rejection, unchanged draft and source-item preservation. The tasks.md and traceability.md rows agree.
-- PASS â€” FR-003, the workout document contract and T031 consistently state that editable entry name and description are copied, saved/reloaded and frozen at publication. No catalog fields or product defaults were invented.
-- PASS â€” template assignment preserves every request-time workspace in its receipt set: true-flag All Workspaces exclusions receive `skipped_already_assigned`, while only self-created-template workspaces remain eligible. This agrees across FR-010/FR-011, contract, data model, T025 and traceability.
-- PASS â€” F17-MCQ-9 history and FR-016 traceability both say seven-program-day blocks with no calendar start; this agrees with spec, plan, tasks and Section B assessment.
-- PASS â€” export field list now includes day titles and published-revision descriptions when present. This is covered by the existing complete-authorized-content and revision-matching rules; no static user-facing copy changed.
-- PASS â€” no new PO ambiguity or open MCQ was introduced. Existing PO quotations were not edited.
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios. Its Clarifications and PO decision register state that no open product ambiguities remain in F17. `plan.md` covers exercise add/publication, template assignment, volume and exports. `tasks.md` retains FR-tagged T031 and rest-day task coverage; no task checkbox was ticked.
+- PASS — entry check applies the existing-PR CodeRabbit/CI-fix exception: the prior Analyze was not after the current review fixes, so this record is dated after the final `spec.md`, `plan.md` and `tasks.md` edits.
+- PASS — T031’s F16 runtime dependency gates only live integration/publication acceptance; contract-based mock and RED work remain allowed as explicitly described by the review finding. The requirement remains FR-003/FR-004/FR-023 and SC-001/SC-011.
+- PASS — SC-012 crosswalk now includes T019, whose existing FR-002/FR-015 and SC-006/SC-012 tags and acceptance checks cover rejection, unchanged draft and source-item preservation. The tasks.md and traceability.md rows agree.
+- PASS — FR-003, the workout document contract and T031 consistently state that editable entry name and description are copied, saved/reloaded and frozen at publication. No catalog fields or product defaults were invented.
+- PASS — template assignment preserves every request-time workspace in its receipt set: true-flag All Workspaces exclusions receive `skipped_already_assigned`, while only self-created-template workspaces remain eligible. This agrees across FR-010/FR-011, contract, data model, T025 and traceability.
+- PASS — F17-MCQ-9 history and FR-016 traceability both say seven-program-day blocks with no calendar start; this agrees with spec, plan, tasks and Section B assessment.
+- PASS — export field list now includes day titles and published-revision descriptions when present. This is covered by the existing complete-authorized-content and revision-matching rules; no static user-facing copy changed.
+- PASS — no new PO ambiguity or open MCQ was introduced. Existing PO quotations were not edited.
 
 ### Hostile cross-artifact findings
 
@@ -113,23 +113,23 @@ Scope: six unresolved inline findings and one review-body nitpick on exact head 
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
-## S44 Greptile P2 fix-lane Analyze â€” 2026-11-10 13:33 UTC
+## S44 Greptile P2 fix-lane Analyze — 2026-11-10 13:33 UTC
 
-Scope: three unresolved Greptile P2 findings on head `6f70703c887119f0a41bc9f4847b9e6039bedd9d` â€” replay check ordering before the assignment run row (`data-model.md` Â§5.2), run-level versus permanent identity-level copy keys (`data-model.md` Â§5.2), and the export field mapping for entry-level Reps/Rest/RIR (`contracts/export-and-ai-prompt.md` Â§2). No FR, SC, task or scope change; product behaviour is unchanged.
+Scope: three unresolved Greptile P2 findings on head `6f70703c887119f0a41bc9f4847b9e6039bedd9d` — replay check ordering before the assignment run row (`data-model.md` §5.2), run-level versus permanent identity-level copy keys (`data-model.md` §5.2), and the export field mapping for entry-level Reps/Rest/RIR (`contracts/export-and-ai-prompt.md` §2). No FR, SC, task or scope change; product behaviour is unchanged.
 
 ### Entry and cross-artifact checks
 
-- PASS â€” `spec.md` has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched assignment and export scope; Â§8 Clarifications and Â§8.6 PO-decision register record the cited PO sources and state "No open ambiguities".
-- PASS â€” `plan.md` covers assignment idempotency and export content; `tasks.md` T007/T009/T025/T026/T027/T037/T038/T041/T053 carry the touched rules with unchanged FR tags; `traceability.md` FR-011/FR-018 rows remain consistent.
-- PASS â€” the corrections restate existing decisions only: S44-PO-2/S44-R2 mixed-batch receipts, S42-PO-8 zero-copy rejection, S43-PO-1 skip-regardless-of-version, and the entry-level prescription schema. No new product decision is encoded.
-- PASS â€” this Analyze section is dated after the final edits to `data-model.md` and `contracts/export-and-ai-prompt.md` in this lane.
+- PASS — `spec.md` has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched assignment and export scope; §8 Clarifications and §8.6 PO-decision register record the cited PO sources and state "No open ambiguities".
+- PASS — `plan.md` covers assignment idempotency and export content; `tasks.md` T007/T009/T025/T026/T027/T037/T038/T041/T053 carry the touched rules with unchanged FR tags; `traceability.md` FR-011/FR-018 rows remain consistent.
+- PASS — the corrections restate existing decisions only: S44-PO-2/S44-R2 mixed-batch receipts, S42-PO-8 zero-copy rejection, S43-PO-1 skip-regardless-of-version, and the entry-level prescription schema. No new product decision is encoded.
+- PASS — this Analyze section is dated after the final edits to `data-model.md` and `contracts/export-and-ai-prompt.md` in this lane.
 
 ### Hostile cross-artifact findings
 
 | Severity | Finding | Disposition                                                                                                                                                                                    |
 | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CRITICAL | 0 open  | No implementation, schema or privilege change in this spec-only lane.                                                                                                                          |
-| HIGH     | 0 open  | Replay ordering, copy-key scope and the export data source now agree across `data-model.md` Â§5.2/Â§5.3, `contracts/template-assignment.md` Â§2/Â§4 and `contracts/export-and-ai-prompt.md` Â§2/Â§6. |
+| HIGH     | 0 open  | Replay ordering, copy-key scope and the export data source now agree across `data-model.md` §5.2/§5.3, `contracts/template-assignment.md` §2/§4 and `contracts/export-and-ai-prompt.md` §2/§6. |
 | MEDIUM   | 0 open  | The three P2 findings are corrected in text; no behaviour change, no open MCQ.                                                                                                                 |
 | LOW      | 0 open  | IDs and task tags are unchanged; task checkboxes remain unticked because no implementation tests were run.                                                                                     |
 
@@ -160,19 +160,19 @@ Scope: the 10 unresolved CodeRabbit inline threads on exact head b5362e5d88f989e
 
 **Analyze result: CRITICAL 0; HIGH 0; MEDIUM 1 PO decision; LOW 0.**
 
-## S44 PR #78 CR round 4 Analyze â€” 2026-11-10 15:36 UTC
+## S44 PR #78 CR round 4 Analyze — 2026-11-10 15:36 UTC
 
-Scope: encode the S44-PO-11 answer to S44-MCQ-F17-1, mapped by S44-R10, across F17 spec artifacts after the outside-diff note on PR #78. The PO answer is byte-exact in Â§8.7: `A: Reject the move (Recommended)`. No runtime implementation or acceptance-test execution is claimed.
+Scope: encode the S44-PO-11 answer to S44-MCQ-F17-1, mapped by S44-R10, across F17 spec artifacts after the outside-diff note on PR #78. The PO answer is byte-exact in §8.7: `A: Reject the move (Recommended)`. No runtime implementation or acceptance-test execution is claimed.
 
 ### Entry and cross-artifact checks
 
-- PASS â€” `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for the touched scope. FR-002 and A3-9 require no-write rejection when an item is added/moved to a rest day; A3-7 states rest days are item-free and remain in volume week blocks. A rejected move leaves the item on its source day. SC-012 makes unchanged-document and source-item assertions measurable.
-- PASS â€” Â§8.7 records S44-PO-11 and architect mapping (S44-R10) separately, closes S44-MCQ-F17-1, and states no open ambiguities remain in the current F17 spec scope.
-- PASS â€” `contracts/workout-plan-document.md` Â§1 forbids rest-day items; Â§2 defines rejected add/move behavior and source preservation; Â§5 uses the existing generic `invalid_document` code and specifies validation before writes.
-- PASS â€” `plan.md` and `data-model.md` state the same empty-rest-day invariant. Volume's existing rule that rest days remain in program-day week boundaries is unchanged.
-- PASS â€” `tasks.md` T002/T019/T043/T048 specify validator, persistence, UI, and property-test acceptance cases, including no writes and source preservation; FR-002/SC-012 mappings agree. No task checkbox was ticked because no implementation tests ran.
-- PASS â€” `traceability.md` maps FR-002 to S44-PO-11/S44-R10, the related tasks, and planned test intent; evidence remains `none` and status remains PLANNED.
-- PASS â€” decision matrix and Section B assessment reflect closure; no stale open/blocked status for S44-MCQ-F17-1 remains in the active artifacts.
+- PASS — `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for the touched scope. FR-002 and A3-9 require no-write rejection when an item is added/moved to a rest day; A3-7 states rest days are item-free and remain in volume week blocks. A rejected move leaves the item on its source day. SC-012 makes unchanged-document and source-item assertions measurable.
+- PASS — §8.7 records S44-PO-11 and architect mapping (S44-R10) separately, closes S44-MCQ-F17-1, and states no open ambiguities remain in the current F17 spec scope.
+- PASS — `contracts/workout-plan-document.md` §1 forbids rest-day items; §2 defines rejected add/move behavior and source preservation; §5 uses the existing generic `invalid_document` code and specifies validation before writes.
+- PASS — `plan.md` and `data-model.md` state the same empty-rest-day invariant. Volume's existing rule that rest days remain in program-day week boundaries is unchanged.
+- PASS — `tasks.md` T002/T019/T043/T048 specify validator, persistence, UI, and property-test acceptance cases, including no writes and source preservation; FR-002/SC-012 mappings agree. No task checkbox was ticked because no implementation tests ran.
+- PASS — `traceability.md` maps FR-002 to S44-PO-11/S44-R10, the related tasks, and planned test intent; evidence remains `none` and status remains PLANNED.
+- PASS — decision matrix and Section B assessment reflect closure; no stale open/blocked status for S44-MCQ-F17-1 remains in the active artifacts.
 
 ### Hostile cross-artifact findings
 
@@ -185,16 +185,16 @@ Scope: encode the S44-PO-11 answer to S44-MCQ-F17-1, mapped by S44-R10, across F
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
-## S45 Greptile PR #78 follow-up Analyze â€” 2026-11-10 22:16 UTC
+## S45 Greptile PR #78 follow-up Analyze — 2026-11-10 22:16 UTC
 
 Scope: Greptile P2 `data-model.md` Workout document row omits the editable `name` and optional `description` fields required by `contracts/workout-plan-document.md`. This is a spec consistency correction within FR-003; no product behavior is added and no implementation task is authorized or marked complete.
 
 ### Entry and cross-artifact checks
 
-- PASS â€” `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; its Clarifications and decision register state there are no open ambiguities in current F17 scope.
-- PASS â€” `contracts/workout-plan-document.md` defines editable `name` and optional `description`, persistence through draft save/reload and publication behavior; `data-model.md` now lists the same fields and draft persistence under Workout document.
-- PASS â€” `plan.md`, T031 in `tasks.md`, and FR-003 / SC-011 in `traceability.md` already cover the same entry fields. IDs and FR/task/SC mappings are unchanged; no PO quotation was edited.
-- PASS â€” this Analyze entry is dated after the `data-model.md` edit. No task checkbox changed and no implementation tests are claimed.
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; its Clarifications and decision register state there are no open ambiguities in current F17 scope.
+- PASS — `contracts/workout-plan-document.md` defines editable `name` and optional `description`, persistence through draft save/reload and publication behavior; `data-model.md` now lists the same fields and draft persistence under Workout document.
+- PASS — `plan.md`, T031 in `tasks.md`, and FR-003 / SC-011 in `traceability.md` already cover the same entry fields. IDs and FR/task/SC mappings are unchanged; no PO quotation was edited.
+- PASS — this Analyze entry is dated after the `data-model.md` edit. No task checkbox changed and no implementation tests are claimed.
 
 ### Hostile cross-artifact findings
 
@@ -207,7 +207,7 @@ Scope: Greptile P2 `data-model.md` Workout document row omits the editable `name
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
-## S47 Phase-0 [INDEPENDENT] implementation Analyze â€” 2026-11-11 12:02 UTC
+## S47 Phase-0 [INDEPENDENT] implementation Analyze — 2026-11-11 12:02 UTC
 
 Scope: pure-TS implementation of the eight Phase-0 `[PURE-TS][INDEPENDENT]`
 tasks on branch `017-impl-s47-p0` (T001, T003, T053, T006, T007, T008, T009,
@@ -216,19 +216,19 @@ DB, migration, RLS, UI or export-runtime work was done.
 
 ### Entry and cross-artifact checks
 
-- PASS â€” `spec.md` retains numbered FRs, measurable SCs and Given/When/Then
-  scenarios; Â§8.8 states no open ambiguities remain in F17 scope.
-- PASS â€” `plan.md` covers the touched pure-function scope; `tasks.md` carries
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then
+  scenarios; §8.8 states no open ambiguities remain in F17 scope.
+- PASS — `plan.md` covers the touched pure-function scope; `tasks.md` carries
   the eight task IDs with unchanged FR tags; the eight boxes are ticked only
   after their tests passed on the current head.
-- PASS â€” this Analyze section is dated after the last spec/plan/tasks edit in
+- PASS — this Analyze section is dated after the last spec/plan/tasks edit in
   this lane (task ticks + traceability evidence).
-- PASS â€” `traceability.md` cites test file::name evidence for FR-020 (T001),
+- PASS — `traceability.md` cites test file::name evidence for FR-020 (T001),
   FR-002 (T003), FR-004 (T053), FR-016 (T006), FR-017/FR-018 (T007), FR-019
   (T008), FR-010/FR-011 (T009), FR-022 (T010); remaining rows stay PLANNED
   with `none` evidence.
-- PASS â€” every task followed RED (missing-module failure recorded) â†’ smallest
-  change â†’ GREEN â†’ guard-removal mutation (test fails, recorded) â†’ restore â†’
+- PASS — every task followed RED (missing-module failure recorded) → smallest
+  change → GREEN → guard-removal mutation (test fails, recorded) → restore →
   GREEN. No test was weakened; no requirement, copy or default was invented.
 
 ### Hostile cross-artifact findings
@@ -242,16 +242,16 @@ DB, migration, RLS, UI or export-runtime work was done.
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
-## S47 T007 export-guard contract revision Analyze â€” 2026-11-11
+## S47 T007 export-guard contract revision Analyze — 2026-11-11
 
 Scope: revise T007 formula guard so coach-authored cell content is never modified; formula-leading values (`=`, `+`, `-`, `@`, including after leading whitespace/control characters) are stored as text via a cell descriptor flag (`quotePrefix`) instead of a leading apostrophe (FR-017, FR-018, SC-008). No spec/plan requirement text changed; only the pure-TS guard contract and its tests.
 
 ### Entry and cross-artifact checks
 
-- PASS â€” `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; FR-017/FR-018 and SC-008 unchanged.
-- PASS â€” `plan.md` and `tasks.md` T007 carry the touched scope with unchanged FR tags; T007 remains ticked with updated evidence.
-- PASS â€” `traceability.md` FR-017/FR-018 rows updated with new test evidence.
-- PASS â€” this Analyze entry is dated after the guard contract and test edits.
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; FR-017/FR-018 and SC-008 unchanged.
+- PASS — `plan.md` and `tasks.md` T007 carry the touched scope with unchanged FR tags; T007 remains ticked with updated evidence.
+- PASS — `traceability.md` FR-017/FR-018 rows updated with new test evidence.
+- PASS — this Analyze entry is dated after the guard contract and test edits.
 
 ### Hostile cross-artifact findings
 
@@ -264,7 +264,7 @@ Scope: revise T007 formula guard so coach-authored cell content is never modifie
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
-## S47 independent-review remediation Analyze â€” 2026-11-11
+## S47 independent-review remediation Analyze — 2026-11-11
 
 Scope: remediate the seven MEDIUM findings of the independent review
 (`runs/s47-mm-f17-review/review.md`) on branch `017-impl-s47-p0`. Includes the
@@ -273,14 +273,14 @@ T007 tasks.md requirement-text revision already present at HEAD (commit
 cell content" instead of "neutralised", recording the architect-ruled
 quotePrefix-flag implementation; FR-017 still says "neutralise formula
 injection" and SC-008 still says "stored as text", with the neutralisation
-obligation carried by the future writer (T037â€“T039) honoring `quotePrefix`.
+obligation carried by the future writer (T037–T039) honoring `quotePrefix`.
 
 ### Entry and cross-artifact checks
 
-- PASS â€” `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; no spec/plan requirement text was changed by this lane except the T007 tasks.md wording noted above.
-- PASS â€” `tasks.md` T007 wording now matches the delivered guard contract; FR-017/FR-018 and SC-008 tags unchanged.
-- PASS â€” `traceability.md` evidence updated for the verified pure-TS tasks (T008, T009, T007, T003, T006); remaining rows stay PLANNED.
-- PASS â€” this Analyze section is dated after the remediation edits.
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; no spec/plan requirement text was changed by this lane except the T007 tasks.md wording noted above.
+- PASS — `tasks.md` T007 wording now matches the delivered guard contract; FR-017/FR-018 and SC-008 tags unchanged.
+- PASS — `traceability.md` evidence updated for the verified pure-TS tasks (T008, T009, T007, T003, T006); remaining rows stay PLANNED.
+- PASS — this Analyze section is dated after the remediation edits.
 
 ### Hostile cross-artifact findings
 
@@ -293,7 +293,7 @@ obligation carried by the future writer (T037â€“T039) honoring `quotePrefix
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
-## S48 F17 NEW-1..NEW-8 remediation Analyze â€” 2026-11-11
+## S48 F17 NEW-1..NEW-8 remediation Analyze — 2026-11-11
 
 Scope: remediate independent-review findings NEW-1..NEW-7 on branch
 `017-impl-s47-p0` (pure-TS guard/state/test/generator/traceability only; no
@@ -301,27 +301,27 @@ schema, migration, RLS, UI or export-runtime work), and correct the NEW-8
 authority defect. No spec/plan requirement text changed by this lane: FR-017
 still says "neutralise formula injection", SC-008 still says "stored as
 text". The authority for the `quotePrefix` forced-text descriptor design is
-**S48-R6** (`runs/s48-arch/s48-architect-rulings.md` Â§S48-R6); that ruling
+**S48-R6** (`runs/s48-arch/s48-architect-rulings.md` §S48-R6); that ruling
 supersedes and replaces the unlocatable "architect-ruled" phrase in the
 "S47 independent-review remediation" section above, which cited no locatable
 ruling. Per S48-R6, T007 stays ticked for the descriptor and FR-017/SC-008
-traceability is PARTIAL pending the T037â€“T039 writer test proving flagged
+traceability is PARTIAL pending the T037–T039 writer test proving flagged
 cells are stored as text.
 
 ### Entry and cross-artifact checks
 
-- PASS â€” `spec.md` retains numbered FRs, measurable SCs and Given/When/Then
-  scenarios; Â§8.8 states no open ambiguities remain in F17 scope.
-- PASS â€” `plan.md` covers the touched pure-function/export scope; `tasks.md`
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then
+  scenarios; §8.8 states no open ambiguities remain in F17 scope.
+- PASS — `plan.md` covers the touched pure-function/export scope; `tasks.md`
   carries T003/T006/T008/T009 with unchanged FR tags; no task checkbox was
   ticked without its tests passing on the current head.
-- PASS â€” `traceability.md` evidence now cites the remediation tests for the
+- PASS — `traceability.md` evidence now cites the remediation tests for the
   verified pure-TS tasks (T003 load variants + fresh-id coverage, T006
   rest-day-only/empty-session perSession/perWeek rows, T008 coach-content
   scoping + clause-reset, T009 retired-held reporting + state
-  classification); FR-017/SC-008 stay PARTIAL pending the T037â€“T039 writer;
+  classification); FR-017/SC-008 stay PARTIAL pending the T037–T039 writer;
   remaining rows stay PLANNED.
-- PASS â€” this Analyze section is dated after the remediation edits.
+- PASS — this Analyze section is dated after the remediation edits.
 
 ### Hostile cross-artifact findings
 
@@ -371,5 +371,6 @@ cells are stored as text.
 
 ## T025 Date Update (2026-11-16)
 
-- T025 task status and FR-010/FR-011 plus SC-003/SC-004 traceability now cite Stack D RPC and RED/GREEN/mutation evidence in "verification.md".
+- T025 task status and FR-010/FR-011 plus SC-003/SC-004 traceability now cite Stack D RPC and RED/GREEN/mutation evidence in `verification.md`.
 - No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
