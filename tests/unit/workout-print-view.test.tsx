@@ -6,6 +6,14 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { WorkoutPrintView } from '../../components/workout-planner/WorkoutPrintView';
 import { getMessages } from '../../lib/i18n';
+import {
+  EXCEL_COLUMNS,
+  PRINT_TABLE_COLUMNS,
+  getWorkoutExportLabels,
+  formatWorkoutExportLoad,
+  formatWorkoutExportReps,
+  formatWorkoutExportSetType,
+} from '../../lib/workout-planner/excel-export';
 import type { WorkoutExportPayload } from '../../lib/workout-planner/export-payload';
 
 (
@@ -107,7 +115,7 @@ function makeFullPayload(): WorkoutExportPayload {
   };
 }
 
-describe('WorkoutPrintView (T037 part 1)', () => {
+describe('WorkoutPrintView (T037)', () => {
   it.each(['en', 'ar'] as const)(
     'renders every FR-018 field and exact PO-approved i18n labels in %s',
     (locale) => {
@@ -231,5 +239,87 @@ describe('WorkoutPrintView (T037 part 1)', () => {
     expect(css).toContain('@media print');
     expect(css).toMatch(/thead\s*\{[^}]*display:\s*table-header-group/s);
     expect(css).toMatch(/tr\s*\{[^}]*break-inside:\s*avoid/s);
+  });
+
+  it.each(['en', 'ar'] as const)(
+    'reuses the merged T038 Excel export column headings in exact order (%s)',
+    (locale) => {
+      const payload = makeFullPayload();
+      const m = getMessages(locale);
+      const host = renderView(
+        <WorkoutPrintView payload={payload} locale={locale} />,
+      );
+
+      const thList = Array.from(host.querySelectorAll('thead th')).map(
+        (th) => th.textContent?.trim() ?? '',
+      );
+      const expectedHeadings = PRINT_TABLE_COLUMNS.map((col) => m[col.heading]);
+
+      expect(thList).toEqual(expectedHeadings);
+      expect(PRINT_TABLE_COLUMNS.map((c) => c.key)).toEqual([
+        'exercise',
+        'description',
+        'sets',
+        'setType',
+        'reps',
+        'load',
+        'restSec',
+        'rir',
+        'notes',
+        'alternatives',
+        'video',
+      ]);
+    },
+  );
+
+  it.each(['en', 'ar'] as const)(
+    'shares formatting logic with T038 Excel export without duplication (%s)',
+    (locale) => {
+      const labels = getWorkoutExportLabels(locale);
+      const item = makeFullPayload().days[0]!.items[0]!;
+
+      // reps
+      expect(formatWorkoutExportReps(item)).toBe('8-10');
+
+      // set types
+      expect(formatWorkoutExportSetType(item.sets[0]!, labels)).toBe(
+        labels.warmUp,
+      );
+      expect(formatWorkoutExportSetType(item.sets[1]!, labels)).toBe(
+        labels.working,
+      );
+
+      // loads
+      expect(formatWorkoutExportLoad(item.sets[0]!, labels)).toBe(
+        labels.bodyweight,
+      );
+      expect(formatWorkoutExportLoad(item.sets[1]!, labels)).toBe(
+        `${labels.addedWeight} 32.5 kg`,
+      );
+    },
+  );
+
+  it('matches approved S58-PO-5 export headings byte-for-byte in both EN and AR', () => {
+    const fixturePath = resolve(
+      process.cwd(),
+      'tests/fixtures/f17/export-headings.approved.txt',
+    );
+    const approvedLines = readFileSync(fixturePath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => line.trim().split('\t'));
+    const approvedMap = new Map<string, string>(
+      approvedLines.map(([enText, arText]) => [enText!, arText!]),
+    );
+
+    const mEn = getMessages('en');
+    const mAr = getMessages('ar');
+
+    for (const col of EXCEL_COLUMNS) {
+      const enHeading = mEn[col.heading];
+      const arHeading = mAr[col.heading];
+      expect(approvedMap.has(enHeading)).toBe(true);
+      expect(approvedMap.get(enHeading)).toBe(arHeading);
+    }
   });
 });
