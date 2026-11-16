@@ -1,0 +1,23 @@
+{
+  "source": "F18-SC-006 benchmark measurement, Stack A local reset on 2026-11-16",
+  "headroom_rule": "For measured byte/count/latency maxima, record ceil(maximum observed across baseline runs × 1.25), capped at any applicable specification target. F18-SC-006 caps publish latency at 300 ms; the measured 262.824 ms maximum leaves 37.176 ms (about 12% of the ceiling) of margin. The 143 ms read ceiling remains below the 300 ms SC target. Entries without a specification target retain 25% headroom. Decimal places remain capped by the document contract at 3, without headroom. This is a measured operating envelope, not a new product-side validator limit.",
+  "baseline_runs": 4,
+  "document": {
+    "max_request_bytes": 141192,
+    "max_meals": 27,
+    "max_items": 210,
+    "max_alternatives": 630,
+    "max_decimal_places": 3
+  },
+  "request_mix": {
+    "publish_requests": 3,
+    "revision_read_requests": 30,
+    "publish_max_ms": 300,
+    "read_max_ms": 143
+  },
+  "storage": {
+    "max_revision_payload_bytes": 180099,
+    "max_revision_document_bytes": 153978,
+    "max_template_document_bytes": 165014
+  }
+}
