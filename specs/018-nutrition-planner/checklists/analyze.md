@@ -157,6 +157,3 @@ Date update note (retained from origin/main): T020/T021 implementation and bench
 
 **Result:** no requirement change or open product decision; implementation bookkeeping is consistent with the approved spec.
 
-<!-- Origin-main pre-slice Analyze note retained verbatim for the documentation union:
-- PASS — plan.md describes the touched scope; tasks T001, T002, T005, T008, T021 and T025 are tagged to the affected FR/SC ids without renumbering.
--->
