@@ -156,4 +156,3 @@ Date update note (retained from origin/main): T020/T021 implementation and bench
 - PASS � consistency check date is current with the task evidence commit.
 
 **Result:** no requirement change or open product decision; implementation bookkeeping is consistent with the approved spec.
-

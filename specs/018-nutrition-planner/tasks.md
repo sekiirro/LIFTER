@@ -110,4 +110,3 @@ T001–T006 fix the contracts. T007–T015 build persistence and RPCs after F19 
 | F18-SC-010  | T016                               |
 | F18-SC-011  | T002, T025 (half-up tie fixtures)  |
 | F18-SC-012  | T001, T005, T025                   |
-
