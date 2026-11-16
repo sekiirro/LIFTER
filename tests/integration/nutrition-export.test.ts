@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { snapshotMapKey } from '../../lib/plans/nutrition/macros';
 import {
   readNutritionExport,
@@ -11,13 +11,53 @@ import { clientContext, graph, sql } from './registration-approval-fixture';
 import type { Context } from './registration-approval-fixture';
 
 let f: Context;
+let otherClientContext: Context;
 let db: ReturnType<typeof sql>;
 let seeded: Awaited<ReturnType<typeof graph>>;
+let otherClientSeeded: Awaited<ReturnType<typeof graph>>;
+let auditPlanId: string;
+let auditRevisionId: string;
+let auditOtherPlanId: string;
+let auditOtherRevisionId: string;
+let auditClientUserId: string;
+let otherClientUserId: string;
 
 beforeAll(async () => {
   f = await clientContext();
+  otherClientContext = await clientContext();
   db = sql();
   seeded = await db.begin(async (tx) => graph(tx, f));
+  otherClientSeeded = await db.begin(async (tx) =>
+    graph(tx, otherClientContext),
+  );
+  auditPlanId = randomUUID();
+  auditRevisionId = randomUUID();
+  auditOtherPlanId = randomUUID();
+  auditOtherRevisionId = randomUUID();
+  const clients = await db`
+    select id, auth_user_id from public.clients
+    where id in (${seeded.client}, ${otherClientSeeded.client})
+  `;
+  auditClientUserId = clients.find(
+    (row) => row.id === seeded.client,
+  )!.auth_user_id;
+  otherClientUserId = clients.find(
+    (row) => row.id === otherClientSeeded.client,
+  )!.auth_user_id;
+  await db`
+    insert into public.plan_roots (id, workspace_id, client_id, plan_kind, created_by)
+    values
+      (${auditPlanId}, ${f.wsA.id}, ${seeded.client}, 'nutrition', ${f.trainerA.userId}),
+      (${auditOtherPlanId}, ${f.wsA.id}, ${seeded.client}, 'nutrition', ${f.trainerA.userId})
+  `;
+  await db`
+    insert into public.plan_revisions (
+      id, workspace_id, plan_id, revision_number, source_draft_version,
+      plan_kind, content, authored_by
+    ) values
+      (${auditRevisionId}, ${f.wsA.id}, ${auditPlanId}, 1, 1, 'nutrition', ${db.json({})}, ${f.trainerA.userId}),
+      (${auditOtherRevisionId}, ${f.wsA.id}, ${auditOtherPlanId}, 1, 1, 'nutrition', ${db.json({})}, ${f.trainerA.userId})
+  `;
 });
 
 afterAll(async () => {
@@ -25,7 +65,277 @@ afterAll(async () => {
 });
 
 describe('F18 T023 nutrition export integration & database audit', () => {
-  it('denies export for unaffiliated/unpermitted actor and logs denial audit', async () => {
+  async function callAuditAs(
+    userId: string,
+    args: {
+      workspaceId: string | null;
+      planId: string;
+      revisionId: string | null;
+      outcome?: string;
+      reason?: string | null;
+    },
+  ): Promise<string | null> {
+    return db.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: userId, role: 'authenticated' })}, true)`;
+      await tx`create or replace function pg_temp.try_nutrition_export_audit(
+        p_workspace_id uuid, p_plan_id uuid, p_revision_id uuid,
+        p_outcome text, p_reason text
+      ) returns text language plpgsql as $fn$
+      begin
+        perform public.record_nutrition_export_audit(
+          p_workspace_id, p_plan_id, p_revision_id, p_outcome, p_reason
+        );
+        return null;
+      exception when others then
+        return sqlstate;
+      end;
+      $fn$`;
+      const [result] = await tx`
+        select pg_temp.try_nutrition_export_audit(
+          ${args.workspaceId}::uuid,
+          ${args.planId}::uuid,
+          ${args.revisionId}::uuid,
+          ${args.outcome ?? 'success'},
+          ${args.reason ?? null}
+        ) as error_code
+      `;
+      return result!.error_code;
+    });
+  }
+
+  it('denies a foreign-workspace coach without writing an audit row', async () => {
+    const error = await callAuditAs(f.trainerB.userId, {
+      workspaceId: f.wsB.id,
+      planId: auditPlanId,
+      revisionId: auditRevisionId,
+    });
+    expect(error).toBe('42501');
+    const rows = await db`
+      select 1 from public.audit_events
+      where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+    `;
+    expect(rows).toHaveLength(0);
+  });
+
+  it('denies a different approved client without writing an audit row', async () => {
+    const error = await callAuditAs(otherClientUserId, {
+      workspaceId: f.wsA.id,
+      planId: auditPlanId,
+      revisionId: auditRevisionId,
+    });
+    expect(error).toBe('42501');
+    const rows = await db`
+      select 1 from public.audit_events
+      where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+    `;
+    expect(rows).toHaveLength(0);
+  });
+
+  it('denies a revision that belongs to a different plan without writing an audit row', async () => {
+    const error = await callAuditAs(f.trainerA.userId, {
+      workspaceId: f.wsA.id,
+      planId: auditPlanId,
+      revisionId: auditOtherRevisionId,
+    });
+    expect(error).toBe('42501');
+    const rows = await db`
+      select 1 from public.audit_events
+      where action = 'plan.nutrition_export' and target_id = ${auditOtherRevisionId}
+    `;
+    expect(rows).toHaveLength(0);
+  });
+
+  it('allows an own-workspace coach and derives workspace from the plan root', async () => {
+    const error = await callAuditAs(f.trainerA.userId, {
+      workspaceId: f.wsB.id,
+      planId: auditPlanId,
+      revisionId: auditRevisionId,
+    });
+    expect(error).toBeNull();
+    const [row] = await db`
+      select workspace_id, details from public.audit_events
+      where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+    `;
+    expect(row).toMatchObject({
+      workspace_id: f.wsA.id,
+      details: {
+        plan_id: auditPlanId,
+        revision_id: auditRevisionId,
+        outcome: 'success',
+      },
+    });
+  });
+
+  it('allows the plan own approved client and derives workspace from the plan root', async () => {
+    const error = await callAuditAs(auditClientUserId, {
+      workspaceId: f.wsB.id,
+      planId: auditPlanId,
+      revisionId: auditRevisionId,
+    });
+    expect(error).toBeNull();
+    const [row] = await db`
+      select workspace_id from public.audit_events
+      where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+    `;
+    expect(row?.workspace_id).toBe(f.wsA.id);
+  });
+
+  it('rejects audit allowlist violations without writing an audit row', async () => {
+    const before = await db`
+      select count(*)::int as count from public.audit_events
+      where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+    `;
+    const error = await callAuditAs(f.trainerA.userId, {
+      workspaceId: null,
+      planId: auditPlanId,
+      revisionId: auditRevisionId,
+      outcome: 'forged',
+      reason: 'private_content',
+    });
+    expect(error).toBe('42501');
+    const rows = await db`
+      select count(*)::int as count from public.audit_events
+      where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+    `;
+    expect(rows[0]?.count).toBe(before[0]?.count);
+  });
+
+  it('fails closed when the success audit RPC returns an error', async () => {
+    const planId = randomUUID();
+    const revisionId = randomUUID();
+    const doc = {
+      schemaVersion: 1,
+      structure: 'single_day',
+      implicitDayTypeId: 'dt-rest',
+      dayTypes: [
+        {
+          id: 'dt-rest',
+          name: { en: 'Rest' },
+          trainingDay: false,
+          targets: null,
+        },
+      ],
+      meals: [],
+    };
+    await db`
+      insert into public.plan_roots (id, workspace_id, client_id, plan_kind, created_by)
+      values (${planId}, ${f.wsA.id}, ${seeded.client}, 'nutrition', ${f.trainerA.userId})
+    `;
+    await db`
+      insert into public.plan_revisions (
+        id, workspace_id, plan_id, revision_number, source_draft_version,
+        plan_kind, content, authored_by
+      ) values (
+        ${revisionId}, ${f.wsA.id}, ${planId}, 1, 1, 'nutrition', ${db.json(doc)}, ${f.trainerA.userId}
+      )
+    `;
+    await db`
+      insert into public.nutrition_plan_version_contents (
+        revision_id, workspace_id, plan_id, schema_version, algorithm_version,
+        document, snapshot_map, computed_values, created_by
+      ) values (
+        ${revisionId}, ${f.wsA.id}, ${planId}, 1, 1, ${db.json(doc)}, ${db.json({})},
+        ${db.json({ algorithmVersion: 1, items: {}, meals: {}, totals: { kcal: '0', protein: '0', carbs: '0', fat: '0' } })},
+        ${f.trainerA.userId}
+      )
+    `;
+    const rpc = vi.spyOn(f.trainerA.client, 'rpc').mockResolvedValueOnce({
+      data: null,
+      error: {
+        message: 'audit unavailable',
+        code: 'XX000',
+        details: '',
+        hint: '',
+      },
+    } as never);
+    await expect(
+      readNutritionExport({
+        client: f.trainerA.client,
+        actor: {
+          userId: f.trainerA.userId,
+          role: 'Trainer',
+          workspaceRelation: 'own',
+          coachingWork: true,
+          membershipRevoked: false,
+        },
+        planId,
+        revisionId,
+      }),
+    ).rejects.toThrow('Nutrition export audit failed');
+    rpc.mockRestore();
+  });
+
+  it('fails closed when the plan-root read returns a database error', async () => {
+    const planId = randomUUID();
+    const revisionId = randomUUID();
+    const doc = {
+      schemaVersion: 1,
+      structure: 'single_day',
+      implicitDayTypeId: 'dt-rest',
+      dayTypes: [
+        {
+          id: 'dt-rest',
+          name: { en: 'Rest' },
+          trainingDay: false,
+          targets: null,
+        },
+      ],
+      meals: [],
+    };
+    await db`
+      insert into public.plan_roots (id, workspace_id, client_id, plan_kind, created_by)
+      values (${planId}, ${f.wsA.id}, ${seeded.client}, 'nutrition', ${f.trainerA.userId})
+    `;
+    await db`
+      insert into public.plan_revisions (
+        id, workspace_id, plan_id, revision_number, source_draft_version,
+        plan_kind, content, authored_by
+      ) values (
+        ${revisionId}, ${f.wsA.id}, ${planId}, 1, 1, 'nutrition', ${db.json(doc)}, ${f.trainerA.userId}
+      )
+    `;
+    await db`
+      insert into public.nutrition_plan_version_contents (
+        revision_id, workspace_id, plan_id, schema_version, algorithm_version,
+        document, snapshot_map, computed_values, created_by
+      ) values (
+        ${revisionId}, ${f.wsA.id}, ${planId}, 1, 1, ${db.json(doc)}, ${db.json({})},
+        ${db.json({ algorithmVersion: 1, items: {}, meals: {}, totals: { kcal: '0', protein: '0', carbs: '0', fat: '0' } })},
+        ${f.trainerA.userId}
+      )
+    `;
+    const originalFrom = f.trainerA.client.from.bind(f.trainerA.client);
+    const from = vi.spyOn(f.trainerA.client, 'from').mockImplementation(((
+      table: string,
+    ) => {
+      if (table !== 'plan_roots') return originalFrom(table as never);
+      const query = {
+        eq() {
+          return query;
+        },
+        async maybeSingle() {
+          return { data: null, error: { message: 'read failed' } };
+        },
+      };
+      return { select: () => query } as never;
+    }) as never);
+    const result = await readNutritionExport({
+      client: f.trainerA.client,
+      actor: {
+        userId: f.trainerA.userId,
+        role: 'Trainer',
+        workspaceRelation: 'own',
+        coachingWork: true,
+        membershipRevoked: false,
+      },
+      planId,
+      revisionId,
+    });
+    from.mockRestore();
+    expect(result).toEqual({ success: false, reason: 'not_found' });
+  });
+
+  it('denies export for an actor outside the application-wall export roles', async () => {
     const planId = randomUUID();
     const revisionId = randomUUID();
 
@@ -48,35 +358,21 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     if (result.success) return;
     expect(result.reason).toBe('not_permitted');
 
-    // Verify denial audit event was written
     const events = await db`
       select actor_user_id, action, target_table, target_id, details
       from public.audit_events
       where action = 'plan.nutrition_export'
         and actor_user_id = ${f.trainerA.userId}
+        and target_id = ${revisionId}
       order by occurred_at desc
       limit 1
     `;
 
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({
-      actor_user_id: f.trainerA.userId,
-      action: 'plan.nutrition_export',
-      target_table: 'plan_revisions',
-      details: {
-        plan_id: planId,
-        revision_id: revisionId,
-        outcome: 'denied',
-        reason: 'not_permitted',
-      },
-    });
-    // Strict allowlist: no forbidden fields
-    expect(events[0]!.details).not.toHaveProperty('document');
-    expect(events[0]!.details).not.toHaveProperty('food_name');
+    expect(events).toHaveLength(0);
   });
 
-  it('denies export for non-existent revision and logs not_found denial audit', async () => {
-    const planId = randomUUID();
+  it('denies export for a non-existent revision without attributing a forged audit target', async () => {
+    const planId = auditPlanId;
     const revisionId = randomUUID();
 
     const actor: NutritionExportActor = {
@@ -108,13 +404,52 @@ describe('F18 T023 nutrition export integration & database audit', () => {
       limit 1
     `;
 
-    expect(events).toHaveLength(1);
-    expect(events[0]!.details).toMatchObject({
-      plan_id: planId,
-      revision_id: revisionId,
-      outcome: 'denied',
-      reason: 'not_found',
+    expect(events).toHaveLength(0);
+  });
+
+  it('fails closed when revision content is absent instead of falling back to revision content', async () => {
+    const planId = randomUUID();
+    const revisionId = randomUUID();
+    const revisionDocument = {
+      schemaVersion: 1,
+      structure: 'single_day',
+      implicitDayTypeId: 'dt-rest',
+      dayTypes: [
+        {
+          id: 'dt-rest',
+          name: { en: 'Fallback must not render' },
+          trainingDay: false,
+          targets: null,
+        },
+      ],
+      meals: [],
+    };
+    await db`
+      insert into public.plan_roots (id, workspace_id, client_id, plan_kind, created_by)
+      values (${planId}, ${f.wsA.id}, ${seeded.client}, 'nutrition', ${f.trainerA.userId})
+    `;
+    await db`
+      insert into public.plan_revisions (
+        id, workspace_id, plan_id, revision_number, source_draft_version,
+        plan_kind, content, authored_by
+      ) values (
+        ${revisionId}, ${f.wsA.id}, ${planId}, 1, 1, 'nutrition',
+        ${db.json(revisionDocument)}, ${f.trainerA.userId}
+      )
+    `;
+    const result = await readNutritionExport({
+      client: f.trainerA.client,
+      actor: {
+        userId: f.trainerA.userId,
+        role: 'Trainer',
+        workspaceRelation: 'own',
+        coachingWork: true,
+        membershipRevoked: false,
+      },
+      planId,
+      revisionId,
     });
+    expect(result).toEqual({ success: false, reason: 'not_found' });
   });
 
   it('allows authorized export on published revision and logs success audit', async () => {

@@ -137,17 +137,52 @@ set search_path = ''
 as $$
 declare
   v_actor_user_id uuid;
+  v_workspace_id uuid;
+  v_client_id uuid;
 begin
   v_actor_user_id := auth.uid();
-  if v_actor_user_id is null
-    or (
-      not coalesce(app_private.is_platform_owner(), false)
-      and not coalesce(app_private.role_has_capability(app_private.current_staff_role(), 'coaching_work'), false)
-      and not exists (
-        select 1 from public.clients c
-        where c.auth_user_id = v_actor_user_id
-          and c.approval_state = 'approved'
-      )
+
+  if p_outcome is null or p_outcome not in ('success', 'denied')
+    or (p_outcome = 'success' and p_reason is not null)
+    or (p_outcome = 'denied' and (
+      p_reason is null or p_reason not in ('not_permitted', 'not_found')
+    )) then
+    raise exception 'not_permitted' using errcode = '42501';
+  end if;
+
+  select pr.workspace_id, pr.client_id
+    into v_workspace_id, v_client_id
+  from public.plan_roots pr
+  where pr.id = p_plan_id;
+
+  if not found or v_actor_user_id is null then
+    raise exception 'not_permitted' using errcode = '42501';
+  end if;
+
+  if p_revision_id is not null and not exists (
+    select 1
+    from public.plan_revisions r
+    where r.id = p_revision_id and r.plan_id = p_plan_id
+  ) then
+    raise exception 'not_permitted' using errcode = '42501';
+  end if;
+
+  if not coalesce(app_private.is_platform_owner(), false)
+    and not exists (
+      select 1
+      from public.workspace_memberships wm
+      join public.staff_profiles sp on sp.user_id = wm.user_id
+      where wm.user_id = v_actor_user_id
+        and wm.workspace_id = v_workspace_id
+        and wm.revoked_at is null
+        and coalesce(app_private.role_has_capability(sp.role, 'coaching_work'), false)
+    )
+    and not exists (
+      select 1 from public.clients c
+      where c.id = v_client_id
+        and c.workspace_id = v_workspace_id
+        and c.auth_user_id = v_actor_user_id
+        and c.approval_state = 'approved'
     ) then
     raise exception 'not_permitted' using errcode = '42501';
   end if;
@@ -164,10 +199,7 @@ begin
     'plan.nutrition_export',
     'plan_revisions',
     coalesce(p_revision_id, p_plan_id, '00000000-0000-0000-0000-000000000000'::uuid),
-    case
-      when p_workspace_id is null or p_workspace_id = '00000000-0000-0000-0000-000000000000'::uuid then null
-      else p_workspace_id
-    end,
+    v_workspace_id,
     pg_catalog.jsonb_strip_nulls(pg_catalog.jsonb_build_object(
       'plan_id', p_plan_id,
       'revision_id', p_revision_id,

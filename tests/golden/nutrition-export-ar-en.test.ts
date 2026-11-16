@@ -584,7 +584,7 @@ describe('F18 T023 PDF and Excel export — RED items and fidelity', () => {
     expect(html).toContain('800');
   });
 
-  it('RED 9: calls audit logging on export success and denial', async () => {
+  it('RED 9: requires a successful audit write before returning an export projection', async () => {
     const auditCalls: Array<{
       outcome: string;
       reason?: string;
@@ -593,6 +593,59 @@ describe('F18 T023 PDF and Excel export — RED items and fidelity', () => {
     }> = [];
     const mockClient = {
       from(table: string) {
+        if (table === 'client_nutrition_alternative_selections') {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    eq() {
+                      return Promise.resolve({ data: [], error: null });
+                    },
+                  };
+                },
+              };
+            },
+          };
+        }
+        if (
+          table === 'plan_revisions' ||
+          table === 'nutrition_plan_version_contents' ||
+          table === 'plan_roots'
+        ) {
+          const data =
+            table === 'plan_revisions'
+              ? {
+                  id: '33333333-3333-4000-8000-000000000001',
+                  plan_id: '00000000-0000-4000-8000-000000000001',
+                  workspace_id: '11111111-1111-4000-8000-000000000001',
+                  revision_number: 1,
+                  plan_kind: 'nutrition',
+                  content: SINGLE_DAY_DOC,
+                }
+              : table === 'nutrition_plan_version_contents'
+                ? {
+                    schema_version: 1,
+                    algorithm_version: 1,
+                    document: SINGLE_DAY_DOC,
+                    snapshot_map: SNAPSHOT_MAP,
+                    computed_values: SINGLE_DAY_COACH_VALUES,
+                  }
+                : {
+                    id: '00000000-0000-4000-8000-000000000001',
+                    workspace_id: '11111111-1111-4000-8000-000000000001',
+                    client_id: '22222222-2222-4000-8000-000000000001',
+                  };
+          const query = {
+            eq() {
+              return query;
+            },
+            async maybeSingle() {
+              return { data, error: null };
+            },
+          };
+          return { select: () => query };
+        }
         return {
           select() {
             return {
@@ -726,11 +779,7 @@ describe('F18 T023 PDF and Excel export — RED items and fidelity', () => {
       revisionId: '33333333-3333-4000-8000-000000000001',
     });
     expect(deniedResult.success).toBe(false);
-    expect(
-      auditCalls.some(
-        (c) => c.outcome === 'denied' && c.reason === 'not_permitted',
-      ),
-    ).toBe(true);
+    expect(auditCalls.some((c) => c.outcome === 'denied')).toBe(false);
   });
 });
 

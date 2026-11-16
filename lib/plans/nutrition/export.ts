@@ -147,17 +147,20 @@ async function recordAudit(
   outcome: string,
   reason?: string,
 ): Promise<void> {
-  if (typeof client?.rpc !== 'function') return;
+  if (typeof client?.rpc !== 'function') {
+    throw new Error('Nutrition export audit failed');
+  }
   try {
-    await client.rpc('record_nutrition_export_audit', {
+    const { error } = await client.rpc('record_nutrition_export_audit', {
       p_workspace_id: workspaceId,
       p_plan_id: planId,
       p_revision_id: revisionId,
       p_outcome: outcome,
       p_reason: reason ?? null,
     });
+    if (error) throw new Error('Nutrition export audit failed');
   } catch {
-    // Audit recording best-effort
+    throw new Error('Nutrition export audit failed');
   }
 }
 
@@ -178,14 +181,6 @@ export async function readNutritionExport(params: {
 
   // 1. Application-wall authorization check
   if (!canExportNutritionPlan(actor)) {
-    await recordAudit(
-      client,
-      '00000000-0000-0000-0000-000000000000',
-      planId,
-      revisionId,
-      'denied',
-      'not_permitted',
-    );
     return { success: false, reason: 'not_permitted' };
   }
 
@@ -201,14 +196,6 @@ export async function readNutritionExport(params: {
     .maybeSingle();
 
   if (revError || !revision) {
-    await recordAudit(
-      client,
-      '00000000-0000-0000-0000-000000000000',
-      planId,
-      revisionId,
-      'denied',
-      'not_found',
-    );
     return { success: false, reason: 'not_found' };
   }
 
@@ -224,7 +211,12 @@ export async function readNutritionExport(params: {
     .eq('workspace_id', workspaceId)
     .maybeSingle();
 
-  if (contentError || !content) {
+  if (
+    contentError ||
+    !content?.document ||
+    !content.snapshot_map ||
+    !content.computed_values
+  ) {
     await recordAudit(
       client,
       workspaceId,
@@ -237,34 +229,52 @@ export async function readNutritionExport(params: {
   }
 
   // 4. Database RLS read: fetch plan root metadata
-  const { data: plan } = await client
+  const { data: plan, error: planError } = await client
     .from('plan_roots')
     .select('id, workspace_id, client_id')
     .eq('id', planId)
     .eq('workspace_id', workspaceId)
     .maybeSingle();
 
+  if (planError || !plan) {
+    await recordAudit(
+      client,
+      workspaceId,
+      planId,
+      revisionId,
+      'denied',
+      'not_found',
+    );
+    return { success: false, reason: 'not_found' };
+  }
+
   // 5. Database RLS read: fetch revision-scoped client alternative selections (S43-PO-8; S43-R10)
-  const { data: selectionRows } = await client
+  const { data: selectionRows, error: selectionError } = await client
     .from('client_nutrition_alternative_selections')
     .select('item_id, alternative_id')
     .eq('plan_version_id', revisionId)
     .eq('workspace_id', workspaceId);
+
+  if (selectionError || !selectionRows) {
+    await recordAudit(
+      client,
+      workspaceId,
+      planId,
+      revisionId,
+      'denied',
+      'not_found',
+    );
+    return { success: false, reason: 'not_found' };
+  }
 
   const selectedAlternativeIds: Record<string, string> = {};
   for (const row of selectionRows ?? []) {
     selectedAlternativeIds[row.item_id] = row.alternative_id;
   }
 
-  const document = (content?.document ??
-    revision.content) as NutritionDocumentV1;
-  const snapshotMap = (content?.snapshot_map ?? {}) as NutritionSnapshotMap;
-  const computedValues = (content?.computed_values ?? {
-    algorithmVersion: 1,
-    items: {},
-    meals: {},
-    totals: { kcal: '0', protein: '0', carbs: '0', fat: '0' },
-  }) as ComputedValues;
+  const document = content.document as NutritionDocumentV1;
+  const snapshotMap = content.snapshot_map as NutritionSnapshotMap;
+  const computedValues = content.computed_values as ComputedValues;
 
   const hasSelections = Object.keys(selectedAlternativeIds).length > 0;
   const selectedValues = hasSelections
@@ -292,7 +302,7 @@ export async function readNutritionExport(params: {
       plan: {
         id: planId,
         workspaceId,
-        clientId: plan?.client_id ?? null,
+        clientId: plan.client_id,
         title: docTitle,
       },
       revision: {
@@ -602,7 +612,7 @@ export async function buildNutritionWorkbook(
     '',
     '',
     L.totals,
-    'totals',
+    L.totals,
     '',
     displayCalories(docTotals.kcal),
     displayMacroGrams(docTotals.protein),

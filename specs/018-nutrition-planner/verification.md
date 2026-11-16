@@ -189,4 +189,13 @@
   - TypeScript typecheck (`tsc --noEmit`): clean, 0 errors.
   - ESLint (`eslint . --max-warnings=0`): clean, 0 errors, 0 warnings.
   - Prettier format check (`prettier --check .` and `format-check-changed.mjs`): 100% formatted.
-  - Migration timestamp check: 284 migrations validated, valid timestamp strictly within reserved range.
+- Migration timestamp check: 284 migrations validated, valid timestamp strictly within reserved range.
+
+## S61-R25 — PR #188 export audit repair
+
+- Edited the existing, unmerged `20261120210000_f18_nutrition_export_audit.sql` in place (reserved range `20261120210000–20261120215959`; no new migration). The recorder gets `workspace_id` and the plan client from `plan_roots`, rejects an unrelated revision, and permits only the PO, coaching-work staff with an active membership in the derived workspace, or that plan's own approved client. Caller workspace is ignored. Outcome and reason are constrained to `success`/`denied` and `null`/`not_permitted`/`not_found` as appropriate; all authorization/shape denials use generic `42501` and write no row.
+- `readNutritionExport` now fails closed on audit RPC errors (including returned PostgREST errors), plan-root errors/missing rows, selection errors, and missing version content. It no longer falls back to `plan_revisions.content`. The Excel document totals cell uses approved `L.totals`.
+- **RED, Stack D after safe reset and provisioning:** ran the new integration cases against the original PR migration. The suite failed 6 tests: foreign-workspace coach, different approved client, mismatched plan/revision, coach scope derivation, client scope derivation, and audit allowlist. The mismatched-scope audit used the caller's workspace; invalid outcome/reason reached a table check (`23514`) instead of generic `42501`.
+- **GREEN, Stack D after restoring the fix, safe reset, and provisioning:** `tests/integration/nutrition-export.test.ts` passed 13/13, including foreign coach denied with no row; different approved client denied with no row; cross-plan revision denied with no row; own-workspace coach and plan's own approved client accepted with derived workspace; invalid allowlist denied; audit RPC failure, root read error, and missing-content fallback all fail closed.
+- **Mutation, killed and restored:** changed the membership scope predicate from `wm.workspace_id = v_workspace_id` to `wm.workspace_id = wm.workspace_id`. The foreign-coach test failed at `expect(error).toBe('42501')` (received `null`), proving it detects the scope bypass. Restored the predicate, safely reset and reprovisioned Stack D, then reran the touched integration suite successfully (13/13).
+- **Focused export golden:** `tests/golden/nutrition-export-ar-en.test.ts` passed 13/13 after the success path's selection read was included in its mock. The test now expects an application-wall denial to return before attempting a database audit write.
