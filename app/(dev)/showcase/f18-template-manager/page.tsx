@@ -16,7 +16,10 @@ import styles from './page.module.css';
 export default async function F18TemplateManagerShowcasePage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string | string[]; status?: string | string[] }>;
+  searchParams: Promise<{
+    role?: string | string[];
+    status?: string | string[];
+  }>;
 }) {
   if (!isShowcaseEnabled(process.env)) notFound();
 
