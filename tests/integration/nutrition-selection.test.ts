@@ -219,6 +219,42 @@ beforeAll(async () => {
 afterAll(async () => db?.end());
 
 describe('F18 T010 select_nutrition_alternative', () => {
+  it('audits a verified item but omits an unverified alternative id', async () => {
+    const { revisionId } = await publishNutritionPlan(
+      seeded.client,
+      makeDocWithAlternatives(true),
+    );
+    const foodName = 'Chicken breast 200g';
+    const denied = await primaryClientAuth.client.rpc(
+      'select_nutrition_alternative',
+      {
+        p_plan_version_id: revisionId,
+        p_item_id: 'item-1',
+        p_alternative_id: foodName,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(denied.error).toBeNull();
+    expect(denied.data).toEqual({ status: 'invalid_selection' });
+
+    const events = await db`
+      select actor_user_id, action, target_table, target_id, workspace_id, details
+      from public.audit_events
+      where action = 'client.nutrition_select'
+        and target_id = ${revisionId}
+        and actor_user_id = ${primaryClientAuth.authUserId}
+    `;
+    expect(events).toHaveLength(1);
+    expect(events[0]!.details).toMatchObject({
+      revision_id: revisionId,
+      item_id: 'item-1',
+      outcome: 'denied',
+      reason: 'invalid_selection',
+    });
+    expect(events[0]!.details).not.toHaveProperty('alternative_id');
+    expect(JSON.stringify(events[0])).not.toContain(foodName);
+  });
+
   it('enforces self-only upsert/delete, no-op silence, durable revision counter, idempotency, and audit allowlist', async () => {
     const { planId, revisionId } = await publishNutritionPlan(
       seeded.client,
