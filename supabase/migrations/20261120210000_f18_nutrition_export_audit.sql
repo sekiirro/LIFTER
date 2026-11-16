@@ -155,7 +155,35 @@ begin
   from public.plan_roots pr
   where pr.id = p_plan_id;
 
-  if not found or v_actor_user_id is null then
+  if v_actor_user_id is null then
+    raise exception 'not_permitted' using errcode = '42501';
+  end if;
+
+  if p_outcome = 'denied' then
+    insert into public.audit_events (
+      actor_user_id,
+      action,
+      target_table,
+      target_id,
+      workspace_id,
+      details
+    ) values (
+      v_actor_user_id,
+      'plan.nutrition_export',
+      'plan_revisions',
+      coalesce(p_revision_id, p_plan_id, '00000000-0000-0000-0000-000000000000'::uuid),
+      v_workspace_id,
+      pg_catalog.jsonb_strip_nulls(pg_catalog.jsonb_build_object(
+        'plan_id', p_plan_id,
+        'revision_id', p_revision_id,
+        'outcome', p_outcome,
+        'reason', p_reason
+      ))
+    );
+    return;
+  end if;
+
+  if not found then
     raise exception 'not_permitted' using errcode = '42501';
   end if;
 

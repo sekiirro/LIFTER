@@ -103,32 +103,240 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     });
   }
 
-  it('denies a foreign-workspace coach without writing an audit row', async () => {
+  it('records exactly one derived-workspace denial for a foreign-workspace coach', async () => {
     const error = await callAuditAs(f.trainerB.userId, {
       workspaceId: f.wsB.id,
       planId: auditPlanId,
       revisionId: auditRevisionId,
+      outcome: 'denied',
+      reason: 'not_permitted',
     });
-    expect(error).toBe('42501');
+    expect(error).toBeNull();
     const rows = await db`
-      select 1 from public.audit_events
-      where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+      select actor_user_id, action, target_table, target_id, workspace_id, details
+      from public.audit_events
+      where action = 'plan.nutrition_export'
+        and actor_user_id = ${f.trainerB.userId}
+        and target_id = ${auditRevisionId}
+        and details->>'outcome' = 'denied'
     `;
-    expect(rows).toHaveLength(0);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      actor_user_id: f.trainerB.userId,
+      action: 'plan.nutrition_export',
+      target_table: 'plan_revisions',
+      target_id: auditRevisionId,
+      workspace_id: f.wsA.id,
+      details: {
+        plan_id: auditPlanId,
+        revision_id: auditRevisionId,
+        outcome: 'denied',
+        reason: 'not_permitted',
+      },
+    });
+    expect(Object.keys(rows[0]!.details as object).sort()).toEqual(
+      ['plan_id', 'reason', 'revision_id', 'outcome'].sort(),
+    );
   });
 
-  it('denies a different approved client without writing an audit row', async () => {
+  it('records exactly one derived-workspace denial for another client', async () => {
     const error = await callAuditAs(otherClientUserId, {
       workspaceId: f.wsA.id,
       planId: auditPlanId,
       revisionId: auditRevisionId,
+      outcome: 'denied',
+      reason: 'not_permitted',
+    });
+    expect(error).toBeNull();
+    const rows = await db`
+      select actor_user_id, action, target_table, target_id, workspace_id, details
+      from public.audit_events
+      where action = 'plan.nutrition_export'
+        and actor_user_id = ${otherClientUserId}
+        and target_id = ${auditRevisionId}
+    `;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      actor_user_id: otherClientUserId,
+      action: 'plan.nutrition_export',
+      target_table: 'plan_revisions',
+      target_id: auditRevisionId,
+      workspace_id: f.wsA.id,
+      details: {
+        plan_id: auditPlanId,
+        revision_id: auditRevisionId,
+        outcome: 'denied',
+        reason: 'not_permitted',
+      },
+    });
+    expect(Object.keys(rows[0]!.details as object).sort()).toEqual(
+      ['plan_id', 'reason', 'revision_id', 'outcome'].sort(),
+    );
+  });
+
+  it('records an unknown-plan denial with a null workspace and the supplied target', async () => {
+    const planId = randomUUID();
+    const revisionId = randomUUID();
+    const error = await callAuditAs(f.trainerB.userId, {
+      workspaceId: f.wsB.id,
+      planId,
+      revisionId,
+      outcome: 'denied',
+      reason: 'not_found',
+    });
+    expect(error).toBeNull();
+    const rows = await db`
+      select actor_user_id, target_id, workspace_id, details
+      from public.audit_events
+      where action = 'plan.nutrition_export'
+        and actor_user_id = ${f.trainerB.userId}
+        and target_id = ${revisionId}
+    `;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      actor_user_id: f.trainerB.userId,
+      target_id: revisionId,
+      workspace_id: null,
+      details: {
+        plan_id: planId,
+        revision_id: revisionId,
+        outcome: 'denied',
+        reason: 'not_found',
+      },
+    });
+  });
+
+  it('rejects unauthorized success audit attempts without writing a row', async () => {
+    const error = await callAuditAs(f.trainerB.userId, {
+      workspaceId: f.wsB.id,
+      planId: auditPlanId,
+      revisionId: auditRevisionId,
+      outcome: 'success',
     });
     expect(error).toBe('42501');
     const rows = await db`
       select 1 from public.audit_events
-      where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+      where action = 'plan.nutrition_export'
+        and actor_user_id = ${f.trainerB.userId}
+        and target_id = ${auditRevisionId}
+        and details->>'outcome' = 'success'
     `;
     expect(rows).toHaveLength(0);
+  });
+
+  it('fails closed when a denied export audit write fails', async () => {
+    const rpc = vi.spyOn(f.trainerA.client, 'rpc').mockResolvedValueOnce({
+      data: null,
+      error: {
+        message: 'audit unavailable',
+        code: 'XX000',
+        details: '',
+        hint: '',
+      },
+    } as never);
+    await expect(
+      readNutritionExport({
+        client: f.trainerA.client,
+        actor: {
+          userId: f.trainerA.userId,
+          role: 'Sales',
+          workspaceRelation: 'own',
+          coachingWork: false,
+          membershipRevoked: false,
+        },
+        planId: auditPlanId,
+        revisionId: auditRevisionId,
+      }),
+    ).rejects.toThrow('Nutrition export audit failed');
+    rpc.mockRestore();
+  });
+
+  it('audits a foreign coach export attempt once with ids only', async () => {
+    const planId = randomUUID();
+    const revisionId = randomUUID();
+    await db`
+      insert into public.plan_roots (id, workspace_id, client_id, plan_kind, created_by)
+      values (${planId}, ${f.wsA.id}, ${seeded.client}, 'nutrition', ${f.trainerA.userId})
+    `;
+    const result = await readNutritionExport({
+      client: f.trainerB.client,
+      actor: {
+        userId: f.trainerB.userId,
+        role: 'Trainer',
+        workspaceRelation: 'foreign',
+        coachingWork: true,
+        membershipRevoked: false,
+      },
+      planId,
+      revisionId,
+    });
+    expect(result).toEqual({ success: false, reason: 'not_permitted' });
+    const rows = await db`
+      select actor_user_id, target_id, workspace_id, details
+      from public.audit_events
+      where action = 'plan.nutrition_export'
+        and actor_user_id = ${f.trainerB.userId}
+        and target_id = ${revisionId}
+    `;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      actor_user_id: f.trainerB.userId,
+      target_id: revisionId,
+      workspace_id: f.wsA.id,
+      details: {
+        plan_id: planId,
+        revision_id: revisionId,
+        outcome: 'denied',
+        reason: 'not_permitted',
+      },
+    });
+    expect(Object.keys(rows[0]!.details as object).sort()).toEqual(
+      ['plan_id', 'revision_id', 'outcome', 'reason'].sort(),
+    );
+  });
+
+  it('audits another client export attempt once with ids only', async () => {
+    const planId = randomUUID();
+    const revisionId = randomUUID();
+    await db`
+      insert into public.plan_roots (id, workspace_id, client_id, plan_kind, created_by)
+      values (${planId}, ${f.wsA.id}, ${seeded.client}, 'nutrition', ${f.trainerA.userId})
+    `;
+    const result = await readNutritionExport({
+      client: f.trainerB.client,
+      actor: {
+        userId: f.trainerB.userId,
+        role: 'client',
+        workspaceRelation: 'own',
+        coachingWork: false,
+        membershipRevoked: false,
+      },
+      planId,
+      revisionId,
+    });
+    expect(result).toEqual({ success: false, reason: 'not_permitted' });
+    const rows = await db`
+      select actor_user_id, target_id, workspace_id, details
+      from public.audit_events
+      where action = 'plan.nutrition_export'
+        and actor_user_id = ${f.trainerB.userId}
+        and target_id = ${revisionId}
+    `;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      actor_user_id: f.trainerB.userId,
+      target_id: revisionId,
+      workspace_id: f.wsA.id,
+      details: {
+        plan_id: planId,
+        revision_id: revisionId,
+        outcome: 'denied',
+        reason: 'not_permitted',
+      },
+    });
+    expect(Object.keys(rows[0]!.details as object).sort()).toEqual(
+      ['plan_id', 'revision_id', 'outcome', 'reason'].sort(),
+    );
   });
 
   it('denies a revision that belongs to a different plan without writing an audit row', async () => {
@@ -155,6 +363,7 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     const [row] = await db`
       select workspace_id, details from public.audit_events
       where action = 'plan.nutrition_export' and target_id = ${auditRevisionId}
+        and details->>'outcome' = 'success'
     `;
     expect(row).toMatchObject({
       workspace_id: f.wsA.id,
@@ -335,7 +544,7 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     expect(result).toEqual({ success: false, reason: 'not_found' });
   });
 
-  it('denies export for an actor outside the application-wall export roles', async () => {
+  it('audits denial for an actor outside the application-wall export roles', async () => {
     const planId = randomUUID();
     const revisionId = randomUUID();
 
@@ -359,7 +568,7 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     expect(result.reason).toBe('not_permitted');
 
     const events = await db`
-      select actor_user_id, action, target_table, target_id, details
+      select actor_user_id, action, target_table, target_id, workspace_id, details
       from public.audit_events
       where action = 'plan.nutrition_export'
         and actor_user_id = ${f.trainerA.userId}
@@ -368,10 +577,21 @@ describe('F18 T023 nutrition export integration & database audit', () => {
       limit 1
     `;
 
-    expect(events).toHaveLength(0);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      target_table: 'plan_revisions',
+      target_id: revisionId,
+      workspace_id: null,
+      details: {
+        plan_id: planId,
+        revision_id: revisionId,
+        outcome: 'denied',
+        reason: 'not_permitted',
+      },
+    });
   });
 
-  it('denies export for a non-existent revision without attributing a forged audit target', async () => {
+  it('audits a missing revision with the derived workspace and supplied ids only', async () => {
     const planId = auditPlanId;
     const revisionId = randomUUID();
 
@@ -395,7 +615,7 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     expect(result.reason).toBe('not_found');
 
     const events = await db`
-      select actor_user_id, action, target_table, target_id, details
+      select actor_user_id, action, target_table, target_id, workspace_id, details
       from public.audit_events
       where action = 'plan.nutrition_export'
         and actor_user_id = ${f.trainerA.userId}
@@ -404,7 +624,21 @@ describe('F18 T023 nutrition export integration & database audit', () => {
       limit 1
     `;
 
-    expect(events).toHaveLength(0);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      target_table: 'plan_revisions',
+      target_id: revisionId,
+      workspace_id: f.wsA.id,
+      details: {
+        plan_id: planId,
+        revision_id: revisionId,
+        outcome: 'denied',
+        reason: 'not_found',
+      },
+    });
+    expect(Object.keys(events[0]!.details as object).sort()).toEqual(
+      ['plan_id', 'revision_id', 'outcome', 'reason'].sort(),
+    );
   });
 
   it('fails closed when revision content is absent instead of falling back to revision content', async () => {

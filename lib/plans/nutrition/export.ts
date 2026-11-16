@@ -141,7 +141,7 @@ function servingDisplayUnit(
 
 async function recordAudit(
   client: SupabaseClient,
-  workspaceId: string,
+  workspaceId: string | null,
   planId: string,
   revisionId: string,
   outcome: string,
@@ -181,6 +181,14 @@ export async function readNutritionExport(params: {
 
   // 1. Application-wall authorization check
   if (!canExportNutritionPlan(actor)) {
+    await recordAudit(
+      client,
+      null,
+      planId,
+      revisionId,
+      'denied',
+      'not_permitted',
+    );
     return { success: false, reason: 'not_permitted' };
   }
 
@@ -196,6 +204,7 @@ export async function readNutritionExport(params: {
     .maybeSingle();
 
   if (revError || !revision) {
+    await recordAudit(client, null, planId, revisionId, 'denied', 'not_found');
     return { success: false, reason: 'not_found' };
   }
 

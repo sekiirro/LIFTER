@@ -779,7 +779,12 @@ describe('F18 T023 PDF and Excel export — RED items and fidelity', () => {
       revisionId: '33333333-3333-4000-8000-000000000001',
     });
     expect(deniedResult.success).toBe(false);
-    expect(auditCalls.some((c) => c.outcome === 'denied')).toBe(false);
+    expect(auditCalls).toContainEqual({
+      outcome: 'denied',
+      reason: 'not_permitted',
+      planId: '00000000-0000-4000-8000-000000000001',
+      revisionId: '33333333-3333-4000-8000-000000000001',
+    });
   });
 });
 
