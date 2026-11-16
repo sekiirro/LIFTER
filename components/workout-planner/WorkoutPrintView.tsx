@@ -1,12 +1,20 @@
-// F17 printable workout export renderer (T037 part 1; FR-017, FR-018, SC-008).
+// F17 printable workout export renderer (T037; FR-017, FR-018, SC-008).
 //
 // Renders the render-neutral `WorkoutExportPayload` with UI-language labels
-// from PO-approved `workout.export.*` and `print.*` keys, preserves authored
-// text verbatim, keeps exercise names in English, and sets `dir="rtl"` for AR
-// and `dir="ltr"` for EN.
+// from PO-approved S58-PO-5 keys shared with the T038 Excel export, preserves
+// authored text verbatim, keeps exercise names in English, and sets `dir="rtl"`
+// for AR and `dir="ltr"` for EN.
 
 import type { Locale } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
+import {
+  PRINT_TABLE_COLUMNS,
+  getWorkoutExportLabels,
+  formatWorkoutExportLoad,
+  formatWorkoutExportReps,
+  formatWorkoutExportSetType,
+  type WorkoutExportLabels,
+} from '../../lib/workout-planner/excel-export';
 import type {
   WorkoutExportDay,
   WorkoutExportItem,
@@ -30,30 +38,6 @@ function isSafeHttpUrl(url: string): boolean {
   } catch {
     return false;
   }
-}
-
-function formatReps(item: WorkoutExportItem): string {
-  if (!item.reps) return '';
-  return 'value' in item.reps
-    ? String(item.reps.value)
-    : `${item.reps.min}-${item.reps.max}`;
-}
-
-function formatSetType(set: WorkoutExportSet, m: Messages): string {
-  return set.type === 'warmup'
-    ? m['workout.export.warmUp']
-    : m['workout.export.working'];
-}
-
-function formatLoad(set: WorkoutExportSet, m: Messages): string {
-  if (set.load.mode === 'bodyweight') {
-    return m['workout.export.bodyweight'];
-  }
-  const mode =
-    set.load.mode === 'added_weight'
-      ? m['workout.export.addedWeight']
-      : m['workout.export.assisted'];
-  return `${mode} ${set.load.value} ${set.load.unit}`;
 }
 
 function renderVideoUrl(url: string, key: string) {
@@ -82,8 +66,9 @@ function renderItemRows(
   item: WorkoutExportItem,
   itemIndex: number,
   m: Messages,
+  labels: WorkoutExportLabels,
 ) {
-  const reps = formatReps(item);
+  const reps = formatWorkoutExportReps(item);
   const restSec = item.restSec === undefined ? '' : String(item.restSec);
   const rir = item.rir === undefined ? '' : String(item.rir);
   const videoUrls = [
@@ -105,9 +90,15 @@ function renderItemRows(
         {item.description !== undefined ? <Bidi>{item.description}</Bidi> : ''}
       </td>
       <td>{set === null ? '' : <Bidi dir="ltr">{setIndex + 1}</Bidi>}</td>
-      <td>{set === null ? '' : formatSetType(set, m)}</td>
+      <td>{set === null ? '' : formatWorkoutExportSetType(set, labels)}</td>
       <td>{reps ? <Bidi dir="ltr">{reps}</Bidi> : ''}</td>
-      <td>{set === null ? '' : <Bidi>{formatLoad(set, m)}</Bidi>}</td>
+      <td>
+        {set === null ? (
+          ''
+        ) : (
+          <Bidi>{formatWorkoutExportLoad(set, labels)}</Bidi>
+        )}
+      </td>
       <td>{restSec ? <Bidi dir="ltr">{restSec}</Bidi> : ''}</td>
       <td>{rir ? <Bidi dir="ltr">{rir}</Bidi> : ''}</td>
       <td>{item.notes !== undefined ? <Bidi>{item.notes}</Bidi> : ''}</td>
@@ -139,7 +130,12 @@ function renderItemRows(
   ));
 }
 
-function renderDay(day: WorkoutExportDay, index: number, m: Messages) {
+function renderDay(
+  day: WorkoutExportDay,
+  index: number,
+  m: Messages,
+  labels: WorkoutExportLabels,
+) {
   const dayNumber = String(index + 1);
 
   if (day.kind === 'rest') {
@@ -199,22 +195,16 @@ function renderDay(day: WorkoutExportDay, index: number, m: Messages) {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th scope="col">{m['print.exercise']}</th>
-              <th scope="col">{m['workout.export.description']}</th>
-              <th scope="col">{m['print.sets']}</th>
-              <th scope="col">{m['workout.export.setType']}</th>
-              <th scope="col">{m['print.reps']}</th>
-              <th scope="col">{m['workout.export.load']}</th>
-              <th scope="col">{m['workout.export.restSec']}</th>
-              <th scope="col">{m['workout.export.rir']}</th>
-              <th scope="col">{m['workout.export.notes']}</th>
-              <th scope="col">{m['workout.export.alternatives']}</th>
-              <th scope="col">{m['workout.export.video']}</th>
+              {PRINT_TABLE_COLUMNS.map((col) => (
+                <th key={col.key} scope="col">
+                  {m[col.heading]}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {day.items.flatMap((item, itemIndex) =>
-              renderItemRows(item, itemIndex, m),
+              renderItemRows(item, itemIndex, m, labels),
             )}
           </tbody>
         </table>
@@ -229,6 +219,7 @@ function renderDay(day: WorkoutExportDay, index: number, m: Messages) {
  */
 export function WorkoutPrintView({ payload, locale }: WorkoutPrintViewProps) {
   const m = getMessages(locale);
+  const labels = getWorkoutExportLabels(locale);
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
 
   return (
@@ -265,7 +256,7 @@ export function WorkoutPrintView({ payload, locale }: WorkoutPrintViewProps) {
         ) : null}
       </header>
 
-      {payload.days.map((day, index) => renderDay(day, index, m))}
+      {payload.days.map((day, index) => renderDay(day, index, m, labels))}
     </article>
   );
 }
