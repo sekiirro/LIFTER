@@ -166,6 +166,8 @@ export const en: Record<keyof typeof ar, string> = {
   'workout.export.alternatives': 'Alternatives',
   'workout.export.video': 'Video',
   'workout.export.loadUnit': 'kg / lb',
+  'workout.copyPrompt.action': 'Copy AI Prompt',
+  'workout.copyPrompt.copied': 'Copied.',
   'workout.volume.title': 'Volume',
   'workout.volume.muscle': 'Muscle',
   'workout.volume.session': 'Session',
