@@ -381,6 +381,14 @@ describe('T064 re-review N3/N5 tests', () => {
     const mock = await createLegacySynthetic(f);
     const report = await inRolledBackTx([mock.id], async (tx) => {
       await tx.unsafe('create role t064_blind nologin');
+      // PG16+: the creator holds ADMIN only; SET membership is needed for SET ROLE.
+      const [v] =
+        await tx`select current_setting('server_version_num')::int as n`;
+      await tx.unsafe(
+        (v!.n as number) >= 160000
+          ? 'grant t064_blind to current_user with set true'
+          : 'grant t064_blind to current_user',
+      );
       await tx.unsafe(
         'grant usage on schema public, app_private to t064_blind',
       );

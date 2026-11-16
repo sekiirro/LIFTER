@@ -94,6 +94,7 @@ async function expectRefused(
     db.begin(async (tx) => {
       if (prepare) await prepare(tx);
       await runIn(tx, a, text);
+      throw new Error('rollback: the script unexpectedly succeeded');
     }),
   ).rejects.toThrow(new RegExp(`c5_refused:${code}`));
 }
@@ -571,6 +572,7 @@ describe('T065 dependent-category refusals (nothing is written)', () => {
           'required_financial_dependency',
         );
         await runIn(tx, { pkgs: [mock.id], ws: [f.wsA.id] });
+        throw new Error('rollback: the script unexpectedly succeeded');
       }),
     ).rejects.toThrow(/c5_refused:preflight_not_deletable/);
     expect(await counts(mock.id)).toMatchObject({ p: 1, o: 1, v: 1 });
@@ -603,6 +605,7 @@ describe('T065 dependent-category refusals (nothing is written)', () => {
           ]),
         );
         await runIn(tx, { pkgs: [mock.id], ws: [f.wsA.id] });
+        throw new Error('rollback: the script unexpectedly succeeded');
       }),
     ).rejects.toThrow(/c5_refused:preflight_not_deletable/);
   });
@@ -687,16 +690,26 @@ describe('T065 lock and concurrency (control 6)', () => {
   // A dependent insert (registration link -> version FK) takes only ROW SHARE on the package tables.
   // The script's trigger DDL (SHARE ROW EXCLUSIVE) does not conflict with that; only the
   // EXCLUSIVE table lock does, which is exactly what this test isolates.
+  // The transaction ALWAYS rolls back (the trigger DDL and the row never become visible to other
+  // files); the return value says whether the insert got through before the rollback.
+  class InsertedThenRollback extends Error {}
   const insertDependent = async (conn: Sql, mockId: string) => {
     const [x] = await conn`
       select o.workspace_id as ws, o.current_version_id as ver
         from public.package_offers o where o.package_id=${mockId} limit 1`;
-    await conn.begin(async (tx) => {
-      await tx.unsafe("set local lock_timeout = '700ms'");
-      await tx`alter table public.registration_links disable trigger registration_links_insert_guard`;
-      await tx`insert into public.registration_links(workspace_id,package_version_id,token_hash,created_by,created_at,expires_at,price_minor,currency,duration_days,commission_rate_bp)
+    return conn
+      .begin(async (tx) => {
+        await tx.unsafe("set local lock_timeout = '700ms'");
+        await tx`alter table public.registration_links disable trigger registration_links_insert_guard`;
+        await tx`insert into public.registration_links(workspace_id,package_version_id,token_hash,created_by,created_at,expires_at,price_minor,currency,duration_days,commission_rate_bp)
         values (${x!.ws},${x!.ver},md5(random()::text)||md5(random()::text),${f.po.userId},timestamptz '2026-01-01 00:00:00+00',timestamptz '2026-01-02 00:00:00+00',100,'USD',61,10)`;
-    });
+        throw new InsertedThenRollback('rollback');
+      })
+      .then(() => false)
+      .catch((e: unknown) => {
+        if (e instanceof InsertedThenRollback) return true;
+        throw e;
+      });
   };
 
   it('a dependent insert for the target blocks while the script holds the lock', async () => {
@@ -731,7 +744,7 @@ describe('T065 lock and concurrency (control 6)', () => {
         { pkgs: [mock.id], ws: [f.wsA.id] },
         mutate(needle, 'null;'),
         async () => {
-          await insertDependent(conn, other.id);
+          expect(await insertDependent(conn, other.id)).toBe(true);
         },
       );
     } finally {
