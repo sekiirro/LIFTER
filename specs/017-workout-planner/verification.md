@@ -100,6 +100,17 @@
   - Dropped `workout_template_assignment_c_workspace_id_global_template__key` (`UNIQUE (workspace_id, global_template_id)`) on `public.workout_template_assignment_copies` -> `tests/integration/workout-assignment-schema.test.ts` failed at line 236 (`AssertionError: promise resolved "undefined" instead of rejecting`), proving duplicate-on-retry succeeds when copy uniqueness is removed.
   - Restored Stack B via `db reset --local` + `tests/integration/client-accounts-provision.mjs` and verified `git diff --exit-code` on the migration is 0.
 
+## F17 Verification — T037 (s60-fl-f17t037 / s60-fl-160b)
+
+- **Status**: T037 unticked `[ ]`; traceability PARTIAL ("T037 renderer verified; route pending authorized revision read").
+- **Renderer & RTL CSS**: `components/workout-planner/WorkoutPrintView.tsx`, `components/workout-planner/WorkoutPrintView.module.css`, `lib/workout-planner/excel-export.ts`, `tests/unit/workout-print-view.test.tsx`.
+- Reused merged T038 Excel export S58-PO-5 approved column headings and shared formatting helpers (`PRINT_TABLE_COLUMNS`, `formatWorkoutExportLoad`, `formatWorkoutExportReps`, `formatWorkoutExportSetType`, `getWorkoutExportLabels`) without duplicated strings. Full FR-018 field parity, AR RTL print CSS (`table-header-group`, `break-inside: avoid`), and Bidi isolation verified.
+- **RED -> GREEN**: Unit tests in `tests/unit/workout-print-view.test.tsx` (10 tests) failed against unexported columns/labels, then passed cleanly.
+- **Mutations (killed -> restored -> clean diff)**:
+  1. Forcing `dir="ltr"` fails AR RTL assertion (1 failed / 9 passed).
+  2. Removing alternatives column fails FR-018 field assertions (2 failed / 8 passed).
+- **Authorized Revision Read Gap**: Merged codebase does not contain an authorized server-side read of ONE explicitly selected revision into `WorkoutExportPayload` (no staff revision read RPC; no server loader querying `plan_revisions` or calling `buildWorkoutExportPayload`). Per brief ruling S60-R8, T037 remains unticked and traceability is PARTIAL pending authorized revision read implementation.
+
 ## S60-R4 Verification — T016/T017 (s60-luna-f17t016)
 
 - **Branch / stack**: `017-rls-grants-slice-1` / Stack A (`lifter`, API 54321, DB 54322). Safe reset via the approved wrapper, followed by `tests/integration/client-accounts-provision.mjs`; Vault values were not printed.
