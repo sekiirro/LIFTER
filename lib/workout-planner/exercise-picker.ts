@@ -50,10 +50,6 @@ export type ExercisePickerItem = {
   names: Partial<Record<CatalogLocale, string>>;
   /** Explicit current immutable version of the exercise identity. */
   version: number;
-  /** Explicitly selectable immutable versions (defaults to `[version]`). */
-  versions?: readonly number[];
-  /** Pinned workspace override version, when the effective row carries one. */
-  overrideVersion?: number | null;
   primaryMuscle?: MuscleGroupCode;
   equipment?: EquipmentCode;
   lifecycleState?: CatalogLifecycleState;
@@ -66,9 +62,10 @@ export type ExercisePickerFilters = Pick<
 >;
 
 /**
- * Explicit selection payload. Maps 1:1 onto the T031 RPC arguments
- * (`p_source`, `p_exercise_id`) plus the explicit version pin the receipt
- * must carry; the RPC itself pins the current server-side version.
+ * Explicit selection payload. Maps onto the T031 RPC arguments
+ * (`p_source`, `p_exercise_id`) plus the explicit current-version pin the
+ * receipt must carry; the RPC itself takes no version and pins the current
+ * server-side version.
  */
 export type ExercisePickerSelection = {
   source: ExercisePickerSource;
@@ -76,35 +73,6 @@ export type ExercisePickerSelection = {
   version: number;
   workspaceId?: string;
 };
-
-function asPositiveInt(value: unknown): number | null {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 1
-    ? value
-    : null;
-}
-
-/** Explicitly selectable versions: sorted, unique, always containing current. */
-export function resolvePickerVersions(item: ExercisePickerItem): number[] {
-  const seen = new Set<number>();
-  for (const candidate of item.versions ?? []) {
-    const version = asPositiveInt(candidate);
-    if (version !== null) seen.add(version);
-  }
-  const current = asPositiveInt(item.version);
-  if (current !== null) seen.add(current);
-  return [...seen].sort((a, b) => a - b);
-}
-
-/** Honor an explicitly selected version; fall back to current on anything else. */
-export function resolvePickerVersion(
-  item: ExercisePickerItem,
-  selected: unknown,
-): number {
-  const versions = resolvePickerVersions(item);
-  const explicit = asPositiveInt(selected);
-  if (explicit !== null && versions.includes(explicit)) return explicit;
-  return versions[versions.length - 1] ?? 1;
-}
 
 export function pickerItemName(
   item: ExercisePickerItem,
@@ -188,16 +156,15 @@ export function hasPickerSearch(
   });
 }
 
-/** Explicit add payload, or null when nothing is explicitly selected. */
+/** Explicit add payload (current version pin), or null when nothing is selected. */
 export function buildPickerAddSelection(
   item: ExercisePickerItem | null | undefined,
-  version: unknown,
 ): ExercisePickerSelection | null {
   if (!item) return null;
   return {
     source: item.source,
     exerciseId: item.id,
-    version: resolvePickerVersion(item, version),
+    version: item.version,
     ...(item.source === 'workspace_private' && item.workspaceId
       ? { workspaceId: item.workspaceId }
       : {}),

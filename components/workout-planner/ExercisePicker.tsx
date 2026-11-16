@@ -23,8 +23,6 @@ import {
   EXERCISE_PICKER_DEBOUNCE_MS,
   hasPickerSearch,
   pickerItemName,
-  resolvePickerVersion,
-  resolvePickerVersions,
   selectPickerItems,
   type ExercisePickerFilters,
   type ExercisePickerItem,
@@ -52,7 +50,6 @@ export type ExercisePickerProps = {
   initialQuery?: string;
   initialFilters?: ExercisePickerFilters;
   initialSelectedId?: string | null;
-  initialSelectedVersion?: number | null;
   onSearch?: (search: NormalizedCatalogSearch) => void;
   onRetry?: () => void;
   /** Explicit `{source, exerciseId, version, workspaceId?}` for the T031 RPC. */
@@ -87,8 +84,8 @@ function formatPickerReps(
 }
 
 /**
- * Bounded AR/EN exercise search with filters, explicit version selection and a
- * read-only defaults preview (FR-023, FR-024). Props/callbacks only.
+ * Bounded AR/EN exercise search with filters, explicit current-version display
+ * and a read-only defaults preview (FR-023, FR-024). Props/callbacks only.
  */
 export function ExercisePicker({
   locale,
@@ -99,7 +96,6 @@ export function ExercisePicker({
   initialQuery = '',
   initialFilters = {},
   initialSelectedId = null,
-  initialSelectedVersion = null,
   onSearch,
   onRetry,
   onAdd,
@@ -109,14 +105,10 @@ export function ExercisePicker({
   const filterIdBase = useId();
   const radioName = useId();
   const hintId = useId();
-  const versionId = useId();
   const [query, setQuery] = useState(initialQuery);
   const [filters, setFilters] = useState<ExercisePickerFilters>(initialFilters);
   const [selectedId, setSelectedId] = useState<string | null>(
     initialSelectedId,
-  );
-  const [selectedVersion, setSelectedVersion] = useState<number | null>(
-    initialSelectedVersion,
   );
 
   const onSearchRef = useRef(onSearch);
@@ -150,9 +142,6 @@ export function ExercisePicker({
     selectedId !== null
       ? (items.find((candidate) => candidate.id === selectedId) ?? null)
       : null;
-  const effectiveVersion = selectedItem
-    ? resolvePickerVersion(selectedItem, selectedVersion)
-    : null;
 
   function submitNow() {
     onSearchRef.current?.(buildPickerSearch(query, filters, workspaceId));
@@ -178,13 +167,11 @@ export function ExercisePicker({
   }
 
   function choose(id: string) {
-    const next = items.find((candidate) => candidate.id === id) ?? null;
     setSelectedId(id);
-    setSelectedVersion(next ? resolvePickerVersion(next, null) : null);
   }
 
   function addSelected() {
-    const selection = buildPickerAddSelection(selectedItem, selectedVersion);
+    const selection = buildPickerAddSelection(selectedItem);
     if (selection) onAdd?.(selection);
   }
 
@@ -371,28 +358,17 @@ export function ExercisePicker({
         </ul>
       )}
 
-      {selectedItem && effectiveVersion !== null && (
+      {selectedItem && (
         <div className={styles.detail} data-testid="exercise-picker-detail">
           <h3 className={styles.detailTitle}>
             <Bidi dir="auto">{pickerItemName(selectedItem, locale)}</Bidi>
           </h3>
-          <div className={styles.versionRow}>
-            <label htmlFor={versionId}>{m['templates.version']}</label>
-            <select
-              id={versionId}
-              data-testid="exercise-picker-version"
-              value={effectiveVersion}
-              onChange={(event) =>
-                setSelectedVersion(Number(event.currentTarget.value))
-              }
-            >
-              {resolvePickerVersions(selectedItem).map((version) => (
-                <option key={version} value={version}>
-                  {formatUiNumber(version, locale)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <p className={styles.versionRow}>
+            <span>{m['templates.version']}</span>{' '}
+            <Bidi dir="ltr">
+              {formatUiNumber(selectedItem.version, locale)}
+            </Bidi>
+          </p>
           <h4 className={styles.defaultsTitle}>
             {m['catalog.editorDefaultsTitle']}
           </h4>

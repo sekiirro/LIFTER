@@ -9,8 +9,6 @@ import {
   createPickerDebounce,
   EXERCISE_PICKER_DEBOUNCE_MS,
   EXERCISE_PICKER_MAX_RESULTS,
-  resolvePickerVersion,
-  resolvePickerVersions,
   selectPickerItems,
   type ExercisePickerItem,
 } from '../../lib/workout-planner/exercise-picker';
@@ -23,7 +21,6 @@ function item(overrides: Partial<ExercisePickerItem> = {}): ExercisePickerItem {
     source: 'global',
     names: { en: 'Bench Press', ar: 'ضغط الصدر' },
     version: 3,
-    versions: [1, 2, 3],
     primaryMuscle: 'chest',
     equipment: 'barbell',
     lifecycleState: 'active',
@@ -44,7 +41,6 @@ function manyItems(count: number): ExercisePickerItem[] {
       id: `ex-${index}`,
       names: { en: `Exercise ${index}`, ar: `تمرين ${index}` },
       version: 1,
-      versions: [1],
     }),
   );
 }
@@ -73,52 +69,24 @@ describe('F17 T032 exercise picker lib (FR-023, FR-024)', () => {
     expect(capPickerResults(manyItems(3))).toHaveLength(3);
   });
 
-  it('resolves explicit versions sorted, unique, always including current', () => {
-    expect(
-      resolvePickerVersions(item({ version: 3, versions: [3, 1, 2, 2] })),
-    ).toEqual([1, 2, 3]);
-    expect(resolvePickerVersions(item({ version: 2 }))).toEqual([1, 2, 3]);
-    expect(
-      resolvePickerVersions(
-        item({
-          version: 4,
-          versions: [0, -1, 1.5, NaN, 'x' as unknown as number, 4],
-        }),
-      ),
-    ).toEqual([4]);
-    expect(resolvePickerVersions(item({ version: 1, versions: [] }))).toEqual([
-      1,
-    ]);
-  });
-
-  it('honors an explicit version selection and falls back to current', () => {
-    const it3 = item({ version: 3, versions: [1, 2, 3] });
-    expect(resolvePickerVersion(it3, 1)).toBe(1);
-    expect(resolvePickerVersion(it3, 3)).toBe(3);
-    expect(resolvePickerVersion(it3, undefined)).toBe(3);
-    expect(resolvePickerVersion(it3, null)).toBe(3);
-    expect(resolvePickerVersion(it3, 9)).toBe(3);
-    expect(resolvePickerVersion(it3, '2')).toBe(3);
-  });
-
-  it('builds the T031 add-exercise selection with the explicit version pin', () => {
-    expect(buildPickerAddSelection(item({ source: 'global' }), 1)).toEqual({
+  it('pins the current version in the add payload (no older versions offered)', () => {
+    expect(buildPickerAddSelection(item({ source: 'global' }))).toEqual({
       source: 'global',
       exerciseId: 'ex-bench',
-      version: 1,
+      version: 3,
     });
     expect(
       buildPickerAddSelection(
         item({ source: 'workspace_private', workspaceId: 'ws-1' }),
-        2,
       ),
     ).toEqual({
       source: 'workspace_private',
       exerciseId: 'ex-bench',
-      version: 2,
+      version: 3,
       workspaceId: 'ws-1',
     });
-    expect(buildPickerAddSelection(null, 1)).toBeNull();
+    expect(buildPickerAddSelection(item({ version: 5 }))?.version).toBe(5);
+    expect(buildPickerAddSelection(null)).toBeNull();
   });
 
   it('matches AR/EN normalized queries, filters, active-only, own workspace only', () => {
@@ -240,14 +208,17 @@ describe('F17 T032 ExercisePicker UI (FR-023, FR-024)', () => {
     expect(html).not.toContain('data-testid="exercise-picker-version"');
   });
 
-  it('renders the explicit version selector with current selected for the chosen exercise', () => {
+  it('shows the explicit current version read-only with no version control for the chosen exercise', () => {
     const html = renderPicker('en', { initialSelectedId: 'ex-bench' });
-    expect(html).toContain('data-testid="exercise-picker-version"');
+    // No version control is offered (T031 RPC pins the current server-side).
+    expect(html).not.toContain('data-testid="exercise-picker-version"');
+    const detailBlock =
+      html.split('data-testid="exercise-picker-detail"')[1] ?? '';
+    expect(detailBlock).not.toContain('<select');
+    expect(detailBlock).not.toContain('<option');
+    // Explicit current version, read-only, under the approved label.
     expect(html).toContain(en['templates.version']);
-    expect(html).toContain('<option value="1"');
-    expect(html).toContain('<option value="2"');
-    expect(html).toContain('<option value="3"');
-    expect(html).toContain('value="3"');
+    expect(html).toContain('>3<');
     expect(html).not.toContain(en['builder.noExerciseSelected']);
   });
 
