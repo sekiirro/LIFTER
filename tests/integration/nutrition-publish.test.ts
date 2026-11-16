@@ -70,7 +70,7 @@ function makeDoc(targetFoodId: string, foodVersion = 1): NutritionDocumentV1 {
         recipeUrl: null,
         items: [
           {
-            id: 'i-1',
+            id: '33333333-3333-4333-8333-333333333331',
             foodId: targetFoodId,
             foodVersion,
             quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
@@ -103,6 +103,61 @@ async function waitForLockWait(queryText: string) {
 }
 
 describe('F18 T009 publish_nutrition_revision', () => {
+  it('rejects non-UUID item ids while publishing the nutrition document', async () => {
+    const doc = makeDoc(foodId, 1);
+    doc.meals![0]!.items[0]!.id = 'item-not-uuid';
+    const created = await fixture.trainerA.client.rpc('create_plan_draft', {
+      p_workspace_id: fixture.wsA.id,
+      p_client_id: seeded.client,
+      p_plan_kind: 'nutrition',
+      p_content: doc,
+      p_operation_key: randomUUID(),
+    });
+    expect(created.error).toBeNull();
+
+    const published = await fixture.trainerA.client.rpc(
+      'publish_nutrition_revision',
+      {
+        p_plan_id: created.data as string,
+        p_expected_draft_version: 1,
+        p_expected_published_version: 0,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(published.error).toMatchObject({ code: '22023' });
+  });
+
+  it('rejects non-UUID alternative ids while publishing the nutrition document', async () => {
+    const doc = makeDoc(foodId, 1);
+    doc.meals![0]!.items[0]!.alternatives = [
+      {
+        id: 'alternative-not-uuid',
+        foodId,
+        foodVersion: 1,
+        quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
+      },
+    ];
+    const created = await fixture.trainerA.client.rpc('create_plan_draft', {
+      p_workspace_id: fixture.wsA.id,
+      p_client_id: seeded.client,
+      p_plan_kind: 'nutrition',
+      p_content: doc,
+      p_operation_key: randomUUID(),
+    });
+    expect(created.error).toBeNull();
+
+    const published = await fixture.trainerA.client.rpc(
+      'publish_nutrition_revision',
+      {
+        p_plan_id: created.data as string,
+        p_expected_draft_version: 1,
+        p_expected_published_version: 0,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(published.error).toMatchObject({ code: '22023' });
+  });
+
   it('publishes one atomic revision + content + delivery + audit and ignores caller snapshots/totals', async () => {
     const doc = makeDoc(foodId, 1);
     const created = await fixture.trainerA.client.rpc('create_plan_draft', {

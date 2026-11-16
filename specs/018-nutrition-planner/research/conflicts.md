@@ -61,7 +61,7 @@
 ## F18-C-11 — Contributor attribution required by PRD-06 but absent from F19
 
 - **Evidence**: `LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md:188` "other trainer contributions are recorded independently"; old F18 FR-010b; F19 pending spec/data-model contain no contributor table or requirement.
-- **Status**: OPEN-TECH. F18-FR-018 retains the requirement with workspace-scoped immutable rows and nutrition action codes; if F19 adds shared attribution, F18 consumes it and drops the duplicate. Not a PO question; F18 must not lose the requirement.
+- **Status**: RESOLVED-TECH (S60-R43). One F19-owned, domain-neutral table `public.plan_revision_contributors` (`workspace_id`, `plan_id`, `revision_id`, `user_id`, `first_contributed_at`; PK `(revision_id, user_id)`; composite FK `(workspace_id, revision_id) -> plan_revisions(workspace_id, id)`) populated inside the draft-save and publish paths (with companion table `app_private.plan_draft_contributors` consumed/cleared at publish); immutable triggers reject UPDATE/DELETE/TRUNCATE; RLS read restricted to `coaching_work` in that workspace. F18 and F17 consume this shared mechanism.
 
 ## F18-C-12 — Historic migration range reserves nothing
 

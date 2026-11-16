@@ -129,14 +129,14 @@ const DOC = validateNutritionDocument(
         recipeUrl: 'https://www.youtube.com/watch?v=abc',
         items: [
           {
-            id: 'i-1',
+            id: '33333333-3333-4333-8333-333333333331',
             foodId: FOOD_A,
             foodVersion: 3,
             quantity: { value: '37', unit: { kind: 'basis', value: 'g' } },
             note: '@cmd food note',
             alternatives: [
               {
-                id: 'a-1',
+                id: '44444444-4444-4444-8444-444444444441',
                 foodId: FOOD_A,
                 foodVersion: 4,
                 quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
@@ -144,7 +144,7 @@ const DOC = validateNutritionDocument(
             ],
           },
           {
-            id: 'i-2',
+            id: '33333333-3333-4333-8333-333333333332',
             foodId: FOOD_B,
             foodVersion: 2,
             quantity: { value: '1', unit: { kind: 'serving', unitKey: 'g' } },
@@ -162,7 +162,8 @@ const DOC = validateNutritionDocument(
 
 const COACH_VALUES = computeDocumentValues(DOC, SNAPSHOT_MAP);
 const SELECTED_VALUES = computeDocumentValues(DOC, SNAPSHOT_MAP, {
-  'i-1': 'a-1',
+  '33333333-3333-4333-8333-333333333331':
+    '44444444-4444-4444-8444-444444444441',
 });
 
 const NO_SELECTION: NutritionPromptProjection = {
@@ -177,7 +178,10 @@ const WITH_SELECTION: NutritionPromptProjection = {
   document: DOC,
   computedValues: COACH_VALUES,
   selectedValues: SELECTED_VALUES,
-  selectedAlternativeIds: { 'i-1': 'a-1' },
+  selectedAlternativeIds: {
+    '33333333-3333-4333-8333-333333333331':
+      '44444444-4444-4444-8444-444444444441',
+  },
   snapshotMap: SNAPSHOT_MAP,
 };
 
@@ -225,10 +229,10 @@ const PAYLOAD_EN = [
   'meal m-1 Breakfast',
   'meal-notes: =cmd meal note',
   'recipe: https://www.youtube.com/watch?v=abc',
-  'item i-1 Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6',
+  'item 33333333-3333-4333-8333-333333333331 Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6',
   'food-notes: @cmd food note',
-  'alternative a-1 Chicken 150 g | kcal 600 | protein 45 | carbs 15 | fat 7.5',
-  'item i-2 Fish 1 g | kcal 200 | protein 18 | carbs 0 | fat 5.0',
+  'alternative 44444444-4444-4444-8444-444444444441 Chicken 150 g | kcal 600 | protein 45 | carbs 15 | fat 7.5',
+  'item 33333333-3333-4333-8333-333333333332 Fish 1 g | kcal 200 | protein 18 | carbs 0 | fat 5.0',
   'meal m-1 totals 293 | 23 | 19 | 9.6',
   'totals 293 | 23 | 19 | 9.6',
 ].join('\n');
@@ -238,10 +242,10 @@ const PAYLOAD_AR = [
   'وجبة m-1 Breakfast',
   'ملاحظات الوجبة: =cmd meal note',
   'طريقة العمل: https://www.youtube.com/watch?v=abc',
-  'صنف i-1 Chicken 37 g | السعرات 93 | البروتين 4.6 | الكربوهيدرات 19 | الدهون 4.6',
+  'صنف 33333333-3333-4333-8333-333333333331 Chicken 37 g | السعرات 93 | البروتين 4.6 | الكربوهيدرات 19 | الدهون 4.6',
   'ملاحظات الأكل: @cmd food note',
-  'بديل a-1 Chicken 150 g | السعرات 600 | البروتين 45 | الكربوهيدرات 15 | الدهون 7.5',
-  'صنف i-2 Fish 1 g | السعرات 200 | البروتين 18 | الكربوهيدرات 0 | الدهون 5.0',
+  'بديل 44444444-4444-4444-8444-444444444441 Chicken 150 g | السعرات 600 | البروتين 45 | الكربوهيدرات 15 | الدهون 7.5',
+  'صنف 33333333-3333-4333-8333-333333333332 Fish 1 g | السعرات 200 | البروتين 18 | الكربوهيدرات 0 | الدهون 5.0',
   'إجمالي الوجبة m-1 293 | 23 | 19 | 9.6',
   'الإجمالي 293 | 23 | 19 | 9.6',
 ].join('\n');
@@ -251,11 +255,11 @@ const PAYLOAD_SELECTED_EN = [
   'meal m-1 Breakfast',
   'meal-notes: =cmd meal note',
   'recipe: https://www.youtube.com/watch?v=abc',
-  'item i-1 selected a-1 Chicken 150 g | kcal 600 | protein 45 | carbs 15 | fat 7.5',
+  'item 33333333-3333-4333-8333-333333333331 selected 44444444-4444-4444-8444-444444444441 Chicken 150 g | kcal 600 | protein 45 | carbs 15 | fat 7.5',
   "Coach's original: Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6",
   'food-notes: @cmd food note',
-  'alternative a-1 Chicken 150 g | kcal 600 | protein 45 | carbs 15 | fat 7.5',
-  'item i-2 Fish 1 g | kcal 200 | protein 18 | carbs 0 | fat 5.0',
+  'alternative 44444444-4444-4444-8444-444444444441 Chicken 150 g | kcal 600 | protein 45 | carbs 15 | fat 7.5',
+  'item 33333333-3333-4333-8333-333333333332 Fish 1 g | kcal 200 | protein 18 | carbs 0 | fat 5.0',
   'meal m-1 totals 800 | 63 | 15 | 13',
   'totals 800 | 63 | 15 | 13',
 ].join('\n');
@@ -304,11 +308,11 @@ describe('F18 Copy AI Prompt (T024; FR-015, SC-005)', () => {
       lines.filter((l) => l.startsWith('meal ') && !l.includes(' totals ')),
     ).toEqual(['meal m-1 Breakfast']);
     expect(lines.filter((l) => l.startsWith('item '))).toEqual([
-      'item i-1 Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6',
-      'item i-2 Fish 1 g | kcal 200 | protein 18 | carbs 0 | fat 5.0',
+      'item 33333333-3333-4333-8333-333333333331 Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6',
+      'item 33333333-3333-4333-8333-333333333332 Fish 1 g | kcal 200 | protein 18 | carbs 0 | fat 5.0',
     ]);
     expect(lines.filter((l) => l.startsWith('alternative '))).toEqual([
-      'alternative a-1 Chicken 150 g | kcal 600 | protein 45 | carbs 15 | fat 7.5',
+      'alternative 44444444-4444-4444-8444-444444444441 Chicken 150 g | kcal 600 | protein 45 | carbs 15 | fat 7.5',
     ]);
     // quantities and units are the coach's exact strings
     expect(planContentText(NO_SELECTION, 'en')).toContain('Chicken 37 g');

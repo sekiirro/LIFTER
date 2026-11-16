@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { admin, anonClient, checked, createStaff } from './harness';
 import { clientContext, graph, sql } from './registration-approval-fixture';
@@ -158,6 +159,10 @@ describe('F19 T031 trainer deletion retention integration', () => {
         p_operation_key: randomUUID(),
       }),
     ) as string;
+
+    await db.begin((tx) =>
+      seedSubmittedIntake(tx, context.wsA.id, seeded.client),
+    );
 
     checked(
       await trainer.client.rpc('save_plan_draft', {
