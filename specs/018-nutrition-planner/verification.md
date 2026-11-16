@@ -145,3 +145,49 @@
 | 19  | `nutrition_global_templates_po_read` policy (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:83-84`)              | Change policy using clause to `true`                                                                    | `Row 19: enforces generic denial on non-PO global template read and write`                                                                                                                     |
 | 20  | `public.create_nutrition_global_template` (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:258,362`)              | Remove PO authorization check                                                                           | `Row 20: enforces generic denial for Sales role across all plan, template, and export surfaces`, `Row 19: enforces generic denial on non-PO global template read and write`                    |
 | 21  | `app_private.f18_guard_plan_version_content` (`supabase/migrations/20261119010000_f18_nutrition_plan_version_contents.sql:22-24`) | Remove `if tg_op <> 'INSERT'` immutability exception                                                    | `Row 21: rejects UPDATE, DELETE, and TRUNCATE on immutable tables and selections`                                                                                                              |
+
+## 4h. S61 T025 slice 2 (partial) verification — nutrition template manager
+
+Scope: the template-manager UI only
+(`components/plans/nutrition/NutritionTemplateManager.tsx`,
+`components/plans/nutrition/NutritionTemplateManager.module.css`,
+`app/(dev)/showcase/f18-template-manager/`). Slice 1 (editor + alternatives,
+PR #178) is not in this slice. **T025 remains unticked**; this section records
+`PARTIAL` evidence for the template-manager clauses only.
+
+- **RED:** `tests/unit/NutritionTemplateManager.test.tsx` created first; `npx
+  vitest run` failed at collection (`Failed to resolve import ...
+  NutritionTemplateManager.tsx`, 1 failed file, no tests).
+- **GREEN:** after the component + CSS + showcase, the suite passes 11/11:
+  PO-approved EN/AR headings with `dir`/`lang`, version isolation via
+  `<bdi dir="ltr">`, active/retired distinction with no Load entry on retired
+  rows (3 Load buttons for 3 active templates in the PO view), load/version/
+  retire/make-global entry points with approved labels, PO-only global
+  controls with the global section hidden from staff (no global read per
+  `nutrition-api.md` §2), PO-only origin provenance masked from staff,
+  `role="status"` loading, error with retry, `noAccess` for Sales/client/
+  unaffiliated roles, EN/AR empty states, and byte-exact EN/AR assertions for
+  every used key. Full unit suite: 282 files / 3,246 tests passed.
+- **Mutation:** removed the `!item.retired` guard in
+  `NutritionTemplateManager.tsx` (retired rows exposed Load actions).
+  KILLED — `lists items with isolated version numbers and active/retired
+  distinction` failed (1 failed / 10 passed; Load count 5, not 3). Restored
+  the file from backup (SHA-256 identical on both sides) and re-ran 11/11.
+- **Design gate:** `app/(dev)/showcase/f18-template-manager/` renders one
+  manager variant per page load (role/status from search params) with static
+  mocks. Matrix `{en,ar} × {light,dark} × {390,1440}` (8 full-page shots) plus
+  Trainer-ready/loading/error and Sales-ready variants (`en-light-1440`,
+  `ar-dark-390`) plus a keyboard-focus shot: 17 screenshots under
+  `C:/Users/NEW LAP/AppData/Local/Temp/f18-tm-shots/`. Axe-core clean on all
+  16 matrix/variant states (0 violations, 0 incomplete); the initial stacked
+  5-manager preview failed `landmark-unique` (five identically named regions)
+  and was refactored to the single-manager production shape before the clean
+  run. Tokens only, no new copy: every string is a byte-exact
+  `nutritionTemplates.*` key on `origin/main` (S28-PO-2) except the
+  non-retired badge, which reuses byte-exact `templates.active` (documented —
+  nutrition has no `nutritionTemplates.active` key); no `{name}`-composed
+  aria-labels (no approved nutrition key exists), so per-item buttons use the
+  approved visible label as their accessible name.
+- **Local gates:** `npm run lint` clean, `npm run typecheck` clean,
+  `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node
+  scripts/format-check-changed.mjs` passed, `npm run format:check` clean.
