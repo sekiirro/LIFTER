@@ -49,20 +49,20 @@ const FOODS: NutritionSnapshotEntry[] = [
 
 function item(): NutritionItem {
   return {
-    id: 'item-a',
+    id: '018f0000-0000-4000-8000-000000000001',
     foodId: 'chicken',
     foodVersion: 1,
     quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
     note: null,
     alternatives: [
       {
-        id: 'alt-1',
+        id: '018f0000-0000-4000-8000-000000000002',
         foodId: 'chicken',
         foodVersion: 1,
         quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
       },
       {
-        id: 'alt-2',
+        id: '018f0000-0000-4000-8000-000000000003',
         foodId: 'rice',
         foodVersion: 1,
         quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
@@ -196,7 +196,7 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
     await render({
       locale: 'en',
       document: documentWithItem(),
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
     });
     const rows = [...container.querySelectorAll('ol li')];
@@ -220,7 +220,7 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
     await render({
       locale: 'en',
       document: documentWithItem(),
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
       onDocumentChange: (next) => changes.push(next),
     });
@@ -237,13 +237,16 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
       changes
         .at(-1)
         ?.meals?.[0]?.items[0]?.alternatives.map((entry) => entry.id),
-    ).toEqual(['alt-2', 'alt-1']);
+    ).toEqual([
+      '018f0000-0000-4000-8000-000000000003',
+      '018f0000-0000-4000-8000-000000000002',
+    ]);
 
     // The host owns the document, so it re-renders with the committed draft.
     await render({
       locale: 'en',
       document: changes.at(-1)!,
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
       onDocumentChange: (next) => changes.push(next),
     });
@@ -255,7 +258,10 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
       changes
         .at(-1)
         ?.meals?.[0]?.items[0]?.alternatives.map((entry) => entry.id),
-    ).toEqual(['alt-1', 'alt-2']);
+    ).toEqual([
+      '018f0000-0000-4000-8000-000000000002',
+      '018f0000-0000-4000-8000-000000000003',
+    ]);
   });
 
   it('adds one alternative with an injected id and refuses a fourth', async () => {
@@ -263,16 +269,16 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
     await render({
       locale: 'en',
       document: documentWithItem(),
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
-      newId: () => 'new-alt',
+      newId: () => '018f0000-0000-4000-8000-000000000005',
       onDocumentChange: (next) => changes.push(next),
     });
     await click(container.querySelector('form button[type="submit"]')!);
     const added = changes.at(-1)?.meals?.[0]?.items[0]?.alternatives;
     expect(added).toHaveLength(3);
     expect(added?.at(-1)).toEqual({
-      id: 'new-alt',
+      id: '018f0000-0000-4000-8000-000000000005',
       foodId: 'chicken',
       foodVersion: 1,
       quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
@@ -284,7 +290,7 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
         item().alternatives[0]!,
         item().alternatives[1]!,
         {
-          id: 'alt-3',
+          id: '018f0000-0000-4000-8000-000000000004',
           foodId: 'chicken',
           foodVersion: 1,
           quantity: { value: '50', unit: { kind: 'basis', value: 'g' } },
@@ -295,7 +301,7 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
     await render({
       locale: 'en',
       document: full,
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
       onDocumentChange: (next) => atLimit.push(next),
     });
@@ -315,7 +321,7 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
     await render({
       locale: 'en',
       document: documentWithItem(),
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
       onDocumentChange: (next) => changes.push(next),
     });
@@ -346,7 +352,7 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
           },
         ],
       }),
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
     });
     const rows = [...container.querySelectorAll('ol li')];
@@ -361,7 +367,7 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
     await render({
       locale: 'en',
       document: documentWithItem(),
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
       onDocumentChange: (next) => changes.push(next),
     });
@@ -380,18 +386,18 @@ describe('nutrition alternatives editor (F18-FR-006, F18-FR-021)', () => {
       changes
         .at(-1)
         ?.meals?.[0]?.items[0]?.alternatives.map((entry) => entry.id),
-    ).toEqual(['alt-1']);
+    ).toEqual(['018f0000-0000-4000-8000-000000000002']);
   });
 
   it('renders Arabic RTL evidence for the alternatives surface', async () => {
     await render({
       locale: 'ar',
       document: documentWithItem(),
-      itemId: 'item-a',
+      itemId: '018f0000-0000-4000-8000-000000000001',
       foods: FOODS,
     });
     const section = container.querySelector(
-      '[data-testid="alternatives-item-a"]',
+      '[data-testid="alternatives-018f0000-0000-4000-8000-000000000001"]',
     );
     expect(section?.getAttribute('dir')).toBe('rtl');
     expect(container.textContent).toContain(ar['nutritionAlternatives.title']);

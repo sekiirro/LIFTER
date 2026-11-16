@@ -21,8 +21,8 @@ describe('F18 T016 nutrition audit allowlist', () => {
     const foodName = 'Chicken breast 200g';
     const denied = await f.trainerA.client.rpc('select_nutrition_alternative', {
       p_plan_version_id: revisionId,
-      p_item_id: foodName,
-      p_alternative_id: 'alternative-audit-denial',
+      p_item_id: '11111111-1111-4111-8111-111111111111',
+      p_alternative_id: foodName,
       p_operation_key: randomUUID(),
     });
     expect(denied.error).toBeNull();
@@ -120,4 +120,32 @@ describe('F18 T016 nutrition audit allowlist', () => {
       db.begin((tx) => tx.savepoint(insertForbidden)),
     ).rejects.toMatchObject({ code: '23514' });
   });
+
+  it.each(['item_id', 'alternative_id'] as const)(
+    'rejects non-UUID %s at the audit table boundary',
+    async (key) => {
+      const insertInvalidId = async (tx: Tx) =>
+        tx`
+          insert into public.audit_events
+            (actor_user_id, action, target_table, target_id, workspace_id, details)
+          values (
+            ${f.trainerA.userId}, 'client.nutrition_select',
+            'client_nutrition_alternative_selections', ${randomUUID()}, ${f.wsA.id},
+            ${tx.json({
+              revision_id: randomUUID(),
+              outcome: 'denied',
+              reason: 'invalid_selection',
+              [key]: `${key}-not-uuid`,
+            })}
+          )
+        `;
+
+      await expect(
+        db.begin((tx) => tx.savepoint(insertInvalidId)),
+      ).rejects.toMatchObject({
+        code: '23514',
+        message: expect.stringContaining('nutrition_audit_id_invalid'),
+      });
+    },
+  );
 });

@@ -243,7 +243,10 @@ describe('F18 T008 SQL app_private.nutrition_compute_values & TS parity', () => 
         dayTypes: DAY_TYPES,
         meals: [
           meal('m-1', [
-            item('i-1', FOOD_F1, 3, '37', { kind: 'basis', value: 'g' }),
+            item('33333333-3333-4333-8333-333333333331', FOOD_F1, 3, '37', {
+              kind: 'basis',
+              value: 'g',
+            }),
           ]),
         ],
         title: null,
@@ -265,9 +268,18 @@ describe('F18 T008 SQL app_private.nutrition_compute_values & TS parity', () => 
         dayTypes: DAY_TYPES,
         meals: [
           meal('m-1', [
-            item('i-1', FOOD_F1, 3, '1.175', { kind: 'basis', value: 'g' }),
-            item('i-2', FOOD_F1, 3, '1.175', { kind: 'basis', value: 'g' }),
-            item('i-3', FOOD_F1, 3, '1.175', { kind: 'basis', value: 'g' }),
+            item('33333333-3333-4333-8333-333333333331', FOOD_F1, 3, '1.175', {
+              kind: 'basis',
+              value: 'g',
+            }),
+            item('33333333-3333-4333-8333-333333333332', FOOD_F1, 3, '1.175', {
+              kind: 'basis',
+              value: 'g',
+            }),
+            item('33333333-3333-4333-8333-333333333333', FOOD_F1, 3, '1.175', {
+              kind: 'basis',
+              value: 'g',
+            }),
           ]),
         ],
         title: null,
@@ -293,7 +305,13 @@ describe('F18 T008 SQL app_private.nutrition_compute_values & TS parity', () => 
             dayTypeId: 'dt-rest',
             meals: [
               meal('m-0', [
-                item('i-0a', FOOD_F1, 3, '100', { kind: 'basis', value: 'g' }),
+                item(
+                  '33333333-3333-4333-8333-333333333334',
+                  FOOD_F1,
+                  3,
+                  '100',
+                  { kind: 'basis', value: 'g' },
+                ),
               ]),
             ],
           },
@@ -304,7 +322,13 @@ describe('F18 T008 SQL app_private.nutrition_compute_values & TS parity', () => 
             dayTypeId: 'dt-train',
             meals: [
               meal('m-3', [
-                item('i-3a', FOOD_F1, 4, '200', { kind: 'basis', value: 'g' }),
+                item(
+                  '33333333-3333-4333-8333-333333333335',
+                  FOOD_F1,
+                  4,
+                  '200',
+                  { kind: 'basis', value: 'g' },
+                ),
               ]),
             ],
           },
@@ -331,27 +355,40 @@ describe('F18 T008 SQL app_private.nutrition_compute_values & TS parity', () => 
         dayTypes: DAY_TYPES,
         meals: [
           meal('m-1', [
-            item('i-basis', FOOD_F3, 1, '100', { kind: 'basis', value: 'g' }),
-            item('i-serving', FOOD_F3, 1, '1.5', {
+            item('33333333-3333-4333-8333-333333333336', FOOD_F3, 1, '100', {
+              kind: 'basis',
+              value: 'g',
+            }),
+            item('33333333-3333-4333-8333-333333333337', FOOD_F3, 1, '1.5', {
               kind: 'serving',
               unitKey: 'g',
             }),
-            item('i-encoded', FOOD_F3, 1, '2', {
+            item('33333333-3333-4333-8333-333333333338', FOOD_F3, 1, '2', {
               kind: 'serving',
               unitKey: '1 cup (240ml)',
             }),
-            item('i-zero', FOOD_F2, 2, '250', { kind: 'basis', value: 'ml' }),
-            item('i-alt', FOOD_F1, 3, '100', { kind: 'basis', value: 'g' }, [
-              {
-                id: 'a-1',
-                foodId: FOOD_F1,
-                foodVersion: 4,
-                quantity: {
-                  value: '150',
-                  unit: { kind: 'basis', value: 'g' },
+            item('33333333-3333-4333-8333-333333333339', FOOD_F2, 2, '250', {
+              kind: 'basis',
+              value: 'ml',
+            }),
+            item(
+              '33333333-3333-4333-8333-333333333340',
+              FOOD_F1,
+              3,
+              '100',
+              { kind: 'basis', value: 'g' },
+              [
+                {
+                  id: '44444444-4444-4444-8444-444444444441',
+                  foodId: FOOD_F1,
+                  foodVersion: 4,
+                  quantity: {
+                    value: '150',
+                    unit: { kind: 'basis', value: 'g' },
+                  },
                 },
-              },
-            ]),
+              ],
+            ),
           ]),
         ],
         title: null,
@@ -362,8 +399,16 @@ describe('F18 T008 SQL app_private.nutrition_compute_values & TS parity', () => 
     expect(await computeInSql(doc, SNAPSHOT_MAP)).toEqual(
       computeDocumentValues(doc, SNAPSHOT_MAP),
     );
-    expect(await computeInSql(doc, SNAPSHOT_MAP, { 'i-alt': 'a-1' })).toEqual(
-      computeDocumentValues(doc, SNAPSHOT_MAP, { 'i-alt': 'a-1' }),
+    expect(
+      await computeInSql(doc, SNAPSHOT_MAP, {
+        '33333333-3333-4333-8333-333333333340':
+          '44444444-4444-4444-8444-444444444441',
+      }),
+    ).toEqual(
+      computeDocumentValues(doc, SNAPSHOT_MAP, {
+        '33333333-3333-4333-8333-333333333340':
+          '44444444-4444-4444-8444-444444444441',
+      }),
     );
   });
 
@@ -375,7 +420,10 @@ describe('F18 T008 SQL app_private.nutrition_compute_values & TS parity', () => 
       dayTypes: DAY_TYPES,
       meals: [
         meal('m-1', [
-          item('i-bad', FOOD_F1, 3, '100', { kind: 'basis', value: 'ml' }),
+          item('33333333-3333-4333-8333-333333333341', FOOD_F1, 3, '100', {
+            kind: 'basis',
+            value: 'ml',
+          }),
         ]),
       ],
       title: null,

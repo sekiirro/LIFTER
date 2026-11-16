@@ -5,7 +5,7 @@
 
 ## 1. Document envelope
 
-The document is the value stored in `nutrition_plan_version_contents.document` (immutable) and in the private draft's nutrition content (mutable). All ids are strings unique within the document. Quantities, targets, computed values and snapshot nutrition/basis values are decimal strings (`"4.5658"`, never a JavaScript number); structural integers (`schemaVersion`, `dayIndex`, item/alternative `foodVersion`, `algorithmVersion`, snapshot `version`) are JSON numbers, as the examples show.
+The document is the value stored in `nutrition_plan_version_contents.document` (immutable) and in the private draft's nutrition content (mutable). All ids are strings unique within the document. Item and alternative ids are canonical lowercase UUIDv4 strings; day-type and meal ids remain strings. Quantities, targets, computed values and snapshot nutrition/basis values are decimal strings (`"4.5658"`, never a JavaScript number); structural integers (`schemaVersion`, `dayIndex`, item/alternative `foodVersion`, `algorithmVersion`, snapshot `version`) are JSON numbers, as the examples show.
 
 ```json
 {
@@ -48,7 +48,7 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
 
 ```json
 {
-  "id": "i-1",
+  "id": "11111111-1111-4111-8111-111111111111",
   "foodId": "uuid",
   "foodVersion": 3,
   "quantity": { "value": "37.5", "unit": { "kind": "basis", "value": "g" | "ml" } | { "kind": "serving", "unitKey": "<serving unit_key>" } },
@@ -61,7 +61,7 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
 
 ```json
 {
-  "id": "a-1",
+  "id": "22222222-2222-4222-8222-222222222221",
   "foodId": "uuid",
   "foodVersion": 2,
   "quantity": {

@@ -100,16 +100,50 @@
   - Dropped `workout_template_assignment_c_workspace_id_global_template__key` (`UNIQUE (workspace_id, global_template_id)`) on `public.workout_template_assignment_copies` -> `tests/integration/workout-assignment-schema.test.ts` failed at line 236 (`AssertionError: promise resolved "undefined" instead of rejecting`), proving duplicate-on-retry succeeds when copy uniqueness is removed.
   - Restored Stack B via `db reset --local` + `tests/integration/client-accounts-provision.mjs` and verified `git diff --exit-code` on the migration is 0.
 
-## F17 Verification — T037 (s60-fl-f17t037 / s60-fl-160b)
+## F17 Verification — T037 (s60-fl-f17t037 / s60-fl-160b / s61-fl-f17t037r)
 
-- **Status**: T037 unticked `[ ]`; traceability PARTIAL ("T037 renderer verified; route pending authorized revision read").
+- **Status**: T037 fully VERIFIED `[x]`; traceability VERIFIED for T037.
 - **Renderer & RTL CSS**: `components/workout-planner/WorkoutPrintView.tsx`, `components/workout-planner/WorkoutPrintView.module.css`, `lib/workout-planner/excel-export.ts`, `tests/unit/workout-print-view.test.tsx`.
 - Reused merged T038 Excel export S58-PO-5 approved column headings and shared formatting helpers (`PRINT_TABLE_COLUMNS`, `formatWorkoutExportLoad`, `formatWorkoutExportReps`, `formatWorkoutExportSetType`, `getWorkoutExportLabels`) without duplicated strings. Full FR-018 field parity, AR RTL print CSS (`table-header-group`, `break-inside: avoid`), and Bidi isolation verified.
-- **RED -> GREEN**: Unit tests in `tests/unit/workout-print-view.test.tsx` (10 tests) failed against unexported columns/labels, then passed cleanly.
+- **Authorized Revision Read & Print Route (s61-fl-f17t037r)**:
+  - Built ONE shared server-side revision read module under existing RLS (S60-R18): `lib/workout-planner/export-reader.ts` (`loadAuthorizedWorkoutExportPayload`).
+  - Implemented print route: `app/api/workouts/print/route.ts` (API route returning the
+    authorized published-only JSON `WorkoutExportPayload` with UI-locale labels) and
+    `app/workouts/print/page.tsx` (Server Component page rendering the printable
+    `WorkoutPrintView` HTML document). The route serves JSON only: `next build`
+    (Next 16.4.3 Turbopack) rejects `react-dom/server` inside `route.ts`, so per the
+    framework's direction the React-rendered print document lives in the page, which
+    Next renders to HTML itself; RTL/lang/field rendering remains proven by
+    `tests/unit/workout-print-view.test.tsx`.
+  - Refactored `app/api/workouts/copy-prompt/route.ts` to consume `loadAuthorizedWorkoutExportPayload` (S60-D2); existing tests in `tests/unit/workout-copy-prompt-route.test.ts` remain 100% green (5/5).
+- **RED -> GREEN (s61-fl-f17t037r, re-executed on the final JSON-route shape)**:
+  - RED: implementation files moved out of tree; unit `tests/unit/workout-print-route.test.ts`
+    fails at import ("no tests"); integration `tests/integration/workout-print-route.test.ts`
+    fails at module load. Files restored byte-identical.
+  - Unit tests: `tests/unit/workout-print-view.test.tsx` (10 tests passed);
+    `tests/unit/workout-print-route.test.ts` (7 tests passed: EN+AR payload with
+    UI-locale labels, no-store/Vary headers, published-ledger-only assertion, generic
+    404 denials, invalid input); `tests/unit/workout-copy-prompt-route.test.ts`
+    (5 tests passed, no behavior change from S60-D2 refactor).
+  - Integration on Stack B (`lifter-stack-b`): `tests/integration/workout-print-route.test.ts`
+    (4 tests passed: authorized 200 EN + AR JSON payload with UI-locale labels and full
+    field set; foreign workspace 404; Sales role 404; real unpublished draft 404 with
+    draft existence proven in `plan_drafts` and absence proven in `plan_revisions`).
+    Regression: `tests/integration/f17-plan-content.test.ts` +
+    `tests/integration/f17-plan-create.test.ts` (8 tests passed).
+  - `npm run build` (Next 16.4.3) compiles both `ƒ /api/workouts/print` and
+    `ƒ /workouts/print`.
 - **Mutations (killed -> restored -> clean diff)**:
-  1. Forcing `dir="ltr"` fails AR RTL assertion (1 failed / 9 passed).
-  2. Removing alternatives column fails FR-018 field assertions (2 failed / 8 passed).
-- **Authorized Revision Read Gap**: Merged codebase does not contain an authorized server-side read of ONE explicitly selected revision into `WorkoutExportPayload` (no staff revision read RPC; no server loader querying `plan_revisions` or calling `buildWorkoutExportPayload`). Per brief ruling S60-R8, T037 remains unticked and traceability is PARTIAL pending authorized revision read implementation.
+  1. Forcing `dir="ltr"` fails AR RTL assertion in `tests/unit/workout-print-view.test.tsx` (1 failed / 9 passed).
+  2. Removing alternatives column fails FR-018 field assertions in `tests/unit/workout-print-view.test.tsx` (2 failed / 8 passed).
+  3. Dropping published-only check in `lib/workout-planner/export-reader.ts` (temporary
+     `plan_drafts` fallback mutant, re-executed on the final head) fails
+     `tests/integration/workout-print-route.test.ts`
+     assertion `denies unpublished draft with generic 404`
+     (`AssertionError: expected 200 to be 404`; other 3 tests still pass); restored with
+     SHA256 equal to the pre-mutation hash
+     (`F0609A2873D816576C62BA02B95619AC7E76AFD694503093E46CF73803FBB496`)
+     and zero `MUTANT-ONLY` residue (new files are untracked, so `git diff` does not apply).
 
 ## S60-R4 Verification — T016/T017 (s60-luna-f17t016)
 
@@ -207,6 +241,57 @@
   - Substituted unavailable rows with the first candidate -> 2/9 failed (never-substitute list assertions).
   - Restored the component from backup, verified byte-identical, re-ran GREEN 9/9.
 - **Design gate**: tokens-only CSS, native label/select/buttons, AR RTL + EN LTR asserted; Playwright/Chromium shots of the real render (component markup + actual module CSS + `tokensToCss`): `en/ar x light/dark x 390/1440` populated + `en/ar` empty + `en` 768 (11 files under the run temp dir). Fixed and re-shot: empty-select 192px artifact (row `flex-basis` became column height; `flex: none` under 600px) and 14px select text (now inherits 16px like `Field` inputs).
+
+## F17 Verification — T047 (s61-fl-f17t047)
+
+- **Branch / stack**: `017-negative-matrix-slice-1` / Stack B (`lifter-stack-b`, API 25421, DB 25422) via `tools/supabase-safe.mjs`. Safe reset was executed on Stack B, followed by `tests/integration/client-accounts-provision.mjs`.
+- **Scope**: Full negative matrix covering all 6 clauses and per-guard mutation kills for every F17 RPC and table on `origin/main` (T047, FR-020, SC-010):
+  1. Foreign-workspace app + RLS: PO sees WS-A and WS-B; WO-A and Trainer-A see WS-A (1) and WS-B (0); Foreign Trainer-B sees WS-B (1) and WS-A (0); Revoked, Sales, Client, and Unaffiliated see 0 rows.
+  2. Direct DML denial & table triggers: anon, authenticated, and service_role have 0 INSERT/UPDATE/DELETE/TRUNCATE privileges on all 9 F17 tables. Immutability triggers enforce 23514 on version mutation, identity deletion, and immutable column tampering; 23514 on ledger mutation and distribution state deletion.
+  3. Sales, client, unaffiliated, revoked denial: all 8 F17 RPCs (`create_workout_global_template`, `version_workout_global_template`, `retire_workout_global_template`, `create_workout_workspace_template`, `version_workout_workspace_template`, `retire_workout_workspace_template`, `f17_add_workout_exercise`, `f17_resolve_workout_exercise_muscles`) reject Sales, client, unaffiliated, and revoked actors with `42501` and zero writes.
+  4. PO-only global and assignment: Non-PO actors receive generic `42501` on global template RPCs and see 0 rows on global template and assignment tables. Anon has no SELECT privilege.
+  5. Replay vs conflict: CAS mismatch rejects with `40001` `stale_version`; retired templates reject versioning with `42501`; exact idempotency replay returns identical receipt; conflicting parameters under same key triggers `23505` `key_conflict`; replay re-authorization check fails revoked actors with `42501`.
+  6. Indistinguishable denials & rest-day rejection: querying non-existent vs foreign target returns 0 rows in RLS; calling RPCs on non-existent vs foreign targets returns identical generic `42501` `not_permitted`; adding exercise to rest day is rejected with `23514` `invalid_document` and leaves draft version and content unchanged.
+- **TDD Evidence**:
+  - **RED**: Initial implementation of `tests/integration/workout-negative-matrix.test.ts` on Stack B executed with 3 failed / 9 passed (exit 1), exposing column key mapping, savepoint error handling, and trigger error code assertions.
+  - **GREEN**: All 16 tests in `tests/integration/workout-negative-matrix.test.ts` passed (100% clean). Appended catalog block in `tests/integration/rls-catalog.test.ts` passed 44/44.
+- **Per-guard Kill Table**:
+
+| ID  | Guard / Target                                                         | Mutation applied                                                                                | Test Row / Detector                                                             | Observed RED (Mutant Killed)                                                         | Restored GREEN                                 |
+| --- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| M01 | RLS `workout_global_templates_po_read`                                 | `alter policy ... using (true)`                                                                 | `asActor(trainerA, select count(*) from workout_global_templates)`              | Count returned 1 instead of 0                                                        | Count returned 0                               |
+| M02 | RLS `workout_workspace_templates_staff_read`                           | `alter policy ... using (true)`                                                                 | `asActor(trainerB, select count(*) from workout_workspace_templates where wsA)` | Count returned 1 instead of 0                                                        | Count returned 0                               |
+| M03 | RLS `workout_template_assignment_runs_po_read`                         | `alter policy ... using (true)`                                                                 | `asActor(trainerA, select count(*) from workout_template_assignment_runs)`      | Count returned 1 instead of 0                                                        | Count returned 0                               |
+| M04 | Direct DML Denial                                                      | `grant insert on workout_global_templates to authenticated`                                     | `has_table_privilege('authenticated', 'workout_global_templates', 'INSERT')`    | Returned `true` instead of `false`                                                   | Returned `false`                               |
+| M05 | Trigger `workout_global_template_versions_immutable`                   | `disable trigger ...`                                                                           | `update workout_global_template_versions set title = 'Tampered'`                | Update succeeded without error                                                       | Threw `23514` (`template_version_immutable`)   |
+| M06 | Trigger `workout_global_templates_no_delete`                           | `disable trigger ...`                                                                           | `delete from workout_global_templates where id = freshId`                       | Delete succeeded without error                                                       | Threw `23514` (`template_identity_immutable`)  |
+| M07 | Trigger `workout_template_assignment_runs_immutable`                   | `disable trigger ...`                                                                           | `update workout_template_assignment_runs set assigned_workspace_count = 999`    | Update succeeded without error                                                       | Threw `23514` (`assignment_ledger_immutable`)  |
+| M08 | Trigger `workout_template_distribution_state_guard_update`             | `disable trigger ...`                                                                           | `delete from workout_template_distribution_state`                               | Delete succeeded without error                                                       | Threw `23514` (`distribution_state_immutable`) |
+| M09 | Trigger `f17_guard_workout_draft_references`                           | `disable trigger ...`                                                                           | `update plan_drafts set content = foreignPrivRefDoc`                            | Update succeeded without error                                                       | Threw `42501` (`not_permitted`)                |
+| M10 | Trigger `f17_guard_workout_revision_references`                        | `disable trigger ...`                                                                           | `insert into plan_revisions values (..., foreignPrivRefDoc, ...)`               | Insert succeeded without error                                                       | Threw `42501` (`not_permitted`)                |
+| M11 | RPC `create_workout_global_template` PO Check                          | Replace `not app_private.is_platform_owner()` with `false`                                      | `asActor(trainerA, create_workout_global_template(...))`                        | Call succeeded and returned template_id                                              | Threw `42501` (`not_permitted`)                |
+| M12 | RPC `create_workout_global_template` Private Ref Refusal               | Replace `f17_workout_has_private_reference(p_document)` with `false`                            | `create_workout_global_template(..., validPrivateRefDoc)`                       | Call succeeded and returned template_id                                              | Threw `22023` (`invalid_workout_template`)     |
+| M13 | RPC `create_workout_workspace_template` Tenancy Check                  | Replace `has_workspace_access(p_workspace_id, 'coaching_work')` with `true`                     | `asActor(trainerB, create_workout_workspace_template(wsA.id, ...))`             | Call succeeded and returned template_id                                              | Threw `42501` (`not_permitted`)                |
+| M14 | RPC `create_workout_workspace_template` Foreign Private Ref Refusal    | Replace `f17_workout_has_foreign_private_reference` with `false`                                | `create_workout_workspace_template(wsA.id, ..., validForeignPrivRefDoc)`        | Call succeeded and returned template_id                                              | Threw `22023` (`invalid_workout_template`)     |
+| M15 | RPC `version_workout_workspace_template` CAS Version Check             | Replace `if root.current_version <> p_expected_version` with `null;`                            | `version_workout_workspace_template(wsA.id, wsATemplateId, 999, ...)`           | Call succeeded with stale expected version                                           | Threw `40001` (`stale_version`)                |
+| M16 | RPC `version_workout_workspace_template` Active State Check            | Replace `if root.lifecycle_state <> 'active'` with `null;`                                      | `version_workout_workspace_template` on retired template                        | Call succeeded on retired template                                                   | Threw `42501` (`not_permitted`)                |
+| M17 | RPC `f17_add_workout_exercise` Coaching Role Check                     | Replace coaching capability check with `null;`                                                  | `asActor(salesA, f17_add_workout_exercise(...))`                                | Reached past role check into workspace validation                                    | Threw `42501` (`not_permitted` at line 54)     |
+| M18 | RPC `f17_add_workout_exercise` Rest-Day Rejection Check                | Remove `v_day_kind is distinct from 'session'` check                                            | `f17_add_workout_exercise(planIdA, restDayIdA, ...)`                            | Call succeeded and added item to rest day                                            | Threw `23514` (`invalid_document`)             |
+| M19 | RPC `f17_add_workout_exercise` Foreign Private Exercise Check          | Replace `where e.workspace_id = root.workspace_id` with `where e.workspace_id = e.workspace_id` | `f17_add_workout_exercise(..., 'workspace_private', wsBExId, ...)`              | Bypassed table lookup filter (reached `catalog_effective_workspace_exercise_fields`) | Threw `42501` (`not_permitted` at line 180)    |
+| M20 | RPC `f17_add_workout_exercise` CAS Draft Version Check                 | Replace `if draft.draft_version <> p_expected_draft_version` with `null;`                       | `f17_add_workout_exercise(..., 999, ...)`                                       | Call succeeded with stale draft version                                              | Threw `40001` (`stale_version`)                |
+| M21 | RPC `f17_resolve_workout_exercise_muscles` Workspace Access Check      | Replace `not app_private.has_workspace_access` with `false`                                     | `asActor(trainerB, f17_resolve_workout_exercise_muscles(wsA.id, ...))`          | Call succeeded and returned muscle data                                              | Threw `42501` (`not_permitted`)                |
+| M22 | RPC `f17_resolve_workout_exercise_muscles` Foreign Private Ref Tenancy | Replace `v_ref_workspace_id is distinct from p_workspace_id::text` with `null;`                 | `f17_resolve_workout_exercise_muscles(wsA.id, foreign wsB ref)`                 | Call succeeded and returned muscle data                                              | Threw `42501` (`not_permitted`)                |
+
+- **RLS Catalog Update**: Appended minimal verification in `tests/integration/rls-catalog.test.ts` for `app_private.f17_workout_operation_keys` (forced RLS, zero client-role DML privileges) and narrow execute privileges for `public.f17_add_workout_exercise` and `public.f17_resolve_workout_exercise_muscles` (owner postgres, authenticated EXECUTE true, anon/service_role false, search_path="").
+
+## F17 Verification — T050 performance benchmark and cap decision (s61-luna-f17t050)
+
+- **Branch / stack**: `017-perf-benchmark-slice-1` / Stack D (`lifter-stack-d`; API 45421, DB 45422). Stack D was reset through the approved safe wrapper and `tests/integration/client-accounts-provision.mjs` ran afterward. No migration was added.
+- **Benchmark**: 20 serial `save_plan_draft` RPC samples per document. On the final run, the 7-day/40-exercise plan measured 8,471 stored JSONB bytes and 21.9 ms p95. The benchmark searched the accepted boundary through persisted JSONB and measured exactly 524,288 bytes at 89.0 ms p95. The next candidate stored 524,294 bytes and was rejected. Both p95s meet the unchanged 300 ms target.
+- **Cap decision**: evidence supports keeping the existing 512 KiB cap. No new threshold was introduced, and no product decision is pending.
+- **RED / GREEN**: the first boundary attempt exposed that estimating size before the PostgREST round trip did not identify the actual stored-byte maximum. The benchmark was changed to find the boundary with Stack D saves and read the persisted JSONB byte count. Final touched integration run: `f17-plan-performance.test.ts`, `f17-plan-create.test.ts`, and `f17-plan-content.test.ts` passed, 3 files / 9 tests.
+- **Mutation**: a temporary in-range migration removed the document-size check, then Stack D was reset/provisioned. The benchmark failed because the over-cap document was accepted. The mutant was deleted, Stack D reset/provisioned again, and final integration GREEN passed. The four metric guards also have unit mutations for typical-plan p95, maximum-document p95, maximum stored bytes, and over-cap rejection; each invalid measurement throws and all 5 guard tests pass.
+- **Local CI-equivalent on final diff**: `npm run lint`, `npm run typecheck`, `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node scripts/format-check-changed.mjs`, `npm run format:check`, and full `npm run test:unit` passed (284 files / 3,255 tests). Touched Stack D integration suites passed as above.
 
 ## F17 Verification — T041 (s61-fl-f17t041)
 
