@@ -462,6 +462,8 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_template_private_fields',
           'f18_guard_nutrition_selection',
           'f18_audit_allowlist_guard',
+          'f19_guard_plan_revision_contributors',
+          'f19_track_plan_draft_contributor',
         ]),
       ].sort(),
     );
@@ -586,6 +588,8 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_template_write_audit',
           'f17_reject_assignment_ledger_mutation',
           'f17_guard_distribution_state_update',
+          'f19_guard_plan_revision_contributors',
+          'f19_track_plan_draft_contributor',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -774,6 +778,8 @@ describe('tenancy security catalog (T007)', () => {
               'nutrition_template_private_fields',
               'f18_guard_nutrition_selection',
               'f18_audit_allowlist_guard',
+              'f19_guard_plan_revision_contributors',
+              'f19_track_plan_draft_contributor',
             ].includes(row.proname)),
       );
     }
@@ -2055,6 +2061,54 @@ describe('F17 T014 assignment ledgers and distribution state catalog', () => {
       expect(fn, sig).toMatchObject({
         owner: 'postgres',
         authenticated: false,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
+  });
+});
+
+describe('F17 T031 / T047 workout operation keys and RPC catalog', () => {
+  it('forces RLS, revokes direct DML on operation keys, and verifies narrow RPC execution', async () => {
+    const rel = 'app_private.f17_workout_operation_keys';
+    const [row] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid = ${rel}::regclass`;
+    expect(row, rel).toEqual({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+    });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const priv of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] =
+          await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+        expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+      }
+    }
+
+    const fns = [
+      'public.f17_add_workout_exercise(uuid,uuid,text,uuid,bigint,uuid,uuid)',
+      'public.f17_resolve_workout_exercise_muscles(uuid,jsonb)',
+    ];
+    for (const sig of fns) {
+      const [fn] = await db`select p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        owner: 'postgres',
+        authenticated: true,
         anon: false,
         service_role: false,
       });

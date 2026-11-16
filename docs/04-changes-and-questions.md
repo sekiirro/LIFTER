@@ -1612,3 +1612,16 @@ LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from ot
 ```
 
 Architect mapping S56-R7 (not PO words): no feature-flag mechanism is built; unfinished features merge without a flag; no task or slice waits for a flag; the topic is tracked as a pre-production readiness item. Security, RLS, authorization, tests, CI gates and every other safeguard stay as they are.
+
+### S61-PO-1 - PO words, verbatim
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s61-po/s61-po-1.verbatim.txt`; SHA-256 `0328e852487fa5947738ae83782bb11e440e9898fdefaa083b652dd08f9127fe`.
+
+<!-- prettier-ignore -->
+```text
+Amend Constitution 1.17.0: One green CI per exact PR head is sufficient. Moving main alone must not trigger reruns.
+
+Also Don't respect constitution and use the roster's 10 as I said
+```
+
+Architect mapping S61-R12 (not PO words; C:/Users/NEW LAP/.lifter/runs/s61-arch/s61-architect-rulings.md): (1) Constitution amendment 1.17.0→1.18.0: one successful full CI attempt per exact PR head is sufficient; a main advance alone triggers no rerun or tree comparison; a new head still needs a new green; MERGEABLE (not CONFLICTING) is still required at merge. PO direction is applied operationally NOW; constitution text changes when the amendment PR merges on the PO's explicit `merge #N at <sha>`. (2) Concurrency = roster 10 agents, overriding the constitution's 9 by PO direction. The 5-PR-writer limit is not addressed by PO-1 and stays in force pending the PO's answer (S61-R6 updated).

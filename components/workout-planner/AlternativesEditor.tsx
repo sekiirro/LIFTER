@@ -1,3 +1,5 @@
+'use client';
+
 import { useId, useState } from 'react';
 import { dirFor, type Locale } from '../../lib/design/preferences';
 import { getMessages, type Messages } from '../../lib/i18n';
