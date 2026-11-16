@@ -170,6 +170,11 @@ export const ar = {
   'workout.volume.secondary': 'ثانوية (×0.5)',
   'workout.volume.warmupNotCounted': 'مجموعات الإحماء مش بتتحسب',
   'workout.volume.empty': 'لسه مفيش مجموعات أساسية',
+  // S61-PO-3: planner draft/publish bar copy (approved byte-exact).
+  'planner.allSaved': 'كل التعديلات اتحفظت',
+  'planner.saveAsDraft': 'احفظ كمسودة',
+  'planner.readyPublish': 'جاهز وانشر',
+  'planner.publishing': 'جاري النشر…',
   'templates.listTitle': 'القوالب المتاحة',
   'templates.globalScope': 'عام',
   'templates.ownScope': 'قوالبي',

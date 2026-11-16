@@ -370,6 +370,10 @@ cells are stored as text.
 - No FR, SC, acceptance criteria, or plan design text changed; existing analysis remains applicable.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
+## S60 T019 Date Update (2026-11-16)
+
+- T019 task status and traceability cite Stack C CAS, invalid rest-day rejection, no-op autosave and mutation evidence in `verification.md`.
+
 ## T025 Date Update (2026-11-16)
 
 - T025 task status and FR-010/FR-011 plus SC-003/SC-004 traceability now cite Stack D RPC and RED/GREEN/mutation evidence in `verification.md`.

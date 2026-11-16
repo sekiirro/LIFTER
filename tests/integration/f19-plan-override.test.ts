@@ -5,6 +5,7 @@ import { graph, sql } from './registration-approval-fixture';
 import type { Context } from './registration-approval-fixture';
 import { checked, issue } from './registration-links-fixture';
 import { admin, createStaff } from './harness';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 
 let db: ReturnType<typeof sql>;
 let mutationOriginal: { definition: string; hash: string } | undefined;
@@ -140,6 +141,8 @@ async function deliver(
     kind === 'nutrition'
       ? 'publish_nutrition_revision'
       : 'ready_and_publish_plan';
+  if (kind === 'workout')
+    await db.begin((tx) => seedSubmittedIntake(tx, context.wsA.id, clientId));
   const published = await context.trainerA.client.rpc(rpcName, {
     p_plan_id: created.data,
     p_expected_draft_version: 1,

@@ -63,6 +63,7 @@ export type ReadyAndPublishRequest = {
 export type PlanOperationError =
   | { status: 'not_permitted' }
   | { status: 'invalid_input' }
+  | { status: 'invalid_document' }
   | { status: 'stale_version' }
   | { status: 'key_conflict' }
   | { status: 'unavailable' };
@@ -87,6 +88,8 @@ export function mapPlanRpcError(error: unknown): PlanOperationError {
   if (code === '42501') return { status: 'not_permitted' };
   if (code === '22023' && message === 'invalid_input')
     return { status: 'invalid_input' };
+  if (code === '23514' && message === 'invalid_workout_document')
+    return { status: 'invalid_document' };
   if (code === '40001' && message === 'stale_version')
     return { status: 'stale_version' };
   if (code === '23505' && message === 'key_conflict')
