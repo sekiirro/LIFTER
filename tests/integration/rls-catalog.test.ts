@@ -465,6 +465,8 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_template_private_fields',
           'f18_guard_nutrition_selection',
           'f18_audit_allowlist_guard',
+          'f19_guard_plan_revision_contributors',
+          'f19_track_plan_draft_contributor',
         ]),
       ].sort(),
     );
@@ -594,6 +596,8 @@ describe('tenancy security catalog (T007)', () => {
           'f18_guard_nutrition_document_ids',
           'f18_is_canonical_uuid_v4',
           'f18_invalid_uuid_alias',
+          'f19_guard_plan_revision_contributors',
+          'f19_track_plan_draft_contributor',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -785,6 +789,8 @@ describe('tenancy security catalog (T007)', () => {
               'f18_guard_nutrition_document_ids',
               'f18_is_canonical_uuid_v4',
               'f18_invalid_uuid_alias',
+              'f19_guard_plan_revision_contributors',
+              'f19_track_plan_draft_contributor',
             ].includes(row.proname)),
       );
     }
