@@ -33,6 +33,7 @@ export type CreateWorkoutPlanResult =
       status:
         | 'not_permitted'
         | 'invalid_input'
+        | 'invalid_document'
         | 'stale_version'
         | 'key_conflict'
         | 'unavailable';
