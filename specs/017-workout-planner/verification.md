@@ -250,6 +250,15 @@
 
 - **RLS Catalog Update**: Appended minimal verification in `tests/integration/rls-catalog.test.ts` for `app_private.f17_workout_operation_keys` (forced RLS, zero client-role DML privileges) and narrow execute privileges for `public.f17_add_workout_exercise` and `public.f17_resolve_workout_exercise_muscles` (owner postgres, authenticated EXECUTE true, anon/service_role false, search_path="").
 
+## F17 Verification — T050 performance benchmark and cap decision (s61-luna-f17t050)
+
+- **Branch / stack**: `017-perf-benchmark-slice-1` / Stack D (`lifter-stack-d`; API 45421, DB 45422). Stack D was reset through the approved safe wrapper and `tests/integration/client-accounts-provision.mjs` ran afterward. No migration was added.
+- **Benchmark**: 20 serial `save_plan_draft` RPC samples per document. On the final run, the 7-day/40-exercise plan measured 8,471 stored JSONB bytes and 21.9 ms p95. The benchmark searched the accepted boundary through persisted JSONB and measured exactly 524,288 bytes at 89.0 ms p95. The next candidate stored 524,294 bytes and was rejected. Both p95s meet the unchanged 300 ms target.
+- **Cap decision**: evidence supports keeping the existing 512 KiB cap. No new threshold was introduced, and no product decision is pending.
+- **RED / GREEN**: the first boundary attempt exposed that estimating size before the PostgREST round trip did not identify the actual stored-byte maximum. The benchmark was changed to find the boundary with Stack D saves and read the persisted JSONB byte count. Final touched integration run: `f17-plan-performance.test.ts`, `f17-plan-create.test.ts`, and `f17-plan-content.test.ts` passed, 3 files / 9 tests.
+- **Mutation**: a temporary in-range migration removed the document-size check, then Stack D was reset/provisioned. The benchmark failed because the over-cap document was accepted. The mutant was deleted, Stack D reset/provisioned again, and final integration GREEN passed. The four metric guards also have unit mutations for typical-plan p95, maximum-document p95, maximum stored bytes, and over-cap rejection; each invalid measurement throws and all 5 guard tests pass.
+- **Local CI-equivalent on final diff**: `npm run lint`, `npm run typecheck`, `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node scripts/format-check-changed.mjs`, `npm run format:check`, and full `npm run test:unit` passed (284 files / 3,255 tests). Touched Stack D integration suites passed as above.
+
 ## F17 Verification — T041 (s61-fl-f17t041)
 
 - **Branch / stack**: `017-export-goldens-slice-1` (stacked on PR #160 `origin/017-pdf-print-slice-1`) / no DB stack (renderer goldens).

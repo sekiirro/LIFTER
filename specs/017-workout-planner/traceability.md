@@ -60,7 +60,7 @@
 | SC-010 | T001, T014, T016, T017, T026, T047, T049 | Negative matrix, retries, concurrency | tests/unit/workout-authorization.test.ts + tests/integration/workout-templates-schema.test.ts + tests/integration/workout-assignment-schema.test.ts + rls-catalog.test.ts + verification.md + tests/integration/workout-rls-grants.test.ts (all eight F17 policy/grant checks) + tests/integration/workout-negative-matrix.test.ts + verification.md (T047 full 6-clause negative matrix & 21 per-guard mutation kills) | PARTIAL (T001 + T014 + T016/T017 all eight policies/grants verified; T047 partial; T026/T049 remain open) |
 | SC-012 | T002, T003, T019, T043, T048 | Rejection, unchanged draft and source-item preservation for rest-day add/move; 1,000-op property | tests/unit/workout-id-remap.test.ts::load-variant round-trip + fresh-id coverage; tests/unit/workout-document-property.test.ts (T048; verification/t048-property-test.md); tests/unit/plan-draft-write.test.ts::rejects add/move before RPC; tests/integration/f17-plan-draft-write.test.ts::rejected add/move preserve draft version/content/source item and write no operation receipt | PARTIAL (T002/T003/T019/T048 verified; T043 UI open) |
 | SC-013 | T041, T045, T052 | AR/EN/a11y/approved copy | tests/unit/workout-export-goldens.test.tsx::T041 AR RTL and EN LTR layout goldens, S58-PO-5 approved labels, authored text preserved, exercise names English, byte-exact prompt | PARTIAL (T041 renderers verified; T045/T052 UI open) |
-| SC-014 | T050, T051 | Re-benchmark; no historical number | none | PLANNED |
+| SC-014 | T050, T051 | Fresh Stack D p95 and stored-byte benchmark; no historical number reused | `tests/integration/f17-plan-performance.test.ts` + `tests/unit/workout-performance-benchmark.test.ts` + `verification.md::T050` | VERIFIED (T050); T051 remains open |
 | SC-015 | T022 | Contributor set | none | PLANNED |
 <!-- prettier-ignore-end -->
 
@@ -68,7 +68,9 @@
 
 - RED/GREEN and disabled-check/FK mutation evidence: [verification.md](verification.md).
 - T016/T017 are ticked after the S60 negative matrix and touched integration suites passed. All eight F17 policy predicates were removed one at a time; each produced a failed negative-matrix assertion, then the exact predicate was restored and verified. Direct authenticated INSERT and widened anon EXECUTE mutants each failed the T017 denial/catalog tests and were revoked.
-- T015 enforces the historical 512 KiB guard provisionally; SC-014 remains unbenchmarked and open.
+- T015's 512 KiB guard is supported by the fresh T050 Stack D benchmark and remains unchanged; T051's release-gate work remains open.
+
+**T050 (FR-022/SC-014)** was re-benchmarked on Stack D with 20 serial `save_plan_draft` RPC samples per document after safe reset and fixture provisioning. The 7-day/40-exercise document was 8,471 stored JSONB bytes with 21.9 ms p95. The largest accepted document was exactly 524,288 stored bytes with 89.0 ms p95; a 524,294-byte next candidate was rejected. Both p95 measurements pass the unchanged 300 ms target. The measurements support retaining the existing 512 KiB cap; no migration or cap change was needed. `tests/unit/workout-performance-benchmark.test.ts` independently violates each of the four benchmark assertions (typical p95, maximum p95, maximum bytes, and over-cap rejection) and verifies each violation fails the gate. Removing the database size guard also made the integration benchmark fail at the over-cap rejection assertion; the mutant was removed and Stack D reset/provisioned before final GREEN. Full details and local-gate results are in `verification.md` (T050).
 
 ## Slice evidence — T031 (`017-add-exercise-slice-1`)
 
