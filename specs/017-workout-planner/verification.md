@@ -100,16 +100,50 @@
   - Dropped `workout_template_assignment_c_workspace_id_global_template__key` (`UNIQUE (workspace_id, global_template_id)`) on `public.workout_template_assignment_copies` -> `tests/integration/workout-assignment-schema.test.ts` failed at line 236 (`AssertionError: promise resolved "undefined" instead of rejecting`), proving duplicate-on-retry succeeds when copy uniqueness is removed.
   - Restored Stack B via `db reset --local` + `tests/integration/client-accounts-provision.mjs` and verified `git diff --exit-code` on the migration is 0.
 
-## F17 Verification — T037 (s60-fl-f17t037 / s60-fl-160b)
+## F17 Verification — T037 (s60-fl-f17t037 / s60-fl-160b / s61-fl-f17t037r)
 
-- **Status**: T037 unticked `[ ]`; traceability PARTIAL ("T037 renderer verified; route pending authorized revision read").
+- **Status**: T037 fully VERIFIED `[x]`; traceability VERIFIED for T037.
 - **Renderer & RTL CSS**: `components/workout-planner/WorkoutPrintView.tsx`, `components/workout-planner/WorkoutPrintView.module.css`, `lib/workout-planner/excel-export.ts`, `tests/unit/workout-print-view.test.tsx`.
 - Reused merged T038 Excel export S58-PO-5 approved column headings and shared formatting helpers (`PRINT_TABLE_COLUMNS`, `formatWorkoutExportLoad`, `formatWorkoutExportReps`, `formatWorkoutExportSetType`, `getWorkoutExportLabels`) without duplicated strings. Full FR-018 field parity, AR RTL print CSS (`table-header-group`, `break-inside: avoid`), and Bidi isolation verified.
-- **RED -> GREEN**: Unit tests in `tests/unit/workout-print-view.test.tsx` (10 tests) failed against unexported columns/labels, then passed cleanly.
+- **Authorized Revision Read & Print Route (s61-fl-f17t037r)**:
+  - Built ONE shared server-side revision read module under existing RLS (S60-R18): `lib/workout-planner/export-reader.ts` (`loadAuthorizedWorkoutExportPayload`).
+  - Implemented print route: `app/api/workouts/print/route.ts` (API route returning the
+    authorized published-only JSON `WorkoutExportPayload` with UI-locale labels) and
+    `app/workouts/print/page.tsx` (Server Component page rendering the printable
+    `WorkoutPrintView` HTML document). The route serves JSON only: `next build`
+    (Next 16.4.3 Turbopack) rejects `react-dom/server` inside `route.ts`, so per the
+    framework's direction the React-rendered print document lives in the page, which
+    Next renders to HTML itself; RTL/lang/field rendering remains proven by
+    `tests/unit/workout-print-view.test.tsx`.
+  - Refactored `app/api/workouts/copy-prompt/route.ts` to consume `loadAuthorizedWorkoutExportPayload` (S60-D2); existing tests in `tests/unit/workout-copy-prompt-route.test.ts` remain 100% green (5/5).
+- **RED -> GREEN (s61-fl-f17t037r, re-executed on the final JSON-route shape)**:
+  - RED: implementation files moved out of tree; unit `tests/unit/workout-print-route.test.ts`
+    fails at import ("no tests"); integration `tests/integration/workout-print-route.test.ts`
+    fails at module load. Files restored byte-identical.
+  - Unit tests: `tests/unit/workout-print-view.test.tsx` (10 tests passed);
+    `tests/unit/workout-print-route.test.ts` (7 tests passed: EN+AR payload with
+    UI-locale labels, no-store/Vary headers, published-ledger-only assertion, generic
+    404 denials, invalid input); `tests/unit/workout-copy-prompt-route.test.ts`
+    (5 tests passed, no behavior change from S60-D2 refactor).
+  - Integration on Stack B (`lifter-stack-b`): `tests/integration/workout-print-route.test.ts`
+    (4 tests passed: authorized 200 EN + AR JSON payload with UI-locale labels and full
+    field set; foreign workspace 404; Sales role 404; real unpublished draft 404 with
+    draft existence proven in `plan_drafts` and absence proven in `plan_revisions`).
+    Regression: `tests/integration/f17-plan-content.test.ts` +
+    `tests/integration/f17-plan-create.test.ts` (8 tests passed).
+  - `npm run build` (Next 16.4.3) compiles both `ƒ /api/workouts/print` and
+    `ƒ /workouts/print`.
 - **Mutations (killed -> restored -> clean diff)**:
-  1. Forcing `dir="ltr"` fails AR RTL assertion (1 failed / 9 passed).
-  2. Removing alternatives column fails FR-018 field assertions (2 failed / 8 passed).
-- **Authorized Revision Read Gap**: Merged codebase does not contain an authorized server-side read of ONE explicitly selected revision into `WorkoutExportPayload` (no staff revision read RPC; no server loader querying `plan_revisions` or calling `buildWorkoutExportPayload`). Per brief ruling S60-R8, T037 remains unticked and traceability is PARTIAL pending authorized revision read implementation.
+  1. Forcing `dir="ltr"` fails AR RTL assertion in `tests/unit/workout-print-view.test.tsx` (1 failed / 9 passed).
+  2. Removing alternatives column fails FR-018 field assertions in `tests/unit/workout-print-view.test.tsx` (2 failed / 8 passed).
+  3. Dropping published-only check in `lib/workout-planner/export-reader.ts` (temporary
+     `plan_drafts` fallback mutant, re-executed on the final head) fails
+     `tests/integration/workout-print-route.test.ts`
+     assertion `denies unpublished draft with generic 404`
+     (`AssertionError: expected 200 to be 404`; other 3 tests still pass); restored with
+     SHA256 equal to the pre-mutation hash
+     (`F0609A2873D816576C62BA02B95619AC7E76AFD694503093E46CF73803FBB496`)
+     and zero `MUTANT-ONLY` residue (new files are untracked, so `git diff` does not apply).
 
 ## S60-R4 Verification — T016/T017 (s60-luna-f17t016)
 
