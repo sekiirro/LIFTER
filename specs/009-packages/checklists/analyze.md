@@ -295,3 +295,10 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 - PASS: FR-028, T065, review.md and the contract agree on the deletable definition and the NULL/empty input rules.
 - PASS: this Analyze follows the latest spec, plan and task edits. 0 CRITICAL, 0 HIGH. T064b remains unticked pending the independent re-review verdict; T065 unticked pending CI evidence.
+
+## 2026-11-16 Analyze (task ticks and review record, no requirement change)
+
+**Analyzed:** 2026-11-16. T052, T053, T058, T064, T064a and T064b ticked from exact-head CI evidence (PR #174 head 6073d263); review.md records the independent reviews and the closure of T064b. No FR, SC, acceptance scenario or plan design text changed.
+
+- PASS: tick evidence matches executed CI; T059, T062, T065, T070, T075 and T076 stay unticked with their blockers recorded (provider terms of use unverified; T070 conditions not re-reviewed; T076 retirement contract missing).
+- Findings: 0 open CRITICAL, 0 open HIGH. **No open ambiguities** beyond the recorded architect parameters (FX_SETTLE_DAYS, rate bounds).

@@ -2,7 +2,7 @@
 
 **Task**: T064b (GitHub #137). **FR/SC**: FR-028, FR-006, FR-022, SC-019. **Scope**: design and review evidence only. No deletion, migration or data change is implemented or authorized by this document.
 
-**Gate status: DESIGN AUTHORED; INDEPENDENT SECURITY REVIEW REQUESTED / PENDING. The gate has NOT passed.** Independent review #1 (2026-11-16) returned PASS-WITH-CONDITIONS (blocking); the conditions are folded in below and a short independent re-review is pending (section 8). The author of this design cannot certify it. T065 MUST NOT implement any deletion until an independent reviewer (a fresh agent or the architect, not the author) records a PASS below. T064b stays unticked.
+**Gate status: PASSED WITH RECORDED CONDITIONS (2026-11-16).** Three independent reviews are recorded in section 9: review #1 (commit 587bdf8d), the re-review (commit a045b184) and the T064b closure review (commit 0496d898). Every condition they raised is implemented and exact-head CI is green on PR #174 head 6073d263. The ordering exception is recorded honestly: T065's script was implemented before this PASS was recorded, contrary to the original wording of this gate; it has not been run against any stack.
 
 ## 1. Facts from the installed schema (verified in the repository; corrected after independent review #1)
 
@@ -56,7 +56,7 @@ PO words, verbatim: `Teardown Q1=A, Q2=A, Q3=A` (recorded in `docs/04-changes-an
 
 These decisions do not by themselves authorize any deletion. T065 waits for the independent re-review PASS.
 
-## 6. Independent security review: REQUESTED / PENDING
+## 6. Independent security review: PASSED WITH RECORDED CONDITIONS (see section 9)
 
 Reviewer for the re-review: **not yet assigned** (must be a separate independent agent or the architect, not the author of this design). Review #1 is summarized in section 8.
 
@@ -74,7 +74,7 @@ Checklist the reviewer must complete, citing evidence for each line:
 - [ ] Refusal/escalation leaves the stack unchanged and leaks no row data.
 - [ ] T065 test plan covers: clean mock deletes atomically; each dependency category refuses with zero writes; non-synthetic refuses; unknown table refuses; mid-run failure rolls back and guards remain enabled; foreign-workspace row untouched; Sales/WO/PO/anon cannot invoke; truncate and delete guards still reject after the run.
 
-Result: **PENDING**. When the reviewer finishes, replace this line with `PASS` or `FAIL`, the reviewer identity, date, reviewed commit SHA and findings, then (and only then) tick T064b in `tasks.md` with a reference to this record.
+Result: **PASS (conditions satisfied)**. See section 9 for reviewer identities, reviewed commits and findings.
 
 ## 7. T076 note (FR-023 retirement contract gap)
 
@@ -106,3 +106,15 @@ T065 test plan (integration tests against the real database, operator script exe
 ### Round 2 (independent review of N1-N6 and T065)
 
 Folded in: stale T065/c5-evidence wording removed; stack identity (B1); search_path, timeouts, run/review format, exact workspace equality, extended function hashes, FK RESTRICT and constraint-hash assertions and the other-column check (B3, controls 1-3, 7-8 above). Tests added: N5 unknown nested table, `caller_cannot_see_rows` and the named exception column (preflight tests); per-category dependent refusals (registration link, financial audit row, and client/subscription/renewal/subscription_upgrades rows built with FK checks off where the owner may set the replication role), a concurrent dependent insert blocked by the EXCLUSIVE lock plus a no-LOCK mutant that is not blocked, a replica refusal that also runs as a mutation so it cannot pass vacuously, and mutation checks for delete scoping, `non_target_rows_changed`, `targets_remain`, the audit event count and the current-version update. T064b and T070 verdicts are recorded by the independent reviewers, not here.
+
+## 9. Review record and closure (2026-11-16)
+
+| Review                         | Reviewer identity                                          | Reviewed commit | Verdict                                            |
+| ------------------------------ | ---------------------------------------------------------- | --------------- | -------------------------------------------------- |
+| #1                             | independent AI security review, claude-opus, 2026-11-16    | 587bdf8d        | PASS-WITH-CONDITIONS (blocking; findings 1-14)     |
+| Re-review                      | independent AI security re-review, claude-opus, 2026-11-16 | a045b184        | PASS-WITH-CONDITIONS (N1 blocking; N2-N6)          |
+| T064b closure + T070 (A and B) | independent AI security review, claude-opus, 2026-11-16    | 0496d898        | (A) PASS-WITH-CONDITIONS; (B) PASS-WITH-CONDITIONS |
+
+Closure of (A): N1 deletable definition, N2 NULL code, N3 per-column check, N4 workspace_ids, N5 unknown-table/BYPASSRLS handling and N6 trigger list are implemented (migration 20261121110000, docs, contract); stale wording removed; N5/visibility/named-exception tests added; exact-head CI green at 6073d263. T064b is ticked on that basis. The authors' final edits after 0496d898 were not re-read by a further independent reviewer.
+
+(B) T070 (acceptance review of the implemented deletion path) returned PASS-WITH-CONDITIONS: stack identity, test-plan gaps and LOW hardening were implemented afterwards (commits 0da91583, 2d18e18c, 6073d263) but have not been re-reviewed, so T070 and T065 stay unticked. T065 additionally requires, before any non-local run, explicit PO approval for that stack, a backup with a restore test, and the out-of-band run record (control 1); no teardown has been run on any stack.
