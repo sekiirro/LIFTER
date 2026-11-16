@@ -103,9 +103,21 @@
 ## Slice 5: T019 — Concurrency and idempotency matrix
 
 - **Branch/base**: `20261120160000–20261120165959`, fresh from `origin/main` at `08a6dcc73167bc1d5e984abdeb983d6c1a991532`.
+- **Main sync and documentation union**: merged `origin/main` at `a4eea2efcdba8a9f9dd88f8873f9b35f39cb3cad`. `tasks.md` retains all 30 task rows and IDs; `traceability.md` retains all 106 table rows with first-cell sequence identical to `origin/main`. T019 is checked alongside the merged T020/T021 evidence; verification retains both slice sections and Analyze retains both freshness notes.
 - **Stack**: A, safe reset and `tests/integration/client-accounts-provision.mjs` completed before integration.
 - **Test**: `tests/integration/nutrition-concurrency.test.ts` uses Promise.all with independent database transactions (bounded pool, 12 simultaneous sessions) for 100 publish, selection, template-load, and Assign calls sharing each operation key.
 - **Coverage**: one receipt/revision/delivery/audit after publish replays; simulated ambiguous-commit retry returns the committed receipt; selection counter/audit and template-load draft/audit remain single-write; Assign returns one batch/item/copy with no partial batch when a target workspace is invalid. A concurrent publish/selection race verifies the selected alternative carries to the next revision.
 - **RED / mutation**: temporarily removed `FOR UPDATE` from the installed `public.select_nutrition_alternative` plan-root query. The race test failed at `RPC did not wait behind the competing transaction: select_nutrition_alternative`. Restored the original function and verified its installed definition matched byte-for-byte. `git diff --exit-code -- supabase/migrations` returned 0; no migration was needed.
 - **GREEN**: targeted integration file passed 5/5 tests after restore on Stack A.
 - **Harness correction**: an initial run at 100 physical connections exceeded the local Postgres connection cap; the test retains 100 parallel attempts using a 12-session pool, preserving independent concurrent database transactions within the stack limit.
+
+## Slice 5 (Versioning + benchmark): T020 and T021
+
+- **Base `origin/main` SHA**: `1d7f007ad94b6e814c3fa3fb429712c65f940fd0`; merged latest `origin/main` before push (up to date; includes #157).
+- **Stack**: A (`LIFTER_SUPABASE_STACK=a`, API 54321, DB 54322); safe reset and `client-accounts-provision.mjs` completed before final integration suites.
+- **Host/run**: Windows 11 Pro 10.0.26200; Intel Core i7-13650HX; 23.8 GiB RAM; Node `v24.19.0`; Docker `29.9.2`; PostgreSQL `17.11.0.006`. Four baseline request-mix runs; 3 publish RPCs + 30 revision reads per run.
+- **Measured maxima**: 112,953 request bytes; 21 meals; 168 items; 504 alternatives; precision 3; publish p95 262.824 ms; read p95 113.792 ms; revision payload 144,079 bytes (document 123,182); template document 132,011 bytes.
+- **Threshold rule and envelope**: ceil(max observed × 1.25), capped at any applicable spec target; where no target exists, retain 25% headroom. SC-006 publish cap 300 ms leaves 37.176 ms (about 12% of ceiling); read limit 143 ms remains under the 300 ms target. Decimal precision stays at 3. Envelope: request bytes 141,192; meals 27; items 210; alternatives 630; publish 300 ms; reads 143 ms; revision payload 180,099 bytes; revision document 153,978 bytes; template document 165,014 bytes. Each numeric threshold has a corresponding benchmark assertion. Domain CPU is diagnostic, not a threshold.
+- **GREEN**: after reset/provision, versioning + benchmark integration files passed 2/2 tests with `SC006_TIMING_RUN=true` (2026-11-16 02:29:44; 4.45 s).
+- **T020 mutation (KILLED, restored)**: integer-rounding v1 compute mutation caused versioning test failure (`248` persisted vs frozen `247.500`); migration restored, Stack A reset/provisioned, restored test passed.
+- **T021 mutation (KILLED, restored)**: tightened `document.max_items` from 210 to 1; test failed with `expected 168 to be <= 1`. Restored to 210. Restored envelope SHA-256: `64912824a9fdae1b6032a6ec14e6583330d578c1a929bc21204b3d9099f85510`; tracked source mutation diff returned clean. No migration authored.
