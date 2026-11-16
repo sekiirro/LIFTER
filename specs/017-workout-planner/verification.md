@@ -249,6 +249,7 @@
 | M22 | RPC `f17_resolve_workout_exercise_muscles` Foreign Private Ref Tenancy | Replace `v_ref_workspace_id is distinct from p_workspace_id::text` with `null;`                 | `f17_resolve_workout_exercise_muscles(wsA.id, foreign wsB ref)`                 | Call succeeded and returned muscle data                                              | Threw `42501` (`not_permitted`)                |
 
 - **RLS Catalog Update**: Appended minimal verification in `tests/integration/rls-catalog.test.ts` for `app_private.f17_workout_operation_keys` (forced RLS, zero client-role DML privileges) and narrow execute privileges for `public.f17_add_workout_exercise` and `public.f17_resolve_workout_exercise_muscles` (owner postgres, authenticated EXECUTE true, anon/service_role false, search_path="").
+
 ## F17 Verification — T041 (s61-fl-f17t041)
 
 - **Branch / stack**: `017-export-goldens-slice-1` (stacked on PR #160 `origin/017-pdf-print-slice-1`) / no DB stack (renderer goldens).
