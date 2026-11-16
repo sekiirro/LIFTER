@@ -114,3 +114,10 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## 2026-11-16 T035 implementation evidence analysis (Africa/Cairo)
+
+- Scope: `tasks.md` T035 ticked and the FR-006 traceability row updated from "not implemented" to the implemented evidence (migration `20261120090000_f10_registration_link_issuance_limit.sql`, `tests/integration/registration-links-issuance-limit.test.ts`; CI green on PR #165 head 10762806). No FR, SC, acceptance scenario or plan design text changed; S31-PO-3 (50 per authorized account per rolling 24 hours) is implemented as already specified.
+- Entry gate: PASS - FR-006, SC-001 and SC-006 are covered by the T035 tests (configured value and window, 60-way parallel issuance commits exactly 50, Trainer/WO/PO each limited, cross-workspace total, rollback without quota use, foreign-workspace and anonymous denial).
+- Findings: 0 open CRITICAL, 0 open HIGH. **No open ambiguities.**
+- Verdict: PASS.
