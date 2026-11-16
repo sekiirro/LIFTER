@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   clientContext,
@@ -293,6 +294,9 @@ describe('F17 T031 — Add exercise RPC', () => {
     });
 
     // Publish and verify trainer-edited name & description + original pins are frozen, no video stored
+    await db.begin((tx) =>
+      seedSubmittedIntake(tx, fixture.wsA.id, seeded.client),
+    );
     const pubRes = await fixture.trainerA.client.rpc('ready_and_publish_plan', {
       p_plan_id: planId,
       p_expected_draft_version: 3,

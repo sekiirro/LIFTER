@@ -270,6 +270,16 @@ describe('F19 T012 template and plan copy', () => {
       schema_version: 1,
       notes: 'Latest published custom notes',
       videoUrl: 'https://cdn.example.com/must-not-copy.mp4',
+      ownership: { workspace_id: fixture.workspaceId },
+      authored_by: fixture.context.trainerA.userId,
+      history: [{ event: 'must-not-copy' }],
+      subscription: { id: randomUUID() },
+      subscription_id: randomUUID(),
+      delivery: { id: randomUUID() },
+      delivery_id: randomUUID(),
+      plan_deliveries: [{ id: randomUUID() }],
+      activation: { id: randomUUID() },
+      activation_id: randomUUID(),
       days: [
         {
           id: dayId,

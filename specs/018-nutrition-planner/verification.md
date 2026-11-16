@@ -1,5 +1,12 @@
 # F18 Nutrition Planner — Verification Report
 
+## Slice 5: T017 contributor attribution (F18-FR-018 / S60-R43)
+
+- **RED:** On Stack B after safe reset without the contributor attribution migration, all 4 test cases in `tests/integration/nutrition-contributors.test.ts` failed because `public.plan_revision_contributors` did not exist.
+- **GREEN:** After adding migration `20261120180000_f19_plan_revision_contributors.sql` and registering `app_private.f19_guard_plan_revision_contributors` and `app_private.f19_track_plan_draft_contributor` in `tests/integration/rls-catalog.test.ts`, all 4 test cases in `nutrition-contributors.test.ts` passed (4/4), and `rls-catalog.test.ts` passed (43/43).
+- **Mutation:** Allowed a contributor row from another workspace by mutating the foreign keys in `public.plan_revision_contributors` to non-composite foreign keys (`foreign key (revision_id) references public.plan_revisions(id)` and `foreign key (plan_id) references public.plan_roots(id)`). The test `rejects foreign-workspace contributor rows via composite FK and isolates via RLS` was KILLED (`AssertionError: promise resolved "[]" instead of rejecting` at `tests/integration/nutrition-contributors.test.ts:268`). Restored migration and verified `git diff --exit-code` exited 0; 4/4 tests passed on the restored state.
+- **Regression suites:** Touched integration suites passed on Stack B: `nutrition-contributors.test.ts` (4/4), `nutrition-publish.test.ts` (7/7), `nutrition-versioning.test.ts` (1/1), `nutrition-audit.test.ts` (3/3), `rls-catalog.test.ts` (43/43).
+
 ## Slice 4: T016 audit allowlist and log scrub
 
 - **RED:** On Stack C after safe reset/provision without the new migration, `nutrition-audit.test.ts` had 2 passing cases and failed the forbidden `food_name` insert case because it was accepted by `public.audit_events`.
@@ -110,3 +117,95 @@
 - **GREEN**: after reset/provision, versioning + benchmark integration files passed 2/2 tests with `SC006_TIMING_RUN=true` (2026-11-16 02:29:44; 4.45 s).
 - **T020 mutation (KILLED, restored)**: integer-rounding v1 compute mutation caused versioning test failure (`248` persisted vs frozen `247.500`); migration restored, Stack A reset/provisioned, restored test passed.
 - **T021 mutation (KILLED, restored)**: tightened `document.max_items` from 210 to 1; test failed with `expected 168 to be <= 1`. Restored to 210. Restored envelope SHA-256: `64912824a9fdae1b6032a6ec14e6583330d578c1a929bc21204b3d9099f85510`; tracked source mutation diff returned clean. No migration authored.
+
+## Slice 5 (Security Matrix): T018 (`Authorization and security matrix`)
+
+- **Base `origin/main` SHA**: `1d7f007a`
+- **Stack**: B (`LIFTER_SUPABASE_STACK=b`, API port 25421, DB port 25422)
+- **Node**: `v24.19.0`
+- **Vitest**: `vitest/5.1.0`
+- **Target Suite**: `tests/integration/nutrition-security-matrix.test.ts` (21 tests)
+- **GREEN**: 21/21 tests passed covering all 21 rows of `contracts/nutrition-api.md §8` on clean Stack B reset and provisioning (`tests/integration/client-accounts-provision.mjs`).
+
+### Mutation Evidence (all 21 rows killed, restored, `git diff --exit-code` 0)
+
+| Row | Guard (path:line)                                                                                                                 | Mutant                                                                                                  | KILLED (failing test names)                                                                                                                                                                    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `public.create_nutrition_workspace_template` (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:362,377`)           | Remove workspace `coaching_work` access check                                                           | `Row 1: refuses foreign workspace read, write, export, and prompt`, `Row 20: enforces generic denial for Sales role across all plan, template, and export surfaces`                            |
+| 2   | `public.select_nutrition_alternative` (`supabase/migrations/20261119140000_f18_nutrition_alternative_selections.sql:206-211`)     | Return `{ status: 'ok' }` for unapproved / foreign client                                               | `Row 2: refuses foreign client selection with generic denial and audit`, `Row 20: enforces generic denial for Sales role across all plan, template, and export surfaces`                       |
+| 3   | `public.select_nutrition_alternative` (`supabase/migrations/20261119140000_f18_nutrition_alternative_selections.sql:389`)         | Remove `not v_alt_valid` check in alternative validity guard                                            | `Row 3: refuses selection id not in the approved alternatives list`                                                                                                                            |
+| 4   | `public.select_nutrition_alternative` (`supabase/migrations/20261119140000_f18_nutrition_alternative_selections.sql:328-338`)     | Remove stale revision comparison against latest/delivered revision                                      | `Row 4: refuses selection against an older superseded revision with stale_version`, `Row 12: guarantees deterministic outcome and zero mixed revisions under publish and selection sequencing` |
+| 5   | `public.select_nutrition_alternative` (`supabase/migrations/20261119140000_f18_nutrition_alternative_selections.sql:230-235`)     | Remove subscription entitlement check                                                                   | `Row 5: refuses selection when subscription is inactive or expired`                                                                                                                            |
+| 6   | Direct DML privilege revocation (`supabase/migrations/20261119010000_f18_nutrition_plan_version_contents.sql:62`)                 | Grant `INSERT` on `nutrition_plan_version_contents` to `authenticated`                                  | `Row 6: denies direct table DML by application roles`                                                                                                                                          |
+| 7   | `public.publish_nutrition_revision` (`supabase/migrations/20261119150000_f18_nutrition_selection_carry_forward.sql:71`)           | Accept caller-supplied snapshots from `p_caller_payload->'snapshots'`                                   | `Row 7: ignores caller-supplied snapshots and totals during publish`                                                                                                                           |
+| 8   | `app_private.nutrition_build_snapshot_map` (`supabase/migrations/20261119060000_f18_publish_nutrition_revision.sql:246-248`)      | Fall back to dummy snapshot on missing food version instead of raising `nutrition_missing_food_version` | `Row 8: aborts whole publish transaction when food version is missing`                                                                                                                         |
+| 9   | `app_private.ready_and_publish_plan_impl` (`supabase/migrations/20261119060100_f18_block_generic_nutrition_publish.sql:81,93`)    | Bypass subscription eligibility and entitlement checks on publish                                       | `Row 9: refuses new publish key without subscription, but honors exact authorized replay`                                                                                                      |
+| 10  | `public.publish_nutrition_revision` (`supabase/migrations/20261119150000_f18_nutrition_selection_carry_forward.sql:55-62`)        | Remove idempotent receipt return so replay re-inserts content row                                       | `Row 10: returns original receipt on publish replay with zero duplicates`, `Row 9: refuses new publish key without subscription, but honors exact authorized replay`                           |
+| 11  | `app_private.ready_and_publish_plan_impl` (`supabase/migrations/20261119060100_f18_block_generic_nutrition_publish.sql:89-91`)    | Reject any publish when `current_version > 0`                                                           | `Row 11: appends new revision and delivery on new authorized key with unchanged content`                                                                                                       |
+| 12  | `public.select_nutrition_alternative` (`supabase/migrations/20261119140000_f18_nutrition_alternative_selections.sql:263,328-338`) | Remove stale revision check (shares mutant with Row 4)                                                  | `Row 12: guarantees deterministic outcome and zero mixed revisions under publish and selection sequencing`, `Row 4: refuses selection against an older superseded revision with stale_version` |
+| 13  | `public.create_nutrition_global_template` (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:268-272`)              | Remove idempotent replay return so replays create duplicate rows                                        | `Row 13: produces identical result and zero duplicates across 100 replay attempts`                                                                                                             |
+| 14  | `public.assign_nutrition_templates` (`supabase/migrations/20261119070000_f18_template_assignment_promotion.sql:94-98`)            | Remove idempotent replay return so retries attempt second batch                                         | `Row 14: replaying template assignment returns same batch with zero duplicate copies`                                                                                                          |
+| 15  | `public.assign_nutrition_templates` (`supabase/migrations/20261119070000_f18_template_assignment_promotion.sql:124-126,136-138`)  | Remove `where not exists (... outcome='assigned')` partial workspace filter                             | `Row 15: skips partial workspace and does not top up in All Workspaces assignment`                                                                                                             |
+| 16  | `public.assign_nutrition_templates` (`supabase/migrations/20261119070000_f18_template_assignment_promotion.sql:156,180`)          | Remove `skipped_existing` branch / zero copies check                                                    | `Row 16: marks existing copies skipped_existing without overwrite in Specific Workspaces`, `Row 17: rejects assign when zero copies would be created`                                          |
+| 17  | `public.assign_nutrition_templates` (`supabase/migrations/20261119070000_f18_template_assignment_promotion.sql:180`)              | Remove `if assigned=0 then raise exception 'zero_copies'` check                                         | `Row 17: rejects assign when zero copies would be created`, `Row 16: marks existing copies skipped_existing without overwrite in Specific Workspaces`                                          |
+| 18  | `public.make_nutrition_template_global` (`supabase/migrations/20261119070000_f18_template_assignment_promotion.sql:255-256`)      | Remove `private_nutrition_template_fields` check                                                        | `Row 18: refuses Make it Global when private client data is present`                                                                                                                           |
+| 19  | `nutrition_global_templates_po_read` policy (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:83-84`)              | Change policy using clause to `true`                                                                    | `Row 19: enforces generic denial on non-PO global template read and write`                                                                                                                     |
+| 20  | `public.create_nutrition_global_template` (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:258,362`)              | Remove PO authorization check                                                                           | `Row 20: enforces generic denial for Sales role across all plan, template, and export surfaces`, `Row 19: enforces generic denial on non-PO global template read and write`                    |
+| 21  | `app_private.f18_guard_plan_version_content` (`supabase/migrations/20261119010000_f18_nutrition_plan_version_contents.sql:22-24`) | Remove `if tg_op <> 'INSERT'` immutability exception                                                    | `Row 21: rejects UPDATE, DELETE, and TRUNCATE on immutable tables and selections`                                                                                                              |
+
+## Slice 6: T026 � Multi-plan projection regression (Stack D)
+
+- **Branch/base**: `018-multi-plan-slice-1`, fresh `origin/main` at `8e2ceaf68b1a8b19cf5b3b37e735ae1a7f422721`.
+- **Scope**: added `tests/integration/nutrition-multi-plan.test.ts`; no product change or migration was needed. F19's `client_plan_projection()` already returns every delivered plan and each plan's latest revision.
+- **RED / fixture correction**: initial assertion received `status: invalid` because the synthetic subscription fixture had no F19 activation. Added its normal `subscription_activations` fact; this was fixture setup, not a product defect. A baseline run then passed against the existing projection.
+- **GREEN**: Stack D safe reset followed immediately by `client-accounts-provision.mjs`; touched suite passed 1/1. The fixture publishes a one-meal plan and a two-meal plan, revises the second to four meals, then asserts both IDs, nutrition kinds, revision numbers, and exact meal counts through the client-scoped projection.
+- **Mutation**: temporarily changed F19's migration projection query to filter to the first plan. After Stack D reset, the test failed at the all-plan ID assertion (received one ID, expected two): **KILLED**. Restored the migration byte-for-byte, reset Stack D, provisioned again, and restored test passed 1/1. A first mutation expression using `min(uuid)` errored before assertions; replaced with ordered first-row selection for the valid mutation run.
+- **Final local gates**: lint passed; typecheck passed; changed-file format check passed; `npm run format:check` passed; touched integration passed 1/1. Full unit first run had one timeout in `tests/unit/optimize-body-fat-assets.test.ts` (3234/3235); rerun in isolation passed 281 files / 3235 tests. Recorded as a transient timeout in the shared flakes backlog.
+- **Migration audit**: none authored; no migration timestamp consumed.
+- **CI / review**: pending push and exact-head CI.
+
+## 4h. S61 T025 slice 2 (partial) verification — nutrition template manager
+
+Scope: the template-manager UI only
+(`components/plans/nutrition/NutritionTemplateManager.tsx`,
+`components/plans/nutrition/NutritionTemplateManager.module.css`,
+`app/(dev)/showcase/f18-template-manager/`). Slice 1 (editor + alternatives,
+PR #178) is not in this slice. **T025 remains unticked**; this section records
+`PARTIAL` evidence for the template-manager clauses only.
+
+- **RED:** `tests/unit/NutritionTemplateManager.test.tsx` created first; `npx
+vitest run` failed at collection (`Failed to resolve import ...
+NutritionTemplateManager.tsx`, 1 failed file, no tests).
+- **GREEN:** after the component + CSS + showcase, the suite passes 11/11:
+  PO-approved EN/AR headings with `dir`/`lang`, version isolation via
+  `<bdi dir="ltr">`, active/retired distinction with no Load entry on retired
+  rows (3 Load buttons for 3 active templates in the PO view), load/version/
+  retire/make-global entry points with approved labels, PO-only global
+  controls with the global section hidden from staff (no global read per
+  `nutrition-api.md` §2), PO-only origin provenance masked from staff,
+  `role="status"` loading, error with retry, `noAccess` for Sales/client/
+  unaffiliated roles, EN/AR empty states, and byte-exact EN/AR assertions for
+  every used key. Full unit suite: 282 files / 3,246 tests passed.
+- **Mutation:** removed the `!item.retired` guard in
+  `NutritionTemplateManager.tsx` (retired rows exposed Load actions).
+  KILLED — `lists items with isolated version numbers and active/retired
+distinction` failed (1 failed / 10 passed; Load count 5, not 3). Restored
+  the file from backup (SHA-256 identical on both sides) and re-ran 11/11.
+- **Design gate:** `app/(dev)/showcase/f18-template-manager/` renders one
+  manager variant per page load (role/status from search params) with static
+  mocks. Matrix `{en,ar} × {light,dark} × {390,1440}` (8 full-page shots) plus
+  Trainer-ready/loading/error and Sales-ready variants (`en-light-1440`,
+  `ar-dark-390`) plus a keyboard-focus shot: 17 screenshots under
+  `C:/Users/NEW LAP/AppData/Local/Temp/f18-tm-shots/`. Axe-core clean on all
+  16 matrix/variant states (0 violations, 0 incomplete); the initial stacked
+  5-manager preview failed `landmark-unique` (five identically named regions)
+  and was refactored to the single-manager production shape before the clean
+  run. Tokens only, no new copy: every string is a byte-exact
+  `nutritionTemplates.*` key on `origin/main` (S28-PO-2) except the
+  non-retired badge, which reuses byte-exact `templates.active` (documented —
+  nutrition has no `nutritionTemplates.active` key); no `{name}`-composed
+  aria-labels (no approved nutrition key exists), so per-item buttons use the
+  approved visible label as their accessible name.
+- **Local gates:** `npm run lint` clean, `npm run typecheck` clean,
+  `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node
+scripts/format-check-changed.mjs` passed, `npm run format:check` clean.

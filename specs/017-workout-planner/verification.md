@@ -100,6 +100,134 @@
   - Dropped `workout_template_assignment_c_workspace_id_global_template__key` (`UNIQUE (workspace_id, global_template_id)`) on `public.workout_template_assignment_copies` -> `tests/integration/workout-assignment-schema.test.ts` failed at line 236 (`AssertionError: promise resolved "undefined" instead of rejecting`), proving duplicate-on-retry succeeds when copy uniqueness is removed.
   - Restored Stack B via `db reset --local` + `tests/integration/client-accounts-provision.mjs` and verified `git diff --exit-code` on the migration is 0.
 
+## F17 Verification — T037 (s60-fl-f17t037 / s60-fl-160b)
+
+- **Status**: T037 unticked `[ ]`; traceability PARTIAL ("T037 renderer verified; route pending authorized revision read").
+- **Renderer & RTL CSS**: `components/workout-planner/WorkoutPrintView.tsx`, `components/workout-planner/WorkoutPrintView.module.css`, `lib/workout-planner/excel-export.ts`, `tests/unit/workout-print-view.test.tsx`.
+- Reused merged T038 Excel export S58-PO-5 approved column headings and shared formatting helpers (`PRINT_TABLE_COLUMNS`, `formatWorkoutExportLoad`, `formatWorkoutExportReps`, `formatWorkoutExportSetType`, `getWorkoutExportLabels`) without duplicated strings. Full FR-018 field parity, AR RTL print CSS (`table-header-group`, `break-inside: avoid`), and Bidi isolation verified.
+- **RED -> GREEN**: Unit tests in `tests/unit/workout-print-view.test.tsx` (10 tests) failed against unexported columns/labels, then passed cleanly.
+- **Mutations (killed -> restored -> clean diff)**:
+  1. Forcing `dir="ltr"` fails AR RTL assertion (1 failed / 9 passed).
+  2. Removing alternatives column fails FR-018 field assertions (2 failed / 8 passed).
+- **Authorized Revision Read Gap**: Merged codebase does not contain an authorized server-side read of ONE explicitly selected revision into `WorkoutExportPayload` (no staff revision read RPC; no server loader querying `plan_revisions` or calling `buildWorkoutExportPayload`). Per brief ruling S60-R8, T037 remains unticked and traceability is PARTIAL pending authorized revision read implementation.
+
+## S60-R4 Verification — T016/T017 (s60-luna-f17t016)
+
+- **Branch / stack**: `017-rls-grants-slice-1` / Stack A (`lifter`, API 54321, DB 54322). Safe reset via the approved wrapper, followed by `tests/integration/client-accounts-provision.mjs`; Vault values were not printed.
+- **Source review**: Existing migrations already define eight forced-RLS read policies for all F17 template and assignment tables and authenticated-only EXECUTE grants for six template RPCs. No policy/grant migration gap was found, so this slice adds no migration.
+- **RED / mutation evidence (Stack A; each mutant was isolated in its own run and restored)**: Replaced each policy's sole `USING` predicate with `true`, one policy per run. `tests/integration/workout-rls-grants.test.ts` failed on the corresponding authorization assertion for all eight policies: `workout_global_templates_po_read`, `workout_global_template_versions_po_read`, `workout_workspace_templates_staff_read`, `workout_workspace_template_versions_staff_read`, `workout_template_assignment_runs_po_read`, `workout_template_assignment_items_po_read`, `workout_template_assignment_copies_po_read`, and `workout_template_distribution_state_po_read`. After each run, the exact original predicate was restored and catalog-verified.
+- **T017 mutation evidence**: Granting authenticated `INSERT` on `public.workout_global_templates` made the direct-DML denial assertion fail; the grant was revoked. Granting `anon` EXECUTE on `public.create_workout_global_template(text,jsonb,uuid)` made the narrow-EXECUTE assertion fail; the grant was revoked. Both restores completed before later suites.
+- **GREEN**: On the final scoped-fixture version, `workout-rls-grants.test.ts`, `workout-template-rpcs.test.ts`, `workout-templates-schema.test.ts`, `workout-assignment-schema.test.ts`, and `rls-catalog.test.ts` passed: 5 files / 55 tests. The matrix uses synthetic workspace owner, trainer, Sales, client, unaffiliated and foreign-workspace actors, including a revoked membership. It also asserts FORCE RLS, no client-role base-table DML, empty definer search paths, schema-qualified application references, and narrow RPC execution.
+- A combined run initially exposed that unscoped row counts included prior committed fixtures from repeated integration invocations. The new test was changed to select only its own seeded row IDs/workspace IDs; the final combined run above passed.
+
+## S60 T018 Create plan
+
+- **Branch / stack**: `017-create-plan-slice-1` / Stack D (`lifter-stack-d`). Reset and every post-reset provisioning used `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` plus `tests/integration/client-accounts-provision.mjs`.
+- **Implementation**: Added the authenticated workout-plan server action and API service. It derives workspace from the selected client, denies non-staff/foreign staff generically, sends blank creation to F19 `create_plan_draft`, and sends template/existing-plan creation to F19 `copy_plan_to_draft`. No parallel lifecycle writer or migration was added.
+- **RED**: The unit suite was added first and failed because `lib/plans/create` did not exist. The focused integration test asserts 12 concurrent identical blank-plan submits return one Plan ID, one root, one draft, and one operation receipt.
+- **GREEN**: After safe reset and provisioning, `f17-plan-create.test.ts`, `f19-plan-copy.test.ts`, and `f19-plan-core-schema.test.ts` passed: 3 files / 16 tests. Coverage includes concurrent duplicate creation, generic Sales/foreign-staff/client denial with no root/draft/ledger writes, copy modes, source semantics, and F19 authorization/replay behavior.
+- **Mutation (DB-only scratch; restored)**: Added temporary migration `20261120120001_t018_remove_plan_create_ledger_mutant.sql`, replacing `create_plan_draft` without its operation-key fingerprint/ledger insert/replay guard. After safe reset and provisioning, the concurrent duplicate-submit test failed as required: expected one Plan ID, received 12; 1 failed, 5 skipped. Removed the scratch migration, safely reset and reprovisioned Stack D, reran the three integration files (16/16 passed), and verified the mutation file is absent.
+- **Local gates**: `npm run lint`, `npm run typecheck`, both format gates, all-origin migration scan, and full unit suite passed. Final full unit run: 278 files / 3,213 tests. One earlier default-worker run had two scheduling timeouts; the passing rerun was recorded in the lane flakes backlog.
+
+## S60 T019 Autosave and Save as Draft with CAS
+
+- **Branch / stack**: `017-autosave-slice-1` / Stack C. Branch started at fresh `origin/main` `8e2ceaf68b1a8b19cf5b3b37e735ae1a7f422721` after PR #164 merged. Every Stack C reset used `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` with `SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'` and `LIFTER_SUPABASE_STACK=c`, followed by `tests/integration/client-accounts-provision.mjs`.
+- **Implementation**: Added `saveWorkoutPlanDraft` in `lib/plans/draft-write.ts`. It resolves the authenticated plan workspace and checks `coaching_work` before parsing, validates workout schema v1 through the shared document parser, maps invalid workout content to `invalid_document`, and writes only through F19 `save_plan_draft` with expected draft version and operation key. Autosave and Save as Draft share the F19 private-draft CAS path; neither writes or removes a published revision.
+- **RED**: New unit tests first failed because `lib/plans/draft-write` did not exist. The first integration execution failed because the test actor fixture omitted its Trainer domain role; after correcting the fixture, the T019 cases ran against Stack C.
+- **GREEN**: `tests/unit/plan-draft-write.test.ts` and `tests/contracts/f19-plan-core-client.test.ts` passed. `tests/integration/f17-plan-draft-write.test.ts`, `tests/integration/f17-plan-content.test.ts`, and `tests/integration/f19-plan-core-schema.test.ts` passed 15/15 after safe reset and provisioning. The integration cases prove add/move to rest day return `invalid_document`, leave the stored draft/version and operation ledger unchanged, preserve the item on its source day, enforce stale CAS, and preserve an existing published revision after a no-op autosave.
+- **Mutation evidence (restored)**: Removing the rest-day-item check from `parseWorkoutDocumentV1` made both add/move acceptance cases fail because the invalid payload persisted as draft version 2. Removing F19's `draft.draft_version <> p_expected_draft_version` comparison on Stack C made the stale-write test fail because the stale request succeeded at version 3. Source/function were restored; Stack C was reset and reprovisioned after each mutation.
+- **Local gates**: Full unit suite passed 282 files / 3,240 tests; `npm run lint`, `npm run typecheck`, `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node scripts/format-check-changed.mjs`, `npm run format:check`, `npm run check:secrets`, `npm run check:migration-timestamps`, and the all-remote-ref timestamp scan (371 refs) passed. No migration was added. Full touched-integration evidence is the 15/15 run above.
+- The first parallel full-unit attempt had three default 5-second timeouts while local gates and integrations ran concurrently; the standalone full-unit rerun passed 282/3,240. Recorded in `C:/Users/NEW LAP/.lifter/backlog/flakes.md`; exact-head CI remains required.
+- Detailed run record: `C:/Users/NEW LAP/.lifter/runs/s60-luna-f17t019/report.md`.
+
+## S61 T020 Ready & Publish gates
+
+- **Branch / stack**: `017-publish-gates-slice-1` stacked on PR #185 / T019; Stack C. All database resets used `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` with the assigned Stack C workdir, then `tests/integration/client-accounts-provision.mjs`.
+- **Implementation**: Added `publishWorkoutPlan` and `publishWorkoutPlanAction`. The API checks the authenticated actor and workout-plan workspace, validates the caller's explicit `expectedDraftVersion` and `expectedPublishedRevision`, and calls F19 `ready_and_publish_plan` exactly once. Migration `20261121000000_f17_workout_publish_intake_gate.sql` extends only the F19 public RPC entry point: it locks/rechecks the client, requires an F15 assigned form submission for workout delivery, then delegates to the unchanged F19 implementation. Subscription eligibility, CAS, operation-key replay, revision/delivery writes, and activation remain F19-owned.
+- **RED**: `tests/unit/plan-publish.test.ts` first failed because `lib/plans/publish` did not exist. Before the gate migration, `f17-plan-publish.test.ts` failed at the intake refusal assertion: an approved client with no submitted form returned `status: ok` and wrote revision/delivery rows.
+- **GREEN**: After safe reset + provision on Stack C, eight touched integration suites passed: `f17-plan-publish`, `f19-plan-delivery`, `f19-plan-activation`, `f19-plan-override`, `f17-add-exercise-rpc`, `f19-plan-expiry`, `f19-trainer-deletion`, and `rls-catalog` — 8 files / 79 tests. T020 proves missing intake and expired subscription each return a generic refusal with zero revision/delivery rows; with submitted intake and a current subscription, direct publish creates exactly one revision and delivery and preserves the latest draft content without an explicit Save as Draft. Unit publish contract tests pass 4/4.
+- **Mutation evidence (restored on Stack C)**:
+  1. Disabled the new intake predicate in the migration, safely reset/provisioned, and ran the focused T020 integration test. It failed because the missing-intake publish returned `status: ok` instead of `not_permitted`. Restored the predicate and reset Stack C.
+  2. In a DB-only scratch mutation, bypassed both F19 subscription-eligibility checks for expired subscriptions. `f17-plan-publish.test.ts -t 'expired subscription'` failed because the expired plan returned `status: ok` instead of `not_permitted`. Restored F19 state with safe `db reset --local` and reprovisioned Stack C; no F19 migration or implementation file was changed.
+- **Local gates**: Full unit suite 283 files / 3,243 tests; touched integration 8 files / 79 tests; lint, typecheck, changed-file format gate, full format check, `check:secrets`, and migration timestamp validation passed. The all-origin timestamp scan passed across 387 refs; exact-head CI and architect review are pending.
+- Detailed run record: `C:/Users/NEW LAP/.lifter/runs/s61-luna-f17t020/report.md`.
+
+## F17 Verification — T044 slices 1+2 (template manager + assignment wizard UI)
+
+- **Branch / stack**: slice 1 `017-template-manager-slice-1` (merged as PR #173) + slice 2 `017-assign-wizard-slice-2` / no DB stack (UI-only, mocked props; T025 RPC not called).
+- **Implementation**: slice 1 `components/workout-planner/TemplateManager.tsx` (global/own/assigned scopes, load/create/edit, PO-only global gating, provenance masking); slice 2 `components/workout-planner/TemplateAssignWizard.tsx` + `TemplateAssignWizard.module.css` (Step 1 selection all/specific/all-except with retired not selectable; Step 2 target all/specific; review with `assigned` / `skipped_already_assigned` / `skipped_existing` / `no_copies` + zero-copies `assignNothing`; non-PO returns null). Copy: 20 `templates.assign*`/`outcome*`/`explain*` keys byte-exact EN+AR per S60-PO-8 in one contiguous block after `templates.empty`.
+- **RED**: slice 2 `tests/unit/template-assign-wizard.test.tsx` (8 tests) failed 8/8 before the wizard existed (missing component + keys).
+- **GREEN**: 8/8 pass on this head; slice 1 `tests/unit/workout-template-manager.test.tsx` (7 tests) passes on this head (merged).
+- **Mutation (kill -> restore; component file matches pre-mutation bytes)**:
+  - Removed the PO scope gate (`if (!allowed) return null;`) -> `non-PO roles render nothing` failed (WO rendered the wizard); restored.
+  - Collapsed the state distinction (`skipped_existing` label -> `skipped_already_assigned`) -> `review shows all four receipt outcomes` failed (`Skipped: already has it` missing); restored.
+
+## S61 T021 — published workout revision immutability
+
+- RED-to-GREEN: F19 already implements the requirement in `20261114120000_f19_plan_roots_drafts_revisions.sql`: `plan_revisions_immutable` rejects UPDATE/DELETE, `plan_revisions_no_truncate` blocks TRUNCATE, and table grants are revoked from API roles before SELECT is granted. The new integration assertions passed against this existing implementation, so no production migration or API change was needed. The first focused run exposed only a test expectation mismatch (`bigint` values serialize as strings); correcting the expected representation produced a green run.
+- Coverage: `tests/integration/f19-plan-core-schema.test.ts` checks UPDATE/DELETE/TRUNCATE privileges for both `authenticated` and `service_role`; privileged direct UPDATE/DELETE are rejected by the trigger; both API roles' direct UPDATE/DELETE fail; inserting revision 2 leaves revisions 1 and 2 retained.
+- Mutation: removed `plan_revisions_immutable` from the migration source, reset and reprovisioned Stack C, then ran `npm run test:integration -- tests/integration/f19-plan-core-schema.test.ts -t 'rejects revision mutation'`. It failed as expected because the privileged UPDATE resolved instead of being rejected. Restored the migration source, reset and reprovisioned Stack C, and reran the focused suite: 1 file / 6 tests passed. Mutation was local and not committed.
+- Newest-first listing deferred per S61-PO-4 (no screen/contract yet).
+
+## S61 T030 Slice Evidence (Copy published plan)
+
+- **Task / requirement**: T030 / FR-014 (F19 FR-008 copy contract).
+- **Stack**: Stack A (`LIFTER_SUPABASE_STACK=a`); safe reset followed by `tests/integration/client-accounts-provision.mjs`.
+- **Coverage**: `tests/integration/f19-plan-copy.test.ts` verifies the latest of two published revisions is copied rather than an unpublished later draft; destination content remains independent; ownership, authorship, history, subscription, delivery, activation, and Video document fields are omitted; no destination revisions or deliveries are created, and only destination audit events exist.
+- **RED / mutation**: Added source-document fields for ownership/authorship/history/subscription/delivery/activation and verified the copy contract against them. On Stack A, temporarily replaced `app_private.f19_sanitize_copied_content` from `20261119130000_f19_nutrition_template_copy.sql` with a mutant omitting the `delivery` and `activation` exclusions. `f19-plan-copy.test.ts` was killed: workout copy retained both facts (expected field-for-field content mismatch), and the existing nutrition delivery exclusion assertion also failed.
+- **Restore / GREEN**: Safe reset restored the migration-defined function; reprovisioned Stack A. `f19-plan-copy.test.ts`: 1 file / 8 tests passed. `git diff --exit-code -- supabase/migrations/20261119130000_f19_nutrition_template_copy.sql`: exit 0. Mutation SQL scratch is outside the repository at `C:/Users/NEW LAP/.lifter/runs/s61-luna-f17t030/t030-mutation.sql`.
+
+## F17 Verification — T042 (s61-muse-f17t042, `017-draft-publish-ui-slice-1`, stack: none)
+
+- **Branch**: `017-draft-publish-ui-slice-1` / no DB stack (UI-only, mocked props; F19 RPCs untouched — T019/T020 own them).
+- **Implementation**: `components/workout-planner/DraftPublishBar.tsx` + `DraftPublishBar.module.css` (client component; parent owns all calls via `onSaveDraft?`/`onPublish`/`onReload` and all readiness via `canPublish`; no fetching, no RPC changes). Copy: reused 7 `forms.*` keys byte-exact + 4 new `planner.*` keys byte-exact per S61-PO-3 (`All changes saved`/`كل التعديلات اتحفظت`, `Save as Draft`/`احفظ كمسودة`, `Ready & Publish`/`جاهز وانشر`, `Publishing…`/`جاري النشر…`) in one contiguous block after `workout.volume.*`.
+- **RED**: `tests/unit/workout-draft-publish-bar.test.tsx` (9 tests: EN indicator states, AR RTL byte-exact, optional Save as Draft, single publish + handler, publishing/conflict disable, no-op readiness, conflict block + reload, copy lock) failed before the component existed (unresolved import).
+- **GREEN**: 9/9 pass; full unit 282 files / 3,244 tests pass on the final head. One earlier full-unit run showed a single unidentified failure under default worker fan-out; two standalone reruns fully green (recorded in `~/.lifter/backlog/flakes.md`).
+- **Mutation evidence (kill -> restore)**:
+  - `DraftPublishBar.tsx:54`: forced publish disabled after any save (`|| lastSaved !== 'none'`) -> no-op readiness test failed; restored (line verified back to `!canPublish || saving || publishing || conflicted`).
+  - `DraftPublishBar.tsx:71`: hid the conflict branch (`saveError === 'never-conflict'`) -> conflict display test failed; restored (line verified back to `{conflicted ? (`).
+- **Local gates**: `npm run lint` pass; `npm run typecheck` pass (stale `.next` validator errors pre-existing on clean HEAD; removed `.next`, clean re-run exit 0); `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node scripts/format-check-changed.mjs` pass (no changed md/yaml/json); `npm run format:check` pass; `npm run size` within budget (cron worker 11.76 KiB; no new dependency). Touched integration: none (UI-only, no stack; precedent T044 slices). Migration validation: N/A (no migrations). Full AR/EN x light/dark x mobile/desktop screenshot matrix and axe remain with T045/T052.
+
+## F17 Verification — T033 (s60-ds-f17t033)
+
+- **Branch**: `017-default-override-slice-1` from `origin/main` `1d7f007a`; worktree `LFTR-s60-ds`. No DB stack.
+- **Implementation**: `components/workout-planner/EntryPrescriptionFields.tsx` + `.module.css` render Rest, RIR and Reps of one plan entry as ordinary controlled inputs. The displayed values come only from the entry that the merged `resolveWorkoutExercise` filled at add time; the component has no catalog import, no effect hook and no defaults prop, so no re-default path exists. Invalid typed values stay visible but are not committed; the only error string is the approved `builder.invalidReps` for min>max.
+- **RED**: `tests/unit/workout-prescription-ui.test.tsx` (6 tests) failed before the component existed with the recorded module-not-found error (`R/red.txt`).
+- **GREEN**: 6/6 tests pass: EN ordinary editable fields with copied values; AR RTL plus approved labels and Arabic-Indic digits; edits commit through the merged document validator; edit-then-save/reload keeps edited values and never restores library defaults; absent defaults stay blank; no platform-defaults control and no defaults source. Full unit suite: 278 files / 3212 tests passed on this head.
+- **Mutation (restored)**: added a `Restore platform defaults` button that writes fixed rest/RIR values -> `offers no platform-defaults control and keeps no defaults source` failed (`/default/i` and `<button>` matched; 1 failed / 5 passed, `R/mutation.txt`). Reverted; 6/6 passed again and no mutation marker remains.
+- **Copy**: nine S28-PO-2 approved `builder.*` keys (`restHint`, `rirHint`, `reps`, `repsMode`, `fixedReps`, `repRange`, `min`, `max`, `invalidReps`) copied byte-exact from `origin/017-workout-planner` into `lib/i18n/messages/{en,ar}.ts` (9/9 byte-identical per file).
+
+## F17 Verification — T034 (s60-muse-f17t034)
+
+- **Branch / stack**: `017-alternatives-ui-slice-1` / none (client-side only; no server action, DB, autosave, or stack).
+- **Implementation**: `lib/workout-planner/alternatives.ts` (pure add/remove/cap-3/unique/invalid-`invalid_document` helpers reusing `parseWorkoutReference` from merged `lib/workout-planner/document.ts`; `isAlternativeUnavailable` for removed/merged), `components/workout-planner/AlternativesEditor.tsx` + `AlternativesEditor.module.css` (controlled editor; availability/names/candidates as props from the F16 lookup; no fetching), 75 PO-approved `builder.*` strings byte-exact from `origin/017-workout-planner` plus `builder.alternativeUnavailable` (EN `Unavailable` / AR `مش متاح`, S60-PO-5) appended as one contiguous block to `lib/i18n/messages/{en,ar}.ts`.
+- **RED**: `tests/unit/workout-alternatives-ui.test.ts` (9 tests) failed before the new files existed (import error), then GREEN 9/9 against them. Full unit suite: 279 files / 3,216 tests passed.
+- **Mutation (in-place; restored byte-identical)**:
+  - Dropped the `builder.alternativeUnavailable` badge (`{false && …}`) -> 2/9 failed (EN + AR badge assertions).
+  - Substituted unavailable rows with the first candidate -> 2/9 failed (never-substitute list assertions).
+  - Restored the component from backup, verified byte-identical, re-ran GREEN 9/9.
+- **Design gate**: tokens-only CSS, native label/select/buttons, AR RTL + EN LTR asserted; Playwright/Chromium shots of the real render (component markup + actual module CSS + `tokensToCss`): `en/ar x light/dark x 390/1440` populated + `en/ar` empty + `en` 768 (11 files under the run temp dir). Fixed and re-shot: empty-select 192px artifact (row `flex-basis` became column height; `flex: none` under 600px) and 14px select text (now inherits 16px like `Field` inputs).
+
+## F17 Verification — T041 (s61-fl-f17t041)
+
+- **Branch / stack**: `017-export-goldens-slice-1` (stacked on PR #160 `origin/017-pdf-print-slice-1`) / no DB stack (renderer goldens).
+- **Scope**:
+  - Export goldens for renderers that exist: Excel export (`buildWorkoutWorkbook`, #160), Copy AI Prompt (`buildAiPrompt` + `formatWorkoutPromptContent`, T040), and print view (`WorkoutPrintView`, #160).
+  - Revision N while N+1 exists: isolated export of Revision N without leaking Revision N+1 content; dynamic live video URL resolution from current library.
+  - AR/EN exact byte equality for Copy AI Prompt after single `{{PLAN_CONTENT}}` substitution against `tests/fixtures/f17/workout-prompt-golden-{en,ar}.txt` and `specs/017-workout-planner/contracts/copy-ai-prompt.md`.
+  - AR/EN exact row-for-row and cell-for-cell equality for Excel export against `tests/fixtures/f17/workout-excel-golden-{en,ar}.json`.
+  - SC-008 formula injection protection: 100% of cells stored as text (`@` format, `ValueType.String`, no formula evaluation) across all coach-authored fields.
+  - Print view renderer layout checks: AR RTL (`dir="rtl"`, Bidi isolation) vs EN LTR (`dir="ltr"`), S58-PO-5 approved labels in UI language, exercise names English, authored text preserved verbatim.
+  - Route goldens status: noted Remaining (PARTIAL pending authorized revision read route).
+- **RED**: Initial RED assertion in `tests/unit/workout-export-goldens.test.tsx` failed with expected mismatch (`R/red.txt`).
+- **GREEN**: 12/12 unit tests pass in `tests/unit/workout-export-goldens.test.tsx` (`R/green.txt`).
+- **Mutation Evidence (killed -> restored -> `git diff --exit-code` = 0)**:
+  1. **Prompt byte mutation**: Mutated 1 byte in English prompt golden -> `tests/unit/workout-export-goldens.test.tsx` failed with prompt byte mismatch (`R/mutation-prompt-byte.txt`); restored clean.
+  2. **Excel cell mutation**: Mutated cell value in English Excel golden row 0 (`Plan` -> `MutatedPlan`) -> `tests/unit/workout-export-goldens.test.tsx` failed with cell mismatch (`R/mutation-excel-cell.txt`); restored clean.
+  3. **Print layout mutation**: Mutated `WorkoutPrintView.tsx` line 223 to force `dir="ltr"` on Arabic locale -> `tests/unit/workout-export-goldens.test.tsx` failed with layout assertion mismatch (`R/mutation-print-layout.txt`); restored clean.
+  4. **Formula injection mutation**: Mutated `excel-export.ts` to assign formula to cells starting with `=` -> `tests/unit/workout-export-goldens.test.tsx` failed with formula detection failure (`R/mutation-formula.txt`); restored clean.
+  - `git diff --exit-code` on all pre-existing code is 0.
+
 ## F17 Verification — T025 (s60-luna-f17t025)
 
 - **Branch / stack**: `20261120170000-20261120175959` / Stack D (`lifter-stack-d`). Migration `20261120170000_f17_workout_template_assign_run.sql` applied after safe Stack D reset followed by client-account provisioning.
