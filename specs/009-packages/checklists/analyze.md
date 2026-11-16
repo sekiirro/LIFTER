@@ -253,3 +253,19 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed. **No open ambiguities** remain for this merge.
 - Verdict: PASS for this merge reconciliation.
+
+## 2026-11-16 S61-PO-1 (FX=B) full Analyze (Africa/Cairo)
+
+**Analyzed:** 2026-11-16 (Africa/Cairo), full cross-artifact pass over `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/packages-surface.md`, `quickstart.md`, `tasks.md`, `traceability.md`, `fx-coverage-verification.md` and `docs/04-changes-and-questions.md`.
+**Trigger:** PO decision S61-PO-1 "FX=B": Frankfurter v2 pinned to one named provider per currency on that provider's own publication calendar; amend FR-026, SC-017 and the T058 calendar fixtures.
+**Entry gate:** PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the amendment.
+
+- PASS (decision recorded): S61-PO-1 is in `spec.md` Clarifications (PO words "FX=B" verbatim, the option-B text separately quoted, architect mapping labelled as not PO words) and appended verbatim to `docs/04-changes-and-questions.md`; the ID is next-free (highest prior was S58-PO-8 on this branch and S60-PO-5 on other origin branches; the orchestrator re-numbers on merge if it collides).
+- PASS (consistency): FR-026, FR-031, SC-017, SC-022, acceptance scenario 8, the Edge-cases FX paragraph, plan (constraints, SK-009-09, dashboard, FX section, decision list, historical FX), data-model (snapshot, rounding, rules), research (reporting-FX exception, decision, platform note), contracts, quickstart, T058, T059, T067, T075 and traceability FR-026/FR-027 all state the same rule: `USD`→`CBE`, `SAR`→`SAMA`, `EGP`→1, provider's own calendar, latest prior valid publication strictly before the Africa/Cairo date. The verbatim S36-PO-3 quotation still says ECB/TARGET and is unchanged; the later amendment is stated separately.
+- PASS (scope): S36-PO-2/S36-PO-3 rounding, exact per-line conversion, EGP identity, pending/retry and unchanged payment rules are untouched. No FR/SC/task renumbered or added; no checkbox ticked.
+- PASS (data model): no migration is required; `data-model.md` specifies snapshot content (now also provider key) but no storage table for a reporting consumer exists yet (T072/T073); T059 is a pure server-only library.
+- PASS (T075 evidence): `fx-coverage-verification.md` addendum records live per-provider coverage, calendars, the range-endpoint carry-in behaviour and the single-date snap-back; the pre-decision verdict table is retained as history.
+- LOW (INFO): the earlier `analyze.md` line mentioning "ECB/TARGET holiday fixtures" (2026-11-03..) is historical and superseded by this section.
+- **BLOCKER (recorded, not assumed): provider terms of use for `CBE` and `SAMA` (and Frankfurter v2 service terms) could not be verified** - `https://www.cbe.org.eg/en/disclaimer` returns a client-rendered shell without text and `https://www.sama.gov.sa/en-us/pages/termsofuse.aspx` did not respond. This gates acceptance of T059/T075 and is part of the T062 independent security review (FX egress, provider verification, request-data minimization), which has NOT been started. It is a verification gate, not a product ambiguity, and does not reopen S61-PO-1.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings (1 INFO above).
+- Verdict: PASS for the S61-PO-1 amendment; static review plus the unit tests named in tasks.md T058/T059. No integration, e2e or CI evidence yet.
