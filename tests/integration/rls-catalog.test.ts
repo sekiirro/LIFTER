@@ -320,6 +320,7 @@ describe('tenancy security catalog (T007)', () => {
           // F17 workout content validation triggers (20261119040000).
           'f17_validate_workout_schema_version',
           'f17_validate_workout_document_size',
+          'f17_guard_workout_references',
           'f17_guard_template_identity_update',
           'f17_reject_template_identity_delete',
           'f17_reject_template_version_mutation',
@@ -460,6 +461,7 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_template_assign_guard',
           'nutrition_template_private_fields',
           'f18_guard_nutrition_selection',
+          'f18_audit_allowlist_guard',
         ]),
       ].sort(),
     );
@@ -541,6 +543,7 @@ describe('tenancy security catalog (T007)', () => {
           'staff_display_name_is_white_space',
           'f17_validate_workout_schema_version',
           'f17_validate_workout_document_size',
+          'f17_guard_workout_references',
           'f19_audit_plan_change',
           'f19_audit_plan_revision',
           'f19_guard_delivery',
@@ -665,6 +668,7 @@ describe('tenancy security catalog (T007)', () => {
               'evaluate_forms_alerts_core',
               'f17_validate_workout_schema_version',
               'f17_validate_workout_document_size',
+              'f17_guard_workout_references',
               'f19_audit_plan_change',
               'f19_audit_plan_revision',
               'f19_guard_delivery',
@@ -769,6 +773,7 @@ describe('tenancy security catalog (T007)', () => {
               'nutrition_template_assign_guard',
               'nutrition_template_private_fields',
               'f18_guard_nutrition_selection',
+              'f18_audit_allowlist_guard',
             ].includes(row.proname)),
       );
     }
@@ -859,7 +864,7 @@ describe('audit security catalog (T005)', () => {
       join pg_catalog.pg_namespace n on n.oid = c.relnamespace
       join pg_catalog.pg_proc p on p.oid = t.tgfoid
       where n.nspname = 'public' and not t.tgisinternal
-        and p.proname in ('audit_row_change', 'audit_package_created', 'audit_events_immutable')
+        and p.proname in ('audit_row_change', 'audit_package_created', 'audit_events_immutable', 'f18_audit_allowlist_guard')
       order by t.tgname,c.relname`;
     expect(triggers).toEqual([
       {
@@ -875,6 +880,13 @@ describe('audit security catalog (T005)', () => {
         type: 5,
         tgenabled: 'O',
         proname: 'audit_row_change',
+      },
+      {
+        tgname: 'audit_events_f18_allowlist',
+        relname: 'audit_events',
+        type: 7,
+        tgenabled: 'O',
+        proname: 'f18_audit_allowlist_guard',
       },
       {
         tgname: 'audit_events_immutable',
