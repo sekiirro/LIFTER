@@ -65,7 +65,7 @@ function makeDoc(schemaVersion = 1): NutritionDocumentV1 {
         recipeUrl: null,
         items: [
           {
-            id: 'i-1',
+            id: '33333333-3333-4333-8333-333333333331',
             foodId,
             foodVersion: 1,
             quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },

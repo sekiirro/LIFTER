@@ -48,7 +48,7 @@ function documentWithTwoMeals(): NutritionDocumentV1 {
         recipeUrl: null,
         items: [
           {
-            id: 'item-a',
+            id: '018f0000-0000-4000-8000-000000000001',
             foodId: 'chicken',
             foodVersion: 1,
             quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
@@ -177,7 +177,7 @@ describe('nutrition plan editor (F18-FR-002, F18-FR-006, F18-FR-021, F18-FR-023)
 
     await typeInto(
       container.querySelector<HTMLInputElement>(
-        '[data-testid="item-quantity-item-a"]',
+        '[data-testid="item-quantity-018f0000-0000-4000-8000-000000000001"]',
       )!,
       '200',
     );
@@ -219,7 +219,7 @@ describe('nutrition plan editor (F18-FR-002, F18-FR-006, F18-FR-021, F18-FR-023)
       '[data-testid="meal-note-meal-a"]',
     )!;
     const foodNote = container.querySelector<HTMLTextAreaElement>(
-      '[data-testid="food-note-item-a"]',
+      '[data-testid="food-note-018f0000-0000-4000-8000-000000000001"]',
     )!;
     expect(mealNote.value).toBe('meal note');
     expect(foodNote.value).toBe('food note');

@@ -45,7 +45,7 @@ async function createAuthClientUser(): Promise<{
 function makeDocWithAlternatives(includeSecondAlt = true): NutritionDocumentV1 {
   const alts: NutritionAlternative[] = [
     {
-      id: 'alt-1',
+      id: '22222222-2222-4222-8222-222222222221',
       foodId: altFood1Id,
       foodVersion: 1,
       quantity: {
@@ -56,7 +56,7 @@ function makeDocWithAlternatives(includeSecondAlt = true): NutritionDocumentV1 {
   ];
   if (includeSecondAlt) {
     alts.push({
-      id: 'alt-2',
+      id: '22222222-2222-4222-8222-222222222222',
       foodId: altFood2Id,
       foodVersion: 1,
       quantity: {
@@ -86,7 +86,7 @@ function makeDocWithAlternatives(includeSecondAlt = true): NutritionDocumentV1 {
         recipeUrl: null,
         items: [
           {
-            id: 'item-1',
+            id: '11111111-1111-4111-8111-111111111111',
             foodId: primaryFoodId,
             foodVersion: 1,
             quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
@@ -94,14 +94,14 @@ function makeDocWithAlternatives(includeSecondAlt = true): NutritionDocumentV1 {
             alternatives: alts,
           },
           {
-            id: 'item-2',
+            id: '11111111-1111-4111-8111-111111111112',
             foodId: primaryFoodId,
             foodVersion: 1,
             quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
             note: null,
             alternatives: [
               {
-                id: 'alt-other-item',
+                id: '22222222-2222-4222-8222-222222222223',
                 foodId: altFood1Id,
                 foodVersion: 1,
                 quantity: { value: '120', unit: { kind: 'basis', value: 'g' } },
@@ -219,6 +219,48 @@ beforeAll(async () => {
 afterAll(async () => db?.end());
 
 describe('F18 T010 select_nutrition_alternative', () => {
+  it('rejects non-UUID item and alternative ids as invalid_selection', async () => {
+    const { revisionId } = await publishNutritionPlan(
+      seeded.client,
+      makeDocWithAlternatives(true),
+    );
+    const invalidItem = await primaryClientAuth.client.rpc(
+      'select_nutrition_alternative',
+      {
+        p_plan_version_id: revisionId,
+        p_item_id: 'item-not-uuid',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(invalidItem.error).toBeNull();
+    expect(invalidItem.data).toEqual({ status: 'invalid_selection' });
+
+    const invalidAlternative = await primaryClientAuth.client.rpc(
+      'select_nutrition_alternative',
+      {
+        p_plan_version_id: revisionId,
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: 'alternative-not-uuid',
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(invalidAlternative.error).toBeNull();
+    expect(invalidAlternative.data).toEqual({ status: 'invalid_selection' });
+
+    const uppercaseItem = await primaryClientAuth.client.rpc(
+      'select_nutrition_alternative',
+      {
+        p_plan_version_id: revisionId,
+        p_item_id: 'ABCDEFAB-CDEF-4ABC-8ABC-ABCDEFABCDEF',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(uppercaseItem.error).toBeNull();
+    expect(uppercaseItem.data).toEqual({ status: 'invalid_selection' });
+  });
+
   it('audits a verified item but omits an unverified alternative id', async () => {
     const { revisionId } = await publishNutritionPlan(
       seeded.client,
@@ -229,7 +271,7 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
         p_alternative_id: foodName,
         p_operation_key: randomUUID(),
       },
@@ -247,7 +289,7 @@ describe('F18 T010 select_nutrition_alternative', () => {
     expect(events).toHaveLength(1);
     expect(events[0]!.details).toMatchObject({
       revision_id: revisionId,
-      item_id: 'item-1',
+      item_id: '11111111-1111-4111-8111-111111111111',
       outcome: 'denied',
       reason: 'invalid_selection',
     });
@@ -273,7 +315,7 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
         p_alternative_id: null,
         p_operation_key: randomUUID(),
       },
@@ -303,14 +345,14 @@ describe('F18 T010 select_nutrition_alternative', () => {
     expect(cntAfterNoopClear!.c).toBe(0);
     expect(auditAfterNoopClear!.c).toBe(auditBeforeNoopClear[0]!.c);
 
-    // 2. Real select: alt-1 -> selection_revision = 1, noop = false, 1 row, 1 audit
+    // 2. Real select: 22222222-2222-4222-8222-222222222221 -> selection_revision = 1, noop = false, 1 row, 1 audit
     const select1Key = randomUUID();
     const select1 = await clientAuth.client.rpc(
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: select1Key,
       },
     );
@@ -319,18 +361,18 @@ describe('F18 T010 select_nutrition_alternative', () => {
       status: 'ok',
       selection_revision: 1,
       noop: false,
-      selected_alternative_id: 'alt-1',
+      selected_alternative_id: '22222222-2222-4222-8222-222222222221',
     });
 
     const [selRow1] = await db`
       select client_id, item_id, alternative_id, created_by
       from public.client_nutrition_alternative_selections
-      where workspace_id = ${fixture.wsA.id} and plan_version_id = ${revisionId} and item_id = 'item-1'
+      where workspace_id = ${fixture.wsA.id} and plan_version_id = ${revisionId} and item_id = '11111111-1111-4111-8111-111111111111'
     `;
     expect(selRow1).toMatchObject({
       client_id: seeded.client,
-      item_id: 'item-1',
-      alternative_id: 'alt-1',
+      item_id: '11111111-1111-4111-8111-111111111111',
+      alternative_id: '22222222-2222-4222-8222-222222222221',
       created_by: clientAuth.authUserId,
     });
 
@@ -339,8 +381,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: select1Key,
       },
     );
@@ -352,15 +394,15 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-2',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222222',
         p_operation_key: select1Key,
       },
     );
     expect(conflict1.error).toBeNull();
     expect(conflict1.data).toEqual({ status: 'key_conflict' });
 
-    // 5. No-op select (already selected alt-1 with new key): noop = true, counter stays 1, no new audit
+    // 5. No-op select (already selected 22222222-2222-4222-8222-222222222221 with new key): noop = true, counter stays 1, no new audit
     const auditBeforeNoopSel = await db`
       select count(*)::int as c from public.audit_events
       where workspace_id = ${fixture.wsA.id}
@@ -371,8 +413,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -381,7 +423,7 @@ describe('F18 T010 select_nutrition_alternative', () => {
       status: 'ok',
       selection_revision: 1,
       noop: true,
-      selected_alternative_id: 'alt-1',
+      selected_alternative_id: '22222222-2222-4222-8222-222222222221',
     });
     const [auditAfterNoopSel] = await db`
       select count(*)::int as c from public.audit_events
@@ -394,7 +436,7 @@ describe('F18 T010 select_nutrition_alternative', () => {
     // 6. Clear deletes selection row, retains and increments durable counter to 2
     const clear1 = await clientAuth.client.rpc('select_nutrition_alternative', {
       p_plan_version_id: revisionId,
-      p_item_id: 'item-1',
+      p_item_id: '11111111-1111-4111-8111-111111111111',
       p_alternative_id: null,
       p_operation_key: randomUUID(),
     });
@@ -421,8 +463,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-2',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222222',
         p_operation_key: randomUUID(),
       },
     );
@@ -431,7 +473,7 @@ describe('F18 T010 select_nutrition_alternative', () => {
       status: 'ok',
       selection_revision: 3,
       noop: false,
-      selected_alternative_id: 'alt-2',
+      selected_alternative_id: '22222222-2222-4222-8222-222222222222',
     });
 
     // 8. Audit allowlist / log-scrub: no food names, macros, quantities, or raw operation keys
@@ -465,8 +507,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: randomUUID(),
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -478,8 +520,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'forged-item',
-        p_alternative_id: 'alt-1',
+        p_item_id: '99999999-9999-4999-8999-999999999999',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -491,8 +533,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-other-item',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222223',
         p_operation_key: randomUUID(),
       },
     );
@@ -505,8 +547,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: nonV4Key,
       },
     );
@@ -518,8 +560,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -531,8 +573,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -554,8 +596,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -567,8 +609,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
         p_client_id: seeded.client,
       } as never,
@@ -598,8 +640,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -635,8 +677,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: okKey,
       },
     );
@@ -651,8 +693,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-2',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222222',
         p_operation_key: randomUUID(),
       },
     );
@@ -664,8 +706,8 @@ describe('F18 T010 select_nutrition_alternative', () => {
       'select_nutrition_alternative',
       {
         p_plan_version_id: revisionId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: okKey,
       },
     );
@@ -680,15 +722,15 @@ describe('F18 T010 select_nutrition_alternative', () => {
         plan_id: randomUUID(),
         plan_version_id: revisionId,
         client_id: expSeeded.client,
-        item_id: 'item-1',
-        alternative_id: 'alt-2',
+        item_id: '11111111-1111-4111-8111-111111111111',
+        alternative_id: '22222222-2222-4222-8222-222222222222',
         created_by: expClientAuth.authUserId,
       });
     expect(directInsertClient.error).not.toBeNull();
 
     const directUpdateTrainer = await fixture.trainerA.client
       .from('client_nutrition_alternative_selections')
-      .update({ alternative_id: 'alt-2' })
+      .update({ alternative_id: '22222222-2222-4222-8222-222222222222' })
       .eq('plan_version_id', revisionId);
     expect(directUpdateTrainer.error).not.toBeNull();
 
