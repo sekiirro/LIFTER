@@ -150,6 +150,14 @@
   - Removed the PO scope gate (`if (!allowed) return null;`) -> `non-PO roles render nothing` failed (WO rendered the wizard); restored.
   - Collapsed the state distinction (`skipped_existing` label -> `skipped_already_assigned`) -> `review shows all four receipt outcomes` failed (`Skipped: already has it` missing); restored.
 
+## S61 T030 Slice Evidence (Copy published plan)
+
+- **Task / requirement**: T030 / FR-014 (F19 FR-008 copy contract).
+- **Stack**: Stack A (`LIFTER_SUPABASE_STACK=a`); safe reset followed by `tests/integration/client-accounts-provision.mjs`.
+- **Coverage**: `tests/integration/f19-plan-copy.test.ts` verifies the latest of two published revisions is copied rather than an unpublished later draft; destination content remains independent; ownership, authorship, history, subscription, delivery, activation, and Video document fields are omitted; no destination revisions or deliveries are created, and only destination audit events exist.
+- **RED / mutation**: Added source-document fields for ownership/authorship/history/subscription/delivery/activation and verified the copy contract against them. On Stack A, temporarily replaced `app_private.f19_sanitize_copied_content` from `20261119130000_f19_nutrition_template_copy.sql` with a mutant omitting the `delivery` and `activation` exclusions. `f19-plan-copy.test.ts` was killed: workout copy retained both facts (expected field-for-field content mismatch), and the existing nutrition delivery exclusion assertion also failed.
+- **Restore / GREEN**: Safe reset restored the migration-defined function; reprovisioned Stack A. `f19-plan-copy.test.ts`: 1 file / 8 tests passed. `git diff --exit-code -- supabase/migrations/20261119130000_f19_nutrition_template_copy.sql`: exit 0. Mutation SQL scratch is outside the repository at `C:/Users/NEW LAP/.lifter/runs/s61-luna-f17t030/t030-mutation.sql`.
+
 ## F17 Verification — T042 (s61-muse-f17t042, `017-draft-publish-ui-slice-1`, stack: none)
 
 - **Branch**: `017-draft-publish-ui-slice-1` / no DB stack (UI-only, mocked props; F19 RPCs untouched — T019/T020 own them).
