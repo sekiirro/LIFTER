@@ -100,6 +100,15 @@
   - Dropped `workout_template_assignment_c_workspace_id_global_template__key` (`UNIQUE (workspace_id, global_template_id)`) on `public.workout_template_assignment_copies` -> `tests/integration/workout-assignment-schema.test.ts` failed at line 236 (`AssertionError: promise resolved "undefined" instead of rejecting`), proving duplicate-on-retry succeeds when copy uniqueness is removed.
   - Restored Stack B via `db reset --local` + `tests/integration/client-accounts-provision.mjs` and verified `git diff --exit-code` on the migration is 0.
 
+## S60 T018 Create plan
+
+- **Branch / stack**: `017-create-plan-slice-1` / Stack D (`lifter-stack-d`). Reset and every post-reset provisioning used `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` plus `tests/integration/client-accounts-provision.mjs`.
+- **Implementation**: Added the authenticated workout-plan server action and API service. It derives workspace from the selected client, denies non-staff/foreign staff generically, sends blank creation to F19 `create_plan_draft`, and sends template/existing-plan creation to F19 `copy_plan_to_draft`. No parallel lifecycle writer or migration was added.
+- **RED**: The unit suite was added first and failed because `lib/plans/create` did not exist. The focused integration test asserts 12 concurrent identical blank-plan submits return one Plan ID, one root, one draft, and one operation receipt.
+- **GREEN**: After safe reset and provisioning, `f17-plan-create.test.ts`, `f19-plan-copy.test.ts`, and `f19-plan-core-schema.test.ts` passed: 3 files / 16 tests. Coverage includes concurrent duplicate creation, generic Sales/foreign-staff/client denial with no root/draft/ledger writes, copy modes, source semantics, and F19 authorization/replay behavior.
+- **Mutation (DB-only scratch; restored)**: Added temporary migration `20261120120001_t018_remove_plan_create_ledger_mutant.sql`, replacing `create_plan_draft` without its operation-key fingerprint/ledger insert/replay guard. After safe reset and provisioning, the concurrent duplicate-submit test failed as required: expected one Plan ID, received 12; 1 failed, 5 skipped. Removed the scratch migration, safely reset and reprovisioned Stack D, reran the three integration files (16/16 passed), and verified the mutation file is absent.
+- **Local gates**: `npm run lint`, `npm run typecheck`, both format gates, all-origin migration scan, and full unit suite passed. Final full unit run: 278 files / 3,213 tests. One earlier default-worker run had two scheduling timeouts; the passing rerun was recorded in the lane flakes backlog.
+
 ## F17 Verification — T044 slices 1+2 (template manager + assignment wizard UI)
 
 - **Branch / stack**: slice 1 `017-template-manager-slice-1` (merged as PR #173) + slice 2 `017-assign-wizard-slice-2` / no DB stack (UI-only, mocked props; T025 RPC not called).
