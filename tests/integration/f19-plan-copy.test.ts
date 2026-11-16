@@ -229,14 +229,14 @@ function makeValidNutritionTemplateDoc(notes: string) {
           recipeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           items: [
             {
-              id: 'item-1',
+              id: '11111111-1111-4111-8111-111111111111',
               foodId: foodOats,
               foodVersion: 2,
               quantity: { value: '80', unit: { kind: 'basis', value: 'g' } },
               note: 'Rolled oats',
               alternatives: [
                 {
-                  id: 'alt-1',
+                  id: '22222222-2222-4222-8222-222222222221',
                   foodId: foodRice,
                   foodVersion: 1,
                   quantity: {
@@ -732,7 +732,10 @@ describe('F19 T012 template and plan copy', () => {
       ...v2.doc,
       ownership: { workspaceId: fixture.workspaceId },
       history: [{ event: 'created' }],
-      selection: { itemId: 'item-1', alternativeId: 'alt-1' },
+      selection: {
+        itemId: '11111111-1111-4111-8111-111111111111',
+        alternativeId: '22222222-2222-4222-8222-222222222221',
+      },
       delivery: { id: 'del-1' },
     };
 
@@ -815,11 +818,13 @@ describe('F19 T012 template and plan copy', () => {
     expect(validatedV1.dayTypes[0]?.id).not.toBe('dt-1');
     expect(validatedV1.implicitDayTypeId).toBe(validatedV1.dayTypes[0]?.id);
     expect(validatedV1.meals?.[0]?.id).not.toBe('meal-1');
-    expect(validatedV1.meals?.[0]?.items[0]?.id).not.toBe('item-1');
+    expect(validatedV1.meals?.[0]?.items[0]?.id).not.toBe(
+      '11111111-1111-4111-8111-111111111111',
+    );
     expect(validatedV1.meals?.[0]?.items[0]?.foodId).toBe(v1.foodOats);
     expect(validatedV1.meals?.[0]?.items[0]?.foodVersion).toBe(2);
     expect(validatedV1.meals?.[0]?.items[0]?.alternatives[0]?.id).not.toBe(
-      'alt-1',
+      '22222222-2222-4222-8222-222222222221',
     );
     expect(validatedV1.meals?.[0]?.items[0]?.alternatives[0]?.foodId).toBe(
       v1.foodRice,

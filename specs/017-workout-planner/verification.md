@@ -330,3 +330,23 @@
 - **Stack C verification**: After Stack C reset and `tests/integration/client-accounts-provision.mjs`, `npm run test:integration -- workout-print-route catalog-exercise-video-t050` passed 2 files / 24 tests. The Stack C migration junction at `supabase-stack-c/supabase/migrations` points to this worktree's root migrations and is untracked.
 - **Focused unit verification**: `npm run test:unit -- tests/unit/workout-live-video.test.ts tests/unit/workout-copy-prompt-route.test.ts tests/unit/workout-print-view.test.tsx tests/unit/workout-excel-export.test.ts` passed 4 files / 27 tests.
 - **Scope**: T035 is verified. T005, T011, and T031 remain open under SC-011.
+
+## F17 Verification — T046 (s61-fl-f17t046)
+
+- **Branch / stack**: `017-assignment-states-slice-1` (stacked on `20261120170000–20261120175959` / PR #176) / Stack B (`lifter-stack-b`).
+- **Scope**: T046 — Assignment state visibility tests (FR-011, SC-004). Proves that `never-assigned`, `intentionally partial`, and `own-templates-only` workspaces/states are distinguishable in:
+  1. The PO view (`TemplateManager.tsx` on main, AR/EN labels, role-gated provenance masking via `workout_template_assignment_copies`).
+  2. Run receipts (`public.assign_workout_templates` RPC from #176).
+  3. Durable state (distribution state flags and template origin copies).
+- **Suites**:
+  - Unit: `tests/unit/workout-assignment-state-visibility.test.tsx` (4 tests).
+  - Integration: `tests/integration/workout-assignment-state-visibility.test.ts` (5 tests).
+- **RED**: Initial implementation of unit tests verified state distinction and role gating; initial integration assertions verified receipt semantics across scopes and state preservation.
+- **GREEN**: All 4 unit tests and 5 integration tests pass cleanly on Stack B.
+- **Mutation (Stack B; restored)**: Mutated `supabase/migrations/20261120170000_f17_workout_template_assign_run.sql` line 147 from:
+  `if workspace_assigned then`
+  to:
+  `if false and workspace_assigned then`
+  collapsing `intentionally partial` (workspace previously assigned) into `never-assigned` under All Workspaces assignment. After `db reset --local` on Stack B and provisioning, ran `tests/integration/workout-assignment-state-visibility.test.ts`: line 130 failed with `AssertionError: expected 'no_copies' to be 'skipped_already_assigned'`, proving intentional partiality is distinguished in run receipts from never-assigned workspaces.
+  Restored the migration file; `git diff --exit-code supabase/migrations/20261120170000_f17_workout_template_assign_run.sql` exited 0; executed clean `db reset --local` and reprovisioned Stack B; re-ran integration suite and confirmed 5/5 GREEN.
+

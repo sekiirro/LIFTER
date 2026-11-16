@@ -342,7 +342,10 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
           'f18_guard_plan_version_content',
+          'f18_guard_nutrition_document_ids',
           'f18_guard_nutrition_selection',
+          'f18_invalid_uuid_alias',
+          'f18_is_canonical_uuid_v4',
           'f18_selection_audit',
           'f18_is_self_approved_client',
           'f18_is_self_approved_plan_client',
@@ -523,6 +526,8 @@ describe('tenancy security catalog (T007)', () => {
         'nutrition_template_assign_guard',
         'nutrition_template_private_fields',
         'f18_guard_nutrition_selection',
+        'f18_is_canonical_uuid_v4',
+        'f18_invalid_uuid_alias',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -588,6 +593,9 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_template_write_audit',
           'f17_reject_assignment_ledger_mutation',
           'f17_guard_distribution_state_update',
+          'f18_guard_nutrition_document_ids',
+          'f18_is_canonical_uuid_v4',
+          'f18_invalid_uuid_alias',
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
         ].includes(row.proname)
@@ -778,6 +786,9 @@ describe('tenancy security catalog (T007)', () => {
               'nutrition_template_private_fields',
               'f18_guard_nutrition_selection',
               'f18_audit_allowlist_guard',
+              'f18_guard_nutrition_document_ids',
+              'f18_is_canonical_uuid_v4',
+              'f18_invalid_uuid_alias',
               'f19_guard_plan_revision_contributors',
               'f19_track_plan_draft_contributor',
             ].includes(row.proname)),

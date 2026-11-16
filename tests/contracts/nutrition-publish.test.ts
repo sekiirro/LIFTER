@@ -69,7 +69,7 @@ const DOC_F1 = {
       recipeUrl: null,
       items: [
         {
-          id: 'i-1',
+          id: '33333333-3333-4333-8333-333333333331',
           foodId: 'f1',
           foodVersion: 3,
           quantity: { value: '37', unit: { kind: 'basis', value: 'g' } },
@@ -367,7 +367,7 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     expect(content.snapshotMap['food:f1@3#basis:g']).toBeDefined();
     expect(
       (content.computedValues as { items: Record<string, { protein: string }> })
-        .items['i-1']!.protein,
+        .items['33333333-3333-4333-8333-333333333331']!.protein,
     ).toBe('4.5658');
   });
 
@@ -377,7 +377,7 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     const meals = servingDoc.meals as Array<Record<string, unknown>>;
     meals[0]!.items = [
       {
-        id: 'i-serving',
+        id: '33333333-3333-4333-8333-333333333354',
         foodId: 'f1',
         foodVersion: 3,
         quantity: { value: '1', unit: { kind: 'serving', unitKey: 'g' } },
@@ -398,7 +398,7 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     // 12.34 × 100.000 (basis quantity) × 1 / 100 = 12.34 exactly
     expect(
       (content.computedValues as { items: Record<string, { protein: string }> })
-        .items['i-serving']!.protein,
+        .items['33333333-3333-4333-8333-333333333354']!.protein,
     ).toBe('12.3400000');
   });
 
@@ -408,7 +408,7 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     const meals = encodedDoc.meals as Array<Record<string, unknown>>;
     meals[0]!.items = [
       {
-        id: 'i-encoded',
+        id: '33333333-3333-4333-8333-333333333355',
         foodId: 'f1',
         foodVersion: 3,
         quantity: {
@@ -433,7 +433,7 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     // 12.34 × 250.000 / 100 = 30.85 exactly (scale 2+3+2 = 7)
     expect(
       (content.computedValues as { items: Record<string, { protein: string }> })
-        .items['i-encoded']!.protein,
+        .items['33333333-3333-4333-8333-333333333355']!.protein,
     ).toBe('30.8500000');
   });
 
@@ -500,7 +500,7 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
     const meals = forgedDoc.meals as Array<Record<string, unknown>>;
     meals[0]!.items = [
       {
-        id: 'i-1',
+        id: '33333333-3333-4333-8333-333333333331',
         foodId: 'missing-food',
         foodVersion: 9,
         quantity: { value: '37', unit: { kind: 'basis', value: 'g' } },

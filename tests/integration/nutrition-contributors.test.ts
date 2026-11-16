@@ -85,7 +85,7 @@ function makeDoc(
         recipeUrl: null,
         items: [
           {
-            id: 'i-1',
+            id: '33333333-3333-4333-8333-333333333371',
             foodId: targetFoodId,
             foodVersion,
             quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },

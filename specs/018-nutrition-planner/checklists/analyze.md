@@ -156,3 +156,25 @@ Date update note (retained from origin/main): T020/T021 implementation and bench
 - PASS � consistency check date is current with the task evidence commit.
 
 **Result:** no requirement change or open product decision; implementation bookkeeping is consistent with the approved spec.
+
+## Analyze — S60-PO-3 UUID-only item and alternative ids
+
+**Analyzed:** 2026-11-16. **Scope:** full requirement and design pass after the S60-PO-3 text update. Re-read spec.md, plan.md, tasks.md (including T029), data-model.md, nutrition-document.md, nutrition-api.md, traceability.md, clarifications, and the F18 decision matrix. Cross-checked the selected PO words against `runs/s60-po/s60-po-3.verbatim.txt` and the approved lowercase UUIDv4 convention in `lib/catalog/uuid.ts` / `crypto.randomUUID()`.
+
+### Entry check
+
+- PASS — S60-PO-3 is recorded as a direct PO decision in spec.md clarifications and the decision matrix; the mapping is not presented as additional PO wording.
+- PASS — F18-FR-002 now distinguishes item/alternative IDs (canonical lowercase UUIDv4) from day-type and meal IDs (strings). The nutrition-document and nutrition-api contracts, data model, T029 task, validator expectations, SQL publish/selection paths, audit boundary, and fixture rule express the same scope.
+- PASS — selection still uses text parameters to address JSON document IDs; malformed inputs map to `invalid_selection`. Audit events contain only UUID-shaped item/alternative IDs. No foodId, day-type, or meal-ID requirements were changed.
+- PASS — no migration data rewrite is specified. LIFTER is not live; the lane uses synthetic Stack A data, and the tracked repository has no nutrition seed file.
+
+### Findings
+
+- CRITICAL: 0 open.
+- HIGH: 0 open.
+- MEDIUM: 0 open product decisions. Existing OPEN-TECH reconciliation entries remain unchanged and do not affect this requirement.
+- LOW: no FR/contract/data-model mismatch found in the UUID-only scope.
+
+### Cross-artifact decision
+
+S60-PO-3's approved “UUIDs only (Recommended)” choice applies to item and alternative IDs only. Require canonical lowercase UUIDv4 form at the TS validator, published-document SQL boundary, selection RPC/table boundary, and F18 audit allowlist guard. Keep other F18 ID scopes unchanged. The fixtures use deterministic lowercase UUIDv4 values; negative tests retain malformed values only where the test explicitly checks rejection.
