@@ -100,25 +100,29 @@
   - Dropped `workout_template_assignment_c_workspace_id_global_template__key` (`UNIQUE (workspace_id, global_template_id)`) on `public.workout_template_assignment_copies` -> `tests/integration/workout-assignment-schema.test.ts` failed at line 236 (`AssertionError: promise resolved "undefined" instead of rejecting`), proving duplicate-on-retry succeeds when copy uniqueness is removed.
   - Restored Stack B via `db reset --local` + `tests/integration/client-accounts-provision.mjs` and verified `git diff --exit-code` on the migration is 0.
 
-## F17 Verification — T043 (PARTIAL — slice 1) (s60-fl-f17t043)
+## F17 Verification — T043 (VERIFIED — slices 1+2) (s60-fl-f17t043 + s61-fl-f17t043b)
 
-- **Status**: PARTIAL — slice 1 verified: structure, reorder/cross-day move/duplicate, keyboard alternatives, rest-day rejection (3 mutants); slice 2 open: field editing (notes, reps, set load/rest/RIR, day title/kind) and AlternativesEditor (T034) integration.
-- **Branch / stack**: `017-plan-builder-slice-1` / NO DB stack (pure UI and document transforms).
+- **Status**: VERIFIED — slice 1 verified: structure, reorder/cross-day move/duplicate, keyboard alternatives, rest-day rejection (3 mutants, PR #170); slice 2 verified: editable fields (plan/day/item notes, fixed/range reps, warmup/working set type, bodyweight/added_weight/assisted set load with value & unit, restSec, rir, day title, day kind switching with rest rejection, alternative removal) reusing document validator `parseWorkoutDocumentV1` (S60-D3; 3 slice-2 mutants).
+- **Branch / stack**: slice 1 `017-plan-builder-slice-1` (PR #170) + slice 2 `017-plan-builder-slice-2` / NO DB stack (pure UI and document transforms).
 - **Implementation**:
   - `components/workout-planner/WorkoutPlanBuilder.tsx` and `components/workout-planner/WorkoutPlanBuilder.module.css`.
-  - Added pure document transform functions to `lib/workout-planner/document.ts` (`reorderWorkoutItem`, `duplicateWorkoutItem`, `removeWorkoutItem`, `addWorkoutDay`, `reorderWorkoutDay`, `duplicateWorkoutDay`, `removeWorkoutDay`).
-  - Added PO-approved S28-PO-2 `builder.*` keys to `lib/i18n/messages/en.ts` and `ar.ts`.
-- **RED**: Initial test `tests/unit/WorkoutPlanBuilder.test.tsx` executed and failed before implementation.
-- **GREEN**: All 13 tests passed covering AR RTL, EN LTR, sessions/rest days, items, sets, notes, alternatives, reorder, cross-day move, duplicate, keyboard move controls, and rest-day rejection. Full unit suite green (278 files, 3,219 passed).
+  - Added pure document transform functions to `lib/workout-planner/document.ts` (`reorderWorkoutItem`, `duplicateWorkoutItem`, `removeWorkoutItem`, `addWorkoutDay`, `reorderWorkoutDay`, `duplicateWorkoutDay`, `removeWorkoutDay`, `updatePlanNotes`, `updateWorkoutDay`, `updateWorkoutItem`, `updateWorkoutSet`, `removeWorkoutAlternative`).
+  - Reused PO-approved S28-PO-2 `builder.*` keys in `lib/i18n/messages/en.ts` and `ar.ts`.
+- **RED**: Initial test `tests/unit/WorkoutPlanBuilder.test.tsx` executed and failed (8 failed in slice 2) before implementation.
+- **GREEN**: All 21 tests passed in `tests/unit/WorkoutPlanBuilder.test.tsx` + 14 tests in `tests/unit/workout-document.test.ts` (35 total), covering AR RTL, EN LTR, sessions/rest days, items, sets, all editable fields, keyboard move controls, and rest-day rejection.
 - **Acceptance Tests**:
   - Adding or moving an item to a rest day is rejected with `invalid_document` and no write (`onChange` is not called).
+  - Attempting to switch a session day containing items to `kind: 'rest'` is rejected with `invalid_document` and no write (`onChange` is not called; `onError` is called).
   - A rejected move leaves the item on its source day.
   - Rest days cannot display or retain items.
-- **Mutations (3/3 killed; restored; `git diff --exit-code` = 0)**:
-  - Mutation 1 (remove keyboard alternative): Removed `move-item-up` button -> test failed at line 347 (`expected 0 to be greater than 0`). Restored.
-  - Mutation 2 (remove ID preservation): Regenerated ID on reorder -> test failed at line 407 (`expected '...' to be 'bbbb1111-1111-4111-8111-111111111111'`). Restored.
-  - Mutation 3 (remove rest-day rejection): Removed rest-day rejection in document parser -> test failed at line 299 (`expected "vi.fn()" to not be called at all, but actually been called 1 times`). Restored.
-- **Design Gate Screenshots**: Rendered via Playwright across {AR-RTL, EN-LTR} × {light, dark} × {mobile 390px, desktop 1440px} saved to `C:/Users/NEW LAP/.lifter/runs/s60-fl-f17t043/screenshots/`.
+  - Document validator `parseWorkoutDocumentV1` enforces bounds on reps (1..100, min<=max), restSec (0..600, step 15), rir (0..5), load decimals (> 0) without UI logic duplication (S60-D3).
+- **Mutations (6/6 killed; restored; `git diff --exit-code` = 0)**:
+  - _Slice 1 Mutations_:
+    1. Mutation 1 (remove keyboard alternative): Removed `move-item-up` button -> test failed at line 347 (`expected 0 to be greater than 0`). Restored.
+    2. Mutation 2 (remove ID preservation): Regenerated ID on reorder -> test failed at line 407 (`expected '...' to be 'bbbb1111-1111-4111-8111-111111111111'`). Restored.
+    3. Mutation 3 (remove rest-day rejection): Removed rest-day rejection in document parser -> test failed at line 299 (`expected "vi.fn()" to not be called at all, but actually been called 1 times`). Restored.
+  - _Slice 2 Mutations_: 4. Mutation 4 (bypass document validator in `updateWorkoutItem` — S60-D3 violation): In `lib/workout-planner/document.ts:488`, bypassed `parseWorkoutDocumentV1` and returned unvalidated clone -> tests `allows editing exercise notes, rest, and RIR with document validator bounds` and `allows editing exercise reps in fixed mode and range mode with bounds validation` failed (`AssertionError: expected "vi.fn()" to be called 2 times, but got 3 times`). Restored. 5. Mutation 5 (allow rest day with items on kind change — acceptance test violation): In `lib/workout-planner/document.ts:230`, disabled rest day item check -> test `allows editing day kind and rejects converting a session day with items to rest day` failed (`AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times`). Restored. 6. Mutation 6 (drop set load update in `updateWorkoutSet`): In `lib/workout-planner/document.ts:513`, commented out load update -> test `allows editing set type (warmup/working) and set load modes (bodyweight/added_weight/assisted)` failed (`AssertionError: expected 'bodyweight' to be 'added_weight'`). Restored.
+- **Design Gate Screenshots**: Rendered via Playwright across {AR-RTL, EN-LTR} × {light, dark} × {mobile 390px, desktop 1440px} saved to `C:/Users/NEW LAP/.lifter/runs/s60-fl-f17t043/screenshots/` and `C:/Users/NEW LAP/.lifter/runs/s61-fl-f17t043b/screenshots/`.
 
 ## F17 Verification — T044 slices 1+2 (template manager + assignment wizard UI)
 
