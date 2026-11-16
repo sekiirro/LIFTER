@@ -462,6 +462,7 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_template_private_fields',
           'f18_guard_nutrition_selection',
           'f18_audit_allowlist_guard',
+          'package_c5_preflight',
         ]),
       ].sort(),
     );
@@ -521,6 +522,7 @@ describe('tenancy security catalog (T007)', () => {
         'nutrition_template_assign_guard',
         'nutrition_template_private_fields',
         'f18_guard_nutrition_selection',
+        'package_c5_preflight',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -563,6 +565,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_productivity_unit',
           'f18_guard_plan_version_content',
           'f18_guard_nutrition_selection',
+          'package_c5_preflight',
           'f18_selection_audit',
           'f18_is_self_approved_client',
           'f18_is_self_approved_plan_client',
@@ -774,6 +777,7 @@ describe('tenancy security catalog (T007)', () => {
               'nutrition_template_private_fields',
               'f18_guard_nutrition_selection',
               'f18_audit_allowlist_guard',
+              'package_c5_preflight',
             ].includes(row.proname)),
       );
     }

@@ -5,6 +5,7 @@
 // T064a landed (migration 20261121100000): these tests are GREEN gates, no longer `it.fails`.
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { TransactionSql } from 'postgres';
 import {
   checked,
   createLegacySynthetic,
@@ -306,5 +307,113 @@ describe('T064 deletable contract, input modes and v2 checks (N1-N5)', () => {
     expect([...report.workspace_ids].sort()).toEqual(
       [f.wsA.id, f.wsB.id].sort(),
     );
+  });
+});
+
+describe('T064 re-review N3/N5 tests', () => {
+  class Done extends Error {
+    constructor(readonly report: PreflightReport) {
+      super('rollback');
+    }
+  }
+  const inRolledBackTx = (
+    targets: string[],
+    prepare: (tx: TransactionSql) => Promise<void>,
+  ) =>
+    db
+      .begin(async (tx) => {
+        await prepare(tx);
+        throw new Done(await runPreflight(tx, targets));
+      })
+      .catch((e: unknown) => {
+        if (e instanceof Done) return e.report;
+        throw e;
+      });
+
+  it('N5 an unknown table that references a package offer escalates (level 1)', async () => {
+    const mock = await createLegacySynthetic(f);
+    checked(await publish(f, mock.id, { tier_rank: 1 }));
+    const report = await inRolledBackTx([mock.id], async (tx) => {
+      await tx.unsafe(
+        'create table public.t064_unknown_dep (id uuid primary key default gen_random_uuid(), oid uuid references public.package_offers(id))',
+      );
+      await tx.unsafe(
+        `insert into public.t064_unknown_dep(oid) select id from public.package_offers where package_id='${mock.id}'`,
+      );
+    });
+    expect(report.status).toBe('escalate');
+    expect(report.deletable).toBe(false);
+    expect(report.refusals.map((r) => r.code)).toContain(
+      'unknown_dependency_state',
+    );
+    expect(
+      report.dependencies.find((d) => d.edge === 'public.t064_unknown_dep.oid')
+        ?.kind,
+    ).toBe('unknown_dependency');
+  });
+
+  it('N5 an unknown table under a known dependent is labelled unknown_dependency and subsumed by the financial refusal', async () => {
+    const ctx = await clientContext();
+    await bought(ctx);
+    const report = await inRolledBackTx([ctx.p.id], async (tx) => {
+      await tx.unsafe(
+        'create table public.t064_nested (id uuid primary key default gen_random_uuid(), sub uuid references public.subscriptions(id))',
+      );
+      await tx.unsafe(
+        `insert into public.t064_nested(sub) select s.id from public.subscriptions s
+           join public.package_versions v on v.id = s.package_version_id
+           join public.package_offers o on o.id = v.offer_id where o.package_id='${ctx.p.id}'`,
+      );
+    });
+    const nested = report.dependencies.find(
+      (d) => d.edge === 'public.t064_nested.sub',
+    );
+    expect(nested?.kind).toBe('unknown_dependency');
+    expect(nested?.count).toBeGreaterThan(0);
+    const codes = report.refusals.map((r) => r.code);
+    expect(codes).toContain('required_financial_dependency');
+    expect(codes).not.toContain('unknown_dependency_state');
+    expect(report.status).toBe('refused');
+    expect(report.deletable).toBe(false);
+  });
+
+  it('N5 a caller that cannot see rows (no BYPASSRLS) escalates with caller_cannot_see_rows', async () => {
+    const mock = await createLegacySynthetic(f);
+    const report = await inRolledBackTx([mock.id], async (tx) => {
+      await tx.unsafe('create role t064_blind nologin');
+      await tx.unsafe(
+        'grant usage on schema public, app_private to t064_blind',
+      );
+      await tx.unsafe(
+        'grant select on all tables in schema public, app_private to t064_blind',
+      );
+      await tx.unsafe(
+        `grant execute on function ${PREFLIGHT_FN}(uuid[]) to t064_blind`,
+      );
+      await tx.unsafe('set local role t064_blind');
+    });
+    expect(report.status).toBe('escalate');
+    expect(report.deletable).toBe(false);
+    expect(report.refusals.map((r) => r.code)).toContain(
+      'caller_cannot_see_rows',
+    );
+  });
+
+  it('N3 the named exception column is verified and applies to that exact column only', async () => {
+    const [col] = await db`
+      select exists (
+        select 1 from pg_attribute a join pg_class c on c.oid=a.attrelid join pg_namespace n on n.oid=c.relnamespace
+         where n.nspname='app_private' and c.relname='branding_render_handles' and a.attname='version_id' and not a.attisdropped
+           and not exists (select 1 from pg_constraint k where k.contype='f' and k.conrelid=c.oid and a.attnum = any(k.conkey))
+      ) as no_fk`;
+    expect(col!.no_fk).toBe(true); // the exception is needed: no FK covers it
+    const mock = await createLegacySynthetic(f);
+    expect((await runPreflight(db, [mock.id])).status).toBe('clean');
+    const other = await inRolledBackTx([mock.id], async (tx) => {
+      await tx.unsafe(
+        'create table public.t064_same_name (id int, version_id uuid)',
+      );
+    });
+    expect(other.status).toBe('escalate');
   });
 });

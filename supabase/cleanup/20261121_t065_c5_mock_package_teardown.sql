@@ -13,8 +13,14 @@
 --     -v package_ids='<uuid>,<uuid>' \
 --     -v workspace_ids='<verified-synthetic workspace uuid>,...' \
 --     -v run_id='c5-<yyyymmdd>-<n>' -v review_ref='<T064b PASS record reference>' \
---     -v expected_database='<current_database() of the named stack>' \
+--     -v expected_stack_id='<system_identifier of the named stack>' \
 --     -f supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql
+-- run_id must match ^c5-<yyyymmdd>-<n>$; review_ref is 1-120 characters of [A-Za-z0-9._:/#-].
+-- expected_stack_id is the cluster-unique identifier of the named stack: run
+--   select system_identifier::text from pg_control_system();
+-- on it and record it. If the owner may not call pg_control_system(), the stack owner maintains
+-- `alter database <db> set lifter.stack_id = '<unique id>'` and passes that value instead.
+-- (current_database() is 'postgres' on every stack and proves nothing.)
 -- Record operator, reviewer, stack identity and before-counts in the out-of-band run record FIRST.
 -- package_ids must be the allow-list captured from app_private.package_c5_preflight(...) (deletable = true);
 -- workspace_ids is the operator-verified list of synthetic workspaces (the schema has no synthetic marker).
@@ -26,10 +32,15 @@ select set_config('c5.package_ids', :'package_ids', true),
        set_config('c5.workspace_ids', :'workspace_ids', true),
        set_config('c5.run_id', :'run_id', true),
        set_config('c5.review_ref', :'review_ref', true),
-       set_config('c5.expected_database', :'expected_database', true);
+       set_config('c5.expected_stack_id', :'expected_stack_id', true);
 -- ==== core ====
 -- In autocommit mode each statement is its own transaction, so this setting would be gone when the DO
 -- block runs; the block then refuses (control 2: refuse if not inside one transaction).
+-- search_path is pinned (pg_catalog only; temp tables are always referenced as pg_temp.c5_*) and the
+-- timeouts are set by statements OUTSIDE the DO block, where they apply to it.
+set local search_path = pg_catalog;
+set local lock_timeout = '5s';
+set local statement_timeout = '120s';
 select set_config('c5.in_tx', '1', true);
 
 do $c5$
@@ -38,7 +49,10 @@ declare
   v_ws uuid[];
   v_run text := nullif(current_setting('c5.run_id', true), '');
   v_review text := nullif(current_setting('c5.review_ref', true), '');
-  v_db text := nullif(current_setting('c5.expected_database', true), '');
+  v_expected_stack text := nullif(current_setting('c5.expected_stack_id', true), '');
+  v_actual_stack text;
+  fk_hash_before text;
+  fk_hash_after text;
   v_rep jsonb;
   n int;
   m int;
@@ -79,11 +93,25 @@ begin
   if current_user <> 'postgres' then
     raise exception 'c5_refused:not_database_owner' using errcode = 'C5001';
   end if;
-  if v_db is null or v_db <> current_database() then
+  begin
+    select system_identifier::text into v_actual_stack from pg_catalog.pg_control_system();
+  exception when insufficient_privilege then
+    v_actual_stack := nullif(current_setting('lifter.stack_id', true), '');
+  end;
+  if v_actual_stack is null or v_expected_stack is null or v_actual_stack <> v_expected_stack then
     raise exception 'c5_refused:stack_identity_mismatch' using errcode = 'C5001';
   end if;
   if v_run is null or v_review is null then
     raise exception 'c5_refused:missing_run_or_review_reference' using errcode = 'C5001';
+  end if;
+  if v_run !~ '^c5-[0-9]{8}-[0-9]+$' or length(v_run) > 40 or v_review !~ '^[A-Za-z0-9._:/#-]{1,120}$' then
+    raise exception 'c5_refused:invalid_run_or_review_reference' using errcode = 'C5001';
+  end if;
+  if current_setting('search_path') <> 'pg_catalog' then
+    raise exception 'c5_refused:search_path_not_pinned' using errcode = 'C5001';
+  end if;
+  if current_setting('statement_timeout') in ('0', '0ms') or current_setting('lock_timeout') in ('0', '0ms') then
+    raise exception 'c5_refused:timeouts_not_set' using errcode = 'C5001';
   end if;
   -- Control 8 (finding 13): FORCE RLS on the package tables; deletes rely on BYPASSRLS.
   if not coalesce((select r.rolbypassrls or r.rolsuper from pg_catalog.pg_roles r where r.rolname = current_user), false) then
@@ -106,9 +134,7 @@ begin
     null; -- already asserted to be 'origin'
   end;
 
-  -- Control 6 (finding 7): EXCLUSIVE lock in a fixed order with timeouts, then re-check everything.
-  set local lock_timeout = '5s';
-  set local statement_timeout = '120s';
+  -- Control 6 (finding 7): EXCLUSIVE lock in a fixed order (timeouts were set before this block).
   lock table public.packages, public.package_offers, public.package_versions in exclusive mode;
 
   -- Control 5: trigger/FK/rule state, refuse (never repair).
@@ -149,11 +175,26 @@ begin
     raise exception 'c5_refused:rewrite_rule_present' using errcode = 'C5001';
   end if;
 
-  select md5(string_agg(pg_catalog.pg_get_functiondef(p.oid), '|' order by p.proname))
+  if exists (
+    select 1 from pg_catalog.pg_constraint con
+     where con.contype = 'f' and con.confdeltype not in ('r', 'a')
+       and con.confrelid in ('public.packages'::regclass, 'public.package_offers'::regclass, 'public.package_versions'::regclass))
+  then
+    raise exception 'c5_refused:fk_not_restrictive' using errcode = 'C5001';
+  end if;
+  select md5(string_agg(pg_catalog.pg_get_constraintdef(con.oid) || con.convalidated::text || con.conname::text, '|' order by con.oid))
+    into fk_hash_before
+    from pg_catalog.pg_constraint con
+   where con.conrelid in ('public.packages'::regclass, 'public.package_offers'::regclass, 'public.package_versions'::regclass)
+      or con.confrelid in ('public.packages'::regclass, 'public.package_offers'::regclass, 'public.package_versions'::regclass);
+
+  select md5(string_agg(pg_catalog.pg_get_functiondef(p.oid), '|' order by p.proname, p.oid))
     into hash_before
     from pg_catalog.pg_proc p join pg_catalog.pg_namespace ns on ns.oid = p.pronamespace
    where ns.nspname = 'app_private'
-     and p.proname in ('forbid_delete', 'audit_events_immutable', 'guard_package_offer_update');
+     and p.proname in ('forbid_delete', 'audit_events_immutable', 'guard_package_offer_update', 'guard_package_offer_category',
+                       'guard_package_version_insert', 'guard_package_version_market', 'audit_row_change',
+                       'audit_package_created', 'package_c5_preflight');
 
   -- Re-run the read-only preflight under the lock and require set-equality with the allow-list.
   v_rep := app_private.package_c5_preflight(v_pkgs);
@@ -171,6 +212,9 @@ begin
   if exists (select 1 from jsonb_array_elements_text(v_rep -> 'workspace_ids') w where w::uuid <> all(v_ws)) then
     raise exception 'c5_refused:workspace_not_verified_synthetic' using errcode = 'C5001';
   end if;
+  if v_ws is distinct from (select coalesce(array_agg(w::uuid order by w::uuid), '{}') from jsonb_array_elements_text(v_rep -> 'workspace_ids') w) then
+    raise exception 'c5_refused:workspace_list_mismatch' using errcode = 'C5001';
+  end if;
 
   select count(*) into nontarget_pkgs from public.packages where id <> all(v_pkgs);
   select count(*) into nontarget_offers from public.package_offers where package_id <> all(v_pkgs);
@@ -178,24 +222,25 @@ begin
     from public.package_versions v join public.package_offers o on o.id = v.offer_id where o.package_id <> all(v_pkgs);
 
   create temp table c5_offers on commit drop as
-    select o.workspace_id, o.id, o.package_id, o.current_version_id from public.package_offers o where o.package_id = any(v_pkgs);
+    select o.workspace_id, o.id, o.package_id, o.current_version_id, to_jsonb(o) - 'current_version_id' as rest
+      from public.package_offers o where o.package_id = any(v_pkgs);
   create temp table c5_versions on commit drop as
     select v.workspace_id, v.id, o.package_id from public.package_versions v
       join public.package_offers o on o.id = v.offer_id where o.package_id = any(v_pkgs);
   create temp table c5_counts on commit drop as
     select p.id as package_id,
-           (select count(*) from c5_offers x where x.package_id = p.id)::int as offers,
-           (select count(*) from c5_versions x where x.package_id = p.id)::int as versions
+           (select count(*) from pg_temp.c5_offers x where x.package_id = p.id)::int as offers,
+           (select count(*) from pg_temp.c5_versions x where x.package_id = p.id)::int as versions
       from public.packages p where p.id = any(v_pkgs);
 
   -- Control 7 (Q2=A narrowed): break the current-version cycle with ONE update, only
   -- package_offers_guard disabled, re-enabled before any DELETE.
-  select count(*) into n from c5_offers where current_version_id is not null;
+  select count(*) into n from pg_temp.c5_offers where current_version_id is not null;
   if n > 0 then
     alter table public.package_offers disable trigger package_offers_guard;
     with u as (
       update public.package_offers o set current_version_id = null
-        from c5_offers c
+        from pg_temp.c5_offers c
        where o.workspace_id = c.workspace_id and o.id = c.id and o.current_version_id is not null
       returning o.id)
     select count(*) into m from u;
@@ -207,32 +252,37 @@ begin
                     and t.tgname = 'package_offers_guard' and t.tgenabled = 'O') then
       raise exception 'c5_refused:offer_guard_not_reenabled' using errcode = 'C5001';
     end if;
-    if exists (select 1 from public.package_offers o join c5_offers c on c.id = o.id and c.workspace_id = o.workspace_id
+    if exists (select 1 from public.package_offers o join pg_temp.c5_offers c on c.id = o.id and c.workspace_id = o.workspace_id
                 where o.current_version_id is not null or o.available) then
       raise exception 'c5_refused:offer_state_unexpected' using errcode = 'C5001';
+    end if;
+    -- Only current_version_id may differ: every other column of every target offer is unchanged.
+    if exists (select 1 from public.package_offers o join pg_temp.c5_offers c on c.id = o.id and c.workspace_id = o.workspace_id
+                where (to_jsonb(o) - 'current_version_id') is distinct from c.rest) then
+      raise exception 'c5_refused:offer_other_column_changed' using errcode = 'C5001';
     end if;
   end if;
 
   -- Control 8: delete order versions, offers, packages; each trigger disabled only around its own DELETE.
   alter table public.package_versions disable trigger package_versions_no_delete;
   with d as (
-    delete from public.package_versions v using c5_versions c
+    delete from public.package_versions v using pg_temp.c5_versions c
      where v.workspace_id = c.workspace_id and v.id = c.id
     returning v.id)
   select count(*) into m from d;
   alter table public.package_versions enable trigger package_versions_no_delete;
-  if m <> (select count(*) from c5_versions) then
+  if m <> (select count(*) from pg_temp.c5_versions) then
     raise exception 'c5_refused:version_delete_count_mismatch' using errcode = 'C5001';
   end if;
 
   alter table public.package_offers disable trigger package_offers_no_delete;
   with d as (
-    delete from public.package_offers o using c5_offers c
+    delete from public.package_offers o using pg_temp.c5_offers c
      where o.workspace_id = c.workspace_id and o.id = c.id
     returning o.id)
   select count(*) into m from d;
   alter table public.package_offers enable trigger package_offers_no_delete;
-  if m <> (select count(*) from c5_offers) then
+  if m <> (select count(*) from pg_temp.c5_offers) then
     raise exception 'c5_refused:offer_delete_count_mismatch' using errcode = 'C5001';
   end if;
 
@@ -250,7 +300,7 @@ begin
   insert into public.audit_events(actor_user_id, action, target_table, target_id, workspace_id, details)
   select null, 'package.teardown_executed', 'packages', c.package_id, null,
          jsonb_build_object('run_id', v_run, 'review_ref', v_review, 'offer_count', c.offers, 'version_count', c.versions)
-    from c5_counts c;
+    from pg_temp.c5_counts c;
 
   -- Control 10: post-conditions, any failure rolls everything back.
   select coalesce(array_agg(c.relname::text || '.' || t.tgname::text || ':' || t.tgenabled::text order by (c.relname::text || '.' || t.tgname::text) collate "C"), '{}')
@@ -263,11 +313,21 @@ begin
   if actual_triggers is distinct from (select array_agg(x order by split_part(x, ':', 1) collate "C") from unnest(expected_triggers) x) then
     raise exception 'c5_refused:post_trigger_state_unexpected' using errcode = 'C5001';
   end if;
-  select md5(string_agg(pg_catalog.pg_get_functiondef(p.oid), '|' order by p.proname))
+  select md5(string_agg(pg_catalog.pg_get_functiondef(p.oid), '|' order by p.proname, p.oid))
     into hash_after
     from pg_catalog.pg_proc p join pg_catalog.pg_namespace ns on ns.oid = p.pronamespace
    where ns.nspname = 'app_private'
-     and p.proname in ('forbid_delete', 'audit_events_immutable', 'guard_package_offer_update');
+     and p.proname in ('forbid_delete', 'audit_events_immutable', 'guard_package_offer_update', 'guard_package_offer_category',
+                       'guard_package_version_insert', 'guard_package_version_market', 'audit_row_change',
+                       'audit_package_created', 'package_c5_preflight');
+  select md5(string_agg(pg_catalog.pg_get_constraintdef(con.oid) || con.convalidated::text || con.conname::text, '|' order by con.oid))
+    into fk_hash_after
+    from pg_catalog.pg_constraint con
+   where con.conrelid in ('public.packages'::regclass, 'public.package_offers'::regclass, 'public.package_versions'::regclass)
+      or con.confrelid in ('public.packages'::regclass, 'public.package_offers'::regclass, 'public.package_versions'::regclass);
+  if fk_hash_after is distinct from fk_hash_before then
+    raise exception 'c5_refused:constraint_changed' using errcode = 'C5001';
+  end if;
   if hash_after is distinct from hash_before then
     raise exception 'c5_refused:guard_function_changed' using errcode = 'C5001';
   end if;
@@ -278,8 +338,8 @@ begin
     raise exception 'c5_refused:non_target_rows_changed' using errcode = 'C5001';
   end if;
   if exists (select 1 from public.packages where id = any(v_pkgs))
-     or exists (select 1 from public.package_offers o join c5_offers c on c.id = o.id)
-     or exists (select 1 from public.package_versions v join c5_versions c on c.id = v.id) then
+     or exists (select 1 from public.package_offers o join pg_temp.c5_offers c on c.id = o.id)
+     or exists (select 1 from public.package_versions v join pg_temp.c5_versions c on c.id = v.id) then
     raise exception 'c5_refused:targets_remain' using errcode = 'C5001';
   end if;
   if (select count(*) from public.audit_events
@@ -288,6 +348,6 @@ begin
   end if;
 
   raise notice 'c5_ok run_id=% packages=% offers=% versions=%', v_run, cardinality(v_pkgs),
-    (select count(*) from c5_offers), (select count(*) from c5_versions);
+    (select count(*) from pg_temp.c5_offers), (select count(*) from pg_temp.c5_versions);
 end
 $c5$;
