@@ -138,7 +138,19 @@ as $$
 declare
   v_actor_user_id uuid;
 begin
-  v_actor_user_id := coalesce(auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid);
+  v_actor_user_id := auth.uid();
+  if v_actor_user_id is null
+    or (
+      not coalesce(app_private.is_platform_owner(), false)
+      and not coalesce(app_private.role_has_capability(app_private.current_staff_role(), 'coaching_work'), false)
+      and not exists (
+        select 1 from public.clients c
+        where c.auth_user_id = v_actor_user_id
+          and c.approval_state = 'approved'
+      )
+    ) then
+    raise exception 'not_permitted' using errcode = '42501';
+  end if;
 
   insert into public.audit_events (
     actor_user_id,

@@ -178,6 +178,7 @@
     - Historical-revision export reads that specific revision selection (S43-PO-8; S43-R10).
   - `tests/integration/nutrition-audit.test.ts`: 3/3 tests passed.
   - `tests/integration/rls-catalog.test.ts`: 43/43 tests passed.
+  - `tests/integration/client-accounts-catalog.test.ts`: 22/22 tests passed (asserts 42501 on pending synthetic JWT callers across catalog RPCs).
 - **Mutation Evidence (KILLED, restored, `git diff --exit-code` 0)**:
   - **Mutation target**: `tests/golden/nutrition-export-ar-en.test.ts:779-804`
   - **Mutant**: Substituted current revision selection (`Egg 2 piece`, 355 kcal total) into historical revision 1 export projection (which expected `Grilled Chicken 150 g`, 800 kcal total).
