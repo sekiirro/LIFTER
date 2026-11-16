@@ -1,5 +1,21 @@
 # F18 Nutrition Planner — Verification Report
 
+## Slice 4: T016 audit allowlist and log scrub
+
+- **RED:** On Stack C after safe reset/provision without the new migration, `nutrition-audit.test.ts` had 2 passing cases and failed the forbidden `food_name` insert case because it was accepted by `public.audit_events`.
+- **GREEN:** After the allowlist migration was added and Stack C reset/provisioned, `nutrition-audit.test.ts` passed 3/3.
+- **Mutation:** Temporarily added `food_name: "Forbidden Mutation Food"` to `app_private.nutrition_template_write_audit` payload. The successful template mutation test failed because the database guard rejected the event with `nutrition_audit_field_not_allowlisted`. Restored the migration and reset Stack C.
+- **F18 RPC regression:** 11 integration files passed, 81 tests total: audit, Assign, Make it Global, templates, template RPCs, publish, selection/carry-forward, snapshots, parity, content, and `rls-catalog.test.ts`.
+- **Other local gates:** typecheck, lint, formatting, migration timestamp check, and full unit suite (277 files / 3,206 tests) passed. Local checks and logs are recorded in `C:/Users/NEW LAP/.lifter/runs/s60-luna-f18t016/report.md`.
+- **Local validate flake:** `ci:local` had one full-suite attempt with timeouts in three unrelated unit tests; the standalone full `npm test` rerun passed 277/277 files and 3,206/3,206 tests. Recorded in `C:/Users/NEW LAP/.lifter/backlog/flakes.md`; exact-head CI remains required.
+
+## S60-R14 denial identifier scrub
+
+- **RED:** On Stack C, the audit denial scrub test failed when `p_item_id` was `Chicken breast 200g`; the real-item / invalid-alternative test also failed because that unverified alternative was stored. Each case observed exactly one denial event.
+- **GREEN:** Migration `20261120110200_f18_selection_audit_verified_ids.sql` now includes a denied `item_id` only when it exists in the target revision document, and includes a denied `alternative_id` only when it exists under that item. Success audit payloads are unchanged. Focused audit/selection suites passed 7/7; after merging PR #157, all 12 F18 nutrition integration suites including `rls-catalog.test.ts` passed 86/86 on Stack C.
+- **Mutation:** Temporarily restored raw `p_item_id` in the denied audit payload; the food-name scrub assertion failed with the raw text present. Restored the implementation and `git diff --exit-code` returned 0 against the staged clean baseline.
+- **Local gates:** After the main sync, full unit passed 277 files / 3,206 tests; typecheck, lint, both format gates, spec consistency, and migration timestamp validation passed. S60-Q1 ID-format hardening is pending PO decision; this fix does not change the ID contract or validator.
+
 ## Environment
 
 - **Base `origin/main` SHA**: `9995e5b7`
@@ -83,3 +99,14 @@
 - **Migration scan**: all 312 current origin refs scanned before migration creation, zero lane-range hits. The reserved `20261119150000–20261119155959` registry row was already present (S59-R51).
 - **Function body diff**: `C:/Users/NEW LAP/.lifter/runs/s59-hy-f18t011/body.diff`.
 - **Final local CI-equivalent**: lint, typecheck, changed-file and repo-wide format checks, and migration timestamp checks passed. Full unit suite: 3,206/3,206 across 277 files. Final Stack A reset + provisioning; touched integration suites: 56/56 across carry-forward (4), selection (3), publish (7), and `rls-catalog` (42).
+
+## Slice 5 (Versioning + benchmark): T020 and T021
+
+- **Base `origin/main` SHA**: `1d7f007ad94b6e814c3fa3fb429712c65f940fd0`; merged latest `origin/main` before push (up to date; includes #157).
+- **Stack**: A (`LIFTER_SUPABASE_STACK=a`, API 54321, DB 54322); safe reset and `client-accounts-provision.mjs` completed before final integration suites.
+- **Host/run**: Windows 11 Pro 10.0.26200; Intel Core i7-13650HX; 23.8 GiB RAM; Node `v24.19.0`; Docker `29.9.2`; PostgreSQL `17.11.0.006`. Four baseline request-mix runs; 3 publish RPCs + 30 revision reads per run.
+- **Measured maxima**: 112,953 request bytes; 21 meals; 168 items; 504 alternatives; precision 3; publish p95 262.824 ms; read p95 113.792 ms; revision payload 144,079 bytes (document 123,182); template document 132,011 bytes.
+- **Threshold rule and envelope**: ceil(max observed × 1.25), capped at any applicable spec target; where no target exists, retain 25% headroom. SC-006 publish cap 300 ms leaves 37.176 ms (about 12% of ceiling); read limit 143 ms remains under the 300 ms target. Decimal precision stays at 3. Envelope: request bytes 141,192; meals 27; items 210; alternatives 630; publish 300 ms; reads 143 ms; revision payload 180,099 bytes; revision document 153,978 bytes; template document 165,014 bytes. Each numeric threshold has a corresponding benchmark assertion. Domain CPU is diagnostic, not a threshold.
+- **GREEN**: after reset/provision, versioning + benchmark integration files passed 2/2 tests with `SC006_TIMING_RUN=true` (2026-11-16 02:29:44; 4.45 s).
+- **T020 mutation (KILLED, restored)**: integer-rounding v1 compute mutation caused versioning test failure (`248` persisted vs frozen `247.500`); migration restored, Stack A reset/provisioned, restored test passed.
+- **T021 mutation (KILLED, restored)**: tightened `document.max_items` from 210 to 1; test failed with `expected 168 to be <= 1`. Restored to 210. Restored envelope SHA-256: `64912824a9fdae1b6032a6ec14e6583330d578c1a929bc21204b3d9099f85510`; tracked source mutation diff returned clean. No migration authored.
