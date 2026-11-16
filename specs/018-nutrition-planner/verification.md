@@ -199,6 +199,7 @@
 - **GREEN, Stack D after restoring the fix, safe reset, and provisioning:** `tests/integration/nutrition-export.test.ts` passed 13/13, including foreign coach denied with no row; different approved client denied with no row; cross-plan revision denied with no row; own-workspace coach and plan's own approved client accepted with derived workspace; invalid allowlist denied; audit RPC failure, root read error, and missing-content fallback all fail closed.
 - **Mutation, killed and restored:** changed the membership scope predicate from `wm.workspace_id = v_workspace_id` to `wm.workspace_id = wm.workspace_id`. The foreign-coach test failed at `expect(error).toBe('42501')` (received `null`), proving it detects the scope bypass. Restored the predicate, safely reset and reprovisioned Stack D, then reran the touched integration suite successfully (13/13).
 - **Focused export golden:** `tests/golden/nutrition-export-ar-en.test.ts` passed 13/13 after the success path's selection read was included in its mock. The test now expects an application-wall denial to return before attempting a database audit write.
+
 # S61-R38 nutrition export audit correction
 
 - Stack C safe reset and `tests/integration/client-accounts-provision.mjs` passed with the corrected, PR-owned migration.
