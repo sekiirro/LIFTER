@@ -448,6 +448,8 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_template_start_operation',
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
+          'f17_reject_assignment_ledger_mutation',
+          'f17_guard_distribution_state_update',
           'nutrition_template_guard_identity',
           'nutrition_template_version_immutable',
           'nutrition_template_start_operation',
@@ -579,6 +581,8 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_template_start_operation',
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
+          'f17_reject_assignment_ledger_mutation',
+          'f17_guard_distribution_state_update',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -1968,6 +1972,65 @@ describe('F17 T013/T016/T017 workout templates catalog', () => {
       'app_private.f17_reject_template_version_mutation()',
       'app_private.f17_reject_template_identity_delete()',
       'app_private.f17_guard_template_identity_update()',
+    ];
+    for (const sig of fns) {
+      const [fn] = await db`select p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        owner: 'postgres',
+        authenticated: false,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
+  });
+});
+
+describe('F17 T014 assignment ledgers and distribution state catalog', () => {
+  it('forces RLS, revokes direct DML, and hardens assignment guards', async () => {
+    const tables = [
+      'public.workout_template_distribution_state',
+      'public.workout_template_assignment_runs',
+      'public.workout_template_assignment_items',
+      'public.workout_template_assignment_copies',
+    ];
+    for (const rel of tables) {
+      const [row] = await db`select relrowsecurity, relforcerowsecurity
+        from pg_class where oid = ${rel}::regclass`;
+      expect(row, rel).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'service_role']) {
+        const [sel] =
+          await db`select has_table_privilege(${role}, ${rel}, 'SELECT') as allowed`;
+        expect(sel!.allowed, `${role} SELECT ${rel}`).toBe(false);
+      }
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const priv of [
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+          expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+        }
+      }
+    }
+
+    const fns = [
+      'app_private.f17_reject_assignment_ledger_mutation()',
+      'app_private.f17_guard_distribution_state_update()',
     ];
     for (const sig of fns) {
       const [fn] = await db`select p.proconfig,
