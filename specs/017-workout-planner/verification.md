@@ -141,3 +141,10 @@
 - **Mutation (kill -> restore; component file matches pre-mutation bytes)**:
   - Removed the PO scope gate (`if (!allowed) return null;`) -> `non-PO roles render nothing` failed (WO rendered the wizard); restored.
   - Collapsed the state distinction (`skipped_existing` label -> `skipped_already_assigned`) -> `review shows all four receipt outcomes` failed (`Skipped: already has it` missing); restored.
+
+## S61 T021 — published workout revision immutability
+
+- RED-to-GREEN: F19 already implements the requirement in `20261114120000_f19_plan_roots_drafts_revisions.sql`: `plan_revisions_immutable` rejects UPDATE/DELETE, `plan_revisions_no_truncate` blocks TRUNCATE, and table grants are revoked from API roles before SELECT is granted. The new integration assertions passed against this existing implementation, so no production migration or API change was needed. The first focused run exposed only a test expectation mismatch (`bigint` values serialize as strings); correcting the expected representation produced a green run.
+- Coverage: `tests/integration/f19-plan-core-schema.test.ts` checks UPDATE/DELETE/TRUNCATE privileges for both `authenticated` and `service_role`; privileged direct UPDATE/DELETE are rejected by the trigger; both API roles' direct UPDATE/DELETE fail; inserting revision 2 leaves revisions 1 and 2 retained.
+- Mutation: removed `plan_revisions_immutable` from the migration source, reset and reprovisioned Stack C, then ran `npm run test:integration -- tests/integration/f19-plan-core-schema.test.ts -t 'rejects revision mutation'`. It failed as expected because the privileged UPDATE resolved instead of being rejected. Restored the migration source, reset and reprovisioned Stack C, and reran the focused suite: 1 file / 6 tests passed. Mutation was local and not committed.
+- Newest-first listing deferred per S61-PO-4 (no screen/contract yet).
