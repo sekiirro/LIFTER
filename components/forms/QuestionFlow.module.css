@@ -65,6 +65,10 @@
   color: var(--color-success-fg);
 }
 
+.saveRow button:disabled {
+  opacity: 1;
+}
+
 .choices {
   display: grid;
   gap: var(--space-2);
