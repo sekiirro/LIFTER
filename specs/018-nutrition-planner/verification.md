@@ -146,7 +146,7 @@
 | 20  | `public.create_nutrition_global_template` (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:258,362`)              | Remove PO authorization check                                                                           | `Row 20: enforces generic denial for Sales role across all plan, template, and export surfaces`, `Row 19: enforces generic denial on non-PO global template read and write`                    |
 | 21  | `app_private.f18_guard_plan_version_content` (`supabase/migrations/20261119010000_f18_nutrition_plan_version_contents.sql:22-24`) | Remove `if tg_op <> 'INSERT'` immutability exception                                                    | `Row 21: rejects UPDATE, DELETE, and TRUNCATE on immutable tables and selections`                                                                                                              |
 
-## Slice 6: T026 — Multi-plan projection regression (Stack D)
+## Slice 6: T026 ï¿½ Multi-plan projection regression (Stack D)
 
 - **Branch/base**: `018-multi-plan-slice-1`, fresh `origin/main` at `8e2ceaf68b1a8b19cf5b3b37e735ae1a7f422721`.
 - **Scope**: added `tests/integration/nutrition-multi-plan.test.ts`; no product change or migration was needed. F19's `client_plan_projection()` already returns every delivered plan and each plan's latest revision.
