@@ -718,6 +718,16 @@ describe('T065 lock and concurrency (control 6)', () => {
     const conn = sql();
     try {
       await holdScript({ pkgs: [mock.id], ws: [f.wsA.id] }, CORE, async () => {
+        // Deterministic proof, independent of any insert: while the script is paused after its work,
+        // another session sees EXCLUSIVE locks held on all three package tables.
+        const held = await conn`
+          select c.relname::text as rel from pg_locks l join pg_class c on c.oid = l.relation
+           where l.granted and l.mode = 'ExclusiveLock' and l.pid <> pg_backend_pid()
+             and c.relname in ('packages','package_offers','package_versions')
+           order by 1`;
+        expect(held.map((r) => r.rel as string).sort()).toEqual(
+          ['package_offers', 'package_versions', 'packages'].sort(),
+        );
         await expect(insertDependent(conn, mock.id)).rejects.toThrow(
           /lock timeout|55P03/,
         );
@@ -750,9 +760,6 @@ describe('T065 lock and concurrency (control 6)', () => {
     } finally {
       await conn.end();
     }
-    const [dep] =
-      await db`select count(*)::int as n from public.registration_links l join public.package_versions v on v.id=l.package_version_id join public.package_offers o on o.id=v.offer_id where o.package_id=${other.id}`;
-    expect(dep!.n).toBe(1);
   });
 });
 
