@@ -16,6 +16,7 @@ import {
 import { createSessionClient } from '../../../../lib/supabase/server';
 import type { Locale } from '../../../../lib/design/preferences';
 import { roleHasCapability } from '../../../../lib/auth/capabilities';
+import { getMessages } from '../../../../lib/i18n';
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -154,8 +155,8 @@ export async function GET(request: Request) {
     });
     const payload = buildWorkoutExportPayload({
       plan: {
-        title: 'Workout plan',
-        identity: `Revision ${revision.revision_number}`,
+        title: getMessages(locale)['workout.export.plan'],
+        identity: String(revision.revision_number),
       },
       document,
       library: {

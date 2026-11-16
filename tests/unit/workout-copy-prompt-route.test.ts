@@ -25,8 +25,10 @@ import { GET } from '../../app/api/workouts/copy-prompt/route';
 import { getMessages } from '../../lib/i18n';
 
 const ws = m.revision.workspace_id;
-const request = () =>
-  new Request(`http://local/api?revision=${m.revision.id}&locale=en`);
+const request = (locale: 'en' | 'ar' = 'en') =>
+  new Request(
+    `http://local/api?revision=${m.revision.id}&locale=${locale}`,
+  );
 
 describe('T040 Copy AI Prompt API', () => {
   beforeEach(() => {
@@ -69,6 +71,19 @@ describe('T040 Copy AI Prompt API', () => {
       ['ar', 'copied', 'تم النسخ.'],
     ] as const)
       expect(getMessages(locale)[`workout.copyPrompt.${key}`]).toBe(value);
+  });
+
+  it('uses approved Arabic title and digits-only revision identity in Arabic prompts', async () => {
+    const response = await GET(request('ar'));
+    const body = await response.json();
+    const planLabel = getMessages('ar')['workout.export.plan'];
+
+    expect(response.status).toBe(200);
+    expect(body.prompt).not.toContain('Workout plan');
+    expect(body.prompt).not.toContain('Revision');
+    expect(body.prompt).toContain(
+      `${planLabel}: ${planLabel} (${m.revision.revision_number})`,
+    );
   });
 
   it.each([
