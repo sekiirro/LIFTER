@@ -1,5 +1,12 @@
 # F18 Nutrition Planner — Verification Report
 
+## Slice 5: T017 contributor attribution (F18-FR-018 / S60-R43)
+
+- **RED:** On Stack B after safe reset without the contributor attribution migration, all 4 test cases in `tests/integration/nutrition-contributors.test.ts` failed because `public.plan_revision_contributors` did not exist.
+- **GREEN:** After adding migration `20261120180000_f19_plan_revision_contributors.sql` and registering `app_private.f19_guard_plan_revision_contributors` and `app_private.f19_track_plan_draft_contributor` in `tests/integration/rls-catalog.test.ts`, all 4 test cases in `nutrition-contributors.test.ts` passed (4/4), and `rls-catalog.test.ts` passed (43/43).
+- **Mutation:** Allowed a contributor row from another workspace by mutating the foreign keys in `public.plan_revision_contributors` to non-composite foreign keys (`foreign key (revision_id) references public.plan_revisions(id)` and `foreign key (plan_id) references public.plan_roots(id)`). The test `rejects foreign-workspace contributor rows via composite FK and isolates via RLS` was KILLED (`AssertionError: promise resolved "[]" instead of rejecting` at `tests/integration/nutrition-contributors.test.ts:268`). Restored migration and verified `git diff --exit-code` exited 0; 4/4 tests passed on the restored state.
+- **Regression suites:** Touched integration suites passed on Stack B: `nutrition-contributors.test.ts` (4/4), `nutrition-publish.test.ts` (7/7), `nutrition-versioning.test.ts` (1/1), `nutrition-audit.test.ts` (3/3), `rls-catalog.test.ts` (43/43).
+
 ## Slice 4: T016 audit allowlist and log scrub
 
 - **RED:** On Stack C after safe reset/provision without the new migration, `nutrition-audit.test.ts` had 2 passing cases and failed the forbidden `food_name` insert case because it was accepted by `public.audit_events`.
@@ -145,3 +152,60 @@
 | 19  | `nutrition_global_templates_po_read` policy (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:83-84`)              | Change policy using clause to `true`                                                                    | `Row 19: enforces generic denial on non-PO global template read and write`                                                                                                                     |
 | 20  | `public.create_nutrition_global_template` (`supabase/migrations/20261119030000_f18_nutrition_templates.sql:258,362`)              | Remove PO authorization check                                                                           | `Row 20: enforces generic denial for Sales role across all plan, template, and export surfaces`, `Row 19: enforces generic denial on non-PO global template read and write`                    |
 | 21  | `app_private.f18_guard_plan_version_content` (`supabase/migrations/20261119010000_f18_nutrition_plan_version_contents.sql:22-24`) | Remove `if tg_op <> 'INSERT'` immutability exception                                                    | `Row 21: rejects UPDATE, DELETE, and TRUNCATE on immutable tables and selections`                                                                                                              |
+
+## Slice 6: T026 � Multi-plan projection regression (Stack D)
+
+- **Branch/base**: `018-multi-plan-slice-1`, fresh `origin/main` at `8e2ceaf68b1a8b19cf5b3b37e735ae1a7f422721`.
+- **Scope**: added `tests/integration/nutrition-multi-plan.test.ts`; no product change or migration was needed. F19's `client_plan_projection()` already returns every delivered plan and each plan's latest revision.
+- **RED / fixture correction**: initial assertion received `status: invalid` because the synthetic subscription fixture had no F19 activation. Added its normal `subscription_activations` fact; this was fixture setup, not a product defect. A baseline run then passed against the existing projection.
+- **GREEN**: Stack D safe reset followed immediately by `client-accounts-provision.mjs`; touched suite passed 1/1. The fixture publishes a one-meal plan and a two-meal plan, revises the second to four meals, then asserts both IDs, nutrition kinds, revision numbers, and exact meal counts through the client-scoped projection.
+- **Mutation**: temporarily changed F19's migration projection query to filter to the first plan. After Stack D reset, the test failed at the all-plan ID assertion (received one ID, expected two): **KILLED**. Restored the migration byte-for-byte, reset Stack D, provisioned again, and restored test passed 1/1. A first mutation expression using `min(uuid)` errored before assertions; replaced with ordered first-row selection for the valid mutation run.
+- **Final local gates**: lint passed; typecheck passed; changed-file format check passed; `npm run format:check` passed; touched integration passed 1/1. Full unit first run had one timeout in `tests/unit/optimize-body-fat-assets.test.ts` (3234/3235); rerun in isolation passed 281 files / 3235 tests. Recorded as a transient timeout in the shared flakes backlog.
+- **Migration audit**: none authored; no migration timestamp consumed.
+- **CI / review**: pending push and exact-head CI.
+
+## 4h. S61 T025 slice 2 (partial) verification — nutrition template manager
+
+Scope: the template-manager UI only
+(`components/plans/nutrition/NutritionTemplateManager.tsx`,
+`components/plans/nutrition/NutritionTemplateManager.module.css`,
+`app/(dev)/showcase/f18-template-manager/`). Slice 1 (editor + alternatives,
+PR #178) is not in this slice. **T025 remains unticked**; this section records
+`PARTIAL` evidence for the template-manager clauses only.
+
+- **RED:** `tests/unit/NutritionTemplateManager.test.tsx` created first; `npx
+vitest run` failed at collection (`Failed to resolve import ...
+NutritionTemplateManager.tsx`, 1 failed file, no tests).
+- **GREEN:** after the component + CSS + showcase, the suite passes 11/11:
+  PO-approved EN/AR headings with `dir`/`lang`, version isolation via
+  `<bdi dir="ltr">`, active/retired distinction with no Load entry on retired
+  rows (3 Load buttons for 3 active templates in the PO view), load/version/
+  retire/make-global entry points with approved labels, PO-only global
+  controls with the global section hidden from staff (no global read per
+  `nutrition-api.md` §2), PO-only origin provenance masked from staff,
+  `role="status"` loading, error with retry, `noAccess` for Sales/client/
+  unaffiliated roles, EN/AR empty states, and byte-exact EN/AR assertions for
+  every used key. Full unit suite: 282 files / 3,246 tests passed.
+- **Mutation:** removed the `!item.retired` guard in
+  `NutritionTemplateManager.tsx` (retired rows exposed Load actions).
+  KILLED — `lists items with isolated version numbers and active/retired
+distinction` failed (1 failed / 10 passed; Load count 5, not 3). Restored
+  the file from backup (SHA-256 identical on both sides) and re-ran 11/11.
+- **Design gate:** `app/(dev)/showcase/f18-template-manager/` renders one
+  manager variant per page load (role/status from search params) with static
+  mocks. Matrix `{en,ar} × {light,dark} × {390,1440}` (8 full-page shots) plus
+  Trainer-ready/loading/error and Sales-ready variants (`en-light-1440`,
+  `ar-dark-390`) plus a keyboard-focus shot: 17 screenshots under
+  `C:/Users/NEW LAP/AppData/Local/Temp/f18-tm-shots/`. Axe-core clean on all
+  16 matrix/variant states (0 violations, 0 incomplete); the initial stacked
+  5-manager preview failed `landmark-unique` (five identically named regions)
+  and was refactored to the single-manager production shape before the clean
+  run. Tokens only, no new copy: every string is a byte-exact
+  `nutritionTemplates.*` key on `origin/main` (S28-PO-2) except the
+  non-retired badge, which reuses byte-exact `templates.active` (documented —
+  nutrition has no `nutritionTemplates.active` key); no `{name}`-composed
+  aria-labels (no approved nutrition key exists), so per-item buttons use the
+  approved visible label as their accessible name.
+- **Local gates:** `npm run lint` clean, `npm run typecheck` clean,
+  `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node
+scripts/format-check-changed.mjs` passed, `npm run format:check` clean.
