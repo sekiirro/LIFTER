@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readClientPlanProjection } from '../../lib/plans/client-projection';
 import { clientContext, graph, sql } from './registration-approval-fixture';
 import type { Context } from './registration-approval-fixture';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 
 let fixture: Context;
 let db: ReturnType<typeof sql>;
@@ -36,6 +37,9 @@ beforeAll(async () => {
   await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,
     delivery_event_id,activation_source)
     values(${fixture.wsA.id},${seeded.subscription},clock_timestamp(),${randomUUID()},'po_override')`;
+  await db.begin((tx) =>
+    seedSubmittedIntake(tx, fixture.wsA.id, seeded.client),
+  );
 
   const created = await fixture.trainerA.client.rpc('create_plan_draft', {
     p_workspace_id: fixture.wsA.id,

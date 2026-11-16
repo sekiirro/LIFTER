@@ -98,7 +98,7 @@ function makeDoc(
   const alts: NutritionAlternative[] = includeAlt
     ? [
         {
-          id: 'alt-1',
+          id: '22222222-2222-4222-8222-222222222221',
           foodId: altFood1Id,
           foodVersion: 1,
           quantity: { value: '120', unit: { kind: 'basis', value: 'g' } },
@@ -126,7 +126,7 @@ function makeDoc(
         recipeUrl: null,
         items: [
           {
-            id: 'item-1',
+            id: '11111111-1111-4111-8111-111111111111',
             foodId: targetFoodId,
             foodVersion,
             quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
@@ -287,8 +287,8 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
       'select_nutrition_alternative',
       {
         p_plan_version_id: revId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -338,8 +338,8 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
       'select_nutrition_alternative',
       {
         p_plan_version_id: revId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-unapproved-999',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '99999999-9999-4999-8999-999999999998',
         p_operation_key: randomUUID(),
       },
     );
@@ -401,8 +401,8 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -461,8 +461,8 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
       'select_nutrition_alternative',
       {
         p_plan_version_id: revId,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -530,7 +530,7 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
               workspace_id, plan_id, plan_version_id, client_id, item_id, alternative_id, created_by
             ) values (
               ${fixtureA.wsA.id}, ${randomUUID()}, ${randomUUID()}, ${seededA.client},
-              'item-1', 'alt-1', ${primaryClientAuth.authUserId}
+              '11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222221', ${primaryClientAuth.authUserId}
             )`,
           ),
         { code: '42501' },
@@ -804,8 +804,8 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev1Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -816,8 +816,8 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
       'select_nutrition_alternative',
       {
         p_plan_version_id: rev2Id,
-        p_item_id: 'item-1',
-        p_alternative_id: 'alt-1',
+        p_item_id: '11111111-1111-4111-8111-111111111111',
+        p_alternative_id: '22222222-2222-4222-8222-222222222221',
         p_operation_key: randomUUID(),
       },
     );
@@ -1185,8 +1185,8 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
     // 7. Select alternative (sales is not a client)
     const select = await f.salesA.client.rpc('select_nutrition_alternative', {
       p_plan_version_id: randomUUID(),
-      p_item_id: 'item-1',
-      p_alternative_id: 'alt-1',
+      p_item_id: '11111111-1111-4111-8111-111111111111',
+      p_alternative_id: '22222222-2222-4222-8222-222222222221',
       p_operation_key: randomUUID(),
     });
     expect(select.data?.status).toBe('not_permitted');
@@ -1286,7 +1286,7 @@ describe('F18 T018: Authorization and security matrix (contracts/nutrition-api.m
       await expectRejected(
         tx,
         (sp) =>
-          sp`update public.client_nutrition_alternative_selections set alternative_id = 'alt-2'`,
+          sp`update public.client_nutrition_alternative_selections set alternative_id = '22222222-2222-4222-8222-222222222222'`,
         { code: '23514' },
       );
     });

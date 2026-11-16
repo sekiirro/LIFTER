@@ -102,14 +102,14 @@ describe('F18 T022 per-version tagged-unit snapshot build', () => {
           recipeUrl: null,
           items: [
             {
-              id: 'i-basis',
+              id: '33333333-3333-4333-8333-333333333361',
               foodId,
               foodVersion: 1,
               quantity: { value: '50', unit: { kind: 'basis', value: 'g' } },
               note: null,
               alternatives: [
                 {
-                  id: 'alt-retired-cup',
+                  id: '77777777-7777-4777-8777-777777777777',
                   foodId: retiredFoodId,
                   foodVersion: 1,
                   quantity: {
@@ -120,7 +120,7 @@ describe('F18 T022 per-version tagged-unit snapshot build', () => {
               ],
             },
             {
-              id: 'i-serving-g',
+              id: '33333333-3333-4333-8333-333333333362',
               foodId,
               foodVersion: 1,
               quantity: {
@@ -131,7 +131,7 @@ describe('F18 T022 per-version tagged-unit snapshot build', () => {
               alternatives: [],
             },
             {
-              id: 'i-serving-scoop',
+              id: '33333333-3333-4333-8333-333333333363',
               foodId,
               foodVersion: 1,
               quantity: {
@@ -252,7 +252,7 @@ describe('F18 T022 per-version tagged-unit snapshot build', () => {
           recipeUrl: null,
           items: [
             {
-              id: 'i-1',
+              id: '33333333-3333-4333-8333-333333333331',
               foodId,
               foodVersion: 2, // wrong version (only v1 exists)
               quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
