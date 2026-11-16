@@ -1612,3 +1612,14 @@ LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from ot
 ```
 
 Architect mapping S56-R7 (not PO words): no feature-flag mechanism is built; unfinished features merge without a flag; no task or slice waits for a flag; the topic is tracked as a pre-production readiness item. Security, RLS, authorization, tests, CI gates and every other safeguard stay as they are.
+
+### S61-PO-1 — PO words, verbatim
+
+Source: PO message 2026-11-16 answering the F9 T064b teardown-design questions Q1, Q2 and Q3 in `specs/009-packages/review.md` section 5 (record held outside the repository; quoted verbatim below).
+
+<!-- prettier-ignore -->
+```text
+Teardown Q1=A, Q2=A, Q3=A
+```
+
+Architect mapping (not PO words): Q1=A, an immutable audit event that merely names a mock package, offer or version as `target_id` does NOT block deletion; only client, registration-link and financial references block. Q2=A, the C5 teardown procedure MAY disable the offer update guard (`package_offers_guard`) for the single `current_version_id := NULL` statement, under the controls in review.md section 4 (the independent review narrowed this to `package_offers_guard` only). Q3=A, transient owner-only, single-transaction trigger disablement by the operator script is NOT a "guard exception" under FR-006/FR-028, with the controls of review.md section 4. Applies to F9 C5 (FR-006, FR-028, T064b, T065). It does not authorize any deletion by itself: T065 waits for the independent T064b re-review PASS.

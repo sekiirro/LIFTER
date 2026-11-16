@@ -253,3 +253,10 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed. **No open ambiguities** remain for this merge.
 - Verdict: PASS for this merge reconciliation.
+
+## 2026-11-16 Analyze (T064a/T064b record update; re-dated, no new product requirement)
+
+**Analyzed:** 2026-11-16. Recorded S61-PO-1 (Teardown Q1=A, Q2=A, Q3=A) in FR-006, FR-028, review.md and the decision register; folded independent review #1 conditions (PASS-WITH-CONDITIONS) into the T064b design (operator cleanup script, not a migration); T065 and `c5-audit-evidence.md` wording aligned; the preflight contract gained `real_catalog_row` and the Q1=A audit semantics. No FR/SC acceptance text changed beyond these decision references.
+
+- PASS: FR-006/FR-028 now cite the decision IDs; T065 names the operator script; the contract refusal codes match the T064a implementation.
+- PASS: this Analyze follows the latest spec, plan and task edits. 0 CRITICAL, 0 HIGH. T064b remains unticked pending independent re-review.

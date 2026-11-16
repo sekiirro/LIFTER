@@ -53,7 +53,7 @@ The audit reference is not a database edge, so the preflight must look it up exp
 
 1. Every FK from client, subscription, renewal, upgrade, registration-link and (transitively) installment/payment tables to package rows is `ON DELETE RESTRICT`. A package, offer or version that any of them references cannot be deleted by any statement, including `TRUNCATE ... CASCADE` which the `*_no_truncate` triggers also block.
 2. `packages`, `package_offers` and `package_versions` carry `*_no_delete` and `*_no_truncate` triggers (`20261029120000_packages.sql`). The existing T077 cleanup (`supabase/cleanup/20261111_t077_legacy_package_offers.sql`) shows the only precedent: it disables one trigger inside an explicit transaction, deletes only offers with no versions/links/clients/subscriptions/renewals/audit references, and re-enables it.
-3. `audit_events` is append-only (`audit_events_immutable` blocks UPDATE/DELETE, `20261027150000_audit_log.sql`). A package delete never removes audit history; audit references are a refusal condition, not something cleanup may erase (tested by `packages-cleanup.test.ts`).
+3. `audit_events` is append-only (`audit_events_immutable` blocks UPDATE/DELETE, `20261027150000_audit_log.sql`). A package delete never removes audit history; audit references to client/financial dependents are a refusal condition and nothing may erase audit rows; audit rows that merely name a mock do not block (PO S61-PO-1 Q1=A) (tested by `packages-cleanup.test.ts`).
 4. C5 requires refusal for non-synthetic data, required financial/audit dependencies or unknown dependency state. The T064 tests specify this and are RED until T064a; no deletion path exists on main, so today no financial or audit record can be damaged by C5 work.
 
 ## 4. Forward-only plan (nothing here is executed)
@@ -61,7 +61,7 @@ The audit reference is not a database edge, so the preflight must look it up exp
 1. T052/T064 (this PR): RED tests pin the preflight contract (`tests/integration/packages-c5-preflight-contract.ts`).
 2. T064a: implement `app_private.package_c5_preflight(uuid[])` as a read-only (STABLE) function in a NEW migration, with a timestamp above the highest version on ALL origin refs (re-run section 1 first). Remove `.fails` from T052/T064 tests in the same PR.
 3. T064b: teardown design and independent security review for protected immutable version rows and the `*_no_delete` guards. No guard exception is authorized until this passes.
-4. T065: new forward migration that deletes only preflight-clean synthetic targets and initializes the four empty categories. Never edit `20261029120000_packages.sql`, `20261118000000_f9_package_markets_types_currency.sql` or any pushed migration; re-run section 1 immediately before pushing.
+4. T065: an operator cleanup script (not a migration; review.md section 4) deletes only preflight-clean synthetic targets; a new forward migration only initializes the four empty categories. Never edit `20261029120000_packages.sql`, `20261118000000_f9_package_markets_types_currency.sql` or any pushed migration; re-run section 1 immediately before pushing.
 5. T070 reviews the implemented deletion path; T063/T071 re-run Analyze and section 1.
 
 Open dependency: the teardown mechanism for mocks that already have offers/versions (the guards forbid deletion) is unspecified and belongs to T064b. Until then the preflight must refuse any mock with attached offers/versions.

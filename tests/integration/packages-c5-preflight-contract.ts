@@ -1,6 +1,6 @@
-// Shared contract + helpers for the F9 C5 preflight RED tests (T052, T064).
-// The preflight (T064a) does NOT exist yet. This file pins the interface the RED
-// tests expect so T064a can implement it; if T064a deliberately differs, change it HERE only.
+// Shared contract + helpers for the F9 C5 preflight tests (T052, T064).
+// T064a is implemented (supabase/migrations/20261121100000_f9_c5_package_preflight.sql). This file pins the interface the
+// tests expect; if the preflight deliberately differs, change it HERE only.
 //
 //   app_private.package_c5_preflight(target_package_ids uuid[] default null) returns jsonb
 //     null target_package_ids = the whole target stack (every row in public.packages).
@@ -12,8 +12,11 @@
 //       refusals: [{ package_id, code }]
 //     }
 //   kind: fk | registration_link | subscription | payment | audit
-//   refusal codes: non_synthetic | attached_offers_or_versions | required_financial_dependency
+//   refusal codes: non_synthetic | real_catalog_row | attached_offers_or_versions | required_financial_dependency
 //                  | required_audit_dependency | unknown_dependency_state
+//   real_catalog_row: package with workspace_id set, a version with market set, or an offer with available=true.
+//   required_audit_dependency: ONLY audit rows of client/financial dependents block. Audit rows that merely
+//   name a mock package/offer/version are reported (kind audit) but do NOT block (PO Q1=A, S61-PO-1).
 //   Zero writes of any kind (STABLE, executable inside a read-only transaction).
 import type { Sql, TransactionSql } from 'postgres';
 
@@ -88,14 +91,19 @@ export async function catalogFkEdges(q: Q) {
   return rows.map((r) => `${r.source_table}#${r.conname}->${r.target_table}`);
 }
 
-// Any column that names a package id, whether or not an FK covers it (unknown-state oracle).
+// Any BASE-TABLE column that names a package id, whether or not an FK covers it (unknown-state oracle).
+// Views (for example registration_links_safe) are excluded: they derive from covered tables.
 export async function packageReferenceColumns(q: Q) {
   const rows = await q.unsafe(`
-    select table_schema||'.'||table_name||'.'||column_name as col
-      from information_schema.columns
-     where table_schema in ('public','app_private')
-       and column_name in ('package_id','package_offer_id','package_version_id')
-       and table_name not in ('packages','package_offers','package_versions')
+    select n.nspname||'.'||c.relname||'.'||a.attname as col
+      from pg_attribute a
+      join pg_class c on c.oid=a.attrelid
+      join pg_namespace n on n.oid=c.relnamespace
+     where n.nspname in ('public','app_private')
+       and c.relkind in ('r','p','f')
+       and a.attnum>0 and not a.attisdropped
+       and a.attname in ('package_id','package_offer_id','package_version_id')
+       and c.relname not in ('packages','package_offers','package_versions')
      order by 1`);
   return rows.map((r) => r.col as string);
 }
