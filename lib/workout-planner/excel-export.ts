@@ -39,6 +39,11 @@ export const EXCEL_COLUMNS = [
   width: number;
 }[];
 
+/** Columns rendered within the printable item table (excludes document/day-level columns 'plan' and 'day'). */
+export const PRINT_TABLE_COLUMNS = EXCEL_COLUMNS.filter(
+  (col) => col.key !== 'plan' && col.key !== 'day',
+);
+
 type ColumnKey = (typeof EXCEL_COLUMNS)[number]['key'];
 type ExportRow = Partial<Record<ColumnKey, string>>;
 
@@ -53,18 +58,21 @@ function writeRow(sheet: Worksheet, values: string[]): void {
   values.forEach((value, index) => writeCell(row.getCell(index + 1), value));
 }
 
-function repsText(item: WorkoutExportItem): string {
+export function formatWorkoutExportReps(item: WorkoutExportItem): string {
   if (!item.reps) return '';
   return 'value' in item.reps
     ? String(item.reps.value)
     : `${item.reps.min}-${item.reps.max}`;
 }
 
-function setTypeText(set: WorkoutExportSet, labels: Labels): string {
+export function formatWorkoutExportSetType(
+  set: WorkoutExportSet,
+  labels: WorkoutExportLabels,
+): string {
   return set.type === 'warmup' ? labels.warmUp : labels.working;
 }
 
-type Labels = {
+export type WorkoutExportLabels = {
   plan: string;
   restDay: string;
   bodyweight: string;
@@ -74,7 +82,7 @@ type Labels = {
   working: string;
 };
 
-function labelsFor(locale: Locale): Labels {
+export function getWorkoutExportLabels(locale: Locale): WorkoutExportLabels {
   const messages = getMessages(locale);
   return {
     plan: messages['workout.export.plan'],
@@ -87,18 +95,24 @@ function labelsFor(locale: Locale): Labels {
   };
 }
 
-function loadText(set: WorkoutExportSet, labels: Labels): string {
+export function formatWorkoutExportLoad(
+  set: WorkoutExportSet,
+  labels: WorkoutExportLabels,
+): string {
   if (set.load.mode === 'bodyweight') return labels.bodyweight;
   const mode =
     set.load.mode === 'added_weight' ? labels.addedWeight : labels.assisted;
   return `${mode} ${set.load.value} ${set.load.unit}`;
 }
 
-function itemRows(item: WorkoutExportItem, labels: Labels): ExportRow[] {
+function itemRows(
+  item: WorkoutExportItem,
+  labels: WorkoutExportLabels,
+): ExportRow[] {
   const shared = {
     exercise: item.name,
     description: item.description ?? '',
-    reps: repsText(item),
+    reps: formatWorkoutExportReps(item),
     restSec: item.restSec === undefined ? '' : String(item.restSec),
     rir: item.rir === undefined ? '' : String(item.rir),
     notes: item.notes ?? '',
@@ -114,15 +128,15 @@ function itemRows(item: WorkoutExportItem, labels: Labels): ExportRow[] {
   return item.sets.map((set, index) => ({
     ...shared,
     sets: String(index + 1),
-    setType: setTypeText(set, labels),
-    load: loadText(set, labels),
+    setType: formatWorkoutExportSetType(set, labels),
+    load: formatWorkoutExportLoad(set, labels),
   }));
 }
 
 function dayRows(
   day: WorkoutExportDay,
   index: number,
-  labels: Labels,
+  labels: WorkoutExportLabels,
 ): ExportRow[] {
   const dayLabel = day.title ?? String(index + 1);
   if (day.kind === 'rest') {
@@ -148,7 +162,7 @@ export function buildWorkoutWorkbook(
   locale: Locale,
 ): Workbook {
   const messages = getMessages(locale);
-  const labels = labelsFor(locale);
+  const labels = getWorkoutExportLabels(locale);
   const workbook = new Workbook();
   workbook.creator = 'LIFTER';
   const metaRows: string[][] = [
