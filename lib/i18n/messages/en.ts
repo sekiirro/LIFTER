@@ -178,6 +178,11 @@ export const en: Record<keyof typeof ar, string> = {
   'workout.volume.secondary': 'Secondary (×0.5)',
   'workout.volume.warmupNotCounted': 'Warm-up sets not counted',
   'workout.volume.empty': 'No working sets yet',
+  // S61-PO-3: planner draft/publish bar copy (approved byte-exact).
+  'planner.allSaved': 'All changes saved',
+  'planner.saveAsDraft': 'Save as Draft',
+  'planner.readyPublish': 'Ready & Publish',
+  'planner.publishing': 'Publishing…',
   'templates.listTitle': 'Available templates',
   'templates.globalScope': 'Global',
   'templates.ownScope': 'My templates',

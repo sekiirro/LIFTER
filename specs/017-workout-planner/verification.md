@@ -127,3 +127,14 @@
 - **Mutation (kill -> restore; component file matches pre-mutation bytes)**:
   - Removed the PO scope gate (`if (!allowed) return null;`) -> `non-PO roles render nothing` failed (WO rendered the wizard); restored.
   - Collapsed the state distinction (`skipped_existing` label -> `skipped_already_assigned`) -> `review shows all four receipt outcomes` failed (`Skipped: already has it` missing); restored.
+
+## F17 Verification — T042 (s61-muse-f17t042, `017-draft-publish-ui-slice-1`, stack: none)
+
+- **Branch**: `017-draft-publish-ui-slice-1` / no DB stack (UI-only, mocked props; F19 RPCs untouched — T019/T020 own them).
+- **Implementation**: `components/workout-planner/DraftPublishBar.tsx` + `DraftPublishBar.module.css` (client component; parent owns all calls via `onSaveDraft?`/`onPublish`/`onReload` and all readiness via `canPublish`; no fetching, no RPC changes). Copy: reused 7 `forms.*` keys byte-exact + 4 new `planner.*` keys byte-exact per S61-PO-3 (`All changes saved`/`كل التعديلات اتحفظت`, `Save as Draft`/`احفظ كمسودة`, `Ready & Publish`/`جاهز وانشر`, `Publishing…`/`جاري النشر…`) in one contiguous block after `workout.volume.*`.
+- **RED**: `tests/unit/workout-draft-publish-bar.test.tsx` (9 tests: EN indicator states, AR RTL byte-exact, optional Save as Draft, single publish + handler, publishing/conflict disable, no-op readiness, conflict block + reload, copy lock) failed before the component existed (unresolved import).
+- **GREEN**: 9/9 pass; full unit 282 files / 3,244 tests pass on the final head. One earlier full-unit run showed a single unidentified failure under default worker fan-out; two standalone reruns fully green (recorded in `~/.lifter/backlog/flakes.md`).
+- **Mutation evidence (kill -> restore)**:
+  - `DraftPublishBar.tsx:54`: forced publish disabled after any save (`|| lastSaved !== 'none'`) -> no-op readiness test failed; restored (line verified back to `!canPublish || saving || publishing || conflicted`).
+  - `DraftPublishBar.tsx:71`: hid the conflict branch (`saveError === 'never-conflict'`) -> conflict display test failed; restored (line verified back to `{conflicted ? (`).
+- **Local gates**: `npm run lint` pass; `npm run typecheck` pass (stale `.next` validator errors pre-existing on clean HEAD; removed `.next`, clean re-run exit 0); `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node scripts/format-check-changed.mjs` pass (no changed md/yaml/json); `npm run format:check` pass; `npm run size` within budget (cron worker 11.76 KiB; no new dependency). Touched integration: none (UI-only, no stack; precedent T044 slices). Migration validation: N/A (no migrations). Full AR/EN x light/dark x mobile/desktop screenshot matrix and axe remain with T045/T052.
