@@ -980,4 +980,15 @@ export const ar = {
   'plans.expiredTitle': 'اشتراكك انتهي',
   'plans.expiredBody':
     'اشتراكك خلص، بس رحلتنا لسه مكملة! تواصل مع كابتنك وجدّد اشتراكك عشان تكمل تقدمك.',
+  // F17 builder entry prescriptions: approved copy (S28-PO-2), copied
+  // byte-exact from origin/017-workout-planner (S60 lane s60-ds-f17t033).
+  'builder.restHint': 'مدة الراحة (بالثواني)',
+  'builder.rirHint': 'التكرارات المتبقية',
+  'builder.reps': 'التكرارات',
+  'builder.repsMode': 'نوع التكرارات',
+  'builder.fixedReps': 'عدد ثابت',
+  'builder.repRange': 'نطاق',
+  'builder.min': 'الحد الأدنى',
+  'builder.max': 'الحد الأقصى',
+  'builder.invalidReps': 'يجب ألا يقل الحد الأدنى عن الحد الأقصى.',
 } as const;

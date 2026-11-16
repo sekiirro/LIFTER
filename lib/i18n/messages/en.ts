@@ -1012,4 +1012,15 @@ export const en: Record<keyof typeof ar, string> = {
   'plans.expiredTitle': 'Subscription Expired',
   'plans.expiredBody':
     "Your subscription has ended, but your journey isn't over! Contact your coach to renew and keep making progress.",
+  // F17 builder entry prescriptions: approved copy (S28-PO-2), copied
+  // byte-exact from origin/017-workout-planner (S60 lane s60-ds-f17t033).
+  'builder.restHint': 'Rest (seconds)',
+  'builder.rirHint': 'Reps in reserve',
+  'builder.reps': 'Repetitions',
+  'builder.repsMode': 'Repetition type',
+  'builder.fixedReps': 'Fixed count',
+  'builder.repRange': 'Range',
+  'builder.min': 'Minimum',
+  'builder.max': 'Maximum',
+  'builder.invalidReps': 'Minimum cannot be greater than maximum.',
 };
