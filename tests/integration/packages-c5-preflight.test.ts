@@ -99,7 +99,7 @@ describe('T064 refuse/escalate before any write', () => {
     );
   });
 
-  it('T064 audit rows that merely name a mock offer do not block, but the attached offer does (PO Q1=A, S61-PO-1)', async () => {
+  it('T064 audit rows that merely name a mock offer do not block, but the attached offer does (PO Q1=A, S61-PO-2)', async () => {
     const mock = await createLegacySynthetic(f);
     const offerId = randomUUID();
     await db`

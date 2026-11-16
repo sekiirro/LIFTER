@@ -16,7 +16,7 @@
 //                  | required_audit_dependency | unknown_dependency_state
 //   real_catalog_row: package with workspace_id set, a version with market set, or an offer with available=true.
 //   required_audit_dependency: ONLY audit rows of client/financial dependents block. Audit rows that merely
-//   name a mock package/offer/version are reported (kind audit) but do NOT block (PO Q1=A, S61-PO-1).
+//   name a mock package/offer/version are reported (kind audit) but do NOT block (PO Q1=A, S61-PO-2).
 //   Zero writes of any kind (STABLE, executable inside a read-only transaction).
 import type { Sql, TransactionSql } from 'postgres';
 

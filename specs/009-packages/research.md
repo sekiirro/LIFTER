@@ -101,8 +101,8 @@ This records the supplied architect decisions against repository evidence; it do
   cross-currency total. Currency is validated in the application and DB publication walls before
   mutation.
 - **Reporting-FX exception (as stated in the spec)**: the no-conversion rule above governs package
-  prices. FR-026/FR-031 now require the Africa/Cairo transaction date, ECB/TARGET business-day
-  selection of the latest prior valid Frankfurter publication, verified coverage for every supported
+  prices. FR-026/FR-031 now require the Africa/Cairo transaction date, own-calendar (S61-PO-1)
+  selection of the latest prior valid publication of the Frankfurter v2 provider pinned to each currency (S61-PO-1: `USD`→`CBE`, `SAR`→`SAMA`, own calendar), verified coverage for every supported
   currency, exact per-line conversion, and one half-up rounding of each reported aggregate to EGP
   minor units. If no prior valid publication exists, the existing idempotent pending/retry rule keeps
   the item out of converted totals. Original transaction/settlement values and existing payment rules
@@ -137,11 +137,11 @@ See the current [spec.md](spec.md#po-decision-register). The prior S33 MCQs are 
 
 S32-PO-4 closes the previous product blockers for audit-safe legacy migration, editable defaults, full PO package management, promotional date/expiry support, and historical FX-based EGP reporting. S31-PO-5 and SK-009-04 remain unchanged. The decision explicitly requires original-currency preservation, immutable historical rates, safe API-failure handling, and distinct reported revenue versus actual settlement.
 
-S33-PO-6 and S34-PO-1 identify the existing package rows as mock data, settle transaction date, provider verification, rate-pending behavior, EGP identity, expiry boundaries/link effects, immutable category snapshot, and dashboard basis. S36-PO-2/S36-PO-3 refine the published-rate selection to the latest prior valid Frankfurter publication on the ECB/TARGET calendar, require exact per-line conversion with aggregate-only half-up rounding, define missing promotion bounds, and require coverage verification for every supported currency. The governing requirements are in the current Clarifications and FR-022..FR-033; no unresolved product MCQ is inferred.
+S33-PO-6 and S34-PO-1 identify the existing package rows as mock data, settle transaction date, provider verification, rate-pending behavior, EGP identity, expiry boundaries/link effects, immutable category snapshot, and dashboard basis. S36-PO-2/S36-PO-3 refine the published-rate selection to the latest prior valid Frankfurter publication (S61-PO-1 replaces the ECB/TARGET calendar with the pinned provider's own calendar: `USD`→`CBE`, `SAR`→`SAMA`), require exact per-line conversion with aggregate-only half-up rounding, define missing promotion bounds, and require coverage verification for every supported currency. The governing requirements are in the current Clarifications and FR-022..FR-033; no unresolved product MCQ is inferred.
 
 ## R16 ? External FX API and constitutional data constraint
 
-Constitution platform constraints restrict AI model routing and require synthetic data in development/testing under S31-PO-8. FX retrieval is a runtime data API, not an AI call. FR-027 requires server-side minimization. Frankfurter is allowed only after documented verification checks (S33-PO-6), including coverage of every supported currency; an uncovered currency is a recorded blocker rather than an assumed rate or fallback. Development fixtures remain synthetic.
+Constitution platform constraints restrict AI model routing and require synthetic data in development/testing under S31-PO-8. FX retrieval is a runtime data API, not an AI call. FR-027 requires server-side minimization. Frankfurter v2, pinned to one provider per currency (S61-PO-1), is allowed only after documented verification checks (S33-PO-6), including coverage of every supported currency and the pinned provider's terms of use; an uncovered currency is a recorded blocker rather than an assumed rate or fallback. Development fixtures remain synthetic.
 
 ## S34-PO-1 / S33-PO-6 decision research
 
@@ -155,7 +155,7 @@ The dashboard shows actual monthly collections and package-specific commission w
 
 - **Decision**: Convert every reporting line exactly from its immutable snapshot, sum the exact line
   conversions, and round each reported EGP aggregate half-up exactly once to EGP minor units. Use
-  ECB/TARGET business days and the latest prior valid Frankfurter publication strictly before the
+  the pinned Frankfurter v2 provider's own calendar (S61-PO-1: `USD`→`CBE`, `SAR`→`SAMA`) and its latest prior valid publication strictly before the
   transaction's Africa/Cairo date, falling back to the latest earlier valid publication. If none
   exists, retain the pending/idempotent-retry exclusion. Verify Frankfurter coverage for every
   supported currency; an uncovered currency is a recorded blocker. For Promotional categories, a

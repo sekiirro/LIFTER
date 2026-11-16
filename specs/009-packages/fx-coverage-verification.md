@@ -2,7 +2,7 @@
 
 **Verified**: 2026-11-16 (observations taken 2026-11-15 23:20 UTC, i.e. 2026-11-16 Africa/Cairo) by live `curl` against `https://api.frankfurter.dev`. Task: T075 [FR-026, FR-031, SC-017, SC-022]. Required by S36-PO-2/S36-PO-3 and spec FR-026: record per currency (`EGP`, `USD`, `SAR`) whether the selected Frankfurter service has valid historical rates over the required dates. Any gap is a blocker; no provider, rate or fallback is assumed.
 
-## Verdict (T075 result: BLOCKED, T059 stays blocked)
+## Verdict (T075 result: BLOCKED on the ECB/TARGET reading; superseded by the S61-PO-1 addendum at the end)
 
 | Currency | Frankfurter v1 (ECB reference rates, ECB/TARGET business days)                                                                                                                                                                   | Frankfurter v2 (multi-provider, calendar days)                                                                             | Verdict against the spec as written (ECB/TARGET + Frankfurter)                                                                                                      |
 | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -69,3 +69,35 @@ Which FX source satisfies "ECB/TARGET business-day, latest prior valid publicati
 - **C.** Approve Frankfurter v2 blended series as is, using its calendar days as publications; amend FR-026/SC-017 to drop the ECB/TARGET weekday rule for EGP/SAR/USD.
 
 Recommendation: **B** (or A if CBE/SAMA terms of use cannot be verified). It keeps the "latest prior valid publication" semantics and immutability well defined (one named, auditable provider and calendar per currency, no weekend fabrication) while using a service already selected by the spec. C leaves provenance and calendar semantics undefined; A is safest but delays reporting. Not decided here.
+
+## S61-PO-1 (FX=B) addendum: pinned-provider verification (T075 re-run)
+
+**Decision**: S61-PO-1 "FX=B" approves Frankfurter v2 pinned to one named provider per currency on that provider's own calendar (option B above). **Re-verified**: 2026-11-16 ~01:25 UTC by live `curl` against `https://api.frankfurter.dev/v2` (`/providers`, `/currencies`, `/rates`, `/rate`). The "BLOCKED" verdict above is superseded for coverage; the terms-of-use item below is still a blocker.
+
+### Pinned providers (keys from live `/v2/providers`)
+
+| Line currency | Pinned provider key | Provider metadata (API)                                                                                                                                                                                      | Quote    | Calendar observed over 2025-01-01..2026-11-13                                                                                                                                                                                      |
+| ------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `USD`         | `CBE`               | Central Bank of Egypt, country EG, official rate, pivot EGP, daily, start 2024-03-03, end 2026-11-15, 0 missed publishes. Lists AED AUD BHD CAD CHF CNY DKK EGP EUR GBP JOD JPY KWD NOK OMR QAR SAR SEK USD. | USD->EGP | 452 rows; weekday counts Sun 91, Mon 92, Tue 95, Wed 94, Thu 80, Fri 0, Sat 0 (no Friday/Saturday rows); 36 Sunday-Thursday dates absent, all Egyptian holiday runs (e.g. 2026-05-26..28, 2026-05-31). Min 46.77865, max 56.28185. |
+| `SAR`         | `SAMA`              | Saudi Central Bank, country SA, indicative rate, pivot SAR, daily, start 2021-04-10, end 2026-11-15, 0 missed publishes. Lists 72 currencies incl. EGP, USD, SAR.                                            | SAR->EGP | 678 rows, rows on all 7 weekdays (incl. Fri/Sat); 4 dates absent: 2025-07-21, 2025-08-05..07. Min 12.4517, max 15.006. USD->SAR on SAMA is exactly 3.75 on every row (peg), min = max.                                             |
+| `EGP`         | none                | identity                                                                                                                                                                                                     | EGP->EGP | exactly 1, no lookup.                                                                                                                                                                                                              |
+
+Other provider-pair observations: CBE SAR->EGP (452 rows, 12.4733..14.9965) and CBE USD->SAR (3.7499..3.7568, not a constant peg) exist but are NOT used.
+
+Provider calendars used by the T058 fixtures and `lib/packages/fx.ts`: CBE publishes Sunday-Thursday (Friday/Saturday never); official holidays simply have no row. SAMA publishes every calendar day (a Saturday/Sunday row can repeat the prior value, e.g. 14.3802 on 2026-11-07, -08 and -09).
+
+### Findings that shape the adapter
+
+- Rows from `/v2/rates` carry only `date, base, quote, rate`; they do NOT identify the provider. Pinning therefore relies on the explicit `providers=` parameter plus validation: a CBE-pinned response containing any Friday/Saturday row is rejected as evidence of a blended series.
+- The single-date endpoint silently snaps back: `GET /v2/rate/USD/EGP?date=2026-11-07&providers=CBE` returned `date: 2026-11-05` (CBE has no Friday/Saturday rows), and without `providers` returns a blended 2026-11-07 value (53.926 vs CBE 53.9423 on 11-05 vs SAMA 54.721). The adapter uses the range endpoint `/v2/rates?...&providers=...&from=&to=` and validates every returned date against the requested window and the pinned calendar.
+- The range endpoint carries the latest earlier row in when `from` has no row of its own: `/v2/rates?base=USD&quotes=EGP&providers=CBE&from=2026-10-09&to=2026-10-10` returns the 2026-10-07 row, and `from=2025-01-01&to=2025-01-03` returns 2024-12-31 and 2025-01-02. Rows may therefore precede `from` (and a `to` beyond the latest publication returns the latest row, e.g. 2026-11-15); the adapter accepts rows up to 31 days before `from` and none after `to`.
+- Empty arrays (HTTP 200) are returned for unsupported provider/currency combinations (e.g. `providers=ECB`), so an empty result is treated as pending, never as rate 1.
+
+### Terms of use and data URL (verification status: NOT VERIFIED, BLOCKER)
+
+| Provider | API `data_url`                                                                            | API `terms_url`                                     | Result of fetching `terms_url` on 2026-11-16                                                   |
+| -------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `CBE`    | https://www.cbe.org.eg/en/economic-research/statistics/cbe-exchange-rates/historical-data | https://www.cbe.org.eg/en/disclaimer                | HTTP 200 but a 269-byte client-rendered shell; no terms text is retrievable without a browser. |
+| `SAMA`   | https://www.sama.gov.sa/en-US/Currency/FinExc/Pages/Currency.aspx                         | https://www.sama.gov.sa/en-us/pages/termsofuse.aspx | Connection failed (no HTTP response) from this host.                                           |
+
+The API metadata gives URLs only; it does not state licence, redistribution or reporting-use terms. Neither terms page could be read, so the S33-08 "documented verification of provider terms" gate for `CBE`, `SAMA` (and Frankfurter's own service terms for v2 redistribution) is **NOT verified and is a blocker for acceptance**. No terms are assumed. Required before acceptance: a human or a browser-capable reviewer reads both terms pages and records permitted use (internal financial reporting, no client data sent, caching of rates) here and in the T062 review.

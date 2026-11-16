@@ -1613,7 +1613,20 @@ LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from ot
 
 Architect mapping S56-R7 (not PO words): no feature-flag mechanism is built; unfinished features merge without a flag; no task or slice waits for a flag; the topic is tracked as a pre-production readiness item. Security, RLS, authorization, tests, CI gates and every other safeguard stay as they are.
 
-### S61-PO-1 — PO words, verbatim
+### S61-PO-1 - PO words, verbatim
+
+Source: PO decision of 2026-11-16 on the F9 FX evidence `specs/009-packages/fx-coverage-verification.md` (T075).
+
+<!-- prettier-ignore -->
+```text
+FX=B
+```
+
+Option B as offered (verbatim): "Approve Frankfurter v2 pinned to one named provider per currency (for example CBE for EGP, SAMA for SAR). Use that provider's own publication calendar, and amend FR-026, SC-017 and the T058 calendar fixtures."
+
+Architect mapping S61-R1 (not PO words): provider keys read from live `/v2/providers`: `USD`→`EGP` from `CBE`, `SAR`→`EGP` from `SAMA`, `EGP`→`EGP` exactly 1. Replaces the ECB/TARGET business-day calendar of S36-PO-3 with the pinned provider's own calendar; the other S33-PO-6/S36-PO-2/S36-PO-3 FX rules are unchanged. Amends spec 009 FR-026, FR-031, SC-017, SC-022, acceptance scenario 8, plan, data-model, contracts and T058/T059/T067/T075. Provider terms of use are not yet verified and remain a blocker for acceptance (T062).
+
+### S61-PO-2 — PO words, verbatim
 
 Source: PO message 2026-11-16 answering the F9 T064b teardown-design questions Q1, Q2 and Q3 in `specs/009-packages/review.md` section 5 (record held outside the repository; quoted verbatim below).
 
