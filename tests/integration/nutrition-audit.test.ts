@@ -18,9 +18,10 @@ afterAll(async () => {
 describe('F18 T016 nutrition audit allowlist', () => {
   it('records exactly one ids-and-codes event for a denied selection', async () => {
     const revisionId = randomUUID();
+    const foodName = 'Chicken breast 200g';
     const denied = await f.trainerA.client.rpc('select_nutrition_alternative', {
       p_plan_version_id: revisionId,
-      p_item_id: 'item-audit-denial',
+      p_item_id: foodName,
       p_alternative_id: 'alternative-audit-denial',
       p_operation_key: randomUUID(),
     });
@@ -28,7 +29,7 @@ describe('F18 T016 nutrition audit allowlist', () => {
     expect(denied.data).toEqual({ status: 'not_permitted' });
 
     const events = await db`
-      select actor_user_id, action, target_id, workspace_id, details
+      select actor_user_id, action, target_table, target_id, workspace_id, details
       from public.audit_events
       where action = 'client.nutrition_select'
         and target_id = ${revisionId}
@@ -42,21 +43,16 @@ describe('F18 T016 nutrition audit allowlist', () => {
       workspace_id: null,
       details: {
         revision_id: revisionId,
-        item_id: 'item-audit-denial',
-        alternative_id: 'alternative-audit-denial',
         outcome: 'denied',
         reason: 'not_client',
       },
     });
+    expect(events[0]!.details).not.toHaveProperty('item_id');
+    expect(events[0]!.details).not.toHaveProperty('alternative_id');
+    expect(JSON.stringify(events[0])).not.toContain(foodName);
     expect(
       Object.keys(events[0]!.details as Record<string, unknown>).sort(),
-    ).toEqual([
-      'alternative_id',
-      'item_id',
-      'outcome',
-      'reason',
-      'revision_id',
-    ]);
+    ).toEqual(['outcome', 'reason', 'revision_id']);
   });
 
   it('records one safe event for a successful template mutation and exact replay', async () => {

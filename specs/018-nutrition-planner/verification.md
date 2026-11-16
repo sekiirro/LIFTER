@@ -9,6 +9,13 @@
 - **Other local gates:** typecheck, lint, formatting, migration timestamp check, and full unit suite (277 files / 3,206 tests) passed. Local checks and logs are recorded in `C:/Users/NEW LAP/.lifter/runs/s60-luna-f18t016/report.md`.
 - **Local validate flake:** `ci:local` had one full-suite attempt with timeouts in three unrelated unit tests; the standalone full `npm test` rerun passed 277/277 files and 3,206/3,206 tests. Recorded in `C:/Users/NEW LAP/.lifter/backlog/flakes.md`; exact-head CI remains required.
 
+## S60-R14 denial identifier scrub
+
+- **RED:** On Stack C, the audit denial scrub test failed when `p_item_id` was `Chicken breast 200g`; the real-item / invalid-alternative test also failed because that unverified alternative was stored. Each case observed exactly one denial event.
+- **GREEN:** Migration `20261120110200_f18_selection_audit_verified_ids.sql` now includes a denied `item_id` only when it exists in the target revision document, and includes a denied `alternative_id` only when it exists under that item. Success audit payloads are unchanged. Focused audit/selection suites passed 7/7; all 11 F18 nutrition integration suites plus `rls-catalog.test.ts` passed 82/82 on Stack C.
+- **Mutation:** Temporarily restored raw `p_item_id` in the denied audit payload; the food-name scrub assertion failed with the raw text present. Restored the implementation and `git diff --exit-code` returned 0 against the staged clean baseline.
+- **Local gates:** Full unit passed 277 files / 3,206 tests; typecheck and lint passed. S60-Q1 ID-format hardening is pending PO decision; this fix does not change the ID contract or validator.
+
 ## Environment
 
 - **Base `origin/main` SHA**: `9995e5b7`
