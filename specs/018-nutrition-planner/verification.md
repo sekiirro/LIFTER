@@ -167,6 +167,7 @@
 
 - **Integration:** Added a Stack A integration case that stores a valid nutrition draft with a non-UUID alternative id and expects `publish_nutrition_revision` to reject it with SQLSTATE `22023`. After Stack A reset and provisioning, `tests/integration/nutrition-publish.test.ts` passed 9/9.
 - **Mutation:** Removed the single-day alternative-id branch from `app_private.f18_guard_nutrition_document_ids` in migration `20261120200100_f18_uuid_item_alternative_ids.sql`, reset and provisioned Stack A, and ran the focused test. It failed because publishing returned `null` instead of SQLSTATE `22023`. Restored the migration; its SHA-256 matches the original `EF67CA0590B47F8C0AAB42A6A853854D340810937D4FB38EE163D78F06DD646F`, and `git diff --exit-code` was clean. Stack A was reset and provisioned again with the restored migration before the passing integration run.
+
 ## Slice 6: T026 ï¿½ Multi-plan projection regression (Stack D)
 
 - **Branch/base**: `018-multi-plan-slice-1`, fresh `origin/main` at `8e2ceaf68b1a8b19cf5b3b37e735ae1a7f422721`.
