@@ -1636,3 +1636,14 @@ Teardown Q1=A, Q2=A, Q3=A
 ```
 
 Architect mapping (not PO words): Q1=A, an immutable audit event that merely names a mock package, offer or version as `target_id` does NOT block deletion; only client, registration-link and financial references block. Q2=A, the C5 teardown procedure MAY disable the offer update guard (`package_offers_guard`) for the single `current_version_id := NULL` statement, under the controls in review.md section 4 (the independent review narrowed this to `package_offers_guard` only). Q3=A, transient owner-only, single-transaction trigger disablement by the operator script is NOT a "guard exception" under FR-006/FR-028, with the controls of review.md section 4. Applies to F9 C5 (FR-006, FR-028, T064b, T065). It does not authorize any deletion by itself: T065 waits for the independent T064b re-review PASS.
+
+### S61-PO-3 — PO words, verbatim
+
+Source: PO message 2026-11-16, "Select all recommended choices", answering the four open F9 decisions listed in the status report (record held outside the repository; quoted verbatim below).
+
+<!-- prettier-ignore -->
+```text
+Select all recommended choises
+```
+
+Architect mapping (not PO words): the recommended option of each question is adopted. (1) USD to EGP uses provider `CBE` (confirms S61-PO-1). (2) `FX_SETTLE_DAYS` = 3 and the rate bounds USD to EGP 1..1000 and SAR to EGP 0.5..300 are confirmed. (3) The childless-mock rule is approved: a mock package with no offers and no versions counts as deletable by the C5 preflight. The status report gave no recommended option for the T076 retirement contract, so it remains undefined and T076 stays blocked. This does not verify provider terms of use (T059/T062/T075) and does not authorize any teardown run or merge.

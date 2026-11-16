@@ -302,3 +302,11 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 - PASS: tick evidence matches executed CI; T059, T062, T065, T070, T075 and T076 stay unticked with their blockers recorded (provider terms of use unverified; T070 conditions not re-reviewed; T076 retirement contract missing).
 - Findings: 0 open CRITICAL, 0 open HIGH. **No open ambiguities** beyond the recorded architect parameters (FX_SETTLE_DAYS, rate bounds).
+
+## 2026-11-16 Analyze (S61-PO-3 decision recorded)
+
+**Analyzed:** 2026-11-16. S61-PO-3 confirms FX_SETTLE_DAYS=3, the rate bounds, CBE for USD to EGP and the childless-mock rule. spec.md FR-026 now cites the decision instead of "awaiting confirmation". No other requirement text changed.
+
+- PASS: FR-026 matches the decision log.
+- Remaining blockers unchanged: provider terms of use (T059/T062/T075), T070 re-review, T076 retirement contract.
+- Findings: 0 open CRITICAL, 0 open HIGH.
