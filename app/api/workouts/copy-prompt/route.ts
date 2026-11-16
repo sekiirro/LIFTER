@@ -6,6 +6,7 @@ import {
   containsProhibitedInstruction,
 } from '../../../../lib/workout-planner/ai-prompt';
 import { buildWorkoutExportPayload } from '../../../../lib/workout-planner/export-payload';
+import { currentWorkoutVideo } from '../../../../lib/workout-planner/live-video';
 import { formatWorkoutPromptContent } from '../../../../lib/workout-planner/copy-prompt';
 import {
   parseWorkoutDocumentV1,
@@ -129,17 +130,12 @@ export async function GET(request: Request) {
         const detail = result.data[0] as CatalogDetail;
         const name = detail.payload?.name_en;
         if (typeof name !== 'string' || !name) return null;
-        const videoUrl =
-          reference.source === 'global'
-            ? detail.variation?.video_url
-            : detail.payload?.video_url;
+        const videoUrl = currentWorkoutVideo(reference, detail);
         return {
           reference,
           value: {
             name,
-            ...(typeof videoUrl === 'string' && videoUrl.length > 0
-              ? { videoUrl }
-              : {}),
+            ...(videoUrl === undefined ? {} : { videoUrl }),
           },
         };
       }),

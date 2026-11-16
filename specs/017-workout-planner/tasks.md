@@ -56,7 +56,7 @@
 - [x] **T033 (45m) — Default copy/override UI.** `[UI][NEEDS-F16]` (FR-004, FR-005; SC-001). Show copied values as ordinary editable fields; no platform defaults screen; no re-default on load. RED first. Mutation: add a platform-defaults control or re-default path and prove failure. Evidence: `components/workout-planner/EntryPrescriptionFields.tsx`, `components/workout-planner/EntryPrescriptionFields.module.css`, `tests/unit/workout-prescription-ui.test.tsx`.
 
 - [x] **T034 (45m) — Alternatives UI and unavailable indicator.** `[UI][NEEDS-F16]` (FR-002, FR-003; SC-011). Select up to three, edit per plan, show unavailable on removed/merged, never substitute. RED first. Mutation: drop the indicator or substitute a target and prove failure. Evidence: `components/workout-planner/AlternativesEditor.tsx`, `lib/workout-planner/alternatives.ts`, `tests/unit/workout-alternatives-ui.test.ts` (S60-PO-5 badge copy).
-- [ ] **T035 (45m) — Live Video resolution wiring.** `[APP/API][NEEDS-STACK][NEEDS-F16]` (FR-003; SC-011). Resolve on each authorized read/export; never persist; no republish on change. RED first. Mutation: store a URL in the revision and prove failure.
+- [ ] **T035 (45m) — Live Video resolution wiring.** `[APP/API][NEEDS-STACK][NEEDS-F16]` (FR-003; SC-011). Resolve on each authorized read/export; never persist; no republish on change. RED first. Mutation: store a URL in the revision and prove failure. Verified so far: the authorized Copy AI Prompt route reads current F16 detail Video on each request and frozen revision entries omit URLs; RED/GREEN and URL-persistence mutation are recorded in `verification.md`. Remaining: print/excel wiring after #160.
 
 ## Phase 5 — volume and exports
 
