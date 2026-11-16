@@ -340,3 +340,9 @@ cells are stored as text.
 - T023/T024 task status and traceability now cite the Stack B RPC, governance, and mutation evidence in `verification.md`.
 - No FR, SC, acceptance criteria, or plan design text changed; promoted-template loading remains T028/T029 scope.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## T034 Date Update (2026-11-16)
+
+- Updated `tasks.md` (ticked `T034` only), `traceability.md` (FR-002/FR-003/SC-011 cite the T034 unit evidence; T034 verified, remaining UI/integration tasks open), and `verification.md` (T034 RED/GREEN/mutation/design-gate evidence).
+- No FR, SC, acceptance criteria, or plan design text changed (R6: Analyze itself is NOT re-dated).
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
