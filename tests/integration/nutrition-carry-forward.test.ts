@@ -48,8 +48,8 @@ function makeDoc(
     includeItem?: boolean;
   } = {},
 ): NutritionDocumentV1 {
-  const itemId = options.itemId ?? 'item-1';
-  const altId = options.altId ?? 'alt-1';
+  const itemId = options.itemId ?? '11111111-1111-4111-8111-111111111111';
+  const altId = options.altId ?? '22222222-2222-4222-8222-222222222221';
   const alt: NutritionAlternative = {
     id: altId,
     foodId: options.altFoodId ?? altFood1Id,
@@ -169,8 +169,8 @@ async function publishNutritionPlan(
 async function selectAlternative(
   clientAuth: { client: SupabaseClient; authUserId: string },
   revisionId: string,
-  itemId = 'item-1',
-  altId = 'alt-1',
+  itemId = '11111111-1111-4111-8111-111111111111',
+  altId = '22222222-2222-4222-8222-222222222221',
 ) {
   const result = await clientAuth.client.rpc('select_nutrition_alternative', {
     p_plan_version_id: revisionId,
@@ -275,8 +275,8 @@ describe('F18 T011 publish selection carry-forward', () => {
 
     expect(await readSelection(nextRevisionId)).toMatchObject({
       client_id: g.client,
-      item_id: 'item-1',
-      alternative_id: 'alt-1',
+      item_id: '11111111-1111-4111-8111-111111111111',
+      alternative_id: '22222222-2222-4222-8222-222222222221',
       created_by: clientAuth.authUserId,
     });
     const [counter] = await db`
@@ -400,8 +400,8 @@ describe('F18 T011 publish selection carry-forward', () => {
       selectPromise = Promise.resolve().then(async () => {
         select = await clientAuth.client.rpc('select_nutrition_alternative', {
           p_plan_version_id: revisionId,
-          p_item_id: 'item-1',
-          p_alternative_id: 'alt-2',
+          p_item_id: '11111111-1111-4111-8111-111111111111',
+          p_alternative_id: '22222222-2222-4222-8222-222222222222',
           p_operation_key: randomUUID(),
         });
       });
@@ -418,8 +418,8 @@ describe('F18 T011 publish selection carry-forward', () => {
     const carried = await readSelection(nextRevisionId);
     expect(carried).toMatchObject({
       client_id: g.client,
-      item_id: 'item-1',
-      alternative_id: 'alt-1',
+      item_id: '11111111-1111-4111-8111-111111111111',
+      alternative_id: '22222222-2222-4222-8222-222222222221',
       created_by: clientAuth.authUserId,
     });
   });

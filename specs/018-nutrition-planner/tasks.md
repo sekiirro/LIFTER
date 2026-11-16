@@ -18,6 +18,7 @@
 - [x] **T004 (45m) - Selection contract.** `SKILL=TEST`, `RISK=HIGH`. `[INDEPENDENT]`. Files: `tests/contracts/nutrition-selection.test.ts`. RED: forged plan/version/client/item/alternative tuples, coach-source overwrite, stale revision and clear-to-default are all asserted; clear then select advances the durable per-revision counter, while a no-op does not. GREEN: self-only, ids-only, derived totals, generic failures. **Mutation**: accept an alternative id not in the item list or reset the selection counter after clear; a paired test must fail. Covers F18-FR-011..013, F18-FR-016.
 - [x] **T005 (45m) — Export and prompt fidelity contract.** `SKILL=EXPORT`, `RISK=MEDIUM`. `[INDEPENDENT]`, `[RESOLVED-S43-PO-5: byte-exact approved body]`. Files: `tests/contracts/nutrition-export-contract.test.ts`. RED: missing meal/quantity/macro/alternative/Meal Notes/Food Notes/link, conflated note fields, formula prefix executed, selected content primary, recalculated totals, labelled per-item coach-original note in PDF/Excel and copied prompt; totals rows contain client-selection totals only; prompt invention instruction. GREEN: faithful projection; both note fields and both selection sides carried separately. **Mutation**: drop the client selection section or merge the note fields; the contract test must fail. Covers F18-FR-006 (alternatives in export), F18-FR-014, F18-FR-015, F18-FR-023. No DB.
 - [x] **T006 (45m) — Assignment state-machine contract.** `SKILL=TS/DOMAIN`, `RISK=MEDIUM`. `[INDEPENDENT]`, `[RESOLVED-S43-PO-1: skip and report any held copy]`. Files: `lib/plans/nutrition/template-assignment.ts`, `tests/unit/nutrition-assignment.test.ts`. RED: All×All on partial workspace, future workspace, duplicate copy, overwrite, retired template, nutrition/workout independence. GREEN: pure state machine returns the per-target outcome. **Mutation**: make All top up a partial workspace; the test must fail. Covers F18-FR-008, F18-FR-009.
+- [x] **T029 (60m) — Canonical UUIDv4 item and alternative IDs.** `SKILL=DB/SECURITY`, `RISK=HIGH`. `[NEEDS-STACK]`. Files: nutrition document contract, `lib/plans/nutrition/schema.ts`, publish/selection migration, audit guard and all nutrition fixtures. RED: reject non-UUID and uppercase IDs in TS; reject non-UUID IDs on publish, selection and audit insert. GREEN: only lowercase UUIDv4 item/alternative IDs persist or enter audit details; fixtures use UUIDs. **Mutation**: permit a non-UUID item/alternative ID in `app_private.f18_audit_allowlist_guard`; the audit test must fail, then restore and verify the mutation-only diff is clean. Covers F18-FR-002, F18-FR-011, F18-FR-012, F18-FR-017.
 
 ## Phase 1 — Persistence
 
@@ -52,7 +53,7 @@
 
 ## Dependency order
 
-T001–T006 fix the contracts. T007–T015 build persistence and RPCs after F19 merges. T016–T021 close attribution/security/operations. T022 must land with T009 (snapshot build inside publish). T023/T024 depend on T005; prompt templates have per-locale byte-equality acceptance. T025 depends on the copy gate and the design gate. T026 needs F19's projection. T027 runs last.
+T001–T006 fix the original contracts. T007–T015 build persistence and RPCs after F19 merges. T016–T021 close attribution/security/operations. T022 must land with T009 (snapshot build inside publish). T023/T024 depend on T005; prompt templates have per-locale byte-equality acceptance. T025 depends on the copy gate and the design gate. T026 needs F19's projection. T027 is the release audit. T029 tightens item/alternative ID boundaries under S60-PO-3.
 
 ## Parallelism
 
@@ -76,7 +77,7 @@ T001–T006 fix the contracts. T007–T015 build persistence and RPCs after F19 
 | Requirement | Tasks                              |
 | ----------- | ---------------------------------- |
 | F18-FR-001  | T009, T026                         |
-| F18-FR-002  | T001, T007, T022, T025             |
+| F18-FR-002  | T001, T007, T022, T025, T029      |
 | F18-FR-003  | T002, T008, T022                   |
 | F18-FR-004  | T001, T002, T008, T022             |
 | F18-FR-005  | T003, T009, T022                   |
@@ -85,13 +86,13 @@ T001–T006 fix the contracts. T007–T015 build persistence and RPCs after F19 
 | F18-FR-008  | T006, T014                         |
 | F18-FR-009  | T006, T012, T013                   |
 | F18-FR-010  | T026                               |
-| F18-FR-011  | T004, T010                         |
-| F18-FR-012  | T004, T011                         |
+| F18-FR-011  | T004, T010, T029                   |
+| F18-FR-012  | T004, T011, T029                   |
 | F18-FR-013  | T004, T010, T023                   |
 | F18-FR-014  | T005, T023                         |
 | F18-FR-015  | T005, T024                         |
 | F18-FR-016  | T010, T016                         |
-| F18-FR-017  | T018                               |
+| F18-FR-017  | T018, T029                         |
 | F18-FR-018  | T017                               |
 | F18-FR-019  | T003, T009, T010, T013, T014, T019 |
 | F18-FR-020  | T020, T027                         |

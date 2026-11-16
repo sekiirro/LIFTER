@@ -79,14 +79,14 @@ function makeNutritionDoc(): NutritionDocumentV1 {
         recipeUrl: 'https://example.com/oats',
         items: [
           {
-            id: 'item-1',
+            id: '11111111-1111-4111-8111-111111111111',
             foodId: 'food-oats',
             foodVersion: 4,
             quantity: { value: '80', unit: { kind: 'basis', value: 'g' } },
             note: 'Rolled oats',
             alternatives: [
               {
-                id: 'alt-1',
+                id: '22222222-2222-4222-8222-222222222221',
                 foodId: 'food-rice',
                 foodVersion: 2,
                 quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
@@ -234,7 +234,7 @@ describe('F19 T012 pure plan/template copy', () => {
         schemaVersion: 1,
         document: {
           ...nutDoc,
-          selection: { itemId: 'item-1' },
+          selection: { itemId: '11111111-1111-4111-8111-111111111111' },
         } as unknown as NutritionDocumentV1,
       },
       seqUuid(),
