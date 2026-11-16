@@ -137,13 +137,13 @@
   1. Forcing `dir="ltr"` fails AR RTL assertion in `tests/unit/workout-print-view.test.tsx` (1 failed / 9 passed).
   2. Removing alternatives column fails FR-018 field assertions in `tests/unit/workout-print-view.test.tsx` (2 failed / 8 passed).
   3. Dropping published-only check in `lib/workout-planner/export-reader.ts` (temporary
-  `plan_drafts` fallback mutant, re-executed on the final head) fails
-  `tests/integration/workout-print-route.test.ts`
-  assertion `denies unpublished draft with generic 404`
-  (`AssertionError: expected 200 to be 404`; other 3 tests still pass); restored with
-  SHA256 equal to the pre-mutation hash
-  (`F0609A2873D816576C62BA02B95619AC7E76AFD694503093E46CF73803FBB496`)
-  and zero `MUTANT-ONLY` residue (new files are untracked, so `git diff` does not apply).
+     `plan_drafts` fallback mutant, re-executed on the final head) fails
+     `tests/integration/workout-print-route.test.ts`
+     assertion `denies unpublished draft with generic 404`
+     (`AssertionError: expected 200 to be 404`; other 3 tests still pass); restored with
+     SHA256 equal to the pre-mutation hash
+     (`F0609A2873D816576C62BA02B95619AC7E76AFD694503093E46CF73803FBB496`)
+     and zero `MUTANT-ONLY` residue (new files are untracked, so `git diff` does not apply).
 
 ## S60-R4 Verification — T016/T017 (s60-luna-f17t016)
 
