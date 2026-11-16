@@ -1170,4 +1170,87 @@ export const en: Record<keyof typeof ar, string> = {
     'Review workspace and global templates using sample data.',
   'nutritionTemplates.previewNotice':
     'Showcase only. Templates are mocked; nothing is saved.',
+  'nutritionAlternatives.title': 'Manual alternatives',
+  'nutritionAlternatives.intro':
+    'Add up to three coach-approved alternatives. Each alternative uses its own food, portion quantity, and calculated macros.',
+  'nutritionAlternatives.original': 'Original',
+  'nutritionAlternatives.alternative': 'Alternative',
+  'nutritionAlternatives.add': 'Add alternative',
+  'nutritionAlternatives.limitHelp':
+    'You can add up to three alternatives for this item.',
+  'nutritionAlternatives.addDisabledLimit':
+    'Three alternatives is the maximum. Remove one to add another.',
+  'nutritionAlternatives.food': 'Food',
+  'nutritionAlternatives.quantity': 'Portion quantity',
+  'nutritionAlternatives.unit': 'Unit',
+  'nutritionAlternatives.quantityHint':
+    'Macros are calculated from this quantity.',
+  'nutritionAlternatives.calculatedMacros': 'Calculated macros',
+  'nutritionAlternatives.calories': 'Calories',
+  'nutritionAlternatives.protein': 'Protein',
+  'nutritionAlternatives.carbs': 'Carbs',
+  'nutritionAlternatives.fat': 'Fat',
+  'nutritionAlternatives.kilocalories': 'kcal',
+  'nutritionAlternatives.grams': 'g',
+  'nutritionAlternatives.milliliters': 'ml',
+  'nutritionPlan.title': 'Nutrition plan editor',
+  'nutritionPlan.structure': 'Plan structure',
+  'nutritionPlan.singleDay': 'Repeating single day',
+  'nutritionPlan.sevenDay': 'Seven days',
+  'nutritionPlan.day': 'Day',
+  'nutritionPlan.dayType': 'Day type',
+  'nutritionPlan.trainingDay': 'Training day',
+  'nutritionPlan.restDay': 'Rest day',
+  'nutritionPlan.meals': 'Meals',
+  'nutritionPlan.meal': 'Meal',
+  'nutritionPlan.addMeal': 'Add meal',
+  'nutritionPlan.moveUp': 'Move meal up',
+  'nutritionPlan.moveDown': 'Move meal down',
+  'nutritionPlan.duplicate': 'Duplicate meal',
+  'nutritionPlan.quantity': 'Quantity',
+  'nutritionPlan.mealTotals': 'Meal totals',
+  'nutritionPlan.dayTotals': 'Day totals',
+  'nutritionPlan.loading': 'Loading plan…',
+  'nutritionPlan.emptyTitle': 'No meals yet',
+  'nutritionPlan.emptyDescription': 'Add a meal to start building this plan.',
+  'nutritionPlan.errorTitle': 'Unable to load plan',
+  'nutritionPlan.errorDescription': 'Try loading the plan again.',
+  'nutritionPlan.conflictTitle': 'Plan changed elsewhere',
+  'nutritionPlan.conflictDescription':
+    'Refresh the draft before continuing edits.',
+  'nutritionPlan.retry': 'Retry',
+  'nutritionPlan.previewTitle': 'Nutrition plan editor',
+  'nutritionPlan.previewIntro':
+    'Editor preview with sample data. Changes are not saved.',
+  'nutritionPlan.previewNotice':
+    'Showcase only. Plan and foods are mocked; nothing is saved.',
+  'nutritionPlan.totalsAnnouncement': 'Selected day totals',
+  'nutritionPlan.totalsUnavailable': 'Totals could not be calculated',
+  'nutritionAlternatives.moveUp': 'Move up',
+  'nutritionAlternatives.moveDown': 'Move down',
+  'nutritionAlternatives.remove': 'Remove',
+  'nutritionAlternatives.unifiedListLabel': 'Alternatives, original item first',
+  'nutritionAlternatives.manualOnly':
+    'Quantities are entered manually, and macros are calculated from the food and portion. Quantities are never changed automatically, and no suggestions are generated.',
+  'nutritionAlternatives.invalidQuantity':
+    'Enter a quantity greater than 0 with at most three decimal places.',
+  'nutritionAlternatives.unavailableFood':
+    'This food is not in the current list, so its macros cannot be recalculated here.',
+  'nutritionAlternatives.macrosUnavailable':
+    'Enter a valid quantity to see calculated macros.',
+  'nutritionAlternatives.errorTitle': 'Could not update alternatives',
+  'nutritionAlternatives.removeTitle': 'Remove alternative?',
+  'nutritionAlternatives.removeDescription':
+    'This alternative, its portion, and its calculated macros will be removed from the draft.',
+  'nutritionAlternatives.removeConfirm': 'Remove alternative',
+  'nutritionAlternatives.removeCancel': 'Keep alternative',
+  'nutritionAlternatives.empty': 'No manual alternatives yet.',
+  'nutritionAlternatives.actionsLabel': 'Alternative actions',
+  'nutritionAlternatives.previewTitle': 'Nutrition alternatives editor',
+  'nutritionAlternatives.previewIntro':
+    'Developer preview of the coach-configured manual alternatives editor with mocked catalog and plan data.',
+  'nutritionAlternatives.previewNotice':
+    'Showcase only. Foods and plan values are mocked; nothing is saved.',
+  'nutritionPlan.mealNotes': 'Notes for this meal',
+  'nutritionPlan.foodNotes': 'Notes for this food',
 };
