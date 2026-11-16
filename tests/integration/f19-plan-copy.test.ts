@@ -2,6 +2,10 @@ import { randomUUID } from 'node:crypto';
 import type { JSONValue } from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  nutritionUnitContextKey,
+  validateNutritionDocument,
+} from '../../lib/plans/nutrition/schema';
+import {
   clientNotesFixture,
   type ClientNotesFixture,
 } from './client-notes-fixture';
@@ -137,6 +141,118 @@ async function seedGlobalTemplate(
   });
 
   return templateId;
+}
+
+async function seedNutritionWorkspaceTemplate(
+  workspaceId: string,
+  v1Doc: Record<string, JSONValue>,
+  v2Doc: Record<string, JSONValue>,
+  status: 'active' | 'retired' = 'active',
+) {
+  const templateId = randomUUID();
+  const actorId = fixture.context.woA.userId;
+
+  await db().begin(async (tx) => {
+    await tx`set constraints all deferred`;
+    await tx`
+      insert into public.nutrition_workspace_templates (
+        workspace_id, id, status, display_name, current_version, created_by,
+        retired_at
+      ) values (
+        ${workspaceId}, ${templateId}, ${status}, 'Nutrition Tpl', 2, ${actorId},
+        ${status === 'retired' ? new Date().toISOString() : null}
+      )
+    `;
+    await tx`
+      insert into public.nutrition_workspace_template_versions (
+        workspace_id, template_id, version, document, schema_version, created_by
+      ) values
+      (${workspaceId}, ${templateId}, 1, ${tx.json(v1Doc)}, 1, ${actorId}),
+      (${workspaceId}, ${templateId}, 2, ${tx.json(v2Doc)}, 1, ${actorId})
+    `;
+  });
+
+  return templateId;
+}
+
+async function seedNutritionGlobalTemplate(
+  v1Doc: Record<string, JSONValue>,
+  status: 'active' | 'retired' = 'active',
+) {
+  const templateId = randomUUID();
+  const actorId = fixture.context.po.userId;
+
+  await db().begin(async (tx) => {
+    await tx`set constraints all deferred`;
+    await tx`
+      insert into public.nutrition_global_templates (
+        id, status, current_version, created_by, retired_at
+      ) values (
+        ${templateId}, ${status}, 1, ${actorId},
+        ${status === 'retired' ? new Date().toISOString() : null}
+      )
+    `;
+    await tx`
+      insert into public.nutrition_global_template_versions (
+        template_id, version, document, schema_version, created_by
+      ) values
+      (${templateId}, 1, ${tx.json(v1Doc)}, 1, ${actorId})
+    `;
+  });
+
+  return templateId;
+}
+
+function makeValidNutritionTemplateDoc(notes: string) {
+  const foodOats = randomUUID();
+  const foodRice = randomUUID();
+  return {
+    foodOats,
+    foodRice,
+    doc: {
+      schemaVersion: 1,
+      structure: 'single_day',
+      implicitDayTypeId: 'dt-1',
+      dayTypes: [
+        {
+          id: 'dt-1',
+          name: { ar: 'يوم تدريب', en: 'Training Day' },
+          trainingDay: true,
+          targets: { kcal: '2400', protein: '180', carbs: '260', fat: '70' },
+        },
+      ],
+      meals: [
+        {
+          id: 'meal-1',
+          name: { ar: 'الفطار', en: 'Breakfast' },
+          note: 'Take with water',
+          recipeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          items: [
+            {
+              id: 'item-1',
+              foodId: foodOats,
+              foodVersion: 2,
+              quantity: { value: '80', unit: { kind: 'basis', value: 'g' } },
+              note: 'Rolled oats',
+              alternatives: [
+                {
+                  id: 'alt-1',
+                  foodId: foodRice,
+                  foodVersion: 1,
+                  quantity: {
+                    value: '100',
+                    unit: { kind: 'basis', value: 'g' },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      title: { ar: 'خطة غذائية', en: 'Nutrition Plan' },
+      notes,
+    } as Record<string, JSONValue>,
+  };
 }
 
 describe('F19 T012 template and plan copy', () => {
@@ -596,5 +712,309 @@ describe('F19 T012 template and plan copy', () => {
       },
     );
     expect(foreignRes.error?.code).toBe('42501');
+  });
+
+  it('copies an immutable workspace nutrition template version (pinned or current_version) with remapped IDs, valid F18 schema, exclusions, replay, and key conflict', async () => {
+    const targetClientId = await fixture.createSiblingClient();
+    const v1 = makeValidNutritionTemplateDoc('Nutrition tpl v1');
+    const v2 = makeValidNutritionTemplateDoc('Nutrition tpl v2 current');
+    const taintedV2Doc = {
+      ...v2.doc,
+      ownership: { workspaceId: fixture.workspaceId },
+      history: [{ event: 'created' }],
+      selection: { itemId: 'item-1', alternativeId: 'alt-1' },
+      delivery: { id: 'del-1' },
+    };
+
+    const templateId = await seedNutritionWorkspaceTemplate(
+      fixture.workspaceId,
+      v1.doc,
+      taintedV2Doc,
+    );
+
+    // Pinned version 1
+    const opKeyV1 = randomUUID();
+    const copyV1 = await fixture.context.trainerA.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: templateId,
+        p_operation_key: opKeyV1,
+        p_template_version: 1,
+      },
+    );
+    expect(copyV1.error).toBeNull();
+    const destPlanIdV1 = copyV1.data as string;
+
+    // Exact replay returns original plan id
+    const replayV1 = await fixture.context.trainerA.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: templateId,
+        p_operation_key: opKeyV1,
+        p_template_version: 1,
+      },
+    );
+    expect(replayV1.error).toBeNull();
+    expect(replayV1.data).toBe(destPlanIdV1);
+
+    // Changed args with same operation key -> key_conflict
+    const conflictV1 = await fixture.context.trainerA.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: fixture.clientId,
+        p_create_mode: 'template',
+        p_source_id: templateId,
+        p_operation_key: opKeyV1,
+        p_template_version: 1,
+      },
+    );
+    expect(conflictV1.error?.code).toBe('23505');
+
+    const [rootV1] = await db()`
+      select workspace_id, client_id, plan_kind, created_by
+      from public.plan_roots where id = ${destPlanIdV1}
+    `;
+    expect(rootV1).toEqual({
+      workspace_id: fixture.workspaceId,
+      client_id: targetClientId,
+      plan_kind: 'nutrition',
+      created_by: fixture.context.trainerA.userId,
+    });
+
+    const [draftV1] = await db()`
+      select content from public.plan_drafts where plan_id = ${destPlanIdV1}
+    `;
+    const validatedV1 = validateNutritionDocument(draftV1?.content, {
+      [nutritionUnitContextKey(v1.foodOats, 2)]: {
+        basis: 'g',
+        servingUnitKeys: [],
+      },
+      [nutritionUnitContextKey(v1.foodRice, 1)]: {
+        basis: 'g',
+        servingUnitKeys: [],
+      },
+    });
+    expect(validatedV1.notes).toBe('Nutrition tpl v1');
+    expect(validatedV1.dayTypes[0]?.id).not.toBe('dt-1');
+    expect(validatedV1.implicitDayTypeId).toBe(validatedV1.dayTypes[0]?.id);
+    expect(validatedV1.meals?.[0]?.id).not.toBe('meal-1');
+    expect(validatedV1.meals?.[0]?.items[0]?.id).not.toBe('item-1');
+    expect(validatedV1.meals?.[0]?.items[0]?.foodId).toBe(v1.foodOats);
+    expect(validatedV1.meals?.[0]?.items[0]?.foodVersion).toBe(2);
+    expect(validatedV1.meals?.[0]?.items[0]?.alternatives[0]?.id).not.toBe(
+      'alt-1',
+    );
+    expect(validatedV1.meals?.[0]?.items[0]?.alternatives[0]?.foodId).toBe(
+      v1.foodRice,
+    );
+
+    // Current version (2) with excluded metadata stripped
+    const copyCurrent = await fixture.context.woA.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: templateId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(copyCurrent.error).toBeNull();
+    const destPlanIdV2 = copyCurrent.data as string;
+    const [draftV2] = await db()`
+      select content from public.plan_drafts where plan_id = ${destPlanIdV2}
+    `;
+    const draftV2Record = draftV2?.content as Record<string, unknown>;
+    expect(draftV2Record.ownership).toBeUndefined();
+    expect(draftV2Record.history).toBeUndefined();
+    expect(draftV2Record.selection).toBeUndefined();
+    expect(draftV2Record.delivery).toBeUndefined();
+    const validatedV2 = validateNutritionDocument(draftV2?.content, {
+      [nutritionUnitContextKey(v2.foodOats, 2)]: {
+        basis: 'g',
+        servingUnitKeys: [],
+      },
+      [nutritionUnitContextKey(v2.foodRice, 1)]: {
+        basis: 'g',
+        servingUnitKeys: [],
+      },
+    });
+    expect(validatedV2.notes).toBe('Nutrition tpl v2 current');
+
+    // No revisions, deliveries, or source audit events copied
+    const [counts] = await db()`
+      select
+        (select count(*)::int from public.plan_revisions where plan_id = ${destPlanIdV2}) as revisions,
+        (select count(*)::int from public.plan_deliveries where plan_id = ${destPlanIdV2}) as deliveries,
+        (select count(*)::int from public.plan_audit_events where plan_id = ${destPlanIdV2}) as audits
+    `;
+    expect(counts).toEqual({ revisions: 0, deliveries: 0, audits: 2 });
+  });
+
+  it('refuses retired workspace and global nutrition templates with zero rows written while active global nutrition template copies for PO only', async () => {
+    const targetClientId = await fixture.createSiblingClient();
+    const base = makeValidNutritionTemplateDoc('Nutrition lifecycle tpl');
+    const retiredWsTplId = await seedNutritionWorkspaceTemplate(
+      fixture.workspaceId,
+      base.doc,
+      base.doc,
+      'retired',
+    );
+    const retiredGlobalTplId = await seedNutritionGlobalTemplate(
+      base.doc,
+      'retired',
+    );
+    const activeGlobalTplId = await seedNutritionGlobalTemplate(
+      base.doc,
+      'active',
+    );
+
+    const [beforeCounts] = await db()`
+      select
+        (select count(*)::int from public.plan_roots where client_id = ${targetClientId}) as roots,
+        (select count(*)::int from public.plan_drafts where workspace_id = ${fixture.workspaceId}) as drafts
+    `;
+
+    const wsOpKey = randomUUID();
+    const retiredWsRes = await fixture.context.trainerA.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: retiredWsTplId,
+        p_operation_key: wsOpKey,
+      },
+    );
+    expect(retiredWsRes.error?.code).toBe('42501');
+
+    const globalOpKey = randomUUID();
+    const retiredGlobalRes = await fixture.context.po.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: retiredGlobalTplId,
+        p_operation_key: globalOpKey,
+      },
+    );
+    expect(retiredGlobalRes.error?.code).toBe('42501');
+
+    // Non-PO staff cannot copy active global nutrition template directly
+    const nonPoGlobalOpKey = randomUUID();
+    const nonPoGlobalRes = await fixture.context.trainerA.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: activeGlobalTplId,
+        p_operation_key: nonPoGlobalOpKey,
+      },
+    );
+    expect(nonPoGlobalRes.error?.code).toBe('42501');
+
+    const [afterRefusalCounts] = await db()`
+      select
+        (select count(*)::int from public.plan_roots where client_id = ${targetClientId}) as roots,
+        (select count(*)::int from public.plan_drafts where workspace_id = ${fixture.workspaceId}) as drafts,
+        (select count(*)::int from app_private.plan_operation_keys where operation_key in (${wsOpKey}, ${globalOpKey}, ${nonPoGlobalOpKey})) as op_keys
+    `;
+    expect(afterRefusalCounts).toEqual({
+      roots: beforeCounts?.roots,
+      drafts: beforeCounts?.drafts,
+      op_keys: 0,
+    });
+
+    // Active global nutrition template copies for PO
+    const activeGlobalRes = await fixture.context.po.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: activeGlobalTplId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(activeGlobalRes.error).toBeNull();
+    const [activeDraft] = await db()`
+      select content from public.plan_drafts where plan_id = ${activeGlobalRes.data as string}
+    `;
+    const validatedGlobal = validateNutritionDocument(activeDraft?.content, {
+      [nutritionUnitContextKey(base.foodOats, 2)]: {
+        basis: 'g',
+        servingUnitKeys: [],
+      },
+      [nutritionUnitContextKey(base.foodRice, 1)]: {
+        basis: 'g',
+        servingUnitKeys: [],
+      },
+    });
+    expect(validatedGlobal.notes).toBe('Nutrition lifecycle tpl');
+    expect(validatedGlobal.dayTypes[0]?.id).not.toBe('dt-1');
+  });
+
+  it('denies Sales and cross-workspace actors from copying nutrition templates with zero writes', async () => {
+    const targetClientId = await fixture.createSiblingClient();
+    const base = makeValidNutritionTemplateDoc('Nutrition authz tpl');
+    const wsTplId = await seedNutritionWorkspaceTemplate(
+      fixture.workspaceId,
+      base.doc,
+      base.doc,
+      'active',
+    );
+
+    const [beforeCounts] = await db()`
+      select
+        (select count(*)::int from public.plan_roots where client_id = ${targetClientId}) as roots,
+        (select count(*)::int from public.plan_drafts where workspace_id = ${fixture.workspaceId}) as drafts
+    `;
+
+    const salesKey = randomUUID();
+    const salesRes = await fixture.context.salesA.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: wsTplId,
+        p_operation_key: salesKey,
+      },
+    );
+    expect(salesRes.error?.code).toBe('42501');
+
+    const foreignKey = randomUUID();
+    const foreignRes = await fixture.context.trainerB.client.rpc(
+      'copy_plan_to_draft',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_target_client_id: targetClientId,
+        p_create_mode: 'template',
+        p_source_id: wsTplId,
+        p_operation_key: foreignKey,
+      },
+    );
+    expect(foreignRes.error?.code).toBe('42501');
+
+    const [afterCounts] = await db()`
+      select
+        (select count(*)::int from public.plan_roots where client_id = ${targetClientId}) as roots,
+        (select count(*)::int from public.plan_drafts where workspace_id = ${fixture.workspaceId}) as drafts,
+        (select count(*)::int from app_private.plan_operation_keys where operation_key in (${salesKey}, ${foreignKey})) as op_keys
+    `;
+    expect(afterCounts).toEqual({
+      roots: beforeCounts?.roots,
+      drafts: beforeCounts?.drafts,
+      op_keys: 0,
+    });
   });
 });
