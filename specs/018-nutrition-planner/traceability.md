@@ -36,20 +36,20 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 
 ## 2. Success criteria → task
 
-| Criterion  | Task(s)                | Evidence expected                                             | Status                                                                                     |
-| ---------- | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| F18-SC-001 | T002, T008, T022, T027 | identical TS/SQL golden run (500 cases)                       | SPECIFIED                                                                                  |
-| F18-SC-002 | T018, T019, T027       | full negative/concurrency matrix                              | SPECIFIED                                                                                  |
-| F18-SC-003 | T026                   | multi-plan projection fixture                                 | SPECIFIED                                                                                  |
-| F18-SC-004 | T001, T008, T027       | invalid-unit matrix                                           | SPECIFIED                                                                                  |
-| F18-SC-005 | T005, T023, T024       | Current and historical AR/EN export goldens + prompt fidelity | Current revision specified; historical export specified by S43-PO-8                        |
+| Criterion  | Task(s)                | Evidence expected                                             | Status                                                                                      |
+| ---------- | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| F18-SC-001 | T002, T008, T022, T027 | identical TS/SQL golden run (500 cases)                       | SPECIFIED                                                                                   |
+| F18-SC-002 | T018, T019, T027       | full negative/concurrency matrix                              | SPECIFIED                                                                                   |
+| F18-SC-003 | T026                   | multi-plan projection fixture                                 | SPECIFIED                                                                                   |
+| F18-SC-004 | T001, T008, T027       | invalid-unit matrix                                           | SPECIFIED                                                                                   |
+| F18-SC-005 | T005, T023, T024       | Current and historical AR/EN export goldens + prompt fidelity | Current revision specified; historical export specified by S43-PO-8                         |
 | F18-SC-006 | T021                   | recorded envelope + benchmark report                          | IMPLEMENTED; publish threshold capped at the unchanged 300 ms SC target (`verification.md`) |
-| F18-SC-007 | T006, T014             | assignment state-machine fixtures                             | IMPLEMENTED (held copies skipped/reported; zero-copy race rejected; see `verification.md`) |
-| F18-SC-008 | T004, T010, T011       | selection/carry-forward fixtures                              | SPECIFIED                                                                                  |
-| F18-SC-009 | T012, T015             | template isolation + Make it Global fixtures                  | IMPLEMENTED (see `verification.md`)                                                        |
-| F18-SC-010 | T016                   | log-scrub report                                              | SPECIFIED                                                                                  |
-| F18-SC-011 | T002, T025             | display fixtures                                              | SPECIFIED (half-up)                                                                        |
-| F18-SC-012 | T001, T005, T025       | separate-field schema/editor contract tests                   | SPECIFIED                                                                                  |
+| F18-SC-007 | T006, T014             | assignment state-machine fixtures                             | IMPLEMENTED (held copies skipped/reported; zero-copy race rejected; see `verification.md`)  |
+| F18-SC-008 | T004, T010, T011       | selection/carry-forward fixtures                              | SPECIFIED                                                                                   |
+| F18-SC-009 | T012, T015             | template isolation + Make it Global fixtures                  | IMPLEMENTED (see `verification.md`)                                                         |
+| F18-SC-010 | T016                   | log-scrub report                                              | SPECIFIED                                                                                   |
+| F18-SC-011 | T002, T025             | display fixtures                                              | SPECIFIED (half-up)                                                                         |
+| F18-SC-012 | T001, T005, T025       | separate-field schema/editor contract tests                   | SPECIFIED                                                                                   |
 
 ## 3. Delegated and excluded
 
@@ -135,7 +135,7 @@ Full local verification and mutation restoration details: `C:/Users/NEW LAP/.lif
 
 ## 4f. S60 T020/T021 version freeze and benchmark
 
-| FR / SC                | Task    | Test                                                                                           | Evidence                                                                                                                                                                                                                           |
-| ---------------------- | ------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F18-FR-020             | T020    | `tests/integration/nutrition-versioning.test.ts`                                               | Stack A reset/provision; 1/1 green. Integer-rounding v1 mutation killed by persisted `248` versus frozen `247.500`; restored, reset/provisioned, and green.                                                                           |
-| F18-SC-006             | T021    | `tests/integration/nutrition-benchmark.test.ts`, `nutrition-benchmark-envelope.json`           | Stack A reset/provision; 1/1 green with `SC006_TIMING_RUN=true`. Publish ceiling capped at unchanged 300 ms target; measured p95 maximum 262.824 ms. Tightened `max_items` mutation (1 vs measured 168) killed, restored; see `verification.md`. |
+| FR / SC    | Task | Test                                                                                 | Evidence                                                                                                                                                                                                                                         |
+| ---------- | ---- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F18-FR-020 | T020 | `tests/integration/nutrition-versioning.test.ts`                                     | Stack A reset/provision; 1/1 green. Integer-rounding v1 mutation killed by persisted `248` versus frozen `247.500`; restored, reset/provisioned, and green.                                                                                      |
+| F18-SC-006 | T021 | `tests/integration/nutrition-benchmark.test.ts`, `nutrition-benchmark-envelope.json` | Stack A reset/provision; 1/1 green with `SC006_TIMING_RUN=true`. Publish ceiling capped at unchanged 300 ms target; measured p95 maximum 262.824 ms. Tightened `max_items` mutation (1 vs measured 168) killed, restored; see `verification.md`. |
