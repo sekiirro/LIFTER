@@ -26,9 +26,7 @@ import { getMessages } from '../../lib/i18n';
 
 const ws = m.revision.workspace_id;
 const request = (locale: 'en' | 'ar' = 'en') =>
-  new Request(
-    `http://local/api?revision=${m.revision.id}&locale=${locale}`,
-  );
+  new Request(`http://local/api?revision=${m.revision.id}&locale=${locale}`);
 
 describe('T040 Copy AI Prompt API', () => {
   beforeEach(() => {
