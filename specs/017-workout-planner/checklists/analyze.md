@@ -346,6 +346,11 @@ cells are stored as text.
 - No FR, SC, acceptance criteria, or plan design text changed; promoted-template loading remains T028/T029 scope.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
+## T034 Date Update (2026-11-16)
+
+- Updated `tasks.md` (ticked `T034` only), `traceability.md` (FR-002/FR-003/SC-011 cite the T034 unit evidence; T034 verified, remaining UI/integration tasks open), and `verification.md` (T034 RED/GREEN/mutation/design-gate evidence).
+- No FR, SC, acceptance criteria, or plan design text changed (R6: Analyze itself is NOT re-dated).
+
 ## S60 T018 Date Update (2026-11-16)
 
 - T018 task status and traceability evidence were updated after its tests passed, and verification records the database ledger mutation.
