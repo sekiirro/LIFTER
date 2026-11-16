@@ -11,9 +11,18 @@
 //       dependencies: [{ edge: 'schema.table.column', kind, count }], -- every FK/registration-link/subscription/payment/audit edge
 //       refusals: [{ package_id, code }]
 //     }
-//   kind: fk | registration_link | subscription | payment | audit
+//   input_mode (v2, migration 20261121110000): NULL -> 'all' (inventory of every package; never deletable),
+//   '{}' -> 'empty' (explicit empty allow-list: status 'refused', never deletable), non-empty -> 'list'.
+//   deletable (N1): true ONLY for input_mode 'list' with >=1 target, status clean|refused (never escalate)
+//   and every refusal code === attached_offers_or_versions. A mock that still has offers/versions is
+//   never 'clean' (it is 'refused' with exactly that code) and is deletable; a package with no
+//   children (clean) is also deletable. Any other code, an escalation, NULL or '{}' input is not.
+//   workspace_ids: distinct workspaces of the targets' offers/versions (and packages.workspace_id).
+//   kind: fk | registration_link | client | subscription | payment | audit | unknown_dependency
 //   refusal codes: non_synthetic | real_catalog_row | attached_offers_or_versions | required_financial_dependency
-//                  | required_audit_dependency | unknown_dependency_state
+//                  | required_audit_dependency | unknown_dependency_state | caller_cannot_see_rows
+//   (caller_cannot_see_rows: the calling role lacks BYPASSRLS/superuser, counts would be unreliable: escalate.
+//   A target whose code is NULL is non_synthetic and synthetic=false.)
 //   real_catalog_row: package with workspace_id set, a version with market set, or an offer with available=true.
 //   required_audit_dependency: ONLY audit rows of client/financial dependents block. Audit rows that merely
 //   name a mock package/offer/version are reported (kind audit) but do NOT block (PO Q1=A, S61-PO-2).
@@ -24,7 +33,10 @@ export const PREFLIGHT_FN = 'app_private.package_c5_preflight';
 
 export type PreflightReport = {
   status: 'clean' | 'refused' | 'escalate';
+  input_mode: 'all' | 'list' | 'empty';
+  deletable: boolean;
   synthetic_only: boolean;
+  workspace_ids: string[];
   targets: { package_id: string; code: string | null; synthetic: boolean }[];
   dependencies: { edge: string; kind: string; count: number }[];
   refusals: { package_id: string; code: string }[];

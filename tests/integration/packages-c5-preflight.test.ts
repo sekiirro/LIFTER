@@ -6,7 +6,9 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  checked,
   createLegacySynthetic,
+  publish,
   packagesFixture,
   publishedFixture,
   sql,
@@ -211,5 +213,98 @@ describe('T064 refuse/escalate before any write', () => {
     expect(report.status).toBe('refused');
     expect(report.refusals.every((r) => r.package_id === unsafe)).toBe(true);
     expect(await rowSnapshot(db)).toEqual(before);
+  });
+});
+
+describe('T064 deletable contract, input modes and v2 checks (N1-N5)', () => {
+  it('N1 a mock with offers is refused with exactly attached_offers_or_versions and is deletable; a childless mock is clean and deletable', async () => {
+    const withOffer = await createLegacySynthetic(f);
+    checked(await publish(f, withOffer.id, { tier_rank: 1 }));
+    const bare = await createLegacySynthetic(f);
+    const a = await runPreflight(db, [withOffer.id]);
+    expect(a.status).toBe('refused');
+    expect(new Set(a.refusals.map((r) => r.code))).toEqual(
+      new Set(['attached_offers_or_versions']),
+    );
+    expect(a.deletable).toBe(true);
+    expect(a.workspace_ids).toContain(withOffer.workspace_id);
+    const b = await runPreflight(db, [bare.id]);
+    expect(b).toMatchObject({ status: 'clean', deletable: true });
+  });
+
+  it('N1 empty and NULL inputs are never deletable', async () => {
+    const empty = await runPreflight(db, []);
+    expect(empty).toMatchObject({
+      status: 'refused',
+      input_mode: 'empty',
+      deletable: false,
+    });
+    const all = await runPreflight(db, null);
+    expect(all).toMatchObject({ input_mode: 'all', deletable: false });
+  });
+
+  it('N1 any other refusal code or escalation makes the set not deletable', async () => {
+    const legacy = randomUUID();
+    await db`insert into public.packages(id,code,created_by) values (${legacy},${'legacy-pkg-' + randomUUID()},${f.po.userId})`;
+    const mock = await createLegacySynthetic(f);
+    expect((await runPreflight(db, [legacy])).deletable).toBe(false);
+    expect((await runPreflight(db, [mock.id, legacy])).deletable).toBe(false);
+    expect((await runPreflight(db, [randomUUID()])).deletable).toBe(false);
+  });
+
+  it('N2 a NULL code is non_synthetic and synthetic=false', async () => {
+    const id = randomUUID();
+    await db`insert into public.packages(id,code,created_by,workspace_id,market,type) values (${id},null,${f.po.userId},${f.wsA.id},'International','Year-round')`;
+    const report = await runPreflight(db, [id]);
+    expect(report.targets[0]).toMatchObject({ code: null, synthetic: false });
+    expect(report.synthetic_only).toBe(false);
+    expect(report.refusals.map((r) => r.code)).toContain('non_synthetic');
+  });
+
+  it('N3 escalates per column: a package-looking column without an FK, uuid[] and upper-case jsonb ids', async () => {
+    const mock = await createLegacySynthetic(f);
+    class Done extends Error {
+      constructor(readonly report: PreflightReport) {
+        super('rollback');
+      }
+    }
+    const run = (ddl: string, dml: string) =>
+      db
+        .begin(async (tx) => {
+          await tx.unsafe(ddl);
+          await tx.unsafe(dml);
+          throw new Done(await runPreflight(tx, [mock.id]));
+        })
+        .catch((e: unknown) => {
+          if (e instanceof Done) return e.report;
+          throw e;
+        });
+    for (const [ddl, dml] of [
+      [
+        'create table public.t064_col (id int, my_offer_id uuid)',
+        'insert into public.t064_col values (1, gen_random_uuid())',
+      ],
+      [
+        'create table public.t064_arr (ids uuid[])',
+        `insert into public.t064_arr values (array['${mock.id}']::uuid[])`,
+      ],
+      [
+        'create table public.t064_up (d jsonb)',
+        `insert into public.t064_up values (jsonb_build_object('v', upper('${mock.id}')))`,
+      ],
+    ] as const)
+      expect((await run(ddl, dml)).status).toBe('escalate');
+  });
+
+  it('N4 reports every workspace of a shared legacy package offers', async () => {
+    const mock = await createLegacySynthetic(f);
+    for (const ws of [f.wsA.id, f.wsB.id])
+      await db`
+        insert into public.package_offers(id,workspace_id,package_id,duration_days,duration_months,tier_rank)
+        values (${randomUUID()},${ws},${mock.id},779,null,1)`;
+    const report = await runPreflight(db, [mock.id]);
+    expect([...report.workspace_ids].sort()).toEqual(
+      [f.wsA.id, f.wsB.id].sort(),
+    );
   });
 });

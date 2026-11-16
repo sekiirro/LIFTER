@@ -288,3 +288,10 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - ACCEPTED RESIDUAL RISK (finding 2): a blended series under a `SAMA` pin is not detectable; recorded in `fx-coverage-verification.md` pending PO/architect confirmation.
 - Still open: provider terms-of-use verification (blocker) and T062 final sign-off conditions; no checkbox ticked. IDs unchanged: S61-PO-1 = FX, S61-PO-2 = teardown.
 - CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions (2 architect parameters flagged); LOW: 0.
+
+## 2026-11-16 Analyze (T064b re-review N1-N6 and T065 record update; re-dated, no new product requirement)
+
+**Analyzed:** 2026-11-16. Re-review N1 defined "deletable" (FR-028, T065, `c5-audit-evidence.md`, review.md control 3, preflight contract); N2-N5 are implemented by the forward migration `20261121110000_f9_c5_package_preflight_v2.sql`; N6 lists the expected trigger set in review.md; T065 is implemented as an operator cleanup script outside `supabase/migrations` with integration tests (not yet executed in CI). No FR/SC acceptance text changed beyond the deletable definition.
+
+- PASS: FR-028, T065, review.md and the contract agree on the deletable definition and the NULL/empty input rules.
+- PASS: this Analyze follows the latest spec, plan and task edits. 0 CRITICAL, 0 HIGH. T064b remains unticked pending the independent re-review verdict; T065 unticked pending CI evidence.
