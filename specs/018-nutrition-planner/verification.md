@@ -155,3 +155,8 @@
 - **Static gates:** lint, typecheck, changed-file format check, full `npm run format:check`, and local migration timestamp validation passed. The new migration timestamp is valid and lies in the lane-reserved range.
 - **Analyze:** full requirement re-analysis is recorded in `checklists/analyze.md`; 0 CRITICAL / 0 HIGH findings.
 - **Run report:** `C:/Users/NEW LAP/.lifter/runs/s60-luna-f18uuid/report.md`.
+
+## S61-R24 publish alternative-id rejection follow-up
+
+- **Integration:** Added a Stack A integration case that stores a valid nutrition draft with a non-UUID alternative id and expects `publish_nutrition_revision` to reject it with SQLSTATE `22023`. After Stack A reset and provisioning, `tests/integration/nutrition-publish.test.ts` passed 9/9.
+- **Mutation:** Removed the single-day alternative-id branch from `app_private.f18_guard_nutrition_document_ids` in migration `20261120200100_f18_uuid_item_alternative_ids.sql`, reset and provisioned Stack A, and ran the focused test. It failed because publishing returned `null` instead of SQLSTATE `22023`. Restored the migration; its SHA-256 matches the original `EF67CA0590B47F8C0AAB42A6A853854D340810937D4FB38EE163D78F06DD646F`, and `git diff --exit-code` was clean. Stack A was reset and provisioned again with the restored migration before the passing integration run.
