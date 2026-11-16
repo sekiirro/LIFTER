@@ -345,5 +345,6 @@ cells are stored as text.
 
 - T037 task status and traceability now cite the verified evidence in `components/workout-planner/WorkoutPrintView.tsx`, `components/workout-planner/WorkoutPrintView.module.css`, `lib/workout-planner/excel-export.ts`, and `tests/unit/workout-print-view.test.tsx`.
 - Reused merged T038 Excel export S58-PO-5 approved column headings and shared formatting helpers without duplicated strings; verified full FR-018 field parity, AR RTL print CSS, and mutations.
+- T037 remains unticked `[ ]` and traceability is PARTIAL: "T037 renderer verified; route pending authorized revision read" (authorized server-side read of ONE selected revision into WorkoutExportPayload is pending).
 - No FR, SC, acceptance criteria, or plan design text changed (Constitution 1.17.0 / R6 date update).
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
