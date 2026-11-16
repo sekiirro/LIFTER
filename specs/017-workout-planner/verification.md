@@ -216,6 +216,7 @@
 - **RED / GREEN**: the first boundary attempt exposed that estimating size before the PostgREST round trip did not identify the actual stored-byte maximum. The benchmark was changed to find the boundary with Stack D saves and read the persisted JSONB byte count. Final touched integration run: `f17-plan-performance.test.ts`, `f17-plan-create.test.ts`, and `f17-plan-content.test.ts` passed, 3 files / 9 tests.
 - **Mutation**: a temporary in-range migration removed the document-size check, then Stack D was reset/provisioned. The benchmark failed because the over-cap document was accepted. The mutant was deleted, Stack D reset/provisioned again, and final integration GREEN passed. The four metric guards also have unit mutations for typical-plan p95, maximum-document p95, maximum stored bytes, and over-cap rejection; each invalid measurement throws and all 5 guard tests pass.
 - **Local CI-equivalent on final diff**: `npm run lint`, `npm run typecheck`, `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node scripts/format-check-changed.mjs`, `npm run format:check`, and full `npm run test:unit` passed (284 files / 3,255 tests). Touched Stack D integration suites passed as above.
+
 ## F17 Verification — T041 (s61-fl-f17t041)
 
 - **Branch / stack**: `017-export-goldens-slice-1` (stacked on PR #160 `origin/017-pdf-print-slice-1`) / no DB stack (renderer goldens).
