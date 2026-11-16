@@ -47,6 +47,8 @@ export type FxSettlement = {
 export type FxReport = {
   aggregates: Record<string, bigint>;
   excludedLineIds: string[];
+  /** Ready lines whose snapshot is inconsistent with the pin or implausible. */
+  flaggedLineIds: string[];
   lines: FxReportLine[];
   settlements: FxSettlement[];
 };
@@ -56,6 +58,39 @@ export const FX_TARGET_CURRENCY = 'EGP';
 export const FX_TIMEOUT_MS = 5_000;
 const MAX_RESPONSE_CHARS = 256 * 1024;
 const MAX_ROWS = 100;
+const MAX_TIMEOUT_MS = 15_000;
+
+/**
+ * Settle period after the transaction's Africa/Cairo date before a rate may be
+ * frozen without a provider row dated on or after that date. ARCHITECT
+ * PARAMETER (T062 finding 1): needs PO/architect confirmation.
+ */
+export const FX_SETTLE_DAYS = 3;
+
+/** Plausibility bounds (inclusive) of the EGP rate per pinned currency. */
+export const FX_RATE_BOUNDS: Readonly<
+  Record<Exclude<FxCurrency, 'EGP'>, { min: number; max: number }>
+> = Object.freeze({
+  USD: { min: 1, max: 1000 },
+  SAR: { min: 0.5, max: 300 },
+});
+
+function isPinnedCurrency(
+  currency: unknown,
+): currency is Exclude<FxCurrency, 'EGP'> {
+  return (
+    typeof currency === 'string' && Object.hasOwn(FX_PROVIDER_PINS, currency)
+  );
+}
+
+function rateInBounds(
+  currency: Exclude<FxCurrency, 'EGP'>,
+  rate: string,
+): boolean {
+  const n = Number(rate);
+  const b = FX_RATE_BOUNDS[currency];
+  return Number.isFinite(n) && n >= b.min && n <= b.max;
+}
 
 /** One pinned provider per foreign currency (S61-PO-1). */
 export const FX_PROVIDER_PINS: Readonly<
@@ -114,8 +149,8 @@ const PENDING: FxSnapshot = Object.freeze({ status: 'pending' });
  */
 export function selectFxSnapshot(input: SelectFxInput): FxSnapshot {
   if (input.currency === 'EGP') return { ...EGP_IDENTITY };
+  if (!isPinnedCurrency(input.currency)) return { ...PENDING };
   const provider = FX_PROVIDER_PINS[input.currency];
-  if (!provider) return { ...PENDING };
   let transactionDate: string;
   try {
     transactionDate = cairoDateAt(input.transactionAt);
@@ -127,7 +162,8 @@ export function selectFxSnapshot(input: SelectFxInput): FxSnapshot {
     if (
       !isProviderPublicationDay(provider, publication.date) ||
       publication.date >= transactionDate ||
-      !isValidRate(publication.rate)
+      !isValidRate(publication.rate) ||
+      !rateInBounds(input.currency, publication.rate)
     )
       continue;
     if (!best || publication.date > best.date) best = publication;
@@ -248,10 +284,57 @@ export function validateFxResponse(
     if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0)
       throw new FxProviderError('invalid rate');
     const text = String(rate);
-    if (!isValidRate(text)) throw new FxProviderError('invalid rate');
+    if (!isValidRate(text) || !rateInBounds(currency, text))
+      throw new FxProviderError('invalid rate');
     out.push({ date, rate: text });
   }
   return out;
+}
+
+function clampTimeout(ms: number | undefined): number {
+  if (ms === undefined || !Number.isFinite(ms) || ms <= 0) return FX_TIMEOUT_MS;
+  return Math.min(ms, MAX_TIMEOUT_MS);
+}
+
+/** Reads the body with a byte cap; null when the cap is exceeded. */
+async function readCapped(response: Response): Promise<string | null> {
+  const body = response.body;
+  if (!body) {
+    const text = await response.text();
+    return text.length > MAX_RESPONSE_CHARS ? null : text;
+  }
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+  let bytes = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    bytes += value.byteLength;
+    if (bytes > MAX_RESPONSE_CHARS) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  return text + decoder.decode();
+}
+
+/**
+ * A rate may be frozen only once the provider has provably published past the
+ * day before the transaction: a row dated on or after the transaction's Cairo
+ * date exists, or the settle period has elapsed (T062 finding 1).
+ */
+export function isSettled(
+  transactionAt: string,
+  publications: readonly FxPublication[],
+  now: Date,
+): boolean {
+  const transactionDate = cairoDateAt(transactionAt);
+  if (publications.some((p) => p.date >= transactionDate)) return true;
+  const deadline = new Date(`${transactionDate}T00:00:00Z`);
+  deadline.setUTCDate(deadline.getUTCDate() + FX_SETTLE_DAYS);
+  return cairoDateAt(now) >= deadline.toISOString().slice(0, 10);
 }
 
 export type FetchFxOptions = {
@@ -260,6 +343,8 @@ export type FetchFxOptions = {
   existing?: FxSnapshot | null;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  /** Injectable clock for the settle rule; defaults to the current time. */
+  now?: Date;
 };
 
 /**
@@ -276,11 +361,12 @@ export async function fetchFxSnapshot(
   if (currency === 'EGP') return { ...EGP_IDENTITY };
   if (options.existing && options.existing.status === 'ready')
     return options.existing;
+  if (!isPinnedCurrency(currency)) return { ...PENDING };
   const doFetch = options.fetchImpl ?? fetch;
   const controller = new AbortController();
   const timer = setTimeout(
     () => controller.abort(),
-    options.timeoutMs ?? FX_TIMEOUT_MS,
+    clampTimeout(options.timeoutMs),
   );
   try {
     const window = fxRequestWindow(transactionAt);
@@ -294,9 +380,14 @@ export async function fetchFxSnapshot(
       signal: controller.signal,
     });
     if (!response.ok) return { ...PENDING };
-    const text = await response.text();
-    if (text.length > MAX_RESPONSE_CHARS) return { ...PENDING };
+    const declared = Number(response.headers?.get?.('content-length'));
+    if (Number.isFinite(declared) && declared > MAX_RESPONSE_CHARS)
+      return { ...PENDING };
+    const text = await readCapped(response);
+    if (text === null) return { ...PENDING };
     const publications = validateFxResponse(currency, JSON.parse(text), window);
+    if (!isSettled(transactionAt, publications, options.now ?? new Date()))
+      return { ...PENDING };
     return selectFxSnapshot({ transactionAt, currency, publications });
   } catch {
     return { ...PENDING };
@@ -313,6 +404,19 @@ function parseRate(rate: string): { num: bigint; scale: number } {
   if (!isValidRate(rate)) throw new RangeError('invalid FX rate');
   const [whole, frac = ''] = rate.split('.');
   return { num: BigInt(whole + frac), scale: frac.length };
+}
+
+function snapshotMatchesPin(
+  currency: FxCurrency,
+  snapshot: Extract<FxSnapshot, { status: 'ready' }>,
+): boolean {
+  if (currency === 'EGP')
+    return snapshot.provider === null && snapshot.rate === '1';
+  if (!isPinnedCurrency(currency)) return false;
+  return (
+    snapshot.provider === FX_PROVIDER_PINS[currency] &&
+    isValidRate(snapshot.rate)
+  );
 }
 
 function floorDiv(a: bigint, b: bigint): bigint {
@@ -332,9 +436,14 @@ export function buildFxReport(input: {
 }): FxReport {
   const sums = new Map<string, { num: bigint; scale: number }>();
   const excludedLineIds: string[] = [];
+  const flaggedLineIds: string[] = [];
   for (const line of input.lines) {
     if (line.snapshot.status !== 'ready') {
       excludedLineIds.push(line.id);
+      continue;
+    }
+    if (!snapshotMatchesPin(line.currency, line.snapshot)) {
+      flaggedLineIds.push(line.id);
       continue;
     }
     const rate =
@@ -359,6 +468,7 @@ export function buildFxReport(input: {
   return {
     aggregates,
     excludedLineIds,
+    flaggedLineIds,
     lines: [...input.lines],
     settlements: [...input.settlements],
   };

@@ -276,3 +276,15 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 - PASS: FR-006/FR-028 now cite the decision IDs; T065 names the operator script; the contract refusal codes match the T064a implementation.
 - PASS: this Analyze follows the latest spec, plan and task edits. 0 CRITICAL, 0 HIGH. T064b remains unticked pending independent re-review.
+
+## 2026-11-16 S61-PO-1 T062 review fold-in Analyze (Africa/Cairo)
+
+**Analyzed:** 2026-11-16 (Africa/Cairo), full pass over spec FR-026, `fx-coverage-verification.md`, `lib/packages/fx.ts` and the FX tests after the independent T062 review (PASS-WITH-CONDITIONS).
+
+- PASS (finding 1, MEDIUM): FR-026 now forbids freezing a rate before provider publication provably passed the day before the transaction (row dated on or after the Cairo date, or `FX_SETTLE_DAYS` = 3); otherwise pending; ready snapshots stay immutable. **`FX_SETTLE_DAYS` = 3 is an architect parameter needing PO/architect confirmation.** Tests cover Monday 00:30 Cairo before the Sunday row (pending), after the row and after the settle period (ready).
+- PASS (finding 4): `Object.hasOwn` pin guard before any network call and in `selectFxSnapshot`; tests for `EUR`, `constructor`, `__proto__`.
+- PASS (finding 3): per-pair plausibility bounds (`USD` 1..1000, `SAR` 0.5..300; architect parameters) with tests including 1e20.
+- PASS (findings 5-7, 11): content-length and streaming byte cap; the report builder flags (`flaggedLineIds`) a ready line whose provider does not match the pin and still totals the others; `timeoutMs` clamped. The optional one-request-per-currency-month helper was not added (not cheap enough; deferred).
+- ACCEPTED RESIDUAL RISK (finding 2): a blended series under a `SAMA` pin is not detectable; recorded in `fx-coverage-verification.md` pending PO/architect confirmation.
+- Still open: provider terms-of-use verification (blocker) and T062 final sign-off conditions; no checkbox ticked. IDs unchanged: S61-PO-1 = FX, S61-PO-2 = teardown.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions (2 architect parameters flagged); LOW: 0.

@@ -101,3 +101,7 @@ Provider calendars used by the T058 fixtures and `lib/packages/fx.ts`: CBE publi
 | `SAMA`   | https://www.sama.gov.sa/en-US/Currency/FinExc/Pages/Currency.aspx                         | https://www.sama.gov.sa/en-us/pages/termsofuse.aspx | Connection failed (no HTTP response) from this host.                                           |
 
 The API metadata gives URLs only; it does not state licence, redistribution or reporting-use terms. Neither terms page could be read, so the S33-08 "documented verification of provider terms" gate for `CBE`, `SAMA` (and Frankfurter's own service terms for v2 redistribution) is **NOT verified and is a blocker for acceptance**. No terms are assumed. Required before acceptance: a human or a browser-capable reviewer reads both terms pages and records permitted use (internal financial reporting, no client data sent, caching of rates) here and in the T062 review.
+
+### Accepted residual risk (T062 finding 2)
+
+A blended series that happens to be served for a `SAMA`-pinned request cannot be detected: `SAMA` publishes every calendar day, so no row is off-calendar, and rows do not name their provider. For `CBE` the Friday/Saturday check catches a blend. This residual risk is accepted pending PO/architect confirmation; mitigations are the explicit `providers=` pin, pair/shape validation and the per-pair plausibility bounds.

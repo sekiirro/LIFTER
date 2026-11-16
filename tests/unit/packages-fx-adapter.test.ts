@@ -8,6 +8,9 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import {
+  FX_SETTLE_DAYS,
+  buildFxReport,
+  selectFxSnapshot,
   buildFxRequestUrl,
   fetchFxSnapshot,
   fxRequestWindow,
@@ -282,5 +285,211 @@ describe('T059 validateFxResponse', () => {
     expect(() =>
       validateFxResponse('USD', [row('2026-11-05', 1e-7)], WINDOW),
     ).toThrow();
+  });
+});
+
+describe('T062 hardening', () => {
+  const okFetch = () => mockFetch(async () => json([row('2026-11-08', 54.1)]));
+  const ASK = '2026-11-09T22:30:00Z'; // Cairo 2026-11-10 00:30 (Tuesday)
+
+  it('settle: FX_SETTLE_DAYS is the named architect parameter (3)', () => {
+    expect(FX_SETTLE_DAYS).toBe(3);
+  });
+
+  it('Monday 00:30 Cairo before the Sunday row is ingested -> pending', async () => {
+    // Transaction Cairo date Mon 2026-11-09 00:30; the series ends Thursday.
+    const f = mockFetch(async () => json([row('2026-11-05', 53.9)]));
+    expect(
+      await fetchFxSnapshot({
+        transactionAt: '2026-11-08T22:30:00Z',
+        currency: 'USD',
+        fetchImpl: f,
+        now: new Date('2026-11-09T00:10:00Z'),
+      }),
+    ).toEqual({ status: 'pending' });
+  });
+
+  it('ready once a row dated on or after the transaction date exists', async () => {
+    const f = mockFetch(async () =>
+      json([row('2026-11-08', 54.1), row('2026-11-09', 54.3)]),
+    );
+    expect(
+      await fetchFxSnapshot({
+        transactionAt: '2026-11-08T22:30:00Z',
+        currency: 'USD',
+        fetchImpl: f,
+        now: new Date('2026-11-09T00:10:00Z'),
+      }),
+    ).toMatchObject({
+      status: 'ready',
+      rate: '54.1',
+      publicationDate: '2026-11-08',
+    });
+  });
+
+  it('ready after the settle period even without a later row; pending the day before', async () => {
+    const make = () => mockFetch(async () => json([row('2026-11-05', 53.9)]));
+    const at = '2026-11-08T22:30:00Z'; // Cairo date 2026-11-09
+    expect(
+      await fetchFxSnapshot({
+        transactionAt: at,
+        currency: 'USD',
+        fetchImpl: make(),
+        now: new Date('2026-11-11T12:00:00Z'),
+      }),
+    ).toEqual({ status: 'pending' });
+    expect(
+      await fetchFxSnapshot({
+        transactionAt: at,
+        currency: 'USD',
+        fetchImpl: make(),
+        now: new Date('2026-11-12T12:00:00Z'),
+      }),
+    ).toMatchObject({ status: 'ready', rate: '53.9' });
+  });
+
+  it('an existing ready snapshot stays immutable regardless of the settle rule', async () => {
+    const existing = {
+      status: 'ready' as const,
+      rate: '54.2',
+      publicationDate: '2026-11-09',
+      provider: 'CBE' as const,
+    };
+    expect(
+      await fetchFxSnapshot({
+        transactionAt: ASK,
+        currency: 'USD',
+        existing,
+        fetchImpl: okFetch(),
+        now: new Date('2026-11-10T00:00:00Z'),
+      }),
+    ).toBe(existing);
+  });
+
+  it.each(['EUR', 'constructor', '__proto__', 'toString', 'hasOwnProperty'])(
+    'unpinned currency %j -> pending before any network call',
+    async (currency) => {
+      const f = okFetch();
+      expect(
+        await fetchFxSnapshot({
+          transactionAt: AT,
+          currency: currency as never,
+          fetchImpl: f,
+        }),
+      ).toEqual({ status: 'pending' });
+      expect(f).not.toHaveBeenCalled();
+      expect(
+        selectFxSnapshot({
+          transactionAt: AT,
+          currency: currency as never,
+          publications: [{ date: '2026-11-09', rate: '54' }],
+        }),
+      ).toEqual({ status: 'pending' });
+    },
+  );
+
+  it.each([
+    ['USD', 0.99],
+    ['USD', 1001],
+    ['USD', 1e20],
+    ['SAR', 0.49],
+    ['SAR', 301],
+  ])('implausible %s rate %s is rejected', (currency, rate) => {
+    expect(() =>
+      validateFxResponse(
+        currency as 'USD' | 'SAR',
+        [row('2026-11-05', rate, currency)],
+        WINDOW,
+      ),
+    ).toThrow();
+  });
+
+  it('boundary rates are accepted and the selector skips out-of-bounds rows', () => {
+    expect(
+      validateFxResponse('USD', [row('2026-11-05', 1)], WINDOW),
+    ).toHaveLength(1);
+    expect(
+      validateFxResponse('SAR', [row('2026-11-05', 300, 'SAR')], WINDOW),
+    ).toHaveLength(1);
+    expect(
+      selectFxSnapshot({
+        transactionAt: AT,
+        currency: 'USD',
+        publications: [
+          { date: '2026-11-09', rate: '100000' },
+          { date: '2026-11-08', rate: '54' },
+        ],
+      }),
+    ).toMatchObject({ rate: '54' });
+  });
+
+  it('declared oversize content-length and an oversize stream are rejected', async () => {
+    const big = mockFetch(
+      async () =>
+        new Response('[]', { headers: { 'content-length': '999999' } }),
+    );
+    expect(
+      await fetchFxSnapshot({
+        transactionAt: AT,
+        currency: 'USD',
+        fetchImpl: big,
+      }),
+    ).toEqual({ status: 'pending' });
+    const chunk = new Uint8Array(100_000);
+    const stream = mockFetch(
+      async () =>
+        new Response(
+          new ReadableStream({
+            pull(c) {
+              c.enqueue(chunk);
+            },
+          }),
+        ),
+    );
+    expect(
+      await fetchFxSnapshot({
+        transactionAt: AT,
+        currency: 'USD',
+        fetchImpl: stream,
+      }),
+    ).toEqual({ status: 'pending' });
+  });
+
+  it('timeoutMs is clamped (non-finite, negative and huge values)', async () => {
+    for (const timeoutMs of [Number.NaN, -5, 0, 1e12]) {
+      const f = okFetch();
+      expect(
+        await fetchFxSnapshot({
+          transactionAt: AT,
+          currency: 'USD',
+          fetchImpl: f,
+          timeoutMs,
+        }),
+      ).toMatchObject({ status: 'ready' });
+    }
+  });
+
+  it('report flags a ready line whose provider does not match the pin and keeps other aggregates', () => {
+    const good = {
+      id: 'g',
+      groupKey: 'm',
+      amountMinor: 100n,
+      currency: 'USD' as const,
+      snapshot: {
+        status: 'ready' as const,
+        rate: '2',
+        publicationDate: '2026-11-09',
+        provider: 'CBE' as const,
+      },
+    };
+    const bad = {
+      ...good,
+      id: 'b',
+      snapshot: { ...good.snapshot, provider: 'SAMA' as const },
+    };
+    const report = buildFxReport({ lines: [good, bad], settlements: [] });
+    expect(report.aggregates.m).toBe(200n);
+    expect(report.flaggedLineIds).toEqual(['b']);
+    expect(report.excludedLineIds).toEqual([]);
   });
 });
