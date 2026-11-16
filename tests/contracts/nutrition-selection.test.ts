@@ -87,7 +87,10 @@ function freshWorld(): SelectionWorld {
     deliveredRevisionId: 5,
     subscriptionActive: true,
     itemAlternatives: {
-      'i-1': ['a-1', 'a-2'],
+      '33333333-3333-4333-8333-333333333331': [
+        '44444444-4444-4444-8444-444444444441',
+        '44444444-4444-4444-8444-444444444442',
+      ],
     },
     selections: {},
     counters: {},
@@ -105,8 +108,8 @@ function clientRequest(
     operationKey: '5e1c1d2e-1111-4222-8333-444455556666',
     canonicalRequest: 'hash-1',
     planVersionId: 5,
-    itemId: 'i-1',
-    alternativeId: 'a-2',
+    itemId: '33333333-3333-4333-8333-333333333331',
+    alternativeId: '44444444-4444-4444-8444-444444444442',
     auth: { authUid: PLAN_CLIENT, role: 'client' },
     ...overrides,
   };
@@ -256,15 +259,17 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
     expect(world.revisionBytes).toBe(
       'coach-authored-revision-bytes@revision-5',
     );
-    expect(world.selections['5:i-1']).toEqual({
-      alternativeId: 'a-2',
+    expect(world.selections['5:33333333-3333-4333-8333-333333333331']).toEqual({
+      alternativeId: '44444444-4444-4444-8444-444444444442',
       createdBy: PLAN_CLIENT,
     });
   });
 
   it('rejects an alternative id not in the item approved list (invalid_selection)', () => {
     const world = freshWorld();
-    const invalidRequest = clientRequest({ alternativeId: 'a-9' });
+    const invalidRequest = clientRequest({
+      alternativeId: '44444444-4444-4444-8444-444444444449',
+    });
     const result = selectNutritionAlternative(world, invalidRequest);
     expect(result.status).toBe('invalid_selection');
     const conflict = selectNutritionAlternative(
@@ -272,11 +277,13 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       clientRequest({
         operationKey: invalidRequest.operationKey,
         canonicalRequest: 'hash-valid-alternative',
-        alternativeId: 'a-1',
+        alternativeId: '44444444-4444-4444-8444-444444444441',
       }),
     );
     expect(conflict.status).toBe('key_conflict');
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.counters['5']).toBeUndefined();
     expect(world.auditEvents).toEqual([
       { action: 'client.nutrition_select', denial: true },
@@ -291,7 +298,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       clientRequest({ planVersionId: 4 }),
     );
     expect(result.status).toBe('stale_version');
-    expect(world.selections['4:i-1']).toBeUndefined();
+    expect(
+      world.selections['4:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.auditEvents).toHaveLength(1);
     expect(world.auditEvents[0]!.denial).toBe(true);
   });
@@ -309,7 +318,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       }),
     );
     expect(result.status).toBe('not_permitted');
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.auditEvents).toHaveLength(1);
   });
 
@@ -327,7 +338,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       );
       expect(attempt.status).toBe('not_permitted');
     }
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.revisionBytes).toBe(
       'coach-authored-revision-bytes@revision-5',
     );
@@ -338,7 +351,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
     world.subscriptionActive = false;
     const result = selectNutritionAlternative(world, clientRequest());
     expect(result.status).toBe('not_permitted');
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.auditEvents).toEqual([
       { action: 'client.nutrition_select', denial: true },
     ]);
@@ -346,7 +361,10 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
 
   it('advances the durable per-revision counter on clear then select', () => {
     const world = freshWorld();
-    world.itemAlternatives['i-2'] = ['a-1', 'a-2'];
+    world.itemAlternatives['33333333-3333-4333-8333-333333333332'] = [
+      '44444444-4444-4444-8444-444444444441',
+      '44444444-4444-4444-8444-444444444442',
+    ];
     const first = selectNutritionAlternative(world, clientRequest());
     expect(first).toMatchObject({
       status: 'ok',
@@ -368,15 +386,17 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       selectedAlternativeId: null,
     });
     // the row is deleted (clear-to-default) but the counter is retained
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.counters['5']).toBe(2);
     const reselected = selectNutritionAlternative(
       world,
       clientRequest({
         operationKey: '5e1c1d2e-3333-4222-8333-444455556666',
         canonicalRequest: 'hash-2',
-        itemId: 'i-2',
-        alternativeId: 'a-1',
+        itemId: '33333333-3333-4333-8333-333333333332',
+        alternativeId: '44444444-4444-4444-8444-444444444441',
       }),
     );
     expect(reselected).toMatchObject({
@@ -384,7 +404,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       selectionRevision: 3,
       noop: false,
     });
-    expect(world.selections['5:i-2']!.alternativeId).toBe('a-1');
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333332']!.alternativeId,
+    ).toBe('44444444-4444-4444-8444-444444444441');
   });
 
   it('treats a re-select of the current alternative and a clear of nothing as no-ops', () => {
@@ -422,7 +444,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       selectionRevision: 0,
     });
     expect(untouched.counters['5']).toBeUndefined();
-    expect(untouched.selections['5:i-1']).toBeUndefined();
+    expect(
+      untouched.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(untouched.auditEvents).toHaveLength(0);
   });
 
@@ -438,20 +462,25 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       }),
     );
     expect(clear.status).toBe('ok');
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     const successes = world.auditEvents.filter((e) => !e.denial);
     expect(successes).toHaveLength(2);
   });
 
   it('switching between approved alternatives changes the selection', () => {
     const world = freshWorld();
-    selectNutritionAlternative(world, clientRequest({ alternativeId: 'a-1' }));
+    selectNutritionAlternative(
+      world,
+      clientRequest({ alternativeId: '44444444-4444-4444-8444-444444444441' }),
+    );
     const switched = selectNutritionAlternative(
       world,
       clientRequest({
         operationKey: '5e1c1d2e-6666-4222-8333-444455556666',
         canonicalRequest: 'hash-2',
-        alternativeId: 'a-2',
+        alternativeId: '44444444-4444-4444-8444-444444444442',
       }),
     );
     expect(switched).toMatchObject({
@@ -459,7 +488,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       selectionRevision: 2,
       noop: false,
     });
-    expect(world.selections['5:i-1']!.alternativeId).toBe('a-2');
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331']!.alternativeId,
+    ).toBe('44444444-4444-4444-8444-444444444442');
   });
 
   it('fails generically with no partial write on every unauthorized path', () => {
@@ -478,7 +509,7 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
         world,
         clientRequest({
           operationKey: '5e1c1d2e-bbbb-4222-8333-444455556666',
-          alternativeId: 'a-9',
+          alternativeId: '44444444-4444-4444-8444-444444444449',
         }),
       ).status,
     ).toBe('invalid_selection');
@@ -494,7 +525,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
     // each denial wrote exactly one denial audit and no selection row
     expect(world.auditEvents).toHaveLength(3);
     for (const event of world.auditEvents) expect(event.denial).toBe(true);
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
   });
 
   it('checks the subscription before revision and receipt lookups (expired client)', () => {
@@ -512,8 +545,10 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
     priorWorld.subscriptionActive = false;
     const replay = selectNutritionAlternative(priorWorld, clientRequest());
     expect(replay.status).toBe('not_permitted');
-    expect(priorWorld.selections['5:i-1']).toEqual({
-      alternativeId: 'a-2',
+    expect(
+      priorWorld.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toEqual({
+      alternativeId: '44444444-4444-4444-8444-444444444442',
       createdBy: PLAN_CLIENT,
     });
   });
@@ -524,11 +559,13 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
     expect(first.status).toBe('ok');
     const conflict = selectNutritionAlternative(
       world,
-      clientRequest({ alternativeId: 'a-1' }),
+      clientRequest({ alternativeId: '44444444-4444-4444-8444-444444444441' }),
     );
     expect(conflict.status).toBe('key_conflict');
     // the changed payload did not write and the denial is audited
-    expect(world.selections['5:i-1']!.alternativeId).toBe('a-2');
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331']!.alternativeId,
+    ).toBe('44444444-4444-4444-8444-444444444442');
     expect(world.counters['5']).toBe(1);
     expect(world.auditEvents.filter((e) => e.denial)).toEqual([
       { action: 'client.nutrition_select', denial: true },
@@ -542,7 +579,7 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       status: 'ok',
       selectionRevision: 1,
       noop: false,
-      selectedAlternativeId: 'a-2',
+      selectedAlternativeId: '44444444-4444-4444-8444-444444444442',
     });
     const replay = selectNutritionAlternative(world, clientRequest());
     expect(replay).toEqual(first);
@@ -552,14 +589,14 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       world,
       clientRequest({
         operationKey: '5e1c1d2e-2222-4222-8333-444455556666',
-        alternativeId: 'a-2',
+        alternativeId: '44444444-4444-4444-8444-444444444442',
       }),
     );
     const noopFirst = selectNutritionAlternative(
       world,
       clientRequest({
         operationKey: '5e1c1d2e-dddd-4222-8333-444455556666',
-        alternativeId: 'a-2',
+        alternativeId: '44444444-4444-4444-8444-444444444442',
       }),
     );
     expect(noopFirst).toMatchObject({ status: 'ok', noop: true });
@@ -567,7 +604,7 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       world,
       clientRequest({
         operationKey: '5e1c1d2e-dddd-4222-8333-444455556666',
-        alternativeId: 'a-2',
+        alternativeId: '44444444-4444-4444-8444-444444444442',
       }),
     );
     expect(noopReplay).toEqual(noopFirst);
@@ -588,16 +625,18 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       selectionRevision: 0,
       selectedAlternativeId: null,
     });
-    // a different key selects a-1; retrying the no-op key must return the
+    // a different key selects 44444444-4444-4444-8444-444444444441; retrying the no-op key must return the
     // recorded no-op without deleting the new selection
     selectNutritionAlternative(
       world,
       clientRequest({
         operationKey: '5e1c1d2e-ffff-4222-8333-444455556666',
-        alternativeId: 'a-1',
+        alternativeId: '44444444-4444-4444-8444-444444444441',
       }),
     );
-    expect(world.selections['5:i-1']!.alternativeId).toBe('a-1');
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331']!.alternativeId,
+    ).toBe('44444444-4444-4444-8444-444444444441');
     expect(world.counters['5']).toBe(1);
     const retry = selectNutritionAlternative(
       world,
@@ -607,7 +646,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       }),
     );
     expect(retry).toEqual(noopClear);
-    expect(world.selections['5:i-1']!.alternativeId).toBe('a-1');
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331']!.alternativeId,
+    ).toBe('44444444-4444-4444-8444-444444444441');
     expect(world.counters['5']).toBe(1);
   });
 
@@ -637,7 +678,9 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
     expect(world.auditEvents).toEqual([
       { action: 'client.nutrition_select', denial: true },
     ]);
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.counters['5']).toBeUndefined();
     expect(world.receipts.size).toBe(0);
   });
@@ -657,15 +700,20 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
     expect(world.auditEvents).toEqual([
       { action: 'client.nutrition_select', denial: true },
     ]);
-    expect(world.selections['9:i-1']).toBeUndefined();
+    expect(
+      world.selections['9:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.counters['9']).toBeUndefined();
   });
 
   it('encodes clear and the alternative id "null" without collision (key_conflict)', () => {
     const world = freshWorld();
-    // select a-1 first, then clear it with a distinct key: the clear result
+    // select 44444444-4444-4444-8444-444444444441 first, then clear it with a distinct key: the clear result
     // is stored under its canonical hash
-    selectNutritionAlternative(world, clientRequest({ alternativeId: 'a-1' }));
+    selectNutritionAlternative(
+      world,
+      clientRequest({ alternativeId: '44444444-4444-4444-8444-444444444441' }),
+    );
     const cleared = selectNutritionAlternative(
       world,
       clientRequest({
@@ -680,13 +728,15 @@ describe('nutrition selection contract (F18-FR-011..013, T004)', () => {
       world,
       clientRequest({
         operationKey: '5e1c1d2e-2222-4222-8333-444455556666',
-        itemId: 'i-1',
+        itemId: '33333333-3333-4333-8333-333333333331',
         alternativeId: 'null',
       }),
     );
     expect(collision.status).toBe('key_conflict');
     // nothing was written for the colliding request
-    expect(world.selections['5:i-1']).toBeUndefined();
+    expect(
+      world.selections['5:33333333-3333-4333-8333-333333333331'],
+    ).toBeUndefined();
     expect(world.counters['5']).toBe(2);
   });
 });

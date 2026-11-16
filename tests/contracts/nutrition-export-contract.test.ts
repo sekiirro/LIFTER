@@ -134,14 +134,14 @@ const DOC = validateNutritionDocument(
         recipeUrl: 'https://www.youtube.com/watch?v=abc',
         items: [
           {
-            id: 'i-1',
+            id: '33333333-3333-4333-8333-333333333331',
             foodId: FOOD_A,
             foodVersion: 3,
             quantity: { value: '37', unit: { kind: 'basis', value: 'g' } },
             note: FOOD_NOTE,
             alternatives: [
               {
-                id: 'a-1',
+                id: '44444444-4444-4444-8444-444444444441',
                 foodId: FOOD_A,
                 foodVersion: 4,
                 quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
@@ -149,7 +149,7 @@ const DOC = validateNutritionDocument(
             ],
           },
           {
-            id: 'i-2',
+            id: '33333333-3333-4333-8333-333333333332',
             foodId: FOOD_B,
             foodVersion: 2,
             quantity: { value: '1', unit: { kind: 'serving', unitKey: 'g' } },
@@ -167,7 +167,8 @@ const DOC = validateNutritionDocument(
 
 const COACH_VALUES = computeDocumentValues(DOC, SNAPSHOT_MAP);
 const SELECTED_VALUES = computeDocumentValues(DOC, SNAPSHOT_MAP, {
-  'i-1': 'a-1',
+  '33333333-3333-4333-8333-333333333331':
+    '44444444-4444-4444-8444-444444444441',
 });
 
 type ExportProjection = {
@@ -191,7 +192,10 @@ const WITH_SELECTION: ExportProjection = {
   document: DOC,
   computedValues: COACH_VALUES,
   selectedValues: SELECTED_VALUES,
-  selectedAlternativeIds: { 'i-1': 'a-1' },
+  selectedAlternativeIds: {
+    '33333333-3333-4333-8333-333333333331':
+      '44444444-4444-4444-8444-444444444441',
+  },
   snapshotMap: SNAPSHOT_MAP,
 };
 
@@ -227,7 +231,7 @@ const SEVEN_DAY_DOC = validateNutritionDocument(
             recipeUrl: null,
             items: [
               {
-                id: 'i-a',
+                id: '33333333-3333-4333-8333-333333333351',
                 foodId: FOOD_A,
                 foodVersion: 3,
                 quantity: { value: '37', unit: { kind: 'basis', value: 'g' } },
@@ -254,7 +258,7 @@ const SEVEN_DAY_DOC = validateNutritionDocument(
             recipeUrl: null,
             items: [
               {
-                id: 'i-b',
+                id: '33333333-3333-4333-8333-333333333352',
                 foodId: FOOD_A,
                 foodVersion: 3,
                 quantity: {
@@ -355,7 +359,7 @@ const DOC_2 = validateNutritionDocument(
         recipeUrl: null,
         items: [
           {
-            id: 'i-d',
+            id: '33333333-3333-4333-8333-333333333353',
             foodId: FOOD_D,
             foodVersion: 1,
             quantity: {
@@ -774,7 +778,11 @@ describe('export and prompt fidelity contract (T005)', () => {
     // descriptors carry the canonical PORTION values, not per-100 values
     expect(text).toContain('kcal 93 | protein 4.6 | carbs 19 | fat 4.6');
     // the item's authorized alternative list is carried (F18-FR-014)
-    const altCell = cells.find((c) => c.field === 'item:i-1:alternative:a-1')!;
+    const altCell = cells.find(
+      (c) =>
+        c.field ===
+        'item:33333333-3333-4333-8333-333333333331:alternative:44444444-4444-4444-8444-444444444441',
+    )!;
     expect(altCell.value).toContain('Chicken 150 g');
     expect(altCell.value).toContain(
       'kcal 600 | protein 45 | carbs 15 | fat 7.5',
@@ -798,7 +806,7 @@ describe('export and prompt fidelity contract (T005)', () => {
       .filter((c) => c.section === 'notes')
       .map((c) => c.field);
     expect(allNoteFields).toEqual([
-      'item:i-1:food-notes',
+      'item:33333333-3333-4333-8333-333333333331:food-notes',
       'meal:m-1:meal-notes',
       'meal:m-1:recipe-url',
     ]);
@@ -820,7 +828,11 @@ describe('export and prompt fidelity contract (T005)', () => {
 
   it('renders the selected alternative as primary with recalculated totals', () => {
     const cells = renderExcel(WITH_SELECTION);
-    const selected = cells.find((c) => c.field === 'item:i-1:selected:a-1')!;
+    const selected = cells.find(
+      (c) =>
+        c.field ===
+        'item:33333333-3333-4333-8333-333333333331:selected:44444444-4444-4444-8444-444444444441',
+    )!;
     expect(selected.value).toContain('Chicken 150 g');
     // alternative: 30.00 per 100 g at 150 g → 45 → displayed 45
     expect(selected.value).toContain('protein 45');
@@ -830,7 +842,10 @@ describe('export and prompt fidelity contract (T005)', () => {
     expect(docTotal.value).toBe('800 | 63 | 15 | 13');
     expect(docTotal.value).not.toContain('4.6');
     // the coach original is a labelled per-item side note, not a totals row
-    const coachNote = cells.find((c) => c.field === 'item:i-1:coach-original')!;
+    const coachNote = cells.find(
+      (c) =>
+        c.field === 'item:33333333-3333-4333-8333-333333333331:coach-original',
+    )!;
     expect(coachNote.section).toBe('items');
     expect(
       coachNote.value.startsWith(`${SIDE_NOTE_LABEL.en}: Chicken 37 g`),
@@ -842,11 +857,25 @@ describe('export and prompt fidelity contract (T005)', () => {
 
   it('shows the coach original only for items without a selection', () => {
     const cells = renderExcel(NO_SELECTION);
-    expect(cells.some((c) => c.field === 'item:i-1')).toBe(true);
-    expect(cells.some((c) => c.field === 'item:i-1:selected:a-1')).toBe(false);
-    expect(cells.some((c) => c.field === 'item:i-1:coach-original')).toBe(
-      false,
-    );
+    expect(
+      cells.some(
+        (c) => c.field === 'item:33333333-3333-4333-8333-333333333331',
+      ),
+    ).toBe(true);
+    expect(
+      cells.some(
+        (c) =>
+          c.field ===
+          'item:33333333-3333-4333-8333-333333333331:selected:44444444-4444-4444-8444-444444444441',
+      ),
+    ).toBe(false);
+    expect(
+      cells.some(
+        (c) =>
+          c.field ===
+          'item:33333333-3333-4333-8333-333333333331:coach-original',
+      ),
+    ).toBe(false);
   });
 
   it('uses the S43-PO-2 approved side-note labels (P5)', () => {
@@ -882,9 +911,11 @@ describe('export and prompt fidelity contract (T005)', () => {
     // faithful plan content: coach item with portion values, notes, link,
     // alternative, totals
     expect(prompt).toContain(
-      'item i-1 Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6',
+      'item 33333333-3333-4333-8333-333333333331 Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6',
     );
-    expect(prompt).toContain('alternative a-1 Chicken 150 g | kcal 600');
+    expect(prompt).toContain(
+      'alternative 44444444-4444-4444-8444-444444444441 Chicken 150 g | kcal 600',
+    );
     expect(prompt).toContain('meal m-1 totals 293 | 23 | 19 | 9.6');
     expect(prompt).toContain('meal-notes: =cmd meal note');
     expect(prompt).toContain('recipe: https://www.youtube.com/watch?v=abc');
@@ -906,7 +937,9 @@ describe('export and prompt fidelity contract (T005)', () => {
 
   it('prompt with a selection carries the labelled coach-original note and client totals', () => {
     const en = buildNutritionPrompt(WITH_SELECTION, 'en');
-    expect(en).toContain('item i-1 selected a-1 Chicken 150 g');
+    expect(en).toContain(
+      'item 33333333-3333-4333-8333-333333333331 selected 44444444-4444-4444-8444-444444444441 Chicken 150 g',
+    );
     expect(en).toContain(`${SIDE_NOTE_LABEL.en}: Chicken 37 g`);
     expect(en).toContain('totals 800 | 63 | 15 | 13');
     expect(en).toContain('meal m-1 totals 800 | 63 | 15 | 13');
@@ -921,12 +954,16 @@ describe('export and prompt fidelity contract (T005)', () => {
   it('renders a seven-day document with day grouping, per-day totals and document notes', () => {
     const cells = renderExcel(SEVEN_DAY_PROJECTION);
     // both meals' items resolve (the second meal is not document.meals[0])
-    expect(cells.find((c) => c.field === 'item:i-a')!.value).toContain(
-      'Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6',
-    );
-    expect(cells.find((c) => c.field === 'item:i-b')!.value).toContain(
-      'Chicken 62.5 g | kcal 156 | protein 7.7 | carbs 31 | fat 7.7',
-    );
+    expect(
+      cells.find(
+        (c) => c.field === 'item:33333333-3333-4333-8333-333333333351',
+      )!.value,
+    ).toContain('Chicken 37 g | kcal 93 | protein 4.6 | carbs 19 | fat 4.6');
+    expect(
+      cells.find(
+        (c) => c.field === 'item:33333333-3333-4333-8333-333333333352',
+      )!.value,
+    ).toContain('Chicken 62.5 g | kcal 156 | protein 7.7 | carbs 31 | fat 7.7');
     // per-day totals and document totals
     expect(cells.find((c) => c.field === 'day:0:total')!.value).toBe(
       '93 | 4.6 | 19 | 4.6',
@@ -969,7 +1006,9 @@ describe('export and prompt fidelity contract (T005)', () => {
   it('resolves an RFC 3986 encoded serving key and guards formula-prefixed meal names (DOC_2)', () => {
     const cells = renderExcel(DOC_2_PROJECTION);
     // the serving key cup/large is looked up through its encoded canonical key
-    const itemCell = cells.find((c) => c.field === 'item:i-d')!;
+    const itemCell = cells.find(
+      (c) => c.field === 'item:33333333-3333-4333-8333-333333333353',
+    )!;
     expect(itemCell.value).toContain('Yogurt 1 cup/large');
     // portion values: 3.50 × 250 / 100 = 8.75 protein; kcal 60 × 250/100 = 150
     expect(itemCell.value).toContain(
@@ -982,7 +1021,9 @@ describe('export and prompt fidelity contract (T005)', () => {
     // the prompt renders the same projection faithfully
     const prompt = buildNutritionPrompt(DOC_2_PROJECTION, 'en');
     expect(prompt).toContain('meal m-x =Suspicious Meal');
-    expect(prompt).toContain('item i-d Yogurt 1 cup/large');
+    expect(prompt).toContain(
+      'item 33333333-3333-4333-8333-333333333353 Yogurt 1 cup/large',
+    );
   });
 });
 
@@ -1107,9 +1148,15 @@ describe('AR structural payload labels (P6, S49-PO-5)', () => {
     const payload = planContentText(WITH_SELECTION, 'ar');
     const L = NUTRITION_PROMPT_LABELS.ar;
     expect(
-      payload.split('\n').some((l) => l.includes(`${L.selected} a-1`)),
+      payload
+        .split('\n')
+        .some((l) =>
+          l.includes(`${L.selected} 44444444-4444-4444-8444-444444444441`),
+        ),
     ).toBe(true);
-    expect(payload).toContain(`${L.item} i-1 ${L.selected} a-1 Chicken 150 g`);
+    expect(payload).toContain(
+      `${L.item} 33333333-3333-4333-8333-333333333331 ${L.selected} 44444444-4444-4444-8444-444444444441 Chicken 150 g`,
+    );
     expect(payload).toContain(`${L.totals} 800 | 63 | 15 | 13`);
     expect(payload).toContain(`${L.mealTotals} m-1 800 | 63 | 15 | 13`);
     expect(payload).toContain(`${L.sideNote}: Chicken 37 g`);
@@ -1120,10 +1167,10 @@ describe('AR structural payload labels (P6, S49-PO-5)', () => {
 وجبة m-1 Breakfast
 ملاحظات الوجبة: =cmd meal note
 طريقة العمل: https://www.youtube.com/watch?v=abc
-صنف i-1 Chicken 37 g | السعرات 93 | البروتين 4.6 | الكربوهيدرات 19 | الدهون 4.6
+صنف 33333333-3333-4333-8333-333333333331 Chicken 37 g | السعرات 93 | البروتين 4.6 | الكربوهيدرات 19 | الدهون 4.6
 ملاحظات الأكل: @cmd food note
-بديل a-1 Chicken 150 g | السعرات 600 | البروتين 45 | الكربوهيدرات 15 | الدهون 7.5
-صنف i-2 Fish 1 g | السعرات 200 | البروتين 18 | الكربوهيدرات 0 | الدهون 5.0
+بديل 44444444-4444-4444-8444-444444444441 Chicken 150 g | السعرات 600 | البروتين 45 | الكربوهيدرات 15 | الدهون 7.5
+صنف 33333333-3333-4333-8333-333333333332 Fish 1 g | السعرات 200 | البروتين 18 | الكربوهيدرات 0 | الدهون 5.0
 إجمالي الوجبة m-1 293 | 23 | 19 | 9.6
 الإجمالي 293 | 23 | 19 | 9.6`;
     const prompt = buildNutritionPrompt(NO_SELECTION, 'ar');

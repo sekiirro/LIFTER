@@ -81,16 +81,19 @@ describe('F19 T010 plan lifecycle schema', () => {
     `;
     expect(authors).toHaveLength(5);
     expect(authors.every((row) => row.confdeltype === 'r')).toBe(true);
-    const writes = await db()`
-      select has_table_privilege('authenticated', 'public.plan_roots', 'insert') as root_insert,
-        has_table_privilege('authenticated', 'public.plan_drafts', 'update') as draft_update,
-        has_table_privilege('authenticated', 'public.plan_revisions', 'delete') as revision_delete
-    `;
-    expect(writes[0]).toEqual({
-      root_insert: false,
-      draft_update: false,
-      revision_delete: false,
-    });
+    for (const role of ['authenticated', 'service_role']) {
+      const [writes] = await db()`
+        select
+          has_table_privilege(${role}, 'public.plan_revisions', 'UPDATE') as can_update,
+          has_table_privilege(${role}, 'public.plan_revisions', 'DELETE') as can_delete,
+          has_table_privilege(${role}, 'public.plan_revisions', 'TRUNCATE') as can_truncate
+      `;
+      expect(writes).toEqual({
+        can_update: false,
+        can_delete: false,
+        can_truncate: false,
+      });
+    }
   });
 
   it('persists a tenant-bound root and draft, applies version CAS, and appends content-free audit events', async () => {
@@ -185,7 +188,7 @@ describe('F19 T010 plan lifecycle schema', () => {
     expect(updates[0]?.count).toBe(1);
   });
 
-  it('rejects draft version jumps, root deletion, and revision mutation or deletion', async () => {
+  it('rejects revision mutation and deletion for direct DML roles and retains prior published revisions', async () => {
     const id = await seedPlan();
     await expect(db()`
       update public.plan_drafts set draft_version = 3, updated_at = now() + interval '1 second'
@@ -201,6 +204,14 @@ describe('F19 T010 plan lifecycle schema', () => {
         ${fixture.workspaceId}, ${id}, 1, 1, 'workout', '{"schema_version":1,"days":[]}'::jsonb,
         ${fixture.context.trainerA.userId}
       ) returning id
+      `;
+    const [newerRevision] = await db()`
+      insert into public.plan_revisions (
+        workspace_id, plan_id, revision_number, source_draft_version, plan_kind, content, authored_by
+      ) values (
+        ${fixture.workspaceId}, ${id}, 2, 2, 'workout', '{"schema_version":1,"days":[]}'::jsonb,
+        ${fixture.context.trainerA.userId}
+      ) returning id
     `;
     await expect(db()`
       update public.plan_revisions set content = '{"changed":true}'::jsonb
@@ -209,6 +220,27 @@ describe('F19 T010 plan lifecycle schema', () => {
     await expect(db()`
       delete from public.plan_revisions where workspace_id = ${fixture.workspaceId} and id = ${revision!.id}
     `).rejects.toBeDefined();
+    for (const role of ['authenticated', 'service_role']) {
+      await expect(
+        db().begin(async (tx) => {
+          await tx.unsafe(`set local role ${role}`);
+          await tx`update public.plan_revisions set content = '{"changed":true}'::jsonb where id = ${revision!.id}`;
+        }),
+      ).rejects.toBeDefined();
+      await expect(
+        db().begin(async (tx) => {
+          await tx.unsafe(`set local role ${role}`);
+          await tx`delete from public.plan_revisions where id = ${revision!.id}`;
+        }),
+      ).rejects.toBeDefined();
+    }
+    const retained = await db()`
+      select revision_number from public.plan_revisions
+      where workspace_id = ${fixture.workspaceId} and plan_id = ${id}
+      order by revision_number
+    `;
+    expect(retained.map((row) => row.revision_number)).toEqual(['1', '2']);
+    expect(newerRevision).toBeDefined();
   });
 
   it('limits reads to coaching staff in the workspace and gives Sales and foreign staff no rows', async () => {
