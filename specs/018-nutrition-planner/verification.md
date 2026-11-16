@@ -1,5 +1,12 @@
 # F18 Nutrition Planner — Verification Report
 
+## Slice 5: T017 contributor attribution (F18-FR-018 / S60-R43)
+
+- **RED:** On Stack B after safe reset without the contributor attribution migration, all 4 test cases in `tests/integration/nutrition-contributors.test.ts` failed because `public.plan_revision_contributors` did not exist.
+- **GREEN:** After adding migration `20261120180000_f19_plan_revision_contributors.sql` and registering `app_private.f19_guard_plan_revision_contributors` and `app_private.f19_track_plan_draft_contributor` in `tests/integration/rls-catalog.test.ts`, all 4 test cases in `nutrition-contributors.test.ts` passed (4/4), and `rls-catalog.test.ts` passed (43/43).
+- **Mutation:** Allowed a contributor row from another workspace by mutating the foreign keys in `public.plan_revision_contributors` to non-composite foreign keys (`foreign key (revision_id) references public.plan_revisions(id)` and `foreign key (plan_id) references public.plan_roots(id)`). The test `rejects foreign-workspace contributor rows via composite FK and isolates via RLS` was KILLED (`AssertionError: promise resolved "[]" instead of rejecting` at `tests/integration/nutrition-contributors.test.ts:268`). Restored migration and verified `git diff --exit-code` exited 0; 4/4 tests passed on the restored state.
+- **Regression suites:** Touched integration suites passed on Stack B: `nutrition-contributors.test.ts` (4/4), `nutrition-publish.test.ts` (7/7), `nutrition-versioning.test.ts` (1/1), `nutrition-audit.test.ts` (3/3), `rls-catalog.test.ts` (43/43).
+
 ## Slice 4: T016 audit allowlist and log scrub
 
 - **RED:** On Stack C after safe reset/provision without the new migration, `nutrition-audit.test.ts` had 2 passing cases and failed the forbidden `food_name` insert case because it was accepted by `public.audit_events`.
