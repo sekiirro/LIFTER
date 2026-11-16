@@ -2062,3 +2062,51 @@ describe('F17 T014 assignment ledgers and distribution state catalog', () => {
     }
   });
 });
+
+describe('F17 T031 / T047 workout operation keys and RPC catalog', () => {
+  it('forces RLS, revokes direct DML on operation keys, and verifies narrow RPC execution', async () => {
+    const rel = 'app_private.f17_workout_operation_keys';
+    const [row] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid = ${rel}::regclass`;
+    expect(row, rel).toEqual({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+    });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const priv of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] =
+          await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+        expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+      }
+    }
+
+    const fns = [
+      'public.f17_add_workout_exercise(uuid,uuid,text,uuid,bigint,uuid,uuid)',
+      'public.f17_resolve_workout_exercise_muscles(uuid,jsonb)',
+    ];
+    for (const sig of fns) {
+      const [fn] = await db`select p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
+  });
+});
