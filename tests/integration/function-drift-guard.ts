@@ -5,6 +5,12 @@ import { loadEnv } from './harness';
 
 export const guardedFunctions = [
   {
+    identity:
+      'public.assign_workout_templates(text,uuid[],uuid[],text,uuid[],uuid)',
+    migration: '20261120170000_f17_workout_template_assign_run.sql',
+    name: 'public.assign_workout_templates',
+  },
+  {
     identity: 'app_private.f15_answer_values_valid(jsonb,jsonb)',
     migration: '20261112031600_f15_direct_rpc_answer_validation.sql',
     name: 'app_private.f15_answer_values_valid',
