@@ -151,5 +151,3 @@ Shared fixtures are appended, never overwritten, under concurrency.
 - FR-026 is an exclusion statement; no tasks by design.
 - Every other FR and SC maps to at least one task.
 - S43-MCQ-A/C are resolved by S43-PO-5 (architect mapping (S43-R6)); tasks remain unticked until their tests execute and pass.
-- [ ] **T016 (60m) — RLS policies for F17 tables.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-020; SC-010). Workspace isolation; PO-only global and assignment; Sales/client denial; foreign indistinguishable. RED: negative matrix before policy change. Mutation: remove each predicate and prove its row fails.
-- [ ] **T017 (50m) — Definer grants and direct-DML denial.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-020). `search_path = ''`, qualified names, narrow EXECUTE, no base-table DML for client roles. RED first. Mutation: grant direct DML or widen EXECUTE and prove denial tests fail.
