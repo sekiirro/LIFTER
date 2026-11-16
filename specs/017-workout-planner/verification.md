@@ -100,8 +100,9 @@
   - Dropped `workout_template_assignment_c_workspace_id_global_template__key` (`UNIQUE (workspace_id, global_template_id)`) on `public.workout_template_assignment_copies` -> `tests/integration/workout-assignment-schema.test.ts` failed at line 236 (`AssertionError: promise resolved "undefined" instead of rejecting`), proving duplicate-on-retry succeeds when copy uniqueness is removed.
   - Restored Stack B via `db reset --local` + `tests/integration/client-accounts-provision.mjs` and verified `git diff --exit-code` on the migration is 0.
 
-## F17 Verification — T043 (s60-fl-f17t043)
+## F17 Verification — T043 (PARTIAL — slice 1) (s60-fl-f17t043)
 
+- **Status**: PARTIAL — slice 1 verified: structure, reorder/cross-day move/duplicate, keyboard alternatives, rest-day rejection (3 mutants); slice 2 open: field editing (notes, reps, set load/rest/RIR, day title/kind) and AlternativesEditor (T034) integration.
 - **Branch / stack**: `017-plan-builder-slice-1` / NO DB stack (pure UI and document transforms).
 - **Implementation**:
   - `components/workout-planner/WorkoutPlanBuilder.tsx` and `components/workout-planner/WorkoutPlanBuilder.module.css`.

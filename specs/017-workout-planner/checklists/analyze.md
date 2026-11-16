@@ -4,7 +4,7 @@
 **Method:** Cross-artifact and S41 hostile review of the updated F17 spec-only scope after S43-R9 Sol-3/Sol-4.
 
 **S59 date update:** task-status and traceability evidence only (T031); no FR/SC/acceptance/plan text changed; 0 open CRITICAL/HIGH findings
-**S60 date update:** task-status and traceability evidence only (T043); no FR/SC/acceptance/plan text changed; 0 open CRITICAL/HIGH findings
+**S60 date update:** task-status and traceability evidence only (T043 partial); no FR/SC/acceptance/plan text changed; 0 open CRITICAL/HIGH findings
 
 ## Entry check at the start of the S44 lane (2026-11-10 05:43 UTC)
 
