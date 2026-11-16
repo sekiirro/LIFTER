@@ -6,6 +6,7 @@ import {
   buildWorkoutExportPayload,
   type WorkoutExportLibrary,
 } from '../../lib/workout-planner/export-payload';
+import { formatWorkoutPromptContent } from '../../lib/workout-planner/copy-prompt';
 import {
   EXCEL_COLUMNS,
   buildWorkoutWorkbook,
@@ -270,6 +271,20 @@ const HEADING_KEYS: MessageKey[] = EXCEL_COLUMNS.map(
 );
 
 describe('F17 Excel workbook (T038; FR-017, FR-018, SC-008)', () => {
+  it('renders the complete shared T038 payload in Copy AI Prompt content', () => {
+    const promptContent = formatWorkoutPromptContent(payload());
+    for (const value of [
+      PLAN_TITLE,
+      PLAN_IDENTITY,
+      PLAN_NOTES,
+      EXERCISE_NAME,
+      ALT_ONE_NAME,
+      ALT_ONE_VIDEO,
+      DIP_VIDEO,
+    ])
+      expect(promptContent).toContain(value);
+  });
+
   it('exports every FR-018 field with authored text preserved', async () => {
     const sheet = await roundTrip(buildWorkoutWorkbook(payload(), 'en'));
     const cells = atomsOf(sheet);

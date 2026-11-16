@@ -26,6 +26,44 @@ async function createWorkout(content: unknown, operationKey = randomUUID()) {
 }
 
 describe('F17 plan content attached to F19 Plan Core', () => {
+  it('exposes the selected published revision only through authorized workspace RLS', async () => {
+    const created = await createWorkout({
+      schema_version: 1,
+      notes: 'synthetic prompt note',
+      days: [],
+    });
+    expect(created.error).toBeNull();
+    const planId = String(created.data);
+    const [root] = await db()`
+      select created_by from public.plan_roots
+      where workspace_id=${fixture.workspaceId} and id=${planId}
+    `;
+    const revisionId = randomUUID();
+    await db()`insert into public.plan_revisions (id,workspace_id,plan_id,revision_number,source_draft_version,plan_kind,content,authored_by)
+      select ${revisionId},d.workspace_id,d.plan_id,1,d.draft_version,'workout',d.content,${root!.created_by}
+      from public.plan_drafts d where d.workspace_id=${fixture.workspaceId} and d.plan_id=${planId}`;
+    const read = (client: typeof fixture.context.trainerA.client) =>
+      client
+        .from('plan_revisions')
+        .select('id,workspace_id,plan_kind,content')
+        .eq('id', revisionId)
+        .eq('plan_kind', 'workout');
+    const [allowed, sales, foreign] = await Promise.all([
+      read(fixture.context.trainerA.client),
+      read(fixture.context.salesA.client),
+      read(fixture.context.trainerB.client),
+    ]);
+    expect(allowed.data).toMatchObject([
+      {
+        id: revisionId,
+        workspace_id: fixture.workspaceId,
+        plan_kind: 'workout',
+      },
+    ]);
+    expect(sales).toMatchObject({ error: null, data: [] });
+    expect(foreign).toMatchObject({ error: null, data: [] });
+  });
+
   it('uses F19 rows with composite workspace keys and no duplicate plan lifecycle tables', async () => {
     const [tables] = await db()`
       select
