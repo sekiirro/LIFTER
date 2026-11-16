@@ -3,7 +3,10 @@
 **Analyzed:** 2026-11-16 13:13 UTC
 **Method:** Cross-artifact and S41 hostile review of the updated F17 spec-only scope after S43-R9 Sol-3/Sol-4.
 
+**S58 date update (retained from base/PR side):** Re-dated after task-status and traceability evidence updates only; no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
 **S59 date update:** task-status and traceability evidence only (T031); no FR/SC/acceptance/plan text changed; 0 open CRITICAL/HIGH findings
+
+**S60 date update:** Re-dated after T016/T017 task-status and traceability evidence updates only; the negative matrix and mutation evidence are recorded in `verification.md`. No FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
 
 **S60 date update (2026-11-16):** Re-dated after T040 implementation, task status and traceability evidence updates only; no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
 
@@ -347,4 +350,14 @@ cells are stored as text.
 
 - T033 is ticked with evidence in `tasks.md`; `traceability.md` records the new UI test for FR-004/FR-005/SC-001 and `verification.md` records RED/GREEN/mutation.
 - No FR, SC, acceptance criteria, or plan design text changed.
+
+## T034 Date Update (2026-11-16)
+
+- Updated `tasks.md` (ticked `T034` only), `traceability.md` (FR-002/FR-003/SC-011 cite the T034 unit evidence; T034 verified, remaining UI/integration tasks open), and `verification.md` (T034 RED/GREEN/mutation/design-gate evidence).
+- No FR, SC, acceptance criteria, or plan design text changed (R6: Analyze itself is NOT re-dated).
+
+## S60 T018 Date Update (2026-11-16)
+
+- T018 task status and traceability evidence were updated after its tests passed, and verification records the database ledger mutation.
+- No FR, SC, acceptance criteria, or plan design text changed; existing analysis remains applicable.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
