@@ -99,3 +99,22 @@
 - **Mutation (DB-only scratch on Stack B; restored via safe reset; `git diff --exit-code` = 0)**:
   - Dropped `workout_template_assignment_c_workspace_id_global_template__key` (`UNIQUE (workspace_id, global_template_id)`) on `public.workout_template_assignment_copies` -> `tests/integration/workout-assignment-schema.test.ts` failed at line 236 (`AssertionError: promise resolved "undefined" instead of rejecting`), proving duplicate-on-retry succeeds when copy uniqueness is removed.
   - Restored Stack B via `db reset --local` + `tests/integration/client-accounts-provision.mjs` and verified `git diff --exit-code` on the migration is 0.
+
+## F17 Verification — T043 (s60-fl-f17t043)
+
+- **Branch / stack**: `017-plan-builder-slice-1` / NO DB stack (pure UI and document transforms).
+- **Implementation**:
+  - `components/workout-planner/WorkoutPlanBuilder.tsx` and `components/workout-planner/WorkoutPlanBuilder.module.css`.
+  - Added pure document transform functions to `lib/workout-planner/document.ts` (`reorderWorkoutItem`, `duplicateWorkoutItem`, `removeWorkoutItem`, `addWorkoutDay`, `reorderWorkoutDay`, `duplicateWorkoutDay`, `removeWorkoutDay`).
+  - Added PO-approved S28-PO-2 `builder.*` keys to `lib/i18n/messages/en.ts` and `ar.ts`.
+- **RED**: Initial test `tests/unit/WorkoutPlanBuilder.test.tsx` executed and failed before implementation.
+- **GREEN**: All 13 tests passed covering AR RTL, EN LTR, sessions/rest days, items, sets, notes, alternatives, reorder, cross-day move, duplicate, keyboard move controls, and rest-day rejection. Full unit suite green (278 files, 3,219 passed).
+- **Acceptance Tests**:
+  - Adding or moving an item to a rest day is rejected with `invalid_document` and no write (`onChange` is not called).
+  - A rejected move leaves the item on its source day.
+  - Rest days cannot display or retain items.
+- **Mutations (3/3 killed; restored; `git diff --exit-code` = 0)**:
+  - Mutation 1 (remove keyboard alternative): Removed `move-item-up` button -> test failed at line 347 (`expected 0 to be greater than 0`). Restored.
+  - Mutation 2 (remove ID preservation): Regenerated ID on reorder -> test failed at line 407 (`expected '...' to be 'bbbb1111-1111-4111-8111-111111111111'`). Restored.
+  - Mutation 3 (remove rest-day rejection): Removed rest-day rejection in document parser -> test failed at line 299 (`expected "vi.fn()" to not be called at all, but actually been called 1 times`). Restored.
+- **Design Gate Screenshots**: Rendered via Playwright across {AR-RTL, EN-LTR} × {light, dark} × {mobile 390px, desktop 1440px} saved to `C:/Users/NEW LAP/.lifter/runs/s60-fl-f17t043/screenshots/`.
