@@ -35,6 +35,117 @@ const document = (suffix: string) => ({
 });
 
 describe('F17 T023/T024 workout template RPCs', () => {
+  it('promotes as a separate PO-only global copy and marks unresolved private refs RED', async () => {
+    const privateId = randomUUID();
+    const sourceDocument = {
+      schema_version: 1,
+      days: [
+        {
+          id: randomUUID(),
+          kind: 'session',
+          items: [
+            {
+              id: randomUUID(),
+              exercise: {
+                source: 'workspace_private',
+                identity_id: privateId,
+                version: 1,
+                workspace_id: f.wsA.id,
+              },
+              name: 'Promoted private ref',
+              alternatives: [],
+              sets: [],
+            },
+          ],
+        },
+      ],
+    };
+
+    await db.begin(async (tx) => {
+      const sourceRows = await asActor(
+        tx,
+        f.trainerA.userId,
+        () =>
+          tx`select public.create_workout_workspace_template(${f.wsA.id}, 'Promote me', ${tx.json(sourceDocument)}, ${randomUUID()}) as result`,
+      );
+      const source = sourceRows[0]?.result as {
+        template_id: string;
+        version: number;
+      };
+
+      await expectRejected(
+        tx,
+        (sp) =>
+          asActor(
+            sp,
+            f.trainerA.userId,
+            () =>
+              sp`select public.promote_workout_workspace_template(${f.wsA.id}, ${source.template_id}, 1, ${randomUUID()})`,
+          ),
+        { code: '42501' },
+      );
+
+      const operationKey = randomUUID();
+      const promotedRows = await asActor(
+        tx,
+        f.po.userId,
+        () =>
+          tx`select public.promote_workout_workspace_template(${f.wsA.id}, ${source.template_id}, 1, ${operationKey}) as result`,
+      );
+      const promoted = promotedRows[0]?.result as {
+        template_id: string;
+        version: number;
+        unresolved_references: { path: string; status: string }[];
+      };
+
+      expect(promoted.template_id).not.toBe(source.template_id);
+      expect(promoted.version).toBe(1);
+      expect(promoted.unresolved_references).toEqual([
+        {
+          path: '$.days[0].items[0].exercise',
+          status: 'RED',
+        },
+      ]);
+      const replayRows = await asActor(
+        tx,
+        f.po.userId,
+        () =>
+          tx`select public.promote_workout_workspace_template(${f.wsA.id}, ${source.template_id}, 1, ${operationKey}) as result`,
+      );
+      expect(replayRows[0]?.result).toEqual(promoted);
+
+      await tx`select set_config('role', 'postgres', true)`;
+      const sourceAfter = await tx`
+        select t.lifecycle_state, t.current_version, v.document, v.title
+        from public.workout_workspace_templates t
+        join public.workout_workspace_template_versions v
+          on v.workspace_id = t.workspace_id and v.template_id = t.id and v.version = t.current_version
+        where t.workspace_id = ${f.wsA.id} and t.id = ${source.template_id}
+      `;
+      const globalCopy = await tx`
+        select g.origin_workspace_id, g.origin_workspace_template_id, g.origin_workspace_template_version,
+          v.document, v.title
+        from public.workout_global_templates g
+        join public.workout_global_template_versions v
+          on v.template_id = g.id and v.version = g.current_version
+        where g.id = ${promoted.template_id}
+      `;
+      expect(sourceAfter[0]).toMatchObject({
+        lifecycle_state: 'active',
+        current_version: 1,
+        title: 'Promote me',
+        document: sourceDocument,
+      });
+      expect(globalCopy[0]).toMatchObject({
+        origin_workspace_id: f.wsA.id,
+        origin_workspace_template_id: source.template_id,
+        origin_workspace_template_version: 1,
+        title: 'Promote me',
+        document: sourceDocument,
+      });
+    });
+  });
+
   it('enforces PO-only global CRUD, workspace coaching scope, immutable versions, CAS, and safe retirement', async () => {
     const marker = 'rollback_workout_template_rpc_fixture';
     try {

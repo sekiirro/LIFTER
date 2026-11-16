@@ -109,3 +109,12 @@
 - **Mutation (kill -> restore; component file matches pre-mutation bytes)**:
   - Removed the PO scope gate (`if (!allowed) return null;`) -> `non-PO roles render nothing` failed (WO rendered the wizard); restored.
   - Collapsed the state distinction (`skipped_existing` label -> `skipped_already_assigned`) -> `review shows all four receipt outcomes` failed (`Skipped: already has it` missing); restored.
+
+## F17 Verification — T028 (s60-luna-f17t028)
+
+- **Branch / stack**: `017-promote-global-slice-1` / Stack D (`lifter-stack-d`). Migration `20261120190001_f17_promote_workspace_template.sql` is in the lane-reserved `20261120190000–20261120195959` range.
+- **Implementation**: `public.promote_workout_workspace_template(uuid,uuid,integer,uuid)` checks platform-owner authorization before revealing source existence, checks the expected source version, creates a distinct global template identity and immutable version 1 with origin workspace/template/version provenance, copies only the validated workout-template document, preserves the workspace source, writes an audit event, and returns unresolved reference path/status flags. `app_private.f17_workout_template_unresolved_refs(jsonb,uuid)` checks pinned global/private exercise identity/version resolution and returns `RED` for unresolved or foreign workspace references. It is private and registered in the RLS function inventory. Loading is not implemented here; T029 owns load blocking.
+- **RED**: Added the promotion test before the migration; it failed with PostgreSQL `42883` because the promotion RPC did not exist. The existing T023/T024 cases passed.
+- **GREEN**: On Stack D after safe reset + synthetic fixture provisioning, `workout-template-rpcs.test.ts` passed 4/4 and `rls-catalog.test.ts` passed 43/43. Final restored migration also passed the promotion suite 4/4.
+- **Mutation (kill → restore)**: Temporarily changed the RPC to retire the source workspace template before creating its global copy. `workout-template-rpcs.test.ts` failed because source lifecycle was `retired` instead of `active`, proving source retention is asserted. Restored migration SHA-1 object hash: `84c1af8aebbc8cbaa7952450a126d51945997ef1` (same before mutation and after restore). Safe reset + provisioning performed after restoration.
+- **R6 Analyze note**: No FR, SC, acceptance-criterion, or plan design text changed; only implementation, tests, task status, traceability evidence, and verification evidence changed, so no Analyze re-date is needed.
