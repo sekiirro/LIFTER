@@ -58,3 +58,34 @@ Static source inspection only. No test suite was executed in this compliance lan
   `tests/integration/registration-approval-verification.md`.
 - FR-023 and SC-009 remain PARTIAL because T053/T054 UI coverage and implementation
   are still open; this supplement claims only T050/T051.
+
+## S64 S12-3 execution supplement — 2026-11-17
+
+Exact head `de2b1fa7613ec3185e9e20dc0a3352617244b3aa`, Stack A only, one PR.
+This supplement records executed evidence only; no FR/SC, acceptance-scenario or
+plan design text changed, so the 2026-11-17 status-only Analyze revalidation
+remains current. 29/29 FRs and 11/11 SCs remain mapped (40/40).
+
+| FR / SC                     | S64 evidence                                                                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-001 / ND1 role removal   | Q-M01 (TS) and Q-M02 (SQL) killed on this head; bidirectional `matrix-parity.test.ts` green in the full integration run.                                                                                                            |
+| FR-002..003                 | Q-M05, Q-M06 and Q-M12 killed; full Stack A integration green (2344 passed).                                                                                                                                                           |
+| FR-004..005 / 009..010      | Q-M07 killed; exact-original reversal and commission suites green; Q-M08/M21/M22 records retained from S14, not re-executed on this head.                                                                                            |
+| FR-006 / 008 / 017..018     | Q-M04 killed (forced RLS); role-denial e2e journeys green in T043; Q-M09/M13 historical records retained.                                                                                                                              |
+| FR-007                      | T043 client status journeys (pending, approved, rejected, reconsidered) and 12-cell axe matrix green.                                                                                                                                  |
+| FR-011..012                 | Q-M10 and Q-M11 killed; replay suite green. FR-011 deletion-state clauses remain owned by unticked T055.                                                                                                                              |
+| FR-013..015 / 025           | Correction coverage green in integration; Q-M15/M16 and historical Q-M08/M22 records; correction operationality is evidenced, production gate remains.                                                                               |
+| FR-016                      | Q-M17 killed; safe audit emission suite green.                                                                                                                                                                                          |
+| FR-019..021 / DG2..4        | T043 rendered staff/client journeys and axe matrix green; 18 retained screenshots byte-identical.                                                                                                                                       |
+| FR-022                      | Distribution-job emit remains owned by unticked T056; no evidence claimed.                                                                                                                                                              |
+| FR-023 / SC-009             | Q-M19 and Q-M20 killed on this head. T053/T054 remain PARTIAL pending the COPY-F12-T054 PO strings; no labels added.                                                                                                                  |
+| FR-024 / SC-010             | T043 status matrix and redirect/manual-fallback journeys green; Q-M23 source mutants survived the detector and are recorded as a gap, not a kill.                                                                                      |
+| FR-026..029                 | Q-M24 killed; CSRF/shape/error-scrub suite green in unit gate.                                                                                                                                                                          |
+| SC-001..003 / 005 / 007     | Full integration + killed money/ledger mutants; 1 expected fail and 6 skips are recorded, not treated as passes.                                                                                                                        |
+| SC-004 / 006 / 008 / 011    | T042/T043 e2e, full integration and mutation evidence; SC-012 still T055-owned.                                                                                                                                                         |
+
+T043 is evidenced and ticked; T045 and T046 are evidenced and ticked with the
+documented environment/external gaps; T047 is ticked after the pull_request CI
+record is attached. **T044 remains unticked**: 17 of 24 Q-M ids were killed on
+this head, Q-M23 survived, and Q-M03/M08/M09/M13/M21/M22 were not re-executed.
+T048 (architect review) is not ticked by this lane.
