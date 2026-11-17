@@ -76,6 +76,25 @@ async function remainsPlatformOwner(userId: string) {
   });
 }
 
+async function hasWorkspaceAccess(userId: string, workspaceId: string) {
+  return db.begin(async (tx) => {
+    await tx`select set_config('role', 'authenticated', true)`;
+    await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: userId, role: 'authenticated' })}, true)`;
+    const [row] =
+      await tx`select app_private.has_workspace_access(${workspaceId}::uuid, null) as allowed`;
+    return row?.allowed;
+  });
+}
+
+async function membershipCounts(userId: string) {
+  const [row] = await db`
+    select count(*)::int as total,
+      count(*) filter (where revoked_at is null)::int as active
+    from public.workspace_memberships where user_id = ${userId}
+  `;
+  return { total: Number(row?.total ?? 0), active: Number(row?.active ?? 0) };
+}
+
 describe('T021 final Platform Owner demotion characterization and RED cases', () => {
   let first: Awaited<ReturnType<typeof createStaff>>;
   let second: Awaited<ReturnType<typeof createStaff>>;
@@ -497,6 +516,210 @@ describe('T014 Workspace Owner roster boundary', () => {
         pg_catalog.has_table_privilege('authenticated', 'app_private.f3_platform_owner_state', 'UPDATE') as writable
     `;
     expect(counterAcl).toEqual({ readable: false, writable: false });
+  });
+});
+
+describe('T025/T027 revocation boundary and stale sessions', () => {
+  it('T025/T027(a) removes non-PO workspace access for the same signed session after revocation', async () => {
+    const po = await createStaff('platform_owner', 's63-t025-po');
+    const trainer = await createStaff('trainer', 's63-t025-trainer');
+    const otherTrainer = await createStaff('trainer', 's63-t025-other-trainer');
+    const workspace = await makeWorkspace(po, 'T025 revoked workspace');
+    const membership = await grantMembership(po, workspace.id, trainer.userId);
+    const otherMembership = await grantMembership(
+      po,
+      workspace.id,
+      otherTrainer.userId,
+    );
+
+    const beforeRead = await trainer.client
+      .from('workspaces')
+      .select('id')
+      .eq('id', workspace.id);
+    expect(beforeRead.error).toBeNull();
+    expect(beforeRead.data).toHaveLength(1);
+    expect(await hasWorkspaceAccess(trainer.userId, workspace.id)).toBe(true);
+
+    checked(
+      await po.client
+        .from('workspace_memberships')
+        .update({ revoked_at: new Date().toISOString(), revoked_by: po.userId })
+        .eq('id', membership.id),
+    );
+
+    const afterRead = await trainer.client
+      .from('workspaces')
+      .select('id')
+      .eq('id', workspace.id);
+    expect(afterRead.error).toBeNull();
+    expect(afterRead.data).toEqual([]);
+    expect(await hasWorkspaceAccess(trainer.userId, workspace.id)).toBe(false);
+
+    const deniedWorkspaceUpdate = await trainer.client
+      .from('workspaces')
+      .update({ name: 'T025 denied rename' })
+      .eq('id', workspace.id)
+      .select('id');
+    expect(
+      Boolean(deniedWorkspaceUpdate.error) ||
+        deniedWorkspaceUpdate.data?.length === 0,
+    ).toBe(true);
+    const [unchangedWorkspace] =
+      await db`select name from public.workspaces where id = ${workspace.id}`;
+    expect(unchangedWorkspace?.name).toBe('T025 revoked workspace');
+
+    const deniedWorkspace = await trainer.client
+      .from('workspaces')
+      .insert({
+        name: 'T025 denied workspace',
+        slug: `s63-${randomUUID()}`,
+        created_by: trainer.userId,
+      })
+      .select('id');
+    expect(
+      Boolean(deniedWorkspace.error) || deniedWorkspace.data?.length === 0,
+    ).toBe(true);
+
+    const deniedMembership = await trainer.client
+      .from('workspace_memberships')
+      .insert({
+        workspace_id: workspace.id,
+        user_id: trainer.userId,
+        granted_by: trainer.userId,
+      })
+      .select('id');
+    expect(
+      Boolean(deniedMembership.error) || deniedMembership.data?.length === 0,
+    ).toBe(true);
+
+    const deniedRevocation = await trainer.client
+      .from('workspace_memberships')
+      .update({
+        revoked_at: new Date().toISOString(),
+        revoked_by: trainer.userId,
+      })
+      .eq('id', otherMembership.id)
+      .select('id');
+    expect(
+      Boolean(deniedRevocation.error) || deniedRevocation.data?.length === 0,
+    ).toBe(true);
+    const [otherMembershipAfter] =
+      await db`select revoked_at from public.workspace_memberships where id = ${otherMembership.id}`;
+    expect(otherMembershipAfter?.revoked_at).toBeNull();
+
+    const deniedRole = await trainer.client
+      .from('staff_profiles')
+      .update({ role: 'workspace_owner' })
+      .eq('user_id', trainer.userId)
+      .select('user_id');
+    expect(Boolean(deniedRole.error) || deniedRole.data?.length === 0).toBe(
+      true,
+    );
+    expect(await roleOf(trainer.userId)).toBe('trainer');
+  });
+
+  it('T027(c) denies a Platform Owner session after the role is changed', async () => {
+    const po = await createStaff('platform_owner', 's63-t027-po');
+    const formerPo = await createStaff('platform_owner', 's63-t027-former-po');
+    const workspace = await makeWorkspace(po, 'T027 stale PO workspace');
+    const beforeRead = await formerPo.client
+      .from('workspaces')
+      .select('id')
+      .eq('id', workspace.id);
+    expect(beforeRead.error).toBeNull();
+    expect(beforeRead.data).toHaveLength(1);
+
+    checked(
+      await po.client
+        .from('staff_profiles')
+        .update({ role: 'trainer' })
+        .eq('user_id', formerPo.userId),
+    );
+
+    const afterRead = await formerPo.client
+      .from('workspaces')
+      .select('id')
+      .eq('id', workspace.id);
+    expect(afterRead.error).toBeNull();
+    expect(afterRead.data).toEqual([]);
+    expect(await remainsPlatformOwner(formerPo.userId)).toBe(false);
+    const deniedRole = await formerPo.client
+      .from('staff_profiles')
+      .update({ role: 'workspace_owner' })
+      .eq('user_id', po.userId)
+      .select('user_id');
+    expect(Boolean(deniedRole.error) || deniedRole.data?.length === 0).toBe(
+      true,
+    );
+    expect(await roleOf(po.userId)).toBe('platform_owner');
+  });
+});
+
+describe('T026 no automatic membership creation', () => {
+  it('does not add membership rows when revoking an existing member', async () => {
+    const po = await createStaff('platform_owner', 's63-t026a-po');
+    const member = await createStaff('trainer', 's63-t026a-member');
+    const workspace = await makeWorkspace(po, 'T026(a) workspace');
+    const membership = await grantMembership(po, workspace.id, member.userId);
+    const before = await membershipCounts(member.userId);
+    expect(before.total).toBeGreaterThanOrEqual(1);
+
+    checked(
+      await po.client
+        .from('workspace_memberships')
+        .update({ revoked_at: new Date().toISOString(), revoked_by: po.userId })
+        .eq('id', membership.id),
+    );
+
+    const after = await membershipCounts(member.userId);
+    expect(after.total).toBe(before.total);
+    expect(after.active).toBe(before.active - 1);
+  });
+
+  it('does not add rows during add-first transfer or its membership revocation', async () => {
+    const formerPo = await createStaff('platform_owner', 's63-t026b-former-po');
+    const replacement = await createStaff(null, 's63-t026b-replacement');
+    const workspace = await makeWorkspace(formerPo, 'T026(b) workspace');
+    const membership = await grantMembership(
+      formerPo,
+      workspace.id,
+      formerPo.userId,
+    );
+    const replacementBefore = await membershipCounts(replacement.userId);
+
+    checked(
+      await formerPo.client.from('staff_profiles').insert({
+        user_id: replacement.userId,
+        role: 'platform_owner',
+        display_name: testStaffDisplayName(),
+      }),
+    );
+    checked(
+      await formerPo.client
+        .from('staff_profiles')
+        .update({ role: 'trainer' })
+        .eq('user_id', formerPo.userId),
+    );
+    expect(await membershipCounts(replacement.userId)).toEqual(
+      replacementBefore,
+    );
+
+    const formerBeforeRevoke = await membershipCounts(formerPo.userId);
+    checked(
+      await replacement.client
+        .from('workspace_memberships')
+        .update({
+          revoked_at: new Date().toISOString(),
+          revoked_by: replacement.userId,
+        })
+        .eq('id', membership.id),
+    );
+    const formerAfterRevoke = await membershipCounts(formerPo.userId);
+    expect(formerAfterRevoke.total).toBe(formerBeforeRevoke.total);
+    expect(formerAfterRevoke.active).toBe(formerBeforeRevoke.active - 1);
+    expect(await membershipCounts(replacement.userId)).toEqual(
+      replacementBefore,
+    );
   });
 });
 
