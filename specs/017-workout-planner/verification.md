@@ -318,6 +318,17 @@
 
 - **RLS Catalog Update**: Appended minimal verification in `tests/integration/rls-catalog.test.ts` for `app_private.f17_workout_operation_keys` (forced RLS, zero client-role DML privileges) and narrow execute privileges for `public.f17_add_workout_exercise` and `public.f17_resolve_workout_exercise_muscles` (owner postgres, authenticated EXECUTE true, anon/service_role false, search_path="").
 
+## F17 Verification — T047/T051 current-main release gate (s63-luna-f17neg)
+
+- **Baseline / stack**: `b3cdd34c1d65d4aea6171276219a13e5cac7e612` (`origin/main` after fetching the PR #212 merge); Stack A only, worktree `LFTR-s63-luna-f17neg`. Merged PRs #206 and #212 are included.
+- **T047 scope**: Current main has 10 F17 tables and 14 plan/template/export RPCs from merged PRs #176, #181, #185, #192, #193, #206 and #212. The matrix covers foreign workspace and RLS visibility, including contributor action rows; direct DML denial; Sales, client, unaffiliated, revoked and foreign-workspace actor denials; PO-only global/assignment/promotion; replay/conflict and CAS; generic denials; export audit.
+- **RED / mutation**: Existing M01–M21 probes remain. This slice adds mutation kills for assignment, promotion, global load, draft save, publish authorization-before-validation, export audit authorization, contributor-table RLS, and contributor-row immutability (29 guard probes total). Each probe runs in a rolled-back savepoint; function mutants restore the original definition with an MD5 equality check.
+- **T051 fresh path**: Stack A `db reset --local` from an empty database completed through current migrations, including `20261122030000_f17_revision_contributor_actions.sql`; `client-accounts-provision.mjs` ran after reset.
+- **T051 upgrade path**: Stack A `db reset --local --version 20261122010000`, then provisioner, then `migration up --local`; applied `20261122030000_f17_revision_contributor_actions.sql` and `20261122060000_auth_recovery_limits_t031.sql` successfully.
+- **Migration identity gate**: `npm run check:migration-versions:remote` passed across 438 remote refs with no cross-ref version collision; `npm run check:migration-timestamps` validated every local migration. No migration was added by this lane, so the reserved 20261122080000–20261122085959 range was not consumed.
+- **Audit atomicity / DML**: `workout-export-audit.test.ts` injects an after-insert failure and verifies no audit row survives; `workout-negative-matrix.test.ts` checks all 10 F17 tables have no client-role DML and contributor RLS/immutability; `rls-catalog.test.ts` verifies audit_events grants and SECURITY DEFINER RPC access. `workout-contributors.test.ts` checks the merged action-code behavior.
+- **Final focused integration**: Stack A, 7 files / 96 tests passed after the #212 merge: `workout-negative-matrix.test.ts`, `workout-export-audit.test.ts`, `workout-contributors.test.ts`, `workout-assign-run.test.ts`, `rls-catalog.test.ts`, `f19-trainer-deletion.test.ts`, and `f19-plan-activation.test.ts`.
+
 ## F17 Verification — T050 performance benchmark and cap decision (s61-luna-f17t050)
 
 - **Branch / stack**: `017-perf-benchmark-slice-1` / Stack D (`lifter-stack-d`; API 45421, DB 45422). Stack D was reset through the approved safe wrapper and `tests/integration/client-accounts-provision.mjs` ran afterward. No migration was added.

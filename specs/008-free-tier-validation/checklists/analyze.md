@@ -150,3 +150,8 @@
 - Coverage: matrix totals unchanged (2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC); every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests or measurements ran and no verification status was upgraded. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S63 docs-only evidence (2026-11-17; date update only)
+
+- Scope: `tasks.md` status-only change; T013 ticked with Evidence (S63) citing the on-main FR-006 row/summary wording and main CI run 43995126788. `traceability.md` S63 evidence note added. No requirement text changed; T012 stays unchecked.
+- CRITICAL: 0 open; HIGH: 0 open.

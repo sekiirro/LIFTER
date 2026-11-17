@@ -33,4 +33,22 @@ describe('correction history answer labels', () => {
     expect(html).toContain(`>${messages['forms.no']}<`);
     expect(html).toContain('recorded value');
   });
+
+  it('uses Arabic boolean labels and preserves numeric display', () => {
+    const html = renderToStaticMarkup(
+      createElement(CorrectionHistory, {
+        locale: 'ar',
+        questions,
+        entries: [
+          { version: 1, answers: { consent: true } },
+          { version: 2, answers: { consent: false } },
+          { version: 3, answers: { consent: 42 } },
+        ],
+      }),
+    );
+    const messages = getMessages('ar');
+    expect(html).toContain(`>${messages['forms.yes']}<`);
+    expect(html).toContain(`>${messages['forms.no']}<`);
+    expect(html).toContain('٤٢');
+  });
 });

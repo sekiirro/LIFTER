@@ -466,3 +466,12 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T041 and T063 remain unchecked.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S63 pre-production deferral note - 2026-11-17 (date update only)
+
+- Scope: `tasks.md` status-note-only changes (T039, T040 and the T043 closure clause that depends
+  on T040 each record "Deferred to pre-production by S63-PO-4 (2026-11-17)" with a one-line reason;
+  none ticked) and a verbatim S63-PO-4 entry in the `spec.md` Clarifications (2026-11-03 session
+  block). No requirement text changed; no verification status upgraded; T041 stays open.
+- Findings: 0 open CRITICAL, 0 open HIGH. **No open ambiguities** remain for this note.
+- Verdict: PASS for this documentation-only correction.

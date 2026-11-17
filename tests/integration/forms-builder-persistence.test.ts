@@ -8,6 +8,10 @@ import {
   worker,
 } from './registration-approval-operations-fixture';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
+import {
+  validateAnswerSet,
+  type FormQuestion,
+} from '../../lib/forms/validation';
 import starter from '../../lib/forms/s14-starter-content.json';
 
 const db = sql();
@@ -296,6 +300,95 @@ it('rejects N12 and derived definitions with absent required selector metadata',
       select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
     expect(result!.valid).toBe(false);
   }
+});
+
+it('T081 keeps SQL and TypeScript derived-answer checks in parity', async () => {
+  const questions: FormQuestion[] = [
+    {
+      id: 'N07.meal_count',
+      sectionId: 'nutrition',
+      type: 'mealCount',
+      required: false,
+      choices: ['2', '3', '4', '5'],
+    },
+    {
+      id: 'N07.training_timing',
+      sectionId: 'nutrition',
+      type: 'derivedChoice',
+      required: false,
+      choices: [
+        'meal-1',
+        'meal-2',
+        'meal-3',
+        'meal-4',
+        'meal-5',
+        'before-first',
+        'no-fixed-time',
+      ],
+      derivedOptions: {
+        sourceQuestionId: 'N07.meal_count',
+        fixedChoices: ['before-first', 'no-fixed-time'],
+      },
+    },
+  ];
+  const snapshot = { questions };
+  const cases = [
+    {
+      answers: { 'N07.meal_count': '2', 'N07.training_timing': 'meal-3' },
+      valid: false,
+    },
+    { answers: { 'N07.training_timing': 'before-first' }, valid: false },
+    {
+      answers: { 'N07.meal_count': '2', 'N07.training_timing': 'meal-2' },
+      valid: true,
+    },
+  ];
+  for (const { answers, valid } of cases) {
+    const [sqlResult] = await db`
+      select app_private.f15_answer_values_valid(${db.json(snapshot)},${db.json(answers)}) as valid`;
+    expect(sqlResult?.valid).toBe(valid);
+    expect(validateAnswerSet(questions, answers).length === 0).toBe(valid);
+  }
+});
+
+it('T081 kills the SQL absent-selector guard mutant', async () => {
+  await withCrashSafeFunctionMutant(
+    'app_private.f15_answer_values_valid(jsonb,jsonb)',
+    (body) =>
+      body.replace(
+        "if source_id is null or jsonb_typeof(p_answers->source_id) is distinct from 'string' then return false; end if;",
+        'if source_id is null then return false; end if;',
+      ),
+    async () => {
+      const snapshot = {
+        questions: [
+          {
+            id: 'N07.training_timing',
+            type: 'derivedChoice',
+            choices: ['before-first'],
+            derivedOptions: {
+              sourceQuestionId: 'N07.meal_count',
+              fixedChoices: ['before-first'],
+            },
+          },
+        ],
+      };
+      const answers = { 'N07.training_timing': 'before-first' };
+      let namedAssertionFailed = false;
+      try {
+        const [result] = await db`
+          select app_private.f15_answer_values_valid(${db.json(snapshot)},${db.json(answers)}) as valid`;
+        expect(result?.valid).toBe(false);
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AssertionError') {
+          namedAssertionFailed = true;
+        } else {
+          throw error;
+        }
+      }
+      expect(namedAssertionFailed).toBe(true);
+    },
+  );
 });
 
 it('rejects a slider definition without its validation object', async () => {
@@ -738,10 +831,18 @@ describe('T006/T009 persisted Builder writes', () => {
         const copyVersion = await tx`
           select definition,status from public.form_versions
           where workspace_id=${fixture.workspaceId} and form_id=${copied[0]!.result.formId}`;
-        expect(copyVersion[0]).toMatchObject({
-          definition: definition(),
-          status: 'draft',
-        });
+        expect(copyVersion[0]?.status).toBe('draft');
+        expect(copyVersion[0]?.definition).toEqual(
+          copied[0]?.result.definition,
+        );
+        expect(copyVersion[0]?.definition.questions[1]?.choices).toEqual([
+          'one',
+          'two',
+        ]);
+        expect(
+          copyVersion[0]?.definition.questions[1]?.when.conditions[0]
+            ?.questionId,
+        ).toBe(copyVersion[0]?.definition.questions[0]?.id);
         throw rollback;
       }),
     ).rejects.toBe(rollback);
@@ -761,7 +862,7 @@ describe('T006/T009 persisted Builder writes', () => {
           values(${workspaceId},${actor},${actor})`;
         await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
           values(${policy},'terms','published')`;
-        const original = definition();
+        const original = structuredClone(starter);
         await tx`insert into public.forms(id,workspace_id,name)
           values(${formId},${workspaceId},'Snapshot source')`;
         await tx`insert into public.form_versions(
@@ -780,7 +881,7 @@ describe('T006/T009 persisted Builder writes', () => {
           where workspace_id=${workspaceId} and client_id=${client.id} and form_id=${formId}`;
 
         const saved = await tx`select app_private.save_workspace_form_draft(
-          ${workspaceId},${formId},1,${tx.json(definition('Later draft'))},${randomUUID()},${actor},'Snapshot source'
+          ${workspaceId},${formId},1,${tx.json(original)},${randomUUID()},${actor},'Snapshot source'
         ) as result`;
         expect(saved[0]?.result.status).toBe('ok');
         const published = await tx`select app_private.publish_workspace_form(
@@ -791,6 +892,43 @@ describe('T006/T009 persisted Builder writes', () => {
           ${workspaceId},${formId},${randomUUID()},${actor}
         ) as result`;
         expect(copied[0]?.result.status).toBe('ok');
+        const copiedDefinition = copied[0]?.result
+          .definition as typeof original;
+        const conditionalIndex = original.questions.findIndex(
+          (question) => question.when?.conditions.length,
+        );
+        const derivedIndex = original.questions.findIndex(
+          (question) => question.type === 'derivedChoice',
+        );
+        const conditionalTargetId =
+          original.questions[conditionalIndex]!.when!.conditions[0]!.questionId;
+        const conditionalTargetIndex = original.questions.findIndex(
+          (question) => question.id === conditionalTargetId,
+        );
+        const derivedTargetId =
+          original.questions[derivedIndex]!.derivedOptions!.sourceQuestionId;
+        const derivedTargetIndex = original.questions.findIndex(
+          (question) => question.id === derivedTargetId,
+        );
+        expect(conditionalIndex).toBeGreaterThanOrEqual(0);
+        expect(derivedIndex).toBeGreaterThanOrEqual(0);
+        expect(
+          copiedDefinition.questions[conditionalIndex]!.when!.conditions[0]!
+            .questionId,
+        ).toBe(copiedDefinition.questions[conditionalTargetIndex]!.id);
+        expect(
+          copiedDefinition.questions[derivedIndex]!.derivedOptions!
+            .sourceQuestionId,
+        ).toBe(copiedDefinition.questions[derivedTargetIndex]!.id);
+        expect(copiedDefinition.questions[derivedTargetIndex]!.id).not.toBe(
+          original.questions[derivedTargetIndex]!.id,
+        );
+        expect(
+          original.questions[conditionalIndex]!.when!.conditions[0]!.questionId,
+        ).toBe(conditionalTargetId);
+        expect(
+          original.questions[derivedIndex]!.derivedOptions!.sourceQuestionId,
+        ).toBe(derivedTargetId);
         const retired = await tx`select app_private.retire_workspace_form(
           ${workspaceId},${formId},${randomUUID()},${actor}
         ) as result`;
@@ -809,6 +947,59 @@ describe('T006/T009 persisted Builder writes', () => {
         throw rollback;
       }),
     ).rejects.toBe(rollback);
+  });
+
+  it('kills the T094 derived-option source remap mutant', async () => {
+    await withCrashSafeFunctionMutant(
+      'app_private.copy_workspace_form(uuid,uuid,uuid,uuid)',
+      (body) =>
+        body.replace(
+          "new_derived_options:=jsonb_set(new_derived_options,'{sourceQuestionId}',to_jsonb(question_map->>old_id),true);",
+          'new_derived_options:=new_derived_options;',
+        ),
+      async () => {
+        let namedAssertionFailed = false;
+        const mutationRollback = new Error('rollback T094 copy mutant probe');
+        await expect(
+          db.begin(async (tx) => {
+            const fixture = await workspace(tx);
+            const [source] = await tx`
+              select definition from public.form_versions
+              where workspace_id=${fixture.workspaceId} and form_id=${fixture.formId}
+              order by version_number desc limit 1`;
+            const copied = await tx`
+              select app_private.copy_workspace_form(
+                ${fixture.workspaceId},${fixture.formId},${randomUUID()},${fixture.actor}
+              ) as result`;
+            const sourceDefinition = source!.definition;
+            const derivedIndex = sourceDefinition.questions.findIndex(
+              (question: { derivedOptions?: { sourceQuestionId?: string } }) =>
+                question.derivedOptions?.sourceQuestionId,
+            );
+            const targetIndex = sourceDefinition.questions.findIndex(
+              (question: { id: string }) =>
+                question.id ===
+                sourceDefinition.questions[derivedIndex]!.derivedOptions!
+                  .sourceQuestionId,
+            );
+            try {
+              expect(
+                copied[0]?.result.definition.questions[derivedIndex]!
+                  .derivedOptions!.sourceQuestionId,
+              ).toBe(copied[0]?.result.definition.questions[targetIndex]!.id);
+            } catch (error) {
+              if (error instanceof Error && error.name === 'AssertionError') {
+                namedAssertionFailed = true;
+              } else {
+                throw error;
+              }
+            }
+            throw mutationRollback;
+          }),
+        ).rejects.toBe(mutationRollback);
+        expect(namedAssertionFailed).toBe(true);
+      },
+    );
   });
 
   it('rejects invalid authoring bounds and rolls back a write if its audit append fails', async () => {

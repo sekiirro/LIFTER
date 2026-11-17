@@ -8,6 +8,7 @@ import {
   request,
   sqlCall,
 } from './registration-approval-operations-fixture';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
@@ -57,13 +58,129 @@ async function seedAssignment(
     insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
     values(${context.wsA.id},${assignmentId},1,clock_timestamp())
   `;
-  return { assignmentId, answers };
+  return { assignmentId, answers, formId, policy };
 }
 
 async function act(tx: TransactionSql, userId: string) {
   await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: userId, role: 'authenticated' })},true)`;
   await tx`set local role authenticated`;
 }
+
+it('T082 validates corrections against the assigned snapshot and rejects stale revisions', async () => {
+  const context = await clientContext();
+  const client = await registered(context);
+  await expect(
+    db.begin(async (tx) => {
+      const assignment = await seedAssignment(
+        tx,
+        context,
+        client,
+        'T082 snapshot',
+      );
+      const newerDefinition = {
+        questions: [
+          { id: 'latest_only', sectionId: 'latest', type: 'shortText' },
+        ],
+      };
+      await tx`
+        insert into public.form_versions(
+          workspace_id,form_id,version_number,terms_policy_version,definition,status,published_at
+        ) values(
+          ${context.wsA.id},${assignment.formId},2,${assignment.policy},
+          ${tx.json(newerDefinition)},'published',clock_timestamp()
+        )`;
+      await act(tx, client.userId);
+      const [stale] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignment.assignmentId},2,${randomUUID()},
+          ${tx.json({ ordinary: 'stale correction' })},'synthetic stale revision'
+        ) as result`;
+      expect(stale?.result).toEqual({ status: 'conflict', revision: 1 });
+      const [latestOnly] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignment.assignmentId},1,${randomUUID()},
+          ${tx.json({ latest_only: 'not in assignment snapshot' })},'synthetic snapshot check'
+        ) as result`;
+      expect(latestOnly?.result).toEqual({ status: 'invalid' });
+      const [authorizedSnapshot] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignment.assignmentId},1,${randomUUID()},
+          ${tx.json({ ordinary: 'valid assignment snapshot correction' })},'synthetic valid correction'
+        ) as result`;
+      expect(authorizedSnapshot?.result).toMatchObject({
+        status: 'corrected',
+        revision: 2,
+      });
+      throw new Error('rollback T082 snapshot fixture');
+    }),
+  ).rejects.toThrow('rollback T082 snapshot fixture');
+});
+
+it('T082 kills correction validation that reads the latest form definition', async () => {
+  await withCrashSafeFunctionMutant(
+    'public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text,jsonb)',
+    (body) =>
+      body.replace(
+        /select a\.version_snapshot into snapshot\s+from public\.form_assignments a where a\.workspace_id=p_workspace_id and a\.id=p_assignment_id;/,
+        `select v.definition into snapshot
+  from public.form_assignments a
+  join public.form_versions v on v.workspace_id=a.workspace_id and v.form_id=a.form_id
+  where a.workspace_id=p_workspace_id and a.id=p_assignment_id
+  order by v.version_number desc limit 1;`,
+      ),
+    async () => {
+      const context = await clientContext();
+      const client = await registered(context);
+      let namedAssertionFailed = false;
+      await db.begin(async (tx) => {
+        const rollback = new Error('rollback T082 snapshot mutant');
+        await expect(
+          tx.savepoint(async (sp) => {
+            const assignment = await seedAssignment(
+              sp,
+              context,
+              client,
+              'T082 mutant',
+            );
+            const latestDefinition = {
+              questions: [
+                { id: 'latest_only', sectionId: 'latest', type: 'shortText' },
+              ],
+            };
+            await sp`
+            insert into public.form_versions(
+              workspace_id,form_id,version_number,terms_policy_version,definition,status,published_at
+            ) values(
+              ${context.wsA.id},${assignment.formId},2,${assignment.policy},
+              ${tx.json(latestDefinition)},'published',clock_timestamp()
+            )`;
+            await act(sp, client.userId);
+            try {
+              const [result] = await sp`
+              select public.correct_form_answer(
+                ${context.wsA.id},${assignment.assignmentId},1,${randomUUID()},
+                ${sp.json({ latest_only: 'must be outside snapshot' })},'synthetic snapshot mutant'
+              ) as result`;
+              expect(result?.result).toEqual({ status: 'invalid' });
+            } catch (error) {
+              if (
+                error instanceof Error &&
+                (error.name === 'AssertionError' ||
+                  error.message === 'invalid_form_answer_snapshot')
+              ) {
+                namedAssertionFailed = true;
+              } else {
+                throw error;
+              }
+            }
+            throw rollback;
+          }),
+        ).rejects.toBe(rollback);
+        expect(namedAssertionFailed).toBe(true);
+      });
+    },
+  );
+});
 
 it('T014 enforces correction and audited history access for Client, Trainer, WO, PO, and Sales', async () => {
   const context = await clientContext();
@@ -183,8 +300,12 @@ it('T014 enforces correction and audited history access for Client, Trainer, WO,
           `;
           try {
             expect(mutantRead?.result).toBeNull();
-          } catch {
-            crossTenantMutantKilled = true;
+          } catch (error) {
+            if (error instanceof Error && error.name === 'AssertionError') {
+              crossTenantMutantKilled = true;
+            } else {
+              throw error;
+            }
           }
           throw mutantRollback;
         }),
