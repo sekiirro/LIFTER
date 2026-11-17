@@ -10,6 +10,21 @@ import { evaluateProgression } from '../../lib/forms/progression';
 import starter from '../../lib/forms/s14-starter-content.json';
 
 describe('S14 form definition types and privacy metadata', () => {
+  it('T116 rejects malformed runtime question elements before answer access', () => {
+    const malformed = [
+      null,
+      'primitive',
+      5,
+      { type: 'shortText' },
+    ] as unknown as FormQuestion[];
+    expect(() =>
+      validateAnswerSet(malformed, { answer: 'value' }),
+    ).not.toThrow();
+    expect(validateAnswerSet(malformed, { answer: 'value' })).toContainEqual({
+      code: 'invalid_question',
+    });
+  });
+
   it('requires N08 food choices to match the selected budget', () => {
     const runtimeQuestions = starter.questions.map(
       (question) =>

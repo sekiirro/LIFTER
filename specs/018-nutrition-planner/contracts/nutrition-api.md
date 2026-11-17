@@ -65,6 +65,7 @@ Enforcement rules:
 1. Resolve the client from `auth.uid()`; require the plan belongs to that client, is in the client's workspace and has a current subscription (F19/F13 entitlement). No caller-supplied client or workspace is authority.
 2. Require `plan_version_id` to be the current published, delivered revision of that plan.
 3. Require `item_id` to exist in that immutable revision and `alternative_id` (when non-null) to be one of that item's approved alternatives.
+   Both values, when present, must be canonical lowercase UUIDv4 strings; malformed item or alternative ids return `invalid_selection`.
 4. Compare with the current selection. On a real change, upsert/delete the selection row and increment the durable `selection_revision` counter for the whole `(workspace_id, plan_version_id)` once; a clear deletes the selection row but retains the counter. Write one success audit event. Selecting the alternative already selected, or clearing when nothing is selected, is a successful **no-op**: no selection/counter write and no audit event (the operation key still records the result).
 5. Return only the selection state and its revision; never return coach content or another client's data.
 6. Failures are generic: `not_permitted`, `stale_version`, `invalid_selection`, `key_conflict`. A failure leaves selection/domain state unchanged and leaks no existence; a denied selection request still writes the required denial audit event (F18-FR-016).

@@ -1,0 +1,128 @@
+.editor {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--line-height-heading);
+  font-weight: 600;
+  color: var(--color-text);
+  text-wrap: balance;
+}
+
+.empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--line-height-body);
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-card-raised);
+}
+
+.name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  font-size: var(--text-sm);
+  line-height: var(--line-height-body);
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-full);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-fg);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.addBlock {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.addLabel {
+  font-size: var(--text-sm);
+  line-height: var(--line-height-body);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.addRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.select {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+  min-block-size: var(--touch-min);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-card);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.select:disabled {
+  color: var(--color-text-disabled);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .editor {
+    padding: var(--space-3);
+  }
+
+  .addRow {
+    flex-direction: column;
+  }
+
+  .select {
+    flex: none;
+  }
+}

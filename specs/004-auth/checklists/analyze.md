@@ -1,5 +1,10 @@
 # Spec Kit Analyze — F4 Authentication, S39 round 7
 
+- Date update (S54-R6): 2026-11-17 07:14 UTC. Recorded after the T031 task-status and
+  traceability evidence changes for FR-010. No FR/SC/acceptance or plan design text changed;
+  this is a date update only, not a new full Analyze. The four-column limits signature and
+  the approved values were already in data-model.md/plan.md/spec.md before this change.
+  0 open CRITICAL/HIGH findings.
 - Date: 2026-11-09 04:56 +02:00, after the last changes to spec.md, plan.md, tasks.md, traceability.md, copy-proposal.md and contracts/auth-surface.md in this round, and after the round-7 review fixes to spec.md (SC-016), traceability.md and tasks.md (T041/T041a, T048).
 - Scope: specification and planning only. No application code, SQL, migration, environment or test was changed or run.
 - Inputs: S39-PO-4 option 2 (English of the 13 former proposal rows approved as written); S39-PO-5 option 1 (Egyptian Arabic redraft approved exactly as in `runs/s39-haiku-f4-ar/copy-ar-redraft.md` "proposed Egyptian Arabic", plus the five-key term switch). Exact quoted extracts and mappings are in the round report; prior inputs are the S38 round-6 records.
@@ -164,3 +169,13 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## 2026-11-15 Analyze - v1 deferral record (date update only)
+
+- Scope: `tasks.md` status-only change; T047 records the PO-approved v1 deferral (S54-PO-8). No requirement text changed; T047 stays unchecked.
+- CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-17 Analyze - S63 docs-only evidence (date update only)
+
+- Scope: `tasks.md` status-only changes; T033 ticked with Evidence (S63) citing main code and main CI run 43995126788; T030/T046 record Status (S63) not-done notes. `traceability.md` S63 evidence section added. No requirement text changed; T030/T046 stay unchecked.
+- CRITICAL: 0 open; HIGH: 0 open.

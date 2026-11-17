@@ -253,3 +253,67 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed. **No open ambiguities** remain for this merge.
 - Verdict: PASS for this merge reconciliation.
+
+## 2026-11-16 S61-PO-1 (FX=B) full Analyze (Africa/Cairo)
+
+**Analyzed:** 2026-11-16 (Africa/Cairo), full cross-artifact pass over `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/packages-surface.md`, `quickstart.md`, `tasks.md`, `traceability.md`, `fx-coverage-verification.md` and `docs/04-changes-and-questions.md`.
+**Trigger:** PO decision S61-PO-1 "FX=B": Frankfurter v2 pinned to one named provider per currency on that provider's own publication calendar; amend FR-026, SC-017 and the T058 calendar fixtures.
+**Entry gate:** PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the amendment.
+
+- PASS (decision recorded): S61-PO-1 is in `spec.md` Clarifications (PO words "FX=B" verbatim, the option-B text separately quoted, architect mapping labelled as not PO words) and appended verbatim to `docs/04-changes-and-questions.md`; the ID is next-free (highest prior was S58-PO-8 on this branch and S60-PO-5 on other origin branches; the orchestrator re-numbers on merge if it collides).
+- PASS (consistency): FR-026, FR-031, SC-017, SC-022, acceptance scenario 8, the Edge-cases FX paragraph, plan (constraints, SK-009-09, dashboard, FX section, decision list, historical FX), data-model (snapshot, rounding, rules), research (reporting-FX exception, decision, platform note), contracts, quickstart, T058, T059, T067, T075 and traceability FR-026/FR-027 all state the same rule: `USD`→`CBE`, `SAR`→`SAMA`, `EGP`→1, provider's own calendar, latest prior valid publication strictly before the Africa/Cairo date. The verbatim S36-PO-3 quotation still says ECB/TARGET and is unchanged; the later amendment is stated separately.
+- PASS (scope): S36-PO-2/S36-PO-3 rounding, exact per-line conversion, EGP identity, pending/retry and unchanged payment rules are untouched. No FR/SC/task renumbered or added; no checkbox ticked.
+- PASS (data model): no migration is required; `data-model.md` specifies snapshot content (now also provider key) but no storage table for a reporting consumer exists yet (T072/T073); T059 is a pure server-only library.
+- PASS (T075 evidence): `fx-coverage-verification.md` addendum records live per-provider coverage, calendars, the range-endpoint carry-in behaviour and the single-date snap-back; the pre-decision verdict table is retained as history.
+- LOW (INFO): the earlier `analyze.md` line mentioning "ECB/TARGET holiday fixtures" (2026-11-03..) is historical and superseded by this section.
+- **BLOCKER (recorded, not assumed): provider terms of use for `CBE` and `SAMA` (and Frankfurter v2 service terms) could not be verified** - `https://www.cbe.org.eg/en/disclaimer` returns a client-rendered shell without text and `https://www.sama.gov.sa/en-us/pages/termsofuse.aspx` did not respond. This gates acceptance of T059/T075 and is part of the T062 independent security review (FX egress, provider verification, request-data minimization), which has NOT been started. It is a verification gate, not a product ambiguity, and does not reopen S61-PO-1.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 cross-reference findings (1 INFO above).
+- Verdict: PASS for the S61-PO-1 amendment; static review plus the unit tests named in tasks.md T058/T059. No integration, e2e or CI evidence yet.
+
+## 2026-11-16 Analyze (T064a/T064b record update; re-dated, no new product requirement)
+
+**Analyzed:** 2026-11-16. Recorded S61-PO-2 (Teardown Q1=A, Q2=A, Q3=A) in FR-006, FR-028, review.md and the decision register; folded independent review #1 conditions (PASS-WITH-CONDITIONS) into the T064b design (operator cleanup script, not a migration); T065 and `c5-audit-evidence.md` wording aligned; the preflight contract gained `real_catalog_row` and the Q1=A audit semantics. No FR/SC acceptance text changed beyond these decision references.
+
+- PASS: FR-006/FR-028 now cite the decision IDs; T065 names the operator script; the contract refusal codes match the T064a implementation.
+- PASS: this Analyze follows the latest spec, plan and task edits. 0 CRITICAL, 0 HIGH. T064b remains unticked pending independent re-review.
+
+## 2026-11-16 S61-PO-1 T062 review fold-in Analyze (Africa/Cairo)
+
+**Analyzed:** 2026-11-16 (Africa/Cairo), full pass over spec FR-026, `fx-coverage-verification.md`, `lib/packages/fx.ts` and the FX tests after the independent T062 review (PASS-WITH-CONDITIONS).
+
+- PASS (finding 1, MEDIUM): FR-026 now forbids freezing a rate before provider publication provably passed the day before the transaction (row dated on or after the Cairo date, or `FX_SETTLE_DAYS` = 3); otherwise pending; ready snapshots stay immutable. **`FX_SETTLE_DAYS` = 3 is an architect parameter needing PO/architect confirmation.** Tests cover Monday 00:30 Cairo before the Sunday row (pending), after the row and after the settle period (ready).
+- PASS (finding 4): `Object.hasOwn` pin guard before any network call and in `selectFxSnapshot`; tests for `EUR`, `constructor`, `__proto__`.
+- PASS (finding 3): per-pair plausibility bounds (`USD` 1..1000, `SAR` 0.5..300; architect parameters) with tests including 1e20.
+- PASS (findings 5-7, 11): content-length and streaming byte cap; the report builder flags (`flaggedLineIds`) a ready line whose provider does not match the pin and still totals the others; `timeoutMs` clamped. The optional one-request-per-currency-month helper was not added (not cheap enough; deferred).
+- ACCEPTED RESIDUAL RISK (finding 2): a blended series under a `SAMA` pin is not detectable; recorded in `fx-coverage-verification.md` pending PO/architect confirmation.
+- Still open: provider terms-of-use verification (blocker) and T062 final sign-off conditions; no checkbox ticked. IDs unchanged: S61-PO-1 = FX, S61-PO-2 = teardown.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions (2 architect parameters flagged); LOW: 0.
+
+## 2026-11-16 Analyze (T064b re-review N1-N6 and T065 record update; re-dated, no new product requirement)
+
+**Analyzed:** 2026-11-16. Re-review N1 defined "deletable" (FR-028, T065, `c5-audit-evidence.md`, review.md control 3, preflight contract); N2-N5 are implemented by the forward migration `20261121110000_f9_c5_package_preflight_v2.sql`; N6 lists the expected trigger set in review.md; T065 is implemented as an operator cleanup script outside `supabase/migrations` with integration tests (not yet executed in CI). No FR/SC acceptance text changed beyond the deletable definition.
+
+- PASS: FR-028, T065, review.md and the contract agree on the deletable definition and the NULL/empty input rules.
+- PASS: this Analyze follows the latest spec, plan and task edits. 0 CRITICAL, 0 HIGH. T064b remains unticked pending the independent re-review verdict; T065 unticked pending CI evidence.
+
+## 2026-11-16 Analyze (task ticks and review record, no requirement change)
+
+**Analyzed:** 2026-11-16. T052, T053, T058, T064, T064a and T064b ticked from exact-head CI evidence (PR #174 head 6073d263); review.md records the independent reviews and the closure of T064b. No FR, SC, acceptance scenario or plan design text changed.
+
+- PASS: tick evidence matches executed CI; T059, T062, T065, T070, T075 and T076 stay unticked with their blockers recorded (provider terms of use unverified; T070 conditions not re-reviewed; T076 retirement contract missing).
+- Findings: 0 open CRITICAL, 0 open HIGH. **No open ambiguities** beyond the recorded architect parameters (FX_SETTLE_DAYS, rate bounds).
+
+## 2026-11-16 Analyze (S61-PO-3 decision recorded)
+
+**Analyzed:** 2026-11-16. S61-PO-3 confirms FX_SETTLE_DAYS=3, the rate bounds, CBE for USD to EGP and the childless-mock rule. spec.md FR-026 now cites the decision instead of "awaiting confirmation". No other requirement text changed.
+
+- PASS: FR-026 matches the decision log.
+- Remaining blockers unchanged: provider terms of use (T059/T062/T075), T070 re-review, T076 retirement contract.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+
+## 2026-11-17 Analyze (merge audit; task-status only)
+
+**Analyzed:** 2026-11-17 02:29 UTC. Reviewed the merged F9 task-status evidence and review record, reconciled traceability with verified tasks, and confirmed no FR, SC, acceptance scenario, or plan design text changed. T064b is unticked because the recorded T065 script predates the T064b PASS.
+
+- PASS: requirements and product decisions unchanged; no new product ambiguity. 0 CRITICAL, 0 HIGH requirement findings.
+- FOLLOW-UP: architect to determine whether the T064b sequencing exception is acceptable for merge, or what additional evidence is required. T065 remains unticked and no teardown has run.

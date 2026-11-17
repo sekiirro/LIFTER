@@ -22,3 +22,7 @@ Static source inspection only. No tests, stacks, deployments, cloud queries, or 
 - Functional requirements: 2 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. FR-005 is PARTIAL because console output omits exact counts for tables outside the top 15 unless `--json` is used. FR-006 is PARTIAL because projection coverage is limited to the supplied 15 relations, omits other tables/database overhead, and treats `reltuples = -1` as one row.
 - Success criteria: 0 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Static verification only. T010/T011 remain historically checked but were not executed in this lane. ND-F8-1 is decided by S31-PO-4; ND-F8-2/3 remain open.
+
+## S63 docs-only evidence (2026-11-17; T013 tick)
+
+- T013 ticked: FR-006 row (:12) and Summary above state the at-most-15 supplied relations in `db-usage.mjs` and the omitted tables/overhead; FR-006 kept PARTIAL; no test evidence added or claimed. Evidence: main CI run 43995126788 validate success (spec-consistency FR/SC/task cross-checks over this file executed; file identical 9f80 to f25c2410).

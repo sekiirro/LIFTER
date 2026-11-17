@@ -13,9 +13,7 @@ const matrix = [
   { locale: 'en', theme: 'dark', width: 390, height: 844 },
   { locale: 'en', theme: 'dark', width: 1440, height: 1000 },
 ] as const;
-const baseOrigin = new URL(
-  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-).origin;
+const baseOrigin = new URL(process.env.PLAYWRIGHT_BASE_URL!).origin;
 
 for (const variant of matrix) {
   test(`${variant.locale} ${variant.theme} ${variant.width}px renders without axe violations`, async ({

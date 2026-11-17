@@ -279,3 +279,18 @@ Scope: Greptile PR #98 round-2 blocking findings. Aligned the Analyze rule wordi
 **Findings**: 0 CRITICAL, 0 HIGH. No open ambiguities remain.
 
 **Verdict**: PASS - 0 CRITICAL, 0 HIGH.
+
+## S63 docs-only evidence refresh - 2026-11-17 (date update only)
+
+- Scope: `tasks.md` status/evidence-only changes (T021, T025, T026, T027, T033 ticked with Evidence (S63); T020, T022, T028, T029, T030, T031, T032, T034 Status (S63) notes) and `traceability.md` union evidence additions. No requirement text changed; refresh evidence only, no requirement text changed.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for this documentation-only correction.
+
+## S63 evidence tick - 2026-11-17 (date update only)
+
+- Scope: `tasks.md` status-only change (T020 ticked with Evidence (S63): dispatch runs `44049662655`
+  and `44049669467` on main head `e50b553b646c000a9faaae53976bfca729205d20`, all required jobs
+  success) and `traceability.md` FR-021 row PENDING (platform-gated) to VERIFIED (dispatch, S63).
+  No requirement text changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguities remain.
+- Verdict: PASS for this documentation-only correction.

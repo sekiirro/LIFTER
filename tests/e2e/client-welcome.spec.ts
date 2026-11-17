@@ -5,9 +5,7 @@ import {
   registered,
 } from '../integration/registration-approval-operations-fixture';
 
-const origin = new URL(
-  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-).origin;
+const origin = new URL(process.env.PLAYWRIGHT_BASE_URL!).origin;
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 let clientCredentials: { email: string; password: string };

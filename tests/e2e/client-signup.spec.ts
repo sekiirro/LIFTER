@@ -10,7 +10,7 @@ import { expectHeroAxeClean } from './registration-hero-evidence';
 const origin =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.APP_ORIGIN ??
-  'http://localhost:3000';
+  process.env.PLAYWRIGHT_BASE_URL!;
 const s31ScreenshotDirectory =
   process.env.HERO_R17_SCREENSHOT_DIR ??
   join(tmpdir(), 'lifter-s31-hero-r18', 'signup-states');
