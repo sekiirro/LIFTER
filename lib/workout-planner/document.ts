@@ -397,3 +397,136 @@ export function removeWorkoutDay(
   current.days.splice(index, 1);
   return parseWorkoutDocumentV1(current);
 }
+
+export type WorkoutLoad =
+  | { mode: 'bodyweight' }
+  | { mode: 'added_weight' | 'assisted'; value: string; unit: 'kg' | 'lb' };
+
+export type WorkoutReps = { value: number } | { min: number; max: number };
+
+/** Update document-level plan notes. Reuses document validator (S60-D3). */
+export function updatePlanNotes(
+  document: WorkoutDocumentV1,
+  notes?: string,
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  if (notes !== undefined && notes !== '') {
+    current.notes = notes;
+  } else {
+    delete current.notes;
+  }
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Update day fields (title, notes, kind). Rejects switching to rest if day has items. Reuses document validator (S60-D3). */
+export function updateWorkoutDay(
+  document: WorkoutDocumentV1,
+  dayId: string,
+  patch: { title?: string; notes?: string; kind?: 'session' | 'rest' },
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) => d.id === dayId);
+  if (!day) return fail();
+  if (patch.title !== undefined) {
+    if (patch.title !== '') day.title = patch.title;
+    else delete day.title;
+  }
+  if (patch.notes !== undefined) {
+    if (patch.notes !== '') day.notes = patch.notes;
+    else delete day.notes;
+  }
+  if (patch.kind !== undefined) {
+    day.kind = patch.kind;
+  }
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Update exercise item fields (notes, reps, restSec, rir). Reuses document validator (S60-D3). */
+export function updateWorkoutItem(
+  document: WorkoutDocumentV1,
+  itemId: string,
+  patch: {
+    name?: string;
+    description?: string;
+    notes?: string;
+    reps?: WorkoutReps;
+    restSec?: number;
+    rir?: number;
+  },
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) =>
+    d.items.some((item) => item.id === itemId),
+  );
+  if (!day) return fail();
+  const item = day.items.find((i) => i.id === itemId);
+  if (!item) return fail();
+  if (patch.name !== undefined) item.name = patch.name;
+  if (patch.description !== undefined) {
+    if (patch.description !== '') item.description = patch.description;
+    else delete item.description;
+  }
+  if (patch.notes !== undefined) {
+    if (patch.notes !== '') item.notes = patch.notes;
+    else delete item.notes;
+  }
+  if ('reps' in patch) {
+    if (patch.reps !== undefined) item.reps = patch.reps;
+    else delete item.reps;
+  }
+  if ('restSec' in patch) {
+    if (patch.restSec !== undefined) item.restSec = patch.restSec;
+    else delete item.restSec;
+  }
+  if ('rir' in patch) {
+    if (patch.rir !== undefined) item.rir = patch.rir;
+    else delete item.rir;
+  }
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Update set row fields (type, load). Reuses document validator (S60-D3). */
+export function updateWorkoutSet(
+  document: WorkoutDocumentV1,
+  setId: string,
+  patch: {
+    type?: 'warmup' | 'working';
+    load?: WorkoutLoad;
+  },
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  let foundSet: WorkoutSet | undefined;
+  for (const day of current.days) {
+    for (const item of day.items) {
+      const s = item.sets.find((candidate) => candidate.id === setId);
+      if (s) {
+        foundSet = s;
+        break;
+      }
+    }
+    if (foundSet) break;
+  }
+  if (!foundSet) return fail();
+  if (patch.type !== undefined) foundSet.type = patch.type;
+  if (patch.load !== undefined) foundSet.load = patch.load;
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Remove an alternative from an item by index. */
+export function removeWorkoutAlternative(
+  document: WorkoutDocumentV1,
+  itemId: string,
+  alternativeIndex: number,
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) =>
+    d.items.some((item) => item.id === itemId),
+  );
+  if (!day) return fail();
+  const item = day.items.find((i) => i.id === itemId);
+  if (!item || !Array.isArray(item.alternatives)) return fail();
+  if (alternativeIndex < 0 || alternativeIndex >= item.alternatives.length)
+    return fail();
+  item.alternatives.splice(alternativeIndex, 1);
+  return parseWorkoutDocumentV1(current);
+}

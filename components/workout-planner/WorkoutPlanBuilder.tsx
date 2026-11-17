@@ -10,10 +10,15 @@ import {
   duplicateWorkoutItem,
   moveWorkoutItem,
   parseWorkoutDocumentV1,
+  removeWorkoutAlternative,
   removeWorkoutDay,
   removeWorkoutItem,
   reorderWorkoutDay,
   reorderWorkoutItem,
+  updatePlanNotes,
+  updateWorkoutDay,
+  updateWorkoutItem,
+  updateWorkoutSet,
   type WorkoutDocumentV1,
 } from '../../lib/workout-planner/document';
 import type {
@@ -239,14 +244,23 @@ export function WorkoutPlanBuilder({
         </div>
       </header>
 
-      {doc.notes && (
-        <div className={styles.planNotesBlock}>
-          <span className={styles.itemDescription}>
-            {m['builder.planNotes']}
-          </span>
-          <p style={{ margin: 0 }}>{doc.notes}</p>
-        </div>
-      )}
+      <div className={styles.planNotesBlock}>
+        <span className={styles.itemDescription}>{m['builder.planNotes']}</span>
+        {doc.notes && <p style={{ margin: 0 }}>{doc.notes}</p>}
+        <textarea
+          id="plan-notes-textarea"
+          className={styles.textarea}
+          data-field="plan-notes"
+          aria-label={m['builder.planNotes']}
+          placeholder={m['builder.planNotes']}
+          value={doc.notes ?? ''}
+          onChange={(e) => {
+            const val = e.target.value;
+            commit(() => updatePlanNotes(doc, val));
+          }}
+          disabled={readOnly}
+        />
+      </div>
 
       <div className={styles.daysList}>
         <h3 className={styles.title} style={{ fontSize: 'var(--text-lg)' }}>
@@ -276,6 +290,56 @@ export function WorkoutPlanBuilder({
                   {day.notes && (
                     <span className={styles.dayNotes}>({day.notes})</span>
                   )}
+                  <input
+                    type="text"
+                    className={styles.input}
+                    data-field="day-title"
+                    aria-label={m['builder.dayTitle']}
+                    placeholder={
+                      isRest ? m['builder.restDayTitle'] : m['builder.dayTitle']
+                    }
+                    value={day.title ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      commit(() =>
+                        updateWorkoutDay(doc, day.id, { title: val }),
+                      );
+                    }}
+                    disabled={readOnly}
+                  />
+
+                  <input
+                    type="text"
+                    className={styles.input}
+                    data-field="day-notes"
+                    aria-label={m['builder.dayNotes']}
+                    placeholder={m['builder.dayNotes']}
+                    value={day.notes ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      commit(() =>
+                        updateWorkoutDay(doc, day.id, { notes: val }),
+                      );
+                    }}
+                    disabled={readOnly}
+                  />
+
+                  <select
+                    className={styles.select}
+                    data-field="day-kind"
+                    aria-label={m['builder.dayTitle']}
+                    value={day.kind}
+                    onChange={(e) => {
+                      const nextKind = e.target.value as 'session' | 'rest';
+                      commit(() =>
+                        updateWorkoutDay(doc, day.id, { kind: nextKind }),
+                      );
+                    }}
+                    disabled={readOnly}
+                  >
+                    <option value="session">{m['builder.dayTitle']}</option>
+                    <option value="rest">{m['builder.restDayTitle']}</option>
+                  </select>
                 </div>
 
                 <div className={styles.dayActions}>
@@ -444,35 +508,194 @@ export function WorkoutPlanBuilder({
                           </div>
 
                           <div className={styles.itemMeta}>
-                            {item.reps && (
-                              <span>
-                                {m['builder.reps']}:{' '}
-                                <Bidi>
-                                  {'value' in item.reps
-                                    ? String(item.reps.value)
-                                    : `${item.reps.min}-${item.reps.max}`}
-                                </Bidi>
-                              </span>
-                            )}
-                            {item.restSec !== undefined && (
-                              <span>
-                                {m['workout.export.restSec']}:{' '}
-                                <Bidi>{item.restSec}s</Bidi>
-                              </span>
-                            )}
-                            {item.rir !== undefined && (
-                              <span>
-                                {m['workout.export.rir']}:{' '}
-                                <Bidi>{item.rir}</Bidi>
-                              </span>
-                            )}
-                            {item.alternatives &&
-                              item.alternatives.length > 0 && (
-                                <span className={styles.alternativesBadge}>
-                                  {m['builder.alternatives']}:{' '}
-                                  <Bidi>{item.alternatives.length}</Bidi>
-                                </span>
+                            <div className={styles.inlineGroup}>
+                              <label className={styles.label}>
+                                {m['builder.repsMode']}
+                              </label>
+                              <select
+                                className={styles.select}
+                                data-field="reps-mode"
+                                aria-label={m['builder.repsMode']}
+                                value={
+                                  item.reps && 'min' in item.reps
+                                    ? 'range'
+                                    : 'fixed'
+                                }
+                                onChange={(e) => {
+                                  const mode = e.target.value;
+                                  if (mode === 'fixed') {
+                                    const val =
+                                      item.reps && 'min' in item.reps
+                                        ? item.reps.min
+                                        : 8;
+                                    commit(() =>
+                                      updateWorkoutItem(doc, item.id, {
+                                        reps: { value: val },
+                                      }),
+                                    );
+                                  } else {
+                                    const min =
+                                      item.reps && 'value' in item.reps
+                                        ? item.reps.value
+                                        : 8;
+                                    commit(() =>
+                                      updateWorkoutItem(doc, item.id, {
+                                        reps: { min, max: min + 2 },
+                                      }),
+                                    );
+                                  }
+                                }}
+                                disabled={readOnly}
+                              >
+                                <option value="fixed">
+                                  {m['builder.fixedReps']}
+                                </option>
+                                <option value="range">
+                                  {m['builder.repRange']}
+                                </option>
+                              </select>
+
+                              {item.reps && 'min' in item.reps ? (
+                                <>
+                                  <label className={styles.label}>
+                                    {m['builder.min']}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    className={`${styles.input} ${styles.tableInput}`}
+                                    data-field="reps-min"
+                                    aria-label={m['builder.min']}
+                                    value={item.reps.min}
+                                    min="1"
+                                    max="100"
+                                    onChange={(e) => {
+                                      const min = parseInt(e.target.value, 10);
+                                      const max =
+                                        item.reps && 'max' in item.reps
+                                          ? item.reps.max
+                                          : 10;
+                                      commit(() =>
+                                        updateWorkoutItem(doc, item.id, {
+                                          reps: { min, max },
+                                        }),
+                                      );
+                                    }}
+                                    disabled={readOnly}
+                                  />
+                                  <label className={styles.label}>
+                                    {m['builder.max']}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    className={`${styles.input} ${styles.tableInput}`}
+                                    data-field="reps-max"
+                                    aria-label={m['builder.max']}
+                                    value={item.reps.max}
+                                    min="1"
+                                    max="100"
+                                    onChange={(e) => {
+                                      const max = parseInt(e.target.value, 10);
+                                      const min =
+                                        item.reps && 'min' in item.reps
+                                          ? item.reps.min
+                                          : 1;
+                                      commit(() =>
+                                        updateWorkoutItem(doc, item.id, {
+                                          reps: { min, max },
+                                        }),
+                                      );
+                                    }}
+                                    disabled={readOnly}
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <label className={styles.label}>
+                                    {m['builder.reps']}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    className={`${styles.input} ${styles.tableInput}`}
+                                    data-field="reps-value"
+                                    aria-label={m['builder.reps']}
+                                    value={
+                                      item.reps && 'value' in item.reps
+                                        ? item.reps.value
+                                        : ''
+                                    }
+                                    min="1"
+                                    max="100"
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value, 10);
+                                      commit(() =>
+                                        updateWorkoutItem(doc, item.id, {
+                                          reps: { value: val },
+                                        }),
+                                      );
+                                    }}
+                                    disabled={readOnly}
+                                  />
+                                </>
                               )}
+                            </div>
+
+                            <div className={styles.inlineGroup}>
+                              <label className={styles.label}>
+                                {m['builder.restHint']}
+                              </label>
+                              <input
+                                type="number"
+                                className={`${styles.input} ${styles.tableInput}`}
+                                data-field="item-rest"
+                                aria-label={m['builder.restHint']}
+                                placeholder={m['builder.restHint']}
+                                min="0"
+                                max="600"
+                                step="15"
+                                value={item.restSec ?? ''}
+                                onChange={(e) => {
+                                  const val =
+                                    e.target.value === ''
+                                      ? undefined
+                                      : parseInt(e.target.value, 10);
+                                  commit(() =>
+                                    updateWorkoutItem(doc, item.id, {
+                                      restSec: val,
+                                    }),
+                                  );
+                                }}
+                                disabled={readOnly}
+                              />
+                            </div>
+
+                            <div className={styles.inlineGroup}>
+                              <label className={styles.label}>
+                                {m['builder.rirHint']}
+                              </label>
+                              <input
+                                type="number"
+                                className={`${styles.input} ${styles.tableInput}`}
+                                data-field="item-rir"
+                                aria-label={m['builder.rirHint']}
+                                placeholder={m['builder.rirHint']}
+                                min="0"
+                                max="5"
+                                step="1"
+                                value={item.rir ?? ''}
+                                onChange={(e) => {
+                                  const val =
+                                    e.target.value === ''
+                                      ? undefined
+                                      : parseInt(e.target.value, 10);
+                                  commit(() =>
+                                    updateWorkoutItem(doc, item.id, {
+                                      rir: val,
+                                    }),
+                                  );
+                                }}
+                                disabled={readOnly}
+                              />
+                            </div>
                           </div>
 
                           {item.notes && (
@@ -480,6 +703,68 @@ export function WorkoutPlanBuilder({
                               <em>{item.notes}</em>
                             </p>
                           )}
+
+                          <div className={styles.field}>
+                            <label className={styles.label}>
+                              {m['builder.exerciseNotes']}
+                            </label>
+                            <input
+                              type="text"
+                              className={styles.input}
+                              data-field="item-notes"
+                              aria-label={m['builder.exerciseNotes']}
+                              placeholder={m['builder.exerciseNotes']}
+                              value={item.notes ?? ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                commit(() =>
+                                  updateWorkoutItem(doc, item.id, {
+                                    notes: val,
+                                  }),
+                                );
+                              }}
+                              disabled={readOnly}
+                            />
+                          </div>
+
+                          {item.alternatives &&
+                            item.alternatives.length > 0 && (
+                              <div className={styles.alternativesList}>
+                                <span className={styles.alternativesBadge}>
+                                  {m['builder.alternatives']}:{' '}
+                                  <Bidi>{item.alternatives.length}</Bidi>
+                                </span>
+                                {item.alternatives.map((_, altIdx) => (
+                                  <div
+                                    key={altIdx}
+                                    className={styles.alternativeItem}
+                                  >
+                                    <span>
+                                      {m['builder.alternativeExercise']}{' '}
+                                      <Bidi>{altIdx + 1}</Bidi>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className={styles.btn}
+                                      data-action="remove-alternative"
+                                      aria-label={`${m['builder.removeAlternative']} ${altIdx + 1}`}
+                                      onClick={() => {
+                                        commit(() =>
+                                          removeWorkoutAlternative(
+                                            doc,
+                                            item.id,
+                                            altIdx,
+                                          ),
+                                        );
+                                      }}
+                                      disabled={readOnly}
+                                    >
+                                      {m['builder.removeAlternative']}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
 
                           <div className={styles.setsContainer}>
                             <div
@@ -509,6 +794,7 @@ export function WorkoutPlanBuilder({
                                   <tr>
                                     <th>#</th>
                                     <th>{m['builder.setType']}</th>
+                                    <th>{m['builder.loadMode']}</th>
                                     <th>{m['builder.load']}</th>
                                     <th></th>
                                   </tr>
@@ -518,21 +804,6 @@ export function WorkoutPlanBuilder({
                                     const loadMode = (
                                       set.load as { mode: string }
                                     )?.mode;
-                                    let loadText = m['builder.bodyweight'];
-                                    if (
-                                      loadMode === 'added_weight' ||
-                                      loadMode === 'assisted'
-                                    ) {
-                                      const l = set.load as {
-                                        value: string;
-                                        unit: string;
-                                      };
-                                      const prefix =
-                                        loadMode === 'assisted'
-                                          ? `${m['builder.assisted']} `
-                                          : '';
-                                      loadText = `${prefix}${l.value} ${l.unit}`;
-                                    }
 
                                     return (
                                       <tr key={set.id} data-set-id={set.id}>
@@ -540,12 +811,196 @@ export function WorkoutPlanBuilder({
                                           <Bidi>{sIdx + 1}</Bidi>
                                         </td>
                                         <td>
-                                          {set.type === 'warmup'
-                                            ? m['builder.warmup']
-                                            : m['builder.working']}
+                                          <select
+                                            className={`${styles.select} ${styles.tableSelect}`}
+                                            data-field="set-type"
+                                            aria-label={m['builder.setType']}
+                                            value={set.type}
+                                            onChange={(e) => {
+                                              const nextType = e.target
+                                                .value as 'warmup' | 'working';
+                                              commit(() =>
+                                                updateWorkoutSet(doc, set.id, {
+                                                  type: nextType,
+                                                }),
+                                              );
+                                            }}
+                                            disabled={readOnly}
+                                          >
+                                            <option value="warmup">
+                                              {m['builder.warmup']}
+                                            </option>
+                                            <option value="working">
+                                              {m['builder.working']}
+                                            </option>
+                                          </select>
                                         </td>
                                         <td>
-                                          <Bidi>{loadText}</Bidi>
+                                          <select
+                                            className={`${styles.select} ${styles.tableSelect}`}
+                                            data-field="load-mode"
+                                            aria-label={m['builder.loadMode']}
+                                            value={loadMode}
+                                            onChange={(e) => {
+                                              const mode = e.target.value;
+                                              if (mode === 'bodyweight') {
+                                                commit(() =>
+                                                  updateWorkoutSet(
+                                                    doc,
+                                                    set.id,
+                                                    {
+                                                      load: {
+                                                        mode: 'bodyweight',
+                                                      },
+                                                    },
+                                                  ),
+                                                );
+                                              } else {
+                                                const nextMode = mode as
+                                                  'added_weight' | 'assisted';
+                                                const currentVal =
+                                                  loadMode === 'added_weight' ||
+                                                  loadMode === 'assisted'
+                                                    ? (
+                                                        set.load as {
+                                                          value: string;
+                                                        }
+                                                      ).value
+                                                    : '10.0';
+                                                const currentUnit =
+                                                  loadMode === 'added_weight' ||
+                                                  loadMode === 'assisted'
+                                                    ? (
+                                                        set.load as {
+                                                          unit: 'kg' | 'lb';
+                                                        }
+                                                      ).unit
+                                                    : 'kg';
+                                                commit(() =>
+                                                  updateWorkoutSet(
+                                                    doc,
+                                                    set.id,
+                                                    {
+                                                      load: {
+                                                        mode: nextMode,
+                                                        value: currentVal,
+                                                        unit: currentUnit,
+                                                      },
+                                                    },
+                                                  ),
+                                                );
+                                              }
+                                            }}
+                                            disabled={readOnly}
+                                          >
+                                            <option value="bodyweight">
+                                              {m['builder.bodyweight']}
+                                            </option>
+                                            <option value="added_weight">
+                                              {m['builder.load']}
+                                            </option>
+                                            <option value="assisted">
+                                              {m['builder.assisted']}
+                                            </option>
+                                          </select>
+                                        </td>
+                                        <td>
+                                          {loadMode === 'bodyweight' ? (
+                                            <span
+                                              className={styles.itemDescription}
+                                            >
+                                              {m['builder.bodyweight']}
+                                            </span>
+                                          ) : (
+                                            <div className={styles.inlineGroup}>
+                                              <input
+                                                type="text"
+                                                className={`${styles.input} ${styles.tableInput}`}
+                                                data-field="load-value"
+                                                aria-label={
+                                                  m['builder.loadValue']
+                                                }
+                                                placeholder={
+                                                  m['builder.loadValue']
+                                                }
+                                                value={
+                                                  (
+                                                    set.load as {
+                                                      value: string;
+                                                    }
+                                                  ).value
+                                                }
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  const unit = (
+                                                    set.load as {
+                                                      unit: 'kg' | 'lb';
+                                                    }
+                                                  ).unit;
+                                                  commit(() =>
+                                                    updateWorkoutSet(
+                                                      doc,
+                                                      set.id,
+                                                      {
+                                                        load: {
+                                                          mode: loadMode as
+                                                            | 'added_weight'
+                                                            | 'assisted',
+                                                          value: val,
+                                                          unit,
+                                                        },
+                                                      },
+                                                    ),
+                                                  );
+                                                }}
+                                                disabled={readOnly}
+                                              />
+                                              <select
+                                                className={`${styles.select} ${styles.tableSelect}`}
+                                                data-field="load-unit"
+                                                aria-label={m['builder.unit']}
+                                                value={
+                                                  (
+                                                    set.load as {
+                                                      unit: 'kg' | 'lb';
+                                                    }
+                                                  ).unit
+                                                }
+                                                onChange={(e) => {
+                                                  const unit = e.target
+                                                    .value as 'kg' | 'lb';
+                                                  const val = (
+                                                    set.load as {
+                                                      value: string;
+                                                    }
+                                                  ).value;
+                                                  commit(() =>
+                                                    updateWorkoutSet(
+                                                      doc,
+                                                      set.id,
+                                                      {
+                                                        load: {
+                                                          mode: loadMode as
+                                                            | 'added_weight'
+                                                            | 'assisted',
+                                                          value: val,
+                                                          unit,
+                                                        },
+                                                      },
+                                                    ),
+                                                  );
+                                                }}
+                                                disabled={readOnly}
+                                              >
+                                                <option value="kg">
+                                                  {m['builder.kg']}
+                                                </option>
+                                                <option value="lb">
+                                                  {m['builder.lb']}
+                                                </option>
+                                              </select>
+                                            </div>
+                                          )}
                                         </td>
                                         <td>
                                           <button

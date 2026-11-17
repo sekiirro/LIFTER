@@ -27,6 +27,22 @@ function renderBuilder(props: WorkoutPlanBuilderProps): HTMLDivElement {
   return container;
 }
 
+function fireChange(
+  element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
+  value: string,
+): void {
+  const prototype =
+    element instanceof HTMLTextAreaElement
+      ? window.HTMLTextAreaElement.prototype
+      : element instanceof HTMLSelectElement
+        ? window.HTMLSelectElement.prototype
+        : window.HTMLInputElement.prototype;
+  const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
+  descriptor?.set?.call(element, value);
+  element.dispatchEvent(new Event('input', { bubbles: true }));
+  element.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -592,6 +608,492 @@ describe('WorkoutPlanBuilder UI (T043; FR-002, FR-024, SC-012)', () => {
         '[data-item-id="bbbb1111-1111-4111-8111-111111111111"]',
       );
       expect(itemWithAlt?.textContent).toContain(en['builder.alternatives']);
+    });
+  });
+
+  describe('Editable fields (Slice 2: notes, reps, set values/load/rest/RIR, day title/kind)', () => {
+    it('allows editing plan notes', () => {
+      const doc = createSampleDocument();
+      const onChange = vi.fn();
+      const host = renderBuilder({ document: doc, locale: 'en', onChange });
+
+      const planNotesInput = host.querySelector<HTMLTextAreaElement>(
+        '[data-field="plan-notes"]',
+      );
+      expect(planNotesInput).toBeTruthy();
+      expect(planNotesInput?.value).toBe('Sample plan general notes');
+
+      act(() => {
+        if (planNotesInput) {
+          fireChange(planNotesInput, 'Updated plan notes by coach');
+        }
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const updatedDoc = onChange.mock.calls[0]![0] as WorkoutDocumentV1;
+      expect(updatedDoc.notes).toBe('Updated plan notes by coach');
+    });
+
+    it('allows editing day title and day notes', () => {
+      const doc = createSampleDocument();
+      const onChange = vi.fn();
+      const host = renderBuilder({ document: doc, locale: 'en', onChange });
+
+      const dayCard = host.querySelector(
+        '[data-day-id="aaaa1111-1111-4111-8111-111111111111"]',
+      );
+      expect(dayCard).toBeTruthy();
+
+      const dayTitleInput = dayCard?.querySelector<HTMLInputElement>(
+        '[data-field="day-title"]',
+      );
+      expect(dayTitleInput).toBeTruthy();
+      expect(dayTitleInput?.value).toBe('Upper Body A');
+
+      act(() => {
+        if (dayTitleInput) {
+          fireChange(dayTitleInput, 'Chest & Shoulders Heavy');
+        }
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange.mock.calls[0]![0].days[0].title).toBe(
+        'Chest & Shoulders Heavy',
+      );
+
+      const dayNotesInput = dayCard?.querySelector<HTMLInputElement>(
+        '[data-field="day-notes"]',
+      );
+      expect(dayNotesInput).toBeTruthy();
+      expect(dayNotesInput?.value).toBe('Focus on chest and triceps');
+
+      act(() => {
+        if (dayNotesInput) {
+          fireChange(dayNotesInput, 'Warm up rotator cuffs thoroughly');
+        }
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(2);
+      expect(onChange.mock.calls[1]![0].days[0].notes).toBe(
+        'Warm up rotator cuffs thoroughly',
+      );
+    });
+
+    it('allows editing day kind and rejects converting a session day with items to rest day', () => {
+      const doc = createSampleDocument();
+      const onChange = vi.fn();
+      const onError = vi.fn();
+      const host = renderBuilder({
+        document: doc,
+        locale: 'en',
+        onChange,
+        onError,
+      });
+
+      // Day 1 has 2 items -> switching kind to rest must reject with invalid_document
+      const day1Card = host.querySelector(
+        '[data-day-id="aaaa1111-1111-4111-8111-111111111111"]',
+      );
+      const day1KindSelect = day1Card?.querySelector<HTMLSelectElement>(
+        '[data-field="day-kind"]',
+      );
+      expect(day1KindSelect).toBeTruthy();
+      expect(day1KindSelect?.value).toBe('session');
+
+      act(() => {
+        if (day1KindSelect) {
+          fireChange(day1KindSelect, 'rest');
+        }
+      });
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+      expect((onError.mock.calls[0]![0] as Error).message).toBe(
+        'invalid_document',
+      );
+
+      // Now add a blank session day and switch it to rest -> should succeed
+      const addSessionBtn = Array.from(
+        host.querySelectorAll<HTMLButtonElement>('header button'),
+      ).find((b) => b.textContent?.includes(en['builder.addSession']));
+      expect(addSessionBtn).toBeTruthy();
+      act(() => {
+        addSessionBtn?.click();
+      });
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const docWithEmptySession = onChange.mock
+        .calls[0]![0] as WorkoutDocumentV1;
+      const emptyDay =
+        docWithEmptySession.days[docWithEmptySession.days.length - 1]!;
+      expect(emptyDay.kind).toBe('session');
+      expect(emptyDay.items.length).toBe(0);
+
+      // Re-render with new doc containing empty session day
+      onChange.mockClear();
+      onError.mockClear();
+      const updatedHost = renderBuilder({
+        document: docWithEmptySession,
+        locale: 'en',
+        onChange,
+        onError,
+      });
+
+      const emptyDayCard = updatedHost.querySelector(
+        `[data-day-id="${emptyDay.id}"]`,
+      );
+      const emptyDayKindSelect = emptyDayCard?.querySelector<HTMLSelectElement>(
+        '[data-field="day-kind"]',
+      );
+      expect(emptyDayKindSelect).toBeTruthy();
+
+      act(() => {
+        if (emptyDayKindSelect) {
+          fireChange(emptyDayKindSelect, 'rest');
+        }
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const docAfterKindChange = onChange.mock
+        .calls[0]![0] as WorkoutDocumentV1;
+      const changedDay = docAfterKindChange.days.find(
+        (d) => d.id === emptyDay.id,
+      );
+      expect(changedDay?.kind).toBe('rest');
+    });
+
+    it('allows editing exercise notes, rest, and RIR with document validator bounds', () => {
+      const doc = createSampleDocument();
+      const onChange = vi.fn();
+      const onError = vi.fn();
+      const host = renderBuilder({
+        document: doc,
+        locale: 'en',
+        onChange,
+        onError,
+      });
+
+      const itemCard = host.querySelector(
+        '[data-item-id="bbbb1111-1111-4111-8111-111111111111"]',
+      );
+      expect(itemCard).toBeTruthy();
+
+      // Edit exercise notes
+      const notesInput = itemCard?.querySelector<HTMLInputElement>(
+        '[data-field="item-notes"]',
+      );
+      expect(notesInput).toBeTruthy();
+      expect(notesInput?.value).toBe('Pause 1s at chest');
+
+      act(() => {
+        if (notesInput) {
+          fireChange(notesInput, 'Control the eccentric phase');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange.mock.calls[0]![0].days[0].items[0].notes).toBe(
+        'Control the eccentric phase',
+      );
+
+      // Edit restSec (multiple of 15)
+      const restInput = itemCard?.querySelector<HTMLInputElement>(
+        '[data-field="item-rest"]',
+      );
+      expect(restInput).toBeTruthy();
+      expect(restInput?.value).toBe('120');
+
+      act(() => {
+        if (restInput) {
+          fireChange(restInput, '90');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(2);
+      expect(onChange.mock.calls[1]![0].days[0].items[0].restSec).toBe(90);
+
+      // Invalid restSec (e.g. 95 not divisible by 15) rejected via validator (S60-D3)
+      act(() => {
+        if (restInput) {
+          fireChange(restInput, '95');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(2); // no new write
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+
+      // Edit RIR (0 to 5)
+      const rirInput = itemCard?.querySelector<HTMLInputElement>(
+        '[data-field="item-rir"]',
+      );
+      expect(rirInput).toBeTruthy();
+      expect(rirInput?.value).toBe('2');
+
+      act(() => {
+        if (rirInput) {
+          fireChange(rirInput, '3');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(3);
+      expect(onChange.mock.calls[2]![0].days[0].items[0].rir).toBe(3);
+
+      // Invalid RIR (> 5) rejected via validator (S60-D3)
+      act(() => {
+        if (rirInput) {
+          fireChange(rirInput, '7');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(3);
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('allows editing exercise reps in fixed mode and range mode with bounds validation', () => {
+      const doc = createSampleDocument();
+      const onChange = vi.fn();
+      const onError = vi.fn();
+      const host = renderBuilder({
+        document: doc,
+        locale: 'en',
+        onChange,
+        onError,
+      });
+
+      // Item 1 has fixed reps { value: 8 }
+      const item1Card = host.querySelector(
+        '[data-item-id="bbbb1111-1111-4111-8111-111111111111"]',
+      );
+      const repsModeSelect = item1Card?.querySelector<HTMLSelectElement>(
+        '[data-field="reps-mode"]',
+      );
+      expect(repsModeSelect).toBeTruthy();
+      expect(repsModeSelect?.value).toBe('fixed');
+
+      const repsValueInput = item1Card?.querySelector<HTMLInputElement>(
+        '[data-field="reps-value"]',
+      );
+      expect(repsValueInput).toBeTruthy();
+      expect(repsValueInput?.value).toBe('8');
+
+      act(() => {
+        if (repsValueInput) {
+          fireChange(repsValueInput, '10');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange.mock.calls[0]![0].days[0].items[0].reps).toEqual({
+        value: 10,
+      });
+
+      // Switch to range mode
+      act(() => {
+        if (repsModeSelect) {
+          fireChange(repsModeSelect, 'range');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(2);
+      expect(onChange.mock.calls[1]![0].days[0].items[0].reps).toEqual({
+        min: 8,
+        max: 10,
+      });
+
+      // Item 2 has range reps { min: 6, max: 8 }
+      const item2Card = host.querySelector(
+        '[data-item-id="bbbb2222-2222-4222-8222-222222222222"]',
+      );
+      const minInput = item2Card?.querySelector<HTMLInputElement>(
+        '[data-field="reps-min"]',
+      );
+      const maxInput = item2Card?.querySelector<HTMLInputElement>(
+        '[data-field="reps-max"]',
+      );
+      expect(minInput?.value).toBe('6');
+      expect(maxInput?.value).toBe('8');
+
+      // Edit min to 5
+      act(() => {
+        if (minInput) {
+          fireChange(minInput, '5');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(3);
+      expect(onChange.mock.calls[2]![0].days[0].items[1].reps).toEqual({
+        min: 5,
+        max: 8,
+      });
+
+      // Invalid range: min > max (e.g. min 12, max 8) rejected by validator (S60-D3)
+      act(() => {
+        if (minInput) {
+          fireChange(minInput, '12');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(3); // no write
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('allows editing set type (warmup/working) and set load modes (bodyweight/added_weight/assisted)', () => {
+      const doc = createSampleDocument();
+      const onChange = vi.fn();
+      const onError = vi.fn();
+      const host = renderBuilder({
+        document: doc,
+        locale: 'en',
+        onChange,
+        onError,
+      });
+
+      // Target set 1: id 'cccc1111-1111-4111-8111-111111111111' (warmup, bodyweight)
+      const set1Row = host.querySelector(
+        'tr[data-set-id="cccc1111-1111-4111-8111-111111111111"]',
+      );
+      expect(set1Row).toBeTruthy();
+
+      // Change set type from warmup to working
+      const setTypeSelect = set1Row?.querySelector<HTMLSelectElement>(
+        '[data-field="set-type"]',
+      );
+      expect(setTypeSelect).toBeTruthy();
+      expect(setTypeSelect?.value).toBe('warmup');
+
+      act(() => {
+        if (setTypeSelect) {
+          fireChange(setTypeSelect, 'working');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange.mock.calls[0]![0].days[0].items[0].sets[0].type).toBe(
+        'working',
+      );
+
+      // Change load mode from bodyweight to added_weight
+      const loadModeSelect = set1Row?.querySelector<HTMLSelectElement>(
+        '[data-field="load-mode"]',
+      );
+      expect(loadModeSelect).toBeTruthy();
+      expect(loadModeSelect?.value).toBe('bodyweight');
+
+      act(() => {
+        if (loadModeSelect) {
+          fireChange(loadModeSelect, 'added_weight');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(2);
+      expect(
+        onChange.mock.calls[1]![0].days[0].items[0].sets[0].load.mode,
+      ).toBe('added_weight');
+
+      // Now target set 2: id 'cccc2222-2222-4222-8222-222222222222' (added_weight 80.0 kg)
+      const set2Row = host.querySelector(
+        'tr[data-set-id="cccc2222-2222-4222-8222-222222222222"]',
+      );
+      const loadValueInput = set2Row?.querySelector<HTMLInputElement>(
+        '[data-field="load-value"]',
+      );
+      const loadUnitSelect = set2Row?.querySelector<HTMLSelectElement>(
+        '[data-field="load-unit"]',
+      );
+      expect(loadValueInput?.value).toBe('80.0');
+      expect(loadUnitSelect?.value).toBe('kg');
+
+      // Edit value and unit
+      act(() => {
+        if (loadValueInput) {
+          fireChange(loadValueInput, '92.5');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(3);
+      expect(onChange.mock.calls[2]![0].days[0].items[0].sets[1].load).toEqual({
+        mode: 'added_weight',
+        value: '92.5',
+        unit: 'kg',
+      });
+
+      // Switch load mode to assisted
+      const set2LoadModeSelect = set2Row?.querySelector<HTMLSelectElement>(
+        '[data-field="load-mode"]',
+      );
+      act(() => {
+        if (set2LoadModeSelect) {
+          fireChange(set2LoadModeSelect, 'assisted');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(4);
+      expect(
+        onChange.mock.calls[3]![0].days[0].items[0].sets[1].load.mode,
+      ).toBe('assisted');
+
+      // Invalid load value (e.g. 0 or negative) rejected by validator (S60-D3)
+      act(() => {
+        if (loadValueInput) {
+          fireChange(loadValueInput, '0');
+        }
+      });
+      expect(onChange).toHaveBeenCalledTimes(4); // no write
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('allows removing an alternative from an exercise item', () => {
+      const doc = createSampleDocument();
+      const onChange = vi.fn();
+      const host = renderBuilder({ document: doc, locale: 'en', onChange });
+
+      const itemWithAlt = host.querySelector(
+        '[data-item-id="bbbb1111-1111-4111-8111-111111111111"]',
+      );
+      const removeAltBtn = itemWithAlt?.querySelector<HTMLButtonElement>(
+        'button[data-action="remove-alternative"]',
+      );
+      expect(removeAltBtn).toBeTruthy();
+
+      act(() => {
+        removeAltBtn?.click();
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const updatedItem = onChange.mock.calls[0]![0].days[0].items[0];
+      expect(updatedItem.alternatives.length).toBe(0);
+    });
+
+    it('renders all editable field labels with byte-exact approved Arabic translations in RTL', () => {
+      const doc = createSampleDocument();
+      const host = renderBuilder({ document: doc, locale: 'ar' });
+
+      // Plan notes placeholder / label
+      const planNotes = host.querySelector<HTMLTextAreaElement>(
+        '[data-field="plan-notes"]',
+      );
+      expect(planNotes?.getAttribute('aria-label')).toBe(
+        ar['builder.planNotes'],
+      );
+
+      // Day title & notes
+      const dayTitle = host.querySelector<HTMLInputElement>(
+        '[data-field="day-title"]',
+      );
+      expect(dayTitle?.getAttribute('aria-label')).toBe(ar['builder.dayTitle']);
+
+      const dayNotes = host.querySelector<HTMLInputElement>(
+        '[data-field="day-notes"]',
+      );
+      expect(dayNotes?.getAttribute('aria-label')).toBe(ar['builder.dayNotes']);
+
+      // Reps mode options
+      const repsMode = host.querySelector<HTMLSelectElement>(
+        '[data-field="reps-mode"]',
+      );
+      expect(repsMode?.textContent).toContain(ar['builder.fixedReps']);
+      expect(repsMode?.textContent).toContain(ar['builder.repRange']);
+
+      // Load mode options
+      const loadMode = host.querySelector<HTMLSelectElement>(
+        '[data-field="load-mode"]',
+      );
+      expect(loadMode?.textContent).toContain(ar['builder.bodyweight']);
+      expect(loadMode?.textContent).toContain(ar['builder.load']);
+      expect(loadMode?.textContent).toContain(ar['builder.assisted']);
+
+      // Set type options
+      const setType = host.querySelector<HTMLSelectElement>(
+        '[data-field="set-type"]',
+      );
+      expect(setType?.textContent).toContain(ar['builder.warmup']);
+      expect(setType?.textContent).toContain(ar['builder.working']);
     });
   });
 });
