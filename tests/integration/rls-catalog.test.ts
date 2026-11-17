@@ -474,6 +474,7 @@ describe('tenancy security catalog (T007)', () => {
           'package_c5_preflight',
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
+          'f19_set_plan_revision_contributor_actions',
         ]),
       ].sort(),
     );
@@ -536,6 +537,7 @@ describe('tenancy security catalog (T007)', () => {
         'package_c5_preflight',
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
+        'f19_set_plan_revision_contributor_actions',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -611,6 +613,7 @@ describe('tenancy security catalog (T007)', () => {
           'f3_lock_platform_owner_state',
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
+          'f19_set_plan_revision_contributor_actions',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -806,6 +809,7 @@ describe('tenancy security catalog (T007)', () => {
               'f18_invalid_uuid_alias',
               'f19_guard_plan_revision_contributors',
               'f19_track_plan_draft_contributor',
+              'f19_set_plan_revision_contributor_actions',
             ].includes(row.proname)),
       );
     }

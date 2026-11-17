@@ -53,6 +53,82 @@ async function holdIdentity(workspaceId: string, globalId: string) {
 }
 
 describe('F17 T025 assign run RPC', () => {
+  it('T027 skips a held v1 copy when assigning the newer global v2', async () => {
+    const globalId = await seedGlobal('Source v1');
+    const heldId = await holdIdentity(f.wsA.id, globalId);
+    const nextDocument = {
+      schema_version: 1,
+      days: [{ id: randomUUID(), kind: 'session', items: [] }],
+    };
+    await db.begin(async (tx) => {
+      await tx`insert into public.workout_global_template_versions (
+        template_id, version, title, schema_version, document, created_by
+      ) values (${globalId}, 2, 'Source v2', 1, ${tx.json(nextDocument)}, ${f.po.userId})`;
+      await tx`update public.workout_global_templates set current_version = 2 where id = ${globalId}`;
+    });
+
+    const result = await db.begin(async (tx) =>
+      asPo(tx, async () => {
+        const rows = await tx`select public.assign_workout_templates(
+          'specific', ${[globalId]}::uuid[], null, 'specific_workspaces', ${[f.wsA.id, f.wsB.id]}::uuid[], ${randomUUID()}
+        ) as result`;
+        return rows[0]?.result as {
+          items: Array<{
+            workspace_id: string;
+            outcome: string;
+            created_copy_ids: string[];
+            skipped_template_ids: string[];
+          }>;
+        };
+      }),
+    );
+
+    expect(result.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          workspace_id: f.wsA.id,
+          outcome: 'no_copies',
+          created_copy_ids: [],
+          skipped_template_ids: [globalId],
+        }),
+        expect.objectContaining({
+          workspace_id: f.wsB.id,
+          outcome: 'assigned',
+        }),
+      ]),
+    );
+    const retained = await db`
+      select t.id, t.current_version, t.origin_global_template_version, v.version, v.title
+      from public.workout_workspace_templates t
+      join public.workout_workspace_template_versions v
+        on v.workspace_id = t.workspace_id and v.template_id = t.id
+      where t.workspace_id = ${f.wsA.id} and t.id = ${heldId}
+    `;
+    expect(retained).toMatchObject([
+      {
+        id: heldId,
+        current_version: 1,
+        origin_global_template_version: 1,
+        version: 1,
+        title: 'Held copy',
+      },
+    ]);
+    const createdId = result.items.find(
+      (item) => item.workspace_id === f.wsB.id,
+    )?.created_copy_ids[0];
+    if (!createdId) throw new Error('Version 2 assignment copy id is missing');
+    const created = await db`
+      select t.origin_global_template_version, v.version, v.title
+      from public.workout_workspace_templates t
+      join public.workout_workspace_template_versions v
+        on v.workspace_id = t.workspace_id and v.template_id = t.id
+      where t.workspace_id = ${f.wsB.id} and t.id = ${createdId}
+    `;
+    expect(created).toMatchObject([
+      { origin_global_template_version: 2, version: 1, title: 'Source v2' },
+    ]);
+  });
+
   it('records mixed no_copies and assigned workspace receipts, and rejects a zero-total run before writes', async () => {
     const globalId = await seedGlobal('Mixed outcome template');
     const heldId = await holdIdentity(f.wsA.id, globalId);
