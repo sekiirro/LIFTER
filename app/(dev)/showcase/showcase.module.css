@@ -101,6 +101,10 @@
 .demoContent {
   display: grid;
   gap: var(--space-4);
+  /* Shell demos use the approved 64rem content lane the inline-start rail is
+     positioned against, so the rail never overlaps content at >= 1024px. */
+  inline-size: min(100% - 2 * var(--space-4), 64rem);
+  margin-inline: auto;
   padding: var(--space-6);
 }
 .roleLink {

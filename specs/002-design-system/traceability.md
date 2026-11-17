@@ -4,6 +4,8 @@ Targeted verification executed on current local head `6233642ced5fddc9e695eb28cf
 
 Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b57d404`, `d9b9fd7`; merged PR #28 head/approved SHA `12bcad944c9366f17afc00a36bd14586c5f2e77a`.
 
+S63 Q16/Q5 implementation lane (s63-hy4-shell): executed `npx playwright test tests/e2e/shell-q16.spec.ts tests/e2e/shell.spec.ts tests/e2e/a11y.spec.ts` on port 3000 with `LIFTER_SHOWCASE=1` — 41 passed, 14 project-skipped, 0 failed. RED (before the 64rem fix): 13 failed / 0 passed. Mutation (breakpoint reverted to 75rem): 4 failed / 0 passed; restored and re-ran green. New spec `tests/e2e/shell-q16.spec.ts` carries the FR-021/FR-027/FR-028, SC-009/010/011 assertions; screenshots in `~/.lifter/runs/s63-hy4-shell/shots/`.
+
 | Requirement | Task(s) | Test(s) / evidence | Status |
 |---|---|---|---|
 | FR-001 | T006, T008 | `tests/unit/tokens-contrast.test.ts::keeps body and muted text readable on both surfaces`; `tests/unit/tokens-css.test.ts` selector/token assertions | VERIFIED |
@@ -26,14 +28,14 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | FR-018 | T027, T030, T031, T032 | `tests/e2e/components.spec.ts::Retry increments the demonstration counter` and `::a11y` showcase matrix | VERIFIED |
 | FR-019 | T028, T029, T030, T031, T032 | `tests/e2e/components.spec.ts::toast uses the pre-existing polite region without moving focus, and dismisses`; `::auto-dismisses after five active seconds and pauses for hover and focus` | VERIFIED |
 | FR-020 | T006, T011, T023, T027, T032 | `tests/e2e/components.spec.ts::reduces button transitions and disables skeleton shimmer` | VERIFIED |
-| FR-021 | T036, T047, T048, T050, T051 | Existing responsive-shell evidence at the pre-Q5 implementation breakpoint; Q16/Q5 1024px sidebar and 1024–1199px content-clearance tasks remain unchecked pending implementation/browser verification (T034's `min-width: 48rem` / provisional ND-3 does not describe FR-021; the 48rem value is superseded by S31-PO-7 Q5) | PARTIAL |
+| FR-021 | T036, T047, T048, T050, T051 | `tests/e2e/shell-q16.spec.ts::sidebar variant, inline-start placement and icons-only default at 1024 and 1440`; `::content clears the fixed rail at 1024-1440`; `::each icon name is shown on pointer hover and keyboard focus at 1024 and 1440`; `tests/e2e/shell.spec.ts::desktop navigation preserves the content lane across responsive widths`, `::mobile ${role} bottom bar has ordered visible labels and 44px targets` (below 1024px) | VERIFIED |
 | FR-022 | T033, T034, T036 | `tests/unit/navigation.test.ts::defines the exact trainer order, labels, and icons`; `::defines the exact client order, labels, and icons`; shell role cases | VERIFIED |
 | FR-023 | T001, T002, T014, T018, T021, T030, T035, T040 | `tests/unit/showcase-gate.test.ts::enables only the exact flag`; `tests/e2e/theme-locale.spec.ts::uses device colors without a theme cookie and serves the enabled showcase` | VERIFIED |
 | FR-024 | T037, T038, T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; `specs/002-design-system/print-spike.md` | VERIFIED |
 | FR-025 | T041 | Constitution v1.1.0, D-18, and Architecture v3 UI-row diffs in commit `b57d404`; no test applicable to document content | PARTIAL |
 | FR-026 | T040 | `specs/002-design-system/plan.md` decision table is present; no executable asserting test is applicable or recorded | PARTIAL |
-| FR-027 | T043, T044, T045, T047, T050, T051 | Existing PR #28 evidence in checked T043-T045, plus unchecked Q16/Q5 follow-up tasks T047, T050, and T051 (implementation and screenshot) | PARTIAL |
-| FR-028 | T043, T048, T049 | Existing unit tests cover fallback selection and the browser test covers over-budget focus identity; T048-T049 remain unchecked for all fallback conditions | PARTIAL |
+| FR-027 | T043, T044, T045, T047, T050, T051 | Existing PR #28 evidence in checked T043-T045; `tests/e2e/shell-q16.spec.ts::sidebar variant, inline-start placement and icons-only default at 1024 and 1440` and `::each icon name is shown on pointer hover and keyboard focus at 1024 and 1440` verify the Q16 vertical Liquid Glass sidebar | VERIFIED |
+| FR-028 | T043, T048, T049 | Existing unit fallback-selection tests, plus `tests/e2e/shell-q16.spec.ts::static fallback keeps the focused rail link as the identical node` (over-budget condition at 1024px); T049 full fallback matrix remains unchecked for the other conditions | PARTIAL |
 | FR-029 | T045 | `tests/unit/glass-popover-menu.test.tsx::opens on ArrowUp at the last item and on ArrowDown at the first`; `::moves focus with arrows and wraps at either end`; `::supports Home and End and closes without trapping Tab`; `::returns focus to the trigger on Escape`; `::activates the focused item with Space`; `tests/e2e/glass.spec.ts::popover ArrowDown navigation works after enhancement` | VERIFIED |
 | SC-001 | T007 | `tests/unit/tokens-contrast.test.ts` contrast assertions for both modes and sample colors | VERIFIED |
 | SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN × dark/light axe matrix | VERIFIED |
@@ -43,9 +45,9 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | SC-006 | T038-T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; print-spike report | VERIFIED |
 | SC-007 | — | Build-size gate evidence is not mapped to a tagged task or re-verified in this static pass; T042 remains untagged and is not attributed to SC-007 | PARTIAL |
 | SC-008 | T046 | PR #28 body reports 15 paired samples and passing median deltas; local report outputs r1-r8 are referenced but not present in this checkout; measurement not rerun | PARTIAL |
-| SC-010 | T047-T048, T050-T051 | Static inspection only; PR #28 source uses a 75rem breakpoint, so the approved 64rem breakpoint and 1024/1440 screenshot assertions remain unimplemented and unchecked | PARTIAL |
-| SC-009 | T043, T048-T049 | Existing unit tests cover fallback selection and browser focus identity for over-budget fallback only; T048-T049 remain unchecked for all fallback conditions | PARTIAL |
-| SC-011 | T050-T051 | 1024–1199px content/sidebar non-overlap is specified; implementation and browser assertions remain unchecked | PARTIAL |
+| SC-010 | T047-T048, T050-T051 | `tests/e2e/shell-q16.spec.ts::sidebar variant, inline-start placement and icons-only default at 1024 and 1440`, `::each icon name is shown on pointer hover and keyboard focus at 1024 and 1440`, `::1024px sidebar has no serious or critical axe violations`; screenshots `shell-{ar,en}-{light,dark}-{1024,1440}.png` in lane run dir | VERIFIED |
+| SC-009 | T043, T048-T049 | Existing unit tests cover fallback selection; `tests/e2e/shell-q16.spec.ts::static fallback keeps the focused rail link as the identical node` covers over-budget fallback in-browser; T049 full fallback matrix remains unchecked | PARTIAL |
+| SC-011 | T050-T051 | `tests/e2e/shell-q16.spec.ts::content clears the fixed rail at 1024-1440` at 1024/1080/1199/1200/1280/1440 in AR RTL and EN LTR for both themes | VERIFIED |
 
 ## Static verification note
 

@@ -34,10 +34,9 @@
   margin-inline: auto;
   z-index: 5;
 }
-/* ND-3 provisional */
-/* Keep the horizontal dock through 74.99rem. The fixed vertical dock needs
-   enough outside gutter to clear the unchanged 64rem content column. */
-@media (min-width: 75rem) {
+/* S31-PO-7 Q5: the vertical inline-start sidebar shows from 64rem (1024px);
+   the labeled bottom bar shows below 64rem. FR-021 / FR-027 / SC-010. */
+@media (min-width: 64rem) {
   .rail {
     display: flex;
   }
@@ -45,8 +44,18 @@
     display: none;
   }
   .content {
-    padding-inline-start: 0;
     padding-block-end: 0;
+    /* From 1024-1199px the fixed rail sits inside the content lane, so inset
+       the content box by the rail footprint to clear it (SC-011). */
+    padding-inline-start: calc(
+      var(--space-4) + var(--rail-width) + var(--space-4)
+    );
+  }
+}
+/* At 75rem and wider the rail sits in the gutter outside the 64rem lane. */
+@media (min-width: 75rem) {
+  .content {
+    padding-inline-start: 0;
   }
 }
 @media print {
