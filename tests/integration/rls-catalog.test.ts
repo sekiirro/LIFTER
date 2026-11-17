@@ -324,6 +324,8 @@ describe('tenancy security catalog (T007)', () => {
           'f17_guard_template_identity_update',
           'f17_reject_template_identity_delete',
           'f17_reject_template_version_mutation',
+          'f17_workout_template_unresolved_refs',
+          'f17_remap_workout_template_ids',
           'f19_audit_plan_change',
           'f19_audit_plan_revision',
           'f19_guard_delivery',
@@ -342,7 +344,10 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
           'f18_guard_plan_version_content',
+          'f18_guard_nutrition_document_ids',
           'f18_guard_nutrition_selection',
+          'f18_invalid_uuid_alias',
+          'f18_is_canonical_uuid_v4',
           'f18_selection_audit',
           'f18_is_self_approved_client',
           'f18_is_self_approved_plan_client',
@@ -446,6 +451,7 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_uuid_valid',
           'f17_workout_reference_valid',
           'f17_workout_document_valid',
+          'f17_remap_workout_template_ids',
           'f17_workout_template_start_operation',
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
@@ -463,6 +469,8 @@ describe('tenancy security catalog (T007)', () => {
           'f18_guard_nutrition_selection',
           'f18_audit_allowlist_guard',
           'package_c5_preflight',
+          'f19_guard_plan_revision_contributors',
+          'f19_track_plan_draft_contributor',
         ]),
       ].sort(),
     );
@@ -523,6 +531,8 @@ describe('tenancy security catalog (T007)', () => {
         'nutrition_template_private_fields',
         'f18_guard_nutrition_selection',
         'package_c5_preflight',
+        'f18_is_canonical_uuid_v4',
+        'f18_invalid_uuid_alias',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -584,11 +594,17 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_uuid_valid',
           'f17_workout_reference_valid',
           'f17_workout_document_valid',
+          'f17_remap_workout_template_ids',
           'f17_workout_template_start_operation',
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
           'f17_reject_assignment_ledger_mutation',
           'f17_guard_distribution_state_update',
+          'f18_guard_nutrition_document_ids',
+          'f18_is_canonical_uuid_v4',
+          'f18_invalid_uuid_alias',
+          'f19_guard_plan_revision_contributors',
+          'f19_track_plan_draft_contributor',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -778,6 +794,11 @@ describe('tenancy security catalog (T007)', () => {
               'f18_guard_nutrition_selection',
               'f18_audit_allowlist_guard',
               'package_c5_preflight',
+              'f18_guard_nutrition_document_ids',
+              'f18_is_canonical_uuid_v4',
+              'f18_invalid_uuid_alias',
+              'f19_guard_plan_revision_contributors',
+              'f19_track_plan_draft_contributor',
             ].includes(row.proname)),
       );
     }
@@ -1530,6 +1551,7 @@ describe('registration security catalog', () => {
       'app_private.f18_guard_nutrition_selection()',
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
+      'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'app_private.f15_alert_occurrence_authorize_insert()',
       'app_private.f15_alert_recipient_authorized(uuid,uuid,text)',
       'app_private.f15_alert_schedule_audit()',
@@ -1988,6 +2010,8 @@ describe('F17 T013/T016/T017 workout templates catalog', () => {
       'app_private.f17_reject_template_version_mutation()',
       'app_private.f17_reject_template_identity_delete()',
       'app_private.f17_guard_template_identity_update()',
+      'app_private.f17_workout_template_unresolved_refs(jsonb,uuid)',
+      'app_private.f17_remap_workout_template_ids(jsonb)',
     ];
     for (const sig of fns) {
       const [fn] = await db`select p.proconfig,
@@ -2059,6 +2083,54 @@ describe('F17 T014 assignment ledgers and distribution state catalog', () => {
       expect(fn, sig).toMatchObject({
         owner: 'postgres',
         authenticated: false,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
+  });
+});
+
+describe('F17 T031 / T047 workout operation keys and RPC catalog', () => {
+  it('forces RLS, revokes direct DML on operation keys, and verifies narrow RPC execution', async () => {
+    const rel = 'app_private.f17_workout_operation_keys';
+    const [row] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid = ${rel}::regclass`;
+    expect(row, rel).toEqual({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+    });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const priv of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] =
+          await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+        expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+      }
+    }
+
+    const fns = [
+      'public.f17_add_workout_exercise(uuid,uuid,text,uuid,bigint,uuid,uuid)',
+      'public.f17_resolve_workout_exercise_muscles(uuid,jsonb)',
+    ];
+    for (const sig of fns) {
+      const [fn] = await db`select p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        owner: 'postgres',
+        authenticated: true,
         anon: false,
         service_role: false,
       });

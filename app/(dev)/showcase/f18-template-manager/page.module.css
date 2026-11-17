@@ -1,0 +1,49 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+  inline-size: min(100% - var(--space-6), 76rem);
+  margin-inline: auto;
+  padding-block: var(--space-6) var(--space-10);
+}
+
+.header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  line-height: var(--line-height-heading);
+  text-wrap: balance;
+}
+
+.header p,
+.notice {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-body);
+  text-wrap: pretty;
+}
+
+.controls {
+  padding-block: var(--space-4);
+  border-block: 1px solid var(--color-border);
+}
+
+.preferences {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.preview {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.notice {
+  font-size: var(--text-sm);
+}

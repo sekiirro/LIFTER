@@ -310,3 +310,10 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - PASS: FR-026 matches the decision log.
 - Remaining blockers unchanged: provider terms of use (T059/T062/T075), T070 re-review, T076 retirement contract.
 - Findings: 0 open CRITICAL, 0 open HIGH.
+
+## 2026-11-17 Analyze (merge audit; task-status only)
+
+**Analyzed:** 2026-11-17 02:29 UTC. Reviewed the merged F9 task-status evidence and review record, reconciled traceability with verified tasks, and confirmed no FR, SC, acceptance scenario, or plan design text changed. T064b is unticked because the recorded T065 script predates the T064b PASS.
+
+- PASS: requirements and product decisions unchanged; no new product ambiguity. 0 CRITICAL, 0 HIGH requirement findings.
+- FOLLOW-UP: architect to determine whether the T064b sequencing exception is acceptable for merge, or what additional evidence is required. T065 remains unticked and no teardown has run.

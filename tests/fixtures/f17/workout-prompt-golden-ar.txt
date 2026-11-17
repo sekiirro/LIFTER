@@ -1,0 +1,48 @@
+أنت تقوم بتنسيق خطة تمارين. حوّل الخطة التالية إلى مستند واضح وسهل المتابعة للمتدرب.
+
+القواعد:
+1. احتفظ بكل تمرين ومجموعة وعدد تكرارات ووزن ووقت راحة وRIR وملاحظة وبديل كما هو مكتوب تمامًا. لا تُضِف أي شيء ولا تحذفه ولا تستبدله ولا تغيّر ترتيبه.
+2. لا تغيّر أي رقم أو وحدة.
+3. لا تقترح تمارين أو بدائل جديدة.
+4. اجعل اسم كل تمرين واسم كل بديل رابطًا قابلًا للنقر يفتح رابط الفيديو الخاص به المذكور في الخطة. إذا لم يكن للعنصر رابط، فاعرض اسمه كنص عادي.
+5. أبقِ أسماء التمارين باللغة الإنجليزية كما هي مكتوبة.
+6. انقل ملاحظات الكابتن حرفيًا.
+7. اكتب العناوين والتسميات باللغة العربية.
+8. إذا كان هناك شيء غير واضح، فاتركه كما هو مكتوب ولا تخمّن.
+
+الخطة:
+البرنامج: Strength & Hypertrophy Phase 1 — مرحلة القوة والتضخيم ١ (LFT-0042 • Revision 1)
+ملاحظات: Plan-level coach note: Focus on mind-muscle connection and recovery. ملاحظة الخطة العامة.
+ملاحظات: Workout document note: Follow prescribed RIR strictly. ملاحظة المستند: الالتزام بـ RIR.
+Day 1 - Upper Power
+  ملاحظات: Session note: Warm up rotator cuff thoroughly.
+  التمرين: Bench Press
+    الوصف: Barbell flat bench press on competition bench
+    التكرارات: 8-10
+    الراحة (ثانية): 120
+    RIR (عدّات فاضلة): 2
+    نوع المجموعة 1 (إحماء): وزن الجسم
+    نوع المجموعة 2 (أساسية): 80 kg
+    نوع المجموعة 3 (أساسية): 85 kg
+    ملاحظات: Coach note: Arch slightly, drive through heels. ملاحظة الكابتن: ثبّت كعبيك.
+    البدائل: Incline Dumbbell Press
+      الفيديو: https://video.example.com/incline-db
+    البدائل: Machine Chest Press
+    الفيديو: https://video.example.com/bench-press
+  التمرين: Assisted Pull-Up
+    الوصف: Wide grip assisted chin/pull-up machine
+    التكرارات: 12
+    الراحة (ثانية): 90
+    RIR (عدّات فاضلة): 1
+    نوع المجموعة 1 (أساسية): بمساعدة: 15 lb
+    ملاحظات: Coach note: Full extension at bottom.
+    الفيديو: https://video.example.com/assisted-pullup
+  التمرين: Dips
+    الوصف: =1+1 formula injection attempt in description
+    التكرارات: 15
+    الراحة (ثانية): 60
+    RIR (عدّات فاضلة): 0
+    ملاحظات: +2.5kg next block; @coach review depth; -avoid shoulder pain
+    الفيديو: https://video.example.com/dips
+Day 2 - Active Recovery (يوم راحة)
+  ملاحظات: Rest note: 20-30 min mobility & light walking. ملاحظة الراحة: مشي خفيف.

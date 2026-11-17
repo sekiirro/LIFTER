@@ -229,14 +229,14 @@ function makeValidNutritionTemplateDoc(notes: string) {
           recipeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           items: [
             {
-              id: 'item-1',
+              id: '11111111-1111-4111-8111-111111111111',
               foodId: foodOats,
               foodVersion: 2,
               quantity: { value: '80', unit: { kind: 'basis', value: 'g' } },
               note: 'Rolled oats',
               alternatives: [
                 {
-                  id: 'alt-1',
+                  id: '22222222-2222-4222-8222-222222222221',
                   foodId: foodRice,
                   foodVersion: 1,
                   quantity: {
@@ -256,6 +256,233 @@ function makeValidNutritionTemplateDoc(notes: string) {
 }
 
 describe('F19 T012 template and plan copy', () => {
+  it('loads one explicit workout template version with remapped ids and blocks promoted RED references', async () => {
+    const targetClientId = await fixture.createSiblingClient();
+    const exerciseResult = await fixture.context.po.client.rpc(
+      'catalog_create_exercise',
+      {
+        p_operation_key: randomUUID(),
+        p_request: {
+          name_en: 'Template load exercise',
+          name_ar: '\u062A\u0645\u0631\u064A\u0646',
+          primary_muscle_code: 'chest',
+          equipment_codes: ['barbell'],
+        },
+      },
+    );
+    expect(exerciseResult.error).toBeNull();
+    const exerciseId = (exerciseResult.data as { exercise_id: string })
+      .exercise_id;
+    const sourceDoc = {
+      schema_version: 1,
+      notes: 'Pinned source',
+      days: [
+        {
+          id: randomUUID(),
+          name: 'Day',
+          items: [
+            {
+              id: randomUUID(),
+              exercise: {
+                source: 'global',
+                identity_id: exerciseId,
+                version: 1,
+              },
+              name: 'Custom entry',
+              rir: 0,
+              alternatives: [],
+              sets: [
+                {
+                  id: randomUUID(),
+                  type: 'working',
+                  load: { mode: 'bodyweight' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const laterDoc = { schema_version: 1, notes: 'Later', days: [] };
+    const templateId = await seedWorkspaceTemplate(
+      fixture.workspaceId,
+      sourceDoc,
+      laterDoc,
+    );
+    const createDraft = async (actor: {
+      client: typeof fixture.context.trainerA.client;
+    }) => {
+      const result = await actor.client.rpc('create_plan_draft', {
+        p_workspace_id: fixture.workspaceId,
+        p_client_id: targetClientId,
+        p_plan_kind: 'workout',
+        p_content: { schema_version: 1, days: [] },
+        p_operation_key: randomUUID(),
+      });
+      expect(result.error).toBeNull();
+      return result.data as string;
+    };
+    const planId = await createDraft(fixture.context.trainerA);
+    const [loadRpc] = await db()`
+      select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon_execute,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role_execute
+      from pg_catalog.pg_proc p
+      where p.oid = 'public.load_workout_template_version(uuid,text,uuid,integer,uuid)'::regprocedure
+    `;
+    expect(loadRpc).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated_execute: true,
+      anon_execute: false,
+      service_role_execute: false,
+    });
+    expect(loadRpc?.proconfig).toContain('search_path=""');
+    const loadOperationKey = randomUUID();
+    const loaded = await fixture.context.trainerA.client.rpc(
+      'load_workout_template_version',
+      {
+        p_plan_id: planId,
+        p_template_kind: 'workspace',
+        p_template_id: templateId,
+        p_version: 1,
+        p_operation_key: loadOperationKey,
+      },
+    );
+    expect(loaded.error).toBeNull();
+    expect(loaded.data).toMatchObject({
+      loaded: true,
+      draft_version: 2,
+      version: 1,
+    });
+    const [loadedDraft] = await db()`
+      select content from public.plan_drafts where plan_id=${planId}
+    `;
+    const copied = loadedDraft?.content as typeof sourceDoc;
+    expect(copied).toMatchObject({ schema_version: 1, notes: 'Pinned source' });
+    expect(copied.days[0]?.id).not.toBe(sourceDoc.days[0]?.id);
+    expect(copied.days[0]?.items[0]?.id).not.toBe(
+      sourceDoc.days[0]?.items[0]?.id,
+    );
+    expect(copied.days[0]?.items[0]?.sets[0]?.id).not.toBe(
+      sourceDoc.days[0]?.items[0]?.sets[0]?.id,
+    );
+    expect(copied.days[0]?.items[0]?.rir).toBe(0);
+    expect(copied.days[0]?.items[0]?.exercise).toEqual(
+      sourceDoc.days[0]?.items[0]?.exercise,
+    );
+    const replay = await fixture.context.trainerA.client.rpc(
+      'load_workout_template_version',
+      {
+        p_plan_id: planId,
+        p_template_kind: 'workspace',
+        p_template_id: templateId,
+        p_version: 1,
+        p_operation_key: loadOperationKey,
+      },
+    );
+    expect(replay.error).toBeNull();
+    expect(replay.data).toEqual(loaded.data);
+    const foreignActor = await fixture.context.trainerB.client.rpc(
+      'load_workout_template_version',
+      {
+        p_plan_id: planId,
+        p_template_kind: 'workspace',
+        p_template_id: templateId,
+        p_version: 1,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(foreignActor.error?.code).toBe('42501');
+    const [sourceBeforePromotion] = await db()`
+      select document from public.workout_workspace_template_versions
+      where workspace_id=${fixture.workspaceId} and template_id=${templateId} and version=1
+    `;
+    expect(sourceBeforePromotion?.document).toEqual(sourceDoc);
+
+    const unresolvedDoc = {
+      schema_version: 1,
+      days: [
+        {
+          id: randomUUID(),
+          kind: 'session',
+          items: [
+            {
+              id: randomUUID(),
+              exercise: {
+                source: 'workspace_private',
+                identity_id: randomUUID(),
+                version: 1,
+                workspace_id: fixture.workspaceId,
+              },
+              name: 'Unresolved promoted ref',
+              alternatives: [],
+              sets: [],
+            },
+          ],
+        },
+      ],
+    };
+    const unresolvedTemplateId = await seedWorkspaceTemplate(
+      fixture.workspaceId,
+      unresolvedDoc,
+      unresolvedDoc,
+    );
+    const promoted = await fixture.context.po.client.rpc(
+      'promote_workout_workspace_template',
+      {
+        p_workspace_id: fixture.workspaceId,
+        p_template_id: unresolvedTemplateId,
+        p_expected_version: 2,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(promoted.error).toBeNull();
+    expect(promoted.data).toMatchObject({
+      unresolved_references: [
+        { path: '$.days[0].items[0].exercise', status: 'RED' },
+      ],
+    });
+    const promotedId = (promoted.data as { template_id: string }).template_id;
+    const staffGlobalLoad = await fixture.context.trainerA.client.rpc(
+      'load_workout_template_version',
+      {
+        p_plan_id: planId,
+        p_template_kind: 'global',
+        p_template_id: promotedId,
+        p_version: 1,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(staffGlobalLoad.error?.code).toBe('42501');
+    const blockedPlanId = await createDraft(fixture.context.po);
+    const blocked = await fixture.context.po.client.rpc(
+      'load_workout_template_version',
+      {
+        p_plan_id: blockedPlanId,
+        p_template_kind: 'global',
+        p_template_id: promotedId,
+        p_version: 1,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(blocked.error?.code).toBe('22023');
+    const [unchangedBlockedDraft] = await db()`
+      select content,draft_version from public.plan_drafts where plan_id=${blockedPlanId}
+    `;
+    expect(unchangedBlockedDraft).toEqual({
+      content: { schema_version: 1, days: [] },
+      draft_version: '1',
+    });
+    const [sourceAfter] = await db()`
+      select document from public.workout_workspace_template_versions
+      where workspace_id=${fixture.workspaceId} and template_id=${templateId} and version=1
+    `;
+    expect(sourceAfter?.document).toEqual(sourceDoc);
+  });
+
   it('copies latest published workout revision (excluding draft, video, ownership, history, delivery) into an independent destination draft', async () => {
     const targetClientId = await fixture.createSiblingClient();
     const dayId = randomUUID();
@@ -270,6 +497,16 @@ describe('F19 T012 template and plan copy', () => {
       schema_version: 1,
       notes: 'Latest published custom notes',
       videoUrl: 'https://cdn.example.com/must-not-copy.mp4',
+      ownership: { workspace_id: fixture.workspaceId },
+      authored_by: fixture.context.trainerA.userId,
+      history: [{ event: 'must-not-copy' }],
+      subscription: { id: randomUUID() },
+      subscription_id: randomUUID(),
+      delivery: { id: randomUUID() },
+      delivery_id: randomUUID(),
+      plan_deliveries: [{ id: randomUUID() }],
+      activation: { id: randomUUID() },
+      activation_id: randomUUID(),
       days: [
         {
           id: dayId,
@@ -722,7 +959,10 @@ describe('F19 T012 template and plan copy', () => {
       ...v2.doc,
       ownership: { workspaceId: fixture.workspaceId },
       history: [{ event: 'created' }],
-      selection: { itemId: 'item-1', alternativeId: 'alt-1' },
+      selection: {
+        itemId: '11111111-1111-4111-8111-111111111111',
+        alternativeId: '22222222-2222-4222-8222-222222222221',
+      },
       delivery: { id: 'del-1' },
     };
 
@@ -805,11 +1045,13 @@ describe('F19 T012 template and plan copy', () => {
     expect(validatedV1.dayTypes[0]?.id).not.toBe('dt-1');
     expect(validatedV1.implicitDayTypeId).toBe(validatedV1.dayTypes[0]?.id);
     expect(validatedV1.meals?.[0]?.id).not.toBe('meal-1');
-    expect(validatedV1.meals?.[0]?.items[0]?.id).not.toBe('item-1');
+    expect(validatedV1.meals?.[0]?.items[0]?.id).not.toBe(
+      '11111111-1111-4111-8111-111111111111',
+    );
     expect(validatedV1.meals?.[0]?.items[0]?.foodId).toBe(v1.foodOats);
     expect(validatedV1.meals?.[0]?.items[0]?.foodVersion).toBe(2);
     expect(validatedV1.meals?.[0]?.items[0]?.alternatives[0]?.id).not.toBe(
-      'alt-1',
+      '22222222-2222-4222-8222-222222222221',
     );
     expect(validatedV1.meals?.[0]?.items[0]?.alternatives[0]?.foodId).toBe(
       v1.foodRice,
