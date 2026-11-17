@@ -409,6 +409,17 @@
 - **T028 S61-R4**: Promoted source stays in workspace, promoted identity is separate, unresolved reference response is RED, and the promoted RED ref cannot load. Existing T028 promotion mutation and RED coverage are recorded above in this file's earlier T028 section; T028 and T024 are now complete.
 - **Analyze**: No FR, SC, acceptance, or plan design text changed; only implementation/test/status/evidence changed, so no Analyze re-date is needed.
 
+## F17 Verification — T022 contributor actions and T027 newer-version skip (s63-luna-f17b)
+
+- **Stack / migration**: Stack A only. Migration `20261122030000_f17_revision_contributor_actions.sql` is within the lane range `20261122030000–20261122035959`.
+- **T022 implementation**: Added `action_codes` to the existing immutable, workspace-scoped `plan_revision_contributors` projection. Each published row records successful `save` and/or `publish` actions and its existing first-contribution timestamp. The attribution trigger preserves the existing SECURITY DEFINER save/publish functions, operation-key/CAS behavior, RLS, and immutable-row guard. It exposes no plan content.
+- **T022 RED → GREEN**: `tests/integration/workout-contributors.test.ts` first failed because `action_codes` was absent. After the migration, the test verified two staff on one revision, `save`/`publish` codes, a fresh set after the prior revision, timestamps, and a content-free row shape. `tests/integration/f19-trainer-deletion.test.ts` also verifies the contributor row count and publish action remain unchanged through the F11 trainer-deletion workflow.
+- **T022 mutation**: Mutated the trigger to emit an empty action set. Publish failed with `23514` on `plan_revision_contributors_action_codes_check`, killing the attribution mutant. Restored the migration and reset/reprovisioned Stack A.
+- **T027**: `tests/integration/workout-assign-run.test.ts` verifies a workspace holding global version 1 reports that identity skipped when version 2 is selected, while another workspace gets an independent version 2 copy; the held copy remains version 1. Existing assignment code already implemented S43-PO-1, so no RPC change was needed.
+- **T027 mutation**: Mutated the existing-copy predicate to require matching source version. The new regression and existing assignment-state test failed on `workout_workspace_templates_origin_global_uidx`, proving the skip is version-independent. Restored the migration.
+- **Final touched integration**: `workout-contributors.test.ts`, `workout-assign-run.test.ts`, `workout-assignment-state-visibility.test.ts`, `nutrition-contributors.test.ts`, `f19-trainer-deletion.test.ts`, `f19-plan-core-schema.test.ts`, and `rls-catalog.test.ts`: 7 files, 66/66 tests passed on Stack A after safe reset and Vault provisioning.
+- **Analyze**: No requirement or plan text changed; no Analyze re-date is needed.
+
 ## F17 Verification — T039 export audit (s63-hy4-f17t039)
 
 - **Branch / stack**: `s63-f17-export-audit` / Stack B (`lifter-stack-b`). Migration `20261122010000_f17_workout_export_audit.sql` (brief range 20261122010000–20261122015959; all-origin ref/path scan 0 hits; main max 20261121200000). Stack B safe `db reset --local` + `tests/integration/client-accounts-provision.mjs` after every reset.
