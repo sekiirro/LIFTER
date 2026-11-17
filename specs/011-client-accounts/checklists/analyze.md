@@ -1,5 +1,9 @@
 # Analyze — F11 client accounts
 
+## S63 date-only status — 2026-11-17 UTC
+
+S40 gate closure recorded; no requirement text changed. The S40 Clarify gate is closed by S63-PO-10 on the zero-open-ambiguity audit (`C:/Users/NEW LAP/.lifter/runs/s63-muse-s40/s40-audit.md`); FR/SC requirement text is unchanged, so no full Analyze rerun was needed.
+
 ## S57 Luna slice 2 date-only status — 2026-11-15 UTC
 
 T061 implementation, task status and traceability evidence changed; FR/SC requirement text did not. The completed-deletion exclusion remains a T048 dependency because its lifecycle states are not present. No full Analyze rerun was needed.
