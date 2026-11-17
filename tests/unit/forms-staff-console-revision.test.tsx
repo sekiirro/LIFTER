@@ -114,6 +114,38 @@ describe('Forms staff console saved revision before publish', () => {
     expect(adapter.saveDraft).toHaveBeenLastCalledWith('wo', saved);
   });
 
+  it('T086 refuses an Arabic-only draft title with the existing required message', async () => {
+    const arabicOnly = {
+      ...form,
+      title: { en: ' \t ', ar: 'عنوان عربي' },
+    };
+    const adapter = makeAdapter({
+      load: vi.fn(async () => ({
+        ...snapshot,
+        forms: [arabicOnly],
+        defaultOnboardingFormId: arabicOnly.id,
+      })),
+      saveDraft: vi.fn(async () => ({
+        status: 'ok' as const,
+        form: arabicOnly,
+      })),
+    });
+    await render(adapter);
+
+    await clickButton(getMessages('en')['forms.staffSaveDraft']);
+
+    const titleInput = container?.querySelector('input');
+    expect(adapter.saveDraft).not.toHaveBeenCalled();
+    expect(titleInput?.getAttribute('aria-invalid')).toBe('true');
+    expect(titleInput?.getAttribute('aria-describedby')).toBe(
+      'forms-builder-title-error',
+    );
+    expect(
+      container?.querySelector('#forms-builder-title-error')?.textContent,
+    ).toBe(getMessages('en')['forms.required']);
+    expect(document.activeElement).toBe(titleInput);
+  });
+
   it('publishes the form id returned by the preceding successful save', async () => {
     const saved = { ...form, id: 'saved-form', revision: 2 };
     const adapter = makeAdapter({
