@@ -173,3 +173,8 @@ Failed tests:
 - ND-F9-1..5 remain unresolved. Production deployment, remote data, physical-device/manual assistive-technology review, and independent reviewer acceptance are not claimed.
 
 Raw negative/reset/restored logs and structured per-mutation JSON remain in `%TEMP%/lifter-f9-mutation-evidence/` on this machine. The truncate case was repeated after adding unconditional rollback on unexpected success; this record uses the final two-failure run. No mutant remains installed.
+
+## T064b teardown design and T076 retirement test (2026-11-16)
+
+- T064b: the teardown design for protected immutable version rows and the `packages_no_delete`/`packages_no_truncate` guards is authored in `specs/009-packages/review.md`. The independent security review is **REQUESTED / PENDING**; no reviewer has signed off and the gate has not passed. No deletion, migration or data change was made.
+- T076: `tests/integration/packages-retirement.test.ts` holds planned `it.todo` cases. The retirement operation (FR-023) has no approved contract and does not exist on main (owners T054/T055/T066), so no failing or passing test was authored. T076 stays unticked until the test passes on an implementation head.
