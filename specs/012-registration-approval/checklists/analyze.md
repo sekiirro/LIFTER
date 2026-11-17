@@ -407,3 +407,9 @@ Scope: the exact-head CodeRabbit review `5877600535` (CHANGES_REQUESTED on `212d
 - CRITICAL open: 0. HIGH open: 0. MEDIUM open: 0. LOW open: 2 (A-S50-G5, A-S50-G6, both pre-existing).
 - No PO product question is raised by this round and no option, default, copy string or test expectation was invented. Architect ruling S51-R20 verified the finding as a coverage gap against SC-012's already-stated requirement.
 - This is a static document review. It makes no implementation-conformity claim; T055 stays unticked and blocked by 011 T048 and 012 T042.
+
+## S63 status-only revalidation � 2026-11-17
+
+- Requirement, acceptance, and plan text did not change. T042 status and traceability evidence now reflect its executed Stack D integration cases; T055 remains unchecked.
+- The T042-specific scope remains consistent with FR-006/008/018 and existing real-session contracts. Its focused RLS check distinguishes SQL grants from policy denial and passed the permissive-policy mutation.
+- Entry verdict for this status update: 0 open CRITICAL, 0 open HIGH, and zero F12 requirement ambiguities. This revalidation records task/evidence status only; it is not a full feature-gate claim.

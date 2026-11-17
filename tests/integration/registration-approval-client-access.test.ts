@@ -30,38 +30,50 @@ it('T042 real F11 client JWT is limited to self-status and denied client data an
   expect(session.data.session?.user.id).toBe(client.userId);
   expect(session.data.session?.access_token).toBeTruthy();
 
-  const status = await client.client.rpc('client_self_status');
-  expect(status.error).toBeNull();
-  expect(status.data).toEqual({
-    status: 'ok',
-    approval_state: 'pending-approval',
-  });
-  for (const table of ['clients', 'subscriptions', 'payment_events']) {
-    const read = await client.client.from(table).select('*').limit(1);
-    expect(read.error).not.toBeNull();
-  }
-
-  const bucket = `t042-${randomUUID().replaceAll('-', '')}`;
-  const objectPath = 'private/probe.txt';
-  const created = await admin().storage.createBucket(bucket, { public: false });
-  expect(created.error).toBeNull();
+  await db.unsafe(
+    'grant select on public.clients, public.subscriptions, public.payment_events to authenticated',
+  );
   try {
-    const uploaded = await admin()
-      .storage.from(bucket)
-      .upload(objectPath, new Uint8Array([84, 52, 50]), {
-        contentType: 'text/plain',
-      });
-    expect(uploaded.error).toBeNull();
-    const downloaded = await client.client.storage
-      .from(bucket)
-      .download(objectPath);
-    expect(downloaded.error).not.toBeNull();
-    const deniedUpload = await client.client.storage
-      .from(bucket)
-      .upload('private/client.txt', new Uint8Array([120]));
-    expect(deniedUpload.error).not.toBeNull();
+    const status = await client.client.rpc('client_self_status');
+    expect(status.error).toBeNull();
+    expect(status.data).toEqual({
+      status: 'ok',
+      approval_state: 'pending-approval',
+    });
+    for (const table of ['clients', 'subscriptions', 'payment_events']) {
+      const read = await client.client.from(table).select('*').limit(1);
+      expect(read.error).toBeNull();
+      expect(read.data).toEqual([]);
+    }
+
+    const bucket = `t042-${randomUUID().replaceAll('-', '')}`;
+    const objectPath = 'private/probe.txt';
+    const created = await admin().storage.createBucket(bucket, {
+      public: false,
+    });
+    expect(created.error).toBeNull();
+    try {
+      const uploaded = await admin()
+        .storage.from(bucket)
+        .upload(objectPath, new Uint8Array([84, 52, 50]), {
+          contentType: 'text/plain',
+        });
+      expect(uploaded.error).toBeNull();
+      const downloaded = await client.client.storage
+        .from(bucket)
+        .download(objectPath);
+      expect(downloaded.error).not.toBeNull();
+      const deniedUpload = await client.client.storage
+        .from(bucket)
+        .upload('private/client.txt', new Uint8Array([120]));
+      expect(deniedUpload.error).not.toBeNull();
+    } finally {
+      await admin().storage.deleteBucket(bucket);
+    }
   } finally {
-    await admin().storage.deleteBucket(bucket);
+    await db.unsafe(
+      'revoke select on public.clients, public.subscriptions, public.payment_events from authenticated',
+    );
   }
 });
 
