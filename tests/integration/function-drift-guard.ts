@@ -14,6 +14,11 @@ export const guardedFunctions = [
     name: 'public.assign_workout_templates',
   },
   {
+    identity: 'app_private.copy_workspace_form(uuid,uuid,uuid,uuid)',
+    migration: '20261122120000_f15_copy_remap_question_references.sql',
+    name: 'app_private.copy_workspace_form',
+  },
+  {
     identity: 'app_private.f15_answer_values_valid(jsonb,jsonb)',
     migration: '20261112031600_f15_direct_rpc_answer_validation.sql',
     name: 'app_private.f15_answer_values_valid',

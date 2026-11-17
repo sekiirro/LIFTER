@@ -239,3 +239,19 @@ T149 remains deferred: no UI or copy is included; a future PO MCQ must approve e
 | FR-039 — unit DOB cases stay in the future (E2E browser part outstanding) | T114 | Unit part verified, task stays [ ]: injected-`now` (`client-signup-validation.test.ts`), today+2 (`client-signup-form.test.tsx`), Cairo-today-relative integration — all green on current head; E2E `client-signup.spec.ts` uses `dateInputOffsetFromToday(2)`. Remaining: browser verification of E2E cases. | verified in this PR (partial; task open) |
 | FR-038/039 — hostname-scoped preference cookies; configured base origin (non-default-host browser run outstanding) | T126 | Unit part verified, task stays [ ]: new `tests/unit/preferences.test.ts::keeps preference cookies hostname-scoped with no Domain attribute` passes (file green); add-Domain mutation killed (2 failed) and reverted; all e2e `addCookies` already use `url: origin` with no hardcoded host. Remaining: browser run on a non-default hostname. | verified in this PR (partial; task open) |
 <!-- prettier-ignore-end -->
+
+## S15-2 verified slice
+
+<!-- prettier-ignore-start -->
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-004 / FR-006 / FR-008 � parity for derived answers and absent selectors | T081 | Stack C `tests/integration/forms-builder-persistence.test.ts` passed 27/27, including derived-answer parity and absent-selector mutation kill; SQL/TypeScript drift guard retained. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-008 / FR-013 / FR-020 � correction validation uses the assigned snapshot and rejects stale revisions | T082 | Stack C `tests/integration/forms-r3-correction-matrix.test.ts` passed 3/3, including stale snapshot rejection and latest-definition mutation kill. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-004 / FR-006 / FR-007 � require an English draft title with an approved existing message | T086 | `tests/unit/forms-staff-console-revision.test.tsx::T086 refuses an Arabic-only draft title with the existing required message`; Stack C whitespace-title integration regression passed. Existing `forms.required` key used; no new copy. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-008 / FR-013 � localize boolean correction-history labels and preserve numeric/string values | T092 | `tests/unit/forms-correction-history.test.tsx::uses Arabic boolean labels and preserves numeric display`; full unit suite passed 3,515/3,515 on accepted head. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-004 / FR-006 / FR-007 � remap copied conditional and derived-option references | T094 | Stack C `tests/integration/forms-builder-persistence.test.ts` passed 27/27, including copied-reference validity, source immutability, and derived-option remap mutation kill. Migration `20261122120000_f15_copy_remap_question_references.sql`; guard mutation killed and original SQL restored. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-008 � reject malformed runtime form elements before answer access | T116 | `tests/unit/forms-s14-validation.test.ts::T116 rejects malformed runtime question elements before answer access`; full unit suite passed 3,515/3,515 on accepted head. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-008 / FR-013 � cross-tenant probe fails only for its named assertion | T120 | Stack C `tests/integration/forms-r3-correction-matrix.test.ts::T014 enforces correction and audited history access for Client, Trainer, WO, PO, and Sales` passed 3/3; unrelated errors are rethrown. | `9075255edb308c56a166af325cead6a8c78e9767` |
+<!-- prettier-ignore-end -->
+
+Accepted verification head: `52fbb9b65470ddd8d83c5ede2a5b63cd6fa5262a` (code commit above plus origin/main merge). PO proceed decision: S63-PO-7 Q1; six requirements checklist items remain open as recorded.
