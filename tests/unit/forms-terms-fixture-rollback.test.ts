@@ -27,18 +27,13 @@ import { describe, expect, it } from 'vitest';
  * genuinely requires committed visibility, add it to COMMIT_REQUIRED with a
  * reason — and expect an architect question about it.
  */
-const ROOTS = ['tests/integration', 'tests/e2e'] as const;
+const ROOTS = ['tests/integration', 'tests/e2e'];
 const INSERT = /terms_policy_versions\(version/g;
 const ROLLBACK_MARKER =
   /rollback|probe\(|withFormsPolicyF13Fixtures|withCrashSafeFunctionMutant|runTermsMutation|runSignupMutation/i;
 const BOUNDARY = /^\s*(it|test|describe)\s*\(/;
-const ANY_BOUNDARY = /^\s*(it|test|describe)\s*\(/;
 
-const COMMIT_REQUIRED: Array<{
-  file: string;
-  signature: RegExp;
-  reason: string;
-}> = [
+const COMMIT_REQUIRED = [
   {
     file: 'tests/integration/forms-builder-persistence.test.ts',
     signature: /t151-builder-/,
@@ -124,6 +119,12 @@ const COMMIT_REQUIRED: Array<{
       'seedAssignment helper: called only from rollback-scoped matrix transactions; pinned so the helper is not mistaken for a committer',
   },
   {
+    file: 'tests/integration/forms-r3-assignment-invariants.test.ts',
+    signature: /assignmentFixture/,
+    reason:
+      'assignmentFixture helper: called only from rollback-scoped T007/T010 transactions',
+  },
+  {
     file: 'tests/integration/forms-alerts.test.ts',
     signature: /async function formAssignment/,
     reason:
@@ -133,12 +134,6 @@ const COMMIT_REQUIRED: Array<{
     file: 'tests/integration/forms-alert-inbox.test.ts',
     signature: /inbox-\$\{randomUUID|Synthetic alert inbox/,
     reason: 'fixture helper: called only from rollback-scoped inbox transactions',
-  },
-  {
-    file: 'tests/integration/forms-r3-assignment-invariants.test.ts',
-    signature: /assignmentFixture/,
-    reason:
-      'assignmentFixture helper: called only from rollback-scoped T007/T010 transactions',
   },
   {
     file: 'tests/integration/forms-alert-mutations.test.ts',
@@ -154,17 +149,20 @@ const COMMIT_REQUIRED: Array<{
   {
     file: 'tests/integration/forms-recurring-assignment.test.ts',
     signature: /async function createForm/,
-    reason: 'createForm helper: called only inside withFormsPolicyF13Fixtures (probe rollback)',
+    reason:
+      'createForm helper: called only inside withFormsPolicyF13Fixtures (probe rollback)',
   },
   {
     file: 'tests/integration/forms-renewal-assignment.test.ts',
     signature: /async function createForm/,
-    reason: 'createForm helper: called only inside withFormsPolicyF13Fixtures (probe rollback)',
+    reason:
+      'createForm helper: called only inside withFormsPolicyF13Fixtures (probe rollback)',
   },
   {
     file: 'tests/integration/forms-correction-context.test.ts',
     signature: /terms_policy_versions\(version/,
-    reason: 'single fixture insert inside the rollback-scoped correction-context transaction',
+    reason:
+      'single fixture insert inside the rollback-scoped correction-context transaction',
   },
   {
     file: 'tests/integration/f17-plan-publish-fixture.ts',
@@ -186,7 +184,7 @@ const COMMIT_REQUIRED: Array<{
   },
 ];
 
-function listFiles(directory: string): string[] {
+function listFiles(directory) {
   return readdirSync(directory).flatMap((entry) => {
     const absolute = join(directory, entry);
     if (statSync(absolute).isDirectory()) return listFiles(absolute);
@@ -194,21 +192,21 @@ function listFiles(directory: string): string[] {
   });
 }
 
-function enclosingBlock(source: string, index: number): string | null {
+function enclosingBlock(source, index) {
   const lines = source.split('\n');
   let offset = 0;
   let startLine = -1;
   for (let i = 0; i < lines.length; i += 1) {
     const lineStart = offset;
-    offset += lines[i]!.length + 1;
+    offset += lines[i].length + 1;
     if (offset <= index) {
-      if (BOUNDARY.test(lines[i]!)) startLine = i;
+      if (BOUNDARY.test(lines[i])) startLine = i;
       continue;
     }
     if (startLine === -1) return null;
     let endLine = lines.length;
     for (let j = i; j < lines.length; j += 1) {
-      if (ANY_BOUNDARY.test(lines[j]!)) {
+      if (BOUNDARY.test(lines[j])) {
         endLine = j;
         break;
       }
@@ -219,21 +217,21 @@ function enclosingBlock(source: string, index: number): string | null {
   return lines.slice(startLine).join('\n');
 }
 
-function sites(): Array<{ file: string; index: number }> {
+function findSites() {
   return ROOTS.flatMap((root) =>
     listFiles(root).flatMap((absolute) => {
       const source = readFileSync(absolute, 'utf8');
       const file = relative(process.cwd(), absolute).replaceAll('\\', '/');
-      const matches: Array<{ file: string; index: number }> = [];
+      const matches = [];
       for (const match of source.matchAll(INSERT))
-        matches.push({ file, index: match.index ?? 0 });
+        matches.push({ file, index: match.index ?? 0, source });
       return matches;
     }),
   );
 }
 
 describe('T088 Terms policy fixtures stay rollback-scoped', () => {
-  const all = sites();
+  const all = findSites();
 
   it('finds Terms policy fixture inserts to guard', () => {
     // Guard against the scan silently matching nothing (path or pattern drift).
@@ -241,19 +239,15 @@ describe('T088 Terms policy fixtures stay rollback-scoped', () => {
   });
 
   it('no commit-required exemption is stale', () => {
-    const byFile = new Map<string, string>();
-    for (const entry of COMMIT_REQUIRED)
-      byFile.set(entry.file, (byFile.get(entry.file) ?? '') + '|');
     for (const entry of COMMIT_REQUIRED) {
       const source = readFileSync(entry.file, 'utf8');
-      const windowMatches = [...source.matchAll(INSERT)].some(
-        (match) =>
-          entry.signature.test(
-            source.slice(
-              Math.max(0, (match.index ?? 0) - 600),
-              (match.index ?? 0) + 600,
-            ),
+      const windowMatches = [...source.matchAll(INSERT)].some((match) =>
+        entry.signature.test(
+          source.slice(
+            Math.max(0, (match.index ?? 0) - 600),
+            (match.index ?? 0) + 600,
           ),
+        ),
       );
       expect(
         windowMatches,
@@ -263,18 +257,17 @@ describe('T088 Terms policy fixtures stay rollback-scoped', () => {
   });
 
   it('every Terms policy fixture insert is rollback-scoped or explicitly commit-required', () => {
-    const violations: string[] = [];
+    const violations = [];
     for (const site of all) {
-      const source = readFileSync(site.file, 'utf8');
-      const window = source.slice(Math.max(0, site.index - 600), site.index + 600);
+      const window = site.source.slice(Math.max(0, site.index - 600), site.index + 600);
       const exempt = COMMIT_REQUIRED.some(
         (entry) => entry.file === site.file && entry.signature.test(window),
       );
       if (exempt) continue;
-      const block = enclosingBlock(source, site.index);
+      const block = enclosingBlock(site.source, site.index);
       if (block && ROLLBACK_MARKER.test(block)) continue;
       violations.push(
-        `${site.file}:${source.slice(0, site.index).split('\n').length} insert not rollback-scoped and not commit-required`,
+        `${site.file}:${site.source.slice(0, site.index).split('\n').length} insert not rollback-scoped and not commit-required`,
       );
     }
     expect(violations).toEqual([]);
