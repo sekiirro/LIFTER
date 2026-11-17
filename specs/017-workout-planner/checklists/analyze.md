@@ -383,3 +383,9 @@ cells are stored as text.
 - T025 task status and FR-010/FR-011 plus SC-003/SC-004 traceability now cite Stack D RPC and RED/GREEN/mutation evidence in `verification.md`.
 - No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## T041 Date Update (2026-11-17)
+
+- T041 status now cites the authorized-route export goldens in `tests/unit/workout-export-route-goldens.test.tsx` and the four new fixtures, with RED/GREEN/two-mutation evidence in `verification.md`; FR-018 is VERIFIED and SC-008/SC-013 evidence unions the route-level coverage.
+- No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
