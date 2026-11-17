@@ -1,5 +1,11 @@
 // F17 immutable workout document schema v1 parser (T002; FR-002/003).
-import type { WorkoutDay, WorkoutItem, WorkoutSet } from './id-remap';
+import {
+  duplicateDay,
+  duplicateItem,
+  type WorkoutDay,
+  type WorkoutItem,
+  type WorkoutSet,
+} from './id-remap';
 
 export type WorkoutExerciseReference = {
   source: 'global' | 'workspace_private';
@@ -260,5 +266,267 @@ export function moveWorkoutItem(
   const [item] = source.items.splice(index, 1);
   if (!item) return fail();
   target.items.push(item);
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Reorder an item within its session day. Unchanged items keep their ids. */
+export function reorderWorkoutItem(
+  document: WorkoutDocumentV1,
+  itemId: string,
+  direction: 'up' | 'down',
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) =>
+    d.items.some((item) => item.id === itemId),
+  );
+  if (!day) return fail();
+  const index = day.items.findIndex((item) => item.id === itemId);
+  if (direction === 'up' && index > 0) {
+    const item = day.items[index];
+    const prev = day.items[index - 1];
+    if (item && prev) {
+      day.items[index - 1] = item;
+      day.items[index] = prev;
+    }
+  } else if (direction === 'down' && index < day.items.length - 1) {
+    const item = day.items[index];
+    const next = day.items[index + 1];
+    if (item && next) {
+      day.items[index + 1] = item;
+      day.items[index] = next;
+    }
+  }
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Duplicate an item within its session day, remapping item and set ids while preserving all existing ids. */
+export function duplicateWorkoutItem(
+  document: WorkoutDocumentV1,
+  itemId: string,
+  newId: () => string = () => crypto.randomUUID(),
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) =>
+    d.items.some((item) => item.id === itemId),
+  );
+  if (!day || day.kind !== 'session') return fail();
+  const index = day.items.findIndex((item) => item.id === itemId);
+  const targetItem = day.items[index];
+  if (!targetItem) return fail();
+  const duplicate = duplicateItem(targetItem, newId);
+  day.items.splice(index + 1, 0, duplicate);
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Remove an item from its session day. */
+export function removeWorkoutItem(
+  document: WorkoutDocumentV1,
+  itemId: string,
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) =>
+    d.items.some((item) => item.id === itemId),
+  );
+  if (!day) return fail();
+  const index = day.items.findIndex((item) => item.id === itemId);
+  day.items.splice(index, 1);
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Append a day to the plan. */
+export function addWorkoutDay(
+  document: WorkoutDocumentV1,
+  day: WorkoutDay & { items: WorkoutItem[] },
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  current.days.push(structuredClone(day));
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Reorder a day within the plan. All ids are preserved. */
+export function reorderWorkoutDay(
+  document: WorkoutDocumentV1,
+  dayId: string,
+  direction: 'up' | 'down',
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const index = current.days.findIndex((d) => d.id === dayId);
+  if (index === -1) return fail();
+  if (direction === 'up' && index > 0) {
+    const day = current.days[index];
+    const prev = current.days[index - 1];
+    if (day && prev) {
+      current.days[index - 1] = day;
+      current.days[index] = prev;
+    }
+  } else if (direction === 'down' && index < current.days.length - 1) {
+    const day = current.days[index];
+    const next = current.days[index + 1];
+    if (day && next) {
+      current.days[index + 1] = day;
+      current.days[index] = next;
+    }
+  }
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Duplicate a day in the plan, remapping day/item/set ids while preserving all existing ids. */
+export function duplicateWorkoutDay(
+  document: WorkoutDocumentV1,
+  dayId: string,
+  newId: () => string = () => crypto.randomUUID(),
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const index = current.days.findIndex((d) => d.id === dayId);
+  if (index === -1) return fail();
+  const targetDay = current.days[index];
+  if (!targetDay) return fail();
+  const duplicate = duplicateDay(targetDay, newId);
+  current.days.splice(index + 1, 0, duplicate);
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Remove a day from the plan. */
+export function removeWorkoutDay(
+  document: WorkoutDocumentV1,
+  dayId: string,
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const index = current.days.findIndex((d) => d.id === dayId);
+  if (index === -1) return fail();
+  current.days.splice(index, 1);
+  return parseWorkoutDocumentV1(current);
+}
+
+export type WorkoutLoad =
+  | { mode: 'bodyweight' }
+  | { mode: 'added_weight' | 'assisted'; value: string; unit: 'kg' | 'lb' };
+
+export type WorkoutReps = { value: number } | { min: number; max: number };
+
+/** Update document-level plan notes. Reuses document validator (S60-D3). */
+export function updatePlanNotes(
+  document: WorkoutDocumentV1,
+  notes?: string,
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  if (notes !== undefined && notes !== '') {
+    current.notes = notes;
+  } else {
+    delete current.notes;
+  }
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Update day fields (title, notes, kind). Rejects switching to rest if day has items. Reuses document validator (S60-D3). */
+export function updateWorkoutDay(
+  document: WorkoutDocumentV1,
+  dayId: string,
+  patch: { title?: string; notes?: string; kind?: 'session' | 'rest' },
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) => d.id === dayId);
+  if (!day) return fail();
+  if (patch.title !== undefined) {
+    if (patch.title !== '') day.title = patch.title;
+    else delete day.title;
+  }
+  if (patch.notes !== undefined) {
+    if (patch.notes !== '') day.notes = patch.notes;
+    else delete day.notes;
+  }
+  if (patch.kind !== undefined) {
+    day.kind = patch.kind;
+  }
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Update exercise item fields (notes, reps, restSec, rir). Reuses document validator (S60-D3). */
+export function updateWorkoutItem(
+  document: WorkoutDocumentV1,
+  itemId: string,
+  patch: {
+    name?: string;
+    description?: string;
+    notes?: string;
+    reps?: WorkoutReps;
+    restSec?: number;
+    rir?: number;
+  },
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) =>
+    d.items.some((item) => item.id === itemId),
+  );
+  if (!day) return fail();
+  const item = day.items.find((i) => i.id === itemId);
+  if (!item) return fail();
+  if (patch.name !== undefined) item.name = patch.name;
+  if (patch.description !== undefined) {
+    if (patch.description !== '') item.description = patch.description;
+    else delete item.description;
+  }
+  if (patch.notes !== undefined) {
+    if (patch.notes !== '') item.notes = patch.notes;
+    else delete item.notes;
+  }
+  if ('reps' in patch) {
+    if (patch.reps !== undefined) item.reps = patch.reps;
+    else delete item.reps;
+  }
+  if ('restSec' in patch) {
+    if (patch.restSec !== undefined) item.restSec = patch.restSec;
+    else delete item.restSec;
+  }
+  if ('rir' in patch) {
+    if (patch.rir !== undefined) item.rir = patch.rir;
+    else delete item.rir;
+  }
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Update set row fields (type, load). Reuses document validator (S60-D3). */
+export function updateWorkoutSet(
+  document: WorkoutDocumentV1,
+  setId: string,
+  patch: {
+    type?: 'warmup' | 'working';
+    load?: WorkoutLoad;
+  },
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  let foundSet: WorkoutSet | undefined;
+  for (const day of current.days) {
+    for (const item of day.items) {
+      const s = item.sets.find((candidate) => candidate.id === setId);
+      if (s) {
+        foundSet = s;
+        break;
+      }
+    }
+    if (foundSet) break;
+  }
+  if (!foundSet) return fail();
+  if (patch.type !== undefined) foundSet.type = patch.type;
+  if (patch.load !== undefined) foundSet.load = patch.load;
+  return parseWorkoutDocumentV1(current);
+}
+
+/** Remove an alternative from an item by index. */
+export function removeWorkoutAlternative(
+  document: WorkoutDocumentV1,
+  itemId: string,
+  alternativeIndex: number,
+): WorkoutDocumentV1 {
+  const current = parseWorkoutDocumentV1(document);
+  const day = current.days.find((d) =>
+    d.items.some((item) => item.id === itemId),
+  );
+  if (!day) return fail();
+  const item = day.items.find((i) => i.id === itemId);
+  if (!item || !Array.isArray(item.alternatives)) return fail();
+  if (alternativeIndex < 0 || alternativeIndex >= item.alternatives.length)
+    return fail();
+  item.alternatives.splice(alternativeIndex, 1);
   return parseWorkoutDocumentV1(current);
 }

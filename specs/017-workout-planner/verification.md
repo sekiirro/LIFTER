@@ -163,6 +163,30 @@
 - **Mutation (DB-only scratch; restored)**: Added temporary migration `20261120120001_t018_remove_plan_create_ledger_mutant.sql`, replacing `create_plan_draft` without its operation-key fingerprint/ledger insert/replay guard. After safe reset and provisioning, the concurrent duplicate-submit test failed as required: expected one Plan ID, received 12; 1 failed, 5 skipped. Removed the scratch migration, safely reset and reprovisioned Stack D, reran the three integration files (16/16 passed), and verified the mutation file is absent.
 - **Local gates**: `npm run lint`, `npm run typecheck`, both format gates, all-origin migration scan, and full unit suite passed. Final full unit run: 278 files / 3,213 tests. One earlier default-worker run had two scheduling timeouts; the passing rerun was recorded in the lane flakes backlog.
 
+## F17 Verification — T043 (VERIFIED — slices 1+2) (s60-fl-f17t043 + s61-fl-f17t043b)
+
+- **Status**: VERIFIED — slice 1 verified: structure, reorder/cross-day move/duplicate, keyboard alternatives, rest-day rejection (3 mutants, PR #170); slice 2 verified: editable fields (plan/day/item notes, fixed/range reps, warmup/working set type, bodyweight/added_weight/assisted set load with value & unit, restSec, rir, day title, day kind switching with rest rejection, alternative removal) reusing document validator `parseWorkoutDocumentV1` (S60-D3; 3 slice-2 mutants).
+- **Branch / stack**: slice 1 `017-plan-builder-slice-1` (PR #170) + slice 2 `017-plan-builder-slice-2` / NO DB stack (pure UI and document transforms).
+- **Implementation**:
+  - `components/workout-planner/WorkoutPlanBuilder.tsx` and `components/workout-planner/WorkoutPlanBuilder.module.css`.
+  - Added pure document transform functions to `lib/workout-planner/document.ts` (`reorderWorkoutItem`, `duplicateWorkoutItem`, `removeWorkoutItem`, `addWorkoutDay`, `reorderWorkoutDay`, `duplicateWorkoutDay`, `removeWorkoutDay`, `updatePlanNotes`, `updateWorkoutDay`, `updateWorkoutItem`, `updateWorkoutSet`, `removeWorkoutAlternative`).
+  - Reused PO-approved S28-PO-2 `builder.*` keys in `lib/i18n/messages/en.ts` and `ar.ts`.
+- **RED**: Initial test `tests/unit/WorkoutPlanBuilder.test.tsx` executed and failed (8 failed in slice 2) before implementation.
+- **GREEN**: All 21 tests passed in `tests/unit/WorkoutPlanBuilder.test.tsx` + 14 tests in `tests/unit/workout-document.test.ts` (35 total), covering AR RTL, EN LTR, sessions/rest days, items, sets, all editable fields, keyboard move controls, and rest-day rejection.
+- **Acceptance Tests**:
+  - Adding or moving an item to a rest day is rejected with `invalid_document` and no write (`onChange` is not called).
+  - Attempting to switch a session day containing items to `kind: 'rest'` is rejected with `invalid_document` and no write (`onChange` is not called; `onError` is called).
+  - A rejected move leaves the item on its source day.
+  - Rest days cannot display or retain items.
+  - Document validator `parseWorkoutDocumentV1` enforces bounds on reps (1..100, min<=max), restSec (0..600, step 15), rir (0..5), load decimals (> 0) without UI logic duplication (S60-D3).
+- **Mutations (6/6 killed; restored; `git diff --exit-code` = 0)**:
+  - _Slice 1 Mutations_:
+    1. Mutation 1 (remove keyboard alternative): Removed `move-item-up` button -> test failed at line 347 (`expected 0 to be greater than 0`). Restored.
+    2. Mutation 2 (remove ID preservation): Regenerated ID on reorder -> test failed at line 407 (`expected '...' to be 'bbbb1111-1111-4111-8111-111111111111'`). Restored.
+    3. Mutation 3 (remove rest-day rejection): Removed rest-day rejection in document parser -> test failed at line 299 (`expected "vi.fn()" to not be called at all, but actually been called 1 times`). Restored.
+  - _Slice 2 Mutations_: 4. Mutation 4 (bypass document validator in `updateWorkoutItem` — S60-D3 violation): In `lib/workout-planner/document.ts:488`, bypassed `parseWorkoutDocumentV1` and returned unvalidated clone -> tests `allows editing exercise notes, rest, and RIR with document validator bounds` and `allows editing exercise reps in fixed mode and range mode with bounds validation` failed (`AssertionError: expected "vi.fn()" to be called 2 times, but got 3 times`). Restored. 5. Mutation 5 (allow rest day with items on kind change — acceptance test violation): In `lib/workout-planner/document.ts:230`, disabled rest day item check -> test `allows editing day kind and rejects converting a session day with items to rest day` failed (`AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times`). Restored. 6. Mutation 6 (drop set load update in `updateWorkoutSet`): In `lib/workout-planner/document.ts:513`, commented out load update -> test `allows editing set type (warmup/working) and set load modes (bodyweight/added_weight/assisted)` failed (`AssertionError: expected 'bodyweight' to be 'added_weight'`). Restored.
+- **Design Gate Screenshots**: Rendered via Playwright across {AR-RTL, EN-LTR} × {light, dark} × {mobile 390px, desktop 1440px} saved to `C:/Users/NEW LAP/.lifter/runs/s60-fl-f17t043/screenshots/` and `C:/Users/NEW LAP/.lifter/runs/s61-fl-f17t043b/screenshots/`.
+
 ## S60 T019 Autosave and Save as Draft with CAS
 
 - **Branch / stack**: `017-autosave-slice-1` / Stack C. Branch started at fresh `origin/main` `8e2ceaf68b1a8b19cf5b3b37e735ae1a7f422721` after PR #164 merged. Every Stack C reset used `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` with `SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'` and `LIFTER_SUPABASE_STACK=c`, followed by `tests/integration/client-accounts-provision.mjs`.
@@ -195,6 +219,16 @@
 - **Mutation (kill -> restore; component file matches pre-mutation bytes)**:
   - Removed the PO scope gate (`if (!allowed) return null;`) -> `non-PO roles render nothing` failed (WO rendered the wizard); restored.
   - Collapsed the state distinction (`skipped_existing` label -> `skipped_already_assigned`) -> `review shows all four receipt outcomes` failed (`Skipped: already has it` missing); restored.
+
+## F17 Verification — T028 (s60-luna-f17t028)
+
+- **Branch / stack**: `017-promote-global-slice-1` / Stack D (`lifter-stack-d`). Migration `20261120190001_f17_promote_workspace_template.sql` is in the lane-reserved `20261120190000–20261120195959` range.
+- **Implementation**: `public.promote_workout_workspace_template(uuid,uuid,integer,uuid)` checks platform-owner authorization before revealing source existence, checks the expected source version, creates a distinct global template identity and immutable version 1 with origin workspace/template/version provenance, copies only the validated workout-template document, preserves the workspace source, writes an audit event, and returns unresolved reference path/status flags. `app_private.f17_workout_template_unresolved_refs(jsonb,uuid)` checks pinned global/private exercise identity/version resolution and returns `RED` for unresolved or foreign workspace references. It is private and registered in the RLS function inventory. Loading is not implemented here; T029 owns load blocking.
+- **RED**: Added the promotion test before the migration; it failed with PostgreSQL `42883` because the promotion RPC did not exist. The existing T023/T024 cases passed.
+- **GREEN**: On Stack D after safe reset + synthetic fixture provisioning, `workout-template-rpcs.test.ts` passed 4/4 and `rls-catalog.test.ts` passed 43/43. Final restored migration also passed the promotion suite 4/4.
+- **Mutation (kill → restore)**: Temporarily changed the RPC to retire the source workspace template before creating its global copy. `workout-template-rpcs.test.ts` failed because source lifecycle was `retired` instead of `active`, proving source retention is asserted. Restored migration SHA-1 object hash: `84c1af8aebbc8cbaa7952450a126d51945997ef1` (same before mutation and after restore). Safe reset + provisioning performed after restoration.
+- **S61-R4 follow-up**: Kept T028 unticked. Added integration assertions for resolved active global + own-workspace private refs (empty unresolved list), foreign-workspace private refs (RED), missing global identity and version (RED), stale expected version (`40001`), and retired/absent sources returning generic `42501` to both PO and non-PO callers. Final restored Stack D run after safe reset + provisioning: `workout-template-rpcs.test.ts` 5/5; full unit suite 3,228/3,228; lint, typecheck, both format gates, and all-origin migration timestamp scan (366 remote refs) passed. Mutation: changed `app_private.f17_workout_template_unresolved_refs` to treat every exercise ref as unresolved; the resolved-reference integration assertion failed as expected. Restored the migration; `git hash-object` before and after was `84c1af8aebbc8cbaa7952450a126d51945997ef1`.
+- **R6 Analyze note**: No FR, SC, acceptance-criterion, or plan design text changed; only implementation, tests, task status, traceability evidence, and verification evidence changed, so no Analyze re-date is needed.
 
 ## S61 T021 — published workout revision immutability
 
@@ -321,3 +355,45 @@
 - **GREEN**: After migration, safe reset, and provisioning, the focused suite passed 3/3. Final touched integration suites (`workout-assign-run`, `workout-assignment-schema`, `workout-template-rpcs`, `workout-templates-schema`, `rls-catalog`, `function-drift-guard`) passed 6 files / 57 tests. After merging `origin/main`, full unit passed 278 files / 3,214 tests. Lint, typecheck, `FORMAT_BASE_SHA=08a6dcc73167bc1d5e984abdeb983d6c1a991532 node scripts/format-check-changed.mjs`, `npm run format:check`, migration timestamp validation, and `check:secrets` passed.
 - **Mutation (Stack D; restored)**: Replaced the All Workspaces distribution-state condition with `false`, safe-reset/reprovisioned, then reran the focused suite. It failed because a previously assigned workspace received `assigned` instead of `skipped_already_assigned`, demonstrating forbidden top-up. Restored the condition, reset/provisioned again, and the final 6-file / 57-test integration run passed.
 - **Scope**: T026 replay/key-conflict semantics, T027, and later UI tasks remain open and were not implemented.
+
+## S62 T035 — Live Video across shared exports
+
+- **Implementation**: `lib/workout-planner/export-reader.ts` is the single resolver for authorized Copy AI Prompt and print reads; it calls `currentWorkoutVideo` on each current F16 detail response. `app/workouts/print/page.tsx` passes that shared payload to `WorkoutPrintView`, which renders the live URL in print and Excel outputs. Video remains absent from frozen revision entries; there is no republish path.
+- **RED/GREEN and mutation evidence**: The original RED/GREEN run and URL-persistence mutation (killed, restored, clean diff) are recorded in the S61 T035 evidence in the branch history. Current regression coverage is `tests/unit/workout-live-video.test.ts` and `tests/unit/workout-copy-prompt-route.test.ts`; the latter proves successive authorized reads use successive current URLs while revision content remains identical.
+- **Renderer evidence**: `tests/unit/workout-print-view.test.tsx` verifies the payload URL is rendered by print view, and `tests/unit/workout-excel-export.test.ts` verifies live URL values in workbook and prompt exports.
+- **Stack C verification**: After Stack C reset and `tests/integration/client-accounts-provision.mjs`, `npm run test:integration -- workout-print-route catalog-exercise-video-t050` passed 2 files / 24 tests. The Stack C migration junction at `supabase-stack-c/supabase/migrations` points to this worktree's root migrations and is untracked.
+- **Focused unit verification**: `npm run test:unit -- tests/unit/workout-live-video.test.ts tests/unit/workout-copy-prompt-route.test.ts tests/unit/workout-print-view.test.tsx tests/unit/workout-excel-export.test.ts` passed 4 files / 27 tests.
+- **Scope**: T035 is verified. T005, T011, and T031 remain open under SC-011.
+
+## F17 Verification — T046 (s61-fl-f17t046)
+
+- **Branch / stack**: `017-assignment-states-slice-1` (stacked on `20261120170000–20261120175959` / PR #176) / Stack B (`lifter-stack-b`).
+- **Scope**: T046 — Assignment state visibility tests (FR-011, SC-004). Proves that `never-assigned`, `intentionally partial`, and `own-templates-only` workspaces/states are distinguishable in:
+  1. The PO view (`TemplateManager.tsx` on main, AR/EN labels, role-gated provenance masking via `workout_template_assignment_copies`).
+  2. Run receipts (`public.assign_workout_templates` RPC from #176).
+  3. Durable state (distribution state flags and template origin copies).
+- **Suites**:
+  - Unit: `tests/unit/workout-assignment-state-visibility.test.tsx` (4 tests).
+  - Integration: `tests/integration/workout-assignment-state-visibility.test.ts` (5 tests).
+- **RED**: Initial implementation of unit tests verified state distinction and role gating; initial integration assertions verified receipt semantics across scopes and state preservation.
+- **GREEN**: All 4 unit tests and 5 integration tests pass cleanly on Stack B.
+- **Mutation (Stack B; restored)**: Mutated `supabase/migrations/20261120170000_f17_workout_template_assign_run.sql` line 147 from:
+  `if workspace_assigned then`
+  to:
+  `if false and workspace_assigned then`
+  collapsing `intentionally partial` (workspace previously assigned) into `never-assigned` under All Workspaces assignment. After `db reset --local` on Stack B and provisioning, ran `tests/integration/workout-assignment-state-visibility.test.ts`: line 130 failed with `AssertionError: expected 'no_copies' to be 'skipped_already_assigned'`, proving intentional partiality is distinguished in run receipts from never-assigned workspaces.
+  Restored the migration file; `git diff --exit-code supabase/migrations/20261120170000_f17_workout_template_assign_run.sql` exited 0; executed clean `db reset --local` and reprovisioned Stack B; re-ran integration suite and confirmed 5/5 GREEN.
+
+## F17 Verification — T029 and S61-R4/T024/T028 load blocking (s61-luna-f17t029)
+
+- **Branch / stack**: `017-load-template-slice-1`, based on `origin/017-promote-global-slice-1` (Stacked on PR #181); Stack D (`supabase-stack-d`) only. Migration `20261121010000_f17_load_workout_template_version.sql` is within the lane-reserved `20261121010000–20261121015959` range.
+- **Implementation**: `public.load_workout_template_version(plan, template kind, template id, explicit version, operation key)` authorizes the workout draft's owning workspace and PO-only global access, locks the draft/template, requires the empty workout draft shape, reads only the requested active immutable version, flags unresolved global/private refs with the T028 helper and fails before writes, remaps every day/item/set UUID, preserves the source values, updates the draft/audit once, and supports authorized exact replay. New private helper has empty search_path and is non-executable to application roles; RPC grants authenticated only.
+- **RED**: Added T029/S61-R4 integration case first. On Stack D with Vault provisioning, it failed with `PGRST202` because `public.load_workout_template_version` was absent. This test covers pinned v1 vs current v2, ID remapping, 0 RIR/source values, source immutability, cross-workspace denial, staff denial for global templates, promotion RED status, and load blocking with no draft write.
+- **GREEN**: After migration and Stack D safe reset + `tests/integration/client-accounts-provision.mjs`, `f19-plan-copy.test.ts`, `workout-template-rpcs.test.ts`, and `rls-catalog.test.ts` passed: 3 files / 57 tests.
+- **Mutation evidence (kill → restore)**:
+  1. Replaced `app_private.f17_remap_workout_template_ids` in Stack D with an identity function. `f19-plan-copy.test.ts` failed at the day-ID inequality assertion (source ID remained unchanged). Restored with safe `db reset --local` + provisioning; the test passed.
+  2. Mutated both template lookups to choose `t.current_version` instead of `p_version`. After safe reset + provisioning, `f19-plan-copy.test.ts` failed because pinned v1 loaded the later `Later` document. Restored both explicit-version predicates.
+  3. Mutated the unresolved-reference guard to `if false`. After safe reset + provisioning, `f19-plan-copy.test.ts` failed because a promoted RED ref loaded successfully (`blocked.error?.code` was undefined). Restored the guard.
+  - Final restored Stack D safe reset + Vault provisioning; all 3 touched integration suites passed 57/57. Final migration file hash: recorded in `R/report.md`; no mutation scratch persisted.
+- **T028 S61-R4**: Promoted source stays in workspace, promoted identity is separate, unresolved reference response is RED, and the promoted RED ref cannot load. Existing T028 promotion mutation and RED coverage are recorded above in this file's earlier T028 section; T028 and T024 are now complete.
+- **Analyze**: No FR, SC, acceptance, or plan design text changed; only implementation/test/status/evidence changed, so no Analyze re-date is needed.

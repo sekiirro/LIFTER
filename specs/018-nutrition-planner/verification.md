@@ -235,3 +235,74 @@ distinction` failed (1 failed / 10 passed; Load count 5, not 3). Restored
 - **Local gates:** `npm run lint` clean, `npm run typecheck` clean,
   `FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node
 scripts/format-check-changed.mjs` passed, `npm run format:check` clean.
+
+## Slice 6: T023 (`PDF and Excel export`)
+
+- **Base `origin/main` SHA**: `2739a4d973f30478afcdaa75f9d2d52bbc8b6669`
+- **Stack**: B (`LIFTER_SUPABASE_STACK=b`, API port 25421, DB port 25422)
+- **Node**: `v24.19.0`
+- **Vitest**: `vitest/5.1.0`
+- **Migration**: `supabase/migrations/20261120210000_f18_nutrition_export_audit.sql` (in reserved range `20261120210000–20261120215959`)
+- **Key Files**:
+  - `lib/plans/nutrition/export.ts`
+  - `tests/golden/nutrition-export-ar-en.test.ts`
+  - `tests/integration/nutrition-export.test.ts`
+  - `tests/integration/rls-catalog.test.ts` (registered `public.record_nutrition_export_audit`)
+- **RED Evidence**:
+  - Golden test `tests/golden/nutrition-export-ar-en.test.ts` initially authored and executed prior to implementation; asserted all 9 RED requirements:
+    1. Frozen food names and serving labels when no selection exists.
+    2. Comprehensive plan content (meals, items, quantities/units, macros, alternatives, notes, recipe link).
+    3. Formula injection resistance: cells beginning with `=+\-@\t\r` stored as text with `@` format, preventing spreadsheet execution.
+    4. Two-wall authorization: application authorization check (`canExportNutritionPlan`) + database RLS check on authenticated session client.
+    5. Current-revision selection as primary with recalculated totals.
+    6. Historical-revision export uses that revision's last valid selection (S43-PO-8; S43-R10).
+    7. Displays coach original as labelled per-item side note for selected items only.
+    8. Totals rows carry client-selection totals only (no coach original in totals; S43-PO-2).
+    9. Audit event emission on both success and denial (`plan.nutrition_export`).
+- **GREEN Evidence**:
+  - `tests/golden/nutrition-export-ar-en.test.ts`: 13/13 tests passed (canonical AR/EN goldens, all 9 RED cases, mutation test).
+  - `tests/integration/nutrition-export.test.ts`: 4/4 tests passed against live Stack B Supabase:
+    - Denies export for unpermitted actor (Sales) and logs denial audit.
+    - Denies export for non-existent revision and logs `not_found` denial audit.
+    - Allows authorized export on published revision under real RLS and logs success audit with strict allowlist.
+    - Historical-revision export reads that specific revision selection (S43-PO-8; S43-R10).
+  - `tests/integration/nutrition-audit.test.ts`: 3/3 tests passed.
+  - `tests/integration/rls-catalog.test.ts`: 43/43 tests passed.
+  - `tests/integration/client-accounts-catalog.test.ts`: 22/22 tests passed (asserts 42501 on pending synthetic JWT callers across catalog RPCs).
+- **Mutation Evidence (KILLED, restored, `git diff --exit-code` 0)**:
+  - **Mutation target**: `tests/golden/nutrition-export-ar-en.test.ts:779-804`
+  - **Mutant**: Substituted current revision selection (`Egg 2 piece`, 355 kcal total) into historical revision 1 export projection (which expected `Grilled Chicken 150 g`, 800 kcal total).
+  - **Result**: KILLED — historical golden assertion threw `AssertionError: expected '... Egg 2 piece ... 355 ...' to contain 'Grilled Chicken 150 g'` / `expected '... Egg 2 piece ...' not to contain 'Egg 2 piece'`.
+  - **Restore**: Mutation test wrapper asserted `.toThrow()`, golden projection cleanly preserved. Tracked baseline clean.
+- **Local Gates**:
+  - Full unit test suite: 281 files / 3,241 tests passed.
+  - TypeScript typecheck (`tsc --noEmit`): clean, 0 errors.
+  - ESLint (`eslint . --max-warnings=0`): clean, 0 errors, 0 warnings.
+  - Prettier format check (`prettier --check .` and `format-check-changed.mjs`): 100% formatted.
+- Migration timestamp check: 284 migrations validated, valid timestamp strictly within reserved range.
+
+## S61-R25 — PR #188 export audit repair
+
+- Edited the existing, unmerged `20261120210000_f18_nutrition_export_audit.sql` in place (reserved range `20261120210000–20261120215959`; no new migration). The recorder gets `workspace_id` and the plan client from `plan_roots`, rejects an unrelated revision, and permits only the PO, coaching-work staff with an active membership in the derived workspace, or that plan's own approved client. Caller workspace is ignored. Outcome and reason are constrained to `success`/`denied` and `null`/`not_permitted`/`not_found` as appropriate; all authorization/shape denials use generic `42501` and write no row.
+- `readNutritionExport` now fails closed on audit RPC errors (including returned PostgREST errors), plan-root errors/missing rows, selection errors, and missing version content. It no longer falls back to `plan_revisions.content`. The Excel document totals cell uses approved `L.totals`.
+- **RED, Stack D after safe reset and provisioning:** ran the new integration cases against the original PR migration. The suite failed 6 tests: foreign-workspace coach, different approved client, mismatched plan/revision, coach scope derivation, client scope derivation, and audit allowlist. The mismatched-scope audit used the caller's workspace; invalid outcome/reason reached a table check (`23514`) instead of generic `42501`.
+- **GREEN, Stack D after restoring the fix, safe reset, and provisioning:** `tests/integration/nutrition-export.test.ts` passed 13/13, including foreign coach denied with no row; different approved client denied with no row; cross-plan revision denied with no row; own-workspace coach and plan's own approved client accepted with derived workspace; invalid allowlist denied; audit RPC failure, root read error, and missing-content fallback all fail closed.
+- **Mutation, killed and restored:** changed the membership scope predicate from `wm.workspace_id = v_workspace_id` to `wm.workspace_id = wm.workspace_id`. The foreign-coach test failed at `expect(error).toBe('42501')` (received `null`), proving it detects the scope bypass. Restored the predicate, safely reset and reprovisioned Stack D, then reran the touched integration suite successfully (13/13).
+- **Focused export golden:** `tests/golden/nutrition-export-ar-en.test.ts` passed 13/13 after the success path's selection read was included in its mock. The test now expects an application-wall denial to return before attempting a database audit write.
+
+# S61-R38 nutrition export audit correction
+
+- Stack C safe reset and `tests/integration/client-accounts-provision.mjs` passed with the corrected, PR-owned migration.
+- `tests/integration/nutrition-export.test.ts`: 18/18 passed after the restored migration.
+- Authorization mutation: temporarily removed the success authorization guard in the migration, reset/provisioned Stack C, and reran the focused integration suite. The unauthorized-success test failed because the RPC returned success (`null`) instead of SQLSTATE `42501`. Restored the guard, then reset/provisioned Stack C and reran 18/18 green.
+- Migration SHA-256 before and after mutation: `02F4F54DD989AF297078BD441C8295665FD14A2958A965336BA3AFFC9B35A541` (identical).
+- Full unit suite: 3,247/3,248 passed; unrelated `optimize-body-fat-assets.test.ts` timed out at 5 seconds. A serial-style `--isolate=false` diagnostic was also attempted and produced two unrelated Next registration mock failures, so it is not counted as a passing run.
+- Lint and typecheck passed. `npm run format:check` passed. `npm run check:migration-timestamps` passed: 284 timestamps valid, 11 documented merged exceptions allowed.
+- The required changed-file format script still reports the pre-existing committed `verification.md` as unformatted because it compares `base...HEAD` and excludes the working tree edit; direct Prettier check of the edited file passes. This gate remains unresolved until the edited file is included in a commit and checked against the base.
+
+## S62-R7 canonical UUID audit guard re-application
+
+- **RED (Stack A, after safe reset/provisioning, PR migration before follow-up):** `nutrition-audit.test.ts` failed both `rejects non-UUID item_id` and `rejects non-UUID alternative_id`; each insert resolved instead of rejecting. The test assertions remain unchanged.
+- **GREEN (Stack A, after adding the re-application migration and safe reset/provisioning):** `nutrition-audit.test.ts` passed 5/5. The T023 export allowlist remains extended, while `item_id` and `alternative_id` use `app_private.f18_is_canonical_uuid_v4`.
+- **Mutation (Stack A, on the test above):** replaced the UUIDv4 predicate with the original non-empty-string predicate in the follow-up migration, reset/provisioned, and reran the suite. Both rejection tests failed again (3 passed, 2 failed). The migration file was restored, Stack A was safely reset and provisioned, and the restored suite passed 5/5.
+- **T023 export regression (Stack A):** `nutrition-export.test.ts` passed 18/18 with UUIDv4 item and alternative IDs in the fixture, persisted selections, computed values, and historical-selection assertions.

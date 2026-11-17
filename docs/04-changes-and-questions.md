@@ -1619,7 +1619,7 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s61-po/s61-po-1.verbatim.txt`; SHA-256 `0
 
 <!-- prettier-ignore -->
 ```text
-Amend Constitution 1.17.0: One green CI per exact PR head is sufficient. Moving main alone must not trigger reruns. 
+Amend Constitution 1.17.0: One green CI per exact PR head is sufficient. Moving main alone must not trigger reruns.
 
 Also Don't respect constitution and use the roster's 10 as I said
 ```
