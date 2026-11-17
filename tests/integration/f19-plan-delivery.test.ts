@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { clientContext, sql, graph } from './registration-approval-fixture';
 import type { Context } from './registration-approval-fixture';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 
 let fixture: Context;
 let db: ReturnType<typeof sql>;
@@ -17,6 +18,9 @@ beforeAll(async () => {
   fixture = await clientContext();
   db = sql();
   seeded = await db.begin((tx) => graph(tx, fixture));
+  await db.begin((tx) =>
+    seedSubmittedIntake(tx, fixture.wsA.id, seeded.client),
+  );
   await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,
     delivery_event_id,activation_source)
     values(${fixture.wsA.id},${seeded.subscription},clock_timestamp(),${randomUUID()},'po_override')`;
