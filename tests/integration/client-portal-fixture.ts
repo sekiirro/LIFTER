@@ -93,13 +93,18 @@ export async function portalFixture() {
     clientId: string,
     kind: PlanKind,
     title: string,
+    // The creator. F17/F18 record contributors per revision: a revision whose
+    // draft creator never saved through save_plan_draft must be published by
+    // that same creator (F19 plan_revision_contributors rule).
+    creator: { rpc: typeof fixture.trainerA.client.rpc } = fixture.trainerA
+      .client,
   ): Promise<string> {
     // F17 T020: workout delivery requires a submitted F15 intake.
     if (kind === 'workout' && !intakeSeeded.has(clientId)) {
       await db.begin((tx) => seedSubmittedIntake(tx, fixture.wsA.id, clientId));
       intakeSeeded.add(clientId);
     }
-    const created = await fixture.trainerA.client.rpc('create_plan_draft', {
+    const created = await creator.rpc('create_plan_draft', {
       p_workspace_id: fixture.wsA.id,
       p_client_id: clientId,
       p_plan_kind: kind,

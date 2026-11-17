@@ -83,7 +83,7 @@ describe('F22 client portal projection (T013)', () => {
       plan: {
         plan_id: workoutPlan,
         revision_number: 2,
-        content: { document: { title: 'F22 rev 2' } },
+        content: { notes: 'F22 rev 2' },
       },
     });
     expect(
@@ -99,7 +99,7 @@ describe('F22 client portal projection (T013)', () => {
       status: 'ok',
       plan: {
         revision_number: 1,
-        content: { document: { title: 'F22 rev 1' } },
+        content: { notes: 'F22 rev 1' },
       },
     });
     expect(JSON.stringify(older)).not.toContain(p.fixture.trainerA.userId);

@@ -84,14 +84,14 @@ beforeAll(async () => {
   rev1Id = await revisionId(nutritionPlan, 1);
   rev2Id = await revisionId(nutritionPlan, 2);
   // Per-revision selections: the client's own, plus another client's rows.
-  await select(active.clientId, nutritionPlan, rev1Id, 'item-a', 'alt-a1');
-  await select(active.clientId, nutritionPlan, rev2Id, 'item-a', 'alt-a2');
+  await select(active.clientId, nutritionPlan, rev1Id, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2');
+  await select(active.clientId, nutritionPlan, rev2Id, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3');
   await select(
     other.clientId,
     otherPlan,
     await revisionId(otherPlan, 1),
-    'item-o',
-    'alt-o1',
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1',
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2',
   );
 });
 afterAll(async () => p?.close());
@@ -113,7 +113,7 @@ describe('F22 client nutrition plan read (T024/T029)', () => {
     expect(content.snapshot_map).toBeTypeOf('object');
     expect(content.computed_values).toBeTruthy();
     expect(result.selections).toEqual([
-      { item_id: 'item-a', alternative_id: 'alt-a2' },
+      { item_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', alternative_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3' },
     ]);
   });
 
@@ -124,7 +124,7 @@ describe('F22 client nutrition plan read (T024/T029)', () => {
       revision_number: 1,
     });
     expect(result.selections).toEqual([
-      { item_id: 'item-a', alternative_id: 'alt-a1' },
+      { item_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', alternative_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2' },
     ]);
     expect(await read(active.authUserId, nutritionPlan, 3)).toEqual({
       status: 'not_found',
@@ -138,9 +138,9 @@ describe('F22 client nutrition plan read (T024/T029)', () => {
     const result = await read(other.authUserId, otherPlan, null);
     expect(result.status).toBe('ok');
     expect(result.selections).toEqual([
-      { item_id: 'item-o', alternative_id: 'alt-o1' },
+      { item_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1', alternative_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2' },
     ]);
-    expect(JSON.stringify(result)).not.toContain('alt-a');
+    expect(JSON.stringify(result)).not.toContain('aaaaaaaa-aaaa-4aaa');
   });
 
   it('answers one not_found for draft-only, workout, unknown and another client’s plan', async () => {

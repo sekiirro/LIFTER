@@ -40,10 +40,12 @@ describe('F22 first-activation unit recipient with the F11 assignment (T011)', (
   it('credits the assigned Trainer, resolved at activation time, when a non-Trainer completes the pair', async () => {
     const client = await p.makeClient({ activate: false, label: 'assigned' });
     const workout = await p.createDraft(client.clientId, 'workout', 'F22 aw');
+    // Created by the completing publisher (F19 contributor rule).
     const nutrition = await p.createDraft(
       client.clientId,
       'nutrition',
       'F22 an',
+      p.fixture.po.client,
     );
     expect(await deliver(p.fixture.trainerA.client, workout)).toMatchObject({
       status: 'ok',

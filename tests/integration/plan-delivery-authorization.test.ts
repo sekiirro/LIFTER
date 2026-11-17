@@ -76,8 +76,18 @@ describe('F22 Ready & Publish authorization (T008)', () => {
   it('lets Workspace Owner and Platform Owner deliver a non-completing first plan', async () => {
     const byOwner = await p.makeClient({ activate: false, label: 'wo' });
     const byPo = await p.makeClient({ activate: false, label: 'po' });
-    const workout = await p.createDraft(byOwner.clientId, 'workout', 'F22 wo');
-    const nutrition = await p.createDraft(byPo.clientId, 'nutrition', 'F22 po');
+    const workout = await p.createDraft(
+      byOwner.clientId,
+      'workout',
+      'F22 wo',
+      p.fixture.woA.client,
+    );
+    const nutrition = await p.createDraft(
+      byPo.clientId,
+      'nutrition',
+      'F22 po',
+      p.fixture.po.client,
+    );
     const owner = await p.fixture.woA.client.rpc(
       p.publishRpc(workout),
       publishArgs(workout),
@@ -99,7 +109,12 @@ describe('F22 Ready & Publish authorization (T008)', () => {
 
   it('refuses a non-Trainer completing publisher without writes, then a Trainer completes once', async () => {
     const client = await p.makeClient({ activate: false, label: 'complete' });
-    const workout = await p.createDraft(client.clientId, 'workout', 'F22 cw');
+    const workout = await p.createDraft(
+      client.clientId,
+      'workout',
+      'F22 cw',
+      p.fixture.woA.client,
+    );
     const nutrition = await p.createDraft(
       client.clientId,
       'nutrition',

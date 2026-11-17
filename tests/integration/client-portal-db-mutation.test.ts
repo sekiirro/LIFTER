@@ -47,7 +47,7 @@ beforeAll(async () => {
     await tx`insert into public.client_nutrition_alternative_selections(
       workspace_id, plan_id, plan_version_id, client_id, item_id, alternative_id, created_by)
       values(${p.fixture.wsA.id}, ${ownerNutrition}, ${ownerRevision!.id}, ${other.clientId},
-        'foreign-item', 'foreign-alt', ${p.fixture.trainerA.userId})`;
+        'cccccccc-cccc-4ccc-8ccc-ccccccccccc1', 'cccccccc-cccc-4ccc-8ccc-ccccccccccc2', ${p.fixture.trainerA.userId})`;
   });
   const [row] = await p.db`select app_private.f22_enqueue_client_notice(
     ${p.fixture.wsA.id}::uuid, ${other.clientId}::uuid, 'workout_delivered',
@@ -207,7 +207,7 @@ describe('F22 database control kill tests', () => {
         return row!.value;
       },
     )) as { selections: Array<{ item_id: string }> };
-    expect(observed.selections.map((x) => x.item_id)).toContain('foreign-item');
+    expect(observed.selections.map((x) => x.item_id)).toContain('cccccccc-cccc-4ccc-8ccc-ccccccccccc1');
     await stillInstalled(signature, control);
     // The installed control keeps the owner's read free of it.
     const [real] = await p.db.begin(async (tx) => {
