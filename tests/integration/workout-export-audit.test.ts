@@ -324,4 +324,44 @@ describe('F17 T039 workout export audit (FR-017; SC-008)', () => {
       }),
     ).toBe('42501');
   });
+
+  it('rolls back the audit row when a post-insert audit guard fails (T051 atomicity)', async () => {
+    await db().begin(async (tx) => {
+      await tx`create function pg_temp.fail_workout_audit_atomicity()
+        returns trigger language plpgsql as $body$
+        begin
+          raise exception 'audit_atomicity_probe' using errcode = '23514';
+        end;
+        $body$`;
+      await tx`create trigger workout_export_audit_atomicity_probe
+        after insert on public.audit_events
+        for each row
+        when (new.action = 'plan.workout_export')
+        execute function pg_temp.fail_workout_audit_atomicity()`;
+
+      await tx`select set_config('role', 'authenticated', true)`;
+      await tx`select set_config('request.jwt.claims', ${JSON.stringify({
+        sub: fixture.context.trainerA.userId,
+        role: 'authenticated',
+      })}, true)`;
+      await expect(
+        tx.savepoint(
+          (sp) => sp`
+        select public.record_workout_export_audit(
+          ${fixture.workspaceId}, ${publishedPlanId}, ${publishedRevisionId}, 'pdf', 'success', null
+        )
+      `,
+        ),
+      ).rejects.toMatchObject({ code: '23514' });
+
+      const rows = await tx`
+        select 1 from public.audit_events
+        where action = 'plan.workout_export'
+          and actor_user_id = ${fixture.context.trainerA.userId}
+          and target_id = ${publishedRevisionId}
+          and details->>'outcome' = 'success'
+      `;
+      expect(rows).toHaveLength(0);
+    });
+  });
 });

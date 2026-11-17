@@ -392,3 +392,9 @@ cells are stored as text.
 - T041 status now cites the authorized-route export goldens in `tests/unit/workout-export-route-goldens.test.tsx` and the four new fixtures, with RED/GREEN/two-mutation evidence in `verification.md`; FR-018 is VERIFIED and SC-008/SC-013 evidence unions the route-level coverage.
 - No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S63 T047/T051 Date Update (2026-11-17)
+
+- T047 status and traceability now cite the current-main negative matrix across 9 F17 tables and 14 plan/template/export RPCs, plus mutation probes; T051 cites all-origin migration-version validation, Stack A fresh and upgrade paths, and audit rollback atomicity.
+- #206 is on main and included. #212 remains open; its contributor action-code update remains explicitly outstanding.
+- No FR, SC, acceptance, or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings and 0 open MCQs.

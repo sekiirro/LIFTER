@@ -318,6 +318,18 @@
 
 - **RLS Catalog Update**: Appended minimal verification in `tests/integration/rls-catalog.test.ts` for `app_private.f17_workout_operation_keys` (forced RLS, zero client-role DML privileges) and narrow execute privileges for `public.f17_add_workout_exercise` and `public.f17_resolve_workout_exercise_muscles` (owner postgres, authenticated EXECUTE true, anon/service_role false, search_path="").
 
+## F17 Verification — T047/T051 current-main release gate (s63-luna-f17neg)
+
+- **Baseline / stack**: `e4cc7230c46e3a4a3e76823bba00197e26feb20a` (`origin/main` after explicitly fetching `refs/heads/main`); Stack A only, worktree `LFTR-s63-luna-f17neg`. PR #206 was merged and its audit RPC/migration are included. PR #212 was open at this check and is explicitly remaining below.
+- **T047 scope**: Current main has 9 F17 tables and 14 plan/template/export RPCs from merged PRs #176, #181, #185, #192, #193 and #206. The matrix covers foreign workspace and RLS visibility; direct DML denial; Sales, client, unaffiliated, revoked and foreign-workspace actor denials; PO-only global/assignment/promotion; replay/conflict and CAS; generic denials; export audit.
+- **RED / mutation**: The test mutation harness removed authorization checks and proved the matrix expectations would fail for the affected row. Existing M01–M21 probes remain; this slice adds mutation kills for assignment, promotion, global load, draft save, publish authorization-before-validation, and export audit authorization (27 guard probes total). Each probe runs in a rolled-back savepoint and the helper restores the original function definition with an MD5 equality check.
+- **T051 fresh path**: Stack A `db reset --local` from an empty database completed through current migrations; `client-accounts-provision.mjs` ran after reset. `migration list --local` confirmed F17 export audit version `20261122010000` was applied.
+- **T051 upgrade path**: Stack A `db reset --local --version 20261122000000`, then provisioner, then `migration up --local`; applied `20261122010000_f17_workout_export_audit.sql` and `20261122060000_auth_recovery_limits_t031.sql` successfully.
+- **Migration identity gate**: `npm run check:migration-versions:remote` passed across 437 remote refs with no cross-ref version collision. No migration was added, so the reserved 20261122080000–20261122085959 range was not consumed.
+- **Audit atomicity / DML**: `workout-export-audit.test.ts` injects an after-insert failure and verifies no audit row survives; `workout-negative-matrix.test.ts` checks all 9 F17 tables have no client-role DML; `rls-catalog.test.ts` separately verifies audit_events grants and SECURITY DEFINER RPC access.
+- **Final focused integration**: Stack A, 3 files / 73 tests passed: `workout-negative-matrix.test.ts`, `workout-export-audit.test.ts`, `rls-catalog.test.ts`.
+- **Remaining**: `save_plan_draft` contributor action-code update after open PR #212 merges; extend the matrix for its new action-specific guards then.
+
 ## F17 Verification — T050 performance benchmark and cap decision (s61-luna-f17t050)
 
 - **Branch / stack**: `017-perf-benchmark-slice-1` / Stack D (`lifter-stack-d`; API 45421, DB 45422). Stack D was reset through the approved safe wrapper and `tests/integration/client-accounts-provision.mjs` ran afterward. No migration was added.

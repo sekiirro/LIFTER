@@ -37,6 +37,8 @@ let wsBTemplateId: string;
 let assignmentRunId: string;
 let assignmentCopyId: string;
 let planIdA: string;
+let planRevisionIdA: string;
+let loadPlanIdA: string;
 let sessionDayIdA: string;
 let restDayIdA: string;
 let globalExId: string;
@@ -67,6 +69,38 @@ async function expectRejected(
   matcher: Record<string, unknown>,
 ) {
   await expect(tx.savepoint((sp) => body(sp))).rejects.toMatchObject(matcher);
+}
+
+async function proveFunctionGuardMutationPermits(
+  identity: string,
+  guard: string,
+  replacement: string,
+  actorId: string,
+  action: (tx: Tx) => PromiseLike<readonly unknown[]>,
+) {
+  await withCrashSafeFunctionMutant(
+    identity,
+    (source) => {
+      expect(source).toContain(guard);
+      return source.replaceAll(guard, replacement);
+    },
+    async () => {
+      let actionSucceeded = false;
+      await db.begin(async (tx) => {
+        const rollback = new Error('guard mutation rollback');
+        await expect(
+          tx.savepoint(async (sp) => {
+            const rows = await asActor(sp, actorId, async () => [
+              ...(await action(sp)),
+            ]);
+            actionSucceeded = rows.length > 0;
+            throw rollback;
+          }),
+        ).rejects.toBe(rollback);
+      });
+      expect(actionSucceeded).toBe(true);
+    },
+  );
 }
 
 beforeAll(async () => {
@@ -196,6 +230,32 @@ beforeAll(async () => {
   });
   expect(planARes.error).toBeNull();
   planIdA = String(planARes.data);
+
+  planRevisionIdA = randomUUID();
+  const [planRoot] = await db`
+    select created_by from public.plan_roots
+    where workspace_id = ${f.wsA.id} and id = ${planIdA}
+  `;
+  await db`
+    insert into public.plan_revisions (
+      id, workspace_id, plan_id, revision_number, source_draft_version,
+      plan_kind, content, authored_by
+    )
+    select ${planRevisionIdA}, d.workspace_id, d.plan_id, 1, d.draft_version,
+           'workout', d.content, ${planRoot!.created_by}
+    from public.plan_drafts d
+    where d.workspace_id = ${f.wsA.id} and d.plan_id = ${planIdA}
+  `;
+
+  const emptyPlanRes = await f.trainerA.client.rpc('create_plan_draft', {
+    p_workspace_id: f.wsA.id,
+    p_client_id: notesFixture.clientId,
+    p_plan_kind: 'workout',
+    p_content: { schema_version: 1, days: [] },
+    p_operation_key: randomUUID(),
+  });
+  expect(emptyPlanRes.error).toBeNull();
+  loadPlanIdA = String(emptyPlanRes.data);
 });
 
 afterAll(async () => {
@@ -853,8 +913,132 @@ describe('F17 T047 Full negative matrix — Clause 3: Sales, client, unaffiliate
             ),
           { code: '42501' },
         );
+
+        // RPC 9: record_workout_export_audit
+        await expectRejected(
+          tx,
+          (sp) =>
+            asActor(
+              sp,
+              actor.userId,
+              () =>
+                sp`select public.record_workout_export_audit(
+                  ${f.wsA.id}, ${planIdA}, ${planRevisionIdA}, 'pdf', 'success', null
+                )`,
+            ),
+          { code: '42501' },
+        );
+
+        // RPC 10: PO-only assignment
+        await expectRejected(
+          tx,
+          (sp) =>
+            asActor(
+              sp,
+              actor.userId,
+              () =>
+                sp`select public.assign_workout_templates(
+                  'all', null, null, 'all_workspaces', null, ${randomUUID()}
+                )`,
+            ),
+          { code: '42501' },
+        );
+
+        // RPC 11: PO-only promotion
+        await expectRejected(
+          tx,
+          (sp) =>
+            asActor(
+              sp,
+              actor.userId,
+              () =>
+                sp`select public.promote_workout_workspace_template(
+                  ${f.wsA.id}, ${wsATemplateId}, 1, ${randomUUID()}
+                )`,
+            ),
+          { code: '42501' },
+        );
+
+        // RPC 12: global-template load is PO-only, even for workspace coaches.
+        await expectRejected(
+          tx,
+          (sp) =>
+            asActor(
+              sp,
+              actor.userId,
+              () =>
+                sp`select public.load_workout_template_version(
+                  ${loadPlanIdA}, 'global', ${globalTemplateId}, 1, ${randomUUID()}
+                )`,
+            ),
+          { code: '42501' },
+        );
       }
+
+      const nonCoachingActors = [
+        f.salesA,
+        f.trainerB,
+        clientActor,
+        unaffiliated,
+        revokedActor,
+      ];
+      for (const actor of nonCoachingActors) {
+        // RPC 13: plan draft save requires current workspace coaching_work.
+        await expectRejected(
+          tx,
+          (sp) =>
+            asActor(
+              sp,
+              actor.userId,
+              () =>
+                sp`select public.save_plan_draft(
+                  ${planIdA}, 1, ${sp.json(validDoc('denied-save'))}, ${randomUUID()}
+                )`,
+            ),
+          { code: '42501' },
+        );
+
+        // RPC 14: workout publication returns the same generic status.
+        const [publish] = await asActor(
+          tx,
+          actor.userId,
+          () =>
+            tx`select public.ready_and_publish_plan(${planIdA}, 1, 0, ${randomUUID()}) as result`,
+        );
+        expect(publish!.result).toMatchObject({ status: 'not_permitted' });
+      }
+
+      // A valid foreign-workspace trainer is denied through the same generic code.
+      await expectRejected(
+        tx,
+        (sp) =>
+          asActor(
+            sp,
+            f.trainerB.userId,
+            () =>
+              sp`select public.record_workout_export_audit(
+                ${f.wsA.id}, ${planIdA}, ${planRevisionIdA}, 'pdf', 'success', null
+              )`,
+          ),
+        { code: '42501' },
+      );
     });
+
+    const unauthorizedIds = [
+      f.salesA.userId,
+      clientActor.userId,
+      unaffiliated.userId,
+      revokedActor.userId,
+      f.trainerB.userId,
+    ];
+    const rows = await db`
+      select actor_user_id from public.audit_events
+      where action = 'plan.workout_export'
+        and target_id = ${planRevisionIdA}
+        and details->>'outcome' = 'success'
+        and actor_user_id = any(${unauthorizedIds}::uuid[])
+    `;
+    expect(rows).toHaveLength(0);
   });
 });
 
@@ -1861,6 +2045,109 @@ describe('F17 T047 Full negative matrix — Per-guard mutation kill suite', () =
           'foreign private reference tenancy mutant killed',
         ).toBe(true);
       },
+    );
+  });
+});
+
+describe('F17 T047 Full negative matrix — Export authorization mutation', () => {
+  it('kills removal of the workout export coaching-work guard', async () => {
+    const guard =
+      'if not coalesce(app_private.is_platform_owner(), false)\n     and not exists (';
+    await expect(
+      withCrashSafeFunctionMutant(
+        'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',
+        (source) => {
+          expect(source).toContain(guard);
+          return source.replace(guard, 'if false\n     and not exists (');
+        },
+        async () =>
+          db.begin(async (tx) =>
+            expectRejected(
+              tx,
+              (sp) =>
+                asActor(
+                  sp,
+                  f.salesA.userId,
+                  () =>
+                    sp`select public.record_workout_export_audit(
+                      ${f.wsA.id}, ${planIdA}, ${planRevisionIdA}, 'pdf', 'success', null
+                    )`,
+                ),
+              { code: '42501' },
+            ),
+          ),
+      ),
+    ).rejects.toThrow();
+  });
+});
+
+describe('F17 T047 Full negative matrix — Merged operation guard mutations', () => {
+  it('kills removal of the PO-only assignment guard', async () => {
+    await proveFunctionGuardMutationPermits(
+      'public.assign_workout_templates(text,uuid[],uuid[],text,uuid[],uuid)',
+      'if actor is null or not app_private.is_platform_owner() then',
+      'if actor is null then',
+      f.trainerA.userId,
+      (tx) =>
+        tx`select public.assign_workout_templates(
+          'all', null, null, 'all_workspaces', null, ${randomUUID()}
+        )`,
+    );
+  });
+
+  it('kills removal of the PO-only promotion guard', async () => {
+    await proveFunctionGuardMutationPermits(
+      'public.promote_workout_workspace_template(uuid,uuid,integer,uuid)',
+      'if actor is null or not app_private.is_platform_owner() then',
+      'if actor is null then',
+      f.trainerA.userId,
+      (tx) =>
+        tx`select public.promote_workout_workspace_template(
+          ${f.wsA.id}, ${wsATemplateId}, 1, ${randomUUID()}
+        )`,
+    );
+  });
+
+  it('kills removal of the PO-only global load guard', async () => {
+    const guard =
+      "if p_template_kind = 'global' and not app_private.is_platform_owner() then";
+    await proveFunctionGuardMutationPermits(
+      'public.load_workout_template_version(uuid,text,uuid,integer,uuid)',
+      guard,
+      'if false then',
+      f.trainerA.userId,
+      (tx) =>
+        tx`select public.load_workout_template_version(
+          ${loadPlanIdA}, 'global', ${globalTemplateId}, 1, ${randomUUID()}
+        )`,
+    );
+  });
+
+  it('kills removal of the coaching-work draft-save guard', async () => {
+    const [draft] = await db`
+      select draft_version from public.plan_drafts
+      where workspace_id = ${f.wsA.id} and plan_id = ${planIdA}
+    `;
+    await proveFunctionGuardMutationPermits(
+      'public.save_plan_draft(uuid,bigint,jsonb,uuid)',
+      "if not found or not app_private.has_workspace_access(root.workspace_id, 'coaching_work') then",
+      'if not found then',
+      f.salesA.userId,
+      (tx) =>
+        tx`select public.save_plan_draft(
+          ${planIdA}, ${draft!.draft_version}, ${tx.json(validDoc('mutant-save'))}, ${randomUUID()}
+        )`,
+    );
+  });
+
+  it('kills removal of the coaching-work publish guard before input validation', async () => {
+    await proveFunctionGuardMutationPermits(
+      'public.ready_and_publish_plan(uuid,bigint,bigint,uuid)',
+      "not app_private.has_workspace_access(root.workspace_id, 'coaching_work')",
+      'false',
+      f.salesA.userId,
+      (tx) =>
+        tx`select public.ready_and_publish_plan(${planIdA}, -1, -1, null)`,
     );
   });
 });
