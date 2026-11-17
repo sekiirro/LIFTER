@@ -97,11 +97,23 @@ create policy food_replacement_requests_staff_read on public.food_replacement_re
   for select to authenticated
   using ((select app_private.has_workspace_access(workspace_id, 'coaching_work')));
 
--- Uses the existing definer wall (approved client of this workspace) so the policy never
--- reads public.clients as the caller.
+-- The client self-read predicate is a definer helper so the policy never reads public.clients as
+-- the caller (F18 uses the same pattern for its selection tables).
+create function app_private.f23_is_own_client(p_workspace_id uuid, p_client_id uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.clients c
+    where c.workspace_id = p_workspace_id and c.id = p_client_id
+      and c.auth_user_id = (select auth.uid()) and c.approval_state = 'approved'
+  )
+$$;
+alter function app_private.f23_is_own_client(uuid, uuid) owner to postgres;
+revoke all on function app_private.f23_is_own_client(uuid, uuid) from public, anon, authenticated, service_role;
+grant execute on function app_private.f23_is_own_client(uuid, uuid) to authenticated;
+
 create policy food_replacement_requests_self_read on public.food_replacement_requests
   for select to authenticated
-  using ((select app_private.client_has_access(workspace_id, client_id)));
+  using ((select app_private.f23_is_own_client(workspace_id, client_id)));
 
 revoke all on public.food_replacement_requests from public, anon, authenticated, service_role;
 grant select on public.food_replacement_requests to authenticated;

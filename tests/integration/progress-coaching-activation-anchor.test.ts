@@ -15,7 +15,8 @@ beforeAll(async () => {
 });
 afterAll(async () => db?.end());
 
-const workoutContent = { schemaVersion: 2, document: { title: 'F23 workout' } };
+// F17 workout document (schema_version 1) with no days.
+const workoutContent = { schema_version: 1, days: [], notes: 'F23 workout' };
 // Minimal valid F18 document (no meals, so no catalog food is needed).
 const nutritionDocument = {
   schemaVersion: 1,

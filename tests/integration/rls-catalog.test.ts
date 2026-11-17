@@ -68,6 +68,7 @@ const f23Private = [
   'f23_derived_uuid_v4',
   'f23_food_request_audit',
   'f23_guard_food_replacement_request',
+  'f23_is_own_client',
   'f23_nutrition_item_path',
   'f23_reconcile_food_requests',
 ];
@@ -662,9 +663,11 @@ describe('tenancy security catalog (T007)', () => {
         expect(row.service_role_execute, row.proname).toBe(true);
       }
       if (row.proname.startsWith('f23_')) {
-        // Spec 023: only the RLS visibility predicate is executable by authenticated.
+        // Spec 023: only the RLS visibility predicates are executable by authenticated.
         expect(row.authenticated_execute, row.proname).toBe(
-          row.proname === 'f23_client_progress_visible',
+          ['f23_client_progress_visible', 'f23_is_own_client'].includes(
+            row.proname,
+          ),
         );
         continue;
       }
