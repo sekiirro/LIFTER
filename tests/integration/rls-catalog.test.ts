@@ -65,6 +65,12 @@ const f23Private = [
   'f23_weekly_checkin_schedule_activate',
   'f23_weekly_checkin_schedule_deactivate',
   'f23_write_measurement_correction',
+  'f23_derived_uuid_v4',
+  'f23_food_request_audit',
+  'f23_guard_food_replacement_request',
+  'f23_is_own_client',
+  'f23_nutrition_item_path',
+  'f23_reconcile_food_requests',
 ];
 // Spec 024 private helpers (all revoked from every API role).
 const f24Private = [
@@ -586,6 +592,10 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        // F23 US3: trigger guard and pure SQL/plpgsql helpers are invoker routines.
+        'f23_derived_uuid_v4',
+        'f23_guard_food_replacement_request',
+        'f23_nutrition_item_path',
         ...f24Invoker,
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
@@ -684,9 +694,11 @@ describe('tenancy security catalog (T007)', () => {
         continue;
       }
       if (row.proname.startsWith('f23_')) {
-        // Spec 023: only the RLS visibility predicate is executable by authenticated.
+        // Spec 023: only the RLS visibility predicates are executable by authenticated.
         expect(row.authenticated_execute, row.proname).toBe(
-          row.proname === 'f23_client_progress_visible',
+          ['f23_client_progress_visible', 'f23_is_own_client'].includes(
+            row.proname,
+          ),
         );
         continue;
       }

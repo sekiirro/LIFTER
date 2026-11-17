@@ -1,5 +1,15 @@
 # Analyze: 023 Client Progress Coaching (P5 Progress)
 
+## Re-run 2026-11-17 (US3 implementation, after the F18 merge)
+
+Date: 2026-11-17. Scope: `specs/023-client-progress-coaching/`. No FR, SC, acceptance or plan design text changed. Changed text in this pass:
+
+- `data-model.md`: the FoodReplacementRequest status list gains `cancelled`, the closed state of a client withdrawal that FR-020 already allows (FR-027's four states are unchanged and remain the server-driven lifecycle);
+- `quickstart.md`: scenarios 9-12 now name their tests instead of BLOCKED on F18;
+- `tasks.md`: evidence annotations and checkboxes for tasks whose exact-head CI is green, plus the exact missing contract for the tasks that stay blocked.
+
+Result: 0 open CRITICAL, 0 open HIGH. Open dependency, recorded: client-recipient notifications (T010, T014, T033, T040) wait for the spec 022 client inbox on the F15 inbox (PR #108, not merged); the F15 inbox has no generic notice kind for staff either. T028 waits for an overdue access projection from P4/F13. T051 and T054 are orchestrator-owned.
+
 Date: 2026-11-15 (re-run after S57-PO-13). Scope: `specs/023-client-progress-coaching/`. This full Analyze follows the S57-PO-8, S57-PO-10, S57-PO-12 and S57-PO-13 spec changes (S57-PO-13 changes only copy status and the `checkin.config.saved` AR text; no FR, SC or acceptance text):
 
 - FR-006, FR-012, FR-013, FR-036 and SC-006 were changed;

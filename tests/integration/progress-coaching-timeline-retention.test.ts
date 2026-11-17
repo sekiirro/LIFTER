@@ -56,6 +56,7 @@ describe('spec 023 timeline retention (T045)', () => {
       'public.subscription_freezes',
       'public.subscription_freeze_events',
       'app_private.client_closure_operations',
+      'public.food_replacement_requests',
     ])
       expect(body, source).toContain(source);
     // No write statements: the projection never duplicates audit rows.
