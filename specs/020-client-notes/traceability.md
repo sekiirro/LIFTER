@@ -82,3 +82,9 @@
 
 - FR-008 → T017 → `tests/unit/client-notes-ui.test.tsx::orders saved off-page snapshots by creation time after first-page refreshes`.
 - Evidence: implementation commit `dd6497757b56039ff65b49eca6d4b4bc0712ffc6`; focused regression RED before the sort, GREEN after, and the removed-sort mutation failed. Full unit suite passed 2,989/2,989 on the implementation tree.
+
+## S63 docs-only evidence (T001 spec-only contract)
+
+| FR                                                                                     | Task | Asserting test                                                                                                                                                                    | Evidence                                                                                                                                                                                                              |
+| -------------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011 | T001 | spec-only contract: `spec.md`, `plan.md`, `data-model.md`, `research.md`, `contracts/client-notes-api.md`, `contracts/client-notes-rls.md`, `checklists/analyze.md` (no code/SQL) | S63: ticked — S37-S40 PO answers recorded (`research.md:29`; `plan.md:55` rounds 6-14); S40-PO-12 resolutions CN-MCQ-24/CN-MCQ-25 encoded (`plan.md:91-92`; `spec.md:70,102`; `contracts/client-notes-rls.md:12,21`). |

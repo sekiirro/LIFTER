@@ -34,6 +34,16 @@ describe('preferences', () => {
     expect(dirFor('ar')).toBe('rtl');
     expect(dirFor('en')).toBe('ltr');
   });
+  it('keeps preference cookies hostname-scoped with no Domain attribute', () => {
+    for (const cookie of [
+      serializePreferenceCookie(THEME_COOKIE, 'dark'),
+      serializePreferenceCookie(LOCALE_COOKIE, 'en'),
+      serializePreferenceCookie(THEME_COOKIE, 'x; Path=/other'),
+    ]) {
+      expect(cookie).not.toMatch(/Domain=/i);
+      expect(cookie).toContain('Path=/');
+    }
+  });
   it('serializes year-long same-site cookies', () => {
     expect(serializePreferenceCookie(THEME_COOKIE, 'dark')).toBe(
       'lifter_theme=dark; Path=/; Max-Age=31536000; SameSite=Lax',

@@ -159,7 +159,7 @@ The PO-only management surface controls workspace-specific names, prices and pac
 
 Promotional categories use approved Africa/Cairo start-inclusive/end-exclusive periods. Expiry stops new links only; issued links retain snapshots (S33-PO-6 S33-05/06).
 
-Historical FX reporting preserves source transaction/settlement currency and separate settlement records. It uses Africa/Cairo transaction dates, previous published business-day rates, verified Frankfurter data, exact EGP identity rate, and idempotent rate-pending retries excluded from totals until fetched. Converted commission remains PO/WO-only; Sales/Trainer are denied (S33-PO-6). Provider requests exclude client/workspace data.
+Historical FX reporting preserves source transaction/settlement currency and separate settlement records. It uses Africa/Cairo transaction dates, previous published rates from the Frankfurter v2 provider pinned per currency (`USD`→`CBE`, `SAR`→`SAMA`, own calendar; S61-PO-1), verified Frankfurter data, exact EGP identity rate, and idempotent rate-pending retries excluded from totals until fetched. Converted commission remains PO/WO-only; Sales/Trainer are denied (S33-PO-6). Provider requests exclude client/workspace data.
 
 ## S43-PO-6/7 package-tier contract delta (no migration authored)
 

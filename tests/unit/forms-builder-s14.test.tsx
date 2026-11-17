@@ -10,6 +10,7 @@ import {
   previewInputValue,
 } from '../../components/forms/FormPreview';
 import { createMockFormsStaffAdapter } from '../../lib/forms/mock-staff-adapter';
+import { getMessages } from '../../lib/i18n';
 import type { StaffFormDraft } from '../../lib/forms/staff-contracts';
 
 const draft: StaffFormDraft = {
@@ -212,17 +213,40 @@ describe('S14 staff form Builder', () => {
 });
 
 describe('FormPreview conditions', () => {
-  it('formats derived meal numbers with the approved template and Bidi isolation', () => {
+  it('interpolates every derived meal number with the exact approved template and LTR isolation', () => {
     for (const locale of ['ar', 'en'] as const) {
-      const html = renderToStaticMarkup(
-        createElement(PreviewDerivedMealLabel, {
-          locale,
-          option: 'meal-2',
-        }),
-      );
-      expect(html).toContain('<bdi dir="ltr">2</bdi>');
-      expect(html).not.toContain('٢');
+      const template = getMessages(locale)['forms.afterMealNumber'];
+      expect(template).toContain('{number}');
+      for (let meal = 1; meal <= 5; meal += 1) {
+        const html = renderToStaticMarkup(
+          createElement(PreviewDerivedMealLabel, {
+            locale,
+            option: `meal-${meal}`,
+          }),
+        );
+        expect(html).toBe(
+          template.replace('{number}', `<bdi dir="ltr">${meal}</bdi>`),
+        );
+        expect(html).toContain(`<bdi dir="ltr">${meal}</bdi>`);
+        expect(html).not.toMatch(/[٠-٩]/);
+      }
     }
+    expect(
+      renderToStaticMarkup(
+        createElement(PreviewDerivedMealLabel, {
+          locale: 'ar',
+          option: 'meal-3',
+        }),
+      ),
+    ).toBe('الوجبة رقم <bdi dir="ltr">3</bdi>');
+    expect(
+      renderToStaticMarkup(
+        createElement(PreviewDerivedMealLabel, {
+          locale: 'en',
+          option: 'meal-3',
+        }),
+      ),
+    ).toBe('After meal <bdi dir="ltr">3</bdi>');
   });
 
   it('keeps numeric answer values visible in controlled preview inputs', () => {

@@ -26,7 +26,7 @@ function item(
   overrides: Record<string, unknown> = {},
 ): Record<string, unknown> {
   return {
-    id: 'i-1',
+    id: '33333333-3333-4333-8333-333333333331',
     foodId: '11111111-1111-1111-1111-111111111111',
     foodVersion: 3,
     quantity: { value: '37.5', unit: { kind: 'basis', value: 'g' } },
@@ -89,7 +89,14 @@ function sevenDayDocument(
       dayIndex,
       dayTypeId: dayIndex % 2 === 0 ? 'dt-train' : 'dt-rest',
       meals: [
-        meal({ id: `m-${dayIndex}`, items: [item({ id: `i-${dayIndex}` })] }),
+        meal({
+          id: `m-${dayIndex}`,
+          items: [
+            item({
+              id: `55555555-5555-4555-8555-${String(dayIndex + 1).padStart(12, '0')}`,
+            }),
+          ],
+        }),
       ],
     })),
     title: null,
@@ -117,6 +124,58 @@ function expectReject(
 }
 
 describe('nutrition document v1 validator (F18-FR-002, T001)', () => {
+  it('rejects non-UUID item and alternative ids as invalid_document', () => {
+    expectReject(
+      singleDayDocument({
+        meals: [meal({ items: [item({ id: 'item-not-uuid' })] })],
+      }),
+      CONTEXT,
+      'invalid_document',
+      'meals[0].items[0].id',
+    );
+    expectReject(
+      singleDayDocument({
+        meals: [
+          meal({
+            items: [
+              item({
+                alternatives: [
+                  {
+                    id: 'alternative-not-uuid',
+                    foodId: '11111111-1111-1111-1111-111111111111',
+                    foodVersion: 3,
+                    quantity: {
+                      value: '1',
+                      unit: { kind: 'serving', unitKey: 'scoop' },
+                    },
+                  },
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+      CONTEXT,
+      'invalid_document',
+      'meals[0].items[0].alternatives[0].id',
+    );
+  });
+
+  it('rejects an uppercase UUID item id because ids are canonical lowercase', () => {
+    expectReject(
+      singleDayDocument({
+        meals: [
+          meal({
+            items: [item({ id: 'ABCDEFAB-CDEF-4ABC-8ABC-ABCDEFABCDEF' })],
+          }),
+        ],
+      }),
+      CONTEXT,
+      'invalid_document',
+      'meals[0].items[0].id',
+    );
+  });
+
   it('accepts the valid single-day fixture (GREEN)', () => {
     const parsed = validateNutritionDocument(singleDayDocument(), CONTEXT);
     expect(parsed.structure).toBe('single_day');
@@ -194,7 +253,7 @@ describe('nutrition document v1 validator (F18-FR-002, T001)', () => {
               item({
                 alternatives: [
                   {
-                    id: 'a-1',
+                    id: '44444444-4444-4444-8444-444444444441',
                     foodId: '11111111-1111-1111-1111-111111111111',
                     foodVersion: 3,
                     quantity: {
@@ -210,10 +269,10 @@ describe('nutrition document v1 validator (F18-FR-002, T001)', () => {
             id: 'm-2',
             items: [
               item({
-                id: 'i-2',
+                id: '33333333-3333-4333-8333-333333333332',
                 alternatives: [
                   {
-                    id: 'a-1',
+                    id: '44444444-4444-4444-8444-444444444441',
                     foodId: '11111111-1111-1111-1111-111111111111',
                     foodVersion: 3,
                     quantity: {
@@ -420,7 +479,7 @@ describe('nutrition document v1 validator (F18-FR-002, T001)', () => {
 
   it('rejects at most three alternatives per item (F18-FR-006)', () => {
     const alts = [1, 2, 3, 4].map((n) => ({
-      id: `a-${n}`,
+      id: `66666666-6666-4666-8666-${String(n).padStart(12, '0')}`,
       foodId: '11111111-1111-1111-1111-111111111111',
       foodVersion: 3,
       quantity: { value: '1', unit: { kind: 'serving', unitKey: 'scoop' } },

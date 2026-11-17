@@ -76,4 +76,4 @@ T001–T002 → T003, T005–T007. T008 after T001–T007. T004 is independent.
 
 ## S41 documentation reconciliation
 
-- [ ] T013 [FR-006] Update the FR-006 traceability row and summary to state that projection coverage is limited to the at most 15 supplied relations in `scripts/free-tier/db-usage.mjs` and omits other tables/database overhead. Keep FR-006 PARTIAL; do not add or claim test evidence.
+- [x] T013 [FR-006] Update the FR-006 traceability row and summary to state that projection coverage is limited to the at most 15 supplied relations in `scripts/free-tier/db-usage.mjs` and omits other tables/database overhead. Keep FR-006 PARTIAL; do not add or claim test evidence. Evidence (S63): done on main — traceability.md:12 states db-usage.mjs supplies at most 15 relations and omits other tables/database overhead; Summary states the 15-relation limit; FR-006 kept PARTIAL; no test evidence added or claimed; main CI run 43995126788 validate success (spec-consistency traceability cross-checks scripts/spec-consistency.mjs:49-50 executed; files identical 9f80 to f25c2410).

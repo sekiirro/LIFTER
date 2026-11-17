@@ -1,0 +1,73 @@
+{
+  "status": "ok",
+  "payload": {
+    "planTitle": "البرنامج",
+    "planIdentity": "1",
+    "documentNotes": "Route note: Follow prescribed RIR strictly. ملاحظة المستند: الالتزام بـ RIR.",
+    "days": [
+      {
+        "kind": "session",
+        "title": "Day 1 - Upper Power",
+        "notes": "Route session note: Warm up rotator cuff thoroughly.",
+        "items": [
+          {
+            "name": "Bench Press",
+            "description": "Barbell flat bench press on competition bench",
+            "reps": {
+              "min": 8,
+              "max": 10
+            },
+            "restSec": 120,
+            "rir": 2,
+            "notes": "Coach note: Arch slightly, drive through heels. ملاحظة الكابتن: ثبّت كعبيك.",
+            "alternatives": [
+              {
+                "name": "Incline Dumbbell Press",
+                "videoUrl": "https://video.example.com/incline-db"
+              },
+              {
+                "name": "Machine Chest Press"
+              }
+            ],
+            "videoUrl": "https://video.example.com/bench-press",
+            "sets": [
+              {
+                "type": "warmup",
+                "load": {
+                  "mode": "bodyweight"
+                }
+              },
+              {
+                "type": "working",
+                "load": {
+                  "mode": "added_weight",
+                  "value": "80",
+                  "unit": "kg"
+                }
+              }
+            ]
+          },
+          {
+            "name": "Dips",
+            "description": "=1+1 formula injection attempt in description",
+            "reps": {
+              "value": 15
+            },
+            "restSec": 60,
+            "rir": 0,
+            "notes": "+2.5kg next block; @coach review depth; -avoid shoulder pain",
+            "alternatives": [],
+            "videoUrl": "https://video.example.com/dips",
+            "sets": []
+          }
+        ]
+      },
+      {
+        "kind": "rest",
+        "title": "Day 2 - Active Recovery",
+        "notes": "Rest note: 20-30 min mobility & light walking.",
+        "items": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+.card {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: var(--text-xl);
+  line-height: var(--line-height-heading);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.body {
+  font-size: var(--text-base);
+  line-height: var(--line-height-body);
+  color: var(--color-text-muted);
+}

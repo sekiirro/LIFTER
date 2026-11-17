@@ -1,7 +1,19 @@
 # Spec Kit Analyze - F17 Workout Planner
 
-**Analyzed:** 2026-11-10 05:43 UTC
+**Analyzed:** 2026-11-17 01:13 Cairo; T035 evidence recorded, no requirement text changed
 **Method:** Cross-artifact and S41 hostile review of the updated F17 spec-only scope after S43-R9 Sol-3/Sol-4.
+
+**S58 date update (retained from base/PR side):** Re-dated after task-status and traceability evidence updates only; no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
+**S59 date update:** task-status and traceability evidence only (T031); no FR/SC/acceptance/plan text changed; 0 open CRITICAL/HIGH findings
+**S60 date update:** task-status and traceability evidence only (T043 partial); no FR/SC/acceptance/plan text changed; 0 open CRITICAL/HIGH findings
+
+**S60 date update:** Re-dated after T016/T017 task-status and traceability evidence updates only; the negative matrix and mutation evidence are recorded in `verification.md`. No FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
+
+**S60 date update (2026-11-16):** Re-dated after T040 implementation, task status and traceability evidence updates only; no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
+
+**S63 date update (2026-11-17 08:43 Cairo):** T022/T027 task statuses and traceability evidence only; no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
+
+**S62 refresh date update (2026-11-17):** Re-dated after merging origin/main into this slice (T037 print-route/export-reader evidence); task-status and traceability evidence only, no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
 
 ## Entry check at the start of the S44 lane (2026-11-10 05:43 UTC)
 
@@ -326,3 +338,65 @@ cells are stored as text.
 | LOW      | 0 open  | FR/task/SC cross-references remain aligned. Residual: bare "no"/"not" cues and the descriptive "There is no need to change the load" case stay negated by design (see lane report). |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## Slice 1 Date Update (2026-11-15 12:37 UTC)
+
+- Updated `tasks.md` (ticked `T013` only; `T016`/`T017` remain unticked), `traceability.md` (recorded slice-1 evidence and partial `T016`/`T017` coverage for `workout_global_templates`, `workout_global_template_versions`, `workout_workspace_templates`, `workout_workspace_template_versions`), and `verification.md`.
+- No FR, SC, acceptance criteria, or plan design text changed (Constitution 1.17.0 date update).
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## T023/T024 Date Update (2026-11-15)
+
+- T023/T024 task status and traceability now cite the Stack B RPC, governance, and mutation evidence in `verification.md`.
+- No FR, SC, acceptance criteria, or plan design text changed; promoted-template loading remains T028/T029 scope.
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## T037 Date Update (2026-11-16)
+
+- T037 task status and traceability now cite the verified evidence in `components/workout-planner/WorkoutPrintView.tsx`, `components/workout-planner/WorkoutPrintView.module.css`, `lib/workout-planner/excel-export.ts`, and `tests/unit/workout-print-view.test.tsx`.
+- Reused merged T038 Excel export S58-PO-5 approved column headings and shared formatting helpers without duplicated strings; verified full FR-018 field parity, AR RTL print CSS, and mutations.
+- T037 remains unticked `[ ]` and traceability is PARTIAL: "T037 renderer verified; route pending authorized revision read" (authorized server-side read of ONE selected revision into WorkoutExportPayload is pending).
+- No FR, SC, acceptance criteria, or plan design text changed (Constitution 1.17.0 / R6 date update).
+
+## T033 Date Update (2026-11-16)
+
+- T033 is ticked with evidence in `tasks.md`; `traceability.md` records the new UI test for FR-004/FR-005/SC-001 and `verification.md` records RED/GREEN/mutation.
+- No FR, SC, acceptance criteria, or plan design text changed.
+
+## T034 Date Update (2026-11-16)
+
+- Updated `tasks.md` (ticked `T034` only), `traceability.md` (FR-002/FR-003/SC-011 cite the T034 unit evidence; T034 verified, remaining UI/integration tasks open), and `verification.md` (T034 RED/GREEN/mutation/design-gate evidence).
+- No FR, SC, acceptance criteria, or plan design text changed (R6: Analyze itself is NOT re-dated).
+
+## S60 T018 Date Update (2026-11-16)
+
+- T018 task status and traceability evidence were updated after its tests passed, and verification records the database ledger mutation.
+- No FR, SC, acceptance criteria, or plan design text changed; existing analysis remains applicable.
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S60 T019 Date Update (2026-11-16)
+
+- T019 task status and traceability cite Stack C CAS, invalid rest-day rejection, no-op autosave and mutation evidence in `verification.md`.
+
+## T025 Date Update (2026-11-16)
+
+- T025 task status and FR-010/FR-011 plus SC-003/SC-004 traceability now cite Stack D RPC and RED/GREEN/mutation evidence in `verification.md`.
+- No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## T039 date update (2026-11-17, s63-hy4-f17t039)
+
+- T039 task status, FR-017/SC-008/FR-025 traceability rows and `verification.md` now cite the Stack B export-audit recorder, allowlist guard, RED/GREEN and two mutation kills/restores.
+- No FR, SC, acceptance-criteria, plan-design, contract or copy text changed; this is a status/evidence update only (S54-R6).
+
+## T041 Date Update (2026-11-17)
+
+- T041 status now cites the authorized-route export goldens in `tests/unit/workout-export-route-goldens.test.tsx` and the four new fixtures, with RED/GREEN/two-mutation evidence in `verification.md`; FR-018 is VERIFIED and SC-008/SC-013 evidence unions the route-level coverage.
+- No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S63 T047/T051 Date Update (2026-11-17)
+
+- T047 status and traceability now cite the current-main negative matrix across 10 F17 tables and 14 plan/template/export RPCs, including #212 contributor action codes, plus mutation probes; T051 cites all-origin migration-version validation, Stack A fresh and upgrade paths, and audit rollback atomicity.
+- #206 and #212 are merged and included. No current-main RPC/table remains outstanding for T047.
+- No FR, SC, acceptance, or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings and 0 open MCQs.

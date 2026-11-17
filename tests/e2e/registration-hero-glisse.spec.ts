@@ -13,7 +13,7 @@ import {
   measureHeroGlisseContrast,
 } from './registration-hero-evidence';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const heroPath = '/showcase/f14-hero';
 
 type RenderedColor = {
