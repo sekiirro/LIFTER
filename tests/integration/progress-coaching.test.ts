@@ -75,29 +75,30 @@ const checkinDefinition = {
   ],
 };
 
-// Both forms share one published terms version: publishing a newer terms version
-// makes every older one non-current, and F15 then treats those forms as not found.
-async function currentTerms(tx: Tx) {
-  const terms = `f23-${randomUUID()}`;
-  await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
-    values(${terms},'terms','published')`;
-  return terms;
-}
-
-async function publishedForm(
-  tx: Tx,
-  workspaceId: string,
-  terms: string,
-  definition: object,
-) {
-  const formId = randomUUID();
-  await tx`insert into public.forms(id,workspace_id,name) values(${formId},${workspaceId},'F23 weekly check-in')`;
-  await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
-    values(${workspaceId},${formId},1,${terms},${tx.json(definition as JSONValue)},'published')`;
-  return formId;
-}
-
 describe('spec 023 progress coaching (database walls and behavior)', () => {
+  // Rollback-scoped: every caller runs inside probe(), which rolls the insert back.
+  // Both forms share one published terms version: publishing a newer terms version
+  // makes every older one non-current, and F15 then treats those forms as not found.
+  async function currentTerms(tx: Tx) {
+    const terms = `f23-${randomUUID()}`;
+    await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+      values(${terms},'terms','published')`;
+    return terms;
+  }
+
+  async function publishedForm(
+    tx: Tx,
+    workspaceId: string,
+    terms: string,
+    definition: object,
+  ) {
+    const formId = randomUUID();
+    await tx`insert into public.forms(id,workspace_id,name) values(${formId},${workspaceId},'F23 weekly check-in')`;
+    await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+      values(${workspaceId},${formId},1,${terms},${tx.json(definition as JSONValue)},'published')`;
+    return formId;
+  }
+
   it('schedules, extracts, corrects, exposes the 024 contract and isolates workspaces', async () => {
     const f = await clientContext();
     await probe(async (tx) => {

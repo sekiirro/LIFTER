@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { clientContext, graph, sql } from './registration-approval-fixture';
 import type { Context } from './registration-approval-fixture';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 
 // Spec 023 T009/T013 on the real F19 T021 path: the weekly check-in anchor is the
 // client's first activation, which ready_and_publish_plan now writes atomically when
@@ -14,6 +15,25 @@ beforeAll(async () => {
 });
 afterAll(async () => db?.end());
 
+const workoutContent = { schemaVersion: 2, document: { title: 'F23 workout' } };
+// Minimal valid F18 document (no meals, so no catalog food is needed).
+const nutritionDocument = {
+  schemaVersion: 1,
+  structure: 'single_day',
+  implicitDayTypeId: 'dt-1',
+  dayTypes: [
+    {
+      id: 'dt-1',
+      name: { ar: 'يوم', en: 'Day' },
+      trainingDay: true,
+      targets: null,
+    },
+  ],
+  meals: [],
+  title: { ar: 'خطة', en: 'F23 nutrition' },
+  notes: null,
+};
+
 async function deliver(
   client: Context['trainerA']['client'],
   workspaceId: string,
@@ -24,19 +44,26 @@ async function deliver(
     p_workspace_id: workspaceId,
     p_client_id: clientId,
     p_plan_kind: kind,
-    p_content: { schemaVersion: 2, document: { title: `F23 ${kind}` } },
+    p_content: kind === 'nutrition' ? nutritionDocument : workoutContent,
     p_operation_key: randomUUID(),
   });
   if (created.error || typeof created.data !== 'string')
     throw new Error(
       `Plan draft failed: ${created.error?.code ?? 'missing id'}`,
     );
-  return client.rpc('ready_and_publish_plan', {
-    p_plan_id: created.data,
-    p_expected_draft_version: 1,
-    p_expected_published_version: 0,
-    p_operation_key: randomUUID(),
-  });
+  // F18: nutrition revisions publish only through publish_nutrition_revision; the generic
+  // ready_and_publish_plan refuses nutrition plans.
+  return client.rpc(
+    kind === 'nutrition'
+      ? 'publish_nutrition_revision'
+      : 'ready_and_publish_plan',
+    {
+      p_plan_id: created.data,
+      p_expected_draft_version: 1,
+      p_expected_published_version: 0,
+      p_operation_key: randomUUID(),
+    },
+  );
 }
 
 describe('spec 023 first-activation check-in anchor (F19 T021)', () => {
@@ -57,6 +84,8 @@ describe('spec 023 first-activation check-in anchor (F19 T021)', () => {
       app_private.f23_client_checkin_anchor(${ws},${seeded.client}) as anchor`;
     expect(pending!.anchor).toBeNull();
 
+    // F17 gate: a workout delivery requires a submitted F15 intake for the client.
+    await db.begin((tx) => seedSubmittedIntake(tx, ws, seeded.client));
     const completing = await deliver(
       context.trainerA.client,
       ws,

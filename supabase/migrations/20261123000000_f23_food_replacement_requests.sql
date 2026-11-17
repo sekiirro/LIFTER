@@ -97,15 +97,11 @@ create policy food_replacement_requests_staff_read on public.food_replacement_re
   for select to authenticated
   using ((select app_private.has_workspace_access(workspace_id, 'coaching_work')));
 
+-- Uses the existing definer wall (approved client of this workspace) so the policy never
+-- reads public.clients as the caller.
 create policy food_replacement_requests_self_read on public.food_replacement_requests
   for select to authenticated
-  using (exists (
-    select 1 from public.clients c
-    where c.workspace_id = food_replacement_requests.workspace_id
-      and c.id = food_replacement_requests.client_id
-      and c.auth_user_id = (select auth.uid())
-      and c.approval_state = 'approved'
-  ));
+  using ((select app_private.client_has_access(workspace_id, client_id)));
 
 revoke all on public.food_replacement_requests from public, anon, authenticated, service_role;
 grant select on public.food_replacement_requests to authenticated;
