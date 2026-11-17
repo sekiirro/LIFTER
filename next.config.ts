@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   async headers() {
     const headers = [
       { key: 'Referrer-Policy', value: 'no-referrer' },
-      { key: 'Cache-Control', value: 'no-store' },
+      { key: 'Cache-Control', value: 'private, no-store' },
     ];
     return [
       { source: '/register/:token', headers },
