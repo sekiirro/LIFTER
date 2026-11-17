@@ -138,7 +138,8 @@ const COMMIT_REQUIRED = [
   {
     file: 'tests/integration/forms-alert-mutations.test.ts',
     signature: /makeAssignment\(/,
-    reason: 'makeAssignment helper: called only from rollbackProbe-wrapped mutation transactions',
+    reason:
+      'makeAssignment helper: called only from rollbackProbe-wrapped mutation transactions',
   },
   {
     file: 'tests/integration/forms-assignment-mutations.test.ts',
@@ -184,7 +185,9 @@ const COMMIT_REQUIRED = [
   },
 ];
 
-function listFiles(directory) {
+type Site = { file: string; index: number; source: string };
+
+function listFiles(directory: string): string[] {
   return readdirSync(directory).flatMap((entry) => {
     const absolute = join(directory, entry);
     if (statSync(absolute).isDirectory()) return listFiles(absolute);
@@ -192,21 +195,23 @@ function listFiles(directory) {
   });
 }
 
-function enclosingBlock(source, index) {
+function enclosingBlock(source: string, index: number): string | null {
   const lines = source.split('\n');
   let offset = 0;
   let startLine = -1;
   for (let i = 0; i < lines.length; i += 1) {
-    const lineStart = offset;
-    offset += lines[i].length + 1;
+    const line = lines[i];
+    if (line === undefined) continue;
+    offset += line.length + 1;
     if (offset <= index) {
-      if (BOUNDARY.test(lines[i])) startLine = i;
+      if (BOUNDARY.test(line)) startLine = i;
       continue;
     }
     if (startLine === -1) return null;
     let endLine = lines.length;
     for (let j = i; j < lines.length; j += 1) {
-      if (BOUNDARY.test(lines[j])) {
+      const candidate = lines[j];
+      if (candidate !== undefined && BOUNDARY.test(candidate)) {
         endLine = j;
         break;
       }
@@ -217,12 +222,12 @@ function enclosingBlock(source, index) {
   return lines.slice(startLine).join('\n');
 }
 
-function findSites() {
+function findSites(): Site[] {
   return ROOTS.flatMap((root) =>
     listFiles(root).flatMap((absolute) => {
       const source = readFileSync(absolute, 'utf8');
       const file = relative(process.cwd(), absolute).replaceAll('\\', '/');
-      const matches = [];
+      const matches: Site[] = [];
       for (const match of source.matchAll(INSERT))
         matches.push({ file, index: match.index ?? 0, source });
       return matches;
@@ -257,7 +262,7 @@ describe('T088 Terms policy fixtures stay rollback-scoped', () => {
   });
 
   it('every Terms policy fixture insert is rollback-scoped or explicitly commit-required', () => {
-    const violations = [];
+    const violations: string[] = [];
     for (const site of all) {
       const window = site.source.slice(Math.max(0, site.index - 600), site.index + 600);
       const exempt = COMMIT_REQUIRED.some(
