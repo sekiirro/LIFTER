@@ -325,6 +325,7 @@ describe('tenancy security catalog (T007)', () => {
           'f17_reject_template_identity_delete',
           'f17_reject_template_version_mutation',
           'f17_workout_template_unresolved_refs',
+          'f17_remap_workout_template_ids',
           'f19_audit_plan_change',
           'f19_audit_plan_revision',
           'f19_guard_delivery',
@@ -450,6 +451,7 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_uuid_valid',
           'f17_workout_reference_valid',
           'f17_workout_document_valid',
+          'f17_remap_workout_template_ids',
           'f17_workout_template_start_operation',
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
@@ -589,6 +591,7 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_uuid_valid',
           'f17_workout_reference_valid',
           'f17_workout_document_valid',
+          'f17_remap_workout_template_ids',
           'f17_workout_template_start_operation',
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
@@ -2003,6 +2006,7 @@ describe('F17 T013/T016/T017 workout templates catalog', () => {
       'app_private.f17_reject_template_identity_delete()',
       'app_private.f17_guard_template_identity_update()',
       'app_private.f17_workout_template_unresolved_refs(jsonb,uuid)',
+      'app_private.f17_remap_workout_template_ids(jsonb)',
     ];
     for (const sig of fns) {
       const [fn] = await db`select p.proconfig,
