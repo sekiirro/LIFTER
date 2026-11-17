@@ -56,7 +56,7 @@ export async function readyAndPublishPlanAction(
   if (!client) return { status: 'unavailable' };
   const root = await client
     .from('plan_roots')
-    .select('workspace_id,client_id')
+    .select('workspace_id,client_id,plan_kind')
     .eq('id', request.planId)
     .maybeSingle();
   if (root.error) return { status: 'unavailable' };
@@ -66,7 +66,13 @@ export async function readyAndPublishPlanAction(
     !authorize(actor, 'coaching_work', root.data.workspace_id)
   )
     return { status: 'not_permitted' };
-  const result = await readyAndPublishPlan(client, request);
+  if (root.data.plan_kind !== 'workout' && root.data.plan_kind !== 'nutrition')
+    return { status: 'unavailable' };
+  const result = await readyAndPublishPlan(
+    client,
+    request,
+    root.data.plan_kind,
+  );
   if (result.status === 'ok') revalidatePath(CLIENT_DETAILS_PATH, 'page');
   return result;
 }

@@ -1277,6 +1277,9 @@ export const en: Record<keyof typeof ar, string> = {
     'Plans are currently unavailable due to your subscription status.',
   'client.portal.viewPlan': 'View plan',
   'client.portal.revision': 'Published revision',
+  'client.portal.exportPdf': 'Download PDF',
+  'client.portal.exportExcel': 'Download Excel',
+  'client.portal.exportUnavailable': 'This plan cannot be exported right now.',
   'client.portal.notice.workoutDelivered':
     'Your workout plan is ready to view.',
   'client.portal.notice.nutritionDelivered':

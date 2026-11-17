@@ -46,7 +46,7 @@ describe('F22 Ready & Publish authorization (T008)', () => {
     const planId = await p.createDraft(client.clientId, 'workout', 'F22 auth');
     for (const actor of [p.fixture.salesA, p.fixture.trainerB]) {
       const denied = await actor.client.rpc(
-        'ready_and_publish_plan',
+        p.publishRpc(planId),
         publishArgs(planId),
       );
       expect(denied.error).toBeNull();
@@ -62,7 +62,7 @@ describe('F22 Ready & Publish authorization (T008)', () => {
     );
     expect(asClient).toEqual({ status: 'not_permitted' });
     const anon = await anonClient().rpc(
-      'ready_and_publish_plan',
+      p.publishRpc(planId),
       publishArgs(planId),
     );
     expect(anon.error).not.toBeNull();
@@ -79,12 +79,12 @@ describe('F22 Ready & Publish authorization (T008)', () => {
     const workout = await p.createDraft(byOwner.clientId, 'workout', 'F22 wo');
     const nutrition = await p.createDraft(byPo.clientId, 'nutrition', 'F22 po');
     const owner = await p.fixture.woA.client.rpc(
-      'ready_and_publish_plan',
+      p.publishRpc(workout),
       publishArgs(workout),
     );
     expect(owner.data).toMatchObject({ status: 'ok', revision_number: 1 });
     const po = await p.fixture.po.client.rpc(
-      'ready_and_publish_plan',
+      p.publishRpc(nutrition),
       publishArgs(nutrition),
     );
     expect(po.data).toMatchObject({ status: 'ok', revision_number: 1 });
@@ -106,13 +106,13 @@ describe('F22 Ready & Publish authorization (T008)', () => {
       'F22 cn',
     );
     const first = await p.fixture.woA.client.rpc(
-      'ready_and_publish_plan',
+      p.publishRpc(workout),
       publishArgs(workout),
     );
     expect(first.data).toMatchObject({ status: 'ok' });
     for (const actor of [p.fixture.woA, p.fixture.po]) {
       const refused = await actor.client.rpc(
-        'ready_and_publish_plan',
+        p.publishRpc(nutrition),
         publishArgs(nutrition),
       );
       expect(refused.data).toEqual({ status: 'not_permitted' });
@@ -123,7 +123,7 @@ describe('F22 Ready & Publish authorization (T008)', () => {
       units: 0,
     });
     const completed = await p.fixture.trainerA.client.rpc(
-      'ready_and_publish_plan',
+      p.publishRpc(nutrition),
       publishArgs(nutrition),
     );
     expect(completed.data).toMatchObject({ status: 'ok' });
@@ -142,11 +142,11 @@ describe('F22 Ready & Publish authorization (T008)', () => {
     );
     const args = publishArgs(planId);
     const first = await p.fixture.trainerA.client.rpc(
-      'ready_and_publish_plan',
+      p.publishRpc(planId),
       args,
     );
     const retry = await p.fixture.trainerA.client.rpc(
-      'ready_and_publish_plan',
+      p.publishRpc(planId),
       args,
     );
     expect(first.data).toMatchObject({ status: 'ok' });

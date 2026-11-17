@@ -16,6 +16,8 @@ let awaiting: PortalClient;
 let owner: PortalClient;
 let other: PortalClient;
 let otherNotice: string;
+let awaitingNutrition: string;
+let ownerNutrition: string;
 
 beforeAll(async () => {
   p = await portalFixture();
@@ -24,6 +26,29 @@ beforeAll(async () => {
   other = await p.makeClient({ activate: true, label: 'kill other' });
   const plan = await p.createDraft(awaiting.clientId, 'workout', 'F22 kill');
   await p.publish(plan, 1, 0);
+  awaitingNutrition = await p.createDraft(
+    awaiting.clientId,
+    'nutrition',
+    'F22 kill n',
+  );
+  await p.publish(awaitingNutrition, 1, 0);
+  ownerNutrition = await p.createDraft(
+    owner.clientId,
+    'nutrition',
+    'F22 own n',
+  );
+  await p.publish(ownerNutrition, 1, 0);
+  const [ownerRevision] = await p.db`select id from public.plan_revisions
+    where plan_id=${ownerNutrition} and revision_number=1`;
+  // A row for ANOTHER client on the owner's revision: only the client filter
+  // keeps it out of the owner's read.
+  await p.db.begin(async (tx) => {
+    await tx`set local app.nutrition_selection_write = 'on'`;
+    await tx`insert into public.client_nutrition_alternative_selections(
+      workspace_id, plan_id, plan_version_id, client_id, item_id, alternative_id, created_by)
+      values(${p.fixture.wsA.id}, ${ownerNutrition}, ${ownerRevision!.id}, ${other.clientId},
+        'foreign-item', 'foreign-alt', ${p.fixture.trainerA.userId})`;
+  });
   const [row] = await p.db`select app_private.f22_enqueue_client_notice(
     ${p.fixture.wsA.id}::uuid, ${other.clientId}::uuid, 'workout_delivered',
     ${randomUUID()}::uuid) as id`;
@@ -147,5 +172,50 @@ describe('F22 database control kill tests', () => {
     const [after] =
       await p.db`select read_at from app_private.client_inbox_notices where id=${otherNotice}`;
     expect(after!.read_at).toBeNull();
+  });
+
+  it('K6 nutrition read entitlement gate: skipping the F13 active check leaks F18 content to an awaiting client', async () => {
+    const signature = 'public.client_portal_nutrition_plan(uuid,integer)';
+    const control = "if summary->>'status' is distinct from 'active' then";
+    const observed = (await underMutant(
+      signature,
+      control,
+      'if false then',
+      awaiting.authUserId,
+      async (tx) => {
+        const [row] = await tx`select public.client_portal_nutrition_plan(
+          ${awaitingNutrition}::uuid, null::integer) as value`;
+        return row!.value;
+      },
+    )) as { status: string };
+    // The real control returns `restricted` (client-nutrition-plan.test.ts).
+    expect(observed.status).toBe('ok');
+    await stillInstalled(signature, control);
+  });
+
+  it('K7 nutrition selection scope: dropping the own-client filter returns another client’s selection', async () => {
+    const signature = 'public.client_portal_nutrition_plan(uuid,integer)';
+    const control = 'and s.client_id = client_row.client_id';
+    const observed = (await underMutant(
+      signature,
+      control,
+      '',
+      owner.authUserId,
+      async (tx) => {
+        const [row] = await tx`select public.client_portal_nutrition_plan(
+          ${ownerNutrition}::uuid, null::integer) as value`;
+        return row!.value;
+      },
+    )) as { selections: Array<{ item_id: string }> };
+    expect(observed.selections.map((x) => x.item_id)).toContain('foreign-item');
+    await stillInstalled(signature, control);
+    // The installed control keeps the owner's read free of it.
+    const [real] = await p.db.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: owner.authUserId, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      return tx`select public.client_portal_nutrition_plan(
+        ${ownerNutrition}::uuid, null::integer) as value`;
+    });
+    expect((real!.value as { selections: unknown[] }).selections).toEqual([]);
   });
 });

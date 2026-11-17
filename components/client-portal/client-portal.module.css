@@ -125,3 +125,10 @@
 .notice p {
   margin: 0;
 }
+.planFrame {
+  inline-size: 100%;
+  min-block-size: 70vh;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}

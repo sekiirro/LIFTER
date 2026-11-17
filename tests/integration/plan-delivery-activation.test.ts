@@ -19,6 +19,14 @@ beforeAll(async () => {
 });
 afterAll(async () => p?.close());
 
+/** The F22 adapter routed by the kind of the plan made by the fixture. */
+function publishVia(
+  client: Parameters<typeof readyAndPublishPlan>[0],
+  request: ReturnType<typeof publishRequest>,
+) {
+  return readyAndPublishPlan(client, request, p.planKind(request.planId));
+}
+
 async function counts(client: PortalClient) {
   const [row] = await p.db`
     select
@@ -44,7 +52,7 @@ describe('F22 first-plan delivery and activation (T007)', () => {
   it('delivers each first plan independently and activates once on the completing delivery', async () => {
     const client = await p.makeClient({ activate: false, label: 'split' });
     const workout = await p.createDraft(client.clientId, 'workout', 'F22 w');
-    const first = await readyAndPublishPlan(
+    const first = await publishVia(
       p.fixture.trainerA.client,
       publishRequest(workout),
     );
@@ -68,7 +76,7 @@ describe('F22 first-plan delivery and activation (T007)', () => {
       'nutrition',
       'F22 n',
     );
-    const completing = await readyAndPublishPlan(
+    const completing = await publishVia(
       p.fixture.trainerA.client,
       publishRequest(nutrition),
     );
@@ -116,10 +124,7 @@ describe('F22 first-plan delivery and activation (T007)', () => {
   it('replays a lost completing response and concurrent duplicates without a second delivery, activation or unit', async () => {
     const client = await p.makeClient({ activate: false, label: 'replay' });
     const workout = await p.createDraft(client.clientId, 'workout', 'F22 rw');
-    await readyAndPublishPlan(
-      p.fixture.trainerA.client,
-      publishRequest(workout),
-    );
+    await publishVia(p.fixture.trainerA.client, publishRequest(workout));
     const nutrition = await p.createDraft(
       client.clientId,
       'nutrition',
@@ -127,17 +132,14 @@ describe('F22 first-plan delivery and activation (T007)', () => {
     );
     const request = publishRequest(nutrition);
     const concurrent = await Promise.all([
-      readyAndPublishPlan(p.fixture.trainerA.client, request),
-      readyAndPublishPlan(p.fixture.trainerA.client, request),
+      publishVia(p.fixture.trainerA.client, request),
+      publishVia(p.fixture.trainerA.client, request),
     ]);
     const ok = concurrent.filter((result) => result.status === 'ok');
     expect(ok.length).toBeGreaterThanOrEqual(1);
     for (const result of concurrent)
       expect(['ok', 'unavailable']).toContain(result.status);
-    const retried = await readyAndPublishPlan(
-      p.fixture.trainerA.client,
-      request,
-    );
+    const retried = await publishVia(p.fixture.trainerA.client, request);
     expect(retried).toEqual(ok[0]);
     expect(await counts(client)).toEqual({
       deliveries: 2,
@@ -149,21 +151,15 @@ describe('F22 first-plan delivery and activation (T007)', () => {
   it('adds no activation or unit for a later revision of a delivered first plan', async () => {
     const client = await p.makeClient({ activate: false, label: 'later' });
     const workout = await p.createDraft(client.clientId, 'workout', 'F22 lw');
-    await readyAndPublishPlan(
-      p.fixture.trainerA.client,
-      publishRequest(workout),
-    );
+    await publishVia(p.fixture.trainerA.client, publishRequest(workout));
     const nutrition = await p.createDraft(
       client.clientId,
       'nutrition',
       'F22 ln',
     );
-    await readyAndPublishPlan(
-      p.fixture.trainerA.client,
-      publishRequest(nutrition),
-    );
+    await publishVia(p.fixture.trainerA.client, publishRequest(nutrition));
     const draftVersion = await p.revise(workout, 1, 'F22 lw2');
-    const later = await readyAndPublishPlan(p.fixture.trainerA.client, {
+    const later = await publishVia(p.fixture.trainerA.client, {
       planId: workout,
       expectedDraftVersion: draftVersion,
       expectedPublishedRevision: 1,
@@ -211,10 +207,7 @@ describe('F22 first-plan delivery and activation (T007)', () => {
     for (const kind of ['workout', 'nutrition'] as const) {
       const plan = await p.createDraft(client.clientId, kind, `F22 o ${kind}`);
       expect(
-        await readyAndPublishPlan(
-          p.fixture.trainerA.client,
-          publishRequest(plan),
-        ),
+        await publishVia(p.fixture.trainerA.client, publishRequest(plan)),
       ).toMatchObject({ status: 'ok' });
     }
     expect(await counts(client)).toEqual({

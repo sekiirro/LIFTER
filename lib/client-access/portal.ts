@@ -1,6 +1,10 @@
 import 'server-only';
 import { createSessionClient } from '../supabase/server';
 import {
+  projectClientNutritionPlan,
+  type ClientNutritionPlan,
+} from './nutrition-projection';
+import {
   projectClientPortalOverview,
   projectClientPortalPlan,
   type ClientPortalOverview,
@@ -61,4 +65,30 @@ export async function readClientPortalPlan(
   const client = await createSessionClient();
   if (!client) return { status: 'denied' };
   return loadClientPortalPlan(client, planId, revisionNumber);
+}
+
+export async function loadClientNutritionPlan(
+  client: PortalRpc,
+  planId: string,
+  revisionNumber: number | null,
+): Promise<ClientNutritionPlan> {
+  try {
+    const { data, error } = await client.rpc('client_portal_nutrition_plan', {
+      p_plan_id: planId,
+      p_revision_number: revisionNumber,
+    });
+    if (error) return { status: 'denied' };
+    return projectClientNutritionPlan(data, { planId, revisionNumber });
+  } catch {
+    return { status: 'denied' };
+  }
+}
+
+export async function readClientNutritionPlan(
+  planId: string,
+  revisionNumber: number | null,
+): Promise<ClientNutritionPlan> {
+  const client = await createSessionClient();
+  if (!client) return { status: 'denied' };
+  return loadClientNutritionPlan(client, planId, revisionNumber);
 }

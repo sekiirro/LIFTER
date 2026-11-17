@@ -1,14 +1,17 @@
 /**
  * F22 US1 wiring of staff Ready & Publish to the F19 RPC (FR-001; SC-001).
  *
- * F19 `ready_and_publish_plan` owns the revision + delivery transaction,
- * idempotency, CAS and subscription binding. This adapter only validates the
- * request shape and maps the closed F19 results. Activation and the
- * productivity unit are committed by F19 T021 inside the same RPC; this
- * adapter neither implements nor simulates them.
+ * F19 `ready_and_publish_plan` (workout) and F18 `publish_nutrition_revision`
+ * (nutrition; the generic RPC refuses nutrition plans) own the revision +
+ * delivery transaction, idempotency, CAS and subscription binding. This
+ * adapter only validates the request shape, routes by the plan's kind and maps
+ * the closed results. Activation and the productivity unit are committed by
+ * F19 T021 inside the same transaction; this adapter neither implements nor
+ * simulates them.
  */
 import {
   mapPlanRpcError,
+  type PlanKind,
   type PlanOperationError,
   type ReadyAndPublishReceipt,
   type ReadyAndPublishRequest,
@@ -60,20 +63,44 @@ export function parseReadyAndPublishRequest(
   };
 }
 
+/** Kind-specific publish RPC: nutrition never goes through the generic one. */
+export const PUBLISH_RPC: Record<PlanKind, string> = {
+  workout: 'ready_and_publish_plan',
+  nutrition: 'publish_nutrition_revision',
+};
+
 const closedStatuses = new Set([
   'not_permitted',
   'invalid_input',
+  'invalid_document',
   'stale_version',
   'key_conflict',
   'unavailable',
 ]);
+
+/**
+ * F18 raises `nutrition_*` validation codes (SQLSTATE 22023) for an invalid
+ * nutrition document; F19 errors keep the shared contract mapping.
+ */
+function mapPublishRpcError(error: unknown): PlanOperationError {
+  if (error && typeof error === 'object') {
+    const { code, message } = error as { code?: unknown; message?: unknown };
+    if (
+      code === '22023' &&
+      typeof message === 'string' &&
+      message.startsWith('nutrition_')
+    )
+      return { status: 'invalid_document' };
+  }
+  return mapPlanRpcError(error);
+}
 
 export function mapReadyAndPublishResult(
   data: unknown,
   error: unknown,
   request: ReadyAndPublishRequest,
 ): ReadyAndPublishResult {
-  if (error) return mapPlanRpcError(error);
+  if (error) return mapPublishRpcError(error);
   if (!data || typeof data !== 'object' || Array.isArray(data))
     return { status: 'unavailable' };
   const value = data as Record<string, unknown>;
@@ -103,11 +130,13 @@ export function mapReadyAndPublishResult(
 export async function readyAndPublishPlan(
   client: PublishRpc,
   input: unknown,
+  kind: PlanKind,
 ): Promise<ReadyAndPublishResult> {
   const request = parseReadyAndPublishRequest(input);
-  if (!request) return { status: 'invalid_input' };
+  if (!request || !Object.hasOwn(PUBLISH_RPC, kind))
+    return { status: 'invalid_input' };
   try {
-    const { data, error } = await client.rpc('ready_and_publish_plan', {
+    const { data, error } = await client.rpc(PUBLISH_RPC[kind]!, {
       p_plan_id: request.planId,
       p_expected_draft_version: request.expectedDraftVersion,
       p_expected_published_version: request.expectedPublishedRevision,

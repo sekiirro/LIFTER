@@ -90,7 +90,7 @@ function isRevisionNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 }
 
-function parseSubscription(value: unknown): SubscriptionSummary | null {
+export function parseSubscription(value: unknown): SubscriptionSummary | null {
   if (!isRecord(value)) return null;
   const status = value.status;
   const end = value.effective_end_exclusive;

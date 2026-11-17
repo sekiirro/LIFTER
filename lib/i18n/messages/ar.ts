@@ -1241,6 +1241,9 @@ export const ar = {
   'client.portal.restricted': 'مش هتقدر تفتح خططك دلوقتي بسبب حالة اشتراكك.',
   'client.portal.viewPlan': 'افتح الخطة',
   'client.portal.revision': 'النسخة المنشورة',
+  'client.portal.exportPdf': 'نزّل PDF',
+  'client.portal.exportExcel': 'نزّل Excel',
+  'client.portal.exportUnavailable': 'مش متاح تنزّل الخطة دي دلوقتي.',
   'client.portal.notice.workoutDelivered':
     'خطة تمرينك جاهزة، تقدر تفتحها دلوقتي.',
   'client.portal.notice.nutritionDelivered':

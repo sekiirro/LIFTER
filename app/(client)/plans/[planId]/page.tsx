@@ -2,7 +2,11 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireActor } from '../../../../lib/auth/actor';
-import { readClientPortalPlan } from '../../../../lib/client-access/portal';
+import {
+  readClientNutritionPlan,
+  readClientPortalPlan,
+} from '../../../../lib/client-access/portal';
+import { renderNutritionPrintHtml } from '../../../../lib/plans/nutrition/export';
 import {
   isUuid,
   parseRevisionParam,
@@ -22,15 +26,20 @@ import styles from '../../../../components/client-portal/client-portal.module.cs
 /**
  * One own delivered plan at the selected published revision. Every request
  * re-reads through `client_portal_plan`, so a stale page or URL cannot keep
- * access after F13 denies it. Plan body rendering belongs to the F17/F18
- * renderers, which are not on main yet (BLOCKED in the F22 PR).
+ * access after F13 denies it. The nutrition body is the F18 print renderer
+ * (one renderer shared with print/export, S57-PO-9) over the client-wall read
+ * `client_portal_nutrition_plan`; the workout body stays BLOCKED until F16/F17
+ * expose a client-authorized exercise projection (no second renderer here).
  */
 export default async function ClientPlanPage({
   params,
   searchParams,
 }: {
   params: Promise<{ planId: string }>;
-  searchParams: Promise<{ revision?: string | string[] }>;
+  searchParams: Promise<{
+    revision?: string | string[];
+    export?: string | string[];
+  }>;
 }) {
   const [{ planId }, query] = await Promise.all([params, searchParams]);
   const revision = parseRevisionParam(query.revision);
@@ -63,6 +72,11 @@ export default async function ClientPlanPage({
     );
 
   const { plan, revisions } = result;
+  const nutrition =
+    plan.kind === 'nutrition'
+      ? await readClientNutritionPlan(planId, plan.revisionNumber)
+      : null;
+  const exportBase = `/plans/${planId}/export?revision=${plan.revisionNumber}`;
   return (
     <main className={styles.main}>
       <Link className={styles.link} href="/plans">
@@ -78,6 +92,13 @@ export default async function ClientPlanPage({
         locale={locale}
         messages={m}
       />
+      {query.export === 'unavailable' && (
+        <Alert
+          tone="warning"
+          title={m['client.portal.exportUnavailable']}
+          data-testid="client-plan-export-unavailable"
+        />
+      )}
       <section className={styles.panel} data-testid="client-plan-revision">
         <p className={styles.meta}>
           {m['client.portal.revision']}{' '}
@@ -110,6 +131,42 @@ export default async function ClientPlanPage({
           </form>
         )}
       </section>
+      {nutrition && nutrition.status !== 'ok' && (
+        <Alert tone="error" title={m['states.error.title']}>
+          <p>{m['states.error.description']}</p>
+        </Alert>
+      )}
+      {nutrition?.status === 'ok' && (
+        <section
+          className={styles.panel}
+          aria-label={m['client.portal.nutrition']}
+          data-testid="client-nutrition-plan"
+        >
+          {/* F18 print document: static HTML + inline CSS, sandboxed (no scripts, forms or navigation). */}
+          <iframe
+            className={styles.planFrame}
+            title={m['client.portal.nutrition']}
+            sandbox=""
+            srcDoc={renderNutritionPrintHtml(nutrition.projection, locale)}
+          />
+          <p className={styles.pager}>
+            <a
+              className={styles.link}
+              href={`${exportBase}&format=pdf`}
+              data-testid="client-plan-export-pdf"
+            >
+              {m['client.portal.exportPdf']}
+            </a>
+            <a
+              className={styles.link}
+              href={`${exportBase}&format=excel`}
+              data-testid="client-plan-export-excel"
+            >
+              {m['client.portal.exportExcel']}
+            </a>
+          </p>
+        </section>
+      )}
     </main>
   );
 }

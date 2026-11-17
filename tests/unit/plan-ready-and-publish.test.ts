@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  PUBLISH_RPC,
   mapReadyAndPublishResult,
   parseReadyAndPublishRequest,
   readyAndPublishPlan,
@@ -96,8 +97,8 @@ describe('F22 US1 Ready & Publish adapter over F19 (T006; FR-001, SC-001)', () =
       revision_number: 1,
     };
     const rpc = vi.fn(async () => ({ data: receipt, error: null }));
-    const first = await readyAndPublishPlan({ rpc }, request);
-    const replay = await readyAndPublishPlan({ rpc }, request);
+    const first = await readyAndPublishPlan({ rpc }, request, 'workout');
+    const replay = await readyAndPublishPlan({ rpc }, request, 'workout');
     expect(replay).toEqual(first);
     expect(rpc).toHaveBeenNthCalledWith(1, 'ready_and_publish_plan', {
       p_plan_id: planId,
@@ -110,9 +111,61 @@ describe('F22 US1 Ready & Publish adapter over F19 (T006; FR-001, SC-001)', () =
 
   it('does not call F19 for an invalid request', async () => {
     const rpc = vi.fn();
-    await expect(readyAndPublishPlan({ rpc }, { planId })).resolves.toEqual({
+    await expect(
+      readyAndPublishPlan({ rpc }, { planId }, 'workout'),
+    ).resolves.toEqual({
       status: 'invalid_input',
     });
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('routes nutrition to the F18 RPC (the generic RPC refuses it) and never mixes kinds', async () => {
+    const rpc = vi.fn(async () => ({
+      data: {
+        status: 'ok',
+        plan_id: planId,
+        revision_id: revisionId,
+        revision_number: 1,
+      },
+      error: null,
+    }));
+    await expect(
+      readyAndPublishPlan({ rpc }, request, 'nutrition'),
+    ).resolves.toMatchObject({ status: 'ok' });
+    expect(rpc).toHaveBeenCalledWith('publish_nutrition_revision', {
+      p_plan_id: planId,
+      p_expected_draft_version: 1,
+      p_expected_published_version: 0,
+      p_operation_key: operationKey,
+    });
+    expect(PUBLISH_RPC).toEqual({
+      workout: 'ready_and_publish_plan',
+      nutrition: 'publish_nutrition_revision',
+    });
+    rpc.mockClear();
+    await expect(
+      readyAndPublishPlan({ rpc }, request, 'comprehensive' as never),
+    ).resolves.toEqual({ status: 'invalid_input' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('maps an F18 nutrition validation error to invalid_document only for nutrition_ codes', () => {
+    expect(
+      mapReadyAndPublishResult(
+        null,
+        { code: '22023', message: 'nutrition_invalid_document' },
+        request,
+      ),
+    ).toEqual({ status: 'invalid_document' });
+    expect(
+      mapReadyAndPublishResult(
+        null,
+        { code: '22023', message: 'something_else' },
+        request,
+      ),
+    ).toEqual({ status: 'unavailable' });
+    expect(
+      mapReadyAndPublishResult({ status: 'invalid_document' }, null, request),
+    ).toEqual({ status: 'invalid_document' });
   });
 });
