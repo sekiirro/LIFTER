@@ -326,3 +326,9 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 - Scope: `tasks.md` status/evidence-only changes (T056, T057, T084, T127 ticked with Evidence (S63)) and `traceability.md` union evidence additions. No requirement text changed; refresh evidence only, no requirement text changed.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for this documentation-only correction.
+
+## S63-muse-s154 S15-4 UI/unit refresh - 2026-11-17 (date update only)
+
+- Scope: `tasks.md` status/evidence-only changes (T093, T096 ticked with Evidence (s63-muse-s154); T114, T126 annotated Verified-so-far/Remaining, both stay open) and `traceability.md` S15-4 slice evidence rows. No FR/SC/requirement, plan-design, copy, or token text changed; only two unit test files gained assertions (`tests/unit/forms-builder-s14.test.tsx`, `tests/unit/preferences.test.ts`), no `components/` or `lib/` change.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for this test-and-evidence-only slice.
