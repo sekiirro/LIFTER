@@ -82,9 +82,10 @@ describe('T021 final Platform Owner demotion characterization and RED cases', ()
   let soleOwner: Awaited<ReturnType<typeof createStaff>>;
 
   it('T021(a) demotes one Platform Owner while another remains', async () => {
+    const ownersBefore = await ownerCount();
     first = await createStaff('platform_owner', 's63-t021-first');
     second = await createStaff('platform_owner', 's63-t021-second');
-    expect(await ownerCount()).toBe(2);
+    expect(await ownerCount()).toBe(ownersBefore + 2);
 
     const result = await second.client
       .from('staff_profiles')
@@ -93,31 +94,33 @@ describe('T021 final Platform Owner demotion characterization and RED cases', ()
     expect(result.error).toBeNull();
     expect(await roleOf(first.userId)).toBe('trainer');
     expect(await remainsPlatformOwner(first.userId)).toBe(false);
-    expect(await ownerCount()).toBe(1);
+    expect(await ownerCount()).toBe(ownersBefore + 1);
     soleOwner = second;
   });
 
-  it('T021(b) refuses demotion of the sole valid Platform Owner (RED before T015)', async () => {
-    const result = await soleOwner.client
-      .from('staff_profiles')
-      .update({ role: 'trainer' })
-      .eq('user_id', soleOwner.userId);
-    if (result.error === null) {
-      const restored = await admin()
-        .from('staff_profiles')
-        .update({ role: 'platform_owner' })
-        .eq('user_id', soleOwner.userId);
-      expect(restored.error).toBeNull();
+  it('T021(b) refuses demotion when the isolated owner count is one (RED before T015)', async () => {
+    let refusal: unknown;
+    try {
+      await db.begin(async (tx) => {
+        // Isolate the final-owner condition from unrelated seeded owners.
+        await tx`update app_private.f3_platform_owner_state set owner_count = 1 where singleton`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: soleOwner.userId, role: 'authenticated' })}, true)`;
+        await tx`update public.staff_profiles set role = 'trainer' where user_id = ${soleOwner.userId}`;
+      });
+    } catch (error) {
+      refusal = error;
     }
-    expect(result.error).toMatchObject({
+    expect(refusal).toMatchObject({
       code: '42501',
       message: 'not_permitted',
     });
     expect(await roleOf(soleOwner.userId)).toBe('platform_owner');
-    expect(await ownerCount()).toBe(1);
+    expect(await guardedOwnerCount()).toBe(await ownerCount());
   });
 
   it('T021(c) permits add-first ownership transfer', async () => {
+    const ownersBefore = await ownerCount();
     const replacement = await createStaff(null, 's63-t021-replacement');
     checked(
       await soleOwner.client.from('staff_profiles').insert({
@@ -131,13 +134,14 @@ describe('T021 final Platform Owner demotion characterization and RED cases', ()
       .update({ role: 'trainer' })
       .eq('user_id', soleOwner.userId);
     expect(result.error).toBeNull();
-    expect(await ownerCount()).toBe(1);
+    expect(await ownerCount()).toBe(ownersBefore);
     expect(await remainsPlatformOwner(soleOwner.userId)).toBe(false);
     expect(await remainsPlatformOwner(replacement.userId)).toBe(true);
     soleOwner = replacement;
   });
 
-  it('T021(d) serializes concurrent demotions of two distinct Platform Owners (RED before T015)', async () => {
+  it('T021(d) serializes concurrent demotions at a two-owner guard count (RED before T015)', async () => {
+    const ownersBefore = await ownerCount();
     const other = await createStaff(null, 's63-t021-racer');
     checked(
       await soleOwner.client.from('staff_profiles').insert({
@@ -146,25 +150,37 @@ describe('T021 final Platform Owner demotion characterization and RED cases', ()
         display_name: testStaffDisplayName(),
       }),
     );
-    expect(await ownerCount()).toBe(2);
-    expect(await guardedOwnerCount()).toBe(2);
-
-    const results = await Promise.all([
-      soleOwner.client
-        .from('staff_profiles')
-        .update({ role: 'trainer' })
-        .eq('user_id', other.userId),
-      other.client
-        .from('staff_profiles')
-        .update({ role: 'trainer' })
-        .eq('user_id', soleOwner.userId),
-    ]);
-    expect(
-      results.every(
-        (result) => result.error === null || result.error.code === '42501',
-      ),
-    ).toBe(true);
-    expect(await ownerCount()).toBeGreaterThanOrEqual(1);
+    expect(await ownerCount()).toBe(ownersBefore + 1);
+    await db`update app_private.f3_platform_owner_state set owner_count = 2 where singleton`;
+    try {
+      expect(await guardedOwnerCount()).toBe(2);
+      const results = await Promise.all([
+        soleOwner.client
+          .from('staff_profiles')
+          .update({ role: 'trainer' })
+          .eq('user_id', other.userId),
+        other.client
+          .from('staff_profiles')
+          .update({ role: 'trainer' })
+          .eq('user_id', soleOwner.userId),
+      ]);
+      expect(
+        results.every(
+          (result) => result.error === null || result.error.code === '42501',
+        ),
+      ).toBe(true);
+      expect(
+        [await roleOf(other.userId), await roleOf(soleOwner.userId)].filter(
+          (role) => role === 'platform_owner',
+        ),
+      ).toHaveLength(1);
+      expect(await guardedOwnerCount()).toBe(1);
+      expect(await ownerCount()).toBeGreaterThanOrEqual(ownersBefore);
+    } finally {
+      await db`update app_private.f3_platform_owner_state
+        set owner_count = (select count(*)::int from public.staff_profiles where role = 'platform_owner')
+        where singleton`;
+    }
     expect(await guardedOwnerCount()).toBe(await ownerCount());
   });
 
