@@ -258,6 +258,9 @@ beforeEach(() => {
   });
   m.rpc.mockImplementation(
     async (name: string, args: Record<string, unknown>) => {
+      if (name === 'record_workout_export_audit') {
+        return { data: null, error: null };
+      }
       if (name !== 'catalog_exercise_detail') {
         return { data: null, error: { message: 'unexpected rpc' } };
       }
@@ -292,6 +295,10 @@ describe('F17 route export goldens (T041 remaining)', () => {
     );
     expect(body.payload.planIdentity).toBe('1');
     expect(body.payload.documentNotes).toBe(REVISION_N_DOCUMENT.notes);
+    expect(m.rpc).toHaveBeenCalledWith(
+      'record_workout_export_audit',
+      expect.objectContaining({ p_outcome: 'success', p_format: 'pdf' }),
+    );
   });
 
   it('print route returns the exact Arabic payload golden', async () => {

@@ -68,6 +68,7 @@ declare
     'audit_events.audit_events_f18_allowlist:O',
     'audit_events.audit_events_immutable:O',
     'audit_events.audit_events_no_truncate:O',
+    'audit_events.f17_workout_export_audit_allowlist:O',
     'package_offers.audit_package_offers:O',
     'package_offers.package_offers_guard:O',
     'package_offers.package_offers_no_delete:O',
