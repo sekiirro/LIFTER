@@ -1,8 +1,8 @@
 # Spec Kit Analyze — F18 nutrition planner
 
-**Analyzed:** 2026-11-16 02:27 Africa/Cairo (R6 date update; T011 task status from PR #157 and T016 verification/traceability evidence recorded; no requirement, contract, or plan design text changed).
+**Analyzed:** 2026-11-16 04:00 Africa/Cairo (R6 date update; T011/T016/T018 status and evidence retained from origin/main; T017 contributor attribution verified per architect ruling S60-R43 and research conflict F18-C-11 resolved as RESOLVED-TECH; no requirement, contract, or plan design text changed).
 
-**Analyzed:** 2026-11-16 (date update: T020/T021 implementation and benchmark evidence recorded; no requirement, contract, or plan design text changed).
+Date update note (retained from origin/main): T020/T021 implementation and benchmark evidence recorded; no requirement, contract, or plan design text changed.
 **Method:** Rechecked spec.md, plan.md, tasks.md, nutrition API/document and template-assignment contracts, data-model.md, traceability.md, research decision matrix/conflicts/Section B assessment, and S43-PO-5 / S44-PO-7 / architect mappings S43-R6, S43-R10 and S44-R7. This pass follows the Greptile P2 thread `PRRT_kwDOVYgYQ862AhVE` on head `d742eb5a` (template-assignment test 11) and reconciles the concurrent Assign single-pair race with the existing zero-copy rejection; it also retains the earlier CodeRabbit PR #79 fixes (`PRR_kwDOVYgYQ88AAAABXM9hLA`, head `f588e222`).
 
 ## Entry check
@@ -157,6 +157,24 @@
 
 **Result:** no requirement change or open product decision; implementation bookkeeping is consistent with the approved spec.
 
-<!-- Origin-main pre-slice Analyze note retained verbatim for the documentation union:
-- PASS — plan.md describes the touched scope; tasks T001, T002, T005, T008, T021 and T025 are tagged to the affected FR/SC ids without renumbering.
--->
+## Analyze — S60-PO-3 UUID-only item and alternative ids
+
+**Analyzed:** 2026-11-16. **Scope:** full requirement and design pass after the S60-PO-3 text update. Re-read spec.md, plan.md, tasks.md (including T029), data-model.md, nutrition-document.md, nutrition-api.md, traceability.md, clarifications, and the F18 decision matrix. Cross-checked the selected PO words against `runs/s60-po/s60-po-3.verbatim.txt` and the approved lowercase UUIDv4 convention in `lib/catalog/uuid.ts` / `crypto.randomUUID()`.
+
+### Entry check
+
+- PASS — S60-PO-3 is recorded as a direct PO decision in spec.md clarifications and the decision matrix; the mapping is not presented as additional PO wording.
+- PASS — F18-FR-002 now distinguishes item/alternative IDs (canonical lowercase UUIDv4) from day-type and meal IDs (strings). The nutrition-document and nutrition-api contracts, data model, T029 task, validator expectations, SQL publish/selection paths, audit boundary, and fixture rule express the same scope.
+- PASS — selection still uses text parameters to address JSON document IDs; malformed inputs map to `invalid_selection`. Audit events contain only UUID-shaped item/alternative IDs. No foodId, day-type, or meal-ID requirements were changed.
+- PASS — no migration data rewrite is specified. LIFTER is not live; the lane uses synthetic Stack A data, and the tracked repository has no nutrition seed file.
+
+### Findings
+
+- CRITICAL: 0 open.
+- HIGH: 0 open.
+- MEDIUM: 0 open product decisions. Existing OPEN-TECH reconciliation entries remain unchanged and do not affect this requirement.
+- LOW: no FR/contract/data-model mismatch found in the UUID-only scope.
+
+### Cross-artifact decision
+
+S60-PO-3's approved “UUIDs only (Recommended)” choice applies to item and alternative IDs only. Require canonical lowercase UUIDv4 form at the TS validator, published-document SQL boundary, selection RPC/table boundary, and F18 audit allowlist guard. Keep other F18 ID scopes unchanged. The fixtures use deterministic lowercase UUIDv4 values; negative tests retain malformed values only where the test explicitly checks rejection.
