@@ -27,10 +27,22 @@ These are the validation scenarios that prove the feature. Each one lists the au
    - E2E: the add, duplicate and edit flow.
 8. **Auto-extraction conflict.** An auto-extracted value conflicts with an existing same-day record; check it is updated in place with a background audit entry only.
    - Integration: `progress-coaching.test.ts`.
-9. **Client selects an existing approved alternative**, and no request or revision is created. BLOCKED on F18.
-10. **Client submits a free-text request.** Check there is one open request per food; cancel and re-submit. BLOCKED on F18.
-11. **Trainer approves.** Check for a draft revision and manual publish within the max-3 cap, with no auto-publish. BLOCKED on F18.
-12. **Stale close.** Remove the target food in a newer revision and check the request closes as stale. BLOCKED on F18.
+9. **Client selects an existing approved alternative**, and no request or revision is created.
+   - Integration: `progress-coaching-food-replacement.test.ts` (F18 `select_nutrition_alternative`).
+   - Unit: `progress-coaching-food-replacement-services.test.ts`.
+10. **Client submits a free-text request.** Check there is one open request per food; cancel and re-submit.
+
+- Integration: `progress-coaching-food-replacement.test.ts`, `progress-coaching-food-replacement-rls.test.ts`.
+- Unit: `progress-coaching-food-replacement-validation.test.ts`.
+
+11. **Trainer approves.** Check for a draft revision and manual publish within the max-3 cap, with no auto-publish.
+
+- Integration: `progress-coaching-food-replacement.test.ts` and `progress-coaching-food-replacement-mutations.test.ts`.
+
+12. **Stale close.** Remove the target food in a newer revision and check the request closes as stale.
+
+- Integration: `progress-coaching-food-replacement.test.ts` and `progress-coaching-food-replacement-mutations.test.ts`.
+
 13. **Timeline.** Trigger meaningful events.
     - Check: the timeline shows only the fixed set, in order, to authorized actors, and denies everyone else.
     - Check: there is no timeline table and no new retention rule.
