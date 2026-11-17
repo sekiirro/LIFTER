@@ -1613,7 +1613,7 @@ LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from ot
 
 Architect mapping S56-R7 (not PO words): no feature-flag mechanism is built; unfinished features merge without a flag; no task or slice waits for a flag; the topic is tracked as a pre-production readiness item. Security, RLS, authorization, tests, CI gates and every other safeguard stay as they are.
 
-### S61-PO-1 - PO words, verbatim
+### S61-PO-1 - PO words, verbatim (F9 FX decision)
 
 Source: PO decision of 2026-11-16 on the F9 FX evidence `specs/009-packages/fx-coverage-verification.md` (T075).
 
