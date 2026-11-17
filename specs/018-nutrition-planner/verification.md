@@ -307,7 +307,7 @@ scripts/format-check-changed.mjs` passed, `npm run format:check` clean.
 - **Mutation (Stack A, on the test above):** replaced the UUIDv4 predicate with the original non-empty-string predicate in the follow-up migration, reset/provisioned, and reran the suite. Both rejection tests failed again (3 passed, 2 failed). The migration file was restored, Stack A was safely reset and provisioned, and the restored suite passed 5/5.
 - **T023 export regression (Stack A):** `nutrition-export.test.ts` passed 18/18 with UUIDv4 item and alternative IDs in the fixture, persisted selections, computed values, and historical-selection assertions.
 
-## S63 T027 — Release gate and migration audit
+## S63 T027 ï¿½ Release gate and migration audit
 
 - **Stack D fresh replay:** after `db reset --local` and `client-accounts-provision.mjs`, the new `tests/integration/nutrition-release-gate.test.ts` passed alongside F18 parity, versioning, audit, security-matrix and `rls-catalog` coverage.
 - **Upgrade replay:** reset Stack D to the 261-migration baseline before F18, then `db push --local` applied the 34 remaining migrations including F18/F17/F19 consumers. Afterward, 11 related integration files passed 108/108, including the release gate, nutrition parity/versioning/audit/security, snapshot, multi-plan, publish, F17 publish and `rls-catalog` suites.

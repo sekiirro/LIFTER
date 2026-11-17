@@ -19,7 +19,7 @@
 - **Restore**: Restored `supabase/migrations/20261114120000_f19_plan_roots_drafts_revisions.sql` (`git diff --exit-code supabase/migrations` = 0) and Stack D constraint (`ON DELETE RESTRICT`), then re-ran `tests/integration/f19-trainer-deletion.test.ts` (2/2 passed).
 - **Re-verified after #134**: Updated `tests/integration/f19-trainer-deletion.test.ts` to publish the nutrition plan via `public.publish_nutrition_revision` with valid F18 document shape and assert `.data.status === 'ok'` on both publishes; re-ran `f19-trainer-deletion.test.ts` (2/2 passed), `f19-plan-activation.test.ts`, `f19-plan-delivery.test.ts`, `nutrition-publish.test.ts`, and `rls-catalog.test.ts` (4 files, 63/63 passed) on Stack D; re-ran the `plan_revisions.authored_by` -> `ON DELETE CASCADE` mutation on Stack D (`f19-trainer-deletion.test.ts:95` failed as expected), restored `ON DELETE RESTRICT`, verified `git diff --exit-code -- supabase` = 0, and re-ran `f19-trainer-deletion.test.ts` (2/2 passed).
 
-## T032 — F17/F18 consumer conformance
+## T032 ï¿½ F17/F18 consumer conformance
 
 - Stack D `tests/integration/f19-plan-activation.test.ts` verifies workout `schema_version` content and nutrition `schemaVersion` content stay domain-owned, both revisions/deliveries appear in the shared client projection, and only the completed workout/nutrition pair activates once.
 - `tests/integration/nutrition-snapshots.test.ts` verifies the nutrition consumer retains F16 versioned/tagged snapshot identities. The shared-plan consumer, nutrition release/parity/versioning/audit/security, workout publish and `rls-catalog` suites passed 108/108 on the pre-F18 upgrade replay.

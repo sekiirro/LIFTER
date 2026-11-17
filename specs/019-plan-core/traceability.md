@@ -66,8 +66,8 @@ S55-R21 rules that this slice implements database contracts only, so it adds no 
 
 ## S63 T032 consumer conformance evidence
 
-| FR / SC | Task | Test | Evidence |
-| --- | --- | --- | --- |
-| FR-001–004, FR-008, FR-013 | T032 | `tests/integration/f19-plan-activation.test.ts`; `nutrition-snapshots.test.ts`; `f17-plan-publish.test.ts`; `nutrition-publish.test.ts` | Stack D verifies domain-owned documents, shared delivery and projection, one activation after the cross-domain pair, and F16 snapshot semantics; included in the 108/108 upgraded-stack run. Details in `verification.md`. |
+| FR / SC                    | Task | Test                                                                                                                                    | Evidence                                                                                                                                                                                                                   |
+| -------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-001ï¿½004, FR-008, FR-013 | T032 | `tests/integration/f19-plan-activation.test.ts`; `nutrition-snapshots.test.ts`; `f17-plan-publish.test.ts`; `nutrition-publish.test.ts` | Stack D verifies domain-owned documents, shared delivery and projection, one activation after the cross-domain pair, and F16 snapshot semantics; included in the 108/108 upgraded-stack run. Details in `verification.md`. |
 
 The S63 T032 evidence above supersedes earlier table notes that list T032 as open for FR-013 and consumer-specific FRs.
