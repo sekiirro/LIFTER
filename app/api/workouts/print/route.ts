@@ -24,6 +24,7 @@ export async function GET(request: Request) {
   const result = await loadAuthorizedWorkoutExportPayload({
     revisionId,
     locale,
+    format: 'pdf',
   });
   if (!result.ok) return denied();
 

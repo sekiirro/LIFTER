@@ -6,6 +6,7 @@ const m = vi.hoisted(() => {
     create: vi.fn(),
     actor: vi.fn(),
     from: vi.fn(),
+    rpc: vi.fn(),
     getUser: vi.fn(),
     query,
     filters: [] as unknown[][],
@@ -44,7 +45,12 @@ describe('T037 PDF Print Route Unit', () => {
     });
     m.query.maybeSingle.mockResolvedValue({ data: m.revision, error: null });
     m.from.mockReturnValue(m.query);
-    m.create.mockResolvedValue({ auth: { getUser: m.getUser }, from: m.from });
+    m.rpc.mockResolvedValue({ data: null, error: null });
+    m.create.mockResolvedValue({
+      auth: { getUser: m.getUser },
+      from: m.from,
+      rpc: m.rpc,
+    });
     m.getUser.mockResolvedValue({ data: { user: { id: 'u' } }, error: null });
     m.actor.mockResolvedValue({
       userId: 'u',
@@ -81,6 +87,24 @@ describe('T037 PDF Print Route Unit', () => {
         ['plan_kind', 'workout'],
       ]),
     );
+  });
+
+  it('records an identity-only success audit event with no content', async () => {
+    const res = await GET(request());
+    expect(res.status).toBe(200);
+    const audit = m.rpc.mock.calls.find(
+      ([name]) => name === 'record_workout_export_audit',
+    );
+    expect(audit).toBeDefined();
+    expect(audit![1]).toEqual({
+      p_workspace_id: ws,
+      p_plan_id: m.revision.plan_id,
+      p_revision_id: m.revision.id,
+      p_format: 'pdf',
+      p_outcome: 'success',
+      p_reason: null,
+    });
+    expect(JSON.stringify(audit![1])).not.toContain('Published unit note');
   });
 
   it('returns the payload as JSON', async () => {

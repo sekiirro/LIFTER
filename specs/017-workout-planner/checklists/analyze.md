@@ -381,3 +381,9 @@ cells are stored as text.
 - T025 task status and FR-010/FR-011 plus SC-003/SC-004 traceability now cite Stack D RPC and RED/GREEN/mutation evidence in `verification.md`.
 - No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## T039 date update (2026-11-17, s63-hy4-f17t039)
+
+- T039 task status, FR-017/SC-008/FR-025 traceability rows and `verification.md` now cite the Stack B export-audit recorder, allowlist guard, RED/GREEN and two mutation kills/restores.
+- No FR, SC, acceptance-criteria, plan-design, contract or copy text changed; this is a status/evidence update only (S54-R6).
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
