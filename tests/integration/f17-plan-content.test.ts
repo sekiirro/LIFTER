@@ -26,6 +26,48 @@ async function createWorkout(content: unknown, operationKey = randomUUID()) {
 }
 
 describe('F17 plan content attached to F19 Plan Core', () => {
+  it('T049 creates and saves once across 100 same-key retries, including unknown-result replay', async () => {
+    const createKey = randomUUID();
+    const created = await Promise.all(
+      Array.from({ length: 100 }, () =>
+        createWorkout(validWorkoutDocument, createKey),
+      ),
+    );
+    expect(created.every((result) => result.error === null)).toBe(true);
+    const planIds = new Set(created.map((result) => result.data));
+    expect(planIds.size).toBe(1);
+    const planId = String(created[0]?.data);
+    const roots = await db()`
+      select count(*)::int as count from public.plan_roots
+      where workspace_id=${fixture.workspaceId} and id=${planId}
+    `;
+    expect(roots[0]?.count).toBe(1);
+
+    const saveKey = randomUUID();
+    const content = { schema_version: 1, days: [], notes: 'retried-save' };
+    const save = () =>
+      fixture.context.trainerA.client.rpc('save_plan_draft', {
+        p_plan_id: planId,
+        p_expected_draft_version: 1,
+        p_content: content,
+        p_operation_key: saveKey,
+      });
+    const saved = await save(); // Ignore this response to exercise recovery after commit.
+    expect(saved.error).toBeNull();
+    const retries = await Promise.all(Array.from({ length: 100 }, save));
+    expect(retries.every((result) => result.error === null)).toBe(true);
+    expect(
+      retries.every(
+        (result) => JSON.stringify(result.data) === JSON.stringify(saved.data),
+      ),
+    ).toBe(true);
+    const draft = await db()`
+      select draft_version::int as version, content from public.plan_drafts
+      where workspace_id=${fixture.workspaceId} and plan_id=${planId}
+    `;
+    expect(draft).toEqual([{ version: 2, content }]);
+  }, 120_000);
+
   it('exposes the selected published revision only through authorized workspace RLS', async () => {
     const created = await createWorkout({
       schema_version: 1,
