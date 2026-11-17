@@ -24,10 +24,10 @@
   - (g) Future `run_at` isn't claimed.
   - (h) anon and PO/trainer API clients: `from('jobs')` select/insert/update fail or return nothing; `rpc('jobs_claim')` etc. are denied.
   - (i) Payload > 4 KB and an invalid kind or error code are rejected.
-  Clean up by using unique kinds/keys per test, and filter claims by asserting only on this test's ids. Note: claims can pick up other tests' due jobs, so give each test its own `kind` and complete/fail only its own jobs; tolerate foreign rows. Use `fileParallelism: false` as already configured.
+    Clean up by using unique kinds/keys per test, and filter claims by asserting only on this test's ids. Note: claims can pick up other tests' due jobs, so give each test its own `kind` and complete/fail only its own jobs; tolerate foreign rows. Use `fileParallelism: false` as already configured.
 - [x] T006 [FR-006] Extend `tests/integration/rls-catalog.test.ts`: jobs has forced RLS; anon/authenticated have no table privileges; `service_role` has SELECT only; the RPCs are executable by service_role and not by anon/authenticated; `enqueue_job` is not executable by any API role.
 
 ## Phase 4: Docs and review
 
 - [x] T007 [FR-007, FR-008] README "Background jobs": enqueue from SQL, the deterministic key convention `<kind>:<workspace>:<entity>:<period>`, the no-PII payload rule, adding a handler, `build:cron`, and the deploy-time secret (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` via `wrangler secret`, PO approval required).
-- [ ] T008 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008) (Claude) Local Docker integration run, a negative check (remove `skip locked` in a temp migration → (b) must fail, or the lease guard → (e) must fail), and green CI.
+- [ ] T008 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008) (Claude) Local Docker integration run, a negative check (remove `skip locked` in a temp migration → (b) must fail, or the lease guard → (e) must fail), and green CI. Status (S63): not done: tests/integration/jobs.test.ts:85 covers T005 (a)-(i) (:86-418) and README.md:214 covers T007 docs, but the required local Docker run plus the negative check plus green CI have no committed evidence on main. What remains: a recorded Docker run with the negative-check result and the CI run reference.

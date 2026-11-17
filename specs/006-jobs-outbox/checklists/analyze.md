@@ -15,9 +15,9 @@
 
 ## Findings
 
-| ID | Category | Severity | Location | Finding | Resolution |
-|---|---|---|---|---|---|
-| A1 | Task traceability | MEDIUM | `tasks.md` T001-T008 | Task descriptions mapped to the requirements by scope but had no explicit FR IDs. | Resolved in this documentation change: each task now carries the FR IDs it implements or verifies. No checkbox changed. |
+| ID  | Category          | Severity | Location             | Finding                                                                           | Resolution                                                                                                              |
+| --- | ----------------- | -------- | -------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| A1  | Task traceability | MEDIUM   | `tasks.md` T001-T008 | Task descriptions mapped to the requirements by scope but had no explicit FR IDs. | Resolved in this documentation change: each task now carries the FR IDs it implements or verifies. No checkbox changed. |
 
 ## Coverage and constitution
 
@@ -39,3 +39,8 @@ FR-to-task mapping is 8/8 (100%). Task-to-FR mapping is explicit after this repa
 
 - Replaced corrupted question-mark delimiters in the clarification and verdict. The FR tags are retained because the SK-A common repair method explicitly requires tasks to be tagged with their FR IDs; no task descriptions or checkboxes were changed in this documentation repair.
 - Refreshed after static review of the seven follow-up CodeRabbit findings.
+
+## S63 docs-only evidence refresh - 2026-11-17 (date update only)
+
+- Scope: `tasks.md` status-only change; T008 records Status (S63) not-done evidence note. No requirement text changed; refresh evidence only, no requirement text changed; T008 stays unchecked.
+- CRITICAL: 0 open; HIGH: 0 open.
