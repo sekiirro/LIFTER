@@ -44,6 +44,7 @@ describe('T040 Copy AI Prompt API', () => {
     });
     m.query.maybeSingle.mockResolvedValue({ data: m.revision, error: null });
     m.from.mockReturnValue(m.query);
+    m.rpc.mockResolvedValue({ data: null, error: null });
     m.create.mockResolvedValue({
       auth: { getUser: m.getUser },
       from: m.from,
@@ -117,25 +118,27 @@ describe('T040 Copy AI Prompt API', () => {
       ],
     };
     m.revision.content = originalContent;
-    m.rpc
-      .mockResolvedValueOnce({
+    let catalogCall = 0;
+    m.rpc.mockImplementation((name: string) => {
+      if (name === 'record_workout_export_audit') {
+        return Promise.resolve({ data: null, error: null });
+      }
+      catalogCall += 1;
+      return Promise.resolve({
         data: [
           {
             payload: { name_en: 'Current library name' },
-            variation: { video_url: 'https://youtu.be/current-one' },
-          },
-        ],
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: [
-          {
-            payload: { name_en: 'Current library name' },
-            variation: { video_url: 'https://youtu.be/current-two' },
+            variation: {
+              video_url:
+                catalogCall === 1
+                  ? 'https://youtu.be/current-one'
+                  : 'https://youtu.be/current-two',
+            },
           },
         ],
         error: null,
       });
+    });
 
     const firstResponse = await GET(request());
     const first = await firstResponse.json();
@@ -148,11 +151,24 @@ describe('T040 Copy AI Prompt API', () => {
     expect(first.prompt).not.toContain('https://youtu.be/current-two');
     expect(second.prompt).toContain('https://youtu.be/current-two');
     expect(second.prompt).not.toContain('https://youtu.be/current-one');
-    expect(m.rpc).toHaveBeenCalledTimes(2);
+    expect(m.rpc).toHaveBeenCalledTimes(4);
     expect(m.rpc).toHaveBeenNthCalledWith(1, 'catalog_exercise_detail', {
       p_exercise_id: 'e1111111-1111-4111-8111-111111111111',
       p_workspace_id: ws,
     });
+    expect(m.rpc).toHaveBeenNthCalledWith(
+      4,
+      'record_workout_export_audit',
+      expect.objectContaining({
+        p_format: 'ai_prompt',
+        p_outcome: 'success',
+        p_revision_id: m.revision.id,
+        p_reason: null,
+      }),
+    );
+    expect(JSON.stringify(m.rpc.mock.calls[3]![1])).not.toContain(
+      'Current library name',
+    );
     expect(m.revision.content).toEqual(originalContent);
   });
 

@@ -28,6 +28,7 @@ export async function GET(request: Request) {
   const result = await loadAuthorizedWorkoutExportPayload({
     revisionId,
     locale,
+    format: 'ai_prompt',
   });
   if (!result.ok) return denied();
 

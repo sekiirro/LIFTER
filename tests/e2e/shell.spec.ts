@@ -124,8 +124,14 @@ for (const locale of ['ar', 'en'] as const) {
           expect(mainBox.width).toBe(width);
 
           if (width === 1024) {
-            await expect(rail).toBeHidden();
-            await expect(page.getByTestId('bottom-bar')).toBeVisible();
+            // S31-PO-7 Q5: 1024px is the first sidebar width (was bottom bar).
+            await expect(rail).toBeVisible();
+            await expect(page.getByTestId('bottom-bar')).toBeHidden();
+            const sidebarBox = await rail.boundingBox();
+            if (!sidebarBox) throw new Error('Expected visible 1024px sidebar');
+            if (locale === 'en')
+              expect(sidebarBox.x + sidebarBox.width).toBeLessThan(width / 3);
+            else expect(sidebarBox.x).toBeGreaterThan((2 * width) / 3);
             continue;
           }
 

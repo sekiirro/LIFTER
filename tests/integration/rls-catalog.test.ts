@@ -317,6 +317,8 @@ describe('tenancy security catalog (T007)', () => {
           'f13_project_entitlement',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
+          'f3_guard_platform_owner_profile_change',
+          'f3_lock_platform_owner_state',
           // F17 workout content validation triggers (20261119040000).
           'f17_validate_workout_schema_version',
           'f17_validate_workout_document_size',
@@ -456,6 +458,7 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
           'f17_reject_assignment_ledger_mutation',
+          'f17_audit_allowlist_guard',
           'f17_guard_distribution_state_update',
           'nutrition_template_guard_identity',
           'nutrition_template_version_immutable',
@@ -468,8 +471,10 @@ describe('tenancy security catalog (T007)', () => {
           'nutrition_template_private_fields',
           'f18_guard_nutrition_selection',
           'f18_audit_allowlist_guard',
+          'package_c5_preflight',
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
+          'f19_set_plan_revision_contributor_actions',
         ]),
       ].sort(),
     );
@@ -529,8 +534,10 @@ describe('tenancy security catalog (T007)', () => {
         'nutrition_template_assign_guard',
         'nutrition_template_private_fields',
         'f18_guard_nutrition_selection',
+        'package_c5_preflight',
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
+        'f19_set_plan_revision_contributor_actions',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -573,6 +580,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_productivity_unit',
           'f18_guard_plan_version_content',
           'f18_guard_nutrition_selection',
+          'package_c5_preflight',
           'f18_selection_audit',
           'f18_is_self_approved_client',
           'f18_is_self_approved_plan_client',
@@ -596,12 +604,16 @@ describe('tenancy security catalog (T007)', () => {
           'f17_workout_template_finish_operation',
           'f17_workout_template_write_audit',
           'f17_reject_assignment_ledger_mutation',
+          'f17_audit_allowlist_guard',
           'f17_guard_distribution_state_update',
           'f18_guard_nutrition_document_ids',
           'f18_is_canonical_uuid_v4',
           'f18_invalid_uuid_alias',
+          'f3_guard_platform_owner_profile_change',
+          'f3_lock_platform_owner_state',
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
+          'f19_set_plan_revision_contributor_actions',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -629,6 +641,7 @@ describe('tenancy security catalog (T007)', () => {
         ].includes(row.proname) ||
           (!row.proname.startsWith('f12_') &&
             !row.proname.startsWith('f13_') &&
+            !row.proname.startsWith('f3_') &&
             !row.proname.startsWith('f17_') &&
             !registrationPrivate.includes(row.proname) &&
             !assignmentPrivate.includes(row.proname) &&
@@ -790,11 +803,13 @@ describe('tenancy security catalog (T007)', () => {
               'nutrition_template_private_fields',
               'f18_guard_nutrition_selection',
               'f18_audit_allowlist_guard',
+              'package_c5_preflight',
               'f18_guard_nutrition_document_ids',
               'f18_is_canonical_uuid_v4',
               'f18_invalid_uuid_alias',
               'f19_guard_plan_revision_contributors',
               'f19_track_plan_draft_contributor',
+              'f19_set_plan_revision_contributor_actions',
             ].includes(row.proname)),
       );
     }
@@ -1548,6 +1563,8 @@ describe('registration security catalog', () => {
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
       'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
+      'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',
+      'app_private.f17_audit_allowlist_guard()',
       'app_private.f15_alert_occurrence_authorize_insert()',
       'app_private.f15_alert_recipient_authorized(uuid,uuid,text)',
       'app_private.f15_alert_schedule_audit()',

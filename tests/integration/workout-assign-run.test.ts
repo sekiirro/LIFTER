@@ -53,6 +53,82 @@ async function holdIdentity(workspaceId: string, globalId: string) {
 }
 
 describe('F17 T025 assign run RPC', () => {
+  it('T027 skips a held v1 copy when assigning the newer global v2', async () => {
+    const globalId = await seedGlobal('Source v1');
+    const heldId = await holdIdentity(f.wsA.id, globalId);
+    const nextDocument = {
+      schema_version: 1,
+      days: [{ id: randomUUID(), kind: 'session', items: [] }],
+    };
+    await db.begin(async (tx) => {
+      await tx`insert into public.workout_global_template_versions (
+        template_id, version, title, schema_version, document, created_by
+      ) values (${globalId}, 2, 'Source v2', 1, ${tx.json(nextDocument)}, ${f.po.userId})`;
+      await tx`update public.workout_global_templates set current_version = 2 where id = ${globalId}`;
+    });
+
+    const result = await db.begin(async (tx) =>
+      asPo(tx, async () => {
+        const rows = await tx`select public.assign_workout_templates(
+          'specific', ${[globalId]}::uuid[], null, 'specific_workspaces', ${[f.wsA.id, f.wsB.id]}::uuid[], ${randomUUID()}
+        ) as result`;
+        return rows[0]?.result as {
+          items: Array<{
+            workspace_id: string;
+            outcome: string;
+            created_copy_ids: string[];
+            skipped_template_ids: string[];
+          }>;
+        };
+      }),
+    );
+
+    expect(result.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          workspace_id: f.wsA.id,
+          outcome: 'no_copies',
+          created_copy_ids: [],
+          skipped_template_ids: [globalId],
+        }),
+        expect.objectContaining({
+          workspace_id: f.wsB.id,
+          outcome: 'assigned',
+        }),
+      ]),
+    );
+    const retained = await db`
+      select t.id, t.current_version, t.origin_global_template_version, v.version, v.title
+      from public.workout_workspace_templates t
+      join public.workout_workspace_template_versions v
+        on v.workspace_id = t.workspace_id and v.template_id = t.id
+      where t.workspace_id = ${f.wsA.id} and t.id = ${heldId}
+    `;
+    expect(retained).toMatchObject([
+      {
+        id: heldId,
+        current_version: 1,
+        origin_global_template_version: 1,
+        version: 1,
+        title: 'Held copy',
+      },
+    ]);
+    const createdId = result.items.find(
+      (item) => item.workspace_id === f.wsB.id,
+    )?.created_copy_ids[0];
+    if (!createdId) throw new Error('Version 2 assignment copy id is missing');
+    const created = await db`
+      select t.origin_global_template_version, v.version, v.title
+      from public.workout_workspace_templates t
+      join public.workout_workspace_template_versions v
+        on v.workspace_id = t.workspace_id and v.template_id = t.id
+      where t.workspace_id = ${f.wsB.id} and t.id = ${createdId}
+    `;
+    expect(created).toMatchObject([
+      { origin_global_template_version: 2, version: 1, title: 'Source v2' },
+    ]);
+  });
+
   it('records mixed no_copies and assigned workspace receipts, and rejects a zero-total run before writes', async () => {
     const globalId = await seedGlobal('Mixed outcome template');
     const heldId = await holdIdentity(f.wsA.id, globalId);
@@ -227,5 +303,91 @@ describe('F17 T025 assign run RPC', () => {
         return tx`select public.assign_workout_templates('all', null, null, 'specific_workspaces', ${[f.wsA.id]}::uuid[], ${randomUUID()})`;
       }),
     ).rejects.toMatchObject({ code: '42501' });
+  });
+
+  it('T026 replays a committed assignment after authorization and conflicts when arguments change', async () => {
+    const globalId = await seedGlobal('Retry assignment template');
+    const key = randomUUID();
+    const invoke = (templateIds: string[]) =>
+      db.begin(async (tx) =>
+        asPo(tx, async () => {
+          const rows = await tx`select public.assign_workout_templates(
+          'specific', ${templateIds}::uuid[], null, 'specific_workspaces', ${[f.wsA.id]}::uuid[], ${key}
+        ) as result`;
+          return rows[0]?.result;
+        }),
+      );
+
+    const committed = await invoke([globalId]); // Simulate losing the first response.
+    await expect(
+      db.begin(async (tx) => {
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })}, true)`;
+        return tx`select public.assign_workout_templates(
+          'specific', ${[globalId]}::uuid[], null, 'specific_workspaces', ${[f.wsA.id]}::uuid[], ${key}
+        )`;
+      }),
+    ).rejects.toMatchObject({ code: '42501' });
+    await expect(invoke([globalId])).resolves.toEqual(committed);
+
+    const otherGlobalId = await seedGlobal('Changed retry assignment template');
+    await expect(invoke([otherGlobalId])).rejects.toThrow(
+      /operation_key_conflict/,
+    );
+    const runs =
+      await db`select count(*)::int as count from public.workout_template_assignment_runs where actor_id=${f.po.userId} and operation_key=${key}`;
+    expect(runs[0]?.count).toBe(1);
+  });
+
+  it('T049 serializes concurrent assignment replays and 100 retries without duplicate copies', async () => {
+    const globalId = await seedGlobal('Concurrent retry assignment template');
+    const key = randomUUID();
+    const invoke = () =>
+      db.begin(async (tx) =>
+        asPo(tx, async () => {
+          const rows = await tx`select public.assign_workout_templates(
+          'specific', ${[globalId]}::uuid[], null, 'specific_workspaces', ${[f.wsB.id]}::uuid[], ${key}
+        ) as result`;
+          return rows[0]?.result;
+        }),
+      );
+    const results = await Promise.all(Array.from({ length: 100 }, invoke));
+    expect(
+      results.every(
+        (result) => JSON.stringify(result) === JSON.stringify(results[0]),
+      ),
+    ).toBe(true);
+    const runs =
+      await db`select count(*)::int as count from public.workout_template_assignment_runs where actor_id=${f.po.userId} and operation_key=${key}`;
+    const copies =
+      await db`select count(*)::int as count from public.workout_template_assignment_copies where global_template_id=${globalId} and workspace_id=${f.wsB.id}`;
+    expect(runs[0]?.count).toBe(1);
+    expect(copies[0]?.count).toBe(1);
+  }, 120_000);
+
+  it('T049 serializes different concurrent assignment runs for one workspace/template identity', async () => {
+    const globalId = await seedGlobal('Concurrent distinct assignment runs');
+    const invoke = (key: string) =>
+      db.begin(async (tx) =>
+        asPo(tx, async () => {
+          const rows = await tx`select public.assign_workout_templates(
+          'specific', ${[globalId]}::uuid[], null, 'specific_workspaces', ${[f.wsA.id]}::uuid[], ${key}
+        ) as result`;
+          return rows[0]?.result;
+        }),
+      );
+    const outcomes = await Promise.allSettled([
+      invoke(randomUUID()),
+      invoke(randomUUID()),
+    ]);
+    expect(
+      outcomes.filter((outcome) => outcome.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      outcomes.filter((outcome) => outcome.status === 'rejected'),
+    ).toHaveLength(1);
+    const copies =
+      await db`select count(*)::int as count from public.workout_template_assignment_copies where global_template_id=${globalId} and workspace_id=${f.wsA.id}`;
+    expect(copies[0]?.count).toBe(1);
   });
 });

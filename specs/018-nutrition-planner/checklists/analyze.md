@@ -191,3 +191,5 @@ Date note: T019 completion bookkeeping recorded on 2026-11-16; no FR, SC, contra
 ### Cross-artifact decision
 
 S60-PO-3's approved “UUIDs only (Recommended)” choice applies to item and alternative IDs only. Require canonical lowercase UUIDv4 form at the TS validator, published-document SQL boundary, selection RPC/table boundary, and F18 audit allowlist guard. Keep other F18 ID scopes unchanged. The fixtures use deterministic lowercase UUIDv4 values; negative tests retain malformed values only where the test explicitly checks rejection.
+
+**2026-11-17 date update:** T027 task status and traceability evidence were synchronized after release-gate tests, fresh replay, upgrade replay and migration scan. No requirement, acceptance, contract or plan design text changed; CRITICAL/HIGH findings remain 0.

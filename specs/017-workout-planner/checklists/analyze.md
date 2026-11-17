@@ -11,6 +11,8 @@
 
 **S60 date update (2026-11-16):** Re-dated after T040 implementation, task status and traceability evidence updates only; no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
 
+**S63 date update (2026-11-17 08:43 Cairo):** T022/T027 task statuses and traceability evidence only; no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
+
 **S62 refresh date update (2026-11-17):** Re-dated after merging origin/main into this slice (T037 print-route/export-reader evidence); task-status and traceability evidence only, no FR/SC/acceptance or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings.
 
 ## Entry check at the start of the S44 lane (2026-11-10 05:43 UTC)
@@ -381,3 +383,20 @@ cells are stored as text.
 - T025 task status and FR-010/FR-011 plus SC-003/SC-004 traceability now cite Stack D RPC and RED/GREEN/mutation evidence in `verification.md`.
 - No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## T039 date update (2026-11-17, s63-hy4-f17t039)
+
+- T039 task status, FR-017/SC-008/FR-025 traceability rows and `verification.md` now cite the Stack B export-audit recorder, allowlist guard, RED/GREEN and two mutation kills/restores.
+- No FR, SC, acceptance-criteria, plan-design, contract or copy text changed; this is a status/evidence update only (S54-R6).
+
+## T041 Date Update (2026-11-17)
+
+- T041 status now cites the authorized-route export goldens in `tests/unit/workout-export-route-goldens.test.tsx` and the four new fixtures, with RED/GREEN/two-mutation evidence in `verification.md`; FR-018 is VERIFIED and SC-008/SC-013 evidence unions the route-level coverage.
+- No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
+- **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S63 T047/T051 Date Update (2026-11-17)
+
+- T047 status and traceability now cite the current-main negative matrix across 10 F17 tables and 14 plan/template/export RPCs, including #212 contributor action codes, plus mutation probes; T051 cites all-origin migration-version validation, Stack A fresh and upgrade paths, and audit rollback atomicity.
+- #206 and #212 are merged and included. No current-main RPC/table remains outstanding for T047.
+- No FR, SC, acceptance, or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings and 0 open MCQs.

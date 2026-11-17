@@ -318,6 +318,17 @@
 
 - **RLS Catalog Update**: Appended minimal verification in `tests/integration/rls-catalog.test.ts` for `app_private.f17_workout_operation_keys` (forced RLS, zero client-role DML privileges) and narrow execute privileges for `public.f17_add_workout_exercise` and `public.f17_resolve_workout_exercise_muscles` (owner postgres, authenticated EXECUTE true, anon/service_role false, search_path="").
 
+## F17 Verification — T047/T051 current-main release gate (s63-luna-f17neg)
+
+- **Baseline / stack**: `b3cdd34c1d65d4aea6171276219a13e5cac7e612` (`origin/main` after fetching the PR #212 merge); Stack A only, worktree `LFTR-s63-luna-f17neg`. Merged PRs #206 and #212 are included.
+- **T047 scope**: Current main has 10 F17 tables and 14 plan/template/export RPCs from merged PRs #176, #181, #185, #192, #193, #206 and #212. The matrix covers foreign workspace and RLS visibility, including contributor action rows; direct DML denial; Sales, client, unaffiliated, revoked and foreign-workspace actor denials; PO-only global/assignment/promotion; replay/conflict and CAS; generic denials; export audit.
+- **RED / mutation**: Existing M01–M21 probes remain. This slice adds mutation kills for assignment, promotion, global load, draft save, publish authorization-before-validation, export audit authorization, contributor-table RLS, and contributor-row immutability (29 guard probes total). Each probe runs in a rolled-back savepoint; function mutants restore the original definition with an MD5 equality check.
+- **T051 fresh path**: Stack A `db reset --local` from an empty database completed through current migrations, including `20261122030000_f17_revision_contributor_actions.sql`; `client-accounts-provision.mjs` ran after reset.
+- **T051 upgrade path**: Stack A `db reset --local --version 20261122010000`, then provisioner, then `migration up --local`; applied `20261122030000_f17_revision_contributor_actions.sql` and `20261122060000_auth_recovery_limits_t031.sql` successfully.
+- **Migration identity gate**: `npm run check:migration-versions:remote` passed across 438 remote refs with no cross-ref version collision; `npm run check:migration-timestamps` validated every local migration. No migration was added by this lane, so the reserved 20261122080000–20261122085959 range was not consumed.
+- **Audit atomicity / DML**: `workout-export-audit.test.ts` injects an after-insert failure and verifies no audit row survives; `workout-negative-matrix.test.ts` checks all 10 F17 tables have no client-role DML and contributor RLS/immutability; `rls-catalog.test.ts` verifies audit_events grants and SECURITY DEFINER RPC access. `workout-contributors.test.ts` checks the merged action-code behavior.
+- **Final focused integration**: Stack A, 7 files / 96 tests passed after the #212 merge: `workout-negative-matrix.test.ts`, `workout-export-audit.test.ts`, `workout-contributors.test.ts`, `workout-assign-run.test.ts`, `rls-catalog.test.ts`, `f19-trainer-deletion.test.ts`, and `f19-plan-activation.test.ts`.
+
 ## F17 Verification — T050 performance benchmark and cap decision (s61-luna-f17t050)
 
 - **Branch / stack**: `017-perf-benchmark-slice-1` / Stack D (`lifter-stack-d`; API 45421, DB 45422). Stack D was reset through the approved safe wrapper and `tests/integration/client-accounts-provision.mjs` ran afterward. No migration was added.
@@ -346,6 +357,17 @@
   3. **Print layout mutation**: Mutated `WorkoutPrintView.tsx` line 223 to force `dir="ltr"` on Arabic locale -> `tests/unit/workout-export-goldens.test.tsx` failed with layout assertion mismatch (`R/mutation-print-layout.txt`); restored clean.
   4. **Formula injection mutation**: Mutated `excel-export.ts` to assign formula to cells starting with `=` -> `tests/unit/workout-export-goldens.test.tsx` failed with formula detection failure (`R/mutation-formula.txt`); restored clean.
   - `git diff --exit-code` on all pre-existing code is 0.
+
+### T041 follow-up — authorized route goldens (s63-ds-f17t041)
+
+- **Branch / stack**: `s63-f17-export-goldens` / no DB stack. Both route handlers run for real over the real authorized export reader and renderers; only the Supabase session client and actor loader are mocked, matching the existing T037/T040 unit route tests.
+- **Scope (remaining T041 clause only)**: exact `tests/fixtures/f17/workout-print-route-golden-{en,ar}.json` payload equality for `/api/workouts/print`, exact `tests/fixtures/f17/workout-copy-prompt-route-golden-{en,ar}.txt` prompt bytes for `/api/workouts/copy-prompt` after the single `{{PLAN_CONTENT}}` substitution, Revision N while N+1 exists in both routes, RTL/LTR layout plus S58-PO-5 labels from the route payload, English exercise names, preserved authored text, and text-only Excel cells from the route payload (SC-008). No production code changed.
+- **RED**: `tests/unit/workout-export-route-goldens.test.tsx` failed 4/8 with missing fixtures (earlier run logged in `R/report.md`); the 4 non-golden route assertions already passed.
+- **GREEN**: 8/8 passed (`R/green.txt`).
+- **Mutation (killed -> restored -> `git diff --exit-code` = 0)**:
+  1. English route prompt golden, one byte (`Rules:` -> `Rulez:`) -> 1 failed / 7 passed (`R/mutation-prompt-byte.txt`); restored clean.
+  2. English route payload golden cell (`planIdentity` `"1"` -> `"7"`) -> 1 failed / 7 passed (`R/mutation-route-cell.txt`); restored clean.
+- **Evidence files**: `tests/unit/workout-export-route-goldens.test.tsx`, `tests/fixtures/f17/workout-print-route-golden-{en,ar}.json`, `tests/fixtures/f17/workout-copy-prompt-route-golden-{en,ar}.txt`.
 
 ## F17 Verification — T025 (s60-luna-f17t025)
 
@@ -397,3 +419,35 @@
   - Final restored Stack D safe reset + Vault provisioning; all 3 touched integration suites passed 57/57. Final migration file hash: recorded in `R/report.md`; no mutation scratch persisted.
 - **T028 S61-R4**: Promoted source stays in workspace, promoted identity is separate, unresolved reference response is RED, and the promoted RED ref cannot load. Existing T028 promotion mutation and RED coverage are recorded above in this file's earlier T028 section; T028 and T024 are now complete.
 - **Analyze**: No FR, SC, acceptance, or plan design text changed; only implementation/test/status/evidence changed, so no Analyze re-date is needed.
+
+## F17 Verification — T022 contributor actions and T027 newer-version skip (s63-luna-f17b)
+
+- **Stack / migration**: Stack A only. Migration `20261122030000_f17_revision_contributor_actions.sql` is within the lane range `20261122030000–20261122035959`.
+- **T022 implementation**: Added `action_codes` to the existing immutable, workspace-scoped `plan_revision_contributors` projection. Each published row records successful `save` and/or `publish` actions and its existing first-contribution timestamp. The attribution trigger preserves the existing SECURITY DEFINER save/publish functions, operation-key/CAS behavior, RLS, and immutable-row guard. It exposes no plan content.
+- **T022 RED → GREEN**: `tests/integration/workout-contributors.test.ts` first failed because `action_codes` was absent. After the migration, the test verified two staff on one revision, `save`/`publish` codes, a fresh set after the prior revision, timestamps, and a content-free row shape. `tests/integration/f19-trainer-deletion.test.ts` also verifies the contributor row count and publish action remain unchanged through the F11 trainer-deletion workflow.
+- **T022 mutation**: Mutated the trigger to emit an empty action set. Publish failed with `23514` on `plan_revision_contributors_action_codes_check`, killing the attribution mutant. Restored the migration and reset/reprovisioned Stack A.
+- **T027**: `tests/integration/workout-assign-run.test.ts` verifies a workspace holding global version 1 reports that identity skipped when version 2 is selected, while another workspace gets an independent version 2 copy; the held copy remains version 1. Existing assignment code already implemented S43-PO-1, so no RPC change was needed.
+- **T027 mutation**: Mutated the existing-copy predicate to require matching source version. The new regression and existing assignment-state test failed on `workout_workspace_templates_origin_global_uidx`, proving the skip is version-independent. Restored the migration.
+- **Final touched integration**: `workout-contributors.test.ts`, `workout-assign-run.test.ts`, `workout-assignment-state-visibility.test.ts`, `nutrition-contributors.test.ts`, `f19-trainer-deletion.test.ts`, `f19-plan-core-schema.test.ts`, and `rls-catalog.test.ts`: 7 files, 66/66 tests passed on Stack A after safe reset and Vault provisioning.
+- **Analyze**: No requirement or plan text changed; no Analyze re-date is needed.
+
+## F17 Verification — T039 export audit (s63-hy4-f17t039)
+
+- **Branch / stack**: `s63-f17-export-audit` / Stack B (`lifter-stack-b`). Migration `20261122010000_f17_workout_export_audit.sql` (brief range 20261122010000–20261122015959; all-origin ref/path scan 0 hits; main max 20261121200000). Stack B safe `db reset --local` + `tests/integration/client-accounts-provision.mjs` after every reset.
+- **Implementation**: `public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)` is SECURITY DEFINER, `search_path = ''`, owner `postgres`, EXECUTE only to `authenticated`. It accepts only identity, `format` (`pdf`|`excel`|`ai_prompt`), `outcome` (`success`|`denied`) and a closed denial reason (`not_permitted`|`not_found`). `app_private.f17_audit_allowlist_guard()` is a BEFORE INSERT trigger on `public.audit_events` that rejects any `plan.workout_export` row whose `details` keys/values fall outside that allowlist. `lib/workout-planner/export-audit.ts` is the only writer; `lib/workout-planner/export-reader.ts` emits exactly one success or denial event for every authorized/declined export and fails closed on success-audit errors. The shared reader is used by both the PDF print route (`pdf`) and Copy AI Prompt route (`ai_prompt`).
+- **RED**: On Stack B before applying the migration, `tests/integration/workout-export-audit.test.ts` failed 6/6: success export 404 (audit RPC absent), no foreign/draft denial rows, PII insert accepted, audit RPC returned SQLSTATE 42883 instead of 42501.
+- **GREEN**: After migration + provisioning: 6/6 passed. Success `details` keys are exactly `format`, `outcome`, `plan_id`, `revision_id`; denial rows add a closed `reason`; the coach-authored sentinel note and authored day title never appear in any audit event. Draft and foreign-workspace revisions are denied with generic `not_found` (indistinguishable from not-found per export contract §3).
+- **Mutations (Stack B; both restored with clean source diff)**:
+  1. Added a `notes` key carrying content to the recorder's success `details`. After reset, `records one identity-only success event` failed (expected 200, got 404) because the guard rejected the write; restored.
+  2. Removed the `f17_workout_export_audit_allowlist` trigger. After reset, `rejects an audit row that carries content/PII` failed (insert accepted); restored the trigger, reset + provisioned, final suite 6/6 GREEN.
+- **Scope**: No copy, FR, SC, acceptance or plan design text changed. T026, T049, T041, T022, T027, T045, T047, T051, T052 remain out of scope; no Playwright run.
+
+## S63 T026/T049 - assignment retries and concurrency
+
+- **Branch / stack**: `s63-f17-retry`, Stack A. Implementation commit: `cc6905141f87f7b9d81af4f8eb65d64ba20caabd`.
+- **Implementation**: Migration `20261122000000_f17_workout_assignment_idempotency.sql` binds `(actor, operation_key)` to a canonical request hash, takes a transaction advisory lock for that key after authorization, and stores the exact JSON receipt in the immutable assignment run row. Authorized exact replay returns that receipt; changed arguments return `operation_key_conflict`. `tests/integration/function-drift-guard.ts` now points to the forward migration definition.
+- **T026 tests**: `tests/integration/workout-assign-run.test.ts` covers the committed-but-unobserved response replay, denial when authorization is absent, same-key changed-argument conflict, and one run/copy. Mutation disabled the request-hash comparison; the changed-argument assertion failed because the RPC returned a receipt instead of `operation_key_conflict`. Restored the comparison and reset Stack A.
+- **T049 tests**: 100 same-key concurrent attempts each for create, save, publish, and assign; distinct-key concurrent assignment runs for one workspace/template; one revision/delivery/copy and no overwritten draft. Unknown-result recovery is exercised for save, publish, and assign. Mutation bypassed the existing-run replay guard; the exact-replay assertion failed with `zero_copies`, and the 100-assignment retry test failed. Restored the guard and reset Stack A.
+- **RED note**: The tests were authored before implementation. Their initial pre-implementation execution could not start because the worktree had no Vitest dependencies (`npm ci` stopped on Windows `ENOTEMPTY`); execution resumed after the migration was implemented. Mutation probes then demonstrated the failing assertions before restoration. No behavior was hidden or weakened.
+- **Final GREEN**: Safe reset applied the migration. Stack A integration command covering `workout-assign-run`, `f17-plan-content`, `f19-plan-activation`, and `rls-catalog` passed 4 files / 69 tests. Full unit passed 299 files / 3,404 tests. Lint, typecheck, Prettier, changed-format, and spec-consistency gates passed. No Analyze re-date: requirement text did not change.
+- **Migration scan**: Fetched all origin branches and PR heads before choosing `20261122000000`; no matching `20261122*.sql` existed. Repeat scan required immediately before push.
