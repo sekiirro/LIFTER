@@ -84,8 +84,7 @@ remains current. 29/29 FRs and 11/11 SCs remain mapped (40/40).
 | SC-001..003 / 005 / 007   | Full integration + killed money/ledger mutants; 1 expected fail and 6 skips are recorded, not treated as passes.                                       |
 | SC-004 / 006 / 008 / 011  | T042/T043 e2e, full integration and mutation evidence; SC-012 still T055-owned.                                                                        |
 
-T043 is evidenced and ticked; T045 and T046 are evidenced and ticked with the
-documented environment/external gaps; T047 is ticked after the pull_request CI
-record is attached. **T044 remains unticked**: 17 of 24 Q-M ids were killed on
+T043, T045, T046 and T047 are evidenced and ticked (T045 with the documented
+environment/external gaps; T047 with the PR #236 / run 44184629061 CI tuple). **T044 remains unticked**: 17 of 24 Q-M ids were killed on
 this head, Q-M23 survived, and Q-M03/M08/M09/M13/M21/M22 were not re-executed.
 T048 (architect review) is not ticked by this lane.
