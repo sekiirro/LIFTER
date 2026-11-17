@@ -35,4 +35,11 @@ Static source inspection only. No test suite was executed in this compliance lan
 
 - Functional requirements: 17 VERIFIED, 12 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. FR-012 is PARTIAL because the cited replay and revocation-after-wait tests do not assert the full lock order (client, subscription, then obligations/ledger). FR-014 is PARTIAL because its S47-PO-12 deleted-client correction clause is mapped to unchecked T055. FR-017 is PARTIAL because deletion-state refusal and authorised replay are mapped to unchecked T055; FR-011 is PARTIAL because deletion-state replay coverage is mapped to unchecked T055. The grouped FR-006, FR-008, FR-017..FR-018 row counts FR-006, FR-008 and FR-018 as verified and FR-017 as the only partial requirement in it.
 - Success criteria: 6 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. SC-012 is PARTIAL because the deleted-client correction and the refused new collection are mapped to unchecked T055.
-- Execution: static verification only; no suite run. T050-T054 are not checked by this reconciliation.
+- Execution: the baseline matrix was a static review; the T042 execution supplement below records its targeted Stack D run. T050-T054 remain unchecked by this reconciliation.
+
+## Execution supplement — 2026-11-17
+
+- T042 / FR-006, FR-008, FR-018: `tests/integration/registration-approval-operations.test.ts::T042 real F11 client session observes pending then approved status without signing in again`, `tests/integration/registration-approval-client-access.test.ts::T042 real F11 client JWT is limited to self-status and denied client data and private Storage`, and `tests/integration/registration-approval-replay.test.ts::T042 global Auth revocation prevents a real F11 client session from refreshing` passed on Stack D (`lifter-stack-d`).
+- The PostgREST test grants SELECT to `authenticated` only for its test, asserts RLS-filtered empty results through the real F11 JWT, then revokes the grants in `finally`; the private Storage read/write denials also passed.
+- RED: without the temporary grants, the assertion failed with SQLSTATE 42501 (`permission denied for table clients`), proving the prior error was grant-masked. GREEN: all 3 T042 tests passed. Mutation: a temporary permissive SELECT policy exposed the synthetic client row and caused T042 to fail; the policy was dropped and the three tests passed again. Detailed commands and outcomes are in the lane report.
+- FR-011, FR-014, FR-017 and SC-012 remain PARTIAL pending unchecked T055 deletion-state cases.
