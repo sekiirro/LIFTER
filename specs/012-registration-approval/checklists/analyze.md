@@ -421,3 +421,9 @@ Scope: the exact-head CodeRabbit review `5877600535` (CHANGES_REQUESTED on `212d
 - Q-V01 infrastructure evidence is recorded in `research.md`; T050/T051 evidence and mutation restoration are recorded in `tests/integration/registration-approval-verification.md` and referenced from `traceability.md`.
 - Clarifications remain explicitly at zero open F12 requirement ambiguities. No new product behavior, defaults, copy, or permissions were introduced.
 - Revalidation result: 0 open CRITICAL, 0 open HIGH; no new consistency finding blocks S12-1. Existing non-blocking findings remain as previously recorded.
+
+## S63 post-base-merge revalidation — 2026-11-17
+
+- Reviewed the latest `origin/main` task-list update alongside this S12-1 record. The T053/T054 notes remain open follow-up work; no FR, SC, acceptance-scenario, or S12-1 design text changed.
+- T051 now states the T050 verification dependency as a prerequisite. Task completion remains evidence-backed, and FR-023/SC-009 remain PARTIAL until T053/T054 are completed.
+- Scope revalidation: zero open F12 requirement ambiguities for S12-1; 0 open CRITICAL and 0 open HIGH findings. No new behavior, copy, defaults, or permissions were introduced.
