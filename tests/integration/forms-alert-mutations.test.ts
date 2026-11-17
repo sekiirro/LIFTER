@@ -23,6 +23,7 @@ const migrationPath = new URL(
 async function expectInvariantFailure(
   label: string,
   assertion: () => Promise<void>,
+  expectedAssertionText?: string | readonly string[],
 ) {
   let failure: unknown;
   try {
@@ -34,6 +35,23 @@ async function expectInvariantFailure(
     failure,
     `${label} mutant must fail its named assertion`,
   ).toBeDefined();
+  if (expectedAssertionText) {
+    expect(
+      failure,
+      `${label} must fail through a Vitest assertion`,
+    ).toMatchObject({
+      name: 'AssertionError',
+    });
+    const expectedTexts = Array.isArray(expectedAssertionText)
+      ? expectedAssertionText
+      : [expectedAssertionText];
+    expect(
+      expectedTexts.some((expectedText) =>
+        (failure as Error).message.includes(expectedText),
+      ),
+      `${label} must fail through one of its named assertions`,
+    ).toBe(true);
+  }
 }
 
 async function rollbackProbe(body: (tx: TransactionSql) => Promise<void>) {
@@ -112,6 +130,52 @@ async function setupClient() {
   const f = await clientContext();
   const client = await registered(f);
   return { f, client };
+}
+
+async function cleanupAndGetOwnedAudit(
+  workspaceId: string,
+  assignmentId: string,
+) {
+  return db.begin(async (tx) => {
+    const occurrences = await tx`
+      select o.id,o.job_id from app_private.form_alert_occurrences o
+      join app_private.form_alert_schedules s
+        on s.workspace_id=o.workspace_id and s.id=o.schedule_id
+      where s.workspace_id=${workspaceId} and s.source_assignment_id=${assignmentId}
+    `;
+    const targets = [
+      ...occurrences.map((row) => row.id),
+      ...occurrences.flatMap((row) => (row.job_id ? [row.job_id] : [])),
+      ...(
+        await tx`
+        select id from app_private.form_alert_inbox
+        where workspace_id=${workspaceId} and source_assignment_id=${assignmentId}
+      `
+      ).map((row) => row.id),
+    ];
+    const occurrenceIds = occurrences.map((row) => row.id);
+    const jobIds = occurrences.flatMap((row) =>
+      row.job_id ? [row.job_id] : [],
+    );
+    await cleanupAlertFixture(tx, workspaceId, assignmentId);
+    const auditRows = await tx`
+      select id,action,target_id from public.audit_events
+      where workspace_id=${workspaceId} and target_id=any(${targets}::uuid[])
+    `;
+    const [residue] = await tx`
+      select
+        (select count(*)::int from app_private.form_alert_inbox
+          where workspace_id=${workspaceId} and source_assignment_id=${assignmentId}) as inbox,
+        (select count(*)::int from public.jobs where id=any(${jobIds}::uuid[])) as jobs,
+        (select count(*)::int from app_private.form_alert_occurrences
+          where workspace_id=${workspaceId} and id=any(${occurrenceIds}::uuid[])) as occurrences,
+        (select count(*)::int from app_private.form_alert_deliveries
+          where workspace_id=${workspaceId} and alert_occurrence_id=any(${occurrenceIds}::uuid[])) as deliveries,
+        (select count(*)::int from app_private.form_alert_schedules
+          where workspace_id=${workspaceId} and source_assignment_id=${assignmentId}) as schedules
+    `;
+    return { auditRows, residue };
+  });
 }
 
 async function trainerBatchProbe(
@@ -395,48 +459,111 @@ it('kills delayed-owner-stage, duplicate-stage, and answer-text mutants', async 
 it('kills race, missing dedupe lock, and two-hour escalation mutants', async () => {
   {
     const { f, client } = await setupClient();
-    const assignment = await db.begin(async (tx) => {
+    const { assignment, scheduleId } = await db.begin(async (tx) => {
       const id = await makeAssignment(tx, f, client.id, null);
-      await tx`insert into app_private.form_alert_schedules(
+      const [schedule] = await tx`insert into app_private.form_alert_schedules(
         workspace_id,source_assignment_id,alert_kind,deadline_at,trainer_user_id
       ) values(
         ${f.wsA.id},${id},'trainer_late','2026-05-13T10:00:00.000Z',${f.trainerA.userId}
-      )`;
-      return id;
+      ) returning id`;
+      return { assignment: id, scheduleId: schedule!.id };
     });
     try {
       await withCrashSafeFunctionMutant(
         CORE,
-        (source) => source.replace('    for update of s skip locked\n', ''),
+        (source) =>
+          source.replace(
+            '    for update of s skip locked\n',
+            '    for update of s\n',
+          ),
         async () =>
           expectInvariantFailure(
             'detector must observe the locked on-time delivery first',
             async () => {
               const writer = sql();
               const evaluator = sql();
-              await evaluator`set lock_timeout = '1s'`;
               await writer`begin`;
+              let writerTransactionOpen = true;
               try {
-                await writer`update app_private.form_alert_schedules
+                const lockedSchedule =
+                  await writer`update app_private.form_alert_schedules
               set delivered_at='2026-05-13T09:59:59.000Z'::timestamptz
-              where workspace_id=${f.wsA.id} and source_assignment_id=${assignment} and alert_kind='trainer_late'`;
-                const result = await evaluate(
-                  evaluator,
-                  f.wsA.id,
-                  '2026-05-14T10:00:00.000Z',
+              where workspace_id=${f.wsA.id} and id=${scheduleId} returning id`;
+                expect(lockedSchedule).toHaveLength(1);
+                const [session] =
+                  await evaluator`select pg_backend_pid() as pid`;
+                expect(session).toBeDefined();
+                const pid = session!.pid;
+                const probeRollback = new Error(
+                  'rollback alert skip-locked mutation probe',
                 );
-                expect(result).toEqual({ status: 'ok', enqueued: 0 });
-                await writer`commit`;
+                let finished = false;
+                let evaluationError: unknown;
+                const pending = evaluator
+                  .begin(async (tx) => {
+                    const result = await evaluate(
+                      tx,
+                      f.wsA.id,
+                      '2026-05-14T10:00:00.000Z',
+                    );
+                    expect(result).toEqual({ status: 'ok', enqueued: 0 });
+                    throw probeRollback;
+                  })
+                  .catch((error) => {
+                    if (error !== probeRollback) evaluationError = error;
+                  })
+                  .finally(() => {
+                    finished = true;
+                  });
+                try {
+                  await expect
+                    .poll(
+                      async () => {
+                        const [activity] = await writer`
+                          select wait_event_type,wait_event
+                          from pg_catalog.pg_stat_activity where pid=${pid}
+                        `;
+                        if (activity?.wait_event_type === 'Lock')
+                          return activity.wait_event;
+                        return finished ? 'finished' : null;
+                      },
+                      { timeout: 5000 },
+                    )
+                    .toBe('finished');
+                  await writer`commit`;
+                  writerTransactionOpen = false;
+                } finally {
+                  if (writerTransactionOpen) {
+                    await writer`rollback`.catch(() => undefined);
+                    writerTransactionOpen = false;
+                  }
+                  await pending;
+                  if (evaluationError !== undefined) throw evaluationError;
+                }
               } finally {
-                await writer`rollback`.catch(() => undefined);
                 await writer.end();
                 await evaluator.end();
               }
             },
+            ['finished', 'enqueued'],
           ),
       );
     } finally {
-      await db.begin((tx) => cleanupAlertFixture(tx, f.wsA.id, assignment));
+      const cleanup = await cleanupAndGetOwnedAudit(f.wsA.id, assignment);
+      expect(
+        cleanup.auditRows,
+        'alert mutation cleanup must leave no owned audit rows',
+      ).toEqual([]);
+      expect(
+        cleanup.residue,
+        'alert mutation cleanup must remove only its owned alert rows',
+      ).toEqual({
+        inbox: 0,
+        jobs: 0,
+        occurrences: 0,
+        deliveries: 0,
+        schedules: 0,
+      });
     }
   }
   {
@@ -465,18 +592,27 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
               const lockConnection = sql();
               const evaluator = sql();
               await lockConnection`begin`;
+              let lockTransactionOpen = true;
               await lockConnection`select pg_catalog.pg_advisory_xact_lock(11011,318)`;
               let finished = false;
+              let evaluationError: unknown;
+              const probeRollback = new Error(
+                'rollback alert lock mutation probe',
+              );
               const [session] = await evaluator`select pg_backend_pid() as pid`;
               expect(session).toBeDefined();
               const pid = session!.pid;
-              const pending = evaluate(
-                evaluator,
-                f.wsA.id,
-                '2026-05-16T10:00:00.000Z',
-              ).finally(() => {
-                finished = true;
-              });
+              const pending = evaluator
+                .begin(async (tx) => {
+                  await evaluate(tx, f.wsA.id, '2026-05-16T10:00:00.000Z');
+                  throw probeRollback;
+                })
+                .catch((error) => {
+                  if (error !== probeRollback) evaluationError = error;
+                })
+                .finally(() => {
+                  finished = true;
+                });
               try {
                 await expect
                   .poll(
@@ -493,18 +629,39 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
                   )
                   .toBe('advisory');
                 await lockConnection`commit`;
+                lockTransactionOpen = false;
                 await pending;
                 void assignment;
               } finally {
-                await lockConnection`rollback`.catch(() => undefined);
+                if (lockTransactionOpen) {
+                  await lockConnection`rollback`.catch(() => undefined);
+                  lockTransactionOpen = false;
+                }
+                await pending;
+                if (evaluationError !== undefined) throw evaluationError;
                 await lockConnection.end();
                 await evaluator.end();
               }
             },
+            'advisory',
           ),
       );
     } finally {
-      await db.begin((tx) => cleanupAlertFixture(tx, f.wsA.id, assignment));
+      const cleanup = await cleanupAndGetOwnedAudit(f.wsA.id, assignment);
+      expect(
+        cleanup.auditRows,
+        'alert mutation cleanup must leave no owned audit rows',
+      ).toEqual([]);
+      expect(
+        cleanup.residue,
+        'alert mutation cleanup must remove only its owned alert rows',
+      ).toEqual({
+        inbox: 0,
+        jobs: 0,
+        occurrences: 0,
+        deliveries: 0,
+        schedules: 0,
+      });
     }
   }
   {

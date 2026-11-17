@@ -338,3 +338,9 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 - Scope: `tasks.md` status/evidence-only change (T138 ticked — documentation-only recording of S35-PO-3 / S36-R7 alert timing and S38-PO-5 S36-01=A/S36-02=A with S36-01=A retained as the F11/F12 future source rule under PDN-S39-F15-01, v1 deferral PO S54-PO-8; T088 annotated Verified-so-far/Remaining, stays open) and `traceability.md` slice rows. T138 required no code, copy, schema, or migration; no FR/SC/requirement text changed. T088 gained a static unit guard (`tests/unit/forms-terms-fixture-rollback.test.ts`) asserting every Terms policy fixture insert is rollback-scoped or explicitly commit-required; integration runtime verification still needs Stack D, so T088 stays open.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for this documentation-and-guard test-only slice; no requirement text changed.
+
+## S63 Luna S153 S15-3 evidence refresh (2026-11-17) (date update only)
+
+- Scope: task status/evidence-only changes for T085, T118, T119 and T142 plus traceability rows. No FR/SC/requirement text, product behavior, copy or schema changed. T083 remains open pending PO decision MCQ S153-01.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for evidence-only updates; implementation and test evidence are recorded in traceability.md and the S153 report.
