@@ -209,6 +209,15 @@ T149 remains deferred: no UI or copy is included; a future PO MCQ must approve e
 | FR-008/013 - return accepted draft revision when submission fails after autosave | T124 | `tests/unit/forms-authorized-client-adapter.test.ts` covers failed submit returning saved revision N and autosave failure preventing submit (2/2 passed). Revert evidence: dropping `revision: savedRevision` made the failed-submit test fail (revision absent); restored, with `git diff --exit-code -- components lib` clean. | verified in this PR |
 <!-- prettier-ignore-end -->
 
+## S63-inkling-015 S15-3 docs (2026-11-17)
+
+<!-- prettier-ignore-start -->
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-017/018/035 — record S35-PO-3 / S36-R7 alert timing and S38-PO-5 S36-01=A/S36-02=A; client-late means the configured client-submission deadline passes without an accepted submission; immediate authorized-owner notices preserved; client-to-Trainer routing and client-late Trainer alerts deferred to F11/F12 under PDN-S39-F15-01; S36-01=A retained as the future authoritative source rule; D-03 Trainer-late, five-working-day Trainer delivery deadline, WO day-five alert, PO day-seven escalation and recipient deduplication distinct and unchanged; no alert implementation or migration | T138 | Documentation-only (no code, no migration). Evidence is the recorded decision chain on origin/main: `spec.md` FR-017/018/035 (L243–246) + SC-022 (L519) + Clarifications S36-R7 (L581–593, S38-PO-5 quoted byte-exact; PDN-S39-F15-01 resolved by S39-PO-8), `contracts/retention-and-alerts.md:17`, `contracts/forms-api.md:16`, `plan.md:27,117,173,179`, `data-model.md:28`, `research.md:107`, `quickstart.md:92`, `checklists/analyze.md` round-8/9 entries (L124–142; 0 CRITICAL/0 HIGH; no open ambiguities for the authorized scope), v1 deferral recorded in `tasks.md` T104/T138/T149 and `checklists/analyze.md:321`. | this PR |
+| FR-039 — Terms policy fixtures in rollback-scoped transactions (partial; task stays open) | T088 | Full `tests/` audit: all same-transaction fixtures already rollback-scoped on origin/main (terms-consent 17e99a0e; s14-persistence, s14-privacy:188/361, r3-submissions:71, r3-reader, r3-drafts, r3-assignment-invariants/consumer, r3-correction-matrix, r3-purge, forms-purge, alerts/alert-inbox/alert-mutations/assignment-mutations, correction-context, recurring/renewal via probe(), client-signup-transaction via runSignupMutation). New static guard `tests/unit/forms-terms-fixture-rollback.test.ts` enforces the invariant (rollback-scoped or explicitly commit-required; stale exemptions fail). Commit-required fixtures (workers/PostgREST/Next server/pg_cron) enumerated in the guard with reasons. Remaining: Stack D re-execution of integration suites; task stays `[ ]`. | this PR (partial) |
+<!-- prettier-ignore-end -->
+
 ## S63 docs-only evidence ticks (2026-11-17)
 
 <!-- prettier-ignore-start -->
@@ -230,3 +239,19 @@ T149 remains deferred: no UI or copy is included; a future PO MCQ must approve e
 | FR-039 — unit DOB cases stay in the future (E2E browser part outstanding) | T114 | Unit part verified, task stays [ ]: injected-`now` (`client-signup-validation.test.ts`), today+2 (`client-signup-form.test.tsx`), Cairo-today-relative integration — all green on current head; E2E `client-signup.spec.ts` uses `dateInputOffsetFromToday(2)`. Remaining: browser verification of E2E cases. | verified in this PR (partial; task open) |
 | FR-038/039 — hostname-scoped preference cookies; configured base origin (non-default-host browser run outstanding) | T126 | Unit part verified, task stays [ ]: new `tests/unit/preferences.test.ts::keeps preference cookies hostname-scoped with no Domain attribute` passes (file green); add-Domain mutation killed (2 failed) and reverted; all e2e `addCookies` already use `url: origin` with no hardcoded host. Remaining: browser run on a non-default hostname. | verified in this PR (partial; task open) |
 <!-- prettier-ignore-end -->
+
+## S15-2 verified slice
+
+<!-- prettier-ignore-start -->
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-004 / FR-006 / FR-008 � parity for derived answers and absent selectors | T081 | Stack C `tests/integration/forms-builder-persistence.test.ts` passed 27/27, including derived-answer parity and absent-selector mutation kill; SQL/TypeScript drift guard retained. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-008 / FR-013 / FR-020 � correction validation uses the assigned snapshot and rejects stale revisions | T082 | Stack C `tests/integration/forms-r3-correction-matrix.test.ts` passed 3/3, including stale snapshot rejection and latest-definition mutation kill. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-004 / FR-006 / FR-007 � require an English draft title with an approved existing message | T086 | `tests/unit/forms-staff-console-revision.test.tsx::T086 refuses an Arabic-only draft title with the existing required message`; Stack C whitespace-title integration regression passed. Existing `forms.required` key used; no new copy. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-008 / FR-013 � localize boolean correction-history labels and preserve numeric/string values | T092 | `tests/unit/forms-correction-history.test.tsx::uses Arabic boolean labels and preserves numeric display`; full unit suite passed 3,515/3,515 on accepted head. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-004 / FR-006 / FR-007 � remap copied conditional and derived-option references | T094 | Stack C `tests/integration/forms-builder-persistence.test.ts` passed 27/27, including copied-reference validity, source immutability, and derived-option remap mutation kill. Migration `20261122120000_f15_copy_remap_question_references.sql`; guard mutation killed and original SQL restored. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-008 � reject malformed runtime form elements before answer access | T116 | `tests/unit/forms-s14-validation.test.ts::T116 rejects malformed runtime question elements before answer access`; full unit suite passed 3,515/3,515 on accepted head. | `9075255edb308c56a166af325cead6a8c78e9767` |
+| FR-008 / FR-013 � cross-tenant probe fails only for its named assertion | T120 | Stack C `tests/integration/forms-r3-correction-matrix.test.ts::T014 enforces correction and audited history access for Client, Trainer, WO, PO, and Sales` passed 3/3; unrelated errors are rethrown. | `9075255edb308c56a166af325cead6a8c78e9767` |
+<!-- prettier-ignore-end -->
+
+Accepted verification head: `52fbb9b65470ddd8d83c5ede2a5b63cd6fa5262a` (code commit above plus origin/main merge). PO proceed decision: S63-PO-7 Q1; six requirements checklist items remain open as recorded.
