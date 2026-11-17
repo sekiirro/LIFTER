@@ -244,7 +244,10 @@ beforeEach(() => {
       ) ?? null;
     return { data: row, error: null };
   });
-  m.from.mockReturnValue(m.query);
+  m.from.mockImplementation(() => {
+    m.filters = [];
+    return m.query;
+  });
   m.create.mockResolvedValue({
     auth: { getUser: m.getUser },
     from: m.from,
