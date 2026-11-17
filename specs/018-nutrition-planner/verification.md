@@ -306,3 +306,12 @@ scripts/format-check-changed.mjs` passed, `npm run format:check` clean.
 - **GREEN (Stack A, after adding the re-application migration and safe reset/provisioning):** `nutrition-audit.test.ts` passed 5/5. The T023 export allowlist remains extended, while `item_id` and `alternative_id` use `app_private.f18_is_canonical_uuid_v4`.
 - **Mutation (Stack A, on the test above):** replaced the UUIDv4 predicate with the original non-empty-string predicate in the follow-up migration, reset/provisioned, and reran the suite. Both rejection tests failed again (3 passed, 2 failed). The migration file was restored, Stack A was safely reset and provisioned, and the restored suite passed 5/5.
 - **T023 export regression (Stack A):** `nutrition-export.test.ts` passed 18/18 with UUIDv4 item and alternative IDs in the fixture, persisted selections, computed values, and historical-selection assertions.
+
+## S63 T027 — Release gate and migration audit
+
+- **Stack D fresh replay:** after `db reset --local` and `client-accounts-provision.mjs`, the new `tests/integration/nutrition-release-gate.test.ts` passed alongside F18 parity, versioning, audit, security-matrix and `rls-catalog` coverage.
+- **Upgrade replay:** reset Stack D to the 261-migration baseline before F18, then `db push --local` applied the 34 remaining migrations including F18/F17/F19 consumers. Afterward, 11 related integration files passed 108/108, including the release gate, nutrition parity/versioning/audit/security, snapshot, multi-plan, publish, F17 publish and `rls-catalog` suites.
+- **Gate assertions:** every F18 data table is forced-RLS and denies INSERT/UPDATE/DELETE/TRUNCATE to `anon`, `authenticated` and `service_role`; the persisted schema/algorithm versions and SQL/TypeScript computed values match; the revision mutation guard refuses a version change; publish audit contains only the approved identifiers and changed-field code.
+- **Mutation:** a transaction granted UPDATE on `nutrition_plan_version_contents` to `authenticated`; the release assertion failed on that mutant. Transaction rollback restored the ACL, and the denial assertions passed afterward.
+- **Migration audit:** `npm run check:migration-versions:remote` passed across 430 remote refs. No migration was needed, so no timestamp was reserved or registry row added.
+- **Traceability:** `F18-FR-020`, `F18-SC-001`, `F18-SC-002`, and `F18-SC-004` now cite T027 and this evidence.

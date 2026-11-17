@@ -63,3 +63,11 @@ S55-R20 directs that invalid synthetic successor IDs resolve through an immutabl
 The projector extension preserves the latest F13 body from `20261113130300_f13_freeze_removal_no_renewal_floor.sql` and adds subscription-ID resolution to its reads. It does not replace manual-date, freeze, upgrade, or renewal calculations. The Stack A `freeze-lifecycle` and `subscription-manual-dates` regression suites pass with this implementation.
 
 S55-R21 rules that this slice implements database contracts only, so it adds no routes or UI. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. T020 is complete on this branch; see `specs/019-plan-core/tasks.md` and `runs/s55-luna-f19s3e/report.md` for tests and mutation evidence.
+
+## S63 T032 consumer conformance evidence
+
+| FR / SC | Task | Test | Evidence |
+| --- | --- | --- | --- |
+| FR-001–004, FR-008, FR-013 | T032 | `tests/integration/f19-plan-activation.test.ts`; `nutrition-snapshots.test.ts`; `f17-plan-publish.test.ts`; `nutrition-publish.test.ts` | Stack D verifies domain-owned documents, shared delivery and projection, one activation after the cross-domain pair, and F16 snapshot semantics; included in the 108/108 upgraded-stack run. Details in `verification.md`. |
+
+The S63 T032 evidence above supersedes earlier table notes that list T032 as open for FR-013 and consumer-specific FRs.
