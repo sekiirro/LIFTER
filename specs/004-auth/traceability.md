@@ -13,7 +13,7 @@ Base: `origin/main` `7e2d0149b0370e4389b462130508352bbd69daa2`. Task mapping is 
 | FR-007 | T017, T020, T021 | `tests/integration/auth-recovery.test.ts`; `tests/unit/recovery-link.test.ts` | tasks.md `[x]`; merged on main | MAPPED | Staff targets denied; matches ND-F4-6 decision SK-004-06. |
 | FR-008 | T006, T017, T024 | `scripts/check-client-secrets.mjs` (CI step) | tasks.md `[x]`; merged on main | MAPPED | - |
 | FR-009 | T003, T020 | `tests/integration/auth-recovery.test.ts` | tasks.md `[x]`; merged on main | MAPPED | - |
-| FR-010 | T003, T020, T031 | `tests/integration/auth-recovery.test.ts` (placeholder 20 / 3 / 1 hour) | tasks.md `[x]` for T003/T020; T031 unchecked | PARTIAL | Decided limits (SK-004-04: 10 per staff per hour, 3 per client per 24 hours) are not implemented; T031. |
+| FR-010 | T003, T020, T031 | `tests/integration/auth-recovery.test.ts` — "approved recovery-link limits (T031)" + "enforces the actor limit across different targets" | commit `288e3fda5f2616653cb3c5c5b44030d9087546a1` (`20261122060000_auth_recovery_limits_t031.sql`); `tests/integration/auth-recovery.test.ts::approved recovery-link limits (T031)` 28/28 Stack B; RED 5 failures before migration, mutation killed 5 assertions, restored diff exit 0 (evidence: `C:/Users/NEW LAP/.lifter/runs/s63-hy4-auth/report.md`) | MAPPED | Approved values 10/issuer/rolling-hour and 3/client/rolling-24h enforced with separate windows; no invented values. |
 | FR-011 | T017, T019, T021 | `tests/unit/recovery-link.test.ts` | tasks.md `[x]`; merged on main | MAPPED | - |
 | FR-012 | T003, T018, T020 | `tests/integration/auth-recovery.test.ts` | tasks.md `[x]`; merged on main | MAPPED | Session-lifetime enforcement deferred per `docs/13-production-readiness.md:34` (no task). |
 | FR-013 | T018, T020 | `tests/integration/auth-recovery.test.ts` | tasks.md `[x]`; merged on main | MAPPED | - |
@@ -26,7 +26,7 @@ Base: `origin/main` `7e2d0149b0370e4389b462130508352bbd69daa2`. Task mapping is 
 | Decision | Source | Spec location | Implementation |
 |---|---|---|---|
 | D-19 approved | S31-PO-2 SK-004-01 | spec.md Clarifications | n/a |
-| ND-F4-4 limits | S31-PO-3 SK-004-04 | spec.md Clarifications, ND-F4-4 | Pending, T031 (FR-010) |
+| ND-F4-4 limits | S31-PO-3 SK-004-04 | spec.md Clarifications, ND-F4-4 | Implemented by T031 (FR-010), 2026-11-17; see FR-010 row |
 | ND-F4-6 clients only | S31-PO-2 SK-004-06 | spec.md Clarifications, ND-F4-6 | Matches current design |
 | ND-F4-1 Trainers | S31-PO-2 SK-004-02 "All workspace Trainers" | spec.md Clarifications, ND-F4-1 | Pending, T032 (FR-006); Trainers denied until then |
 | ND-F4-2 delivery | S31-PO-2 SK-004-03 "Copy only" | spec.md Clarifications, ND-F4-2 | Satisfied: `components/auth/RecoveryLinkDialog.tsx:40` copies only; no share action |
