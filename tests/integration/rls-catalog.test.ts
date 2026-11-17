@@ -317,6 +317,8 @@ describe('tenancy security catalog (T007)', () => {
           'f13_project_entitlement',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
+          'f3_guard_platform_owner_profile_change',
+          'f3_lock_platform_owner_state',
           // F17 workout content validation triggers (20261119040000).
           'f17_validate_workout_schema_version',
           'f17_validate_workout_document_size',
@@ -605,6 +607,8 @@ describe('tenancy security catalog (T007)', () => {
           'f18_guard_nutrition_document_ids',
           'f18_is_canonical_uuid_v4',
           'f18_invalid_uuid_alias',
+          'f3_guard_platform_owner_profile_change',
+          'f3_lock_platform_owner_state',
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
         ].includes(row.proname)
@@ -634,6 +638,7 @@ describe('tenancy security catalog (T007)', () => {
         ].includes(row.proname) ||
           (!row.proname.startsWith('f12_') &&
             !row.proname.startsWith('f13_') &&
+            !row.proname.startsWith('f3_') &&
             !row.proname.startsWith('f17_') &&
             !registrationPrivate.includes(row.proname) &&
             !assignmentPrivate.includes(row.proname) &&
