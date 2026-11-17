@@ -19,6 +19,7 @@ const allF17Tables = [
   'public.workout_template_assignment_items',
   'public.workout_template_assignment_copies',
   'public.workout_template_distribution_state',
+  'public.plan_revision_contributors',
   'app_private.f17_workout_operation_keys',
 ] as const;
 
@@ -246,6 +247,11 @@ beforeAll(async () => {
     from public.plan_drafts d
     where d.workspace_id = ${f.wsA.id} and d.plan_id = ${planIdA}
   `;
+  await db`
+    insert into public.plan_revision_contributors (
+      workspace_id, plan_id, revision_id, user_id
+    ) values (${f.wsA.id}, ${planIdA}, ${planRevisionIdA}, ${f.trainerA.userId})
+  `;
 
   const emptyPlanRes = await f.trainerA.client.rpc('create_plan_draft', {
     p_workspace_id: f.wsA.id,
@@ -384,6 +390,32 @@ describe('F17 T047 Full negative matrix — Clause 1 & 4: Foreign-workspace app 
             tx`select count(*)::int as c from public.workout_workspace_templates where id in (${wsATemplateId}, ${wsBTemplateId})`,
         );
         expect(row!.c, `${actor.userId} seeing workspace templates`).toBe(0);
+      }
+
+      // Contributor identity/action rows follow the plan workspace RLS wall.
+      const [trainerContributor] = await asActor(
+        tx,
+        f.trainerA.userId,
+        () =>
+          tx`select count(*)::int as c from public.plan_revision_contributors where revision_id = ${planRevisionIdA}`,
+      );
+      expect(trainerContributor!.c).toBe(1);
+      for (const actor of [
+        f.trainerB,
+        f.salesA,
+        clientActor,
+        unaffiliated,
+        revokedActor,
+      ]) {
+        const [row] = await asActor(
+          tx,
+          actor.userId,
+          () =>
+            tx`select count(*)::int as c from public.plan_revision_contributors where revision_id = ${planRevisionIdA}`,
+        );
+        expect(row!.c, `${actor.userId} seeing foreign contributor rows`).toBe(
+          0,
+        );
       }
     });
   });
@@ -787,6 +819,16 @@ describe('F17 T047 Full negative matrix — Clause 2: Direct DML denial & table 
         tx,
         (sp) =>
           sp`delete from public.workout_template_distribution_state where workspace_id = ${f.wsA.id}`,
+        { code: '23514' },
+      );
+
+      // plan_revision_contributors is immutable after publish.
+      await expectRejected(
+        tx,
+        (sp) =>
+          sp`update public.plan_revision_contributors
+            set action_codes = array['save']::text[]
+            where revision_id = ${planRevisionIdA}`,
         { code: '23514' },
       );
     });
@@ -1484,6 +1526,27 @@ describe('F17 T047 Full negative matrix — Per-guard mutation kill suite', () =
         'workout_template_assignment_runs_po_read mutant killed',
       ).toBe(true);
 
+      // Mutant 22: widen plan_revision_contributors_staff_read policy.
+      let m22Killed = false;
+      const r22 = new Error('m22');
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`alter policy plan_revision_contributors_staff_read on public.plan_revision_contributors using (true)`;
+          const [res] = await asActor(
+            sp,
+            f.salesA.userId,
+            () =>
+              sp`select count(*)::int as c from public.plan_revision_contributors where revision_id = ${planRevisionIdA}`,
+          );
+          if (res?.c === 1) m22Killed = true;
+          throw r22;
+        }),
+      ).rejects.toBe(r22);
+      expect(
+        m22Killed,
+        'plan_revision_contributors_staff_read mutant killed',
+      ).toBe(true);
+
       // Mutant 4: direct DML grant on workout_global_templates
       let m4Killed = false;
       const r4 = new Error('r4');
@@ -1567,6 +1630,24 @@ describe('F17 T047 Full negative matrix — Per-guard mutation kill suite', () =
       expect(
         m8Killed,
         'f17_guard_distribution_state_update trigger mutant killed',
+      ).toBe(true);
+
+      // Mutant 23: disable immutable revision-contributor trigger.
+      let m23Killed = false;
+      const r23 = new Error('m23');
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`alter table public.plan_revision_contributors disable trigger plan_revision_contributors_immutable`;
+          await sp`update public.plan_revision_contributors
+            set action_codes = array['save']::text[]
+            where revision_id = ${planRevisionIdA}`;
+          m23Killed = true;
+          throw r23;
+        }),
+      ).rejects.toBe(r23);
+      expect(
+        m23Killed,
+        'plan_revision_contributors_immutable trigger mutant killed',
       ).toBe(true);
 
       // Mutant 9: disable f17_guard_workout_draft_references trigger

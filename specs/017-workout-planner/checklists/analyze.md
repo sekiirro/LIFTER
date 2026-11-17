@@ -397,6 +397,6 @@ cells are stored as text.
 
 ## S63 T047/T051 Date Update (2026-11-17)
 
-- T047 status and traceability now cite the current-main negative matrix across 9 F17 tables and 14 plan/template/export RPCs, plus mutation probes; T051 cites all-origin migration-version validation, Stack A fresh and upgrade paths, and audit rollback atomicity.
-- #206 is on main and included. #212 remains open; its contributor action-code update remains explicitly outstanding.
+- T047 status and traceability now cite the current-main negative matrix across 10 F17 tables and 14 plan/template/export RPCs, including #212 contributor action codes, plus mutation probes; T051 cites all-origin migration-version validation, Stack A fresh and upgrade paths, and audit rollback atomicity.
+- #206 and #212 are merged and included. No current-main RPC/table remains outstanding for T047.
 - No FR, SC, acceptance, or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings and 0 open MCQs.
