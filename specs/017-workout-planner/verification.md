@@ -163,6 +163,26 @@
 - **Mutation (DB-only scratch; restored)**: Added temporary migration `20261120120001_t018_remove_plan_create_ledger_mutant.sql`, replacing `create_plan_draft` without its operation-key fingerprint/ledger insert/replay guard. After safe reset and provisioning, the concurrent duplicate-submit test failed as required: expected one Plan ID, received 12; 1 failed, 5 skipped. Removed the scratch migration, safely reset and reprovisioned Stack D, reran the three integration files (16/16 passed), and verified the mutation file is absent.
 - **Local gates**: `npm run lint`, `npm run typecheck`, both format gates, all-origin migration scan, and full unit suite passed. Final full unit run: 278 files / 3,213 tests. One earlier default-worker run had two scheduling timeouts; the passing rerun was recorded in the lane flakes backlog.
 
+## F17 Verification — T043 (PARTIAL — slice 1) (s60-fl-f17t043)
+
+- **Status**: PARTIAL — slice 1 verified: structure, reorder/cross-day move/duplicate, keyboard alternatives, rest-day rejection (3 mutants); slice 2 open: field editing (notes, reps, set load/rest/RIR, day title/kind) and AlternativesEditor (T034) integration.
+- **Branch / stack**: `017-plan-builder-slice-1` / NO DB stack (pure UI and document transforms).
+- **Implementation**:
+  - `components/workout-planner/WorkoutPlanBuilder.tsx` and `components/workout-planner/WorkoutPlanBuilder.module.css`.
+  - Added pure document transform functions to `lib/workout-planner/document.ts` (`reorderWorkoutItem`, `duplicateWorkoutItem`, `removeWorkoutItem`, `addWorkoutDay`, `reorderWorkoutDay`, `duplicateWorkoutDay`, `removeWorkoutDay`).
+  - Added PO-approved S28-PO-2 `builder.*` keys to `lib/i18n/messages/en.ts` and `ar.ts`.
+- **RED**: Initial test `tests/unit/WorkoutPlanBuilder.test.tsx` executed and failed before implementation.
+- **GREEN**: All 13 tests passed covering AR RTL, EN LTR, sessions/rest days, items, sets, notes, alternatives, reorder, cross-day move, duplicate, keyboard move controls, and rest-day rejection. Full unit suite green (278 files, 3,219 passed).
+- **Acceptance Tests**:
+  - Adding or moving an item to a rest day is rejected with `invalid_document` and no write (`onChange` is not called).
+  - A rejected move leaves the item on its source day.
+  - Rest days cannot display or retain items.
+- **Mutations (3/3 killed; restored; `git diff --exit-code` = 0)**:
+  - Mutation 1 (remove keyboard alternative): Removed `move-item-up` button -> test failed at line 347 (`expected 0 to be greater than 0`). Restored.
+  - Mutation 2 (remove ID preservation): Regenerated ID on reorder -> test failed at line 407 (`expected '...' to be 'bbbb1111-1111-4111-8111-111111111111'`). Restored.
+  - Mutation 3 (remove rest-day rejection): Removed rest-day rejection in document parser -> test failed at line 299 (`expected "vi.fn()" to not be called at all, but actually been called 1 times`). Restored.
+- **Design Gate Screenshots**: Rendered via Playwright across {AR-RTL, EN-LTR} × {light, dark} × {mobile 390px, desktop 1440px} saved to `C:/Users/NEW LAP/.lifter/runs/s60-fl-f17t043/screenshots/`.
+
 ## S60 T019 Autosave and Save as Draft with CAS
 
 - **Branch / stack**: `017-autosave-slice-1` / Stack C. Branch started at fresh `origin/main` `8e2ceaf68b1a8b19cf5b3b37e735ae1a7f422721` after PR #164 merged. Every Stack C reset used `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` with `SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'` and `LIFTER_SUPABASE_STACK=c`, followed by `tests/integration/client-accounts-provision.mjs`.
