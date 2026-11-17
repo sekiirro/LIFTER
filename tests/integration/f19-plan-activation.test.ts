@@ -135,6 +135,50 @@ async function addReturningHistory(
 }
 
 describe('F19 T021 automatic initial activation', () => {
+  it('T049 returns one publish receipt for 100 concurrent retries after an unknown result', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    const created = await context.trainerA.client.rpc('create_plan_draft', {
+      p_workspace_id: context.wsA.id,
+      p_client_id: seeded.client,
+      p_plan_kind: 'workout',
+      p_content: { schema_version: 1, days: [], notes: 'T049 retry publish' },
+      p_operation_key: randomUUID(),
+    });
+    expect(created.error).toBeNull();
+    const planId = String(created.data);
+    await db.begin((tx) =>
+      seedSubmittedIntake(tx, context.wsA.id, seeded.client),
+    );
+    const key = randomUUID();
+    const publish = () =>
+      context.trainerA.client.rpc('ready_and_publish_plan', {
+        p_plan_id: planId,
+        p_expected_draft_version: 1,
+        p_expected_published_version: 0,
+        p_operation_key: key,
+      });
+    const committed = await publish(); // Simulate losing the committed response.
+    expect(committed.error).toBeNull();
+    const retries = await Promise.all(Array.from({ length: 100 }, publish));
+    expect(retries.every((result) => result.error === null)).toBe(true);
+    expect(
+      retries.every(
+        (result) =>
+          JSON.stringify(result.data) === JSON.stringify(committed.data),
+      ),
+    ).toBe(true);
+    const revisions = await db`
+      select count(*)::int as count from public.plan_revisions
+      where workspace_id=${context.wsA.id} and plan_id=${planId}
+    `;
+    const deliveries = await db`
+      select count(*)::int as count from public.plan_deliveries
+      where workspace_id=${context.wsA.id} and plan_id=${planId}
+    `;
+    expect(revisions[0]?.count).toBe(1);
+    expect(deliveries[0]?.count).toBe(1);
+  }, 120_000);
+
   it('installs typed activation sources and an immutable client-level unit', async () => {
     const [catalog] = await db`
       select

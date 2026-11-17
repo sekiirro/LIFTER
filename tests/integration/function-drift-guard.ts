@@ -7,7 +7,10 @@ export const guardedFunctions = [
   {
     identity:
       'public.assign_workout_templates(text,uuid[],uuid[],text,uuid[],uuid)',
-    migration: '20261120170000_f17_workout_template_assign_run.sql',
+    migration: [
+      '20261122000000_f17_workout_assignment_idempotency.sql',
+      '20261120170000_f17_workout_template_assign_run.sql',
+    ],
     name: 'public.assign_workout_templates',
   },
   {
