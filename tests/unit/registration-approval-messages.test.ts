@@ -38,6 +38,24 @@ describe('registration approval message parity and semantics', () => {
       /stack|database|provider/i,
     );
   });
+  it('has bilingual approved strings for the flexible-terms schedule editor', () => {
+    // T053: only pre-approved registration.* keys are asserted here. New
+    // upfront/count/default/anchor labels are MCQ-1 blocked: no key or
+    // expectation is invented for them in this file.
+    for (const key of [
+      'registration.schedule',
+      'registration.amount',
+      'registration.offset',
+      'registration.add',
+      'registration.remove',
+      'registration.total',
+      'registration.sumValid',
+      'registration.invalid_input',
+    ] as const) {
+      expect(ar[key], `Arabic ${key}`).toBeTruthy();
+      expect(en[key], `English ${key}`).toBeTruthy();
+    }
+  });
   it('provides bilingual standalone client status and refresh messages', () => {
     for (const key of [
       'registrationApproval.statusPending',
