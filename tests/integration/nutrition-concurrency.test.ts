@@ -11,6 +11,9 @@ import {
 } from './registration-approval-fixture';
 
 const db = sql();
+const NUTRITION_ITEM_ID = '00000000-0000-4000-8000-000000000001';
+const NUTRITION_ALTERNATIVE_ID = '00000000-0000-4000-8000-000000000002';
+const UNAPPROVED_ALTERNATIVE_ID = '00000000-0000-4000-8000-000000000003';
 const concurrencyDb = postgres(loadEnv().dbUrl, {
   // Each Promise gets its own transaction/session; cap simultaneous physical connections below
   // the local Supabase Postgres limit while still exercising independent concurrent sessions.
@@ -47,14 +50,14 @@ const document = (
       items: withAlternative
         ? [
             {
-              id: 'item-1',
+              id: NUTRITION_ITEM_ID,
               foodId,
               foodVersion: 1,
               quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
               note: null,
               alternatives: [
                 {
-                  id: 'alt-1',
+                  id: NUTRITION_ALTERNATIVE_ID,
                   foodId,
                   foodVersion: 1,
                   quantity: {
@@ -268,7 +271,7 @@ describe('F18 T019 concurrency and idempotency', () => {
       selectionPid = backendRow!.pid as number;
       markSelectionStarted();
       const [row] = await tx`select public.select_nutrition_alternative(
-        ${revisionId}, 'item-1', 'alt-1', ${key}
+        ${revisionId}, ${NUTRITION_ITEM_ID}, ${NUTRITION_ALTERNATIVE_ID}, ${key}
       ) as result`;
       return row!.result as Record<string, unknown>;
     });
@@ -287,9 +290,9 @@ describe('F18 T019 concurrency and idempotency', () => {
       const nextRevisionId = nextReceipt.revision_id as string;
       const [carried] = await db`
         select alternative_id from public.client_nutrition_alternative_selections
-        where plan_version_id=${nextRevisionId} and item_id='item-1'
+        where plan_version_id=${nextRevisionId} and item_id=${NUTRITION_ITEM_ID}
       `;
-      expect(carried?.alternative_id).toBe('alt-1');
+      expect(carried?.alternative_id).toBe(NUTRITION_ALTERNATIVE_ID);
     } finally {
       await blocker`select pg_catalog.pg_advisory_unlock(7019, 18018)`;
       await selection;
@@ -303,7 +306,7 @@ describe('F18 T019 concurrency and idempotency', () => {
       Array.from({ length: 100 }, () =>
         inSession(clientActorId, async (tx) => {
           const [row] = await tx`select public.select_nutrition_alternative(
-            ${revisionId}, 'item-1', 'alt-1', ${key}
+            ${revisionId}, ${NUTRITION_ITEM_ID}, ${NUTRITION_ALTERNATIVE_ID}, ${key}
           ) as result`;
           return row!.result;
         }),
@@ -352,7 +355,7 @@ describe('F18 T019 concurrency and idempotency', () => {
       selectionPid = backend!.pid as number;
       signalSelectionStarted();
       const [row] = await tx`select public.select_nutrition_alternative(
-        ${revisionId}, 'item-1', 'not-an-approved-alternative', ${randomUUID()}
+        ${revisionId}, ${NUTRITION_ITEM_ID}, ${UNAPPROVED_ALTERNATIVE_ID}, ${randomUUID()}
       ) as result`;
       return row!.result as Record<string, unknown>;
     });
