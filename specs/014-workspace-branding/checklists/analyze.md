@@ -475,3 +475,10 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
   block). No requirement text changed; no verification status upgraded; T041 stays open.
 - Findings: 0 open CRITICAL, 0 open HIGH. **No open ambiguities** remain for this note.
 - Verdict: PASS for this documentation-only correction.
+
+## S63 Hy4 verification revalidation — 2026-11-17T13:45:00Z
+
+- Scope: open V1-CODE tasks T041, T054, T055, T056, T062 and T063 on code head `e593d880a33a912c97498c5a946bb00bc64c154e`. T039, T040 and the T043 closure remain deferred by S63-PO-4; T058 skip stands; T-u rows are not tasks.
+- Evidence: full unit 305 files / 3514 tests; branding integration 15 files / 86 tests on Stack B; focused e2e 20 (registration-links) + 302 (branding-registration, banner-loaded) + 29 (branding-registration) + 33 (screenshot matrices) + 6 (client-signup) passed; T054, T062 and T063 ticked on executed assertions; T041, T055 and T056 retain explicit remaining clauses.
+- No requirement, FR/SC, acceptance, plan or task-scope wording changed; this is a date/status refresh after task-status and traceability evidence updates. **No open ambiguities** remain.
+- Findings: 0 open CRITICAL, 0 open HIGH. Verdict: PASS for Spec Kit entry on this evidence update.

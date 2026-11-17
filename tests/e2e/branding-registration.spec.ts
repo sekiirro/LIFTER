@@ -214,6 +214,13 @@ for (const locale of ['ar', 'en'] as const) {
           .boundingBox();
         expect(pillBox).not.toBeNull();
         expect(pillBox!.y + pillBox!.height).toBeLessThanOrEqual(cardBox!.y);
+        const headingBox = await page
+          .locator('[data-registration-card="premium-centered"] h1')
+          .boundingBox();
+        expect(headingBox).not.toBeNull();
+        expect(headingBox!.y).toBeGreaterThanOrEqual(
+          pillBox!.y + pillBox!.height,
+        );
         const preferenceMetrics =
           viewport.width <= 390
             ? await expectHeroPreferencesSingleRow(page)
