@@ -527,3 +527,5 @@ one-hour window. It does not match the approved limits above. P1 supplies client
 S31-PO-2 approves clients-only scope, all workspace Trainers, and copy-only
 delivery. Approved Trainer and limit behavior remains unimplemented and needs
 its specified future implementation and verification gates.
+
+General rollout of staff self-service reset is blocked until an external SMTP provider is configured and validated and the PO approves that configuration (FR-020; see docs/13-production-readiness.md AI-03).
