@@ -46,6 +46,10 @@ async function snapshotCounts(
         where workspace_id = ${workspaceId} and created_by = ${trainerId}) as drafts,
       (select count(*)::int from public.plan_revisions
         where workspace_id = ${workspaceId} and authored_by = ${trainerId}) as revisions,
+      (select count(*)::int from public.plan_revision_contributors c
+        join public.plan_roots p on p.workspace_id = c.workspace_id and p.id = c.plan_id
+        where c.workspace_id = ${workspaceId} and p.client_id = ${clientId}
+          and c.user_id = ${trainerId}) as contributor_rows,
       (select count(*)::int from public.plan_deliveries
         where workspace_id = ${workspaceId} and client_id = ${clientId} and subscription_id = ${subscriptionId}) as deliveries,
       (select count(*)::int from public.subscription_activations
@@ -81,7 +85,8 @@ describe('F19 T031 trainer deletion retention integration', () => {
         and (
           (n.nspname = 'public' and c.relname in (
             'plan_roots', 'plan_drafts', 'plan_revisions',
-            'plan_deliveries', 'productivity_units', 'plan_audit_events'
+            'plan_deliveries', 'productivity_units', 'plan_audit_events',
+            'plan_revision_contributors'
           ))
           or (n.nspname = 'app_private' and c.relname in (
             'plan_operation_keys', 'plan_delivery_operations',
@@ -92,7 +97,7 @@ describe('F19 T031 trainer deletion retention integration', () => {
         and rc.relname = 'staff_profiles'
       order by tbl, con.conname
     `;
-    expect(f19StaffFks).toHaveLength(11);
+    expect(f19StaffFks).toHaveLength(12);
     expect(f19StaffFks.every((fk) => fk.confdeltype === 'r')).toBe(true);
 
     const [staffAuthFk] = await db`
@@ -316,6 +321,7 @@ describe('F19 T031 trainer deletion retention integration', () => {
         (select bool_and(created_by = ${trainer.userId}) from public.plan_roots where id in (${workoutDraft}, ${nutritionDraft})) as roots_author_intact,
         (select bool_and(created_by = ${trainer.userId} and updated_by = ${trainer.userId}) from public.plan_drafts where plan_id in (${workoutDraft}, ${nutritionDraft})) as drafts_author_intact,
         (select bool_and(authored_by = ${trainer.userId}) from public.plan_revisions where plan_id in (${workoutDraft}, ${nutritionDraft})) as revisions_author_intact,
+        (select bool_and(action_codes @> array['publish']::text[]) from public.plan_revision_contributors where plan_id in (${workoutDraft}, ${nutritionDraft}) and user_id = ${trainer.userId}) as contributor_actions_intact,
         (select bool_and(delivered_by = ${trainer.userId}) from public.plan_deliveries where plan_id in (${workoutDraft}, ${nutritionDraft})) as deliveries_author_intact,
         (select recipient_trainer_user_id = ${trainer.userId} from public.productivity_units where workspace_id = ${context.wsA.id} and client_id = ${seeded.client}) as unit_recipient_intact,
         (select bool_and(actor_user_id = ${trainer.userId}) from public.plan_audit_events where plan_id in (${workoutDraft}, ${nutritionDraft})) as audit_actor_intact
@@ -326,6 +332,7 @@ describe('F19 T031 trainer deletion retention integration', () => {
       roots_author_intact: true,
       drafts_author_intact: true,
       revisions_author_intact: true,
+      contributor_actions_intact: true,
       deliveries_author_intact: true,
       unit_recipient_intact: true,
       audit_actor_intact: true,
