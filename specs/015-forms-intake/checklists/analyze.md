@@ -320,3 +320,9 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 
 - Scope: `tasks.md` status-only change; T104, T138 and T149 record the PO-approved v1 deferrals (S54-PO-8). No requirement text changed; all three tasks stay unchecked.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## S63 docs-only evidence refresh - 2026-11-17 (date update only)
+
+- Scope: `tasks.md` status/evidence-only changes (T056, T057, T084, T127 ticked with Evidence (S63)) and `traceability.md` union evidence additions. No requirement text changed; refresh evidence only, no requirement text changed.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for this documentation-only correction.
