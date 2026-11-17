@@ -324,6 +324,7 @@ describe('tenancy security catalog (T007)', () => {
           'f17_guard_template_identity_update',
           'f17_reject_template_identity_delete',
           'f17_reject_template_version_mutation',
+          'f17_workout_template_unresolved_refs',
           'f19_audit_plan_change',
           'f19_audit_plan_revision',
           'f19_guard_delivery',
@@ -2001,6 +2002,7 @@ describe('F17 T013/T016/T017 workout templates catalog', () => {
       'app_private.f17_reject_template_version_mutation()',
       'app_private.f17_reject_template_identity_delete()',
       'app_private.f17_guard_template_identity_update()',
+      'app_private.f17_workout_template_unresolved_refs(jsonb,uuid)',
     ];
     for (const sig of fns) {
       const [fn] = await db`select p.proconfig,
