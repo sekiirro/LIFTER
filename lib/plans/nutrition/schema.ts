@@ -1,3 +1,4 @@
+import { UUID_V4 } from '../../catalog/uuid';
 import type {
   NutritionAlternative,
   NutritionDay,
@@ -48,7 +49,8 @@ export type NutritionSchemaErrorCode =
   | 'unit'
   | 'recipe_url'
   | 'alternative_limit'
-  | 'food_reference';
+  | 'food_reference'
+  | 'invalid_document';
 
 /** Error thrown by the frozen v1 validator with a stable code and field. */
 export class NutritionDocumentError extends Error {
@@ -373,6 +375,21 @@ function assertId(value: unknown, field: string): string {
   return value;
 }
 
+function assertUuidDocumentId(value: unknown, field: string): string {
+  if (
+    typeof value !== 'string' ||
+    value !== value.toLowerCase() ||
+    !UUID_V4.test(value)
+  ) {
+    throw new NutritionDocumentError(
+      'invalid_document',
+      field,
+      `${field} must be a lowercase UUIDv4`,
+    );
+  }
+  return value;
+}
+
 function assertAlternatives(
   value: unknown,
   field: string,
@@ -397,7 +414,7 @@ function assertAlternatives(
     const altField = `${field}[${index}]`;
     const obj = assertObject(entry, altField);
     assertUnknownKeys(obj, ALTERNATIVE_KEYS, altField);
-    const id = assertId(obj.id, `${altField}.id`);
+    const id = assertUuidDocumentId(obj.id, `${altField}.id`);
     registerUniqueId(idRegistry, id, `${altField}.id`);
     const foodId = assertId(obj.foodId, `${altField}.foodId`);
     const food = resolveFood(foodId, obj.foodVersion, altField, context);
@@ -443,7 +460,7 @@ function assertItems(
     const itemField = `${field}[${index}]`;
     const obj = assertObject(entry, itemField);
     assertUnknownKeys(obj, ITEM_KEYS, itemField);
-    const id = assertId(obj.id, `${itemField}.id`);
+    const id = assertUuidDocumentId(obj.id, `${itemField}.id`);
     registerUniqueId(idRegistry, id, `${itemField}.id`);
     const foodId = assertId(obj.foodId, `${itemField}.foodId`);
     const food = resolveFood(foodId, obj.foodVersion, itemField, context);

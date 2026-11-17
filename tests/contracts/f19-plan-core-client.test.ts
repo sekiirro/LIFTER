@@ -19,6 +19,9 @@ describe('F19 shared client contract', () => {
       status: 'invalid_input',
     });
     expect(
+      mapPlanRpcError({ code: '23514', message: 'invalid_workout_document' }),
+    ).toEqual({ status: 'invalid_document' });
+    expect(
       mapPlanRpcError({ code: '40001', message: 'stale_version' }),
     ).toEqual({
       status: 'stale_version',

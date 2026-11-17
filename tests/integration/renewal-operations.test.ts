@@ -542,7 +542,7 @@ it('Q2 Trainer may collect a renewal installment in its authorized workspace', a
         expected_revision: 0,
         expected_previous_event_id: null,
         expected_amount_minor: '600',
-        currency: 'XTS',
+        currency: 'USD',
         collected_on: '1900-01-01',
         payment_confirmed: true,
       });
@@ -956,7 +956,7 @@ it('S22-PO-5 exposes no unguarded standalone activation writer to anon or authen
         coalesce(bool_or(has_function_privilege('authenticated',p.oid,'EXECUTE')),false) as authenticated_activation_writer
       from pg_proc p join pg_namespace n on n.oid=p.pronamespace
       where n.nspname in ('public','app_private') and p.proname ~* '(activation|activate)'
-        and p.proname not in ('record_renewal', 'override_activate_subscription')
+        and p.proname not in ('record_renewal', 'override_activate_subscription', 'f3_deactivate_trainer')
     `;
     expect(privileges[0]).toEqual({
       anon_insert: false,

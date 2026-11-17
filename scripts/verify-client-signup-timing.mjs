@@ -4,6 +4,7 @@ import { randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { appendFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
+import { resolvePlaywrightBaseUrl } from './playwright-port.mjs';
 
 function median(values) {
   const sorted = [...values].sort((a, b) => a - b);
@@ -83,7 +84,7 @@ export async function runTiming() {
     db = sql();
   const run = randomUUID(),
     categories = ['ordinary-duplicate', 'archived-collision-synthetic'];
-  const origin = 'http://localhost:3000';
+  const origin = resolvePlaywrightBaseUrl();
   const usedTokens = new Set(),
     usedSecrets = new Set(),
     usedIps = new Set();

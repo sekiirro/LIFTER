@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { computeDocumentValues } from '../../lib/plans/nutrition/macros';
+import type { NutritionDocumentV1 } from '../../lib/plans/nutrition/types';
 import { clientContext, sql, graph } from './registration-approval-fixture';
 import type { Context } from './registration-approval-fixture';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 
 let db: ReturnType<typeof sql>;
-
 beforeAll(async () => {
   db = sql();
 });
@@ -23,18 +25,40 @@ async function deliver(
   kind: 'workout' | 'nutrition',
   operationKey = randomUUID(),
 ) {
+  const content =
+    kind === 'nutrition'
+      ? {
+          schemaVersion: 1,
+          structure: 'single_day',
+          implicitDayTypeId: 'dt-1',
+          dayTypes: [
+            {
+              id: 'dt-1',
+              trainingDay: false,
+              name: { ar: 'يوم', en: 'Day' },
+            },
+          ],
+          meals: [],
+        }
+      : { schema_version: 1, days: [], notes: `T021 ${kind}` };
   const created = await client.rpc('create_plan_draft', {
     p_workspace_id: workspaceId,
     p_client_id: clientId,
     p_plan_kind: kind,
-    p_content: { schemaVersion: 2, document: { title: `T021 ${kind}` } },
+    p_content: content,
     p_operation_key: randomUUID(),
   });
   if (created.error || typeof created.data !== 'string')
     throw new Error(
       `Plan draft failed: ${created.error?.code ?? 'missing id'}`,
     );
-  return client.rpc('ready_and_publish_plan', {
+  const rpcName =
+    kind === 'nutrition'
+      ? 'publish_nutrition_revision'
+      : 'ready_and_publish_plan';
+  if (kind === 'workout')
+    await db.begin((tx) => seedSubmittedIntake(tx, workspaceId, clientId));
+  return client.rpc(rpcName, {
     p_plan_id: created.data,
     p_expected_draft_version: 1,
     p_expected_published_version: 0,
@@ -58,6 +82,22 @@ async function counts(
   return row!;
 }
 
+async function waitForLockWait(queryText: string) {
+  const observer = sql();
+  try {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const [row] = await observer`
+        select count(*)::int as count from pg_stat_activity
+        where wait_event_type='Lock' and query ilike ${`%${queryText}%`}`;
+      if ((row?.count as number) > 0) return;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(`RPC did not reach the client-row lock: ${queryText}`);
+  } finally {
+    await observer.end();
+  }
+}
+
 async function addReturningHistory(
   context: Context,
   clientId: string,
@@ -72,7 +112,7 @@ async function addReturningHistory(
     await db`insert into public.subscriptions(id,workspace_id,client_id,kind,registration_link_id,package_version_id,
       price_minor,currency,commission_rate_bp,duration_days,duration_months,created_by,predecessor_subscription_id)
       values(${priorSubscriptionId},${context.wsA.id},${clientId},'renewal',null,${context.p.versionId},
-        1200,'XTS',17,30,null,${context.po.userId},
+        1200,'USD',17,30,null,${context.po.userId},
         (select id from public.subscriptions where workspace_id=${context.wsA.id} and client_id=${clientId} and kind='initial'))`;
   } finally {
     await db`alter table public.subscriptions enable trigger f12_subscription_insert`;
@@ -97,6 +137,188 @@ async function addReturningHistory(
 }
 
 describe('F19 T021 automatic initial activation', () => {
+  it('keeps workout and nutrition document ownership separate while sharing delivery and activation', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    const workoutDocument = {
+      schema_version: 1,
+      days: [],
+      notes: 'F19 T032 workout-owned content',
+    };
+    const nutritionDocument = {
+      schemaVersion: 1,
+      structure: 'single_day',
+      implicitDayTypeId: 'dt-conformance',
+      dayTypes: [
+        {
+          id: 'dt-conformance',
+          trainingDay: false,
+          name: { ar: 'ÙŠÙˆÙ…', en: 'Day' },
+          targets: null,
+        },
+      ],
+      meals: [],
+      title: { ar: 'Ø®Ø·Ø©', en: 'Plan' },
+      notes: null,
+    };
+
+    const createAndPublish = async (
+      kind: 'workout' | 'nutrition',
+      content: typeof workoutDocument | typeof nutritionDocument,
+    ) => {
+      const created = await context.trainerA.client.rpc('create_plan_draft', {
+        p_workspace_id: context.wsA.id,
+        p_client_id: seeded.client,
+        p_plan_kind: kind,
+        p_content: content,
+        p_operation_key: randomUUID(),
+      });
+      expect(created.error).toBeNull();
+      const planId = created.data as string;
+      if (kind === 'workout')
+        await db.begin((tx) =>
+          seedSubmittedIntake(tx, context.wsA.id, seeded.client),
+        );
+      const published = await context.trainerA.client.rpc(
+        kind === 'nutrition'
+          ? 'publish_nutrition_revision'
+          : 'ready_and_publish_plan',
+        {
+          p_plan_id: planId,
+          p_expected_draft_version: 1,
+          p_expected_published_version: 0,
+          p_operation_key: randomUUID(),
+        },
+      );
+      expect(published.error).toBeNull();
+      expect(published.data).toMatchObject({ status: 'ok' });
+      return { planId, receipt: published.data as { revision_id: string } };
+    };
+
+    const workout = await createAndPublish('workout', workoutDocument);
+    expect(
+      await counts(context.wsA.id, seeded.client, seeded.subscription),
+    ).toEqual({ deliveries: 1, activations: 0, units: 0 });
+
+    const nutrition = await createAndPublish('nutrition', nutritionDocument);
+    const [workoutRow] = await db`
+      select p.plan_kind, r.content from public.plan_roots p
+      join public.plan_revisions r on r.workspace_id = p.workspace_id and r.plan_id = p.id
+      where p.workspace_id = ${context.wsA.id} and p.id = ${workout.planId}
+    `;
+    const [nutritionRow] = await db`
+      select p.plan_kind, r.content, n.schema_version, n.algorithm_version,
+        n.snapshot_map, n.computed_values
+      from public.plan_roots p
+      join public.plan_revisions r on r.workspace_id = p.workspace_id and r.plan_id = p.id
+      join public.nutrition_plan_version_contents n
+        on n.workspace_id = r.workspace_id and n.revision_id = r.id
+      where p.workspace_id = ${context.wsA.id} and p.id = ${nutrition.planId}
+    `;
+    expect(workoutRow).toEqual({
+      plan_kind: 'workout',
+      content: workoutDocument,
+    });
+    expect(nutritionRow).toMatchObject({
+      plan_kind: 'nutrition',
+      content: nutritionDocument,
+      schema_version: 1,
+      algorithm_version: 1,
+      snapshot_map: {},
+    });
+    expect(nutritionRow?.computed_values).toEqual(
+      computeDocumentValues(nutritionDocument as NutritionDocumentV1, {}),
+    );
+    expect(nutritionRow?.content).not.toHaveProperty('schema_version');
+    expect(workoutRow?.content).not.toHaveProperty('schemaVersion');
+    expect(
+      await counts(context.wsA.id, seeded.client, seeded.subscription),
+    ).toEqual({ deliveries: 2, activations: 1, units: 1 });
+
+    const [clientUser] = await db`
+      select auth_user_id from public.clients where id = ${seeded.client}
+    `;
+    const projection = await db.begin(async (tx) => {
+      await tx`select set_config(
+        'request.jwt.claims',
+        ${JSON.stringify({ sub: clientUser!.auth_user_id, role: 'authenticated' })},
+        true
+      )`;
+      await tx`set local role authenticated`;
+      try {
+        const [row] = await tx`select public.client_plan_projection() as value`;
+        return row!.value;
+      } finally {
+        await tx`reset role`;
+      }
+    });
+    const projectedPlans = (
+      projection as {
+        plans: Array<{ plan_id: string; content: unknown }>;
+      }
+    ).plans;
+    expect(projectedPlans.map((plan) => plan.plan_id).sort()).toEqual(
+      [workout.planId, nutrition.planId].sort(),
+    );
+    expect(
+      projectedPlans.find((plan) => plan.plan_id === workout.planId)?.content,
+    ).toEqual(workoutDocument);
+    expect(
+      projectedPlans.find((plan) => plan.plan_id === nutrition.planId)?.content,
+    ).toEqual(nutritionDocument);
+
+    const [activation] = await db`
+      select workout_delivery_id, nutrition_delivery_id
+      from public.subscription_activations
+      where workspace_id = ${context.wsA.id} and subscription_id = ${seeded.subscription}
+    `;
+    expect(activation?.workout_delivery_id).toBeTruthy();
+    expect(activation?.nutrition_delivery_id).toBeTruthy();
+  });
+
+  it('T049 returns one publish receipt for 100 concurrent retries after an unknown result', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    const created = await context.trainerA.client.rpc('create_plan_draft', {
+      p_workspace_id: context.wsA.id,
+      p_client_id: seeded.client,
+      p_plan_kind: 'workout',
+      p_content: { schema_version: 1, days: [], notes: 'T049 retry publish' },
+      p_operation_key: randomUUID(),
+    });
+    expect(created.error).toBeNull();
+    const planId = String(created.data);
+    await db.begin((tx) =>
+      seedSubmittedIntake(tx, context.wsA.id, seeded.client),
+    );
+    const key = randomUUID();
+    const publish = () =>
+      context.trainerA.client.rpc('ready_and_publish_plan', {
+        p_plan_id: planId,
+        p_expected_draft_version: 1,
+        p_expected_published_version: 0,
+        p_operation_key: key,
+      });
+    const committed = await publish(); // Simulate losing the committed response.
+    expect(committed.error).toBeNull();
+    const retries = await Promise.all(Array.from({ length: 100 }, publish));
+    expect(retries.every((result) => result.error === null)).toBe(true);
+    expect(
+      retries.every(
+        (result) =>
+          JSON.stringify(result.data) === JSON.stringify(committed.data),
+      ),
+    ).toBe(true);
+    const revisions = await db`
+      select count(*)::int as count from public.plan_revisions
+      where workspace_id=${context.wsA.id} and plan_id=${planId}
+    `;
+    const deliveries = await db`
+      select count(*)::int as count from public.plan_deliveries
+      where workspace_id=${context.wsA.id} and plan_id=${planId}
+    `;
+    expect(revisions[0]?.count).toBe(1);
+    expect(deliveries[0]?.count).toBe(1);
+  }, 120_000);
+
   it('installs typed activation sources and an immutable client-level unit', async () => {
     const [catalog] = await db`
       select
@@ -233,12 +455,20 @@ describe('F19 T021 automatic initial activation', () => {
       p_workspace_id: context.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'nutrition',
-      p_content: { schemaVersion: 2, document: { title: 'T021 replay' } },
+      p_content: {
+        schemaVersion: 1,
+        structure: 'single_day',
+        implicitDayTypeId: 'dt-1',
+        dayTypes: [
+          { id: 'dt-1', trainingDay: false, name: { ar: 'يوم', en: 'Day' } },
+        ],
+        meals: [],
+      },
       p_operation_key: randomUUID(),
     });
     const planId = created.data as string;
     const publish = () =>
-      context.trainerA.client.rpc('ready_and_publish_plan', {
+      context.trainerA.client.rpc('publish_nutrition_revision', {
         p_plan_id: planId,
         p_expected_draft_version: 1,
         p_expected_published_version: 0,
@@ -436,7 +666,7 @@ describe('F19 T021 automatic initial activation', () => {
       p_workspace_id: context.wsA.id,
       p_client_id: seeded.client,
       p_plan_kind: 'workout',
-      p_content: { schemaVersion: 2, document: {} },
+      p_content: { schema_version: 1, days: [] },
       p_operation_key: randomUUID(),
     });
     const denied = await context.salesA.client.rpc('ready_and_publish_plan', {
@@ -446,5 +676,99 @@ describe('F19 T021 automatic initial activation', () => {
       p_operation_key: null,
     });
     expect(denied.data).toMatchObject({ status: 'not_permitted' });
+  });
+
+  it('credits the assigned Trainer when a non-Trainer publishes the completing delivery', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    const assignment = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: seeded.client,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignment.data).toMatchObject({ status: 'ok' });
+    await deliver(
+      context.trainerA.client,
+      context.wsA.id,
+      seeded.client,
+      'workout',
+    );
+    const completed = await deliver(
+      context.po.client,
+      context.wsA.id,
+      seeded.client,
+      'nutrition',
+    );
+    expect(completed.data).toMatchObject({ status: 'ok' });
+    const [unit] = await db`
+      select recipient_trainer_user_id from public.productivity_units
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(unit!.recipient_trainer_user_id).toBe(context.trainerA.userId);
+    expect(unit!.recipient_trainer_user_id).not.toBe(context.po.userId);
+  });
+
+  it('serializes a concurrent assignment ahead of activation on the client row', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    await deliver(
+      context.trainerA.client,
+      context.wsA.id,
+      seeded.client,
+      'workout',
+    );
+    const draft = await context.po.client.rpc('create_plan_draft', {
+      p_workspace_id: context.wsA.id,
+      p_client_id: seeded.client,
+      p_plan_kind: 'nutrition',
+      p_content: {
+        schemaVersion: 1,
+        structure: 'single_day',
+        implicitDayTypeId: 'dt-1',
+        dayTypes: [
+          { id: 'dt-1', trainingDay: false, name: { ar: 'يوم', en: 'Day' } },
+        ],
+        meals: [],
+      },
+      p_operation_key: randomUUID(),
+    });
+    expect(draft.error).toBeNull();
+    let assignment!: Promise<void>;
+    let activation!: Promise<void>;
+    let assignedResult: unknown;
+    let publishedResult: unknown;
+    await db.begin(async (tx) => {
+      await tx`select id from public.clients where workspace_id=${context.wsA.id} and id=${seeded.client} for update`;
+      assignment = Promise.resolve().then(async () => {
+        assignedResult = await context.po.client.rpc(
+          'assign_client_responsible_trainer',
+          {
+            p_workspace_id: context.wsA.id,
+            p_client_id: seeded.client,
+            p_trainer_user_id: context.trainerA.userId,
+          },
+        );
+      });
+      await waitForLockWait('assign_client_responsible_trainer');
+      activation = Promise.resolve().then(async () => {
+        publishedResult = await context.po.client.rpc(
+          'publish_nutrition_revision',
+          {
+            p_plan_id: draft.data,
+            p_expected_draft_version: 1,
+            p_expected_published_version: 0,
+            p_operation_key: randomUUID(),
+          },
+        );
+      });
+      await waitForLockWait('publish_nutrition_revision');
+    });
+    await Promise.all([assignment, activation]);
+    expect(assignedResult).toMatchObject({ data: { status: 'ok' } });
+    expect(publishedResult).toMatchObject({ data: { status: 'ok' } });
+    const [unit] = await db`
+      select recipient_trainer_user_id from public.productivity_units
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(unit!.recipient_trainer_user_id).toBe(context.trainerA.userId);
   });
 });

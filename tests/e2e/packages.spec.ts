@@ -6,9 +6,7 @@ import { getMessages } from '../../lib/i18n';
 import { tierLabel } from '../../lib/packages/tier-label';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = new URL(
-  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-).origin;
+const origin = new URL(process.env.PLAYWRIGHT_BASE_URL!).origin;
 for (const locale of ['ar', 'en'] as const)
   test(`${locale}: anonymous package route redirects safely and login passes axe`, async ({
     page,
@@ -167,7 +165,7 @@ test.describe('local-stack authenticated package acceptance (required for review
         await page.locator('input[name="nameAr"]').fill('test-authored-ar');
         await page.locator('input[name="nameEn"]').fill('test-authored-en');
         await page.locator('input[name="priceMinor"]').fill('9007199254740993');
-        await page.locator('input[name="currency"]').fill('XTS');
+        await page.locator('input[name="currency"]').fill('EGP');
         await page.locator('input[name="commissionRateBp"]').fill('0');
       }
       await fillTerms();

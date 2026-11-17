@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { prepareLocalBrandingProxyCredential } from './local-playwright-credential.mjs';
+import { resolvePlaywrightBaseUrl } from '../playwright-port.mjs';
 
 // The Stack-safe CLI exports API_URL/ANON_KEY/SERVICE_ROLE_KEY while Next's
 // server helpers intentionally consume the SUPABASE_* names. Keep the app
@@ -17,7 +18,7 @@ if (
   process.env.SERVICE_ROLE_KEY !== undefined
 )
   process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY;
-process.env.APP_ORIGIN ??= 'http://localhost:3000';
+process.env.APP_ORIGIN ??= new URL(resolvePlaywrightBaseUrl()).origin;
 process.env.LIFTER_E2E_ALLOW_HTTP ??= 'true';
 
 const credential = await prepareLocalBrandingProxyCredential();

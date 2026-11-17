@@ -422,7 +422,7 @@ it('composite foreign workspace version FK independently rejects mismatch', asyn
   await expect(
     db.begin(async (tx) => {
       await tx`alter table public.registration_links disable trigger registration_links_insert_guard`;
-      await tx`insert into public.registration_links(workspace_id,package_version_id,token_hash,created_by,expires_at,price_minor,currency,duration_days,commission_rate_bp) values(${f.wsB.id},${f.p.versionId},${secret().hash},${f.po.userId},now()+interval '24 hours',1200,'XTS',61,17)`;
+      await tx`insert into public.registration_links(workspace_id,package_version_id,token_hash,created_by,expires_at,price_minor,currency,duration_days,commission_rate_bp) values(${f.wsB.id},${f.p.versionId},${secret().hash},${f.po.userId},now()+interval '24 hours',1200,'USD',61,17)`;
     }),
   ).rejects.toMatchObject({ code: '23503' });
   await expect(

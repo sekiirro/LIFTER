@@ -47,7 +47,7 @@ it.each([null, schedule])(
           offer_id: f.p.offer.id,
           installment_count: installments?.length ?? 0,
           price_minor: '1200',
-          currency: 'XTS',
+          currency: 'USD',
         },
       },
     ]);
@@ -235,7 +235,10 @@ describe('legacy audit mapping regression', () => {
     ]);
   });
   it('offer availability keeps its pre-F10 shape', async () => {
-    const p = await publishedFixture(f, { tier_rank: 1 });
+    const p = await publishedFixture(f, {
+      tier_rank: 1,
+      workspace_id: f.wsA.id,
+    });
     checked(
       await f.po.client.rpc('set_package_offer_available', {
         workspace_id: f.wsA.id,
@@ -272,7 +275,7 @@ describe('legacy audit mapping regression', () => {
           package_id: f.p.id,
           version: version!.version,
           price_minor: '1301',
-          currency: 'XTS',
+          currency: 'USD',
           commission_rate_bp: 17,
           duration_days: 61,
         },

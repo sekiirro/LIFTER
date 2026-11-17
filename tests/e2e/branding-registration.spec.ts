@@ -18,7 +18,7 @@ import {
 import type { RegistrationFixture } from '../integration/registration-links-fixture';
 import { registrationIssueActorIndex } from './registration-issue-actor';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );

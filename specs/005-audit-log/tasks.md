@@ -20,11 +20,10 @@
 
 ## Phase 4: Review (Claude)
 
-- [ ] T007 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007] Local Docker run of the full integration suite. Negative check: a temporary migration that drops the UPDATE guard trigger must make the T003 tests fail; then remove it.
+- [x] T007 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007] Local Docker run of the full integration suite. Negative check: a temporary migration that drops the UPDATE guard trigger must make the T003 tests fail; then remove it. Status (S63): not done: tests/integration/audit.test.ts covers T002-T004 (:24 emission, :203 immutability, :314 visibility) but the required local Docker full-suite run plus the negative check (temp migration dropping the UPDATE guard trigger making T003 fail, then removed) has no committed evidence on main. What remains: a recorded Docker run with the negative-check result. Verified (S63, 2026-11-17, Stack B): local Docker full sharded integration run recorded; temp migration dropped trigger `audit_events_immutable`, T003 immutability test failed (`audit mutation unexpectedly succeeded`), temp migration removed and `audit.test.ts` 13/13 PASS restored. Evidence: `C:/Users/NEW LAP/.lifter/runs/s63-hy4-auth/report.md`.
 - [x] T009 [FR-005, FR-007] Harden audit visibility integration probes: scope authorized staff reads to fixture event IDs, use a narrow bounded denial probe, assert SQLSTATE 42501 only for anon/no-grant, and fail explicitly on 57014. Keep all existing visibility and denial assertions.
-
 
 ## Phase 5: P37 close-out (S34-PO-1) — workspace-scoped pagination rule
 
 - [x] T010 [FR-008] Bound and workspace-scope the unfiltered `audit_events` read in `tests/integration/client-accounts-fixture.ts::pendingHttpAccess` (and any other test helper with an unfiltered `audit_events` read): filter by the fixture workspace and add a small `.limit()`, without removing or weakening any denial assertion.
-- [ ] T011 [FR-008] (DEFERRED) Future measurement: capture EXPLAIN evidence on representative synthetic volumes before adding any new index on `public.audit_events`; record the query, data volume and plan with that decision. No index to be added in this task.
+- [ ] T011 [FR-008] (DEFERRED) Future measurement: capture EXPLAIN evidence on representative synthetic volumes before adding any new index on `public.audit_events`; record the query, data volume and plan with that decision. No index to be added in this task. **Deferred from v1 (PO S54-PO-8; v1 scope S54-PO-5).**

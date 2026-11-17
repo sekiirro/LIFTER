@@ -6,7 +6,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const local = Boolean(process.env.DB_URL || process.env.SUPABASE_DB_URL);
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'];
 
@@ -269,7 +269,7 @@ test.describe('local public registration states (required for review)', () => {
     await expect(page.getByText(f.wsA.name, { exact: true })).toBeVisible();
     const text = await page.locator('main').innerText();
     expect(text).not.toMatch(
-      /1200|XTS|test-authored|Continue|invalid|expired|consumed/i,
+      /1200|USD|test-authored|Continue|invalid|expired|consumed/i,
     );
     await expect(page.locator('main form')).toHaveCount(1);
     await expect(
@@ -369,7 +369,7 @@ test.describe('required local authenticated registration acceptance', () => {
             .slice(0, 300)}`,
         ).toBeVisible();
         await expect(
-          page.getByText('1200 XTS', { exact: false }),
+          page.getByText('1200 USD', { exact: false }),
         ).toBeVisible();
         if (role !== 'po') {
           const options = page
@@ -468,7 +468,7 @@ test.describe('required local authenticated registration acceptance', () => {
             publicPage.getByText(f.wsA.name, { exact: true }),
           ).toBeVisible();
           expect(await publicPage.locator('main').innerText()).not.toMatch(
-            /1200|XTS|test-authored|Continue/,
+            /1200|USD|test-authored|Continue/,
           );
         } finally {
           await publicContext.close();
@@ -635,7 +635,7 @@ test.describe('required local authenticated registration acceptance', () => {
     ).toHaveCount(0);
     await page.getByRole('button', { name: 'Reload', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByText('1300 XTS', { exact: false })).toBeVisible();
+    await expect(page.getByText('1300 USD', { exact: false })).toBeVisible();
   });
   test('copy failure preserves manual selection; late clipboard completion cannot affect a reopened dialog', async ({
     page,

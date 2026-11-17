@@ -8,7 +8,7 @@ import { en } from '../../lib/i18n/messages/en';
 
 const screenshotDir =
   process.env.LIFTER_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s28-f16-lib4');
-const testBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const testBaseURL = process.env.PLAYWRIGHT_BASE_URL!;
 mkdirSync(screenshotDir, { recursive: true });
 
 const visualMatrix = [

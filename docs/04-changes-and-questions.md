@@ -1613,6 +1613,54 @@ LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from ot
 
 Architect mapping S56-R7 (not PO words): no feature-flag mechanism is built; unfinished features merge without a flag; no task or slice waits for a flag; the topic is tracked as a pre-production readiness item. Security, RLS, authorization, tests, CI gates and every other safeguard stay as they are.
 
+### S61-PO-1 - PO words, verbatim (F9 FX decision)
+
+Source: PO decision of 2026-11-16 on the F9 FX evidence `specs/009-packages/fx-coverage-verification.md` (T075).
+
+<!-- prettier-ignore -->
+```text
+FX=B
+```
+
+Option B as offered (verbatim): "Approve Frankfurter v2 pinned to one named provider per currency (for example CBE for EGP, SAMA for SAR). Use that provider's own publication calendar, and amend FR-026, SC-017 and the T058 calendar fixtures."
+
+Architect mapping S61-R1 (not PO words): provider keys read from live `/v2/providers`: `USD`→`EGP` from `CBE`, `SAR`→`EGP` from `SAMA`, `EGP`→`EGP` exactly 1. Replaces the ECB/TARGET business-day calendar of S36-PO-3 with the pinned provider's own calendar; the other S33-PO-6/S36-PO-2/S36-PO-3 FX rules are unchanged. Amends spec 009 FR-026, FR-031, SC-017, SC-022, acceptance scenario 8, plan, data-model, contracts and T058/T059/T067/T075. Provider terms of use are not yet verified and remain a blocker for acceptance (T062).
+
+### S61-PO-2 — PO words, verbatim
+
+Source: PO message 2026-11-16 answering the F9 T064b teardown-design questions Q1, Q2 and Q3 in `specs/009-packages/review.md` section 5 (record held outside the repository; quoted verbatim below).
+
+<!-- prettier-ignore -->
+```text
+Teardown Q1=A, Q2=A, Q3=A
+```
+
+Architect mapping (not PO words): Q1=A, an immutable audit event that merely names a mock package, offer or version as `target_id` does NOT block deletion; only client, registration-link and financial references block. Q2=A, the C5 teardown procedure MAY disable the offer update guard (`package_offers_guard`) for the single `current_version_id := NULL` statement, under the controls in review.md section 4 (the independent review narrowed this to `package_offers_guard` only). Q3=A, transient owner-only, single-transaction trigger disablement by the operator script is NOT a "guard exception" under FR-006/FR-028, with the controls of review.md section 4. Applies to F9 C5 (FR-006, FR-028, T064b, T065). It does not authorize any deletion by itself: T065 waits for the independent T064b re-review PASS.
+
+### S61-PO-3 — PO words, verbatim
+
+Source: PO message 2026-11-16, "Select all recommended choices", answering the four open F9 decisions listed in the status report (record held outside the repository; quoted verbatim below).
+
+<!-- prettier-ignore -->
+```text
+Select all recommended choises
+```
+
+Architect mapping (not PO words): the recommended option of each question is adopted. (1) USD to EGP uses provider `CBE` (confirms S61-PO-1). (2) `FX_SETTLE_DAYS` = 3 and the rate bounds USD to EGP 1..1000 and SAR to EGP 0.5..300 are confirmed. (3) The childless-mock rule is approved: a mock package with no offers and no versions counts as deletable by the C5 preflight. The status report gave no recommended option for the T076 retirement contract, so it remains undefined and T076 stays blocked. This does not verify provider terms of use (T059/T062/T075) and does not authorize any teardown run or merge.
+
+### S61-PO-1 — PO words, verbatim (CI/concurrency ruling)
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s61-po/s61-po-1.verbatim.txt`; SHA-256 `0328e852487fa5947738ae83782bb11e440e9898fdefaa083b652dd08f9127fe`.
+
+<!-- prettier-ignore -->
+```text
+Amend Constitution 1.17.0: One green CI per exact PR head is sufficient. Moving main alone must not trigger reruns.
+
+Also Don't respect constitution and use the roster's 10 as I said
+```
+
+Architect mapping S61-R12 (not PO words; C:/Users/NEW LAP/.lifter/runs/s61-arch/s61-architect-rulings.md): (1) Constitution amendment 1.17.0→1.18.0: one successful full CI attempt per exact PR head is sufficient; a main advance alone triggers no rerun or tree comparison; a new head still needs a new green; MERGEABLE (not CONFLICTING) is still required at merge. PO direction is applied operationally NOW; constitution text changes when the amendment PR merges on the PO's explicit `merge #N at <sha>`. (2) Concurrency = roster 10 agents, overriding the constitution's 9 by PO direction. The 5-PR-writer limit is not addressed by PO-1 and stays in force pending the PO's answer (S61-R6 updated).
+
 ### S57-PO-1 to S57-PO-11 - PO answers, verbatim (2026-11-14)
 
 Source: Claude Code session https://claude.ai/code/session_014udyWnahqjLL8vfwQacqMc (multiple-choice answers on specs 022-024). Each entry quotes the PO's free-text answer or the selected option label, with the option text the PO saw.

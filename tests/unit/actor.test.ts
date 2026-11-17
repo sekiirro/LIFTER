@@ -65,6 +65,50 @@ describe('server actor verification', () => {
     expect(staffEq).toHaveBeenCalledWith('user_id', 'verified');
     expect(membershipsEq).toHaveBeenCalledWith('user_id', 'verified');
   });
+  it('T027 getActor re-reads membership state after revocation', async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: 'verified' } },
+      error: null,
+    });
+    let revoked = false;
+    mocks.from.mockImplementation((table) => ({
+      select: () => ({
+        eq: () =>
+          table === 'staff_profiles'
+            ? {
+                maybeSingle: async () => ({
+                  data: { role: 'trainer' },
+                  error: null,
+                }),
+              }
+            : {
+                data: [
+                  {
+                    workspace_id: 'workspace-a',
+                    revoked_at: revoked ? '2026-11-17T00:00:00Z' : null,
+                  },
+                ],
+                error: null,
+              },
+      }),
+    }));
+
+    const beforeRevocation = await getActor();
+    expect(authorize(beforeRevocation!, 'coaching_work', 'workspace-a')).toBe(
+      true,
+    );
+    revoked = true;
+    const afterRevocation = await getActor();
+    expect(afterRevocation).toEqual({
+      userId: 'verified',
+      role: 'trainer',
+      activeWorkspaceIds: [],
+    });
+    expect(authorize(afterRevocation!, 'coaching_work', 'workspace-a')).toBe(
+      false,
+    );
+    expect(mocks.from).toHaveBeenCalledTimes(4);
+  });
   it('redirects protected pages without an actor', async () => {
     mocks.redirect.mockImplementation(() => {
       throw new Error('redirect');
