@@ -209,6 +209,15 @@ T149 remains deferred: no UI or copy is included; a future PO MCQ must approve e
 | FR-008/013 - return accepted draft revision when submission fails after autosave | T124 | `tests/unit/forms-authorized-client-adapter.test.ts` covers failed submit returning saved revision N and autosave failure preventing submit (2/2 passed). Revert evidence: dropping `revision: savedRevision` made the failed-submit test fail (revision absent); restored, with `git diff --exit-code -- components lib` clean. | verified in this PR |
 <!-- prettier-ignore-end -->
 
+## S63-inkling-015 S15-3 docs (2026-11-17)
+
+<!-- prettier-ignore-start -->
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-017/018/035 — record S35-PO-3 / S36-R7 alert timing and S38-PO-5 S36-01=A/S36-02=A; client-late means the configured client-submission deadline passes without an accepted submission; immediate authorized-owner notices preserved; client-to-Trainer routing and client-late Trainer alerts deferred to F11/F12 under PDN-S39-F15-01; S36-01=A retained as the future authoritative source rule; D-03 Trainer-late, five-working-day Trainer delivery deadline, WO day-five alert, PO day-seven escalation and recipient deduplication distinct and unchanged; no alert implementation or migration | T138 | Documentation-only (no code, no migration). Evidence is the recorded decision chain on origin/main: `spec.md` FR-017/018/035 (L243–246) + SC-022 (L519) + Clarifications S36-R7 (L581–593, S38-PO-5 quoted byte-exact; PDN-S39-F15-01 resolved by S39-PO-8), `contracts/retention-and-alerts.md:17`, `contracts/forms-api.md:16`, `plan.md:27,117,173,179`, `data-model.md:28`, `research.md:107`, `quickstart.md:92`, `checklists/analyze.md` round-8/9 entries (L124–142; 0 CRITICAL/0 HIGH; no open ambiguities for the authorized scope), v1 deferral recorded in `tasks.md` T104/T138/T149 and `checklists/analyze.md:321`. | this PR |
+| FR-039 — Terms policy fixtures in rollback-scoped transactions (partial; task stays open) | T088 | Full `tests/` audit: all same-transaction fixtures already rollback-scoped on origin/main (terms-consent 17e99a0e; s14-persistence, s14-privacy:188/361, r3-submissions:71, r3-reader, r3-drafts, r3-assignment-invariants/consumer, r3-correction-matrix, r3-purge, forms-purge, alerts/alert-inbox/alert-mutations/assignment-mutations, correction-context, recurring/renewal via probe(), client-signup-transaction via runSignupMutation). New static guard `tests/unit/forms-terms-fixture-rollback.test.ts` enforces the invariant (rollback-scoped or explicitly commit-required; stale exemptions fail). Commit-required fixtures (workers/PostgREST/Next server/pg_cron) enumerated in the guard with reasons. Remaining: Stack D re-execution of integration suites; task stays `[ ]`. | this PR (partial) |
+<!-- prettier-ignore-end -->
+
 ## S63 docs-only evidence ticks (2026-11-17)
 
 <!-- prettier-ignore-start -->
