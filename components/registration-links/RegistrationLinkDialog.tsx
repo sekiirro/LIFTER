@@ -7,9 +7,13 @@ import { Field } from '../ui/Field';
 import { Alert } from '../ui/Alert';
 import { Button } from '../ui/Button';
 import { getMessages } from '../../lib/i18n';
-import type { Installment } from '../../lib/registration-links/validation';
+import type {
+  Installment,
+  PaymentTerms,
+} from '../../lib/registration-links/validation';
 import {
   parseSchedule,
+  parsePaymentTerms,
   exactAmount,
 } from '../../lib/registration-links/validation';
 import { issueRegistrationLinkAction } from '../../app/(app)/registration-links/actions';
@@ -59,6 +63,20 @@ export function RegistrationLinkDialog({
       }))
     : null;
   const valid = parseSchedule(schedule, priceMinor) !== undefined;
+  // Flexible terms: upfront is the first row amount, count includes upfront.
+  // parsePaymentTerms revalidates correspondence + exact total; it agrees
+  // with parseSchedule by construction (same rows, same price).
+  const flexible: PaymentTerms | null | undefined =
+    schedule === null
+      ? null
+      : parsePaymentTerms(
+          {
+            upfrontAmountMinor: rows[0]?.amount,
+            totalPaymentCount: rows.length,
+            installments: schedule,
+          },
+          priceMinor,
+        );
   const total = rows
     .reduce(
       (sum, r) => (exactAmount(r.amount) ? sum + BigInt(r.amount) : sum),
@@ -71,11 +89,21 @@ export function RegistrationLinkDialog({
     setPending(true);
     setFailure(null);
     try {
-      const result = await issueRegistrationLinkAction({
-        workspaceId,
-        packageVersionId: versionId,
-        installments: schedule,
-      });
+      const result = flexible
+        ? await issueRegistrationLinkAction({
+            workspaceId,
+            packageVersionId: versionId,
+            paymentTerms: {
+              upfrontAmountMinor: flexible.upfrontAmountMinor,
+              totalPaymentCount: flexible.totalPaymentCount,
+              installments: flexible.installments,
+            },
+          })
+        : await issueRegistrationLinkAction({
+            workspaceId,
+            packageVersionId: versionId,
+            installments: schedule,
+          });
       if (!live.current) return;
       if (result.status === 'ok') {
         setLink(result.link);
