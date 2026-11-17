@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F18 nutrition planner
 
-**Analyzed:** 2026-11-17 02:18 Africa/Cairo (date update after merge; T019 concurrency/idempotency evidence synchronized with the merged task and traceability status; no requirement, acceptance, contract, or plan design text changed).
+**Analyzed:** 2026-11-17 02:18 Africa/Cairo (date update after merge; T019 concurrency/idempotency evidence synchronized with the merged task and traceability status; T017 contributor attribution verified per architect ruling S60-R43 and research conflict F18-C-11 resolved as RESOLVED-TECH; no requirement, acceptance, contract, or plan design text changed).
 
 Date update note (retained and extended after merge): T020/T021 and T019 implementation evidence recorded; no requirement, acceptance, contract, or plan design text changed. Existing Analyze findings remain unchanged.
 Date update note (retained and extended after merge): T020/T021 implementation and benchmark evidence recorded; T023/T029 task and traceability evidence synchronized; no requirement, acceptance, contract, or plan design text changed. Existing Analyze findings remain unchanged.
