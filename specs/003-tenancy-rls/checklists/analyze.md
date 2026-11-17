@@ -166,3 +166,9 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - Verdict: PASS for this merge reconciliation.
 
 - S63 status refresh 2026-11-17: T014/T015/T017/T018/T020/T021/T022/T024 completion markers and their evidence were updated after tests passed. Requirement text in spec.md, plan.md and task descriptions is unchanged; no new Analyze run is required under R6. Existing verdict remains 0 open CRITICAL/HIGH findings; T016/T019 reviews remain open.
+
+## 2026-11-17 — S63 T025–T027 evidence status refresh
+
+- T025 and T027 are checked with executed test evidence. T026(a,b) now have executed row-count tests; T026 stays open because the separately required F11/F12 add-first old-account acceptance outcome remains pending in spec 011 T047.
+- Only task status and traceability evidence changed; no spec, plan, FR, SC, acceptance-scenario, or task-requirement text changed. This status-only refresh adds no new findings; existing verdict remains 0 open CRITICAL and 0 open HIGH.
+- Result: PASS, 0 CRITICAL, 0 HIGH.
