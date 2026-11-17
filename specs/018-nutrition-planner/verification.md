@@ -107,6 +107,17 @@
 - **Function body diff**: `C:/Users/NEW LAP/.lifter/runs/s59-hy-f18t011/body.diff`.
 - **Final local CI-equivalent**: lint, typecheck, changed-file and repo-wide format checks, and migration timestamp checks passed. Full unit suite: 3,206/3,206 across 277 files. Final Stack A reset + provisioning; touched integration suites: 56/56 across carry-forward (4), selection (3), publish (7), and `rls-catalog` (42).
 
+## Slice 5: T019 — Concurrency and idempotency matrix
+
+- **Branch/base**: `20261120160000–20261120165959`, fresh from `origin/main` at `08a6dcc73167bc1d5e984abdeb983d6c1a991532`.
+- **Main sync and documentation union**: merged `origin/main` at `a4eea2efcdba8a9f9dd88f8873f9b35f39cb3cad`. `tasks.md` retains all 30 task rows and IDs; `traceability.md` retains all 106 table rows with first-cell sequence identical to `origin/main`. T019 is checked alongside the merged T020/T021 evidence; verification retains both slice sections and Analyze retains both freshness notes.
+- **Stack**: A, safe reset and `tests/integration/client-accounts-provision.mjs` completed before integration.
+- **Test**: `tests/integration/nutrition-concurrency.test.ts` uses Promise.all with independent database transactions (bounded pool, 12 simultaneous sessions) for 100 publish, selection, template-load, and Assign calls sharing each operation key.
+- **Coverage**: one receipt/revision/delivery/audit after publish replays; simulated ambiguous-commit retry returns the committed receipt; selection counter/audit and template-load draft/audit remain single-write; Assign returns one batch/item/copy with no partial batch when a target workspace is invalid. A concurrent publish/selection race verifies the selected alternative carries to the next revision.
+- **RED / mutation**: temporarily removed `FOR UPDATE` from the installed `public.select_nutrition_alternative` plan-root query. The race test failed at `RPC did not wait behind the competing transaction: select_nutrition_alternative`. Restored the original function and verified its installed definition matched byte-for-byte. `git diff --exit-code -- supabase/migrations` returned 0; no migration was needed.
+- **GREEN**: targeted integration file passed 5/5 tests after restore on Stack A.
+- **Harness correction**: an initial run at 100 physical connections exceeded the local Postgres connection cap; the test retains 100 parallel attempts using a 12-session pool, preserving independent concurrent database transactions within the stack limit.
+
 ## Slice 5 (Versioning + benchmark): T020 and T021
 
 - **Base `origin/main` SHA**: `1d7f007ad94b6e814c3fa3fb429712c65f940fd0`; merged latest `origin/main` before push (up to date; includes #157).

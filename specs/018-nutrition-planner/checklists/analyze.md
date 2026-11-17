@@ -1,7 +1,8 @@
 # Spec Kit Analyze — F18 nutrition planner
 
-**Analyzed:** 2026-11-17 02:03 Africa/Cairo (date update after merge; T011/T016/T018 status and evidence retained from origin/main, with T023/T029 traceability synchronized; no requirement, acceptance, contract, or plan design text changed).
+**Analyzed:** 2026-11-17 02:18 Africa/Cairo (date update after merge; T019 concurrency/idempotency evidence synchronized with the merged task and traceability status; no requirement, acceptance, contract, or plan design text changed).
 
+Date update note (retained and extended after merge): T020/T021 and T019 implementation evidence recorded; no requirement, acceptance, contract, or plan design text changed. Existing Analyze findings remain unchanged.
 Date update note (retained and extended after merge): T020/T021 implementation and benchmark evidence recorded; T023/T029 task and traceability evidence synchronized; no requirement, acceptance, contract, or plan design text changed. Existing Analyze findings remain unchanged.
 **Method:** Rechecked spec.md, plan.md, tasks.md, nutrition API/document and template-assignment contracts, data-model.md, traceability.md, research decision matrix/conflicts/Section B assessment, and S43-PO-5 / S44-PO-7 / architect mappings S43-R6, S43-R10 and S44-R7. This pass follows the Greptile P2 thread `PRRT_kwDOVYgYQ862AhVE` on head `d742eb5a` (template-assignment test 11) and reconciles the concurrent Assign single-pair race with the existing zero-copy rejection; it also retains the earlier CodeRabbit PR #79 fixes (`PRR_kwDOVYgYQ88AAAABXM9hLA`, head `f588e222`).
 
@@ -144,6 +145,18 @@ Date update note (retained and extended after merge): T020/T021 implementation a
 - T024 (2026-11-15): production prompt builder `lib/plans/nutrition/prompt.ts` + `tests/unit/nutrition-prompt.test.ts` (6/6) implement F18-FR-015 against the unchanged approved P3/P4 bodies; requirement/acceptance text is unchanged, so this is a date-only re-Analyze.
 
 **Analyze result:** CRITICAL 0; HIGH 0. Ready for commit/PR.
+
+## Consistency freshness — T019 implementation bookkeeping (2026-11-16)
+
+Date note: T019 completion bookkeeping recorded on 2026-11-16; no FR, SC, contract, or plan design text changed.
+**Scope:** T019 completion status and verification evidence were added to tasks.md, traceability.md, and verification.md. No FR, SC, contract, or plan design text changed, so this is a date-only consistency update under R6.
+
+- PASS — the 100-call publish, selection, template-load, and Assign replay assertions match F18-FR-019 and API contract §8.
+- PASS — ambiguous publish retry and atomic Assign failure assertions are recorded in `verification.md`.
+- PASS — the plan-root lock race mutation is killed and the installed function restored; no migration or behavior change was introduced.
+- PASS — the full F18-SC-002 inventory remains open under T018/T027; T019 evidence does not overstate that wider coverage.
+
+**Result:** no requirement text changed and no new product decision is open; implementation bookkeeping is consistent with the approved spec.
 
 ## Consistency freshness � T012/T013 implementation bookkeeping (2026-11-15)
 
