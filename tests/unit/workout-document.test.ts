@@ -3,6 +3,11 @@ import {
   addWorkoutItem,
   moveWorkoutItem,
   parseWorkoutDocumentV1,
+  removeWorkoutAlternative,
+  updatePlanNotes,
+  updateWorkoutDay,
+  updateWorkoutItem,
+  updateWorkoutSet,
 } from '../../lib/workout-planner/document';
 
 const uuid = (tail: string) =>
@@ -224,5 +229,126 @@ describe('F17 workout document schema v1 (T002)', () => {
     );
     expect(input).toEqual(before);
     expect(input.days[0]!.items[0]!.id).toBe(uuid('3'));
+  });
+
+  describe('F17 document editable field operations (T043 slice 2)', () => {
+    it('updates plan notes and clears empty notes', () => {
+      const initial = parseWorkoutDocumentV1(doc());
+      const updated = updatePlanNotes(initial, 'Coach general remarks');
+      expect(updated.notes).toBe('Coach general remarks');
+
+      const cleared = updatePlanNotes(updated, '');
+      expect(cleared.notes).toBeUndefined();
+    });
+
+    it('updates day fields and rejects setting a session day with items to rest day', () => {
+      const initial = parseWorkoutDocumentV1(doc());
+      const updated = updateWorkoutDay(initial, uuid('2'), {
+        title: 'Push Day',
+        notes: 'Rest 2 mins between compounds',
+      });
+      expect(updated.days[0]!.title).toBe('Push Day');
+      expect(updated.days[0]!.notes).toBe('Rest 2 mins between compounds');
+
+      // Attempting to set day with items to 'rest' throws invalid_document
+      expect(() =>
+        updateWorkoutDay(updated, uuid('2'), { kind: 'rest' }),
+      ).toThrowError('invalid_document');
+    });
+
+    it('updates item fields (notes, reps, restSec, rir) with document validation', () => {
+      const initial = parseWorkoutDocumentV1(doc());
+      const updated = updateWorkoutItem(initial, uuid('3'), {
+        notes: 'Strict form',
+        reps: { value: 10 },
+        restSec: 120,
+        rir: 2,
+      });
+      const item = updated.days[0]!.items[0]!;
+      expect(item.notes).toBe('Strict form');
+      expect(item.reps).toEqual({ value: 10 });
+      expect(item.restSec).toBe(120);
+      expect(item.rir).toBe(2);
+
+      // Rejects invalid reps (min > max)
+      expect(() =>
+        updateWorkoutItem(updated, uuid('3'), {
+          reps: { min: 15, max: 10 },
+        }),
+      ).toThrowError('invalid_document');
+
+      // Rejects invalid restSec (not divisible by 15)
+      expect(() =>
+        updateWorkoutItem(updated, uuid('3'), { restSec: 50 }),
+      ).toThrowError('invalid_document');
+
+      // Rejects invalid rir (> 5)
+      expect(() =>
+        updateWorkoutItem(updated, uuid('3'), { rir: 6 }),
+      ).toThrowError('invalid_document');
+    });
+
+    it('updates set type and load variants with document validation', () => {
+      const initial = parseWorkoutDocumentV1(doc());
+      const updated = updateWorkoutSet(initial, uuid('4'), {
+        type: 'warmup',
+        load: { mode: 'added_weight', value: '100.5', unit: 'kg' },
+      });
+      const set = updated.days[0]!.items[0]!.sets[0]!;
+      expect(set.type).toBe('warmup');
+      expect(set.load).toEqual({
+        mode: 'added_weight',
+        value: '100.5',
+        unit: 'kg',
+      });
+
+      // Switch to assisted load
+      const assisted = updateWorkoutSet(updated, uuid('4'), {
+        load: { mode: 'assisted', value: '15.0', unit: 'lb' },
+      });
+      expect(assisted.days[0]!.items[0]!.sets[0]!.load).toEqual({
+        mode: 'assisted',
+        value: '15.0',
+        unit: 'lb',
+      });
+
+      // Rejects non-positive load value
+      expect(() =>
+        updateWorkoutSet(assisted, uuid('4'), {
+          load: { mode: 'added_weight', value: '0', unit: 'kg' },
+        }),
+      ).toThrowError('invalid_document');
+    });
+
+    it('removes an alternative by index', () => {
+      const altRef = {
+        source: 'global' as const,
+        identity_id: uuid('9'),
+        version: 1,
+      };
+      const initial = parseWorkoutDocumentV1(
+        doc({
+          days: [
+            {
+              id: uuid('2'),
+              kind: 'session',
+              items: [
+                {
+                  id: uuid('3'),
+                  exercise: ref,
+                  name: 'Squat',
+                  alternatives: [altRef],
+                  sets: [],
+                },
+              ],
+            },
+          ],
+        }),
+      );
+      expect(initial.days[0]!.items[0]!.alternatives).toHaveLength(1);
+
+      const removed = removeWorkoutAlternative(initial, uuid('3'), 0);
+      expect(removed.days[0]!.items[0]!.alternatives).toHaveLength(0);
+    });
   });
 });
