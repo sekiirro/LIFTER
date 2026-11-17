@@ -347,6 +347,17 @@
   4. **Formula injection mutation**: Mutated `excel-export.ts` to assign formula to cells starting with `=` -> `tests/unit/workout-export-goldens.test.tsx` failed with formula detection failure (`R/mutation-formula.txt`); restored clean.
   - `git diff --exit-code` on all pre-existing code is 0.
 
+### T041 follow-up — authorized route goldens (s63-ds-f17t041)
+
+- **Branch / stack**: `s63-f17-export-goldens` / no DB stack. Both route handlers run for real over the real authorized export reader and renderers; only the Supabase session client and actor loader are mocked, matching the existing T037/T040 unit route tests.
+- **Scope (remaining T041 clause only)**: exact `tests/fixtures/f17/workout-print-route-golden-{en,ar}.json` payload equality for `/api/workouts/print`, exact `tests/fixtures/f17/workout-copy-prompt-route-golden-{en,ar}.txt` prompt bytes for `/api/workouts/copy-prompt` after the single `{{PLAN_CONTENT}}` substitution, Revision N while N+1 exists in both routes, RTL/LTR layout plus S58-PO-5 labels from the route payload, English exercise names, preserved authored text, and text-only Excel cells from the route payload (SC-008). No production code changed.
+- **RED**: `tests/unit/workout-export-route-goldens.test.tsx` failed 4/8 with missing fixtures (earlier run logged in `R/report.md`); the 4 non-golden route assertions already passed.
+- **GREEN**: 8/8 passed (`R/green.txt`).
+- **Mutation (killed -> restored -> `git diff --exit-code` = 0)**:
+  1. English route prompt golden, one byte (`Rules:` -> `Rulez:`) -> 1 failed / 7 passed (`R/mutation-prompt-byte.txt`); restored clean.
+  2. English route payload golden cell (`planIdentity` `"1"` -> `"7"`) -> 1 failed / 7 passed (`R/mutation-route-cell.txt`); restored clean.
+- **Evidence files**: `tests/unit/workout-export-route-goldens.test.tsx`, `tests/fixtures/f17/workout-print-route-golden-{en,ar}.json`, `tests/fixtures/f17/workout-copy-prompt-route-golden-{en,ar}.txt`.
+
 ## F17 Verification — T025 (s60-luna-f17t025)
 
 - **Branch / stack**: `20261120170000-20261120175959` / Stack D (`lifter-stack-d`). Migration `20261120170000_f17_workout_template_assign_run.sql` applied after safe Stack D reset followed by client-account provisioning.
