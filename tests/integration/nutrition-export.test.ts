@@ -716,7 +716,7 @@ describe('F18 T023 nutrition export integration & database audit', () => {
           recipeUrl: 'https://example.com/recipe',
           items: [
             {
-              id: 'i-1',
+              id: '11111111-1111-4111-8111-111111111111',
               foodId: '00000000-0000-4000-8000-000000000001',
               foodVersion: 1,
               quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
@@ -748,7 +748,12 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     const dummyComputedValues = {
       algorithmVersion: 1,
       items: {
-        'i-1': { kcal: '389', protein: '16.9', carbs: '66.3', fat: '6.9' },
+        '11111111-1111-4111-8111-111111111111': {
+          kcal: '389',
+          protein: '16.9',
+          carbs: '66.3',
+          fat: '6.9',
+        },
       },
       meals: {
         'm-1': { kcal: '389', protein: '16.9', carbs: '66.3', fat: '6.9' },
@@ -859,14 +864,14 @@ describe('F18 T023 nutrition export integration & database audit', () => {
           recipeUrl: null,
           items: [
             {
-              id: 'i-1',
+              id: '11111111-1111-4111-8111-111111111111',
               foodId: '00000000-0000-4000-8000-000000000001',
               foodVersion: 1,
               quantity: { value: '100', unit: { kind: 'basis', value: 'g' } },
               note: null,
               alternatives: [
                 {
-                  id: 'a-1',
+                  id: '22222222-2222-4222-8222-222222222222',
                   foodId: '00000000-0000-4000-8000-000000000002',
                   foodVersion: 1,
                   quantity: {
@@ -875,7 +880,7 @@ describe('F18 T023 nutrition export integration & database audit', () => {
                   },
                 },
                 {
-                  id: 'a-2',
+                  id: '33333333-3333-4333-8333-333333333333',
                   foodId: '00000000-0000-4000-8000-000000000003',
                   foodVersion: 1,
                   quantity: {
@@ -934,7 +939,14 @@ describe('F18 T023 nutrition export integration & database audit', () => {
 
     const computedValues = {
       algorithmVersion: 1,
-      items: { 'i-1': { kcal: '100', protein: '10', carbs: '10', fat: '2' } },
+      items: {
+        '11111111-1111-4111-8111-111111111111': {
+          kcal: '100',
+          protein: '10',
+          carbs: '10',
+          fat: '2',
+        },
+      },
       meals: { 'm-1': { kcal: '100', protein: '10', carbs: '10', fat: '2' } },
       totals: { kcal: '100', protein: '10', carbs: '10', fat: '2' },
     };
@@ -979,14 +991,14 @@ describe('F18 T023 nutrition export integration & database audit', () => {
         insert into public.client_nutrition_alternative_selections (
           workspace_id, plan_id, plan_version_id, client_id, item_id, alternative_id, created_by
         ) values (
-          ${f.wsA.id}, ${planId}, ${rev1Id}, ${seeded.client}, 'i-1', 'a-1', ${f.trainerA.userId}
+          ${f.wsA.id}, ${planId}, ${rev1Id}, ${seeded.client}, '11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', ${f.trainerA.userId}
         )
       `;
       await tx`
         insert into public.client_nutrition_alternative_selections (
           workspace_id, plan_id, plan_version_id, client_id, item_id, alternative_id, created_by
         ) values (
-          ${f.wsA.id}, ${planId}, ${rev2Id}, ${seeded.client}, 'i-1', 'a-2', ${f.trainerA.userId}
+          ${f.wsA.id}, ${planId}, ${rev2Id}, ${seeded.client}, '11111111-1111-4111-8111-111111111111', '33333333-3333-4333-8333-333333333333', ${f.trainerA.userId}
         )
       `;
     });
@@ -1009,10 +1021,16 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     expect(resRev1.success).toBe(true);
     if (!resRev1.success) return;
 
-    expect(resRev1.projection.selectedAlternativeIds['i-1']).toBe('a-1');
-    expect(resRev1.projection.selectedValues?.items['i-1']?.kcal).toBe(
-      '225.00',
-    ); // 150g of 150 kcal/100g = 225
+    expect(
+      resRev1.projection.selectedAlternativeIds[
+        '11111111-1111-4111-8111-111111111111'
+      ],
+    ).toBe('22222222-2222-4222-8222-222222222222');
+    expect(
+      resRev1.projection.selectedValues?.items[
+        '11111111-1111-4111-8111-111111111111'
+      ]?.kcal,
+    ).toBe('225.00'); // 150g of 150 kcal/100g = 225
 
     // Read Rev 2 export
     const resRev2 = await readNutritionExport({
@@ -1024,14 +1042,26 @@ describe('F18 T023 nutrition export integration & database audit', () => {
     expect(resRev2.success).toBe(true);
     if (!resRev2.success) return;
 
-    expect(resRev2.projection.selectedAlternativeIds['i-1']).toBe('a-2');
-    expect(resRev2.projection.selectedValues?.items['i-1']?.kcal).toBe(
-      '400.00',
-    ); // 200g of 200 kcal/100g = 400
+    expect(
+      resRev2.projection.selectedAlternativeIds[
+        '11111111-1111-4111-8111-111111111111'
+      ],
+    ).toBe('33333333-3333-4333-8333-333333333333');
+    expect(
+      resRev2.projection.selectedValues?.items[
+        '11111111-1111-4111-8111-111111111111'
+      ]?.kcal,
+    ).toBe('400.00'); // 200g of 200 kcal/100g = 400
 
     // Historical export MUST NOT substitute current revision's selection!
-    expect(resRev1.projection.selectedAlternativeIds['i-1']).not.toBe(
-      resRev2.projection.selectedAlternativeIds['i-1'],
+    expect(
+      resRev1.projection.selectedAlternativeIds[
+        '11111111-1111-4111-8111-111111111111'
+      ],
+    ).not.toBe(
+      resRev2.projection.selectedAlternativeIds[
+        '11111111-1111-4111-8111-111111111111'
+      ],
     );
   });
 });

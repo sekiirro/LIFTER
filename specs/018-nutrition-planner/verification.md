@@ -288,3 +288,10 @@ scripts/format-check-changed.mjs` passed, `npm run format:check` clean.
 - Full unit suite: 3,247/3,248 passed; unrelated `optimize-body-fat-assets.test.ts` timed out at 5 seconds. A serial-style `--isolate=false` diagnostic was also attempted and produced two unrelated Next registration mock failures, so it is not counted as a passing run.
 - Lint and typecheck passed. `npm run format:check` passed. `npm run check:migration-timestamps` passed: 284 timestamps valid, 11 documented merged exceptions allowed.
 - The required changed-file format script still reports the pre-existing committed `verification.md` as unformatted because it compares `base...HEAD` and excludes the working tree edit; direct Prettier check of the edited file passes. This gate remains unresolved until the edited file is included in a commit and checked against the base.
+
+## S62-R7 canonical UUID audit guard re-application
+
+- **RED (Stack A, after safe reset/provisioning, PR migration before follow-up):** `nutrition-audit.test.ts` failed both `rejects non-UUID item_id` and `rejects non-UUID alternative_id`; each insert resolved instead of rejecting. The test assertions remain unchanged.
+- **GREEN (Stack A, after adding the re-application migration and safe reset/provisioning):** `nutrition-audit.test.ts` passed 5/5. The T023 export allowlist remains extended, while `item_id` and `alternative_id` use `app_private.f18_is_canonical_uuid_v4`.
+- **Mutation (Stack A, on the test above):** replaced the UUIDv4 predicate with the original non-empty-string predicate in the follow-up migration, reset/provisioned, and reran the suite. Both rejection tests failed again (3 passed, 2 failed). The migration file was restored, Stack A was safely reset and provisioned, and the restored suite passed 5/5.
+- **T023 export regression (Stack A):** `nutrition-export.test.ts` passed 18/18 with UUIDv4 item and alternative IDs in the fixture, persisted selections, computed values, and historical-selection assertions.

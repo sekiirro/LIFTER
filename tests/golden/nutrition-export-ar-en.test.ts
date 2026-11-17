@@ -164,20 +164,20 @@ const SINGLE_DAY_DOC = validateNutritionDocument(
         recipeUrl: 'https://www.youtube.com/watch?v=prep-vid',
         items: [
           {
-            id: 'i-1',
+            id: '11111111-1111-4111-8111-111111111111',
             foodId: FOOD_A,
             foodVersion: 3,
             quantity: { value: '37', unit: { kind: 'basis', value: 'g' } },
             note: FOOD_NOTE_FORMULA,
             alternatives: [
               {
-                id: 'a-1',
+                id: '22222222-2222-4222-8222-222222222222',
                 foodId: FOOD_A,
                 foodVersion: 4,
                 quantity: { value: '150', unit: { kind: 'basis', value: 'g' } },
               },
               {
-                id: 'a-2',
+                id: '33333333-3333-4333-8333-333333333333',
                 foodId: FOOD_C,
                 foodVersion: 1,
                 quantity: {
@@ -188,7 +188,7 @@ const SINGLE_DAY_DOC = validateNutritionDocument(
             ],
           },
           {
-            id: 'i-2',
+            id: '44444444-4444-4444-8444-444444444444',
             foodId: FOOD_B,
             foodVersion: 2,
             quantity: { value: '1', unit: { kind: 'serving', unitKey: 'g' } },
@@ -213,14 +213,20 @@ const SINGLE_DAY_COACH_VALUES = computeDocumentValues(
 const HISTORICAL_REV1_SELECTED_VALUES = computeDocumentValues(
   SINGLE_DAY_DOC,
   SNAPSHOT_MAP,
-  { 'i-1': 'a-1' },
+  {
+    '11111111-1111-4111-8111-111111111111':
+      '22222222-2222-4222-8222-222222222222',
+  },
 );
 
 // Current Revision 2: client chose alternative a-2
 const CURRENT_REV2_SELECTED_VALUES = computeDocumentValues(
   SINGLE_DAY_DOC,
   SNAPSHOT_MAP,
-  { 'i-1': 'a-2' },
+  {
+    '11111111-1111-4111-8111-111111111111':
+      '33333333-3333-4333-8333-333333333333',
+  },
 );
 
 const PROJECTION_HISTORICAL_REV1: NutritionExportProjection = {
@@ -242,12 +248,18 @@ const PROJECTION_HISTORICAL_REV1: NutritionExportProjection = {
   },
   selection: [
     {
-      itemId: 'i-1',
-      alternativeId: 'a-1',
-      selectedValues: HISTORICAL_REV1_SELECTED_VALUES.items['i-1'],
+      itemId: '11111111-1111-4111-8111-111111111111',
+      alternativeId: '22222222-2222-4222-8222-222222222222',
+      selectedValues:
+        HISTORICAL_REV1_SELECTED_VALUES.items[
+          '11111111-1111-4111-8111-111111111111'
+        ],
     },
   ],
-  selectedAlternativeIds: { 'i-1': 'a-1' },
+  selectedAlternativeIds: {
+    '11111111-1111-4111-8111-111111111111':
+      '22222222-2222-4222-8222-222222222222',
+  },
   selectedValues: HISTORICAL_REV1_SELECTED_VALUES,
 };
 
@@ -270,12 +282,18 @@ const PROJECTION_CURRENT_REV2: NutritionExportProjection = {
   },
   selection: [
     {
-      itemId: 'i-1',
-      alternativeId: 'a-2',
-      selectedValues: CURRENT_REV2_SELECTED_VALUES.items['i-1'],
+      itemId: '11111111-1111-4111-8111-111111111111',
+      alternativeId: '33333333-3333-4333-8333-333333333333',
+      selectedValues:
+        CURRENT_REV2_SELECTED_VALUES.items[
+          '11111111-1111-4111-8111-111111111111'
+        ],
     },
   ],
-  selectedAlternativeIds: { 'i-1': 'a-2' },
+  selectedAlternativeIds: {
+    '11111111-1111-4111-8111-111111111111':
+      '33333333-3333-4333-8333-333333333333',
+  },
   selectedValues: CURRENT_REV2_SELECTED_VALUES,
 };
 
