@@ -356,6 +356,15 @@
 - **Mutation (Stack D; restored)**: Replaced the All Workspaces distribution-state condition with `false`, safe-reset/reprovisioned, then reran the focused suite. It failed because a previously assigned workspace received `assigned` instead of `skipped_already_assigned`, demonstrating forbidden top-up. Restored the condition, reset/provisioned again, and the final 6-file / 57-test integration run passed.
 - **Scope**: T026 replay/key-conflict semantics, T027, and later UI tasks remain open and were not implemented.
 
+## S62 T035 — Live Video across shared exports
+
+- **Implementation**: `lib/workout-planner/export-reader.ts` is the single resolver for authorized Copy AI Prompt and print reads; it calls `currentWorkoutVideo` on each current F16 detail response. `app/workouts/print/page.tsx` passes that shared payload to `WorkoutPrintView`, which renders the live URL in print and Excel outputs. Video remains absent from frozen revision entries; there is no republish path.
+- **RED/GREEN and mutation evidence**: The original RED/GREEN run and URL-persistence mutation (killed, restored, clean diff) are recorded in the S61 T035 evidence in the branch history. Current regression coverage is `tests/unit/workout-live-video.test.ts` and `tests/unit/workout-copy-prompt-route.test.ts`; the latter proves successive authorized reads use successive current URLs while revision content remains identical.
+- **Renderer evidence**: `tests/unit/workout-print-view.test.tsx` verifies the payload URL is rendered by print view, and `tests/unit/workout-excel-export.test.ts` verifies live URL values in workbook and prompt exports.
+- **Stack C verification**: After Stack C reset and `tests/integration/client-accounts-provision.mjs`, `npm run test:integration -- workout-print-route catalog-exercise-video-t050` passed 2 files / 24 tests. The Stack C migration junction at `supabase-stack-c/supabase/migrations` points to this worktree's root migrations and is untracked.
+- **Focused unit verification**: `npm run test:unit -- tests/unit/workout-live-video.test.ts tests/unit/workout-copy-prompt-route.test.ts tests/unit/workout-print-view.test.tsx tests/unit/workout-excel-export.test.ts` passed 4 files / 27 tests.
+- **Scope**: T035 is verified. T005, T011, and T031 remain open under SC-011.
+
 ## F17 Verification — T046 (s61-fl-f17t046)
 
 - **Branch / stack**: `017-assignment-states-slice-1` (stacked on `20261120170000–20261120175959` / PR #176) / Stack B (`lifter-stack-b`).
