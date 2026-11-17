@@ -133,7 +133,8 @@ const COMMIT_REQUIRED = [
   {
     file: 'tests/integration/forms-alert-inbox.test.ts',
     signature: /inbox-\$\{randomUUID|Synthetic alert inbox/,
-    reason: 'fixture helper: called only from rollback-scoped inbox transactions',
+    reason:
+      'fixture helper: called only from rollback-scoped inbox transactions',
   },
   {
     file: 'tests/integration/forms-alert-mutations.test.ts',
@@ -264,7 +265,10 @@ describe('T088 Terms policy fixtures stay rollback-scoped', () => {
   it('every Terms policy fixture insert is rollback-scoped or explicitly commit-required', () => {
     const violations: string[] = [];
     for (const site of all) {
-      const window = site.source.slice(Math.max(0, site.index - 600), site.index + 600);
+      const window = site.source.slice(
+        Math.max(0, site.index - 600),
+        site.index + 600,
+      );
       const exempt = COMMIT_REQUIRED.some(
         (entry) => entry.file === site.file && entry.signature.test(window),
       );
