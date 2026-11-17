@@ -207,7 +207,9 @@ describe('F22 database control kill tests', () => {
         return row!.value;
       },
     )) as { selections: Array<{ item_id: string }> };
-    expect(observed.selections.map((x) => x.item_id)).toContain('cccccccc-cccc-4ccc-8ccc-ccccccccccc1');
+    expect(observed.selections.map((x) => x.item_id)).toContain(
+      'cccccccc-cccc-4ccc-8ccc-ccccccccccc1',
+    );
     await stillInstalled(signature, control);
     // The installed control keeps the owner's read free of it.
     const [real] = await p.db.begin(async (tx) => {
