@@ -47,6 +47,21 @@ type ClaimedJob = {
   payload: unknown;
 };
 
+function preparationErrorCode(error: unknown): string | null {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === 'string' && code.length > 0) return code;
+  }
+  return null;
+}
+
+function isTransientPreparationError(error: unknown): boolean {
+  const code = preparationErrorCode(error);
+  if (!code) return false;
+  if (code === '55P03') return true;
+  return code.startsWith('08') || code.startsWith('40');
+}
+
 export async function runTelegramJobs(input: {
   client: TelegramJobClient;
   transport: TelegramTransport;
@@ -88,12 +103,21 @@ export async function runTelegramJobs(input: {
     });
     const context = prepared.data as Record<string, unknown> | null;
     if (prepared.error || !context) {
-      await input.client.rpc('jobs_fail', {
-        id: job.id,
-        lease: job.lease_token,
-        error_code: 'temporary_error',
-        permanent: false,
-      });
+      if (prepared.error && isTransientPreparationError(prepared.error)) {
+        await input.client.rpc('jobs_fail', {
+          id: job.id,
+          lease: job.lease_token,
+          error_code: 'temporary_error',
+          permanent: false,
+        });
+      } else {
+        await input.client.rpc('jobs_fail', {
+          id: job.id,
+          lease: job.lease_token,
+          error_code: 'handler_error',
+          permanent: true,
+        });
+      }
       failed++;
       continue;
     }

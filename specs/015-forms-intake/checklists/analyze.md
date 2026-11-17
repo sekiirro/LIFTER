@@ -344,3 +344,9 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 - Scope: task status/evidence-only changes for T085, T118, T119 and T142 plus traceability rows. No FR/SC/requirement text, product behavior, copy or schema changed. T083 remains open pending PO decision MCQ S153-01.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for evidence-only updates; implementation and test evidence are recorded in traceability.md and the S153 report.
+
+## S64-T083 clarification refresh (2026-11-17) (date update only)
+
+- Scope: `spec.md` Clarification S64-PO-3 for T083 (resolves MCQ S153-01: class 08/40 + 55P03 retry, all other errors permanent), `tasks.md` T083 checkbox tick, `traceability.md` S64-T083 row. No FR/SC/requirement text, product copy, plan design, or schema changed.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for this clarification-and-evidence-only update; unit/mutation evidence is recorded in traceability.md.

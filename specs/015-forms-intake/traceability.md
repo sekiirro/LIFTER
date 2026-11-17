@@ -259,3 +259,11 @@ T149 remains deferred: no UI or copy is included; a future PO MCQ must approve e
 <!-- prettier-ignore-end -->
 
 Accepted verification head: `52fbb9b65470ddd8d83c5ede2a5b63cd6fa5262a` (code commit above plus origin/main merge). PO proceed decision: S63-PO-7 Q1; six requirements checklist items remain open as recorded.
+
+## S64-T083 transient-only Telegram preparation retry (2026-11-17)
+
+<!-- prettier-ignore-start -->
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-017/019/024/025 — retry only approved transient `prepare_f15_telegram_delivery` failures (S64-PO-3: class 08, class 40, 55P03) with existing bounded `temporary_error`; all other errors use existing permanent `handler_error` dead-letter path | T083 | RED: `tests/unit/forms-telegram-t083.test.ts` 4/8 passed before fix (4 permanent cases failed as `temporary_error`); GREEN: `tests/unit/forms-telegram-t083.test.ts` 8/8 + `tests/unit/forms-telegram.test.ts` 12/12 (20/20) after fix, including 08006/40001/40P01/55P03 retry and 23505/42501/PGRST116/no-code-Error dead-letter with canary-leak checks; existing `retries transient preparation RPC failures` updated to S64-PO-3 transient code 08006. Mutation: dropping `08` kills `08006` retry test (1 failed), restored GREEN with `git diff` showing only the intended classifier. Both codes already allow-listed in `20261112025800_f15_allowlisted_job_error_codes.sql`; no migration, DB, Playwright, or copy change. | this PR |
+<!-- prettier-ignore-end -->
