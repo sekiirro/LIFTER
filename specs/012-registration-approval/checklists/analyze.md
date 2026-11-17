@@ -1,5 +1,9 @@
 # Analyze: F12 Registration approval and payments
 
+## S64 date-only status — 2026-11-18 UTC
+
+Docs-only: T056 blocker clause updated to record architect ruling S64-R21 (011 T062 entry-point design approved 2026-11-18; S40 gate and 012 approval-implementation blockers unchanged). FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
+
 - **Date:** 2026-11-03
 - **Analyzed commit:** `d04ef52eb93df68b9361106a5ee4fd4fcaebb108` (origin/main baseline; this artifact follows the local spec/task reconciliation)
 - **Scope:** static consistency and evidence review; no test suites executed.

@@ -434,6 +434,7 @@ export async function pendingHttpAccess(
           boolean: false,
           bytea: '\\x00',
           numeric: 1,
+          date: '2050-01-01',
           'timestamp with time zone': new Date().toISOString(),
           'uuid[]': [],
         };
