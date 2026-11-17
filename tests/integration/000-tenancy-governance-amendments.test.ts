@@ -523,8 +523,14 @@ describe('T025/T027 revocation boundary and stale sessions', () => {
   it('T025/T027(a) removes non-PO workspace access for the same signed session after revocation', async () => {
     const po = await createStaff('platform_owner', 's63-t025-po');
     const trainer = await createStaff('trainer', 's63-t025-trainer');
+    const otherTrainer = await createStaff('trainer', 's63-t025-other-trainer');
     const workspace = await makeWorkspace(po, 'T025 revoked workspace');
     const membership = await grantMembership(po, workspace.id, trainer.userId);
+    const otherMembership = await grantMembership(
+      po,
+      workspace.id,
+      otherTrainer.userId,
+    );
 
     const beforeRead = await trainer.client
       .from('workspaces')
@@ -549,6 +555,19 @@ describe('T025/T027 revocation boundary and stale sessions', () => {
     expect(afterRead.data).toEqual([]);
     expect(await hasWorkspaceAccess(trainer.userId, workspace.id)).toBe(false);
 
+    const deniedWorkspaceUpdate = await trainer.client
+      .from('workspaces')
+      .update({ name: 'T025 denied rename' })
+      .eq('id', workspace.id)
+      .select('id');
+    expect(
+      Boolean(deniedWorkspaceUpdate.error) ||
+        deniedWorkspaceUpdate.data?.length === 0,
+    ).toBe(true);
+    const [unchangedWorkspace] =
+      await db`select name from public.workspaces where id = ${workspace.id}`;
+    expect(unchangedWorkspace?.name).toBe('T025 revoked workspace');
+
     const deniedWorkspace = await trainer.client
       .from('workspaces')
       .insert({
@@ -572,6 +591,21 @@ describe('T025/T027 revocation boundary and stale sessions', () => {
     expect(
       Boolean(deniedMembership.error) || deniedMembership.data?.length === 0,
     ).toBe(true);
+
+    const deniedRevocation = await trainer.client
+      .from('workspace_memberships')
+      .update({
+        revoked_at: new Date().toISOString(),
+        revoked_by: trainer.userId,
+      })
+      .eq('id', otherMembership.id)
+      .select('id');
+    expect(
+      Boolean(deniedRevocation.error) || deniedRevocation.data?.length === 0,
+    ).toBe(true);
+    const [otherMembershipAfter] =
+      await db`select revoked_at from public.workspace_memberships where id = ${otherMembership.id}`;
+    expect(otherMembershipAfter?.revoked_at).toBeNull();
 
     const deniedRole = await trainer.client
       .from('staff_profiles')
