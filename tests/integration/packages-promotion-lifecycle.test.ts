@@ -63,6 +63,15 @@ async function setPeriod(
 
 describe('promotional package availability and issued-link snapshots', () => {
   it('missing start is available from creation and missing end remains indefinite', async () => {
+    const creationBoundary = await db`select
+      app_private.package_promotion_period_active(${promo.packageId},p.created_at - interval '1 microsecond') as before_creation,
+      app_private.package_promotion_period_active(${promo.packageId},p.created_at) as at_creation
+      from public.packages p where p.id=${promo.packageId}`;
+    expect(creationBoundary[0]).toEqual({
+      before_creation: false,
+      at_creation: true,
+    });
+
     const noPeriod = await issue(f, f.po.client, {
       package_version_id: promo.versionId,
     });
@@ -94,11 +103,7 @@ describe('promotional package availability and issued-link snapshots', () => {
         await db`select starts_at,ends_at from public.package_promotion_periods where package_id=${promo.packageId}`;
       const eventsBefore =
         await db`select count(*)::int as n from public.audit_events where target_id=${promo.packageId} and action='package.promotion_period_changed'`;
-      const result = await setPeriod(
-        '2050-01-01T00:00:00Z',
-        null,
-        f.actors[role].client,
-      );
+      const result = await setPeriod('2050-01-01', null, f.actors[role].client);
       expect(result.error?.code).toBe('42501');
       const after =
         await db`select starts_at,ends_at from public.package_promotion_periods where package_id=${promo.packageId}`;
@@ -109,23 +114,42 @@ describe('promotional package availability and issued-link snapshots', () => {
     },
   );
 
-  it('uses inclusive start and exclusive end at the transaction instant', async () => {
-    const start = '2026-11-10T00:00:00+02:00';
-    const end = '2026-11-11T00:00:00+02:00';
-    expect((await setPeriod(start, end)).error).toBeNull();
-    const [atStart] =
-      await db`select app_private.package_promotion_period_active(${promo.packageId},${start}::timestamptz) as active`;
-    const [beforeEnd] =
-      await db`select app_private.package_promotion_period_active(${promo.packageId},${'2026-11-10T23:59:59.999+02:00'}::timestamptz) as active`;
-    const [atEnd] =
-      await db`select app_private.package_promotion_period_active(${promo.packageId},${end}::timestamptz) as active`;
-    expect(atStart!.active).toBe(true);
-    expect(beforeEnd!.active).toBe(true);
-    expect(atEnd!.active).toBe(false);
+  it('uses inclusive start and exclusive end at Africa/Cairo calendar-day boundaries', async () => {
+    const tzOffsets = await db`select
+      extract(epoch from ((timestamp with time zone '2026-01-15 12:00:00+00' at time zone 'Africa/Cairo') - (timestamp with time zone '2026-01-15 12:00:00+00' at time zone 'UTC'))) / 3600 as standard_offset,
+      extract(epoch from ((timestamp with time zone '2026-07-15 12:00:00+00' at time zone 'Africa/Cairo') - (timestamp with time zone '2026-07-15 12:00:00+00' at time zone 'UTC'))) / 3600 as daylight_offset`;
+    expect(Number(tzOffsets[0]!.standard_offset)).toBe(2);
+    expect(Number(tzOffsets[0]!.daylight_offset)).toBe(3);
+
+    expect((await setPeriod('2026-11-10', '2026-11-11')).error).toBeNull();
+    const standardTime = await db`select
+      app_private.package_promotion_period_active(${promo.packageId},'2026-11-09T21:59:59Z'::timestamptz) as before_start,
+      app_private.package_promotion_period_active(${promo.packageId},'2026-11-09T22:00:00Z'::timestamptz) as at_start,
+      app_private.package_promotion_period_active(${promo.packageId},'2026-11-10T21:59:59Z'::timestamptz) as before_end,
+      app_private.package_promotion_period_active(${promo.packageId},'2026-11-10T22:00:00Z'::timestamptz) as at_end`;
+    expect(standardTime[0]).toEqual({
+      before_start: false,
+      at_start: true,
+      before_end: true,
+      at_end: false,
+    });
+
+    expect((await setPeriod('2026-07-20', '2026-07-21')).error).toBeNull();
+    const daylightTime = await db`select
+      app_private.package_promotion_period_active(${promo.packageId},'2026-07-19T20:59:59Z'::timestamptz) as before_start,
+      app_private.package_promotion_period_active(${promo.packageId},'2026-07-19T21:00:00Z'::timestamptz) as at_start,
+      app_private.package_promotion_period_active(${promo.packageId},'2026-07-20T20:59:59Z'::timestamptz) as before_end,
+      app_private.package_promotion_period_active(${promo.packageId},'2026-07-20T21:00:00Z'::timestamptz) as at_end`;
+    expect(daylightTime[0]).toEqual({
+      before_start: false,
+      at_start: true,
+      before_end: true,
+      at_end: false,
+    });
 
     const startAllowed = await db.begin(async (tx) => {
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
-      await tx`select public.set_package_promotion_period(${f.wsA.id},${promo.packageId},now()-interval '1 second',null)`;
+      await tx`select public.set_package_promotion_period(${f.wsA.id},${promo.packageId},(clock_timestamp() at time zone 'Africa/Cairo')::date,null)`;
       const [row] =
         await tx`select public.issue_registration_link(${f.wsA.id},${promo.versionId},${secret().hash},null) as id`;
       return row!.id;
@@ -135,7 +159,7 @@ describe('promotional package availability and issued-link snapshots', () => {
     await expect(
       db.begin(async (tx) => {
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
-        await tx`select public.set_package_promotion_period(${f.wsA.id},${promo.packageId},null,now()-interval '1 second')`;
+        await tx`select public.set_package_promotion_period(${f.wsA.id},${promo.packageId},null,((clock_timestamp() at time zone 'Africa/Cairo')::date))`;
         await tx`select public.issue_registration_link(${f.wsA.id},${promo.versionId},${secret().hash},null)`;
       }),
     ).rejects.toMatchObject({ code: '22023', message: 'stale_terms' });
@@ -151,7 +175,7 @@ describe('promotional package availability and issued-link snapshots', () => {
     const [eventBefore] =
       await db`select id,details from public.audit_events where target_id=${issued} and action='registration_link.issued'`;
 
-    const expiry = await setPeriod(null, '2000-01-01T00:00:00Z');
+    const expiry = await setPeriod(null, '2000-01-01');
     expect(expiry.error).toBeNull();
     expect(
       (await issue(f, f.po.client, { package_version_id: promo.versionId }))
@@ -167,7 +191,7 @@ describe('promotional package availability and issued-link snapshots', () => {
   });
 
   it('same period is idempotent; real changes write one allow-listed event', async () => {
-    const bounds = ['2050-01-01T00:00:00Z', '2050-02-01T00:00:00Z'] as const;
+    const bounds = ['2050-01-01', '2050-02-01'] as const;
     const [before] =
       await db`select count(*)::int as n from public.audit_events where target_id=${promo.packageId} and action='package.promotion_period_changed'`;
     const concurrent = await Promise.all([
@@ -183,8 +207,8 @@ describe('promotional package availability and issued-link snapshots', () => {
       await db`select id,details from public.audit_events where target_id=${promo.packageId} and action='package.promotion_period_changed' order by occurred_at,id`;
     expect(twice).toEqual(once);
     expect(twice.at(-1)?.details).toEqual({
-      starts_at: bounds[0].replace('Z', '+00:00'),
-      ends_at: bounds[1].replace('Z', '+00:00'),
+      starts_at: bounds[0],
+      ends_at: bounds[1],
     });
   });
 
@@ -199,8 +223,14 @@ describe('promotional package availability and issued-link snapshots', () => {
       auth_insert: false,
       service_select: false,
     });
+    const boundTypes =
+      await db`select column_name,data_type from information_schema.columns where table_schema='public' and table_name='package_promotion_periods' and column_name in ('starts_at','ends_at') order by column_name`;
+    expect(boundTypes).toEqual([
+      { column_name: 'ends_at', data_type: 'date' },
+      { column_name: 'starts_at', data_type: 'date' },
+    ]);
     const [rpc] =
-      await db`select owner.rolname as owner, p.prosecdef, p.proconfig, has_function_privilege('authenticated',p.oid,'execute') as auth_exec, has_function_privilege('anon',p.oid,'execute') as anon_exec, has_function_privilege('service_role',p.oid,'execute') as service_exec from pg_proc p join pg_roles owner on owner.oid=p.proowner where p.oid='public.set_package_promotion_period(uuid,uuid,timestamptz,timestamptz)'::regprocedure`;
+      await db`select owner.rolname as owner, p.prosecdef, p.proconfig, has_function_privilege('authenticated',p.oid,'execute') as auth_exec, has_function_privilege('anon',p.oid,'execute') as anon_exec, has_function_privilege('service_role',p.oid,'execute') as service_exec from pg_proc p join pg_roles owner on owner.oid=p.proowner where p.oid='public.set_package_promotion_period(uuid,uuid,date,date)'::regprocedure`;
     expect(rpc).toMatchObject({
       owner: 'postgres',
       prosecdef: true,
@@ -215,7 +245,7 @@ describe('promotional package availability and issued-link snapshots', () => {
     await expect(
       db.begin(async (tx) => {
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
-        await tx`select public.set_package_promotion_period(${f.wsA.id},${promo.packageId},null,'2000-01-01T00:00:00Z')`;
+        await tx`select public.set_package_promotion_period(${f.wsA.id},${promo.packageId},null,'2000-01-01'::date)`;
         await tx`alter table public.registration_links disable trigger registration_links_promotion_period_guard`;
         const [row] =
           await tx`select public.issue_registration_link(${f.wsA.id},${promo.versionId},${secret().hash},null) as id`;
@@ -238,7 +268,7 @@ describe('promotional package availability and issued-link snapshots', () => {
         await tx.unsafe(
           `create trigger test_reject_package_promotion_audit before insert on public.audit_events for each row execute function app_private.test_reject_package_promotion_audit()`,
         );
-        await tx`select public.set_package_promotion_period(${f.wsA.id},${promo.packageId},'2051-01-01T00:00:00Z',null)`;
+        await tx`select public.set_package_promotion_period(${f.wsA.id},${promo.packageId},'2051-01-01'::date,null)`;
       }),
     ).rejects.toMatchObject({ message: 'promotion_audit_failure' });
     const after =

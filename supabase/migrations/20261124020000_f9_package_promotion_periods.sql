@@ -2,8 +2,8 @@
 create table public.package_promotion_periods (
   workspace_id uuid not null,
   package_id uuid not null,
-  starts_at timestamptz,
-  ends_at timestamptz,
+  starts_at date,
+  ends_at date,
   changed_at timestamptz not null default clock_timestamp(),
   changed_by uuid not null references public.staff_profiles(user_id) on delete restrict,
   primary key (workspace_id, package_id),
@@ -74,7 +74,7 @@ create trigger audit_package_promotion_period
 
 create function app_private.package_promotion_period_active(target_package_id uuid, at_time timestamptz)
 returns boolean language plpgsql stable security definer set search_path = '' as $$
-declare category public.packages%rowtype; period public.package_promotion_periods%rowtype;
+declare category public.packages%rowtype; period public.package_promotion_periods%rowtype; cairo_day date;
 begin
   if target_package_id is null or at_time is null then return false; end if;
   select p.* into category from public.packages p where p.id = target_package_id;
@@ -82,8 +82,10 @@ begin
   if category.type is distinct from 'Promotional' then return true; end if;
   select pp.* into period from public.package_promotion_periods pp
     where pp.workspace_id = category.workspace_id and pp.package_id = category.id;
-  return at_time >= coalesce(period.starts_at, category.created_at)
-    and (period.ends_at is null or at_time < period.ends_at);
+  cairo_day := (at_time at time zone 'Africa/Cairo')::date;
+  return (period.starts_at is null and at_time >= category.created_at
+      or period.starts_at is not null and cairo_day >= period.starts_at)
+    and (period.ends_at is null or cairo_day < period.ends_at);
 end;
 $$;
 alter function app_private.package_promotion_period_active(uuid, timestamptz) owner to postgres;
@@ -113,7 +115,7 @@ create trigger registration_links_promotion_period_guard
   for each row execute function app_private.guard_registration_link_promotion_period();
 
 create function public.set_package_promotion_period(
-  workspace_id uuid, package_id uuid, starts_at timestamptz, ends_at timestamptz
+  workspace_id uuid, package_id uuid, starts_at date, ends_at date
 ) returns uuid language plpgsql security definer set search_path = '' as $$
 declare result uuid; category public.packages%rowtype;
 begin
@@ -149,6 +151,6 @@ begin
   return coalesce(result, set_package_promotion_period.package_id);
 end;
 $$;
-alter function public.set_package_promotion_period(uuid, uuid, timestamptz, timestamptz) owner to postgres;
-revoke all on function public.set_package_promotion_period(uuid, uuid, timestamptz, timestamptz) from public, anon, service_role;
-grant execute on function public.set_package_promotion_period(uuid, uuid, timestamptz, timestamptz) to authenticated;
+alter function public.set_package_promotion_period(uuid, uuid, date, date) owner to postgres;
+revoke all on function public.set_package_promotion_period(uuid, uuid, date, date) from public, anon, service_role;
+grant execute on function public.set_package_promotion_period(uuid, uuid, date, date) to authenticated;

@@ -1352,7 +1352,7 @@ describe('package security catalog', () => {
       'public.publish_package_version(uuid,uuid,smallint,integer,text,text,bigint,text,integer)',
       'public.publish_package_version(uuid,uuid,smallint,integer,smallint,text,text,bigint,text,integer)',
       'public.set_package_offer_available(uuid,uuid,boolean)',
-      'public.set_package_promotion_period(uuid,uuid,timestamptz,timestamptz)',
+      'public.set_package_promotion_period(uuid,uuid,date,date)',
       'public.get_package_version_commissions(uuid)',
       'app_private.guard_package_offer_update()',
       'app_private.guard_package_offer_category()',
