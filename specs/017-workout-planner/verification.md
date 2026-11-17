@@ -420,6 +420,17 @@
 - **Final touched integration**: `workout-contributors.test.ts`, `workout-assign-run.test.ts`, `workout-assignment-state-visibility.test.ts`, `nutrition-contributors.test.ts`, `f19-trainer-deletion.test.ts`, `f19-plan-core-schema.test.ts`, and `rls-catalog.test.ts`: 7 files, 66/66 tests passed on Stack A after safe reset and Vault provisioning.
 - **Analyze**: No requirement or plan text changed; no Analyze re-date is needed.
 
+## F17 Verification — T039 export audit (s63-hy4-f17t039)
+
+- **Branch / stack**: `s63-f17-export-audit` / Stack B (`lifter-stack-b`). Migration `20261122010000_f17_workout_export_audit.sql` (brief range 20261122010000–20261122015959; all-origin ref/path scan 0 hits; main max 20261121200000). Stack B safe `db reset --local` + `tests/integration/client-accounts-provision.mjs` after every reset.
+- **Implementation**: `public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)` is SECURITY DEFINER, `search_path = ''`, owner `postgres`, EXECUTE only to `authenticated`. It accepts only identity, `format` (`pdf`|`excel`|`ai_prompt`), `outcome` (`success`|`denied`) and a closed denial reason (`not_permitted`|`not_found`). `app_private.f17_audit_allowlist_guard()` is a BEFORE INSERT trigger on `public.audit_events` that rejects any `plan.workout_export` row whose `details` keys/values fall outside that allowlist. `lib/workout-planner/export-audit.ts` is the only writer; `lib/workout-planner/export-reader.ts` emits exactly one success or denial event for every authorized/declined export and fails closed on success-audit errors. The shared reader is used by both the PDF print route (`pdf`) and Copy AI Prompt route (`ai_prompt`).
+- **RED**: On Stack B before applying the migration, `tests/integration/workout-export-audit.test.ts` failed 6/6: success export 404 (audit RPC absent), no foreign/draft denial rows, PII insert accepted, audit RPC returned SQLSTATE 42883 instead of 42501.
+- **GREEN**: After migration + provisioning: 6/6 passed. Success `details` keys are exactly `format`, `outcome`, `plan_id`, `revision_id`; denial rows add a closed `reason`; the coach-authored sentinel note and authored day title never appear in any audit event. Draft and foreign-workspace revisions are denied with generic `not_found` (indistinguishable from not-found per export contract §3).
+- **Mutations (Stack B; both restored with clean source diff)**:
+  1. Added a `notes` key carrying content to the recorder's success `details`. After reset, `records one identity-only success event` failed (expected 200, got 404) because the guard rejected the write; restored.
+  2. Removed the `f17_workout_export_audit_allowlist` trigger. After reset, `rejects an audit row that carries content/PII` failed (insert accepted); restored the trigger, reset + provisioned, final suite 6/6 GREEN.
+- **Scope**: No copy, FR, SC, acceptance or plan design text changed. T026, T049, T041, T022, T027, T045, T047, T051, T052 remain out of scope; no Playwright run.
+
 ## S63 T026/T049 - assignment retries and concurrency
 
 - **Branch / stack**: `s63-f17-retry`, Stack A. Implementation commit: `cc6905141f87f7b9d81af4f8eb65d64ba20caabd`.

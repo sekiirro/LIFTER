@@ -237,9 +237,10 @@ describe('recovery', () => {
         granted_by: f.po.userId,
       }),
     );
-    for (let i = 0; i < 7; i++) {
+    // S31-PO-3 / T031: 10 links per issuing staff account per rolling hour.
+    for (let i = 0; i < 4; i++) {
       const target = (await clientTarget(f.wsA.id)).userId;
-      for (let j = 0; j < (i === 6 ? 2 : 3); j++)
+      for (let j = 0; j < (i === 3 ? 1 : 3); j++)
         expect(
           (await actor.client.rpc('recovery_link_record', { target })).error,
         ).toBeNull();
@@ -252,7 +253,7 @@ describe('recovery', () => {
     });
     const [count] =
       await db`select count(*)::int as count from public.recovery_link_issuances where issued_by = ${actor.userId}`;
-    expect(count?.count).toBe(20);
+    expect(count?.count).toBe(10);
   });
   it('exposes no direct table writes to any API identity', async () => {
     for (const client of [anonClient(), f.po.client, f.woA.client, admin()]) {
@@ -313,6 +314,144 @@ describe('recovery', () => {
         }),
       ).rejects.toMatchObject({ code: '23514' });
     }
+  });
+});
+
+// T031 (FR-010): approved S31-PO-3 limits — 10 per issuer per rolling hour,
+// 3 per client per rolling 24 hours across all issuers, with separate windows.
+describe('approved recovery-link limits (T031)', () => {
+  async function issuer(label: string) {
+    const actor = await createStaff('workspace_owner', label);
+    checked(
+      await admin().from('workspace_memberships').insert({
+        user_id: actor.userId,
+        workspace_id: f.wsA.id,
+        granted_by: f.po.userId,
+      }),
+    );
+    return actor;
+  }
+
+  it('exposes the four approved limit columns and windows', async () => {
+    const [row] =
+      await db`select per_actor, per_actor_win, per_target, per_target_win
+      from app_private.recovery_link_limits()`;
+    expect(row).toEqual({
+      per_actor: 10,
+      per_actor_win: '01:00:00',
+      per_target: 3,
+      per_target_win: '24:00:00',
+    });
+  });
+
+  it('allows exactly 10 per issuer per rolling hour, then reopens after the window', async () => {
+    const actor = await issuer('t031-issuer-hour');
+    for (let i = 0; i < 10; i++) {
+      const target = (await clientTarget(f.wsA.id)).userId;
+      expect(
+        (await actor.client.rpc('recovery_link_record', { target })).error,
+      ).toBeNull();
+    }
+    const over = (await clientTarget(f.wsA.id)).userId;
+    await expect(
+      actor.client.rpc('recovery_link_record', { target: over }),
+    ).resolves.toMatchObject({
+      error: { code: 'P0001', message: 'rate_limited' },
+    });
+    // A fresh issuer with ten issuances from two hours ago is inside no
+    // one-hour window, so capacity has reopened.
+    const historical = await issuer('t031-issuer-historical');
+    for (let i = 0; i < 10; i++) {
+      const past = (await clientTarget(f.wsA.id)).userId;
+      await db`insert into public.recovery_link_issuances
+        (workspace_id, target_user_id, issued_by, issued_at)
+        values (${f.wsA.id}, ${past}, ${historical.userId}, now() - interval '2 hours')`;
+    }
+    const afterWindow = (await clientTarget(f.wsA.id)).userId;
+    expect(
+      (
+        await historical.client.rpc('recovery_link_record', {
+          target: afterWindow,
+        })
+      ).error,
+    ).toBeNull();
+  });
+
+  it('allows exactly 3 per client per rolling 24 hours across issuers', async () => {
+    const target = (await clientTarget(f.wsA.id)).userId;
+    const first = await issuer('t031-client-issuer-1');
+    const second = await issuer('t031-client-issuer-2');
+    const third = await issuer('t031-client-issuer-3');
+    expect(
+      (await first.client.rpc('recovery_link_record', { target })).error,
+    ).toBeNull();
+    expect(
+      (await second.client.rpc('recovery_link_record', { target })).error,
+    ).toBeNull();
+    expect(
+      (await third.client.rpc('recovery_link_record', { target })).error,
+    ).toBeNull();
+    const blocked = await issuer('t031-client-issuer-4');
+    await expect(
+      blocked.client.rpc('recovery_link_record', { target }),
+    ).resolves.toMatchObject({
+      error: { code: 'P0001', message: 'rate_limited' },
+    });
+    // A client with three issuances from two hours ago is still inside the
+    // rolling 24-hour window, regardless of which issuer created them.
+    const twoHourClient = (await clientTarget(f.wsA.id)).userId;
+    for (let i = 0; i < 3; i++)
+      await db`insert into public.recovery_link_issuances
+        (workspace_id, target_user_id, issued_by, issued_at)
+        values (${f.wsA.id}, ${twoHourClient}, ${blocked.userId}, now() - interval '2 hours')`;
+    await expect(
+      blocked.client.rpc('recovery_link_record', { target: twoHourClient }),
+    ).resolves.toMatchObject({
+      error: { code: 'P0001', message: 'rate_limited' },
+    });
+    // After 25 hours the client window reopens.
+    const oldClient = (await clientTarget(f.wsA.id)).userId;
+    for (let i = 0; i < 3; i++)
+      await db`insert into public.recovery_link_issuances
+        (workspace_id, target_user_id, issued_by, issued_at)
+        values (${f.wsA.id}, ${oldClient}, ${blocked.userId}, now() - interval '25 hours')`;
+    expect(
+      (await blocked.client.rpc('recovery_link_record', { target: oldClient }))
+        .error,
+    ).toBeNull();
+  });
+
+  it('serializes concurrent issuances at both approved limits', async () => {
+    const actor = await issuer('t031-concurrent-issuer');
+    const targets = await Promise.all(
+      Array.from(
+        { length: 12 },
+        async () => (await clientTarget(f.wsA.id)).userId,
+      ),
+    );
+    const results = await Promise.all(
+      targets.map((target) =>
+        actor.client.rpc('recovery_link_record', { target }),
+      ),
+    );
+    expect(results.filter((row) => !row.error)).toHaveLength(10);
+    for (const row of results.filter((row) => row.error))
+      expect(row.error).toMatchObject({ message: 'rate_limited' });
+
+    const client = (await clientTarget(f.wsA.id)).userId;
+    const issuers = await Promise.all(
+      Array.from({ length: 6 }, async (_, index) =>
+        issuer(`t031-concurrent-client-${index}`),
+      ),
+    );
+    const clientResults = await Promise.all(
+      issuers.map((one) =>
+        one.client.rpc('recovery_link_record', { target: client }),
+      ),
+    );
+    expect(clientResults.filter((row) => !row.error)).toHaveLength(3);
+    for (const row of clientResults.filter((row) => row.error))
+      expect(row.error).toMatchObject({ message: 'rate_limited' });
   });
 });
 

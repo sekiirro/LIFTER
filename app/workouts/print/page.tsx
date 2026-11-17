@@ -15,6 +15,7 @@ export default async function WorkoutPrintPage({
   const result = await loadAuthorizedWorkoutExportPayload({
     revisionId: revision,
     locale,
+    format: 'pdf',
   });
   if (!result.ok) notFound();
 

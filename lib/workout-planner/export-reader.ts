@@ -23,6 +23,11 @@ import {
   buildWorkoutExportPayload,
   type WorkoutExportPayload,
 } from './export-payload';
+import {
+  recordWorkoutExportAudit,
+  type WorkoutExportDenialReason,
+  type WorkoutExportFormat,
+} from './export-audit';
 import { currentWorkoutVideo } from './live-video';
 
 const UUID_REGEX =
@@ -85,6 +90,7 @@ export type LoadAuthorizedWorkoutExportResult =
 export type LoadAuthorizedWorkoutExportOptions = {
   revisionId: string;
   locale: Locale;
+  format: WorkoutExportFormat;
   client?: SupabaseClient;
   actor?: Actor;
 };
@@ -92,7 +98,7 @@ export type LoadAuthorizedWorkoutExportOptions = {
 export async function loadAuthorizedWorkoutExportPayload(
   options: LoadAuthorizedWorkoutExportOptions,
 ): Promise<LoadAuthorizedWorkoutExportResult> {
-  const { revisionId, locale } = options;
+  const { revisionId, locale, format } = options;
   if (
     !revisionId ||
     !UUID_REGEX.test(revisionId) ||
@@ -104,18 +110,39 @@ export async function loadAuthorizedWorkoutExportPayload(
   const client = options.client ?? (await createSessionClient());
   if (!client) return { ok: false, status: 404 };
 
+  // Every denial emits one identity-only audit event (FR-017, T039). The audit
+  // write is best-effort on the denial path: an audit failure must never turn a
+  // denial into a success. Success auditing (below) fails closed.
+  const deny = async (
+    reason: WorkoutExportDenialReason,
+  ): Promise<LoadAuthorizedWorkoutExportResult> => {
+    try {
+      await recordWorkoutExportAudit(client, {
+        workspaceId: null,
+        planId: null,
+        revisionId,
+        format,
+        outcome: 'denied',
+        reason,
+      });
+    } catch {
+      // Denials stay generic even when the audit sink is unavailable.
+    }
+    return { ok: false, status: 404 };
+  };
+
   let actor = options.actor;
   if (!actor) {
     const { data: authData, error: authError } = await client.auth.getUser();
-    if (authError || !authData.user) return { ok: false, status: 404 };
+    if (authError || !authData.user) return deny('not_permitted');
     const loadedActor = await loadActorRows(client, authData.user.id);
-    if (!loadedActor) return { ok: false, status: 404 };
+    if (!loadedActor) return deny('not_permitted');
     actor = loadedActor;
   }
 
   // Deny Sales and unaffiliated users before loading any revision content.
   if (!actor.role || !roleHasCapability(actor.role, 'coaching_work')) {
-    return { ok: false, status: 404 };
+    return deny('not_permitted');
   }
 
   // Published-only enforcement (FR-017, T037): exports resolve ONE explicitly
@@ -132,12 +159,12 @@ export async function loadAuthorizedWorkoutExportPayload(
     .maybeSingle();
 
   const revision = selected.data as AuthorizedWorkoutRevision | null;
+  if (!revision) return deny('not_found');
   if (
     selected.error ||
-    !revision ||
     !authorize(actor, 'coaching_work', revision.workspace_id)
   ) {
-    return { ok: false, status: 404 };
+    return deny('not_permitted');
   }
 
   try {
@@ -189,7 +216,7 @@ export async function loadAuthorizedWorkoutExportPayload(
       }),
     );
     if (details.some((detail) => detail === null)) {
-      return { ok: false, status: 404 };
+      return deny('not_found');
     }
     details.forEach((detail) => {
       if (!detail) return;
@@ -217,6 +244,17 @@ export async function loadAuthorizedWorkoutExportPayload(
       },
     });
 
+    // Success audit is identity-only and fails closed: if the event cannot be
+    // written, no export payload is returned. The outer catch turns an audit
+    // failure into a generic denial.
+    await recordWorkoutExportAudit(client, {
+      workspaceId: revision.workspace_id,
+      planId: revision.plan_id,
+      revisionId: revision.id,
+      format,
+      outcome: 'success',
+    });
+
     return {
       ok: true,
       payload,
@@ -224,7 +262,8 @@ export async function loadAuthorizedWorkoutExportPayload(
       actor,
     };
   } catch {
-    // Invalid/missing foreign references never fall back to client-supplied data.
+    // Invalid/missing foreign references (or a failed success audit) never
+    // fall back to client-supplied data.
     return { ok: false, status: 404 };
   }
 }

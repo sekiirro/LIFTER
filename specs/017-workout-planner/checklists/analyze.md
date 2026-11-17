@@ -384,6 +384,11 @@ cells are stored as text.
 - No FR, SC, acceptance criteria, or plan design text changed; this is a status/evidence update only.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
 
+## T039 date update (2026-11-17, s63-hy4-f17t039)
+
+- T039 task status, FR-017/SC-008/FR-025 traceability rows and `verification.md` now cite the Stack B export-audit recorder, allowlist guard, RED/GREEN and two mutation kills/restores.
+- No FR, SC, acceptance-criteria, plan-design, contract or copy text changed; this is a status/evidence update only (S54-R6).
+
 ## T041 Date Update (2026-11-17)
 
 - T041 status now cites the authorized-route export goldens in `tests/unit/workout-export-route-goldens.test.tsx` and the four new fixtures, with RED/GREEN/two-mutation evidence in `verification.md`; FR-018 is VERIFIED and SC-008/SC-013 evidence unions the route-level coverage.
