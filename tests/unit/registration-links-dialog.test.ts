@@ -279,10 +279,14 @@ it('validates the exact live sum, sequence and increasing offsets before issue',
   expect(actions.issue).toHaveBeenCalledExactlyOnceWith({
     workspaceId: ws,
     packageVersionId: version,
-    installments: [
-      { seq: 1, amountMinor: '400', dueOffsetDays: 2 },
-      { seq: 2, amountMinor: '800', dueOffsetDays: 12 },
-    ],
+    paymentTerms: {
+      upfrontAmountMinor: '400',
+      totalPaymentCount: 2,
+      installments: [
+        { seq: 1, amountMinor: '400', dueOffsetDays: 2 },
+        { seq: 2, amountMinor: '800', dueOffsetDays: 12 },
+      ],
+    },
   });
 });
 it('removes an installment row, clears its sum feedback and issues a null schedule', async () => {
@@ -496,6 +500,33 @@ it('maps a thrown action to the generic unavailable state', async () => {
   ).toBe(true);
   expect(fieldValue(current, m['registration.url'])).toBeUndefined();
   expect(text(current)).not.toContain('private provider detail');
+});
+it('keeps entered amounts intact when the installment count changes', () => {
+  const rendered = render(props);
+  const ctx = rendered.ctx;
+  let tree = rendered.tree;
+  clickButton(tree, m['registration.add']);
+  tree = rerender(ctx, props);
+  tree = setField(ctx, m['registration.amount'], 0, '400');
+  tree = setField(ctx, m['registration.offset'], 0, '0');
+  clickButton(tree, m['registration.add']);
+  tree = rerender(ctx, props);
+  tree = setField(ctx, m['registration.amount'], 1, '300');
+  tree = setField(ctx, m['registration.offset'], 1, '15');
+  clickButton(tree, m['registration.add']);
+  tree = rerender(ctx, props);
+  tree = setField(ctx, m['registration.amount'], 2, '500');
+  tree = setField(ctx, m['registration.offset'], 2, '30');
+  expect(text(tree)).toContain('1200 / 1200');
+  clickButton(tree, `${m['registration.remove']} 2`);
+  tree = rerender(ctx, props);
+  expect(fieldValue(tree, m['registration.amount'])).toBe('400');
+  const amounts = elements(tree)
+    .fields.filter((f) =>
+      String(f.props.label).startsWith(m['registration.amount']),
+    )
+    .map((f) => (f.props.inputProps as { value?: string }).value);
+  expect(amounts).toEqual(['400', '500']);
 });
 it('closes an open dialog on workspace and package switches', () => {
   const data = {

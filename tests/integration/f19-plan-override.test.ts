@@ -2,11 +2,13 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { clientContext } from './client-accounts-fixture';
 import { graph, sql } from './registration-approval-fixture';
+import type { Context } from './registration-approval-fixture';
 import { checked, issue } from './registration-links-fixture';
+import { admin, createStaff } from './harness';
+import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 
 let db: ReturnType<typeof sql>;
 let mutationOriginal: { definition: string; hash: string } | undefined;
-
 async function applyOverrideMutation(mode: string) {
   const [row] = await db<{ definition: string; hash: string }[]>`
     select pg_get_functiondef('public.override_activate_subscription(uuid,uuid,uuid,uuid)'::regprocedure) as definition,
@@ -31,10 +33,20 @@ async function applyOverrideMutation(mode: string) {
       /if not app_private\.f19_client_unit_eligible\(p_workspace_id, client_id, root_id\) then\s*assigned_trainer := null;\s*end if;/,
       '-- mutation removed the client-level eligibility guard',
     ],
+    assigned_recipient: [
+      /assigned_trainer := app_private\.current_assigned_trainer\(p_workspace_id, client_id\);/,
+      'assigned_trainer := null;',
+    ],
   };
   const replacement = replacements[mode];
   if (!replacement) throw new Error('unknown_override_mutation');
-  const mutated = row.definition.replace(replacement[0], replacement[1]);
+  let mutated = row.definition.replace(replacement[0], replacement[1]);
+  if (mode === 'po_wall') {
+    mutated = mutated.replaceAll(
+      /if not found or not app_private\.is_platform_owner\(\) then/gi,
+      'if not found then',
+    );
+  }
   if (mutated === row.definition)
     throw new Error(`override_mutation_not_applied:${mode}`);
   await db.unsafe(mutated);
@@ -69,28 +81,74 @@ async function newInitialSubscription() {
   return { context, seeded };
 }
 
+async function waitForLockWait(queryText: string) {
+  const observer = sql();
+  try {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const [row] = await observer`
+        select count(*)::int as count from pg_stat_activity
+        where wait_event_type='Lock' and query ilike ${`%${queryText}%`}`;
+      if ((row?.count as number) > 0) return;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(`RPC did not reach the client-row lock: ${queryText}`);
+  } finally {
+    await observer.end();
+  }
+}
+
+async function addTrainer(context: Context, suffix: string) {
+  const trainer = await createStaff('trainer', suffix);
+  const membership = await admin().from('workspace_memberships').insert({
+    workspace_id: context.wsA.id,
+    user_id: trainer.userId,
+    granted_by: context.po.userId,
+  });
+  if (membership.error) throw new Error(membership.error.message);
+  return trainer;
+}
+
 async function deliver(
   context: Awaited<ReturnType<typeof clientContext>>,
   kind: 'workout' | 'nutrition',
   clientId: string,
 ) {
+  const content =
+    kind === 'nutrition'
+      ? {
+          schemaVersion: 1,
+          structure: 'single_day',
+          implicitDayTypeId: 'dt-1',
+          dayTypes: [
+            {
+              id: 'dt-1',
+              trainingDay: false,
+              name: { ar: 'يوم', en: 'Day' },
+            },
+          ],
+          meals: [],
+        }
+      : { schema_version: 1, days: [], notes: `T022 ${kind}` };
   const created = await context.trainerA.client.rpc('create_plan_draft', {
     p_workspace_id: context.wsA.id,
     p_client_id: clientId,
     p_plan_kind: kind,
-    p_content: { schemaVersion: 2, document: { title: `T022 ${kind}` } },
+    p_content: content,
     p_operation_key: randomUUID(),
   });
   expect(created.error).toBeNull();
-  const published = await context.trainerA.client.rpc(
-    'ready_and_publish_plan',
-    {
-      p_plan_id: created.data,
-      p_expected_draft_version: 1,
-      p_expected_published_version: 0,
-      p_operation_key: randomUUID(),
-    },
-  );
+  const rpcName =
+    kind === 'nutrition'
+      ? 'publish_nutrition_revision'
+      : 'ready_and_publish_plan';
+  if (kind === 'workout')
+    await db.begin((tx) => seedSubmittedIntake(tx, context.wsA.id, clientId));
+  const published = await context.trainerA.client.rpc(rpcName, {
+    p_plan_id: created.data,
+    p_expected_draft_version: 1,
+    p_expected_published_version: 0,
+    p_operation_key: randomUUID(),
+  });
   expect(published.error).toBeNull();
   expect(published.data).toMatchObject({ status: 'ok' });
 }
@@ -174,6 +232,79 @@ describe('F19 T022 Platform Owner Override Activate', () => {
     expect(counts).toEqual({ activations: 1, units: 1, deliveries: 0 });
   });
 
+  it('credits the assigned Trainer instead of the selected recipient', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    const selectedTrainer = await addTrainer(context, 'override-selected');
+
+    const assignment = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: seeded.client,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignment.error).toBeNull();
+    expect(assignment.data).toMatchObject({ status: 'ok' });
+
+    const result = await context.po.client.rpc(
+      'override_activate_subscription',
+      {
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: selectedTrainer.userId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(result.error).toBeNull();
+    expect(result.data).toMatchObject({ status: 'ok' });
+
+    const [unit] =
+      await db`select recipient_trainer_user_id from public.productivity_units
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(unit!.recipient_trainer_user_id).toBe(context.trainerA.userId);
+    expect(unit!.recipient_trainer_user_id).not.toBe(selectedTrainer.userId);
+    const assignments = await db`
+      select id, trainer_user_id, assigned_by, ended_at, ended_by
+      from public.client_trainer_assignments
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(assignments).toHaveLength(1);
+    expect(assignments[0]).toMatchObject({
+      trainer_user_id: context.trainerA.userId,
+      ended_at: null,
+      ended_by: null,
+    });
+  });
+
+  it('leaves assignment history unchanged when a selected recipient is recorded', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    const selectedTrainer = await addTrainer(context, 'override-no-assignment');
+    const [before] = await db`
+      select count(*)::int as count from public.client_trainer_assignments
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(before!.count).toBe(0);
+
+    const result = await context.po.client.rpc(
+      'override_activate_subscription',
+      {
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: selectedTrainer.userId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(result.error).toBeNull();
+    expect(result.data).toMatchObject({ status: 'ok' });
+    const [unit] = await db`
+      select recipient_trainer_user_id from public.productivity_units
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(unit!.recipient_trainer_user_id).toBe(selectedTrainer.userId);
+    const [after] = await db`
+      select count(*)::int as count from public.client_trainer_assignments
+      where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+    expect(after!.count).toBe(0);
+  });
+
   it('does not replay a receipt when its operation key is rebound to another subscription', async () => {
     const { context, seeded } = await newInitialSubscription();
     const otherLink = checked(await issue(context)) as string;
@@ -212,14 +343,14 @@ describe('F19 T022 Platform Owner Override Activate', () => {
   });
 
   it('authorizes the Platform Owner before validating caller parameters', async () => {
-    const context = await clientContext();
+    const { context, seeded } = await newInitialSubscription();
     const result = await context.trainerA.client.rpc(
       'override_activate_subscription',
       {
-        p_workspace_id: null,
-        p_subscription_id: null,
-        p_recipient_trainer_user_id: null,
-        p_operation_key: null,
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: context.trainerA.userId,
+        p_operation_key: randomUUID(),
       },
     );
     expect(result.error).toBeNull();
@@ -256,7 +387,7 @@ describe('F19 T022 Platform Owner Override Activate', () => {
     expect(after).toEqual(before);
   });
 
-  it('refuses a refunded and deactivated client without adding Override facts', async () => {
+  it('refuses a refunded subscription without adding Override facts', async () => {
     const { context, seeded } = await newInitialSubscription();
     const refund = await context.po.client.rpc('record_refund', {
       request: {
@@ -291,6 +422,48 @@ describe('F19 T022 Platform Owner Override Activate', () => {
       (select count(*)::int from public.productivity_units where client_id=${seeded.client}) as units,
       (select count(*)::int from app_private.f19_override_operations where subscription_id=${seeded.subscription}) as receipts,
       (select count(*)::int from public.plan_deliveries where subscription_id=${seeded.subscription}) as deliveries`;
+    expect(after).toEqual(before);
+  });
+
+  it('refuses a separately deactivated client without adding Override facts', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    await db.begin(async (tx) => {
+      await tx`set local session_replication_role='replica'`;
+      await tx`update public.clients
+        set deactivated_at=clock_timestamp(), deactivation_reason='closure'
+        where workspace_id=${context.wsA.id} and id=${seeded.client}`;
+    });
+    const [before] = await db`
+      select
+        (select count(*)::int from public.subscription_activations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as activations,
+        (select count(*)::int from public.productivity_units
+          where workspace_id=${context.wsA.id} and client_id=${seeded.client}) as units,
+        (select count(*)::int from app_private.f19_override_operations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as receipts,
+        (select count(*)::int from public.plan_deliveries
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as deliveries`;
+    const result = await context.po.client.rpc(
+      'override_activate_subscription',
+      {
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: context.trainerA.userId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ status: 'not_permitted' });
+    const [after] = await db`
+      select
+        (select count(*)::int from public.subscription_activations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as activations,
+        (select count(*)::int from public.productivity_units
+          where workspace_id=${context.wsA.id} and client_id=${seeded.client}) as units,
+        (select count(*)::int from app_private.f19_override_operations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as receipts,
+        (select count(*)::int from public.plan_deliveries
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as deliveries`;
     expect(after).toEqual(before);
   });
 
@@ -344,6 +517,162 @@ describe('F19 T022 Platform Owner Override Activate', () => {
       (select count(*)::int from public.plan_deliveries where subscription_id=${seeded.subscription}) as deliveries`;
     expect(counts).toEqual({ activations: 1, units: 1, deliveries: 3 });
   });
+
+  it('overrides after one delivery without fabricating the second delivery', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    await deliver(context, 'workout', seeded.client);
+    const result = await context.po.client.rpc(
+      'override_activate_subscription',
+      {
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: context.trainerA.userId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(result.error).toBeNull();
+    expect(result.data).toMatchObject({
+      status: 'ok',
+      activation_source: 'po_override',
+    });
+    const [counts] = await db`
+      select
+        (select count(*)::int from public.plan_deliveries
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as deliveries,
+        (select count(*)::int from public.subscription_activations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as activations,
+        (select count(*)::int from public.productivity_units
+          where workspace_id=${context.wsA.id} and client_id=${seeded.client}) as units`;
+    expect(counts).toEqual({ deliveries: 1, activations: 1, units: 1 });
+  });
+
+  it('refuses Override after two deliveries already activated the subscription', async () => {
+    const { context, seeded } = await newInitialSubscription();
+    await deliver(context, 'workout', seeded.client);
+    await deliver(context, 'nutrition', seeded.client);
+    const [before] = await db`
+      select
+        (select count(*)::int from public.plan_deliveries
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as deliveries,
+        (select count(*)::int from public.subscription_activations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as activations,
+        (select count(*)::int from public.productivity_units
+          where workspace_id=${context.wsA.id} and client_id=${seeded.client}) as units,
+        (select count(*)::int from app_private.f19_override_operations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as receipts`;
+    expect(before).toEqual({
+      deliveries: 2,
+      activations: 1,
+      units: 1,
+      receipts: 0,
+    });
+
+    const result = await context.po.client.rpc(
+      'override_activate_subscription',
+      {
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: context.trainerA.userId,
+        p_operation_key: randomUUID(),
+      },
+    );
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ status: 'not_permitted' });
+    const [after] = await db`
+      select
+        (select count(*)::int from public.plan_deliveries
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as deliveries,
+        (select count(*)::int from public.subscription_activations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as activations,
+        (select count(*)::int from public.productivity_units
+          where workspace_id=${context.wsA.id} and client_id=${seeded.client}) as units,
+        (select count(*)::int from app_private.f19_override_operations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as receipts`;
+    expect(after).toEqual(before);
+  });
+
+  it.each([
+    ['assignment', true],
+    ['Override', false],
+  ] as const)(
+    'serializes concurrent %s first on the client row before the other operation',
+    async (firstOperation, assignmentFirst) => {
+      const { context, seeded } = await newInitialSubscription();
+      const selectedTrainer = await addTrainer(
+        context,
+        `override-race-${firstOperation}`,
+      );
+      let assignment!: Promise<unknown>;
+      let override!: Promise<unknown>;
+      let assignmentResult: unknown;
+      let overrideResult: unknown;
+      await db.begin(async (tx) => {
+        await tx`select id from public.clients
+          where workspace_id=${context.wsA.id} and id=${seeded.client} for update`;
+        const startAssignment = () => {
+          assignment = Promise.resolve().then(async () => {
+            assignmentResult = await context.po.client.rpc(
+              'assign_client_responsible_trainer',
+              {
+                p_workspace_id: context.wsA.id,
+                p_client_id: seeded.client,
+                p_trainer_user_id: context.trainerA.userId,
+              },
+            );
+          });
+        };
+        const startOverride = () => {
+          override = Promise.resolve().then(async () => {
+            overrideResult = await context.po.client.rpc(
+              'override_activate_subscription',
+              {
+                p_workspace_id: context.wsA.id,
+                p_subscription_id: seeded.subscription,
+                p_recipient_trainer_user_id: selectedTrainer.userId,
+                p_operation_key: randomUUID(),
+              },
+            );
+          });
+        };
+        if (assignmentFirst) {
+          startAssignment();
+          await waitForLockWait('assign_client_responsible_trainer');
+          startOverride();
+          await waitForLockWait('override_activate_subscription');
+        } else {
+          startOverride();
+          await waitForLockWait('override_activate_subscription');
+          startAssignment();
+          await waitForLockWait('assign_client_responsible_trainer');
+        }
+      });
+      await Promise.all([assignment, override]);
+      expect(assignmentResult).toMatchObject({ data: { status: 'ok' } });
+      expect(overrideResult).toMatchObject({ data: { status: 'ok' } });
+      const [unit] = await db`
+        select recipient_trainer_user_id from public.productivity_units
+        where workspace_id=${context.wsA.id} and client_id=${seeded.client}`;
+      expect(unit!.recipient_trainer_user_id).toBe(
+        assignmentFirst ? context.trainerA.userId : selectedTrainer.userId,
+      );
+      const assignments = await db`
+        select trainer_user_id from public.client_trainer_assignments
+        where workspace_id=${context.wsA.id} and client_id=${seeded.client}
+          and ended_at is null`;
+      expect(assignments).toEqual([
+        { trainer_user_id: context.trainerA.userId },
+      ]);
+      const [counts] = await db`
+        select
+          (select count(*)::int from public.subscription_activations
+            where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as activations,
+          (select count(*)::int from public.productivity_units
+            where workspace_id=${context.wsA.id} and client_id=${seeded.client}) as units,
+          (select count(*)::int from app_private.f19_override_operations
+            where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as receipts`;
+      expect(counts).toEqual({ activations: 1, units: 1, receipts: 1 });
+    },
+  );
 
   it('does not award a second unit to a returning client who already has one', async () => {
     const { context, seeded } = await newInitialSubscription();

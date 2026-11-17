@@ -8,7 +8,7 @@ const apiUrl = process.env.API_URL || process.env.SUPABASE_URL || '';
 const anonKey = process.env.ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 const serviceRoleKey =
   process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const origin = 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 const local =
   new URL(apiUrl || 'http://invalid').hostname === '127.0.0.1' &&
   Boolean(anonKey && serviceRoleKey);

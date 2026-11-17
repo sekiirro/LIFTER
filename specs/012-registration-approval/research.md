@@ -157,3 +157,28 @@ insertion, and an explicit fresh-transaction late-obligation probe remains denie
 The accepted client UPDATE guard, base grants, RLS, audit body and financial
 immutability guards are unchanged. This is a technical compatibility correction,
 not an amendment to a PO decision or a historical migration.
+
+## S63 S12-1 readiness evidence (2026-11-17)
+
+T002 cross-check: the final PO decision record in `spec.md` matches the nine
+Decided PA-F12-1..9 entries in `plan.md`; no policy refinements were needed.
+For this lane, Stack A is the approved execution choice recorded under AI-F12-1.
+The historical Stack-B recommendation remains limited to its own infrastructure
+record and is not treated as Stack-B readiness evidence.
+
+The integrated selector/harness/provisioner/e2e path is present on fresh
+`origin/main` (`735e4233f34ac6480ceffb9d98b8f1b99191e2d5`):
+`scripts/local-stack.mjs` selects only explicit A/B/C/D and validates loopback
+API/DB endpoints; `tests/integration/harness.ts` applies that validation before
+opening clients; `tests/integration/client-accounts-provision.mjs` applies the
+same selected-stack validation; `scripts/playwright-stack-command.mjs` and
+`tests/e2e/disposable-stack.ts` route browser fixtures through the selected
+profile. Selector commit `8b9e2d914d03d3a2bae9cc5063370853765f6135` is an
+ancestor of the lane base.
+
+Q-V01/pre-connection infrastructure suites passed on the lane base: 9 files,
+38 tests. Safe-wrapper Stack A metadata identified project `lifter`, API port
+54321, DB port 54322; the wrapper's migration listing reported
+`20261101131000` applied. Stack A was neither started nor provisioned in this
+task. T050/T051 runtime, ACL, and mutation evidence is in
+`tests/integration/registration-approval-verification.md`.

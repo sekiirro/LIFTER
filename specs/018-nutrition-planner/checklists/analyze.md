@@ -1,13 +1,16 @@
 # Spec Kit Analyze — F18 nutrition planner
 
-**Analyzed:** 2026-11-11 05:40 UTC
+**Analyzed:** 2026-11-17 02:18 Africa/Cairo (date update after merge; T019 concurrency/idempotency evidence synchronized with the merged task and traceability status; T017 contributor attribution verified per architect ruling S60-R43 and research conflict F18-C-11 resolved as RESOLVED-TECH; no requirement, acceptance, contract, or plan design text changed).
+
+Date update note (retained and extended after merge): T020/T021 and T019 implementation evidence recorded; no requirement, acceptance, contract, or plan design text changed. Existing Analyze findings remain unchanged.
+Date update note (retained and extended after merge): T020/T021 implementation and benchmark evidence recorded; T023/T029 task and traceability evidence synchronized; no requirement, acceptance, contract, or plan design text changed. Existing Analyze findings remain unchanged.
 **Method:** Rechecked spec.md, plan.md, tasks.md, nutrition API/document and template-assignment contracts, data-model.md, traceability.md, research decision matrix/conflicts/Section B assessment, and S43-PO-5 / S44-PO-7 / architect mappings S43-R6, S43-R10 and S44-R7. This pass follows the Greptile P2 thread `PRRT_kwDOVYgYQ862AhVE` on head `d742eb5a` (template-assignment test 11) and reconciles the concurrent Assign single-pair race with the existing zero-copy rejection; it also retains the earlier CodeRabbit PR #79 fixes (`PRR_kwDOVYgYQ88AAAABXM9hLA`, head `f588e222`).
 
 ## Entry check
 
 - PASS — spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the edited requirements, including containing-day meal visibility, independent Meal Notes/Food Notes edits, display-only rounding, publish replay before eligibility, and the F18-FR-011/F18-FR-012 selection write paths.
 - PASS — Clarifications records S44-PO-7 byte-exact, labels architect mapping (S44-R7) separately, closes S44-MCQ-F18-1, and states no open product ambiguities for this change. The CodeRabbit fixes below reconcile existing approved requirements; none adds a product decision.
-- PASS — plan.md describes the touched scope; tasks T001, T002, T005, T008, T021 and T025 are tagged to the affected FR/SC ids without renumbering.
+- PASS — plan.md describes the touched scope; tasks T001, T002, T005, T008, T020, T021 and T025 are tagged to the affected FR/SC ids without renumbering.
 - PASS — Analyze is dated after the final spec.md, plan.md and tasks.md edits.
 
 ## Findings
@@ -139,5 +142,54 @@
 - AR output uses approved labels from `runs/s49-arch/f18-label-table-approved.md` (SHA-256 `972df3d75cb24bc3f9af2c8647b9d07c8db38a77964e8d05501e6d69d4648888`), Node byte compare verified for the 18-row table.
 - Mutation evidence: swapping one AR label changes the payload and fails the assertion.
 - No production renderer touched (Phase 0); labels live in the contract test only -> #85 not blocked.
+- T024 (2026-11-15): production prompt builder `lib/plans/nutrition/prompt.ts` + `tests/unit/nutrition-prompt.test.ts` (6/6) implement F18-FR-015 against the unchanged approved P3/P4 bodies; requirement/acceptance text is unchanged, so this is a date-only re-Analyze.
 
 **Analyze result:** CRITICAL 0; HIGH 0. Ready for commit/PR.
+
+## Consistency freshness — T019 implementation bookkeeping (2026-11-16)
+
+Date note: T019 completion bookkeeping recorded on 2026-11-16; no FR, SC, contract, or plan design text changed.
+**Scope:** T019 completion status and verification evidence were added to tasks.md, traceability.md, and verification.md. No FR, SC, contract, or plan design text changed, so this is a date-only consistency update under R6.
+
+- PASS — the 100-call publish, selection, template-load, and Assign replay assertions match F18-FR-019 and API contract §8.
+- PASS — ambiguous publish retry and atomic Assign failure assertions are recorded in `verification.md`.
+- PASS — the plan-root lock race mutation is killed and the installed function restored; no migration or behavior change was introduced.
+- PASS — the full F18-SC-002 inventory remains open under T018/T027; T019 evidence does not overstate that wider coverage.
+
+**Result:** no requirement text changed and no new product decision is open; implementation bookkeeping is consistent with the approved spec.
+
+## Consistency freshness � T012/T013 implementation bookkeeping (2026-11-15)
+
+**Analyzed:** 2026-11-15
+**Scope:** Consistency update for the T012/T013 implementation evidence in tasks.md and traceability.md. Those changes tick completed tasks and record executed evidence only. No FR, SC, or other requirement text changed, so this is not a requirement re-analysis under the Spec Kit gate.
+
+- PASS � T012/T013 schema and RPC behavior follow the existing F18 template data model and contracts; S43-PO-1 rulings remain controlling.
+- PASS � T014 assignment and T015 make-global remain unimplemented and unchecked.
+- PASS � traceability records the covered FRs and RED/GREEN/mutation evidence; no new product decision or copy was introduced.
+- PASS � consistency check date is current with the task evidence commit.
+
+**Result:** no requirement change or open product decision; implementation bookkeeping is consistent with the approved spec.
+
+## Analyze — S60-PO-3 UUID-only item and alternative ids
+
+**Analyzed:** 2026-11-16. **Scope:** full requirement and design pass after the S60-PO-3 text update. Re-read spec.md, plan.md, tasks.md (including T029), data-model.md, nutrition-document.md, nutrition-api.md, traceability.md, clarifications, and the F18 decision matrix. Cross-checked the selected PO words against `runs/s60-po/s60-po-3.verbatim.txt` and the approved lowercase UUIDv4 convention in `lib/catalog/uuid.ts` / `crypto.randomUUID()`.
+
+### Entry check
+
+- PASS — S60-PO-3 is recorded as a direct PO decision in spec.md clarifications and the decision matrix; the mapping is not presented as additional PO wording.
+- PASS — F18-FR-002 now distinguishes item/alternative IDs (canonical lowercase UUIDv4) from day-type and meal IDs (strings). The nutrition-document and nutrition-api contracts, data model, T029 task, validator expectations, SQL publish/selection paths, audit boundary, and fixture rule express the same scope.
+- PASS — selection still uses text parameters to address JSON document IDs; malformed inputs map to `invalid_selection`. Audit events contain only UUID-shaped item/alternative IDs. No foodId, day-type, or meal-ID requirements were changed.
+- PASS — no migration data rewrite is specified. LIFTER is not live; the lane uses synthetic Stack A data, and the tracked repository has no nutrition seed file.
+
+### Findings
+
+- CRITICAL: 0 open.
+- HIGH: 0 open.
+- MEDIUM: 0 open product decisions. Existing OPEN-TECH reconciliation entries remain unchanged and do not affect this requirement.
+- LOW: no FR/contract/data-model mismatch found in the UUID-only scope.
+
+### Cross-artifact decision
+
+S60-PO-3's approved “UUIDs only (Recommended)” choice applies to item and alternative IDs only. Require canonical lowercase UUIDv4 form at the TS validator, published-document SQL boundary, selection RPC/table boundary, and F18 audit allowlist guard. Keep other F18 ID scopes unchanged. The fixtures use deterministic lowercase UUIDv4 values; negative tests retain malformed values only where the test explicitly checks rejection.
+
+**2026-11-17 date update:** T027 task status and traceability evidence were synchronized after release-gate tests, fresh replay, upgrade replay and migration scan. No requirement, acceptance, contract or plan design text changed; CRITICAL/HIGH findings remain 0.

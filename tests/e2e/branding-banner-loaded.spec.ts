@@ -21,7 +21,7 @@ import {
   heroEvidenceDirectory,
 } from './registration-hero-evidence';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL!;
 function dateInputYearsAgo(years: number) {
   const date = new Date();
   date.setFullYear(date.getFullYear() - years);

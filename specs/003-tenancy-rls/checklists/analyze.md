@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F3 Workspace Tenancy, Permission Matrix & RLS (S38 round 4: S38-R1 resolves S37-Q7; S37-PO-16 resolves S37-Q4, S37-Q5, S37-Q6)
 
-- Date: 2026-11-08 23:42 +02:00 (S38 round 4 re-analysis after the S38-R1 edits and the CodeRabbit round on `d3ce3d58`: spec.md, plan.md, tasks.md and traceability.md edited; this file is dated after those edits)
+- Date: 2026-11-17 07:34 UTC (S63 implementation evidence status refresh; no requirement text changed)
 - Analyzed baseline: `d3ce3d5858bb438318e02a95cba6b61a5b9c3a54` (round 4 commit for S38-R1) plus the uncommitted round 4b edits to tasks.md (T015 lock evidence; T027(a) wording). No source, migration, workflow, or test files changed.
 - Scope: F3 baseline (`FR-001`..`FR-012`, `SC-001`..`SC-004`), the S30-PO-3 Q7/Q8 governance amendment (`FR-013`, `FR-014`, `SC-005`, `SC-006`), the S35 departed-trainer requirement (`FR-015`, `SC-007`), and the S36-Q2 = C / S37-PO-3 / S37-PO-4 revocation and ownership-change semantics (`FR-016`, `SC-008`).
 - Method: static cross-artifact, migration, FK, trigger, `lib/auth` and test-source review. No SQL executed, no stack started, no CI job run. Local gates for this round (prettier, lint) are recorded in `report.md`.
@@ -99,7 +99,7 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 
 ## 2026-11-09 Analyze — PR #67 review follow-up
 
-- Date: 2026-11-09 (Africa/Cairo), after this round's task and traceability edits.
+- Date: 2026-11-17 07:34 UTC (S63 implementation evidence status refresh; no requirement text changed)
 - Entry check: PASS — spec.md contains numbered FRs, measurable SCs and Given/When/Then scenarios; S37-PO-3 is recorded in Clarifications and explicitly says no special auto-provisioning; no open ambiguity remains about that approved behavior. plan.md covers the touched scope; FR-tagged tasks exist; this analysis follows the edits.
 - FR-016(d): T009 is a database-level characterization only. The app scan found no normal workspace-creation route; this feature records an external dependency on the normal manual PO flow and its acceptance evidence. No new mechanism or task is invented.
 - F11/F12: T021(c) remains the F3 add-first demotion test. T026(c) now separates the F11/F12 acceptance evidence for completed ownership change and removal of old-account workspace access from its no-insert assertion. No tests or implementation are claimed.
@@ -107,7 +107,7 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 
 ## 2026-11-09 Analyze - PR #67 T021 review follow-up
 
-- Date: 2026-11-09 (Africa/Cairo), after the T021 and traceability edits.
+- Date: 2026-11-17 07:34 UTC (S63 implementation evidence status refresh; no requirement text changed)
 - Entry check: PASS - spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios; the S37-PO-3 clarification explicitly settles manual normal-flow creation with no auto-provisioning and no open ambiguity on that behavior; plan.md covers the scope; FR-tagged tasks exist; this Analyze follows the edits.
 - T021 classification: (a), (c), and (e) are characterization of existing demotion, add-first transfer, and transaction rollback. Only missing guard assertions (b) sole-PO refusal and (d) concurrent-demotion protection require RED evidence before T015 and GREEN afterward. FR-014/SC-005 traceability now matches.
 - Scope is documentation-only; no tests, code, SQL, migrations, or task checkboxes changed.
@@ -115,14 +115,14 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 
 ## 2026-11-09 Analyze - PR #67 external T026 dependency
 
-- Date: 2026-11-09 (Africa/Cairo), after the dependency-sequence edit in tasks.md.
+- Date: 2026-11-17 07:34 UTC (S63 implementation evidence status refresh; no requirement text changed)
 - Entry check: PASS - spec.md requirements, measurable SCs and Given/When/Then scenarios remain; S37-PO-3 clarification and explicit no-open-ambiguity statement remain; plan scope and FR-tagged tasks remain present.
 - Dependency review: T026(a),(b) block the revocation branch and T016. T026(c) is owned by F11/F12 and remains necessary to complete SC-008, but does not block T015 or T016. The task sequence now reflects this boundary.
 - Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior or implementation is changed.
 
 ## 2026-11-09 Analyze - PR #67 T024 concurrent revocation evidence
 
-- Date: 2026-11-09 (Africa/Cairo), after the T024 task clarification.
+- Date: 2026-11-17 07:34 UTC (S63 implementation evidence status refresh; no requirement text changed)
 - Entry check: PASS - spec requirements and scenarios, PO clarifications, plan scope and FR-tagged tasks remain present.
 - Evidence review: T024 now requires both concurrent revocations to commit and each affected membership to record non-null revoked_at, alongside unchanged Platform Owner roles/count. No refusal is asserted because membership revocation does not remove Platform Owner access (S37-Q5 = A).
 - Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior or implementation is changed.
@@ -152,7 +152,7 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 
 ## 2026-11-10T18:05Z — spec consistency fix (PR #73)
 
-- Date: 2026-11-10T18:05Z, after the S40/S41 amendment edits to spec.md (latest 2026-11-10).
+- Date: 2026-11-17 07:34 UTC (S63 implementation evidence status refresh; no requirement text changed)
 - Consistency: the S40 round 3 entry cited the F11 task IDs by their F11 tokens, which the feature-consistency check read as identifiers of feature 003. Feature 003 `tasks.md` has no F11 task ids, so those tokens were reported as unknown. The reference now names them as 011 task IDs 47 and 48, which keeps the cross-feature pointer without asserting an F11 identifier in the 003 namespace. No requirement, task, evidence or verdict text changed.
 - Re-check of the 003 Analyze content: 0 open CRITICAL, 0 open HIGH; the 2 open MEDIUM evidence items (A1, A2) and implementation gate G-3 are unchanged; "no open ambiguities" still holds for spec 003.
 - Result: PASS — 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
@@ -164,3 +164,11 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - Entry gate: PASS for numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications and PO decision citations in the touched scope; FR-014 last-PO guard and FR-015 amendment text unchanged in meaning.
 - Findings: 0 open CRITICAL, 0 open HIGH. The 2 MEDIUM evidence items A1/A2 and implementation gate G-3 remain as recorded above.
 - Verdict: PASS for this merge reconciliation.
+
+- S63 status refresh 2026-11-17: T014/T015/T017/T018/T020/T021/T022/T024 completion markers and their evidence were updated after tests passed. Requirement text in spec.md, plan.md and task descriptions is unchanged; no new Analyze run is required under R6. Existing verdict remains 0 open CRITICAL/HIGH findings; T016/T019 reviews remain open.
+
+## 2026-11-17 — S63 T025–T027 evidence status refresh
+
+- T025 and T027 are checked with executed test evidence. T026(a,b) now have executed row-count tests; T026 stays open because the separately required F11/F12 add-first old-account acceptance outcome remains pending in spec 011 T047.
+- Only task status and traceability evidence changed; no spec, plan, FR, SC, acceptance-scenario, or task-requirement text changed. This status-only refresh adds no new findings; existing verdict remains 0 open CRITICAL and 0 open HIGH.
+- Result: PASS, 0 CRITICAL, 0 HIGH.

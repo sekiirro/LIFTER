@@ -1035,5 +1035,33 @@ M22b simulates the next-month replay response by shifting the stored receipt tim
 - Final-source non-DB gates on the combined worktree at HEAD `0cde120dd66e23d9c438784b8b758862363d46af`: `npm run lint`, `npm run typecheck`, `npm test` (**76 files / 1,535 tests passed**), `npm run build`, `npm run size`, and `npm run check:secrets` all passed. Web size: 7,216.38 KiB uncompressed / 1,497.23 KiB upload gzip (1,484.39 KiB worker gzip; 65,536 KiB limit); cron: 2.85 KiB / 1.25 KiB gzip. The existing middleware-to-proxy deprecation warning remains.
 - U9 tablet and workspace-brand visual/accessibility coverage: **32 / 32 passed**; axe and contrast checks passed. The earlier 11 axe scans recorded 0 serious / 0 critical findings. Brand contrast now has rendered evidence. Screenshots are stored under `%TEMP%\lifter-f12-u9\` and retained in `tests/integration/evidence/f12-u9/`: eight mobile/desktop status images, four 768×1024 tablet status images, four workspace-brand AR/EN light/dark images, and the review/payment images. New retained paths: `tests/integration/evidence/f12-u9/registration-status-ar-light-tablet768x1024.png`, `registration-status-ar-dark-tablet768x1024.png`, `registration-status-en-light-tablet768x1024.png`, `registration-status-en-dark-tablet768x1024.png`, `workspace-brand-ar-light.png`, `workspace-brand-ar-dark.png`, `workspace-brand-en-light.png`, and `workspace-brand-en-dark.png`. The retained directory contains 18 PNGs.
 - Mutation coverage recorded across this report: M08, M09, M14, M15, M16a/b, M19, M21, M22a/b, and M24 each produced a failing detector under the documented mutant and were restored to GREEN; Stack A DB mutation details remain in the earlier mutation tables/addenda. No live mutant remains.
+
 - Migration names/status: `20261101124000_flexible_registration_link_terms.sql` is the reserved/planned timestamp and was not edited; immutable `20261101125000_registration_approval_correction_read.sql` remains unchanged; `20261101130000_registration_approval_correction_ambiguity.sql` implements the fixed ambiguity result; `20261101131000_flexible_registration_link_terms_forward.sql` is the additive wrapper migration. No historical migration was modified.
 - This addendum records full latest-source integration, broad E2E, T042, tablet/brand, mutation, and non-DB coverage and supersedes earlier S14 setup-blocker counts for those gates. No `.env*` file was manually opened, displayed, copied, or staged; the integration process loaded the provisioned stack env in-process, with values redacted from output. Final commits and push follow this review.
+
+## S63 S12-1 verification — 2026-11-17
+
+Tested source base: `735e4233f34ac6480ceffb9d98b8f1b99191e2d5`. Stack A only,
+selected by the safe wrapper as project `lifter` (API 54321 / DB 54322). The
+wrapper's migration listing reported local and database version `20261101131000`
+applied. No reset, start, provisioning, hosted access, or migration edit occurred.
+
+- Q-V01 infrastructure tests: 9 files / 38 passed across the stack selector,
+  loopback harness, selected-stack provisioner, disposable e2e routing and
+  Playwright port suites.
+- T050 flexible issuer: `registration-links-flexible.test.ts`, 1 file / 10
+  passed. Registration-link legacy/read/audit/issue/integrity/limit suites:
+  7 files / 125 passed. F11 `client-signup-transaction.test.ts`: 1 file / 15
+  passed.
+- T051 read-only installed-function catalog checks: function present,
+  `SECURITY DEFINER`, empty search path, EXECUTE granted to `authenticated` and
+  denied to `anon`, `service_role` and PUBLIC; delegates to the legacy issuer;
+  rechecks both capabilities after delegation; legacy issuer exists, forced RLS
+  remains enabled and the insert guard is enabled.
+- M19 mutation: temporarily removed only the upfront-to-row-one and
+  declared-count-to-array-length checks while retaining exact authoritative
+  total validation. The two corresponding T050 cases failed; detector result
+  was 2 failed / 6 passed / 2 skipped. Restored the exact pre-mutation
+  `pg_get_functiondef`; equality was verified, then the focused detector passed
+  8 / 8 executed cases (2 skipped). `git diff --exit-code` over the migration,
+  T050 test and fixture returned 0. No live mutant remains.

@@ -458,6 +458,11 @@ export async function pendingHttpAccess(
             'override_activate_subscription',
             'close_client',
             'ready_and_publish_plan',
+            'publish_nutrition_revision',
+            'select_nutrition_alternative',
+            'assign_client_responsible_trainer',
+            'client_responsible_trainer',
+            'unassigned_clients',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
