@@ -413,3 +413,11 @@ Scope: the exact-head CodeRabbit review `5877600535` (CHANGES_REQUESTED on `212d
 - Requirement, acceptance, and plan text did not change. T042 status and traceability evidence now reflect its executed Stack D integration cases; T055 remains unchecked.
 - The T042-specific scope remains consistent with FR-006/008/018 and existing real-session contracts. Its focused RLS check distinguishes SQL grants from policy denial and passed the permissive-policy mutation.
 - Entry verdict for this status update: 0 open CRITICAL, 0 open HIGH, and zero F12 requirement ambiguities. This revalidation records task/evidence status only; it is not a full feature-gate claim.
+
+## S63 S12-1 cross-artifact revalidation — 2026-11-17
+
+- Scope reviewed: the S63 AI-F12-1 Stack A execution note, T002/T003 readiness evidence, T050/T051 verification status and traceability supplement. FR, SC and acceptance-scenario text are unchanged.
+- Cross-artifact consistency: Stack A selection matches the existing session-14 ruling and this lane's authorization; Stack-B historical evidence is explicitly not claimed as Stack A or B readiness. T050/T051 map to the existing FR-023/SC-009 flexible-issuance scope. T053/T054 remain open and FR-023/SC-009 remain PARTIAL.
+- Q-V01 infrastructure evidence is recorded in `research.md`; T050/T051 evidence and mutation restoration are recorded in `tests/integration/registration-approval-verification.md` and referenced from `traceability.md`.
+- Clarifications remain explicitly at zero open F12 requirement ambiguities. No new product behavior, defaults, copy, or permissions were introduced.
+- Revalidation result: 0 open CRITICAL, 0 open HIGH; no new consistency finding blocks S12-1. Existing non-blocking findings remain as previously recorded.

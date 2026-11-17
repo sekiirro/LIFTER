@@ -35,7 +35,7 @@ Static source inspection only. No test suite was executed in this compliance lan
 
 - Functional requirements: 17 VERIFIED, 12 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. FR-012 is PARTIAL because the cited replay and revocation-after-wait tests do not assert the full lock order (client, subscription, then obligations/ledger). FR-014 is PARTIAL because its S47-PO-12 deleted-client correction clause is mapped to unchecked T055. FR-017 is PARTIAL because deletion-state refusal and authorised replay are mapped to unchecked T055; FR-011 is PARTIAL because deletion-state replay coverage is mapped to unchecked T055. The grouped FR-006, FR-008, FR-017..FR-018 row counts FR-006, FR-008 and FR-018 as verified and FR-017 as the only partial requirement in it.
 - Success criteria: 6 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. SC-012 is PARTIAL because the deleted-client correction and the refused new collection are mapped to unchecked T055.
-- Execution: the baseline matrix was a static review; the T042 execution supplement below records its targeted Stack D run. T050-T054 remain unchecked by this reconciliation.
+- Execution: the baseline matrix was a static review; the T042 execution supplement below records its targeted Stack D run. S63 verifies T050/T051 on Stack A; T053/T054 remain unchecked, so FR-023/SC-009 remain PARTIAL.
 
 ## Execution supplement — 2026-11-17
 
@@ -43,3 +43,18 @@ Static source inspection only. No test suite was executed in this compliance lan
 - The PostgREST test grants SELECT to `authenticated` only for its test, asserts RLS-filtered empty results through the real F11 JWT, then revokes the grants in `finally`; the private Storage read/write denials also passed.
 - RED: without the temporary grants, the assertion failed with SQLSTATE 42501 (`permission denied for table clients`), proving the prior error was grant-masked. GREEN: all 3 T042 tests passed. Mutation: a temporary permissive SELECT policy exposed the synthetic client row and caused T042 to fail; the policy was dropped and the three tests passed again. Detailed commands and outcomes are in the lane report.
 - FR-011, FR-014, FR-017 and SC-012 remain PARTIAL pending unchecked T055 deletion-state cases.
+
+## S63 T050/T051 execution supplement — 2026-11-17
+
+- FR-023 / SC-009 T050/T051 verification passed on Stack A at source base
+  `735e4233f34ac6480ceffb9d98b8f1b99191e2d5`: flexible issuer 10/10;
+  registration-link legacy/read/audit/issue/integrity/limit coverage 125/125;
+  F11 signup transaction 15/15.
+- Installed migration `20261101131000_flexible_registration_link_terms_forward.sql`
+  is applied. Catalog evidence confirms the authenticated-only hardened wrapper,
+  post-delegation reauthorization, delegation to the installed legacy issuer,
+  and intact legacy RLS/insert guard. M19 killed both upfront/count mutants and
+  the exact installed definition was restored before GREEN. Full details are in
+  `tests/integration/registration-approval-verification.md`.
+- FR-023 and SC-009 remain PARTIAL because T053/T054 UI coverage and implementation
+  are still open; this supplement claims only T050/T051.
