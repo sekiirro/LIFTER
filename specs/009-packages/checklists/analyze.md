@@ -327,3 +327,9 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 - PASS: no FR, SC, acceptance-scenario or plan requirement text changed — only task-status text and the new design/review document. The FR-028 pointer to "review.md section 4" is read as pointing at the T064b design; reconciling that pointer's wording is left to the architect (noted in the design header). 0 open CRITICAL, 0 HIGH.
 - PASS: T064b remains unticked pending an independent security review of the new design by a different agent; T065 implements no deletion until that PASS; no teardown has run on any stack.
+
+## 2026-11-18 Analyze (T065 teardown conformance & verification; task-status/evidence only)
+
+**Analyzed:** 2026-11-18 (UTC). Reconciled T065 teardown script (`supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`), conformance matrix (`specs/009-packages/reviews/t065-conformance.md`), and integration/mutation tests (`tests/integration/packages-c5-teardown.test.ts`, `tests/integration/packages-verification.md`) with `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS). No FR, SC, acceptance-scenario, or plan requirement text changed — only T065 status/evidence notes; T065 remains `[ ]` pending the separate four-category initialization forward migration (D10) and T070 post-implementation acceptance review.
+
+- PASS: 0 open CRITICAL, 0 open HIGH.
