@@ -4,6 +4,9 @@
 -- Unique on (workspace_id, client_code), assigned by trigger at every client creation
 -- path, immutable afterwards, staff-visible through the existing F11 reader predicate only.
 alter table public.clients add column client_code text;
+-- The unique index exists before the backfill so the allocator's existence check is an
+-- index probe (unique indexes ignore NULLs), keeping the backfill O(n log n) under the table lock.
+create unique index clients_workspace_id_client_code_key on public.clients(workspace_id, client_code);
 
 create function app_private.normalize_client_code(p_code text) returns text
 language sql immutable security definer set search_path = '' as $$
@@ -30,6 +33,9 @@ declare
   candidate text; raw bytea; i int; j int;
 begin
   if p_workspace_id is null then raise exception 'client_code_workspace_required' using errcode = '23514'; end if;
+  -- Serialize allocation per workspace until commit so two concurrent creations can never
+  -- pick the same code; the unique index remains the integrity backstop.
+  perform pg_advisory_xact_lock(hashtextextended('f11.client_code:' || p_workspace_id::text, 0));
   if p_candidates is null then
     p_candidates := array[]::text[];
     for i in 1..8 loop
@@ -87,7 +93,6 @@ alter table public.clients enable trigger user;
 
 alter table public.clients alter column client_code set not null;
 alter table public.clients add constraint clients_client_code_format check (client_code ~ '^[2-9A-HJ-NP-Z]{8}$');
-create unique index clients_workspace_id_client_code_key on public.clients(workspace_id, client_code);
 
 create trigger f11_client_code_assign before insert on public.clients
   for each row execute function app_private.assign_client_code();

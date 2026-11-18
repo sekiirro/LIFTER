@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { clientContext, sql } from './registration-approval-fixture';
-import { pending } from './client-accounts-fixture';
+import { pending, signup, signupFixture } from './client-accounts-fixture';
 import { checked, issue } from './registration-links-fixture';
 import type { Context } from './registration-approval-fixture';
 
@@ -259,5 +259,53 @@ describe('F11 client code (S66-PO-1 option A)', () => {
     expect(await lookup(context.po, context.wsB.id, a.client_code)).toEqual(
       noMatch,
     );
+  });
+
+  it('leaves every user trigger on public.clients enabled (migration disable/enable guard)', async () => {
+    const triggers = await db`
+      select tgname, tgenabled from pg_trigger
+      where tgrelid = 'public.clients'::regclass and not tgisinternal
+      order by tgname`;
+    expect(triggers.map((t) => t.tgname)).toEqual(
+      expect.arrayContaining([
+        'f11_client_code_assign',
+        'f11_client_code_immutable',
+        'f12_client_transition',
+        'signup_client_insert_guard',
+      ]),
+    );
+    for (const t of triggers) expect(t.tgenabled, t.tgname).toBe('O');
+  });
+
+  it('does not report a client_code unique violation as an email/phone duplicate on signup', async () => {
+    const context = await clientContext();
+    const existing = await newClient(context);
+    const fixture = await signupFixture(context);
+    const rollback = new Error('rollback');
+    let result: unknown;
+    await db
+      .begin(async (tx) => {
+        // Force the allocator to return a code that already exists in the workspace.
+        await tx.unsafe(
+          `create or replace function app_private.allocate_client_code(p_workspace_id uuid, p_candidates text[] default null)
+           returns text language sql as $f$ select '${existing.client_code}'::text $f$`,
+        );
+        result = await signup(tx, fixture, {
+          ...fixture.fields,
+          name: 'Client Example Synthetic',
+          date_of_birth: '1990-04-12',
+          username: `Fit.Client.${fixture.link.replaceAll('-', '').slice(0, 8)}`,
+          telegram_username: '@FitClient_1',
+        });
+        const [count] = await tx`
+          select count(*)::int as n from public.clients
+          where registration_link_id=${fixture.link}`;
+        expect(count!.n).toBe(0);
+        throw rollback;
+      })
+      .catch((error) => {
+        if (error !== rollback) throw error;
+      });
+    expect(result).toEqual({ status: 'unavailable' });
   });
 });

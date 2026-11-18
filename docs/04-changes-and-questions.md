@@ -1663,7 +1663,7 @@ Architect mapping S61-R12 (not PO words; C:/Users/NEW LAP/.lifter/runs/s61-arch/
 
 ### S66-PO-1 - PO words, verbatim (F11 client code for F22 T034)
 
-Source: PO answer relayed by the orchestrator on 2026-11-18 (no verbatim file or SHA-256 was available to the implementing agent); the question was the client-code format question for F22 T034 (open item 6 of `docs/01-traceability.md`).
+Source: the PO's answer in the Claude Code session on 2026-11-18 to the AskUserQuestion prompt, recorded verbatim (no verbatim file or SHA-256 exists); the question was the client-code format question for F22 T034 (open item 6 of `docs/01-traceability.md`).
 
 <!-- prettier-ignore -->
 ```text
