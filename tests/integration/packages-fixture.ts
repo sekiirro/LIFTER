@@ -115,6 +115,39 @@ export async function createLegacySynthetic(f: PackagesFixture) {
   ) as string;
   return { id, code, workspace_id: f.wsA.id };
 }
+export async function createLegacyPublishedSynthetic(f: PackagesFixture) {
+  const pkg = await createLegacySynthetic(f);
+  const offerId = randomUUID();
+  const versionId = randomUUID();
+  const db = sql();
+  try {
+    await db.begin(async (tx) => {
+      await tx`select set_config(
+        'request.jwt.claims',
+        ${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},
+        true
+      )`;
+      await tx`insert into public.package_offers(
+        id,workspace_id,package_id,duration_days,duration_months,tier_rank
+      ) values (${offerId},${f.wsA.id},${pkg.id},61,null,1)`;
+      // Recreate a pre-F9 historical snapshot fixture. New publication of an
+      // unclassified package remains fail-closed through the public RPC.
+      await tx`alter table public.package_versions disable trigger package_versions_market_guard`;
+      await tx`insert into public.package_versions(
+        id,workspace_id,offer_id,version,name_ar,name_en,price_minor,currency,
+        commission_rate_bp,duration_days,duration_months,published_by
+      ) values (
+        ${versionId},${f.wsA.id},${offerId},1,'test-authored-ar','test-authored-en',
+        1200,'EGP',0,61,null,${f.po.userId}
+      )`;
+      await tx`alter table public.package_versions enable trigger package_versions_market_guard`;
+      await tx`update public.package_offers set current_version_id=${versionId} where id=${offerId}`;
+    });
+  } finally {
+    await db.end();
+  }
+  return pkg;
+}
 export async function publish(
   f: PackagesFixture,
   packageId: string,

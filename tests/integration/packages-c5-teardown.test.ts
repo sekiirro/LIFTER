@@ -9,8 +9,8 @@ import type { Sql, TransactionSql } from 'postgres';
 import {
   checked,
   createLegacySynthetic,
+  createLegacyPublishedSynthetic,
   packagesFixture,
-  publish,
   publishedFixture,
   sql,
   type PackagesFixture,
@@ -100,8 +100,7 @@ async function expectRefused(
 }
 
 async function legacyMock(workspaces: string[] = [f.wsA.id]) {
-  const mock = await createLegacySynthetic(f);
-  checked(await publish(f, mock.id, { tier_rank: 1 }));
+  const mock = await createLegacyPublishedSynthetic(f);
   for (const [i, ws] of workspaces.entries())
     if (ws !== f.wsA.id)
       await db`

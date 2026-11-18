@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   checked,
+  createLegacySynthetic,
   createSynthetic,
   packagesFixture,
   publish,
@@ -52,17 +53,17 @@ describe('scoped package reads and commission secrecy', () => {
           ],
           [
             'package_versions_safe',
-            'id,workspace_id,price_minor',
+            'id,workspace_id,market,type,price_minor',
             'workspace_id',
             workspace.id,
           ],
           [
             'package_versions',
-            'id,workspace_id,price_minor',
+            'id,workspace_id,market,type,price_minor',
             'workspace_id',
             workspace.id,
           ],
-          ['packages', 'id,code', 'id', p.id],
+          ['packages', 'id,workspace_id,market,type,code', 'id', p.id],
         ]) {
           const result = await actor.client
             .from(table as never)
@@ -75,6 +76,22 @@ describe('scoped package reads and commission secrecy', () => {
               (result.data ?? []).length > 0,
               `${name}/${table}/${workspace.id}`,
             ).toBe(allowed);
+            if (table === 'packages' && allowed)
+              expect(result.data?.[0]).toMatchObject({
+                workspace_id: workspace.id,
+                market: 'International',
+                type: 'Year-round',
+              });
+            if (
+              (table === 'package_versions' ||
+                table === 'package_versions_safe') &&
+              allowed
+            )
+              expect(result.data?.[0]).toMatchObject({
+                workspace_id: workspace.id,
+                market: 'International',
+                type: 'Year-round',
+              });
           }
         }
         const rates = await actor.client.rpc(
@@ -118,6 +135,59 @@ describe('scoped package reads and commission secrecy', () => {
         ),
       ).toEqual([]);
     }
+  });
+  it('retains the unclassified legacy representation without inferring market/type', async () => {
+    const legacy = await createLegacySynthetic(f);
+    expect(
+      checked(
+        await f.po.client
+          .from('packages')
+          .select('id,workspace_id,market,type')
+          .eq('id', legacy.id),
+      ),
+    ).toEqual([
+      {
+        id: legacy.id,
+        workspace_id: null,
+        market: null,
+        type: null,
+      },
+    ]);
+    for (const actor of [f.woA, f.salesA, f.trainerA])
+      expect(
+        checked(
+          await actor.client
+            .from('packages')
+            .select('id,workspace_id,market,type')
+            .eq('id', legacy.id),
+        ),
+      ).toEqual([]);
+  });
+  it('market/type column-grant mutation removes the safe projection and rolls back', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        await tx`revoke select (market,type) on public.package_versions from authenticated`;
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.salesA.userId, role: 'authenticated' })},true)`;
+        await tx`set local role authenticated`;
+        let code = 'no_error';
+        try {
+          await tx`select market,type from public.package_versions where id=${a.versionId}`;
+        } catch (error) {
+          code = (error as { code?: string }).code ?? 'unknown';
+        }
+        throw new Error(`mutation_market_type_read_grant:${code}`);
+      }),
+    ).rejects.toMatchObject({
+      message: 'mutation_market_type_read_grant:42501',
+    });
+    expect(
+      checked(
+        await f.salesA.client
+          .from('package_versions_safe')
+          .select('market,type')
+          .eq('id', a.versionId),
+      ),
+    ).toEqual([{ market: 'International', type: 'Year-round' }]);
   });
   it('retains unavailable and historical rows and exact text above 2^53', async () => {
     const versions = checked(
