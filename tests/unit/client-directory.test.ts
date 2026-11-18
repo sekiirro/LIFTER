@@ -27,6 +27,7 @@ const row = {
   subscription_status: 'active',
   refund_scope: null,
   plans_waiting_for_delivery: 2,
+  pending_food_replacements: 1,
 };
 
 describe('F22 directory query parsing (T030; FR-011)', () => {
@@ -159,6 +160,7 @@ describe('F22 directory result and indicator parsing (T030; SC-008)', () => {
           subscriptionStatus: 'active',
           refundScope: null,
           plansWaitingForDelivery: 2,
+          pendingFoodReplacements: 1,
         },
       ],
     });
@@ -243,7 +245,11 @@ describe('F22 directory result and indicator parsing (T030; SC-008)', () => {
 });
 
 describe('F22 directory assignment filter behind the F11 wall (T035; FR-011, S40-PO-10 item 5)', () => {
-  const assigned = { ...row, assignment: 'unassigned' };
+  const assigned = {
+    ...row,
+    assignment: 'unassigned',
+    client_code: 'ABCD-2345',
+  };
 
   it('parses only the two F11 assignment states and echoes them in the href', () => {
     expect(parseDirectoryQuery({ assignment: 'unassigned' })).toMatchObject({
@@ -297,7 +303,10 @@ describe('F22 directory assignment filter behind the F11 wall (T035; FR-011, S40
     );
     expect(result).toMatchObject({ status: 'ok' });
     if (result.status === 'ok')
-      for (const r of result.rows) expect('assignment' in r).toBe(false);
+      for (const r of result.rows) {
+        expect('assignment' in r).toBe(false);
+        expect('clientCode' in r).toBe(false);
+      }
   });
 
   it('passes the filter and keeps the assignment state for the Workspace Owner and Platform Owner', async () => {
@@ -314,9 +323,27 @@ describe('F22 directory assignment filter behind the F11 wall (T035; FR-011, S40
       );
       expect(result).toMatchObject({
         status: 'ok',
-        rows: [{ assignment: 'unassigned' }],
+        rows: [{ assignment: 'unassigned', clientCode: 'ABCD-2345' }],
       });
     }
+  });
+
+  it('rejects a malformed client code or a missing pending count in rows', () => {
+    for (const patch of [
+      { client_code: 'abcd-2345' },
+      { client_code: 'ABCD2345' },
+      { client_code: 'ABCD-0O1I' },
+      { client_code: null },
+      { pending_food_replacements: -1 },
+      { pending_food_replacements: undefined },
+    ])
+      expect(
+        parseDirectoryResult(
+          { status: 'ok', clients: [{ ...row, ...patch }], has_more: false },
+          null,
+        ),
+        JSON.stringify(patch),
+      ).toEqual({ status: 'unavailable' });
   });
 
   it('rejects malformed assignment state in rows', () => {

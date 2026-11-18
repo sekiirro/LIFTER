@@ -80,7 +80,11 @@ export function rawExercises() {
 export function rawOk(overrides: Record<string, unknown> = {}) {
   return {
     status: 'ok',
-    subscription: { status: 'active', effective_end_exclusive: '2027-01-01' },
+    subscription: {
+      status: 'active',
+      effective_end_exclusive: '2027-01-01',
+      overdue: false,
+    },
     plan: {
       plan_id: PLAN_ID,
       workspace_id: WORKSPACE_ID,

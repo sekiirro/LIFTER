@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { TransactionSql } from 'postgres';
-import { clientContext } from './registration-approval-fixture';
+import { clientContext, probe } from './registration-approval-fixture';
 import {
   asUser,
   portalFixture,
@@ -193,5 +193,150 @@ describe('F22 directory assignment filter (T035)', () => {
       'unassigned',
     );
     expect(ids(loose)).toContain(pendingId);
+  });
+});
+
+// T034 (#264 client code) and T036 (F23 open food replacements), same staff wall.
+async function codeOf(clientId: string): Promise<string> {
+  const [row] =
+    await p.db`select app_private.format_client_code(client_code) as code
+      from public.clients where id=${clientId}`;
+  return row!.code as string;
+}
+async function search(
+  actor: { client: SupabaseClient },
+  term: string,
+  workspaceId?: string,
+): Promise<Result & { clients?: Array<Row & { client_code?: string }> }> {
+  const result = await actor.client.rpc('staff_client_directory', {
+    p_workspace_id: workspaceId ?? p.fixture.wsA.id,
+    p_search: term,
+    p_approval_state: null,
+    p_subscription_status: null,
+    p_limit: 100,
+    p_offset: 0,
+  });
+  expect(result.error).toBeNull();
+  return result.data as Result;
+}
+
+describe('F22 directory client-code search (T034)', () => {
+  it('lets the owner wall find a client by its exact code in any accepted spelling, and shows the code', async () => {
+    const code = await codeOf(assignedId);
+    for (const actor of [p.fixture.woA, p.fixture.po])
+      for (const term of [
+        code,
+        code.toLowerCase(),
+        code.replace('-', ''),
+        ` ${code} `,
+      ]) {
+        const found = await search(actor, term);
+        expect(ids(found), term).toEqual([assignedId]);
+        expect(
+          (found.clients as Array<{ client_code?: string }>)[0]!.client_code,
+        ).toBe(code);
+      }
+  });
+
+  it('never matches a prefix, a fragment, a wrong code or another workspace code', async () => {
+    const code = await codeOf(assignedId);
+    for (const term of [
+      code.slice(0, 4),
+      code.slice(5),
+      code.slice(0, 8),
+      'ZZZZ-ZZZZ',
+      '0000-0000',
+    ])
+      expect(ids(await search(p.fixture.woA, term)), term).not.toContain(
+        assignedId,
+      );
+    // A code of workspace A searched by a foreign owner in its own workspace finds nothing.
+    const foreign = await clientContext();
+    expect(ids(await search(foreign.woA, code, foreign.wsA.id))).toEqual([]);
+    const denied = await foreign.woA.client.rpc('staff_client_directory', {
+      p_workspace_id: p.fixture.wsA.id,
+      p_search: code,
+      p_approval_state: null,
+      p_subscription_status: null,
+      p_limit: 10,
+      p_offset: 0,
+    });
+    expect(denied.error?.code).toBe('42501');
+  });
+
+  it('gives a Trainer no code match and no code on rows (name, email and phone search remain)', async () => {
+    const code = await codeOf(assignedId);
+    const found = await search(p.fixture.trainerA, code);
+    expect(ids(found)).toEqual([]);
+    const named = await search(p.fixture.trainerA, p.run);
+    expect(ids(named).length).toBeGreaterThan(0);
+    for (const row of named.clients!) expect('client_code' in row).toBe(false);
+  });
+
+  it('mutation kill: opening the code wall to every caller lets a Trainer enumerate by code', async () => {
+    const code = await codeOf(assignedId);
+    const signature =
+      'public.staff_client_directory(uuid,text,text,text,integer,integer,text)';
+    const from = 'code_needle := case when can_assign then';
+    let observed: Result = { status: 'not-reached' };
+    const rollback = new Error('rollback');
+    try {
+      await p.db.begin(async (tx: TransactionSql) => {
+        const [d] =
+          await tx`select pg_get_functiondef(${signature}::regprocedure) as def`;
+        const def = d!.def as string;
+        expect(def.split(from).length - 1).toBe(1);
+        await tx.unsafe(
+          def.replace(from, 'code_needle := case when true then'),
+        );
+        await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
+          const [row] = await inner`select public.staff_client_directory(
+            ${p.fixture.wsA.id}::uuid, ${code}, null, null, 100, 0) as v`;
+          observed = row!.v as Result;
+        });
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
+    expect(ids(observed)).toEqual([assignedId]);
+  });
+});
+
+describe('F22 directory pending food replacements (T036)', () => {
+  it('counts only open requests of that client in that workspace', async () => {
+    const plan = await p.createDraft(assignedId, 'nutrition', 'T036 plan');
+    await p.publish(plan, 1, 0);
+    const [rev] =
+      await p.db`select id from public.plan_revisions where plan_id=${plan} and revision_number=1`;
+    await probe(async (tx: TransactionSql) => {
+      await tx`set local session_replication_role = replica`;
+      const insert = (status: string, item: string) =>
+        tx`insert into public.food_replacement_requests(workspace_id, client_id, plan_id, plan_version_id,
+            item_id, request_text, status, requested_by, resolved_at)
+          values(${p.fixture.wsA.id}, ${assignedId}, ${plan}, ${rev!.id}, ${item}, 'synthetic request', ${status},
+            ${p.fixture.trainerA.userId}, ${status === 'open' ? null : new Date().toISOString()})`;
+      await insert('open', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1');
+      await insert('open', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2');
+      await insert('rejected', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3');
+      await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
+        const [row] = await inner`select public.staff_client_directory(
+          ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> })
+          .clients;
+        const byId = Object.fromEntries(
+          rows.map((r) => [r.client_id, r.pending_food_replacements]),
+        );
+        expect(byId[assignedId]).toBe(2);
+        expect(byId[unassignedId]).toBe(0);
+      });
+    });
+    // Nothing leaked out of the rolled-back probe.
+    const after = await search(p.fixture.trainerA, p.run);
+    expect(
+      (after.clients as Array<Record<string, unknown>>).every(
+        (r) => r.pending_food_replacements === 0,
+      ),
+    ).toBe(true);
   });
 });

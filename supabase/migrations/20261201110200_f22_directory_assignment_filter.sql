@@ -5,7 +5,8 @@
 -- Trainers and every other caller with the existing coaching_work wall, p_assignment is ignored
 -- and rows carry no assignment key. 'unassigned' is F11's definition: approved and
 -- app_private.current_assigned_trainer is null. The directory filters, search, refund scope and
--- plans-waiting indicator are otherwise unchanged. The old six-argument function is replaced
+-- plans-waiting indicator are otherwise unchanged. T036 adds the open food replacement count. T034 adds an exact client-code search (#264,
+-- app_private.normalize_client_code) and the formatted code on rows, both for the same owner wall. The old six-argument function is replaced
 -- (dropped) so PostgREST has no ambiguous overload. Adds no table, status or assignment write.
 
 drop function public.staff_client_directory(uuid, text, text, text, integer, integer);
@@ -26,6 +27,7 @@ declare
   more boolean;
   actor uuid := auth.uid();
   can_assign boolean;
+  code_needle text;
 begin
   if p_workspace_id is null
     or not app_private.has_workspace_access(p_workspace_id, 'coaching_work') then
@@ -46,6 +48,10 @@ begin
         and p.role = 'workspace_owner'
     )
   );
+  -- T034 (#264 client code): an exact normalized code match, never a prefix or pattern, and only
+  -- for the same F11 owner-or-Platform-Owner wall (as find_client_by_code). A malformed or
+  -- unknown code simply matches nothing; Trainers keep name, email and phone search only.
+  code_needle := case when can_assign then app_private.normalize_client_code(p_search) end;
   if can_assign and p_assignment is not null
     and p_assignment not in ('assigned', 'unassigned') then
     return jsonb_build_object('status', 'invalid_input');
@@ -66,6 +72,7 @@ begin
   with matched as (
     select c.id, c.name, c.approval_state,
       app_private.f22_subscription_summary(c.workspace_id, c.id) as summary,
+      case when can_assign then app_private.format_client_code(c.client_code) end as client_code,
       -- Evaluated only for an authorized caller; 'unassigned' matches F11 unassigned_clients
       -- (approved and no current responsible Trainer). Non-approved clients have no state.
       case when can_assign and c.approval_state = 'approved' then
@@ -75,13 +82,18 @@ begin
       (select count(*)::integer from public.plan_roots p
         where p.workspace_id = c.workspace_id and p.client_id = c.id
           and not exists (select 1 from public.plan_revisions r
-            where r.workspace_id = p.workspace_id and r.plan_id = p.id)) as plans_waiting
+            where r.workspace_id = p.workspace_id and r.plan_id = p.id)) as plans_waiting,
+      -- T036: F23 food replacement requests still open (status 'open', FR-027), a count only.
+      (select count(*)::integer from public.food_replacement_requests q
+        where q.workspace_id = c.workspace_id and q.client_id = c.id
+          and q.status = 'open') as pending_replacements
     from public.clients c
     where c.workspace_id = p_workspace_id
       and (needle is null
         or c.name ilike needle
         or c.email_normalized ilike needle
-        or c.phone_e164 like needle)
+        or c.phone_e164 like needle
+        or (code_needle is not null and c.client_code = code_needle))
       and (p_approval_state is null or c.approval_state = p_approval_state)
   ), assigned as (
     select m.* from matched m
@@ -100,8 +112,10 @@ begin
       'client_id', n.id, 'name', n.name, 'approval_state', n.approval_state,
       'subscription_status', n.summary->>'status',
       'refund_scope', n.summary->>'refund_scope',
-      'plans_waiting_for_delivery', n.plans_waiting)
-      || case when can_assign then jsonb_build_object('assignment', n.assignment) else '{}'::jsonb end
+      'plans_waiting_for_delivery', n.plans_waiting,
+      'pending_food_replacements', n.pending_replacements)
+      || case when can_assign then jsonb_build_object('assignment', n.assignment,
+        'client_code', n.client_code) else '{}'::jsonb end
       order by n.rn)
       filter (where n.rn <= p_limit), '[]'::jsonb),
     count(*) > p_limit

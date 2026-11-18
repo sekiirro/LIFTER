@@ -1350,6 +1350,9 @@ export const en: Record<keyof typeof ar, string> = {
   'staff.clientDirectory.search': 'Search clients',
   'staff.clientDirectory.filters': 'Filters',
   'staff.clientDirectory.plansWaitingForDelivery': 'Plans waiting for delivery',
+  'staff.clientDirectory.searchPlaceholder':
+    'Search by name, email, phone or client code',
+  'staff.clientDirectory.pendingFoodReplacements': 'Pending food replacements',
   'staff.clientDirectory.subscriptionStatus.awaitingActivation':
     'Awaiting Activation',
   'staff.clientDirectory.subscriptionStatus.future': 'Future',

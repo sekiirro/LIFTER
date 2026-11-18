@@ -14,6 +14,8 @@ import {
   parseLocale,
 } from '../../../../../lib/design/preferences';
 import { createSessionClient } from '../../../../../lib/supabase/server';
+import { readClientPortalPlan } from '../../../../../lib/client-access/portal';
+import { exportClientWorkoutPlan } from '../../../../../lib/workout-planner/client-export';
 
 /**
  * F22 US4: a client downloads the selected published revision of an own
@@ -37,6 +39,52 @@ export async function GET(
     return new NextResponse(null, { status: 404 });
   const client = await createSessionClient();
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
+  // The plan kind comes from the same client-wall read the plan page uses.
+  // Anything but an own, entitled, delivered plan takes the generic denial.
+  const portalPlan = await readClientPortalPlan(planId, revision);
+  const kind = portalPlan.status === 'ok' ? portalPlan.plan.kind : null;
+  const unavailable = () => {
+    const target = new URL(`/plans/${planId}`, request.url);
+    target.searchParams.set('export', 'unavailable');
+    return NextResponse.redirect(target, 303);
+  };
+  if (kind === 'workout') {
+    if (!client) return unavailable();
+    if (format === 'pdf') {
+      // The F17 PDF is the print view printed; the print page performs the
+      // audited export call.
+      const target = new URL(`/plans/${planId}/print`, request.url);
+      if (revision !== null)
+        target.searchParams.set('revision', String(revision));
+      return NextResponse.redirect(target, 303);
+    }
+    const workout = await exportClientWorkoutPlan(client, {
+      planId,
+      revisionNumber: revision,
+      format: 'excel',
+      locale,
+    });
+    if (workout.status !== 'ok' || workout.format !== 'excel')
+      return unavailable();
+    return new NextResponse(
+      workout.body.buffer.slice(
+        workout.body.byteOffset,
+        workout.body.byteOffset + workout.body.byteLength,
+      ) as ArrayBuffer,
+      {
+        status: 200,
+        headers: {
+          'Content-Type': workout.contentType,
+          'Content-Disposition': `attachment; filename="${workout.filename}"`,
+          'Cache-Control': 'no-store',
+          'X-Content-Type-Options': 'nosniff',
+          'Content-Security-Policy':
+            "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+          Vary: 'Cookie',
+        },
+      },
+    );
+  }
   const result = client
     ? await exportClientNutritionPlan(client, {
         planId,

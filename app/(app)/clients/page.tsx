@@ -140,6 +140,7 @@ export default async function ClientDirectoryPage({
               name="q"
               type="search"
               maxLength={100}
+              placeholder={m['staff.clientDirectory.searchPlaceholder']}
               defaultValue={query.search ?? ''}
             />
           </div>
@@ -231,6 +232,23 @@ export default async function ClientDirectoryPage({
                   <Bidi>
                     {formatCount(row.plansWaitingForDelivery, locale)}
                   </Bidi>
+                </p>
+              )}
+              {row.pendingFoodReplacements > 0 && (
+                <p
+                  className={styles.indicator}
+                  data-testid="indicator-pending-food-replacements"
+                >
+                  {/* T037: the staff progress timeline shows the client's replacement requests. */}
+                  <Link
+                    className={styles.link}
+                    href={`/clients/${row.clientId}/progress`}
+                  >
+                    {m['staff.clientDirectory.pendingFoodReplacements']}:{' '}
+                    <Bidi>
+                      {formatCount(row.pendingFoodReplacements, locale)}
+                    </Bidi>
+                  </Link>
                 </p>
               )}
             </li>

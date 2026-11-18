@@ -51,11 +51,19 @@ export type DirectoryRow = {
   /** Only with `refunded`: F13 full vs partial refund (S57-PO-12). */
   refundScope: RefundScope | null;
   plansWaitingForDelivery: number;
+  /** F23 food replacement requests still open for this client (T036). */
+  pendingFoodReplacements: number;
   /**
    * F11 assignment state; present only for callers passing
    * {@link canUseAssignment}. Never carries the trainer identity.
    */
   assignment?: AssignmentFilter | null;
+  /**
+   * F11 client code (`XXXX-XXXX`); present only for callers passing
+   * {@link canUseAssignment} (#264: Platform Owner or the workspace's
+   * Workspace Owner). Searchable by exact code for the same callers.
+   */
+  clientCode?: string;
 };
 
 export type DirectoryResult =
@@ -178,14 +186,24 @@ function parseRow(value: unknown): DirectoryRow | null {
     subscription_status,
     refund_scope,
     plans_waiting_for_delivery,
+    pending_food_replacements,
   } = value;
   const hasAssignment = 'assignment' in value;
+  const hasCode = 'client_code' in value;
   if (
     Object.keys(value)
-      .filter((key) => key !== 'assignment')
+      .filter((key) => key !== 'assignment' && key !== 'client_code')
       .sort()
       .join(',') !==
-      'approval_state,client_id,name,plans_waiting_for_delivery,refund_scope,subscription_status' ||
+      'approval_state,client_id,name,pending_food_replacements,plans_waiting_for_delivery,refund_scope,subscription_status' ||
+    (hasCode &&
+      !(
+        typeof value.client_code === 'string' &&
+        /^[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/u.test(value.client_code)
+      )) ||
+    typeof pending_food_replacements !== 'number' ||
+    !Number.isSafeInteger(pending_food_replacements) ||
+    pending_food_replacements < 0 ||
     (hasAssignment &&
       !(
         value.assignment === null ||
@@ -215,6 +233,8 @@ function parseRow(value: unknown): DirectoryRow | null {
     subscriptionStatus: subscription_status as SubscriptionStatus | null,
     refundScope: refund_scope as RefundScope | null,
     plansWaitingForDelivery: plans_waiting_for_delivery,
+    pendingFoodReplacements: pending_food_replacements,
+    ...(hasCode ? { clientCode: value.client_code as string } : {}),
     ...(hasAssignment
       ? { assignment: value.assignment as AssignmentFilter | null }
       : {}),

@@ -39,6 +39,7 @@ export async function loadClientDirectory(
       rows: result.rows.map((row) => {
         const visible = { ...row };
         delete visible.assignment;
+        delete visible.clientCode;
         return visible;
       }),
     };

@@ -54,6 +54,7 @@ type Reads = {
   overview: Record<string, unknown>;
   plan: Record<string, unknown>;
   nutrition: Record<string, unknown>;
+  workout: Record<string, unknown>;
 };
 async function reads(tx: TransactionSql, user: string): Promise<Reads> {
   return asUser(tx, user, async (inner) => {
@@ -63,7 +64,10 @@ async function reads(tx: TransactionSql, user: string): Promise<Reads> {
       await inner`select public.client_portal_plan(${id}::uuid,null::integer) as v`;
     const [n] =
       await inner`select public.client_portal_nutrition_plan(${id}::uuid,null::integer) as v`;
+    const [w] =
+      await inner`select public.client_portal_workout_plan(${id}::uuid,null::integer) as v`;
     return {
+      workout: w!.v as Record<string, unknown>,
       overview: o!.v as Record<string, unknown>,
       plan: pl!.v as Record<string, unknown>,
       nutrition: n!.v as Record<string, unknown>,
@@ -103,12 +107,12 @@ describe('F22 overdue plan restriction (T018)', () => {
     });
   });
 
-  it('restricts the overview, one plan and one nutrition plan for an overdue active client', async () => {
+  it('restricts the overview, one plan, one nutrition plan and one workout plan for an overdue active client', async () => {
     await probe(async (tx) => {
       await activateDaysAgo(tx, p, 45);
       const user = await authUser(tx, p);
       const r = await reads(tx, user);
-      for (const read of [r.overview, r.plan, r.nutrition]) {
+      for (const read of [r.overview, r.plan, r.nutrition, r.workout]) {
         expect(read).toMatchObject({
           status: 'restricted',
           subscription: { status: 'active', overdue: true },
@@ -126,6 +130,7 @@ describe('F22 overdue plan restriction (T018)', () => {
       expect(r.overview).toMatchObject({ status: 'ok', plans: [] });
       expect(r.plan).toEqual({ status: 'not_found' });
       expect(r.nutrition).toEqual({ status: 'not_found' });
+      expect(r.workout).toEqual({ status: 'not_found' });
     });
     await probe(async (tx) => {
       await activateDaysAgo(tx, p, 45);
@@ -159,6 +164,7 @@ describe('F22 overdue plan restriction (T018)', () => {
       ['public.client_portal_overview()', 'overview'],
       ['public.client_portal_plan(uuid,integer)', 'plan'],
       ['public.client_portal_nutrition_plan(uuid,integer)', 'nutrition'],
+      ['public.client_portal_workout_plan(uuid,integer)', 'workout'],
     ] as const)
       await probe(async (tx) => {
         await activateDaysAgo(tx, p, 45);

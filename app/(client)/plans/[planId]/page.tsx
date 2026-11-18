@@ -7,6 +7,9 @@ import {
   readClientPortalPlan,
 } from '../../../../lib/client-access/portal';
 import { renderNutritionPrintHtml } from '../../../../lib/plans/nutrition/export';
+import { readClientWorkoutView } from '../../../../lib/workout-planner/client-export';
+import { createSessionClient } from '../../../../lib/supabase/server';
+import { WorkoutPrintView } from '../../../../components/workout-planner/WorkoutPrintView';
 import {
   isUuid,
   parseRevisionParam,
@@ -28,8 +31,8 @@ import styles from '../../../../components/client-portal/client-portal.module.cs
  * re-reads through `client_portal_plan`, so a stale page or URL cannot keep
  * access after F13 denies it. The nutrition body is the F18 print renderer
  * (one renderer shared with print/export, S57-PO-9) over the client-wall read
- * `client_portal_nutrition_plan`; the workout body stays BLOCKED until F16/F17
- * expose a client-authorized exercise projection (no second renderer here).
+ * `client_portal_nutrition_plan`; the workout body is the F17 `WorkoutPrintView`
+ * over the client-wall read `client_portal_workout_plan` (no second renderer).
  */
 export default async function ClientPlanPage({
   params,
@@ -75,6 +78,18 @@ export default async function ClientPlanPage({
   const nutrition =
     plan.kind === 'nutrition'
       ? await readClientNutritionPlan(planId, plan.revisionNumber)
+      : null;
+  const workoutClient =
+    plan.kind === 'workout' ? await createSessionClient() : null;
+  const workout =
+    plan.kind === 'workout'
+      ? workoutClient
+        ? await readClientWorkoutView(workoutClient, {
+            planId,
+            revisionNumber: plan.revisionNumber,
+            locale,
+          })
+        : ({ status: 'denied' } as const)
       : null;
   const exportBase = `/plans/${planId}/export?revision=${plan.revisionNumber}`;
   return (
@@ -135,6 +150,36 @@ export default async function ClientPlanPage({
         <Alert tone="error" title={m['states.error.title']}>
           <p>{m['states.error.description']}</p>
         </Alert>
+      )}
+      {workout && workout.status !== 'ok' && (
+        <Alert tone="error" title={m['states.error.title']}>
+          <p>{m['states.error.description']}</p>
+        </Alert>
+      )}
+      {workout?.status === 'ok' && (
+        <section
+          className={styles.panel}
+          aria-label={m['client.portal.workout']}
+          data-testid="client-workout-plan"
+        >
+          <WorkoutPrintView payload={workout.payload} locale={locale} />
+          <p className={styles.pager}>
+            <a
+              className={styles.link}
+              href={`${exportBase}&format=pdf`}
+              data-testid="client-plan-export-pdf"
+            >
+              {m['client.portal.exportPdf']}
+            </a>
+            <a
+              className={styles.link}
+              href={`${exportBase}&format=excel`}
+              data-testid="client-plan-export-excel"
+            >
+              {m['client.portal.exportExcel']}
+            </a>
+          </p>
+        </section>
       )}
       {nutrition?.status === 'ok' && (
         <section

@@ -50,13 +50,18 @@ describe('projectClientWorkoutPlan', () => {
         subscription: {
           status: 'expired',
           effective_end_exclusive: '2026-01-01',
+          overdue: false,
         },
       },
       request,
     );
     expect(restricted).toEqual({
       status: 'restricted',
-      subscription: { status: 'expired', effectiveEndExclusive: '2026-01-01' },
+      subscription: {
+        status: 'expired',
+        effectiveEndExclusive: '2026-01-01',
+        overdue: false,
+      },
     });
   });
 
@@ -68,6 +73,7 @@ describe('projectClientWorkoutPlan', () => {
           subscription: {
             status: 'refunded',
             effective_end_exclusive: '2026-01-01',
+            overdue: false,
             refund_scope: 'full',
           },
         },
@@ -78,6 +84,7 @@ describe('projectClientWorkoutPlan', () => {
       subscription: {
         status: 'refunded',
         effectiveEndExclusive: '2026-01-01',
+        overdue: false,
         refundScope: 'full',
       },
     });
@@ -86,7 +93,11 @@ describe('projectClientWorkoutPlan', () => {
   it('never releases content when the subscription is not active, even if the DB said ok', () => {
     const result = projectClientWorkoutPlan(
       rawOk({
-        subscription: { status: 'frozen', effective_end_exclusive: null },
+        subscription: {
+          status: 'frozen',
+          effective_end_exclusive: null,
+          overdue: false,
+        },
       }),
       request,
     );
@@ -144,6 +155,7 @@ describe('projectClientWorkoutPlan', () => {
           subscription: {
             status: 'active',
             effective_end_exclusive: null,
+            overdue: false,
             subscription_id: uuid('96'),
           },
         }),
@@ -222,6 +234,33 @@ describe('loadClientWorkoutPlan', () => {
         PLAN_ID,
         null,
       ),
+    ).toEqual({ status: 'denied' });
+  });
+});
+
+describe('F22 T018 overdue restriction (workout read)', () => {
+  it('restricts an overdue active client and denies a missing overdue fact', () => {
+    const ok = rawOk();
+    const request = { planId: ok.plan.plan_id, revisionNumber: null };
+    const overdue = projectClientWorkoutPlan(
+      {
+        ...ok,
+        subscription: { ...ok.subscription, overdue: true },
+      },
+      request,
+    );
+    expect(overdue).toMatchObject({
+      status: 'restricted',
+      subscription: { status: 'active', overdue: true },
+    });
+    expect(JSON.stringify(overdue)).not.toContain('exercises');
+    const { overdue: _o, ...withoutFact } = ok.subscription as Record<
+      string,
+      unknown
+    >;
+    void _o;
+    expect(
+      projectClientWorkoutPlan({ ...ok, subscription: withoutFact }, request),
     ).toEqual({ status: 'denied' });
   });
 });
