@@ -44,6 +44,8 @@ export function RegistrationLinkDialog({
     [failure, setFailure] = useState<string | null>(null),
     [copied, setCopied] = useState(false);
   const [rows, setRows] = useState<{ amount: string; offset: string }[]>([]);
+  const [upfront, setUpfront] = useState('');
+  const [useDefaultSplit, setUseDefaultSplit] = useState(false);
   useEffect(() => {
     live.current = true;
     return () => {
@@ -55,13 +57,28 @@ export function RegistrationLinkDialog({
     setLink(null);
     onClose();
   };
-  const schedule: Installment[] | null = rows.length
+  const customSchedule: Installment[] | null = rows.length
     ? rows.map((r, i) => ({
         seq: i + 1,
         amountMinor: r.amount,
         dueOffsetDays: /^[0-9]+$/.test(r.offset) ? Number(r.offset) : NaN,
       }))
     : null;
+  const defaultSchedule: Installment[] | null = upfront
+    ? exactAmount(upfront)
+      ? BigInt(upfront) >= BigInt(priceMinor)
+        ? [{ seq: 1, amountMinor: upfront, dueOffsetDays: 0 }]
+        : [
+            { seq: 1, amountMinor: upfront, dueOffsetDays: 0 },
+            {
+              seq: 2,
+              amountMinor: (BigInt(priceMinor) - BigInt(upfront)).toString(),
+              dueOffsetDays: 30,
+            },
+          ]
+      : [{ seq: 1, amountMinor: upfront, dueOffsetDays: 0 }]
+    : null;
+  const schedule = useDefaultSplit ? defaultSchedule : customSchedule;
   const valid = parseSchedule(schedule, priceMinor) !== undefined;
   // Flexible terms: upfront is the first row amount, count includes upfront.
   // parsePaymentTerms revalidates correspondence + exact total; it agrees
@@ -71,18 +88,21 @@ export function RegistrationLinkDialog({
       ? null
       : parsePaymentTerms(
           {
-            upfrontAmountMinor: rows[0]?.amount,
-            totalPaymentCount: rows.length,
+            upfrontAmountMinor: schedule[0]?.amountMinor,
+            totalPaymentCount: schedule.length,
             installments: schedule,
           },
           priceMinor,
         );
-  const total = rows
+  const total = (schedule ?? [])
     .reduce(
-      (sum, r) => (exactAmount(r.amount) ? sum + BigInt(r.amount) : sum),
+      (sum, r) =>
+        exactAmount(r.amountMinor) ? sum + BigInt(r.amountMinor) : sum,
       0n,
     )
     .toString();
+  const displayedTotal = schedule === null ? priceMinor : total;
+  const paymentCount = schedule?.length ?? 1;
   const issue = async () => {
     if (pendingRef.current || !valid || link) return;
     pendingRef.current = true;
@@ -162,64 +182,131 @@ export function RegistrationLinkDialog({
           {canSchedule && (
             <fieldset disabled={pending}>
               <legend>{m['registration.schedule']}</legend>
-              {rows.map((row, index) => (
-                <div className={styles.installment} key={index}>
-                  <Field
-                    label={`${m['registration.amount']} ${index + 1}`}
-                    inputProps={{
-                      value: row.amount,
-                      inputMode: 'numeric',
-                      onChange: (e) =>
+              <div className={styles.termsControls}>
+                <Field
+                  label={m['registration.defaultSplit']}
+                  inputProps={{
+                    type: 'checkbox',
+                    checked: useDefaultSplit,
+                    disabled: !useDefaultSplit && rows.length > 0,
+                    className: styles.splitToggle,
+                    onChange: (e) => {
+                      const checked = e.currentTarget.checked;
+                      if (checked) setUseDefaultSplit(true);
+                      else {
                         setRows(
-                          rows.map((r, i) =>
-                            i === index ? { ...r, amount: e.target.value } : r,
-                          ),
-                        ),
+                          (defaultSchedule ?? []).map((row) => ({
+                            amount: row.amountMinor,
+                            offset: String(row.dueOffsetDays),
+                          })),
+                        );
+                        setUseDefaultSplit(false);
+                      }
+                    },
+                  }}
+                />
+                <Field
+                  label={m['registration.paymentCount']}
+                  inputProps={{
+                    type: 'number',
+                    value: paymentCount,
+                    readOnly: true,
+                  }}
+                />
+              </div>
+              {useDefaultSplit ? (
+                <>
+                  <Field
+                    label={m['registration.upfrontAmount']}
+                    inputProps={{
+                      type: 'text',
+                      value: upfront,
+                      inputMode: 'numeric',
+                      onChange: (e) => setUpfront(e.target.value),
                     }}
                   />
-                  <Field
-                    label={`${m['registration.offset']} ${index + 1}`}
-                    inputProps={{
-                      value: row.offset,
-                      inputMode: 'numeric',
-                      onChange: (e) =>
-                        setRows(
-                          rows.map((r, i) =>
-                            i === index ? { ...r, offset: e.target.value } : r,
-                          ),
-                        ),
-                    }}
-                  />
+                  <p className={styles.timingNote}>
+                    {m['registration.timingAnchorNote']}
+                  </p>
                   <Button
                     variant="secondary"
-                    onClick={() => setRows(rows.filter((_, i) => i !== index))}
+                    disabled={upfront !== ''}
+                    onClick={() => {
+                      setUseDefaultSplit(false);
+                      setRows([{ amount: '', offset: '' }]);
+                    }}
                   >
-                    {m['registration.remove']} {index + 1}
+                    {m['registration.add']}
                   </Button>
-                </div>
-              ))}
-              <Button
-                variant="secondary"
-                onClick={() => setRows([...rows, { amount: '', offset: '' }])}
-              >
-                {m['registration.add']}
-              </Button>
-              {rows.length > 0 && (
-                <p aria-live="polite">
-                  {m['registration.total']}:{' '}
-                  <bdi>
-                    {total} / {priceMinor}
-                  </bdi>{' '}
-                  —{' '}
-                  {
-                    m[
-                      valid
-                        ? 'registration.sumValid'
-                        : 'registration.invalid_input'
-                    ]
-                  }
-                </p>
+                </>
+              ) : (
+                <>
+                  {rows.map((row, index) => (
+                    <div className={styles.installment} key={index}>
+                      <Field
+                        label={`${m['registration.amount']} ${index + 1}${index === 0 ? ` (${m['registration.upfrontAmount']})` : ''}`}
+                        inputProps={{
+                          value: row.amount,
+                          inputMode: 'numeric',
+                          onChange: (e) =>
+                            setRows(
+                              rows.map((r, i) =>
+                                i === index
+                                  ? { ...r, amount: e.target.value }
+                                  : r,
+                              ),
+                            ),
+                        }}
+                      />
+                      <Field
+                        label={`${m['registration.offset']} ${index + 1}`}
+                        inputProps={{
+                          value: row.offset,
+                          inputMode: 'numeric',
+                          onChange: (e) =>
+                            setRows(
+                              rows.map((r, i) =>
+                                i === index
+                                  ? { ...r, offset: e.target.value }
+                                  : r,
+                              ),
+                            ),
+                        }}
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          setRows(rows.filter((_, i) => i !== index))
+                        }
+                      >
+                        {m['registration.remove']} {index + 1}
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      setRows([...rows, { amount: '', offset: '' }])
+                    }
+                  >
+                    {m['registration.add']}
+                  </Button>
+                </>
               )}
+              <p className={styles.total} aria-live="polite">
+                {m['registration.total']}:{' '}
+                <bdi>
+                  {displayedTotal} / {priceMinor}
+                </bdi>{' '}
+                —{' '}
+                {
+                  m[
+                    valid
+                      ? 'registration.sumValid'
+                      : 'registration.invalid_input'
+                  ]
+                }
+              </p>
             </fieldset>
           )}
           {!valid && (

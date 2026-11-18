@@ -209,7 +209,11 @@ it.each([false, true])(
         text(b.props.children as ReactNode).includes(m['registration.add']),
       ),
     ).toBe(canSchedule);
-    expect(ui.fields).toHaveLength(0);
+    expect(ui.fields.map((field) => field.props.label)).toEqual(
+      canSchedule
+        ? [m['registration.defaultSplit'], m['registration.paymentCount']]
+        : [],
+    );
     expect(fieldValue(tree, m['registration.url'])).toBeUndefined();
     expect(text(tree)).not.toContain('commission');
     expect(ui.alerts).toHaveLength(0);
@@ -300,7 +304,10 @@ it('removes an installment row, clears its sum feedback and issues a null schedu
   expect(text(tree)).toContain('400 / 1200');
   clickButton(tree, `${m['registration.remove']} 1`);
   tree = rerender(ctx, props);
-  expect(elements(tree).fields).toHaveLength(0);
+  expect(elements(tree).fields.map((field) => field.props.label)).toEqual([
+    m['registration.defaultSplit'],
+    m['registration.paymentCount'],
+  ]);
   expect(text(tree)).not.toContain('400 / 1200');
   await confirm(tree);
   expect(actions.issue).toHaveBeenCalledExactlyOnceWith({
@@ -518,8 +525,10 @@ it('keeps entered amounts intact when the installment count changes', () => {
   tree = setField(ctx, m['registration.amount'], 2, '500');
   tree = setField(ctx, m['registration.offset'], 2, '30');
   expect(text(tree)).toContain('1200 / 1200');
+  expect(fieldValue(tree, m['registration.paymentCount'])).toBe(3);
   clickButton(tree, `${m['registration.remove']} 2`);
   tree = rerender(ctx, props);
+  expect(fieldValue(tree, m['registration.paymentCount'])).toBe(2);
   expect(fieldValue(tree, m['registration.amount'])).toBe('400');
   const amounts = elements(tree)
     .fields.filter((f) =>
@@ -593,4 +602,75 @@ it('closes an open dialog on workspace and package switches', () => {
     `/registration-links?workspace=${version}`,
   );
   expect(nav.refresh).not.toHaveBeenCalled();
+});
+
+it('renders the approved upfront, payment-count, default-split and Cairo timing labels', () => {
+  const { tree, ctx } = render(props);
+  const fields = elements(tree).fields;
+  const labels = fields.map((field) => field.props.label);
+  expect(labels).toContain(m['registration.paymentCount']);
+  const defaultSplit = fields.find(
+    (field) => field.props.label === m['registration.defaultSplit'],
+  );
+  expect(defaultSplit).toBeDefined();
+  expect(
+    (defaultSplit!.props.inputProps as { checked?: boolean }).checked,
+  ).toBe(false);
+  (
+    defaultSplit!.props.inputProps as {
+      onChange: (event: { currentTarget: { checked: boolean } }) => void;
+    }
+  ).onChange({ currentTarget: { checked: true } });
+  const defaultTree = rerender(ctx, props);
+  expect(
+    elements(defaultTree).fields.map((field) => field.props.label),
+  ).toContain(m['registration.upfrontAmount']);
+  expect(fieldValue(defaultTree, m['registration.paymentCount'])).toBe(1);
+  expect(text(defaultTree)).toContain(m['registration.timingAnchorNote']);
+  expect(text(defaultTree)).toContain('1200 / 1200');
+});
+
+it('shows the upfront amount and payment count in recent link terms', () => {
+  const data = {
+    status: 'ok',
+    offers: [],
+    links: [
+      {
+        id: version,
+        status: 'valid',
+        created_at: '2026-01-01T00:00:00Z',
+        price_minor: '1200',
+        currency: 'USD',
+        duration_days: 30,
+        opened_at: null,
+      },
+    ],
+    installments: [
+      {
+        link_id: version,
+        seq: 1,
+        amount_minor: '400',
+        due_offset_days: 0,
+      },
+      {
+        link_id: version,
+        seq: 2,
+        amount_minor: '800',
+        due_offset_days: 30,
+      },
+    ],
+  } as unknown as RegistrationData;
+  const ctx = createContext();
+  hooks.ctx = ctx;
+  ctx.index = 0;
+  const tree = RegistrationLinksManager({
+    workspaceId: ws,
+    workspaces: [{ id: ws, name: 'A' }],
+    data,
+    canSchedule: true,
+    locale: 'en',
+  }) as ReactElement;
+  hooks.ctx = null;
+  expect(text(tree)).toContain(`${m['registration.paymentCount']}: 2`);
+  expect(text(tree)).toContain(`${m['registration.upfrontAmount']}: 400 USD`);
 });

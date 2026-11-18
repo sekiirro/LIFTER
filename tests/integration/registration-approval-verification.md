@@ -1229,3 +1229,12 @@ Executed jobs and conclusions (all required jobs executed steps > 0):
 
 The PR was not merged and no merge approval was requested. T048 (architect
 review) remains the reviewer's task.
+
+## S65 T053/T054 execution supplement — 2026-11-18
+
+- Source base: `origin/main` `2cc6e2edab094979d1ca9c180e02b802ac50ce2c`; branch `s65-012-t054`.
+- Copy added append-only to `lib/i18n/messages/en.ts` and `ar.ts`, with exact PO S65-PO-8 values for `registration.upfrontAmount`, `registration.paymentCount`, `registration.defaultSplit`, and `registration.timingAnchorNote`. Duplicate scan found one occurrence of each key per locale. Message parity/value test passed (5/5).
+- RED: new labelled-control assertion failed because the UI had no `registration.upfrontAmount` field; default residual test failed because no such control existed. GREEN: `npx vitest run tests/unit/registration-links-dialog.test.ts tests/unit/registration-links-flexible-ui.test.ts tests/unit/registration-approval-messages.test.ts` passed, 33/33 tests.
+- UI coverage now asserts blank upfront default (no arbitrary amount), default residual computed with BigInt and offset 30, full-price upfront as one payment without a zero remainder, explicit payment count and custom row amounts/offsets, exact live total, no silent row-value rewrite after count changes, manager summary, locale parity, and role-gated editor visibility. Existing show-once URL and privacy cases remain in the dialog suite.
+- No database operation or e2e test was run. T050/T051 Stack A evidence is the S63 supplement above. Real rendered Stack A matrix and e2e remain U9 and are not claimed here.
+- Frontend source review: existing `Field`, `Button`, and dialog primitives retained; CSS uses design tokens and logical properties; no color/font/radius/motion/dependency added. Unit component tests passed; rendered light/dark × AR/EN × mobile/desktop screenshots and axe were not run in this scope.
