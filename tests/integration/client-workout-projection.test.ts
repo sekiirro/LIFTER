@@ -176,6 +176,7 @@ describe('client workout projection read', () => {
     expect(result.subscription).toEqual({
       status: 'active',
       effective_end_exclusive: expect.any(String),
+      overdue: false,
     });
     expect(result.plan).toEqual({
       plan_id: plan,
@@ -357,6 +358,7 @@ describe('client workout projection negatives', () => {
       subscription: {
         status: 'awaiting_activation',
         effective_end_exclusive: null,
+        overdue: false,
       },
     });
     expect(JSON.stringify(result)).not.toContain(awaitingPlan);

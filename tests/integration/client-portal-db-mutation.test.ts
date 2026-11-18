@@ -121,7 +121,8 @@ async function stillInstalled(signature: string, control: string) {
 describe('F22 database control kill tests', () => {
   it('K1 portal entitlement gate: skipping the F13 active check leaks plans to an awaiting client', async () => {
     const signature = 'public.client_portal_overview()';
-    const control = "if summary->>'status' is distinct from 'active' then";
+    const control =
+      "if summary->>'status' is distinct from 'active' or coalesce((summary->>'overdue')::boolean, true) then";
     const observed = (await underMutant(
       signature,
       control,
@@ -202,7 +203,8 @@ describe('F22 database control kill tests', () => {
 
   it('K6 nutrition read entitlement gate: skipping the F13 active check leaks F18 content to an awaiting client', async () => {
     const signature = 'public.client_portal_nutrition_plan(uuid,integer)';
-    const control = "if summary->>'status' is distinct from 'active' then";
+    const control =
+      "if summary->>'status' is distinct from 'active' or coalesce((summary->>'overdue')::boolean, true) then";
     const observed = (await underMutant(
       signature,
       control,
