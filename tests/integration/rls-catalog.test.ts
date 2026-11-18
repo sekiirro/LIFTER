@@ -482,6 +482,12 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'd1_erase_inapplicable_answers',
+          'f15_d1_erasure_run',
+          'f15_d1_erasure_run_batch',
+          'f15_d1_erasure_schedule_activate',
+          'f15_d1_erasure_schedule_deactivate',
+          'guard_form_d1_erasure_control',
         ]),
       ].sort(),
     );
@@ -545,6 +551,10 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        'f15_d1_erasure_run',
+        'f15_d1_erasure_run_batch',
+        'f15_d1_erasure_schedule_activate',
+        'f15_d1_erasure_schedule_deactivate',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -624,6 +634,12 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'd1_erase_inapplicable_answers',
+          'f15_d1_erasure_run',
+          'f15_d1_erasure_run_batch',
+          'f15_d1_erasure_schedule_activate',
+          'f15_d1_erasure_schedule_deactivate',
+          'guard_form_d1_erasure_control',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -823,6 +839,12 @@ describe('tenancy security catalog (T007)', () => {
               'f19_guard_plan_revision_contributors',
               'f19_track_plan_draft_contributor',
               'f19_set_plan_revision_contributor_actions',
+              'd1_erase_inapplicable_answers',
+              'f15_d1_erasure_run',
+              'f15_d1_erasure_run_batch',
+              'f15_d1_erasure_schedule_activate',
+              'f15_d1_erasure_schedule_deactivate',
+              'guard_form_d1_erasure_control',
             ].includes(row.proname)),
       );
     }

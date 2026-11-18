@@ -362,3 +362,9 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 - Scope: reconciled `specs/015-forms-intake/spec.md` EN option table (`N07.2`–`N07.5` to `2 meals`–`5 meals` per already-approved S34-PO-4; line 398 note aligned with already-approved S33-PO-3; `N08.medium.foods`/`N08.high.foods` kept pending per S41-PO-3), ticked `T088` and `T113` in `specs/015-forms-intake/tasks.md`, added `S65-hyd-f15eng` evidence rows in `specs/015-forms-intake/traceability.md`, and added unit/integration regression & rollback-scoped SQL mutation assertions in `tests/unit/forms-s32-approved-intake.test.ts` and `tests/integration/forms-default-onboarding.test.ts`. No new requirement, copy, schema, or PO decision introduced.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for T088 and T113; Stack A (substituting for Stack D) integration and mutation evidence recorded in `traceability.md`.
+
+## S65-hyd-f15purge T029 and T024 Analyze refresh (2026-11-18) (date update only)
+
+- Scope: added forward-only D1 privacy erasure migration `supabase/migrations/20261124150000_f15_d1_privacy_erasure.sql`, migration contract unit test `tests/unit/forms-d1-erasure-migration.test.ts`, Stack D security/mutation integration suite `tests/integration/forms-d1-erasure.test.ts`, `rls-catalog.test.ts` function allowlist entries, `tests/integration/forms-verification.md`, retained UI matrix `specs/015-forms-intake/reports/evidence/t024-acceptance/`, ticked `T029`, and annotated `T024` `Verified so far / Remaining` in `tasks.md` + `traceability.md`. No FR/SC/requirement text, copy, or PO decision changed.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for T029 and T024 evidence updates.
