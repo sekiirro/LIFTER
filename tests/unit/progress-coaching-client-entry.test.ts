@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getActor: vi.fn(),
@@ -53,6 +53,8 @@ const edit = {
 };
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-18T10:00:00Z'));
   vi.clearAllMocks();
   mocks.createSessionClient.mockResolvedValue({ rpc: mocks.rpc });
   mocks.authorizeClientAccess.mockResolvedValue({
@@ -61,7 +63,19 @@ beforeEach(() => {
   });
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe('client entry/edit input parsing', () => {
+  it('refuses dates far in the past so they cannot become the spec 024 baseline (A1)', () => {
+    for (const recordedOn of ['0001-01-01', '1999-12-31', '2025-01-01'])
+      expect(parseOwnEntryInput({ ...entry, recordedOn })).toBeNull();
+    expect(
+      parseOwnEntryInput({ ...entry, recordedOn: '2025-11-20' }),
+    ).not.toBeNull();
+  });
+
   it('accepts well-formed input and rejects malformed fields', () => {
     expect(parseOwnEntryInput(entry)).toEqual(entry);
     expect(parseOwnEditInput(edit)).toEqual(edit);
