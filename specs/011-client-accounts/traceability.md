@@ -38,9 +38,9 @@ S57-R2 B1 RED/GREEN/mutation evidence: concurrent assignment-first membership-re
 
 ## S64 T058/T062 partial evidence (Stack B, 2026-11-18)
 
-| Requirement | Task | Evidence | Status |
-| --- | --- | --- | --- |
-| FR-028 | T058, T062 | `tests/integration/client-trainer-distribution.test.ts` 6/6; touched suites 4 files / 29 tests on Stack B | PARTIAL: job consumer, balanced system assignment, no-op outcomes, lease retry, backlog and shared workspace lock verified. T063 approval emit and T048 deletion-intent/reassignment clauses remain open. |
-| SC-021 | T058, T062 | same focused and touched integration runs | PARTIAL: system-distribution assignment and permitted no-op outcomes verified. Trainer-deletion reassignment and F11 overlapping-deletion exclusion remain open pending T048 intent contract. |
+| Requirement | Task       | Evidence                                                                                                  | Status                                                                                                                                                                                                    |
+| ----------- | ---------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-028      | T058, T062 | `tests/integration/client-trainer-distribution.test.ts` 6/6; touched suites 4 files / 29 tests on Stack B | PARTIAL: job consumer, balanced system assignment, no-op outcomes, lease retry, backlog and shared workspace lock verified. T063 approval emit and T048 deletion-intent/reassignment clauses remain open. |
+| SC-021      | T058, T062 | same focused and touched integration runs                                                                 | PARTIAL: system-distribution assignment and permitted no-op outcomes verified. Trainer-deletion reassignment and F11 overlapping-deletion exclusion remain open pending T048 intent contract.             |
 
 T058 and T062 remain unticked. See `C:/Users/NEW LAP/.lifter/runs/s64-luna-t062/report.md` MCQ-1/MCQ-2 for blockers and recommendations.
