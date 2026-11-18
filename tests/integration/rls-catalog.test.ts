@@ -570,7 +570,7 @@ describe('tenancy security catalog (T007)', () => {
         'f19_set_plan_revision_contributor_actions',
         // F15 T029: D1 erasure cron wrappers declare `security invoker` and enforce
         // the postgres-owner check in the body; only d1_erase_inapplicable_answers
-        // is `security definer` (20261124150000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
+        // is `security definer` (20261130030000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
         'f15_d1_erasure_run',
         'f15_d1_erasure_run_batch',
         'f15_d1_erasure_schedule_activate',

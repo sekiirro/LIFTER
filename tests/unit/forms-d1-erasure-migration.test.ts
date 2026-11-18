@@ -6,12 +6,12 @@ const migrationsDir = path.resolve('supabase/migrations');
 
 function findD1Migration(): string | undefined {
   return readdirSync(migrationsDir).find((name) =>
-    /^2026112415\d{4}_f15_d1_privacy_erasure\.sql$/.test(name),
+    /^2026113003\d{4}_f15_d1_privacy_erasure\.sql$/.test(name),
   );
 }
 
 describe('T029 D1 privacy erasure migration contract', () => {
-  it('provides a forward-only D1 migration in the reserved 2026112415xxxx range without BOM or scheduler activation', () => {
+  it('provides a forward-only D1 migration in the reserved 2026113003xxxx range without BOM or scheduler activation', () => {
     const filename = findD1Migration();
     expect(filename).toBeDefined();
     const filePath = path.join(migrationsDir, filename!);
