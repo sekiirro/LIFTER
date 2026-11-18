@@ -482,3 +482,10 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Evidence: full unit 305 files / 3514 tests; branding integration 15 files / 86 tests on Stack B; focused e2e 20 (registration-links) + 302 (branding-registration, banner-loaded) + 29 (branding-registration) + 33 (screenshot matrices) + 6 (client-signup) passed; T054, T062 and T063 ticked on executed assertions; T041, T055 and T056 retain explicit remaining clauses.
 - No requirement, FR/SC, acceptance, plan or task-scope wording changed; this is a date/status refresh after task-status and traceability evidence updates. **No open ambiguities** remain.
 - Findings: 0 open CRITICAL, 0 open HIGH. Verdict: PASS for Spec Kit entry on this evidence update.
+
+## S64 re-date (2026-11-18) — F14b status annotations only
+
+- Date: 2026-11-18T04:20:00Z (s64-hy4-ui2 lane), after the F14b T-u1/T-u2/T-u4 "Verified so far / Remaining" annotations.
+- Scope: status/evidence annotations only; no task ticked, no FR/SC/acceptance-scenario or plan design text changed. Requirement text carries **no open ambiguities**; the owner-facing upload/alt-text copy gaps found during implementation are escalated as numbered PO MCQs in the lane report (`C:/Users/NEW LAP/.lifter/runs/s64-hy4-ui2/report.md`), not encoded as new copy or behavior.
+- Findings: 0 open CRITICAL, 0 open HIGH in this analysis. Static re-date per S54-R6 (no full Analyze required).
+- Verdict: PASS for this documentation-only re-date.
