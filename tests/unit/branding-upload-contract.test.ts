@@ -37,7 +37,7 @@ describe('F14b upload action contract', () => {
     const migration = readFileSync(
       resolve(
         root,
-        'supabase/migrations/20261124100000_branding_upload_application_seam.sql',
+        'supabase/migrations/20261124190000_branding_upload_application_seam.sql',
       ),
       'utf8',
     );
