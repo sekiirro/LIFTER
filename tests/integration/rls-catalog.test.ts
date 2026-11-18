@@ -1303,9 +1303,7 @@ describe('package security catalog', () => {
           await db`select has_column_privilege(${role},'public.package_versions',${column.column_name},'SELECT') as allowed`;
         expect(grant?.allowed).toBe(
           role === 'authenticated' &&
-            !['commission_rate_bp', 'market', 'type'].includes(
-              column.column_name,
-            ),
+            column.column_name !== 'commission_rate_bp',
         );
       }
     const [view] =
@@ -1329,6 +1327,8 @@ describe('package security catalog', () => {
       'duration_months',
       'published_at',
       'published_by',
+      'market',
+      'type',
     ]);
     expect(
       projection.find((r) => r.column_name === 'price_minor')?.data_type,
