@@ -7,7 +7,9 @@ Date: 2026-11-18. Scope: `specs/023-client-progress-coaching/`. No FR, SC, accep
 - `tasks.md`: migration names renumbered to 20261125030000 and 20261125030100 (F22 took 20261123000000); evidence for T010, T014, T033 and T040 now that `app_private.f22_enqueue_client_notice` is on main.
 - Decision recorded (no new FR): reminders and food replacement notices are produced in the database (hourly job, triggers) rather than by `lib/.../reminders.ts` and a reminders route; staff notices use a sibling inbox table because the F15 inbox is form-alert specific. All copy is the S55-PO-10 approved copy; no new strings.
 
-Result: 0 open CRITICAL, 0 open HIGH. T028 (overdue access) still waits for the F13 overdue input (PR #265).
+T028 is implemented on the merged F13 overdue input (PR #265, app_private.f13_client_overdue_state): measurements are restricted while overdue, in SQL (migration 20261125030300).
+
+Result: 0 open CRITICAL, 0 open HIGH. No task in this spec waits on another PR; T051 (docs/) and T054 are orchestrator-owned.
 
 ## Re-run 2026-11-17 (US3 implementation, after the F18 merge)
 
