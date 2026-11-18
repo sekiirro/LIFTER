@@ -184,6 +184,67 @@ it('T068 stores the pinned rate once and preserves the exact converted line valu
   );
 });
 
+it('T068 creates a missing pre-migration FX snapshot, advances pending USD to ready, and keeps ready immutable', async () => {
+  const eventId = p.approved.receipt!.event_id as string;
+  await db.begin(async (tx) => {
+    await tx`alter table app_private.package_reporting_fx_snapshots disable trigger package_reporting_fx_snapshot_no_change`;
+    await tx`delete from app_private.package_reporting_fx_snapshots
+      where workspace_id=${f.wsA.id} and payment_event_id=${eventId}`;
+    await tx`alter table app_private.package_reporting_fx_snapshots enable trigger package_reporting_fx_snapshot_no_change`;
+  });
+
+  const pending = await admin().rpc('save_package_reporting_fx_snapshot', {
+    p_workspace_id: f.wsA.id,
+    p_payment_event_id: eventId,
+    p_status: 'pending',
+    p_provider_key: 'CBE',
+    p_rate: null,
+    p_publication_date: null,
+  });
+  expect(pending.error).toBeNull();
+  expect(pending.data).toMatchObject({ status: 'pending', provider: 'CBE' });
+  const [pendingRow] = await db`
+    select status, source_currency, provider_key, rate::text, publication_date
+    from app_private.package_reporting_fx_snapshots
+    where workspace_id=${f.wsA.id} and payment_event_id=${eventId}`;
+  expect(pendingRow).toMatchObject({
+    status: 'pending',
+    source_currency: 'USD',
+    provider_key: 'CBE',
+    rate: null,
+    publication_date: null,
+  });
+
+  const ready = await admin().rpc('save_package_reporting_fx_snapshot', {
+    p_workspace_id: f.wsA.id,
+    p_payment_event_id: eventId,
+    p_status: 'ready',
+    p_provider_key: 'CBE',
+    p_rate: '50',
+    p_publication_date: '2026-11-29',
+  });
+  expect(ready.error).toBeNull();
+  expect(ready.data).toMatchObject({
+    status: 'ready',
+    provider: 'CBE',
+    rate: '50',
+  });
+  const retry = await admin().rpc('save_package_reporting_fx_snapshot', {
+    p_workspace_id: f.wsA.id,
+    p_payment_event_id: eventId,
+    p_status: 'ready',
+    p_provider_key: 'CBE',
+    p_rate: '60',
+    p_publication_date: '2026-11-28',
+  });
+  expect(retry.error).toBeNull();
+  expect(retry.data).toMatchObject({
+    status: 'ready',
+    provider: 'CBE',
+    rate: '50',
+  });
+});
+
 it('T068 sums exact converted collection lines before one half-up aggregate rounding', async () => {
   const isolated = await (
     await import('./registration-approval-fixture')

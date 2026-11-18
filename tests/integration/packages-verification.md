@@ -178,3 +178,9 @@ Raw negative/reset/restored logs and structured per-mutation JSON remain in `%TE
 
 - T064b: the teardown design for protected immutable version rows and the `packages_no_delete`/`packages_no_truncate` guards is authored in `specs/009-packages/review.md`. The independent security review is **REQUESTED / PENDING**; no reviewer has signed off and the gate has not passed. No deletion, migration or data change was made.
 - T076: `tests/integration/packages-retirement.test.ts` holds planned `it.todo` cases. The retirement operation (FR-023) has no approved contract and does not exist on main (owners T054/T055/T066), so no failing or passing test was authored. T076 stays unticked until the test passes on an implementation head.
+
+## S66-R3 PR #273 review-fix attempt (2026-11-18)
+
+- Added a T068 integration case for a synthetic pre-migration USD payment event with no reporting snapshot: pending insert, pending-to-ready update, and ready immutability retry.
+- Safe Stack E reset completed and `client-accounts-provision.mjs` completed. Integration execution is blocked before test discovery: the safe wrapper status output provides only stack metadata, and `.env.stack-e` lacks `ANON_KEY` / `SERVICE_ROLE_KEY`; no keys were read or printed. RED result, EGP/SAR cases, and mutation evidence remain unverified.
+- No task is ticked on this attempt. See `C:/Users/NEW LAP/.lifter/runs/s66-luna-fix273/report.md`.
