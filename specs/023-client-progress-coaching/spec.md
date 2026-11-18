@@ -25,7 +25,7 @@ A client with an active subscription receives a weekly check-in form 7 days afte
 
 ### Story 2 — Measurements (P1)
 
-Measurements are auto-extracted from weekly check-in form answers into a dedicated Progress store, preserving question mappings, units and history. A client cannot create a duplicate manual entry for the same day/type. Any authorized trainer may correct a measurement directly; the change is recorded in the background audit log only (actor, timestamp, previous and new values), with no user-facing correction-history UI.
+Measurements are auto-extracted from weekly check-in form answers into a dedicated Progress store, preserving question mappings, units and history. A client may add manual measurements and edit their own manual entries, but cannot create a duplicate manual entry for the same day/type (S57-PO-8). Any authorized trainer may correct any measurement directly; every change is recorded in the background audit log only (actor, timestamp, previous and new values), with no user-facing correction-history UI.
 
 **Independent test**: Submit a weekly form containing mapped measurement answers, assert a Progress record exists with source reference and original units; attempt a same-day duplicate, assert rejection; correct as a second trainer, assert the correction persists and is recorded in the background audit log (actor, timestamp, previous/new values) with no user-facing correction-history entry.
 
@@ -34,6 +34,7 @@ Measurements are auto-extracted from weekly check-in form answers into a dedicat
 1. **Given** a weekly form submission with measurement-mapped answers, **When** it is processed, **Then** corresponding Progress measurements are created with source reference and original units (FR-010).
 2. **Given** an existing measurement for client/type/day, **When** a second entry is attempted (manual or auto), **Then** it is rejected and the user is directed to edit the existing record (FR-012).
 3. **Given** an authorized trainer, **When** they correct a measurement, **Then** the correction persists by directly updating the measurement and the change is recorded in the background audit log (actor, timestamp, previous and new values); no user-facing correction-history entry is created (FR-013).
+4. **Given** a client with an own manual measurement, **When** they edit it, **Then** the measurement is updated in place and the change is recorded in the background audit log; an attempt to edit a check-in-extracted measurement or another client's measurement is rejected (FR-012, FR-013, S57-PO-8).
 
 ### Story 3 — Food replacement request (P2)
 
@@ -78,7 +79,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - **FR-003**: The system MUST reuse the F15 recurring assignment engine for check-in occurrence creation; P5-A MUST NOT define a separate scheduler or occurrence table. (Source: S54-PO-11 Q3=A; p5-audit S54-P5-Q3)
 - **FR-004**: Previously outstanding check-in forms MUST remain visible across freeze and resume. (Source: BRD-04.6)
 - **FR-005**: Weekly check-in completion MUST NOT be a login gate. (Source: BRD-04.6)
-- **FR-006**: The system MUST send an in-app reminder on the check-in day and a second reminder 24 hours later if the check-in remains unanswered. (Source: S54-PO-11 Q2 written)
+- **FR-006**: The system MUST send an in-app reminder on the check-in day and a second reminder 24 hours later if the check-in remains unanswered. Reminders are delivered through the client inbox that spec 022 adds to the F15 inbox (S57-PO-10). (Source: S54-PO-11 Q2 written; S57-PO-10)
 - **FR-007**: Reminder time-of-day MUST be 10:00 AM in the workspace's configured timezone (workspace time). Both the check-in-day reminder and the 24-hour follow-up reminder are sent at 10:00 AM workspace time on their respective days. (Source: S55-PO-3 Q1=A, PO wording "10 AM workspace time"; S54-023-Q1 resolved.)
 - **FR-008**: Check-in KPI "handled check-ins received" MUST count check-ins received, not check-ins sent. (Source: BRD-05)
 - **FR-009**: A frozen client MUST NOT receive inappropriate active-cycle check-in prompts. (Source: BRD-04.6)
@@ -87,8 +88,8 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 
 - **FR-010**: The system MUST maintain a dedicated Progress measurement store with a source reference to the weekly form submission when a measurement is captured via a form. (Source: S54-PO-11 Q4=A; p5-audit S54-P5-Q4)
 - **FR-011**: The system MUST auto-extract measurements from F15 weekly form answers into the Progress store, preserving question mappings, units and history. (Source: S54-PO-11 Q5 written)
-- **FR-012**: The system MUST reject a second manual measurement entry for the same client/day/type and direct the user to edit the existing record. When an auto-extracted measurement conflicts with an existing same-day record, the system MUST directly update that record's value and original units in place and record the change in the background audit log; no user-visible correction-history entry is created for such an auto-update. (Source: S54-PO-11 Q6=A; p5-audit S54-P5-Q6; S55-PO-3 Q2=A, PO wording "directly update measurement, no complicated history UI; keep background audit"; S54-023-Q2 resolved.)
-- **FR-013**: Any authorized trainer in the workspace MAY correct a measurement; the correction MUST directly update the measurement in place, and the change MUST be recorded in the background audit log with actor, timestamp, previous and new values. No user-facing correction-history UI is provided. (Source: S54-PO-11 Q7=A; BRD-09; S55-PO-3 Q2=A, PO wording "directly update measurement, no complicated history UI; keep background audit"; S54-023-Q2 resolved.)
+- **FR-012**: A client MAY add manual measurements and MAY edit their own manual entries in place (S57-PO-8). The system MUST reject a second manual measurement entry for the same client/day/type and direct the user to edit the existing record. A client MUST NOT edit a check-in-extracted measurement or another client's measurement; client edits use the same optimistic version check and background audit as trainer corrections. When an auto-extracted measurement conflicts with an existing same-day record, the system MUST directly update that record's value and original units in place and record the change in the background audit log; no user-visible correction-history entry is created for such an auto-update. (Source: S54-PO-11 Q6=A; p5-audit S54-P5-Q6; S55-PO-3 Q2=A, PO wording "directly update measurement, no complicated history UI; keep background audit"; S54-023-Q2 resolved; S57-PO-8.)
+- **FR-013**: Any authorized trainer in the workspace MAY correct any measurement (manual or check-in-extracted); a client MAY edit only their own manual entries (FR-012); the correction MUST directly update the measurement in place, and the change MUST be recorded in the background audit log with actor, timestamp, previous and new values. No user-facing correction-history UI is provided. (Source: S54-PO-11 Q7=A; BRD-09; S55-PO-3 Q2=A, PO wording "directly update measurement, no complicated history UI; keep background audit"; S54-023-Q2 resolved; S57-PO-8.)
 - **FR-014**: Measurement types and units MUST be derived from the F15 weekly form question mappings; P5 MUST NOT define a separate measurement catalog. (Source: S54-PO-11 Q5 written)
 - **FR-015**: The system MUST NOT create duplicate manual measurement entries that duplicate an auto-extracted measurement for the same client/day/type. (Source: S54-PO-11 Q5 written)
 - **FR-016**: Measurements MUST be visible to the client during an active subscription and subject to F13 plan-access restrictions on expiry/overdue. (Source: BRD-04.8; F13)
@@ -123,7 +124,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 
 ### Notifications / reuse
 
-- **FR-036**: In-app notifications for check-in reminders and food replacement requests MUST reuse the F15 notification inbox and dedupe patterns; no duplicate inbox. (Source: p4-audit overlap map; F15)
+- **FR-036**: In-app notifications for check-in reminders and food replacement requests MUST reuse the F15 notification inbox and dedupe patterns; no duplicate inbox. Client-recipient delivery uses the client inbox that spec 022 adds to the F15 inbox; this spec MUST NOT build its own. (Source: p4-audit overlap map; F15; S57-PO-10)
 
 ### Weekly check-in adherence self-report (P5-A → spec 024 input)
 
@@ -145,7 +146,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - **SC-003**: 100% of unanswered check-ins receive a reminder on the due day and a second reminder 24 hours later.
 - **SC-004**: 100% of measurements auto-extracted from form submissions appear in the Progress store with a source reference and original units.
 - **SC-005**: Zero duplicate measurement records for the same client/day/type.
-- **SC-006**: 100% of corrections by authorized trainers directly update the measurement and are recorded in the background audit log (actor, timestamp, previous and new values); no user-facing correction-history entry is required.
+- **SC-006**: 100% of corrections by authorized trainers, and of client edits of own manual entries, directly update the measurement and are recorded in the background audit log (actor, timestamp, previous and new values); no user-facing correction-history entry is required.
 - **SC-007**: Clients can select existing approved alternatives without a request or revision; a new alternative requires a request and trainer manual publish.
 - **SC-008**: 100% of food replacement requests obey one-open-per-food and the F15 text limits with no attachments.
 - **SC-009**: 100% of timeline views show only the fixed meaningful set, to authorized actors only.
@@ -155,7 +156,7 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 ## Assumptions
 
 - Measurement types and units are derived from F15 weekly form question mappings; historical measurements preserve their original mapping snapshot even if the form question changes later.
-- Manual measurement entry by the client is permitted only where it does not duplicate an auto-extracted measurement for the same client/day/type (Q6=A).
+- Manual measurement entry by the client is permitted only where it does not duplicate an existing measurement for the same client/day/type (Q6=A); the client may edit their own manual entries (S57-PO-8).
 - Timeline ordering is chronological (newest or oldest per UI convention) with a deterministic tie-break; pagination is a UI concern outside this spec.
 - Food replacement notification recipients follow p5-audit Q8 option A (authorized trainer/workspace owner on open; client on resolution).
 - KPI "handled check-ins received" is consumed by P7 reporting; no payroll consequence is added by P5.
@@ -172,7 +173,8 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 - F21 staff display names (bylines) — reuse.
 - F11 auth/audit/RLS — reuse.
 - Spec 024 client leaderboard (branch `024-client-leaderboard`) — consumes this spec's `workoutAdherence` and `dietAdherence` values by name for adherence scoring; this spec MUST NOT redefine leaderboard scoring. (Coordinate by reading spec 024 only; never edit it.)
-- P4 client portal/notifications — P5-A/B/C/E require client dashboard and in-app notifications.
+- P4 client portal/notifications — P5-A/B/C/E require client dashboard and in-app notifications. Check-in reminders reuse the spec 022 client inbox (S57-PO-10).
+- Spec 024 client leaderboard placement — the public Top 5 is shown inside the client Progress page, not Main Navigation (S57-PO-12); spec 024 owns that section.
 
 ## Overlap / reuse (must not duplicate)
 
@@ -204,6 +206,10 @@ A client and authorized staff view a concise chronological timeline of meaningfu
 12. **Resolved MCQs**: S54-P5-Q1=A, Q3=A, Q4=A, Q6=A, Q7=A, Q8-10 (written), Q11=A, Q12=A, Q13=A, Q14=A, Q15=A. Q2 behavior resolved (reminder day + 24h); time-of-day resolved (S54-023-Q1 = 10:00 AM workspace time, S55-PO-3 Q1=A). Same-day measurement conflict resolved (S54-023-Q2 = direct update + background audit, S55-PO-3 Q2=A). Q5 resolved as auto-extract (written). Adherence answer scale resolved (S55-023-Q3 = 0–10 integer, S55-PO-5 Q3=A).
 13. **S55-PO-3** (2026-11-13): For spec 023: Q1=A (reminder send time 10 AM workspace time), Q2=A (directly update measurement, no complicated history UI; keep background audit). Cross-spec spec 024 Q2: custom — weekly check-in gains two self-reported adherence questions (workout adherence, diet adherence) whose average is the leaderboard adherence input, temporary until mobile tracking exists; never reveal scoring mechanics. Answer scale for the two questions was NOT specified by S55-PO-3 and was raised as MCQ S55-023-Q3, resolved by S55-PO-5 to a 0–10 integer scale. (Source: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-3.verbatim.txt`.)
 14. **S55-PO-5** (2026-11-13): S55-023-Q3 = A — 0–10 integer scale for `workoutAdherence` and `dietAdherence` (same as the existing F15 N11 hunger score), so the same form handling and copy patterns can be reused. Verbatim: `C:/Users/NEW LAP/.lifter/runs/s55-po/s55-po-5.verbatim.txt`, SHA-256 8bc5d5621bfd6e231fad6f6c25904a17bee4472fa7e6de8c0447ddac93be8cf6. Rewrites FR-037, SC-011, Key Entities (WeeklyCheckIn), Assumptions and Edge cases; S55-023-Q3 removed from Open questions.
+15. **S57-PO-8** (2026-11-14): clients add measurements and edit their own manual entries; trainers correct everything (FR-012, FR-013, SC-006). Recorded verbatim below.
+16. **S57-PO-10** (2026-11-14): 023 check-in reminders reuse the spec 022 client inbox (FR-006, FR-036). Recorded verbatim below.
+17. **S57-PO-13** (2026-11-15): approves the remaining reviewed F23 copy, changes `checkin.config.saved` AR, and keeps the approved duplicate-measurement message as final. Recorded verbatim below.
+18. **S57-PO-12** (2026-11-15): approved F23 measurement copy; the public Top 5 belongs inside Progress (spec 024). Recorded verbatim below.
 
 ### Open questions for the PO
 
@@ -219,8 +225,57 @@ None. All PO questions for this spec are resolved (S54-023-Q1, S54-023-Q2 by S55
 
 ## Copy
 
-Matched rows in `copy-proposal.md` are approved copy (S55-PO-10); unmatched rows remain proposed and pending PO approval.
+All rows in `copy-proposal.md` are approved copy (S55-PO-10, amended by S57-PO-12 and S57-PO-13).
 
 ### S56-PO-4 - 2026-11-14
 
 PO S56-PO-4 (2026-11-14): "LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from other specs, and continue development normally. Reconsider flags before production. Keep tests and regression safeguards."
+
+### S57-PO-8 - 2026-11-14
+
+PO S57-PO-8 (2026-11-14), F23 FR-012/FR-013: PO selected "Add + edit own": "Clients can also edit their own manual entries; trainers correct everything."
+
+Applied to: Story 2 narrative and acceptance scenario 4, FR-012, FR-013, SC-006, Assumptions. Implementation note: check-in-extracted measurements stay trainer-only.
+
+### S57-PO-10 - 2026-11-14
+
+PO S57-PO-10 (2026-11-14), F22/F23 client notices: PO selected "F19 hook + F22 inbox": "F19 adds a delivery/activation hook as its own task. F22 extends the F15 inbox to client recipients and sends the approved notices. 023 reminders then reuse that client inbox."
+
+Applied to: FR-006, FR-036, Dependencies. Check-in reminder delivery (T010, T014) waits on the spec 022 client inbox.
+
+### S57-PO-12 - 2026-11-15
+
+PO S57-PO-12 (2026-11-15), copy and placement: "Continue F22/F23/F24 independent tasks in parallel. Do not wait for F17/F18/F19 completion. Pause only blocked integrations. Do not modify F17/F18/F19-owned code or duplicate their functionality. Focus on UI, approved copy, full ranking, measurements, tests, and security. Keep PRs updated, clearly report blockers, and coordinate shared files. No merge without my authorization. [...] Top 5 belongs inside Progress, not Main Navigation. Every eligible client sees their private full rank; only the public Top 5 is visible to others. Preserve all other approved copy. Update specs, UI strings, and affected tests."
+
+F23 measurement copy approved by S57-PO-12:
+
+| EN                       | AR                     |
+| ------------------------ | ---------------------- |
+| Add measurement          | ضيف قياس جديد          |
+| Edit measurement         | عدّل القياس            |
+| Measurement saved        | القياس اتسجّل          |
+| No measurements recorded | لسه مفيش قياسات متسجلة |
+
+Applied to: copy-proposal.md (approved rows), Dependencies (Top 5 placement inside Progress, owned by spec 024).
+
+### S57-PO-13 - 2026-11-15
+
+PO S57-PO-13 (2026-11-15), copy approval: "Approve the reviewed EN/Arabic UI copy for F22/F23/F24, with these changes: Check-in saved: "اتحدد فورم المتابعة الأسبوعية." Preserve the previously approved duplicate-measurement message. ... Approve the remaining reviewed Measurement, Check-in, Leaderboard, Account Settings and Goals copy. Finish all independent tasks and tests in #108–#110. Don't implement blocked dependencies or change F17/F18/F19-owned code."
+
+F23 copy approved by S57-PO-13, as proposed on 2026-11-14 except `checkin.config.saved` AR:
+
+| Key                          | EN                                                               | AR                                                                     |
+| ---------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `progress.measurement.value` | Value                                                            | القيمة                                                                 |
+| `progress.measurement.date`  | Date                                                             | التاريخ                                                                |
+| `progress.measurement.save`  | Save measurement                                                 | احفظ القياس                                                            |
+| `checkin.config.title`       | Weekly check-in form                                             | فورم المتابعة الأسبوعية                                                |
+| `checkin.config.select`      | Choose the weekly check-in form                                  | اختار فورم المتابعة الأسبوعية                                          |
+| `checkin.config.save`        | Use this form                                                    | استخدم الفورم ده                                                       |
+| `checkin.config.saved`       | Weekly check-in form saved.                                      | اتحدد فورم المتابعة الأسبوعية.                                         |
+| `checkin.config.invalid`     | This form needs the workout and diet adherence questions (0–10). | الفورم ده لازم يكون فيه سؤالين الالتزام بالتمرين والدايت (من 0 لـ 10). |
+| `checkin.config.conflict`    | Another form is already the weekly check-in.                     | فيه فورم تاني متحدد كمتابعة أسبوعية.                                   |
+
+The previously approved S55-PO-10 `progress.measurement.duplicateSameDay` text is final.
+
+Applied to: copy-proposal.md. No FR, SC or acceptance text changes; blocked dependencies (F18, spec 022 client inbox) are unchanged.

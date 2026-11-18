@@ -137,7 +137,7 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
             .slice(-11),
         password: 'Synthetic9!' + randomUUID().replaceAll('-', ''),
         date_of_birth: '1990-04-12',
-        username: `u3_${randomUUID().replaceAll('-', '').slice(0, 27)}`,
+        username: `u3_${randomUUID().replaceAll('-', '').slice(0, 17)}`,
         telegram_username: '',
       },
     };
@@ -464,6 +464,21 @@ export async function pendingHttpAccess(
             'assign_client_responsible_trainer',
             'client_responsible_trainer',
             'unassigned_clients',
+            // F24: a pending client is neither an approved client nor staff/PO.
+            'client_update_username',
+            'client_leaderboard_opt_out',
+            'client_leaderboard_dashboard_notice',
+            'client_leaderboard_read',
+            'client_leaderboard_self',
+            'workspace_leaderboard_read',
+            'leaderboard_candidate_pool',
+            'create_leaderboard_candidate',
+            'leaderboard_pending_read',
+            'decide_leaderboard_candidate',
+            'set_client_goal_type',
+            'client_goal_read',
+            'client_leaderboard_my_rank',
+            'find_client_by_code',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
