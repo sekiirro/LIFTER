@@ -11,6 +11,7 @@ export type Handler = (job: {
   kind: string;
   workspaceId: string | null;
   payload: Record<string, unknown>;
+  leaseToken: string;
 }) => Promise<void>;
 
 type RpcMethods = {
@@ -19,6 +20,10 @@ type RpcMethods = {
   jobs_fail: {
     args: { id: string; lease: string; error_code: string; permanent: boolean };
     result: string | null;
+  };
+  handle_client_trainer_distribution: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: boolean;
   };
   alert_expired_refund_auth_lockouts: {
     args: { p_limit: number; p_checked_at: string };
@@ -99,6 +104,7 @@ export async function drain({
             kind: job.kind,
             workspaceId: job.workspace_id,
             payload: job.payload,
+            leaseToken: job.lease_token,
           });
         } catch (error) {
           failure =
