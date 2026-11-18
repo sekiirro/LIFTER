@@ -313,6 +313,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
         [
           'client_update_username',
           'client_leaderboard_opt_out',
+          'client_leaderboard_dashboard_notice',
           'client_leaderboard_read',
           'client_leaderboard_self',
           'workspace_leaderboard_read',

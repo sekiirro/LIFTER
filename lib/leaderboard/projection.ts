@@ -196,3 +196,18 @@ export function toMyRankView(value: unknown): MyRankView {
     return { status: 'unavailable' };
   return { status: 'ranked', periodMonth: record.period_month, rank, total };
 }
+
+export type DashboardNoticeStatus =
+  'first_view' | 'not_shown' | 'not_permitted' | 'unavailable';
+
+export function toDashboardNoticeStatus(value: unknown): DashboardNoticeStatus {
+  const status =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as { status?: unknown }).status
+      : undefined;
+  return status === 'first_view' ||
+    status === 'not_shown' ||
+    status === 'not_permitted'
+    ? status
+    : 'unavailable';
+}

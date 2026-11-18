@@ -15,6 +15,8 @@ import {
 } from './generation';
 import {
   toClientLeaderboardSelf,
+  toDashboardNoticeStatus,
+  type DashboardNoticeStatus,
   toLeaderboardView,
   toMyRankView,
   toPendingCandidateView,
@@ -245,5 +247,22 @@ export async function generateLeaderboardCandidateFromSpec023(
     actor,
     workspaceId,
     spec023SourceFor(client),
+  );
+}
+
+/**
+ * FR-005/FR-013, SC-007: true exactly once, on the first dashboard visit after
+ * the client becomes eligible and while they have not opted out. The RPC
+ * records the once-only state atomically; the client comes from the session.
+ */
+export async function takeLeaderboardDashboardNotice(
+  actor: Actor | null,
+): Promise<DashboardNoticeStatus> {
+  if (!isClientSession(actor)) return 'not_permitted';
+  return call(
+    'client_leaderboard_dashboard_notice',
+    undefined,
+    toDashboardNoticeStatus,
+    'unavailable',
   );
 }

@@ -1147,6 +1147,20 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'client_leaderboard_notice_seen_immutable',
+        relname: 'client_leaderboard_notice_seen',
+        type: 27,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_notice_seen_no_truncate',
+        relname: 'client_leaderboard_notice_seen',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
         tgname: 'client_leaderboard_opt_outs_immutable',
         relname: 'client_leaderboard_opt_outs',
         type: 27,

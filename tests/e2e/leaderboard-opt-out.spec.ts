@@ -97,3 +97,53 @@ test.describe.serial('F24 direct opt-out from account settings', () => {
       ).toBeVisible();
     });
 });
+
+// T011/T015 [FR-005, FR-013, SC-007]: the notice is shown once on the client
+// dashboard when the client first becomes eligible, and stays in settings.
+let newcomerEn: LeaderboardClient;
+let newcomerAr: LeaderboardClient;
+
+test.describe.serial('F24 once-only dashboard notice', () => {
+  test.beforeAll(async () => {
+    test.setTimeout(120_000);
+    const f = await leaderboardContext();
+    newcomerEn = await leaderboardClient(f);
+    newcomerAr = await leaderboardClient(f);
+  });
+
+  for (const locale of ['en', 'ar'] as const)
+    test(`${locale}: shown once on the dashboard, then only in settings`, async ({
+      page,
+      context,
+    }) => {
+      const m = getMessages(locale);
+      await context.addCookies([
+        { name: LOCALE_COOKIE, value: locale, url: origin },
+        { name: THEME_COOKIE, value: 'light', url: origin },
+      ]);
+      await installLeaderboardSession(
+        context,
+        (locale === 'en' ? newcomerEn : newcomerAr).client,
+      );
+      const notice = page.getByTestId('leaderboard-dashboard-notice');
+
+      await page.goto('/plans');
+      await expect(notice).toBeVisible();
+      await expect(
+        notice.getByRole('heading', {
+          name: m['leaderboard.optOut.mayAppear'],
+        }),
+      ).toBeVisible();
+      await expect(
+        notice.getByRole('link', { name: m['accountSettings.title'] }),
+      ).toHaveAttribute('href', '/account/settings');
+
+      await page.reload();
+      await expect(notice).toHaveCount(0);
+
+      await page.goto('/account/settings');
+      await expect(
+        page.getByRole('heading', { name: m['leaderboard.optOut.mayAppear'] }),
+      ).toBeVisible();
+    });
+});

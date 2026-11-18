@@ -11,6 +11,7 @@ import { anonClient, sql } from './harness';
 // T005/T006/T007 [FR-001, FR-035, FR-040] foundational RLS and grants.
 const tables = [
   'public.client_leaderboard_opt_outs',
+  'public.client_leaderboard_notice_seen',
   'public.leaderboard_publications',
   'public.leaderboard_entries',
   'public.leaderboard_current_publications',
@@ -20,6 +21,7 @@ const tables = [
 const rpcs = [
   'public.client_update_username(text)',
   'public.client_leaderboard_opt_out()',
+  'public.client_leaderboard_dashboard_notice()',
   'public.client_leaderboard_read()',
   'public.workspace_leaderboard_read(uuid)',
   'public.client_leaderboard_self()',
@@ -123,6 +125,7 @@ describe('API denial for anonymous, revoked and foreign callers', () => {
     ])
       for (const table of [
         'client_leaderboard_opt_outs',
+        'client_leaderboard_notice_seen',
         'leaderboard_publications',
         'leaderboard_entries',
         'leaderboard_current_publications',
@@ -139,6 +142,7 @@ describe('API denial for anonymous, revoked and foreign callers', () => {
       ['workspace_leaderboard_read', { p_workspace_id: f.wsA.id }],
       ['client_leaderboard_self', {}],
       ['client_leaderboard_opt_out', {}],
+      ['client_leaderboard_dashboard_notice', {}],
     ] as const)
       expect((await anonymous.rpc(name, args)).error, name).not.toBeNull();
   });

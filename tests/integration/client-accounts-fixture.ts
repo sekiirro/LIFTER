@@ -467,6 +467,7 @@ export async function pendingHttpAccess(
             // F24: a pending client is neither an approved client nor staff/PO.
             'client_update_username',
             'client_leaderboard_opt_out',
+            'client_leaderboard_dashboard_notice',
             'client_leaderboard_read',
             'client_leaderboard_self',
             'workspace_leaderboard_read',
