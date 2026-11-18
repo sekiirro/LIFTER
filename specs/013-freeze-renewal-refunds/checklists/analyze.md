@@ -457,3 +457,7 @@ The T048 task checkbox and traceability evidence were updated after the pending-
 ### S66 T157 overdue access input (2026-11-18)
 
 Added T157 (tasks.md) and its traceability row for FR-028 "independent overdue input/reason", which F22 T018 and F23 T028 consume. No FR, SC, acceptance-scenario, plan or PO-decision text changed. Overdue is derived only from existing text and columns: FR-010 and the F12 data model due-date rule (Cairo activation date + issued offset for installments 2+, stored `due_on` for renewals, no due date for initial seq 1), D-12 (overdue restricts plans, login kept, access resumes on confirmed payment) and the F12 payable-through-Cairo-day-end rule. Cancelled obligations (refund cancellations) are excluded; overdue stays independent of entitlement, freeze, expiry and refund (FR-028). No staff-wall variant: staff already read due_on and paid state through `subscription_payment_status`. Plan/export enforcement, notices and resume remain P4/F22. T157 stays unticked until exact-head CI is green. **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+### S66 T157 completion evidence (2026-11-18)
+
+T157 is ticked and its traceability row cites exact-head CI at `96fe2428` (all checks incl. integration shards 1-3 green) after the migration was renumbered to 20261125020000 to avoid a version clash with PR #264. No FR, SC, acceptance-scenario, plan or PO-decision text changed. **CRITICAL: 0. HIGH: 0. No open ambiguities.**
