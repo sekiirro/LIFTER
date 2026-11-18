@@ -264,7 +264,13 @@ describe('immutability (T003)', () => {
             throw new Error('audit mutation unexpectedly succeeded');
           }),
         ).rejects.toMatchObject({
-          code: role === 'postgres' ? '23514' : '42501',
+          // F11's audit-reference FK may reject TRUNCATE before the immutability trigger.
+          code:
+            role === 'postgres' && operation === 'truncate'
+              ? expect.stringMatching(/^(23514|0A000)$/)
+              : role === 'postgres'
+                ? '23514'
+                : '42501',
         });
         expect(await events(f.wsA.id)).toEqual(before);
         const [countAfter] =

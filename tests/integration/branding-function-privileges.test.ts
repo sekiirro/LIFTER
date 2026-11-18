@@ -207,12 +207,15 @@ describe('F14 definer function privileges', () => {
       order by signature
     `;
     expect(paths).toEqual([
+      { signature: 'public.advance_deletion_step_a(uuid, uuid)' },
       {
         signature:
           'public.alert_expired_refund_auth_lockouts(integer, timestamp with time zone)',
       },
+      { signature: 'public.begin_deletion_step_c(uuid, uuid)' },
       { signature: 'public.branding_gc_claim(integer)' },
       { signature: 'public.branding_gc_finalize(uuid)' },
+      { signature: 'public.claim_account_deletion_intents(integer)' },
       { signature: 'public.claim_f15_form_alert_jobs(integer, integer)' },
       { signature: 'public.claim_f15_telegram_delivery(uuid)' },
       { signature: 'public.claim_refund_auth_lockout_jobs(integer)' },
@@ -221,9 +224,15 @@ describe('F14 definer function privileges', () => {
           'public.complete_refund_auth_lockout_job(uuid, timestamp with time zone)',
       },
       { signature: 'public.consume_f15_telegram_start(bigint, text, text)' },
+      { signature: 'public.execute_deletion_step_b(uuid, uuid)' },
+      { signature: 'public.execute_deletion_step_d(uuid, uuid)' },
       { signature: 'public.finish_f15_telegram_delivery(uuid, text)' },
       { signature: 'public.handle_client_trainer_distribution(uuid, uuid)' },
       { signature: 'public.prepare_f15_telegram_delivery(uuid, uuid)' },
+      {
+        signature:
+          'public.retry_account_deletion_intent(uuid, uuid, integer, timestamp with time zone, text)',
+      },
       {
         signature:
           'public.retry_refund_auth_lockout_job(uuid, integer, timestamp with time zone, text)',

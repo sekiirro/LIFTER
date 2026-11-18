@@ -140,4 +140,14 @@ describe('actorFromRows', () => {
     for (const cap of CAPABILITIES)
       expect(authorize(actor, cap, 'A')).toBe(false);
   });
+  it('denies every capability when actor is marked deleted', () => {
+    const actor = {
+      userId: 'user',
+      role: 'platform_owner' as const,
+      activeWorkspaceIds: ['A'],
+      deleted: true,
+    };
+    for (const cap of CAPABILITIES)
+      expect(authorize(actor, cap, 'A')).toBe(false);
+  });
 });
