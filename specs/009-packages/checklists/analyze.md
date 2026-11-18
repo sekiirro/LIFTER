@@ -319,3 +319,10 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 - PASS: requirements and product decisions unchanged; no new product ambiguity. 0 CRITICAL, 0 HIGH requirement findings.
 - FOLLOW-UP: architect to determine whether the T064b sequencing exception is acceptable for merge, or what additional evidence is required. T065 remains unticked and no teardown has run.
+
+## 2026-11-18 Analyze (T064b design re-authored; task-status only)
+
+**Analyzed:** 2026-11-18 (UTC). Architect ruling S65-R8: T064b proceeds now; the existing T065 script (`supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`) is an UNACCEPTED DRAFT that must not shape the design. The teardown design was re-authored from the requirements (FR-006, FR-028, SC-019, S61-PO-2 Q1=A/Q2=A/Q3=A, the T064a preflight contract and the installed guards) as `specs/009-packages/reviews/t064b-teardown-design.md`, which lists every divergence of the draft script in its section 9. tasks.md T064b stays unticked with a "Verified so far / Remaining: independent review" status note; traceability.md now points at the design document.
+
+- PASS: no FR, SC, acceptance-scenario or plan requirement text changed — only task-status text and the new design/review document. The FR-028 pointer to "review.md section 4" is read as pointing at the T064b design; reconciling that pointer's wording is left to the architect (noted in the design header). 0 open CRITICAL, 0 HIGH.
+- PASS: T064b remains unticked pending an independent security review of the new design by a different agent; T065 implements no deletion until that PASS; no teardown has run on any stack.
