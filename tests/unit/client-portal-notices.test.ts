@@ -79,7 +79,7 @@ describe('F22 client notice projection (T019; FR-009)', () => {
       });
   });
 
-  it('renders only kinds that have approved F22 copy', () => {
+  it('renders every kind that has approved copy', () => {
     const parsed = projectClientNotices({
       status: 'ok',
       notices: [
@@ -93,7 +93,31 @@ describe('F22 client notice projection (T019; FR-009)', () => {
         noticeId: noticeA,
         message: 'client.portal.notice.workoutDelivered',
       }),
+      expect.objectContaining({
+        noticeId: noticeB,
+        message: 'checkin.reminder.dayOf.body',
+      }),
     ]);
+  });
+
+  it('maps the F23 kinds to approved F23 copy present in both catalogs', () => {
+    const proposal = readFileSync(
+      'specs/023-client-progress-coaching/copy-proposal.md',
+      'utf8',
+    );
+    const en = getMessages('en');
+    const ar = getMessages('ar');
+    for (const kind of [
+      'checkin_reminder_day_of',
+      'checkin_reminder_followup',
+      'food_replacement_resolved',
+    ] as const) {
+      const key = NOTICE_MESSAGE[kind];
+      if (!key) throw new Error(kind);
+      expect(proposal, key).toContain(key);
+      expect(proposal, key).toContain(en[key]);
+      expect(proposal, key).toContain(ar[key]);
+    }
   });
 
   it('maps every F22 kind to an approved key present in both catalogs', () => {
@@ -105,7 +129,7 @@ describe('F22 client notice projection (T019; FR-009)', () => {
     const ar = getMessages('ar');
     const keys = CLIENT_NOTICE_KINDS.flatMap((kind) => {
       const key = NOTICE_MESSAGE[kind];
-      return key ? [key] : [];
+      return key?.startsWith('client.portal.notice.') ? [key] : [];
     });
     expect(keys).toHaveLength(5);
     for (const key of [

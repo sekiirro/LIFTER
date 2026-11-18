@@ -6,6 +6,11 @@ export const RESERVED_SIGNUP_ROLE_NAMES = [
   'trainer',
   'sales',
   'client',
+  // S55-PO-9 Q14 (F24): blocked case-insensitively at signup and later edits.
+  'admin',
+  'support',
+  'lifter',
+  'owner',
 ] as const;
 
 const reservedRoleNames = new Set<string>(RESERVED_SIGNUP_ROLE_NAMES);
@@ -23,11 +28,15 @@ export function normalizeSignupUsername(value: string): string {
   return value.normalize('NFKC').toLowerCase();
 }
 
-/** S32-PO-7: validate the normalized username without trimming or rewriting it. */
+/** S55-PO-9 Q14 narrows the S32-PO-7 length bound to 3-20 characters. */
+export const SIGNUP_USERNAME_MIN_LENGTH = 3;
+export const SIGNUP_USERNAME_MAX_LENGTH = 20;
+
+/** S32-PO-7/S55-PO-9 Q14: validate the normalized username without trimming or rewriting it. */
 export function isValidSignupUsername(value: unknown): value is string {
   return (
     typeof value === 'string' &&
-    /^[a-z0-9_.]{3,30}$/u.test(normalizeSignupUsername(value))
+    /^[a-z0-9_.]{3,20}$/u.test(normalizeSignupUsername(value))
   );
 }
 

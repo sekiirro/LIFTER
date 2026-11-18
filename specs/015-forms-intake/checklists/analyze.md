@@ -365,6 +365,6 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 
 ## S65-hyd-f15purge T029 and T024 Analyze refresh (2026-11-18) (date update only)
 
-- Scope: added forward-only D1 privacy erasure migration `supabase/migrations/20261130030000_f15_d1_privacy_erasure.sql`, migration contract unit test `tests/unit/forms-d1-erasure-migration.test.ts`, Stack D security/mutation integration suite `tests/integration/forms-d1-erasure.test.ts`, `rls-catalog.test.ts` function allowlist entries, `tests/integration/forms-verification.md`, retained UI matrix `specs/015-forms-intake/reports/evidence/t024-acceptance/`, ticked `T029`, and annotated `T024` `Verified so far / Remaining` in `tasks.md` + `traceability.md`. No FR/SC/requirement text, copy, or PO decision changed.
+- Scope: added forward-only D1 privacy erasure migration `supabase/migrations/20261215030000_f15_d1_privacy_erasure.sql`, migration contract unit test `tests/unit/forms-d1-erasure-migration.test.ts`, Stack D security/mutation integration suite `tests/integration/forms-d1-erasure.test.ts`, `rls-catalog.test.ts` function allowlist entries, `tests/integration/forms-verification.md`, retained UI matrix `specs/015-forms-intake/reports/evidence/t024-acceptance/`, ticked `T029`, and annotated `T024` `Verified so far / Remaining` in `tasks.md` + `traceability.md`. No FR/SC/requirement text, copy, or PO decision changed.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for T029 and T024 evidence updates.

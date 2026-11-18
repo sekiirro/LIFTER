@@ -8,7 +8,7 @@
 
 ## 1. T029 — D1 Privacy Erasure Migration & Mutation Evidence
 
-- **Migration:** `supabase/migrations/20261130030000_f15_d1_privacy_erasure.sql` (forward-only, no UTF-8 BOM, scheduler inactive).
+- **Migration:** `supabase/migrations/20261215030000_f15_d1_privacy_erasure.sql` (forward-only, no UTF-8 BOM, scheduler inactive).
 - **Unit contract (`tests/unit/forms-d1-erasure-migration.test.ts`):** RED (`2 failed` before migration) -> GREEN (`2/2 passed`); `tests/unit/forms-erasure-targets.test.ts` (`11/11 passed`).
 - **Stack D integration (`tests/integration/forms-d1-erasure.test.ts`):** `3/3 passed`, verifying:
   - `audit_events_select_scoped` preserved; 0 `DELETE` policies or grants on `public.audit_events`; `UPDATE`/`DELETE`/`TRUNCATE` and caller-settable GUC alone rejected even as `postgres`.

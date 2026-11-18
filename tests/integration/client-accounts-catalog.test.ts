@@ -307,6 +307,35 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           throw new Error('Uncovered public RPC argument type');
         args.push(values[typeName]!);
       }
+      // F24 status-returning RPCs: a pending client is neither an approved
+      // client nor staff/PO, so each returns exactly { status: 'not_permitted' }.
+      if (
+        [
+          'client_update_username',
+          'client_leaderboard_opt_out',
+          'client_leaderboard_dashboard_notice',
+          'client_leaderboard_read',
+          'client_leaderboard_self',
+          'workspace_leaderboard_read',
+          'leaderboard_candidate_pool',
+          'create_leaderboard_candidate',
+          'leaderboard_pending_read',
+          'decide_leaderboard_candidate',
+          'set_client_goal_type',
+          'client_goal_read',
+          'client_leaderboard_my_rank',
+        ].includes(fn.proname)
+      ) {
+        await tx.savepoint(async (inner) => {
+          await inner`set local role authenticated`;
+          const [row] = await inner.unsafe(
+            `select public."${fn.proname}"(${args.join(',')}) as result`,
+          );
+          expect(row!.result, fn.proname).toEqual({ status: 'not_permitted' });
+          await inner`reset role`;
+        });
+        continue;
+      }
       if (
         [
           'record_refund',
@@ -348,7 +377,8 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                           fn.proname === 'publish_nutrition_revision' ||
                           fn.proname === 'select_nutrition_alternative') &&
                           value.status === 'not_permitted') ||
-                        (fn.proname === 'unassigned_clients' &&
+                        ((fn.proname === 'unassigned_clients' ||
+                          fn.proname === 'find_client_by_code') &&
                           value.status === 'not_permitted') ||
                         ((fn.proname === 'assign_client_responsible_trainer' ||
                           fn.proname === 'client_responsible_trainer' ||
