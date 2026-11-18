@@ -8,7 +8,7 @@ import {
 } from '../../lib/subscriptions/overdue';
 
 const migration = readFileSync(
-  'supabase/migrations/20261125010000_f13_overdue_access_input.sql',
+  'supabase/migrations/20261125020000_f13_overdue_access_input.sql',
   'utf8',
 );
 function body(sig: string): string {

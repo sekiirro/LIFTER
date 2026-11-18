@@ -6,7 +6,7 @@ import {
 
 /**
  * F13 FR-028 independent overdue input. Pure mirror of
- * `app_private.f13_project_overdue` (migration 20261125010000); the SQL is authoritative.
+ * `app_private.f13_project_overdue` (migration 20261125020000); the SQL is authoritative.
  * Overdue never changes entitlement, freeze, expiry or refund state.
  */
 export type OverdueObligation = {
