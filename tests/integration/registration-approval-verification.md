@@ -1229,3 +1229,43 @@ Executed jobs and conclusions (all required jobs executed steps > 0):
 
 The PR was not merged and no merge approval was requested. T048 (architect
 review) remains the reviewer's task.
+
+## S65 T053/T054 execution supplement — 2026-11-18
+
+- Source base: `origin/main` `2cc6e2edab094979d1ca9c180e02b802ac50ce2c`; branch `s65-012-t054`.
+- Copy added append-only to `lib/i18n/messages/en.ts` and `ar.ts`, with exact PO S65-PO-8 values for `registration.upfrontAmount`, `registration.paymentCount`, `registration.defaultSplit`, and `registration.timingAnchorNote`. Duplicate scan found one occurrence of each key per locale. Message parity/value test passed (5/5).
+- RED: new labelled-control assertion failed because the UI had no `registration.upfrontAmount` field; default residual test failed because no such control existed. GREEN: `npx vitest run tests/unit/registration-links-dialog.test.ts tests/unit/registration-links-flexible-ui.test.ts tests/unit/registration-approval-messages.test.ts` passed, 33/33 tests.
+- UI coverage now asserts blank upfront default (no arbitrary amount), default residual computed with BigInt and offset 30, full-price upfront as one payment without a zero remainder, explicit payment count and custom row amounts/offsets, exact live total, no silent row-value rewrite after count changes, manager summary, locale parity, and role-gated editor visibility. Existing show-once URL and privacy cases remain in the dialog suite.
+- No database operation or e2e test was run. T050/T051 Stack A evidence is the S63 supplement above. Real rendered Stack A matrix and e2e remain U9 and are not claimed here.
+- Frontend source review: existing `Field`, `Button`, and dialog primitives retained; CSS uses design tokens and logical properties; no color/font/radius/motion/dependency added. Unit component tests passed; rendered light/dark × AR/EN × mobile/desktop screenshots and axe were not run in this scope.
+
+### S65 U1F money-math mutation check - 2026-11-18
+
+- Mutation M1: changed the default residual expression from `priceMinor - upfront` to `priceMinor - upfront + 1n` in `RegistrationLinkDialog.tsx`.
+- RED detector: `npm run test:unit -- --pool=threads --maxWorkers=4 tests/unit/registration-links-flexible-ui.test.ts -t "derives the exact residual"` failed (1 failed, 4 skipped): invalid exact total prevented the issue action, so the expected exact payment terms were absent.
+- Restored the original expression; the same detector passed (1 passed, 4 skipped). No mutant remains. DB-free UI arithmetic only; no Stack A/DB operation.
+- The separate latest full unit (307 files / 3533), targeted U1F suites (34/34), build/typecheck/lint/format gates, and exact-head CI run `44238676868` were green before this evidence-only documentation update. The updated docs need a new exact-head run.
+
+## S65 T056 — FR-022 distribution-job emit (Stack B)
+
+- **Base `origin/main`:** `e5523b64c01d0bd4b4eea6d300b8e770dd2db516`
+- **Environment:** Node `v24.19.0`, Vitest `5.1.0`, PostgreSQL `public.ecr.aws/supabase/postgres:17.11.0.006` (Stack B `lifter-stack-b`, API `25421`, DB `25422`)
+- **Migration:** `supabase/migrations/20261124120000_f12_approval_distribution_job_emit.sql` (replaces `app_private.f12_u3_purchase` to capture `registration_approval_events.id` and call `app_private.enqueue_client_trainer_distribution_job(ws, cid, aid)` inside the approval/reconsideration transaction; `20261101121000_registration_approval_operations.sql` untouched)
+
+### RED -> GREEN
+
+1. **RED** (`tests/integration/registration-approval-operations.test.ts`, pre-migration): 26 tests | 3 failed (`T056 approval enqueues one distribution job in the same transaction and keeps approval fact untouched`, `T056 rolled-back approval writes no job and retry writes exactly one`, `T056 rejection and denied approval enqueue no distribution job; reconsideration enqueues one` — all 3 failed because 0 `client.distribution` jobs were emitted) | 23 passed.
+2. **GREEN** after `db reset --local` + `client-accounts-provision.mjs`:
+   - `tests/integration/registration-approval-operations.test.ts`: 1 file passed | 26 passed.
+   - Touched integration suites (9 files: 6 core F12 files + `client-trainer-distribution.test.ts`, `rls-catalog.test.ts`, `matrix-parity.test.ts`): 9 files passed | 591 passed.
+   - Remaining 6 F12 integration files (`activation`, `client-access`, `correction-ambiguity`, `corrections`, `payments`, `reads`): 6 files passed | 52 passed.
+   - Full unit suite (`npm test -- --maxWorkers=4`): 307 files passed | 3536 passed.
+
+### Mutation Evidence (T056)
+
+Both required mutations executed on Stack B against `tests/integration/registration-approval-operations.test.ts -t T056`, restored identically (`pg_get_functiondef` equality + `git diff` clean for historical migrations), and re-verified GREEN:
+
+| Mutant  | Reversible defect                                                                                                                                                                                                                                                               | Observed RED -> restored GREEN                 |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| T056-M1 | Drop `perform app_private.enqueue_client_trainer_distribution_job(ws, cid, aid);` in `app_private.f12_u3_purchase` (`supabase/migrations/20261124120000_f12_approval_distribution_job_emit.sql:43`)                                                                             | 3 failed / 23 skipped -> 3 passed / 23 skipped |
+| T056-M2 | Break dedupe key prefix `'client.distribution:'` -> `'broken.distribution:'` in `app_private.enqueue_client_trainer_distribution_job` (`supabase/migrations/20261124040000_f11_client_trainer_distribution.sql:78`, live Stack B def only; historical migration file untouched) | 3 failed / 23 skipped -> 3 passed / 23 skipped |
