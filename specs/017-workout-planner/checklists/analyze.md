@@ -401,9 +401,9 @@ cells are stored as text.
 - #206 and #212 are merged and included. No current-main RPC/table remains outstanding for T047.
 - No FR, SC, acceptance, or plan design text changed. Existing analysis remains applicable with 0 open CRITICAL/HIGH findings and 0 open MCQs.
 
-## T053 client-safe workout projection and export (2026-11-18, s66-017-client-workout-projection)
+## T054 client-safe workout projection and export (2026-11-18, s66-017-client-workout-projection)
 
-- tasks.md text changed: T053 added (client-safe workout projection and export for F22 T017/T023-T028), with FR-017, FR-018, FR-025 and SC-008 traceability rows updated. Authorized by the PO for the orchestrator on 2026-11-18 (F22/F23 blockers). No FR, SC, acceptance criteria, plan design, contract or copy text changed; FR-017/FR-025 already assign client access and entitlement enforcement to P4/F13, and T053 supplies only the F17-side client-safe reader and export output that P4 consumes.
+- tasks.md text changed: T054 added (client-safe workout projection and export for F22 T017/T023-T028), with FR-017, FR-018, FR-025 and SC-008 traceability rows updated. Authorized by the PO for the orchestrator on 2026-11-18 (F22/F23 blockers). No FR, SC, acceptance criteria, plan design, contract or copy text changed; FR-017/FR-025 already assign client access and entitlement enforcement to P4/F13, and T054 supplies only the F17-side client-safe reader and export output that P4 consumes.
 - Cross-reference check: task ID, FR tags and traceability rows agree; the client path reuses the F17 payload, print view, Excel writer, formula guards and audit recorder, adds no second renderer or export engine, and leaves the staff reader's `coaching_work` checks untouched.
 - Security review: client wall derived from the signed identity; F13 `active` gate; own-delivered-revision only; allowlisted document; only name and current video per exercise (no description, notes, defaults, provenance); foreign or unresolvable references deny the whole call (F16 client-plan resolver contract); success audit fails closed; a client's foreign-plan denial is stored without foreign identity.
 - **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.** Dated after the last tasks edit.
