@@ -148,7 +148,7 @@ const PENDING: FxSnapshot = Object.freeze({ status: 'pending' });
  * does not publish, or with an invalid rate, are skipped.
  */
 export function selectFxSnapshot(input: SelectFxInput): FxSnapshot {
-  if (input.currency === 'EGP') return { ...EGP_IDENTITY };
+  if (input.currency === 'EGP') return Object.freeze({ ...EGP_IDENTITY });
   if (!isPinnedCurrency(input.currency)) return { ...PENDING };
   const provider = FX_PROVIDER_PINS[input.currency];
   let transactionDate: string;
@@ -169,12 +169,12 @@ export function selectFxSnapshot(input: SelectFxInput): FxSnapshot {
     if (!best || publication.date > best.date) best = publication;
   }
   if (!best) return { ...PENDING };
-  return {
+  return Object.freeze({
     status: 'ready',
     rate: best.rate,
     publicationDate: best.date,
     provider,
-  };
+  });
 }
 
 /** A ready snapshot is immutable; only a missing or pending one is selected. */
@@ -182,7 +182,7 @@ export function resolveFxSnapshot(
   input: SelectFxInput & { existing: FxSnapshot | null },
 ): FxSnapshot {
   if (input.existing && input.existing.status === 'ready')
-    return input.existing;
+    return Object.freeze({ ...input.existing });
   return selectFxSnapshot(input);
 }
 
@@ -358,9 +358,9 @@ export async function fetchFxSnapshot(
   options: FetchFxOptions,
 ): Promise<FxSnapshot> {
   const { transactionAt, currency } = options;
-  if (currency === 'EGP') return { ...EGP_IDENTITY };
+  if (currency === 'EGP') return Object.freeze({ ...EGP_IDENTITY });
   if (options.existing && options.existing.status === 'ready')
-    return options.existing;
+    return Object.freeze({ ...options.existing });
   if (!isPinnedCurrency(currency)) return { ...PENDING };
   const doFetch = options.fetchImpl ?? fetch;
   const controller = new AbortController();
