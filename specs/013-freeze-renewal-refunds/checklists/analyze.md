@@ -461,3 +461,7 @@ Added T157 (tasks.md) and its traceability row for FR-028 "independent overdue i
 ### S66 T157 completion evidence (2026-11-18)
 
 T157 is ticked and its traceability row cites exact-head CI at `96fe2428` (all checks incl. integration shards 1-3 green) after the migration was renumbered to 20261125020000 to avoid a version clash with PR #264. No FR, SC, acceptance-scenario, plan or PO-decision text changed. **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+### S66 T157 review hardening (2026-11-18)
+
+After independent review of PR #265 (PASS-WITH-CONDITIONS, no defects), T157 test scope was extended: cancelled-obligation exclusion with mutation M5, cross-client isolation in one workspace with M4 narrowed to one specific failure and its occurrence count asserted, a renewal stored-due-date case, Cairo-day activation anchoring with mutation M6 (a 00:30 Cairo activation, 22:30Z the previous UTC day, is used because 23:30 Cairo does not differ from UTC), and a stricter fail-closed parser (reason must be installment_past_due exactly when overdue). Multi-subscription fan-out for one client is not reachable through real writers (renewal is in-place on one continuous subscription), so the client-level sum is exercised within the single subscription. No FR, SC, acceptance-scenario, plan or PO-decision text changed. The exact-head CI evidence for the added tests is recorded in the next entry once green. **CRITICAL: 0. HIGH: 0. No open ambiguities.**

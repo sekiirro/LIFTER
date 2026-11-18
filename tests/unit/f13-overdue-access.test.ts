@@ -101,6 +101,17 @@ describe('F13 FR-028 overdue projection (TS mirror)', () => {
       { ...ok, overdue_since: null },
       { ...ok, overdue: false },
       { ...ok, overdue_installment_count: 1.5 },
+      { ...ok, reason: null },
+      { ...ok, reason: 'other' },
+      { ...ok, reason: undefined },
+      {
+        status: 'ok',
+        overdue: false,
+        overdue_since: null,
+        first_overdue_seq: null,
+        overdue_installment_count: 0,
+        reason: 'installment_past_due',
+      },
     ])
       expect(parseClientOverdueStatus(bad)).toEqual({ status: 'invalid' });
   });

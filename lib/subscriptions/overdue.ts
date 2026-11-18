@@ -80,7 +80,8 @@ export function parseClientOverdueStatus(value: unknown): ClientOverdueStatus {
   if (
     v.overdue !== (v.overdue_installment_count as number) > 0 ||
     (v.overdue && (typeof since !== 'string' || !Number.isInteger(seq))) ||
-    (!v.overdue && (since !== null || seq !== null))
+    (!v.overdue && (since !== null || seq !== null)) ||
+    v.reason !== (v.overdue ? 'installment_past_due' : null)
   )
     return { status: 'invalid' };
   return {
@@ -89,6 +90,6 @@ export function parseClientOverdueStatus(value: unknown): ClientOverdueStatus {
     overdueSince: (since as string | null) ?? null,
     firstOverdueSeq: (seq as number | null) ?? null,
     overdueInstallmentCount: v.overdue_installment_count as number,
-    reason: typeof v.reason === 'string' ? v.reason : null,
+    reason: v.reason as string | null,
   };
 }
