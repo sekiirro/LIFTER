@@ -128,6 +128,7 @@ T039 runs only the Prerequisites and gates verification command block and the na
 ## T061 unassigned-client read evidence (2026-11-15 UTC)
 
 On Stack D, safe-reset and provision the owned stack, then run `unassigned-clients` and `tests/integration/rls-catalog.test.ts` with the integration config. This passed 46/46 tests after the final migration restore. The exact safe-wrapper command, stack injection setup, and both required mutation results are recorded in `C:/Users/NEW LAP/.lifter/runs/s57-luna-f11a2/report.md`. The T061 test covers approved/assigned/pending content, Platform Owner and own-workspace Workspace Owner reads, denied roles and foreign workspace, Trainer departure, read-only assignment access and no alert rows. The completed-deletion exclusion is deferred to T048 because its lifecycle states do not exist yet; no synthetic state is used.
+
 ## S11-2 verification commands (2026-11-18 UTC)
 
 Run after provisioning Stack C through the safe wrapper; no migration was required.

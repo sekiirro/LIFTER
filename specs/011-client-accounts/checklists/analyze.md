@@ -7,6 +7,7 @@ Docs-only recording of architect ruling S64-R46: the restricted-continuation hal
 ## S64 date-only status — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R21: the entry-point half of A-S41-4 (P-S40-5, before T062) is APPROVED; the restricted-continuation half (P-S40-1, before T048) stays OPEN. FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
+
 ## S64 Luna S11-2 date-only status — 2026-11-18 UTC
 
 Task notes and traceability evidence changed; FR/SC requirement text did not. Direct-route implementation and verification are recorded in the S64 run report. PO decisions S64-PO-6/7 and S65-PO-1/2 resolve navigation placement, ASCII/manual slug behavior, and 50-character default overflow. No new requirement text or PO decision is inferred; per Constitution/S54-R6, no full Analyze rerun is required for task-status-only updates.
