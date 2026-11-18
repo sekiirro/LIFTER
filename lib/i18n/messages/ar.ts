@@ -12,6 +12,13 @@ export const ar = {
   'checkin.adherence.diet.title': 'التزامك بالدايت',
   'checkin.adherence.diet.question':
     'من 0 لـ 10، شايف إنك التزمت بالدايت قد إيه الأسبوع ده؟',
+  'checkin.reminder.dayOf.title': 'تذكير بالمتابعة الأسبوعية',
+  'checkin.reminder.dayOf.body': 'النهارده معاد متابعتك الأسبوعية.',
+  'checkin.reminder.followup.title': 'المتابعة الأسبوعية لسه ناقصة',
+  'checkin.reminder.followup.body': 'لسه ما بعتّش متابعتك الأسبوعية.',
+  'foodReplacement.notification.open': 'فيه عميل طلب بديل أكل جديد.',
+  'foodReplacement.notification.resolved':
+    'فيه تحديث على طلب بديل الأكل بتاعك.',
   'timeline.title': 'سجل النشاط',
   'timeline.empty': 'لسه مفيش أي أحداث هنا.',
   'timeline.event.registration': 'التسجيل',
@@ -1263,4 +1270,53 @@ export const ar = {
     'للعرض فقط. الأغذية وقيم الخطة وهمية، ولا يُحفظ أي شيء.',
   'nutritionPlan.mealNotes': 'ملاحظات للوجبة دي',
   'nutritionPlan.foodNotes': 'ملاحظات للأكلة دي',
+  'registration.upfrontAmount': 'المبلغ اللي هيتدفع مقدمًا',
+  'registration.paymentCount': 'عدد الأقساط',
+  'registration.defaultSplit': 'قسّم الباقي بالتقسيمة الافتراضية',
+  'registration.timingAnchorNote':
+    'الباقي يتدفع بعد ٣٠ يوم من التفعيل (بتوقيت القاهرة).',
+  // F22 client portal + staff directory: approved S55-PO-10/S55-PO-11 (specs/022-client-portal-delivery/copy-proposal.md).
+  'client.portal.nav': 'صفحتي',
+  'client.portal.title': 'خططك',
+  'client.portal.deliveredPlans': 'الخطط اللي وصلتك',
+  'client.portal.workout': 'خطة التمرين',
+  'client.portal.nutrition': 'خطة الأكل',
+  'client.portal.subscriptionStatus': 'حالة الاشتراك',
+  'client.portal.subscriptionStatus.awaitingActivation':
+    'اشتراكك لسه ما اتفعّلش',
+  'client.portal.subscriptionStatus.future': 'اشتراكك لسه ما بدأش',
+  'client.portal.subscriptionStatus.active': 'اشتراكك شغّال',
+  'client.portal.subscriptionStatus.frozen': 'اشتراكك متوقف مؤقتًا',
+  'client.portal.subscriptionStatus.expired': 'اشتراكك انتهى',
+  'client.portal.subscriptionStatus.refunded': 'فلوس الاشتراك اترجعت',
+  'client.portal.subscriptionEndDate': 'ميعاد انتهاء الاشتراك',
+  'client.portal.emptyPlans': 'لسه ماوصلكش أي خطط.',
+  'client.portal.restricted': 'مش هتقدر تفتح خططك دلوقتي بسبب حالة اشتراكك.',
+  'client.portal.viewPlan': 'افتح الخطة',
+  'client.portal.revision': 'النسخة المنشورة',
+  'client.portal.exportPdf': 'نزّل PDF',
+  'client.portal.exportExcel': 'نزّل Excel',
+  'client.portal.exportUnavailable': 'مش متاح تنزّل الخطة دي دلوقتي.',
+  'client.portal.notice.workoutDelivered':
+    'خطة تمرينك جاهزة، تقدر تفتحها دلوقتي.',
+  'client.portal.notice.nutritionDelivered':
+    'خطة أكلك جاهزة، تقدر تفتحها دلوقتي.',
+  'client.portal.notice.subscriptionActivated': 'اشتراكك اتفعّل.',
+  'client.portal.notice.workoutAndActivated':
+    'خطة تمرينك جاهزة، واشتراكك اتفعّل.',
+  'client.portal.notice.nutritionAndActivated':
+    'خطة أكلك جاهزة، واشتراكك اتفعّل.',
+  'client.portal.inbox.markRead': 'اعتبره مقروء',
+  'client.portal.inbox.empty': 'مفيش إشعارات جديدة.',
+  'staff.clientDirectory.title': 'العملاء',
+  'staff.clientDirectory.search': 'دوّر على عميل',
+  'staff.clientDirectory.filters': 'فلترة',
+  'staff.clientDirectory.plansWaitingForDelivery': 'خطط مستنية تتبعت',
+  'staff.clientDirectory.subscriptionStatus.awaitingActivation':
+    'مستني التفعيل',
+  'staff.clientDirectory.subscriptionStatus.future': 'لسه ما بدأش',
+  'staff.clientDirectory.subscriptionStatus.active': 'شغّال',
+  'staff.clientDirectory.subscriptionStatus.frozen': 'متوقف مؤقتًا',
+  'staff.clientDirectory.subscriptionStatus.expired': 'منتهي',
+  'staff.clientDirectory.subscriptionStatus.refunded': 'تم رد المبلغ',
 } as const;

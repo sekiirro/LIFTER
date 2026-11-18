@@ -748,4 +748,76 @@ describe('signup result focus', () => {
       host.querySelector('form p[role="status"]'),
     );
   });
+
+  it('skips touched-field blur validation while submission disables the inputs', async () => {
+    dom = new JSDOM('<!doctype html><html><body></body></html>', {
+      url: 'http://localhost/',
+    });
+    const globals = {
+      window: dom.window,
+      document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement,
+      HTMLInputElement: dom.window.HTMLInputElement,
+      FormData: dom.window.FormData,
+      Event: dom.window.Event,
+      FocusEvent: dom.window.FocusEvent,
+      Node: dom.window.Node,
+      IS_REACT_ACT_ENVIRONMENT: true,
+    };
+    previousGlobals = new Map(
+      Object.keys(globals).map((key) => [
+        key,
+        Object.getOwnPropertyDescriptor(globalThis, key),
+      ]),
+    );
+    for (const [key, value] of Object.entries(globals))
+      Object.defineProperty(globalThis, key, { configurable: true, value });
+    const { createRoot } = await import('react-dom/client');
+    const action = vi.fn(
+      () => new Promise<ReturnType<typeof signupResult>>(() => {}),
+    );
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+
+    await act(async () => {
+      root?.render(
+        createElement(SignupForm, {
+          action,
+          locale: 'en',
+          phoneCountries,
+        }),
+      );
+    });
+    const form = host.querySelector('form')!;
+    const name = host.querySelector<HTMLInputElement>('[name="name"]')!;
+    await act(async () => {
+      setInputValue(name, 'Heba Sami Nabil');
+      setInputValue(
+        host!.querySelector<HTMLInputElement>('[name="dateOfBirth"]')!,
+        '1990-10-30',
+      );
+      setInputValue(
+        host!.querySelector<HTMLInputElement>('[name="username"]')!,
+        'heba_pending_blur',
+      );
+    });
+    await act(async () => name.focus());
+    expect(document.activeElement).toBe(name);
+
+    await act(async () => {
+      form.requestSubmit();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(action).toHaveBeenCalledOnce();
+    expect(name.disabled).toBe(true);
+
+    await act(async () => {
+      name.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    });
+
+    expect(name.getAttribute('aria-invalid')).not.toBe('true');
+    expect(name.getAttribute('aria-describedby')).toBeNull();
+    expect(host.querySelector('#signup-name-error')).toBeNull();
+  });
 });

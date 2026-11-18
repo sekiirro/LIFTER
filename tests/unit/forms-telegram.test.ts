@@ -342,7 +342,7 @@ describe('staff Telegram link and delivery primitives', () => {
             error: null,
           };
         if (name === 'prepare_f15_telegram_delivery')
-          return { data: null, error: { message: canary } };
+          return { data: null, error: { message: canary, code: '08006' } };
         return { data: 'pending', error: null };
       },
     };

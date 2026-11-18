@@ -475,3 +475,24 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
   block). No requirement text changed; no verification status upgraded; T041 stays open.
 - Findings: 0 open CRITICAL, 0 open HIGH. **No open ambiguities** remain for this note.
 - Verdict: PASS for this documentation-only correction.
+
+## S63 Hy4 verification revalidation — 2026-11-17T13:45:00Z
+
+- Scope: open V1-CODE tasks T041, T054, T055, T056, T062 and T063 on code head `e593d880a33a912c97498c5a946bb00bc64c154e`. T039, T040 and the T043 closure remain deferred by S63-PO-4; T058 skip stands; T-u rows are not tasks.
+- Evidence: full unit 305 files / 3514 tests; branding integration 15 files / 86 tests on Stack B; focused e2e 20 (registration-links) + 302 (branding-registration, banner-loaded) + 29 (branding-registration) + 33 (screenshot matrices) + 6 (client-signup) passed; T054, T062 and T063 ticked on executed assertions; T041, T055 and T056 retain explicit remaining clauses.
+- No requirement, FR/SC, acceptance, plan or task-scope wording changed; this is a date/status refresh after task-status and traceability evidence updates. **No open ambiguities** remain.
+- Findings: 0 open CRITICAL, 0 open HIGH. Verdict: PASS for Spec Kit entry on this evidence update.
+
+## S64 re-date (2026-11-18) — F14b status annotations only
+
+- Date: 2026-11-18T04:20:00Z (s64-hy4-ui2 lane), after the F14b T-u1/T-u2/T-u4 "Verified so far / Remaining" annotations.
+- Scope: status/evidence annotations only; no task ticked, no FR/SC/acceptance-scenario or plan design text changed. Requirement text carries **no open ambiguities**; the owner-facing upload/alt-text copy gaps found during implementation are escalated as numbered PO MCQs in the lane report (`C:/Users/NEW LAP/.lifter/runs/s64-hy4-ui2/report.md`), not encoded as new copy or behavior.
+- Findings: 0 open CRITICAL, 0 open HIGH in this analysis. Static re-date per S54-R6 (no full Analyze required).
+- Verdict: PASS for this documentation-only re-date.
+
+## S64 Hy4 verification status-only revalidation - 2026-11-18T03:20:00Z
+
+- Scope: closure evidence for T041, T055 and T056 on executed head `f6a25888893fca053620d6d214659ae90d988784`, with `origin/main` `c101617d9735660ff0db23ba78b96e832a8120c4` merged before push under architect ruling S64-R36. T039, T040 and the T043 closure remain deferred by S63-PO-4; the T058 skip stands.
+- Evidence: full Q-M01..Q-M30 row-by-row sign-off with zero skipped Storage checks and state-restoration proof on Stack A; six mutation hooks RED then restored GREEN; browser 86/86 plus 55/55 (48 contrast cases); rendered CLS `< 0.001`; FR-026-FR-030 reconciliation with FR-026 and FR-028 explicitly PARTIAL.
+- No requirement, FR/SC, acceptance, plan or task-scope wording changed: only checkbox statuses and evidence text in `tasks.md` and `traceability.md`, plus two evidence documents. **No open ambiguities** remain for this status refresh.
+- Findings: 0 open CRITICAL, 0 open HIGH. Verdict: PASS for Spec Kit entry on this evidence update; not a new feature Analyze.

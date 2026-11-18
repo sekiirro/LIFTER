@@ -338,3 +338,27 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 - Scope: `tasks.md` status/evidence-only change (T138 ticked — documentation-only recording of S35-PO-3 / S36-R7 alert timing and S38-PO-5 S36-01=A/S36-02=A with S36-01=A retained as the F11/F12 future source rule under PDN-S39-F15-01, v1 deferral PO S54-PO-8; T088 annotated Verified-so-far/Remaining, stays open) and `traceability.md` slice rows. T138 required no code, copy, schema, or migration; no FR/SC/requirement text changed. T088 gained a static unit guard (`tests/unit/forms-terms-fixture-rollback.test.ts`) asserting every Terms policy fixture insert is rollback-scoped or explicitly commit-required; integration runtime verification still needs Stack D, so T088 stays open.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for this documentation-and-guard test-only slice; no requirement text changed.
+
+## S63 Luna S153 S15-3 evidence refresh (2026-11-17) (date update only)
+
+- Scope: task status/evidence-only changes for T085, T118, T119 and T142 plus traceability rows. No FR/SC/requirement text, product behavior, copy or schema changed. T083 remains open pending PO decision MCQ S153-01.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for evidence-only updates; implementation and test evidence are recorded in traceability.md and the S153 report.
+
+## S64-T083 clarification refresh (2026-11-17) (date update only)
+
+- Scope: `spec.md` Clarification S64-PO-3 for T083 (resolves MCQ S153-01: class 08/40 + 55P03 retry, all other errors permanent), `tasks.md` T083 checkbox tick, `traceability.md` S64-T083 row. No FR/SC/requirement text, product copy, plan design, or schema changed.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for this clarification-and-evidence-only update; unit/mutation evidence is recorded in traceability.md.
+
+## S64 s15ui browser evidence refresh (2026-11-18) (date update only)
+
+- Scope: `tasks.md` status/evidence-only changes (T091, T095, T112, T114, T126 ticked), `traceability.md` S64 browser slice rows, and a new evidence report `reports/S64-T095-rendered-matrix.md`. No FR/SC/acceptance text, plan design, copy, token, or PO decision changed. T112's production change is a pending-state blur guard derived from the already-specified behavior; it adds no user-visible state or string.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for this evidence-only update; browser and unit evidence are recorded in traceability.md and the lane report.
+
+## S65-hyd-f15eng T088 and T113 Analyze refresh (2026-11-18)
+
+- Scope: reconciled `specs/015-forms-intake/spec.md` EN option table (`N07.2`–`N07.5` to `2 meals`–`5 meals` per already-approved S34-PO-4; line 398 note aligned with already-approved S33-PO-3; `N08.medium.foods`/`N08.high.foods` kept pending per S41-PO-3), ticked `T088` and `T113` in `specs/015-forms-intake/tasks.md`, added `S65-hyd-f15eng` evidence rows in `specs/015-forms-intake/traceability.md`, and added unit/integration regression & rollback-scoped SQL mutation assertions in `tests/unit/forms-s32-approved-intake.test.ts` and `tests/integration/forms-default-onboarding.test.ts`. No new requirement, copy, schema, or PO decision introduced.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for T088 and T113; Stack A (substituting for Stack D) integration and mutation evidence recorded in `traceability.md`.

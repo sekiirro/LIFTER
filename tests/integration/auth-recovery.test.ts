@@ -20,6 +20,8 @@ const db = sql();
 let f: Awaited<ReturnType<typeof twoWorkspaceFixture>>;
 let cA: Awaited<ReturnType<typeof createStaff>>;
 let cB: Awaited<ReturnType<typeof createStaff>>;
+let otherTrainerA: Awaited<ReturnType<typeof createStaff>>;
+let revokedTrainerA: Awaited<ReturnType<typeof createStaff>>;
 let closedError: { message: string; code: string } | null;
 let installedRecoveryTarget: string | null = null;
 
@@ -28,11 +30,38 @@ beforeAll(async () => {
   f = await twoWorkspaceFixture();
   cA = await createStaff(null, 'recovery-client-a');
   cB = await createStaff(null, 'recovery-client-b');
+  otherTrainerA = await createStaff('trainer', 'recovery-other-trainer-a');
+  revokedTrainerA = await createStaff('trainer', 'recovery-revoked-trainer-a');
+  checked(
+    await admin()
+      .from('workspace_memberships')
+      .insert([
+        {
+          workspace_id: f.wsA.id,
+          user_id: otherTrainerA.userId,
+          granted_by: f.po.userId,
+        },
+        {
+          workspace_id: f.wsA.id,
+          user_id: revokedTrainerA.userId,
+          granted_by: f.po.userId,
+          revoked_at: new Date().toISOString(),
+          revoked_by: f.po.userId,
+        },
+      ]),
+  );
   closedError = (
     await f.po.client.rpc('recovery_link_authorize', { target: cA.userId })
   ).error;
   await db`create table if not exists public.test_recovery_targets(user_id uuid primary key, workspace_id uuid not null)`;
-  await db`insert into public.test_recovery_targets(user_id, workspace_id) values (${cA.userId}, ${f.wsA.id}), (${cB.userId}, ${f.wsB.id}), (${f.woA.userId}, ${f.wsA.id})`;
+  await db`insert into public.test_recovery_targets(user_id, workspace_id) values
+    (${cA.userId}, ${f.wsA.id}),
+    (${cB.userId}, ${f.wsB.id}),
+    (${f.woA.userId}, ${f.wsA.id}),
+    (${f.po.userId}, ${f.wsA.id}),
+    (${f.salesA.userId}, ${f.wsA.id}),
+    (${f.trainerA.userId}, ${f.wsA.id}),
+    (${otherTrainerA.userId}, ${f.wsA.id})`;
   await db`create or replace function app_private.recovery_target_workspace(target uuid) returns uuid
     language sql stable security definer set search_path = '' as $$
       select workspace_id from public.test_recovery_targets where user_id = target;
@@ -133,13 +162,17 @@ describe('recovery', () => {
     ['po', 'B', true],
     ['woA', 'A', true],
     ['woA', 'B', false],
-    ['trainerA', 'A', false],
+    ['trainerA', 'A', true],
+    ['trainerB', 'A', false],
     ['salesA', 'A', false],
   ] as const) {
     it(`${identity} / ${workspace}: preflight, record and exact audit attribution`, async () => {
       const caller = f[identity];
       const target = workspace === 'A' ? cA.userId : cB.userId;
       const workspaceId = workspace === 'A' ? f.wsA.id : f.wsB.id;
+      const [beforeAudit] =
+        await db`select count(*)::int as count from public.audit_events
+          where actor_user_id = ${caller.userId} and action = 'recovery_link.generated'`;
       const preflight = await caller.client.rpc('recovery_link_authorize', {
         target,
       });
@@ -152,6 +185,10 @@ describe('recovery', () => {
             code: '42501',
             message: 'not_permitted',
           });
+        const [afterAudit] =
+          await db`select count(*)::int as count from public.audit_events
+            where actor_user_id = ${caller.userId} and action = 'recovery_link.generated'`;
+        expect(afterAudit?.count).toBe(beforeAudit?.count);
         return;
       }
       expect(preflight.error).toBeNull();
@@ -170,6 +207,50 @@ describe('recovery', () => {
       expect(JSON.stringify(rows[0]?.details)).not.toContain('@');
     });
   }
+
+  it('denies a Trainer with revoked workspace membership', async () => {
+    for (const name of ['recovery_link_authorize', 'recovery_link_record']) {
+      const result = await revokedTrainerA.client.rpc(name, {
+        target: cA.userId,
+      });
+      expect(result.error).toMatchObject({
+        code: '42501',
+        message: 'not_permitted',
+      });
+    }
+    const [issuances] =
+      await db`select count(*)::int as count from public.recovery_link_issuances where issued_by = ${revokedTrainerA.userId}`;
+    const [events] =
+      await db`select count(*)::int as count from public.audit_events where actor_user_id = ${revokedTrainerA.userId} and action = 'recovery_link.generated'`;
+    expect(issuances?.count).toBe(0);
+    expect(events?.count).toBe(0);
+  });
+
+  it('denies a Trainer targeting staff (including self) or an unknown target', async () => {
+    const targets = [
+      f.woA.userId,
+      f.po.userId,
+      otherTrainerA.userId,
+      f.salesA.userId,
+      f.trainerA.userId,
+      randomUUID(),
+    ];
+    for (const target of targets) {
+      for (const name of ['recovery_link_authorize', 'recovery_link_record']) {
+        const result = await f.trainerA.client.rpc(name, { target });
+        expect(result.error).toMatchObject({
+          code: '42501',
+          message: 'not_permitted',
+        });
+      }
+      const [events] =
+        await db`select count(*)::int as count from public.audit_events
+          where actor_user_id = ${f.trainerA.userId}
+            and action = 'recovery_link.generated'
+            and details ->> 'target_user_id' = ${target}`;
+      expect(events?.count).toBe(0);
+    }
+  });
 
   it('denies anonymous RPC execution', async () => {
     for (const name of ['recovery_link_authorize', 'recovery_link_record']) {

@@ -22,7 +22,17 @@ const actor = { userId: ws, role: 'sales' as const, activeWorkspaceIds: [ws] };
 beforeEach(() => {
   vi.resetAllMocks();
   m.responses.clear();
-  m.responses.set('packages', [{ id: 'p', code: 'test-pkg-fixture' }]);
+  m.responses.set('packages', [
+    {
+      id: 'p',
+      workspace_id: ws,
+      market: 'International',
+      type: 'Year-round',
+      code: 'test-pkg-fixture',
+      created_at: '2026-01-01T00:00:00Z',
+      created_by: 'actor',
+    },
+  ]);
   m.responses.set('package_offers', [
     {
       id: 'o',
@@ -41,6 +51,8 @@ beforeEach(() => {
       workspace_id: ws,
       offer_id: 'o',
       price_minor: '9007199254740993',
+      market: 'International',
+      type: 'Year-round',
     },
   ]);
   m.responses.set('workspaces', [{ id: ws }]);
@@ -79,6 +91,53 @@ describe('scoped package reads', () => {
       expect(m.eq).toHaveBeenCalledWith('workspace_id', ws);
     },
   );
+  it('returns the stored market/type projection and snapshots without translation', async () => {
+    const result = await loadPackageOffers(actor, ws);
+    expect(result.status).toBe('ok');
+    if (result.status === 'ok') {
+      expect(result.packages).toMatchObject([
+        {
+          workspace_id: ws,
+          market: 'International',
+          type: 'Year-round',
+        },
+      ]);
+      expect(result.versions[0]).toMatchObject({
+        market: 'International',
+        type: 'Year-round',
+      });
+    }
+    expect(m.select).toHaveBeenCalledWith(
+      'id,workspace_id,market,type,code,created_at,created_by',
+    );
+    expect(m.eq).toHaveBeenCalledWith('workspace_id', ws);
+    expect(SAFE_VERSION_COLUMNS).toContain('market');
+    expect(SAFE_VERSION_COLUMNS).toContain('type');
+  });
+  it('preserves unclassified legacy market/type values as null for the PO', async () => {
+    m.responses.set('packages', [
+      {
+        id: 'legacy',
+        workspace_id: null,
+        market: null,
+        type: null,
+        code: 'legacy-fixture',
+        created_at: '2026-01-01T00:00:00Z',
+        created_by: 'actor',
+      },
+    ]);
+    const result = await loadPackageManagement(
+      { ...actor, role: 'platform_owner', activeWorkspaceIds: [] },
+      ws,
+    );
+    expect(result.status).toBe('ok');
+    if (result.status === 'ok')
+      expect(result.packages[0]).toMatchObject({
+        workspace_id: null,
+        market: null,
+        type: null,
+      });
+  });
   it.each(['platform_owner', 'workspace_owner'] as const)(
     'allows scoped rates for %s',
     async (role) => {

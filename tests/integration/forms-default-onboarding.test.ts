@@ -59,6 +59,67 @@ it('provisions the approved localized N11 slider in the default starter', async 
       `;
       const definition = version!.definition as typeof starter;
       expect(definition).toEqual(starter);
+      const n11 = definition.questions.find(({ id }) => id === 'N11') as
+        { labels?: unknown } | undefined;
+      const expectedN11Labels = {
+        minimum: { en: 'I barely feel hungry', ar: 'مش بجوع تقريبًا' },
+        middle: { en: 'Moderate hunger', ar: 'جوع متوسط' },
+        maximum: { en: 'Very strong hunger', ar: 'جوع شديد جدًا' },
+      };
+      expect(n11?.labels).toEqual(expectedN11Labels);
+
+      const [original] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'app_private.ensure_default_onboarding_form(uuid,uuid)'::regprocedure
+        ) as definition
+      `;
+      const mutationRollback = new Error(
+        'rollback default-onboarding N11 labels mutant',
+      );
+      const unlocalizedLabels = JSON.stringify({
+        minimum: expectedN11Labels.minimum,
+        middle: 'جوع متوسط',
+        maximum: 'جوع شديد جدًا',
+      });
+      const mutatedFn = (original?.definition as string).replace(
+        'new_form := pg_catalog.gen_random_uuid();',
+        `starter_definition := pg_catalog.jsonb_set(starter_definition, '{questions,27,labels}', '${unlocalizedLabels}'::jsonb);\n  new_form := pg_catalog.gen_random_uuid();`,
+      );
+      expect(mutatedFn).not.toBe(original?.definition);
+      let n11LabelsMutantKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp.unsafe(mutatedFn);
+          const mutantWorkspace = await workspace(sp);
+          const [mutatedProvisioned] = await sp`
+            select app_private.ensure_default_onboarding_form(
+              ${mutantWorkspace.workspaceId},${mutantWorkspace.actor}
+            ) as form_id
+          `;
+          const [mutatedVersion] = await sp`
+            select definition from public.form_versions
+            where workspace_id=${mutantWorkspace.workspaceId} and form_id=${mutatedProvisioned!.form_id}
+              and version_number=1 and status='draft'
+          `;
+          const mutatedDef = mutatedVersion!.definition as typeof starter;
+          const mutatedN11 = mutatedDef.questions.find(
+            ({ id }) => id === 'N11',
+          ) as { labels?: unknown } | undefined;
+          try {
+            expect(mutatedN11?.labels).toEqual(expectedN11Labels);
+          } catch {
+            n11LabelsMutantKilled = true;
+          }
+          throw mutationRollback;
+        }),
+      ).rejects.toBe(mutationRollback);
+      expect(n11LabelsMutantKilled).toBe(true);
+      const [restored] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'app_private.ensure_default_onboarding_form(uuid,uuid)'::regprocedure
+        ) as definition
+      `;
+      expect(restored?.definition).toBe(original?.definition);
       throw rollback;
     }),
   ).rejects.toBe(rollback);

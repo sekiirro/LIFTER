@@ -1,5 +1,9 @@
 # Analyze: F12 Registration approval and payments
 
+## S64 date-only status — 2026-11-18 UTC
+
+Docs-only: T056 blocker clause updated to record architect ruling S64-R21 (011 T062 entry-point design approved 2026-11-18; S40 gate and 012 approval-implementation blockers unchanged). FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
+
 - **Date:** 2026-11-03
 - **Analyzed commit:** `d04ef52eb93df68b9361106a5ee4fd4fcaebb108` (origin/main baseline; this artifact follows the local spec/task reconciliation)
 - **Scope:** static consistency and evidence review; no test suites executed.
@@ -413,3 +417,33 @@ Scope: the exact-head CodeRabbit review `5877600535` (CHANGES_REQUESTED on `212d
 - Requirement, acceptance, and plan text did not change. T042 status and traceability evidence now reflect its executed Stack D integration cases; T055 remains unchecked.
 - The T042-specific scope remains consistent with FR-006/008/018 and existing real-session contracts. Its focused RLS check distinguishes SQL grants from policy denial and passed the permissive-policy mutation.
 - Entry verdict for this status update: 0 open CRITICAL, 0 open HIGH, and zero F12 requirement ambiguities. This revalidation records task/evidence status only; it is not a full feature-gate claim.
+
+## S64 status-only revalidation — 2026-11-18
+
+- No `spec.md`, `plan.md`, task requirement text, acceptance scenario or
+  contract text changed in the S64 S12-3 slice. Only task execution status,
+  traceability evidence cells and exact-head CI references were recorded:
+  T043, T045, T046 and T047 ticked with executed Stack A evidence; T044 left
+  PARTIAL (17 of 24 Q-M ids killed, one survivor, six not re-executed); T048
+  left to the architect; T053/T054 unchanged and PARTIAL pending the
+  COPY-F12-T054 PO strings.
+- FR total remains 29 (FR-001..029), SC total remains 11 for the F12 gate
+  mapping plus the separately owned SC-012; 40/40 FR/SC rows remain mapped.
+  This revalidation records status and evidence only; it is not a full
+  feature-gate claim and introduces no new requirement, default or copy.
+- Entry verdict for this status update: 0 open CRITICAL, 0 open HIGH, zero
+  F12 requirement ambiguities; the two pre-existing LOW findings remain
+  recorded and unchanged. CI's spec-consistency date-order gate is satisfied
+  by this dated status-only entry.
+
+## S65 T056 status-only revalidation — 2026-11-18
+
+- No `spec.md`, `plan.md`, task requirement text, acceptance scenario or
+  contract text changed in the S65 T056 slice. Only task execution status and
+  traceability evidence were recorded: T056 ticked with executed Stack B
+  RED->GREEN, forward-only migration `20261124120000_f12_approval_distribution_job_emit.sql`,
+  and two killed mutations in `tests/integration/registration-approval-verification.md`;
+  FR-022 remains PARTIAL overall only for the external P2 intake consumer (D-23).
+- Entry verdict for this status update: 0 open CRITICAL, 0 open HIGH, zero
+  F12 requirement ambiguities. CI's spec-consistency date-order gate is
+  satisfied by this dated status-only entry.

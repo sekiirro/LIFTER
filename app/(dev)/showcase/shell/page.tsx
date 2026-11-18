@@ -11,15 +11,21 @@ import styles from '../showcase.module.css';
 export default async function ShellPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string | string[] }>;
+  searchParams: Promise<{
+    role?: string | string[];
+    glass?: string | string[];
+  }>;
 }) {
   if (!isShowcaseEnabled(process.env)) notFound();
   const preferences = await cookies();
   const m = getMessages(parseLocale(preferences.get(LOCALE_COOKIE)?.value));
-  const role = parseDemoRole((await searchParams).role);
+  const params = await searchParams;
+  const role = parseDemoRole(params.role);
   const navigation = getNavigation(role);
+  // Dev-only verification hook for FR-028 explicit-solid fallback coverage.
+  const fallback = params.glass === 'solid' ? 'solid' : 'auto';
   return (
-    <AppShell role={role} activeKey="home" messages={m}>
+    <AppShell role={role} activeKey="home" messages={m} fallback={fallback}>
       <div className={styles.demoContent}>
         <h1>{m['showcase.shell']}</h1>
         <RoleSelector role={role} messages={m} />
