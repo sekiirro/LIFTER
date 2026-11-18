@@ -34,7 +34,7 @@ create table app_private.account_deletion_intents (
   workspace_id uuid references public.workspaces(id) on delete restrict,
   authorized_by_user_id uuid not null references public.staff_profiles(user_id) on delete restrict,
   authorized_capability text not null check (authorized_capability in ('delete_client', 'manage_staff_access')),
-  financial_confirmation_audit_id bigint references public.audit_events(id) on delete restrict,
+  financial_confirmation_audit_id bigint,
   financial_confirmation_consumed_at timestamptz,
   state text not null default 'pending_ban'
     check (state in ('pending_ban', 'banned_pending_db', 'release_pending', 'auth_release_in_progress', 'completed')),
@@ -1076,9 +1076,9 @@ begin
   binding := extensions.digest(convert_to(jsonb_build_array(1, kind, ws::text, cid::text, canonical->>'expected_state',
     null::text, null::text, null::text, canonical->'expected_installment_seq', case when kind = 'reject' then null::integer else 0 end, null::text,
     canonical->>'expected_amount_minor', canonical->>'currency', canonical->>'collected_on', canonical->'payment_confirmed', canonical->>'reason_code')::text, 'UTF8'), 'sha256');
-  select * into c from public.clients where workspace_id = ws and id = cid for update;
+  select * into c from public.clients where workspace_id=ws and id=cid for update;
   if not found then return jsonb_build_object('status', 'not_permitted'); end if;
-  perform s.id from public.subscriptions s where s.workspace_id = ws and s.client_id = cid order by s.id for update;
+  perform s.id from public.subscriptions s where s.workspace_id=ws and s.client_id=cid order by s.id for update;
   perform i.id from public.subscription_installments i join public.subscriptions s on s.workspace_id = i.workspace_id and s.id = i.subscription_id
     where s.workspace_id = ws and s.client_id = cid order by i.subscription_id, i.seq, i.id for update of i;
   perform e.id from public.payment_events e join public.subscriptions s on s.workspace_id = e.workspace_id and s.id = e.subscription_id
