@@ -21,7 +21,7 @@ Spec-only. Entities derived from spec.md; no migrations authored here.
 
 ## FoodReplacementRequest
 
-- client, food item, plan revision reference, free-text, status (open/rejected/approved-via-published-revision/stale-closed), created/closed timestamps.
+- client, food item, plan revision reference, free-text, status (open/rejected/approved-via-published-revision/stale-closed, plus cancelled when the client withdraws an open request, FR-020), created/closed timestamps.
 - At most one open per food; F15 text limits; no attachments.
 
 ## ClientTimelineEntry

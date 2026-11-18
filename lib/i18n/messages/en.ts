@@ -1,6 +1,55 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  // spec 023 client progress coaching (S55-PO-10 approved copy)
+  'progress.title': 'Progress',
+  'progress.measurements.title': 'Measurements',
+  'progress.measurements.empty': 'No measurements recorded',
+  'progress.measurement.edit': 'Edit measurement',
+  'checkin.completed.notGate': 'Check-ins do not block access to your account.',
+  'checkin.adherence.workout.title': 'Workout adherence',
+  'checkin.adherence.workout.question':
+    'On a scale from 0 to 10, how closely did you follow your workout plan this week?',
+  'checkin.adherence.diet.title': 'Diet adherence',
+  'checkin.adherence.diet.question':
+    'On a scale from 0 to 10, how closely did you follow your nutrition plan this week?',
+  'checkin.reminder.dayOf.title': 'Weekly check-in reminder',
+  'checkin.reminder.dayOf.body': 'Your weekly check-in is due today.',
+  'checkin.reminder.followup.title': 'Check-in still pending',
+  'checkin.reminder.followup.body':
+    "You haven't submitted your weekly check-in yet.",
+  'foodReplacement.notification.open': 'A client requested a food replacement.',
+  'foodReplacement.notification.resolved':
+    'Your food replacement request was updated.',
+  'timeline.title': 'Timeline',
+  'timeline.empty': 'No timeline events yet.',
+  'timeline.event.registration': 'Registration',
+  'timeline.event.renewal': 'Renewal',
+  'timeline.event.firstDelivery': 'First plan delivery',
+  'timeline.event.trainerChange': 'Trainer assignment change',
+  'timeline.event.replacementOpen': 'Replacement request opened',
+  'timeline.event.replacementApproved': 'Replacement approved',
+  'timeline.event.replacementRejected': 'Replacement rejected',
+  'timeline.event.replacementStale':
+    'Replacement request closed (food removed)',
+  'timeline.event.freezeApply': 'Freeze applied',
+  'timeline.event.freezeRemove': 'Freeze removed',
+  'timeline.event.closure': 'Closure',
+  // spec 023: approved by S57-PO-12 and S57-PO-13 (pinned in progress-coaching-copy test)
+  'progress.measurement.add': 'Add measurement',
+  'progress.measurement.value': 'Value',
+  'progress.measurement.date': 'Date',
+  'progress.measurement.save': 'Save measurement',
+  'progress.measurement.saved': 'Measurement saved',
+  'progress.measurement.duplicateSameDay':
+    'A measurement already exists for this day. Edit the existing record instead.',
+  'checkin.config.title': 'Weekly check-in form',
+  'checkin.config.select': 'Choose the weekly check-in form',
+  'checkin.config.save': 'Use this form',
+  'checkin.config.saved': 'Weekly check-in form saved.',
+  'checkin.config.invalid':
+    'This form needs the workout and diet adherence questions (0–10).',
+  'checkin.config.conflict': 'Another form is already the weekly check-in.',
   'catalog.taxonomy.muscle.spinal_erectors': 'Spinal erectors',
   'catalog.taxonomy.muscle.rear_delts': 'Rear delts',
   'catalog.taxonomy.muscle.hamstrings': 'Hamstrings',
@@ -29,6 +78,54 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.taxonomy.muscle.triceps': 'Triceps',
   'catalog.taxonomy.muscle.biceps': 'Biceps',
   'catalog.taxonomy.equipment.machine': 'Machine',
+  'leaderboard.title': 'Top 5',
+  'leaderboard.empty': 'No leaderboard is available right now.',
+  'leaderboard.fewerThanFive': '{count} clients qualify so far.',
+  'leaderboard.rankLabel': 'Rank {rank}',
+  'leaderboard.resultsMonthLabel': 'Results for {month} {year}',
+  'leaderboard.optOut.mayAppear': 'You may appear in the Top 5',
+  'leaderboard.optOut.mayAppearBody':
+    'Your username may appear in the Top 5. You can turn this off at any time in account settings.',
+  'leaderboard.optOut.turnOffParticipation': 'Turn off participation',
+  'leaderboard.optOut.success': 'You will no longer appear on the leaderboard.',
+  'leaderboard.optedOut': 'You turned off leaderboard participation.',
+  'leaderboard.publish.action': 'Approve monthly leaderboard',
+  'leaderboard.publish.approved': 'Monthly leaderboard approved.',
+  'leaderboard.publish.rejected': 'Monthly leaderboard rejected.',
+  'leaderboard.ineligible': 'You are not eligible for the leaderboard yet.',
+  'clientSignup.username.tooShort': 'Username must be at least 3 characters.',
+  'clientSignup.username.tooLong': 'Username must be at most 20 characters.',
+  'clientSignup.username.invalidChars':
+    'Username can contain only English letters, digits, underscores and dots.',
+  'accountSettings.username.tooShort':
+    'Username must be at least 3 characters.',
+  'accountSettings.username.tooLong': 'Username must be at most 20 characters.',
+  'accountSettings.username.invalidChars':
+    'Username can contain only English letters, digits, underscores and dots.',
+  'accountSettings.username.reserved': 'This username is reserved.',
+  'accountSettings.username.workspaceTaken':
+    'This username is already used in your workspace.',
+  'leaderboard.yourRank': 'Your rank',
+  'leaderboard.rankOfTotal': 'Rank {rank} of {total}',
+  'accountSettings.username.unavailable': 'Username unavailable',
+  'leaderboard.publish.rejectAction': 'Reject monthly leaderboard',
+  'leaderboard.publish.generateAction': 'Prepare monthly leaderboard',
+  'leaderboard.publish.generated':
+    'The monthly leaderboard is ready for review.',
+  'leaderboard.publish.pendingExists':
+    'A monthly leaderboard is already waiting for review.',
+  'leaderboard.publish.noEligible': 'No clients qualify yet.',
+  'accountSettings.title': 'Account settings',
+  'clientGoals.title': 'Goals',
+  'clientGoals.goalType': 'Goal Type',
+  'clientGoals.goalType.fatLoss': 'Fat Loss',
+  'clientGoals.goalType.muscleGain': 'Muscle Gain',
+  'clientGoals.goalType.maintenance': 'Maintenance',
+  'clientGoals.notSet': 'Not set',
+  'clientGoals.nearTermGoal': 'Near-term goal',
+  'clientGoals.nearTermGoalEmpty': 'No answer yet.',
+  'clientGoals.save': 'Save goal type',
+  'clientGoals.saved': 'Goal type saved.',
   'registration.title': 'Registration links',
   'registration.intro':
     'Issue a registration link using the approved package terms.',
