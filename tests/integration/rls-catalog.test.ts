@@ -329,6 +329,8 @@ describe('tenancy security catalog (T007)', () => {
           'f13_create_refund_lockout_alert',
           'f13_materialize_entitlement',
           'f13_project_entitlement',
+          'f13_project_overdue',
+          'f13_client_overdue_state',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
           'f3_guard_platform_owner_profile_change',
@@ -1618,6 +1620,7 @@ describe('registration security catalog', () => {
       'app_private.f18_guard_nutrition_selection()',
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
+      'public.client_overdue_status()',
       'public.client_portal_workout_plan(uuid,integer)',
       'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',
