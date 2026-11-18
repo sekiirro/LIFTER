@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import {
   getNavigation,
   type NavItem,
@@ -8,8 +9,15 @@ import {
 import type { GlassFallback } from '../ui/glass/GlassSurface';
 import type { Messages } from '../../lib/i18n';
 import { ShellNavigation } from './ShellNavigation';
-import { PlatformOwnerHeader } from './PlatformOwnerHeader';
 import styles from './AppShell.module.css';
+
+const PlatformOwnerHeader = dynamic(
+  () =>
+    import('./PlatformOwnerHeader').then(
+      (module) => module.PlatformOwnerHeader,
+    ),
+  { ssr: true },
+);
 
 export type ShellNavigationProps = {
   items: readonly NavItem[];
