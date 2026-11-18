@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import type { NavKey, Role, NavItem } from '../../lib/design/navigation';
+import type { GlassFallback } from '../ui/glass/GlassSurface';
 import type { Messages } from '../../lib/i18n';
 import { BottomBar } from './BottomBar';
 import { NavRail } from './NavRail';
@@ -12,6 +13,7 @@ type ShellNavigationProps = {
   activeKey?: NavKey;
   messages: Messages;
   workspaceId?: string;
+  fallback?: GlassFallback;
   railClassName?: string;
   bottomClassName?: string;
 };
@@ -49,6 +51,7 @@ export function ShellNavigation({
   activeKey: requestedActiveKey,
   messages,
   workspaceId,
+  fallback,
   railClassName,
   bottomClassName,
 }: ShellNavigationProps) {
@@ -59,7 +62,7 @@ export function ShellNavigation({
   const props = { items, activeKey, hrefFor, messages };
   return (
     <>
-      <NavRail {...props} className={railClassName} />
+      <NavRail {...props} fallback={fallback} className={railClassName} />
       <BottomBar {...props} className={bottomClassName} />
     </>
   );

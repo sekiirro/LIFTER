@@ -11,11 +11,12 @@ export function NavRail({
   hrefFor = (key) => `#${key}`,
   messages,
   className,
+  fallback = 'auto',
 }: ShellNavigationProps) {
   return (
     <GlassSurface
       variant="regular"
-      fallback="auto"
+      fallback={fallback}
       role="navigation"
       aria-label={messages['nav.label']}
       data-testid="nav-rail"
