@@ -305,7 +305,7 @@ it('T157 covers renewal obligations through their stored due date', async () => 
     // Activate now so initial installments 2 and 3 are not yet due; only the renewal can be overdue.
     await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id,activation_source)
       values(${f.wsA.id},${p.sid},clock_timestamp(),gen_random_uuid(),'po_override')`;
-    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
     await tx`set local role authenticated`;
     const renewalInput = {
       workspace_id: f.wsA.id,
