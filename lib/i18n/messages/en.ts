@@ -1258,4 +1258,36 @@ export const en: Record<keyof typeof ar, string> = {
     'Showcase only. Foods and plan values are mocked; nothing is saved.',
   'nutritionPlan.mealNotes': 'Notes for this meal',
   'nutritionPlan.foodNotes': 'Notes for this food',
+  // APPROVED (PO S20 F14b & S65-PO-4)
+  'branding.logoLabel': 'Workspace logo',
+  'branding.bannerLabel': 'Banner image',
+  'branding.bannerAltLegend': 'Banner image description (Arabic or English)',
+  'branding.bannerAltHint':
+    'Enter a description in at least one language; the available description will be used as fallback.',
+  'branding.bannerSizeHint':
+    'Recommended 1600×800 (2:1). Keep important content away from the edges and the lower part of the image.',
+  'branding.uploadFailed':
+    'Upload failed. Check the file type, size, and dimensions, then retry.',
+  'branding.chooseImage': 'Choose image',
+  'branding.replaceImage': 'Replace image',
+  'branding.removeImage': 'Remove image',
+  'branding.retryImage': 'Retry upload',
+  'branding.retryRemove': 'Retry remove',
+  'branding.reloadDraft': 'Reload draft',
+  'branding.workspaceUnavailable':
+    'Workspace access is unavailable, so branding controls are disabled.',
+  'branding.uploadInProgress':
+    'Another branding action is still in progress. Wait for it to finish before continuing.',
+  'branding.uploadingImage': 'Uploading image…',
+  'branding.removingImage': 'Removing image…',
+  'branding.imageAttached': 'Image attached to the draft.',
+  'branding.imageRemoved': 'Image removed from the draft.',
+  'branding.identityOnlyConfirm':
+    'I confirm this banner contains identity content only, without pricing, contact details, calls to action, or links.',
+  'branding.identityOnlyRequired':
+    'Confirm the banner content before uploading.',
+  'branding.logoUploadGuidance':
+    'PNG or WebP · 4 MiB max · 2048 × 2048 px max · 1,000,000 px max',
+  'branding.bannerUploadGuidance':
+    'PNG or WebP · 8 MiB max · 4096 × 2048 px max · 4,000,000 px max',
 };
