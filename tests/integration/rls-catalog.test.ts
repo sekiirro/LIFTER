@@ -46,6 +46,58 @@ const signupPrivate = [
   'redeem_signup_admission_ticket',
   'signup_guard_attempt_delete',
 ];
+// Spec 023 private helpers.
+const f23Private = [
+  'f23_adherence_question_valid',
+  'f23_adherence_value',
+  'f23_checkin_definition_valid',
+  'f23_checkin_due_index',
+  'f23_client_checkin_anchor',
+  'f23_client_frozen_on',
+  'f23_capture_checkin_adherence',
+  'f23_client_progress_visible',
+  'f23_extract_checkin_measurements',
+  'f23_measurement_question',
+  'f23_measurement_value_fits',
+  'f23_store_checkin_adherence',
+  'f23_unit_text',
+  'f23_checkin_reminders_run',
+  'f23_guard_staff_notice',
+  'f23_notify_food_request_change',
+  'f23_weekly_checkin_run',
+  'f23_weekly_checkin_schedule_activate',
+  'f23_weekly_checkin_schedule_deactivate',
+  'f23_write_measurement_correction',
+  'f23_derived_uuid_v4',
+  'f23_food_request_audit',
+  'f23_guard_food_replacement_request',
+  'f23_is_own_client',
+  'f23_nutrition_item_path',
+  'f23_reconcile_food_requests',
+];
+// Spec 024 private helpers (all revoked from every API role).
+const f24Private = [
+  'f24_active_days',
+  'f24_cairo_today',
+  'f24_client_eligible',
+  'f24_client_rankable',
+  'f24_current_view',
+  'f24_eligibility_facts',
+  'f24_guard_current',
+  'f24_guard_entry',
+  'f24_guard_publication',
+  'f24_initial_subscription',
+  'f24_public_entries',
+  'f24_publication_entries',
+  'f24_username_issue',
+  'f24_visible_username',
+];
+// Spec 024 immutability/swap guards run with the caller's rights.
+const f24Invoker = [
+  'f24_guard_current',
+  'f24_guard_entry',
+  'f24_guard_publication',
+];
 // Spec 022 private helpers.
 const f22Private = [
   'f22_delivered_revisions',
@@ -122,13 +174,18 @@ const brandingFunctionOwners: Record<string, string> = {
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
 };
 const assignmentPrivate = [
+  'allocate_client_code',
+  'assign_client_code',
   'current_assigned_trainer',
   'enqueue_client_trainer_distribution_job',
   'end_assignments_on_membership_revocation',
   'end_assignments_on_trainer_role_change',
   'end_client_trainer_assignments',
+  'format_client_code',
+  'guard_client_code_immutable',
   'guard_client_trainer_assignment',
   'guard_client_trainer_assignment_truncate',
+  'normalize_client_code',
   'write_client_trainer_distribution',
 ];
 afterAll(async () => {
@@ -289,6 +346,8 @@ describe('tenancy security catalog (T007)', () => {
           'staff_display_name_is_white_space',
           ...signupPrivate,
           ...brandingPrivate,
+          ...f23Private,
+          ...f24Private,
           ...f22Private,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
@@ -494,12 +553,21 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'f17_client_resolve_global_exercise',
+          'f17_client_safe_reference',
+          'f17_client_safe_set',
+          'f17_client_safe_item',
+          'f17_client_safe_workout_document',
         ]),
       ].sort(),
     );
     for (const row of rows) {
       const expectedDefiner = ![
         // Union of F15/F16 and client-notes intentionally invoker-mode functions.
+        'f23_checkin_reminders_run',
+        'f23_weekly_checkin_run',
+        'f23_weekly_checkin_schedule_activate',
+        'f23_weekly_checkin_schedule_deactivate',
         'audit_events_immutable',
         'branding_actor_id',
         'catalog_assert_exercise_text_limits',
@@ -557,6 +625,15 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        // F23 US3: trigger guard and pure SQL/plpgsql helpers are invoker routines.
+        'f23_derived_uuid_v4',
+        'f23_guard_food_replacement_request',
+        'f23_nutrition_item_path',
+        ...f24Invoker,
+        'f17_client_safe_reference',
+        'f17_client_safe_set',
+        'f17_client_safe_item',
+        'f17_client_safe_workout_document',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -636,6 +713,11 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'f17_client_resolve_global_exercise',
+          'f17_client_safe_reference',
+          'f17_client_safe_set',
+          'f17_client_safe_item',
+          'f17_client_safe_workout_document',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -649,6 +731,21 @@ describe('tenancy security catalog (T007)', () => {
       }
       if (row.proname === 'staff_display_name_is_valid') {
         expect(row.service_role_execute, row.proname).toBe(true);
+      }
+      if (row.proname.startsWith('f24_')) {
+        // Spec 024: helpers are reachable only through the public F24 RPCs.
+        expect(row.authenticated_execute, row.proname).toBe(false);
+        expect(row.service_role_execute, row.proname).toBe(false);
+        continue;
+      }
+      if (row.proname.startsWith('f23_')) {
+        // Spec 023: only the RLS visibility predicates are executable by authenticated.
+        expect(row.authenticated_execute, row.proname).toBe(
+          ['f23_client_progress_visible', 'f23_is_own_client'].includes(
+            row.proname,
+          ),
+        );
+        continue;
       }
       expect(row.authenticated_execute, row.proname).toBe(
         [
@@ -1050,6 +1147,34 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'client_leaderboard_notice_seen_immutable',
+        relname: 'client_leaderboard_notice_seen',
+        type: 27,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_notice_seen_no_truncate',
+        relname: 'client_leaderboard_notice_seen',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_opt_outs_immutable',
+        relname: 'client_leaderboard_opt_outs',
+        type: 27,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_opt_outs_no_truncate',
+        relname: 'client_leaderboard_opt_outs',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
         tgname: 'f12_no_update',
         relname: 'payment_events',
         type: 19,
@@ -1137,6 +1262,27 @@ describe('audit security catalog (T005)', () => {
         tgname: 'f13_no_update',
         relname: 'trainer_productivity_points',
         type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_current_no_truncate',
+        relname: 'leaderboard_current_publications',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_entries_no_truncate',
+        relname: 'leaderboard_entries',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_publications_no_truncate',
+        relname: 'leaderboard_publications',
+        type: 34,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
       },
@@ -1607,6 +1753,7 @@ describe('registration security catalog', () => {
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
       'public.client_overdue_status()',
+      'public.client_portal_workout_plan(uuid,integer)',
       'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',
       'app_private.f17_audit_allowlist_guard()',
@@ -1977,6 +2124,7 @@ describe('F11 responsible-Trainer assignment catalog', () => {
       'public.assign_client_responsible_trainer(uuid,uuid,uuid)',
       'public.client_responsible_trainer(uuid,uuid)',
       'public.unassigned_clients(uuid)',
+      'public.find_client_by_code(uuid,text)',
     ]) {
       const [fn] = await db`select prosecdef,proconfig,
         pg_catalog.pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;

@@ -14,7 +14,7 @@ export type WorkoutExportDenialReason = 'not_permitted' | 'not_found';
 export type WorkoutExportAuditInput = {
   workspaceId: string | null;
   planId: string | null;
-  revisionId: string;
+  revisionId: string | null;
   format: WorkoutExportFormat;
   outcome: WorkoutExportOutcome;
   reason?: WorkoutExportDenialReason;

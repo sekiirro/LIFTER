@@ -1,5 +1,19 @@
 # Analyze — F11 client accounts
 
+## S66 re-analysis (S66-PO-1 client code) — 2026-11-18 UTC
+
+Requirement text changed: new FR-029 (client code) and task T064; FR total is now 29 (FR-001 to FR-029). Static review against spec, tasks and traceability.
+
+| Check                                                  | Result | Evidence                                                                                                       |
+| ------------------------------------------------------ | ------ | -------------------------------------------------------------------------------------------------------------- |
+| FR-029 has a task and a traceability row               | PASS   | T064; `traceability.md` FR-029 row                                                                             |
+| Decision recorded verbatim in the S-register           | PASS   | `docs/04-changes-and-questions.md` S66-PO-1 ("A: Random code (Recommended)")                                   |
+| No permission expanded                                 | PASS   | `find_client_by_code` reuses the exact F11 owner-or-Platform-Owner predicate; the column has no API-role grant |
+| Existing FR-001..FR-028 and SC-001..SC-023 unchanged   | PASS   | only an added FR and task                                                                                      |
+| F22 FR-011 and F24 FR-021 consumers unaffected in text | PASS   | both already name client code; this FR defines it                                                              |
+
+Gate verdict: CRITICAL 0, HIGH 0. T064 stays unticked until exact-head CI is green.
+
 ## S64 date-only status (S64-R46) — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R46: the restricted-continuation half of A-S41-4 (P-S40-1, before T048) is APPROVED, so A-S41-4 is now CLOSED (entry-point half S64-R21, restricted-continuation half S64-R46). FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.

@@ -1,0 +1,83 @@
+.main {
+  display: grid;
+  /* Grid items default to min-content width; minmax(0, 1fr) lets long
+     content (workspace names, usernames) shrink instead of overflowing. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  max-inline-size: 40rem;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-4);
+}
+.section {
+  display: grid;
+  gap: var(--space-3);
+}
+.month {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+.list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}
+.entry:last-child {
+  border-block-end: 0;
+}
+.rank {
+  font-weight: 600;
+}
+.username {
+  overflow-wrap: anywhere;
+}
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-inline-size: 0;
+  gap: var(--space-3);
+  justify-items: start;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.picker {
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+.picker select {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  text-overflow: ellipsis;
+}
+.myRank {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+.myRank dt {
+  color: var(--color-text-muted);
+}
+.myRank dd {
+  margin: 0;
+  font-weight: 600;
+}
+.section > h2 {
+  margin: 0;
+}

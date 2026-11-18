@@ -84,7 +84,7 @@ export async function registered(
     name: 'U3 synthetic client',
     email: `u3-${randomUUID()}@example.test`,
     date_of_birth: '1990-04-12',
-    username: `u3_${randomUUID().replaceAll('-', '').slice(0, 27)}`,
+    username: `u3_${randomUUID().replaceAll('-', '').slice(0, 17)}`,
     telegram_username: '',
     phone:
       '+201' +

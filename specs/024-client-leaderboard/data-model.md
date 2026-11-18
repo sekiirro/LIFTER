@@ -18,10 +18,11 @@ This document is a proposed implementation model for review; it adds no product 
 ### LeaderboardEntry
 
 - `workspace_id`, `publication_id`, `client_id`: composite tenant relation.
-- `rank`: integer 1..5.
-- `username_snapshot`: the approved display value for this publication; no health values, score, client code or notes.
+- `rank`: integer 1..n: the full ranking of all eligible clients (S57-PO-6). The public Top 5 is derived at read time from the first five visible entries, renumbered 1-5.
+- Display identity is read live from the canonical F11 username (no snapshot copy, data minimization); no health values, score, client code or notes.
 - Unique `(workspace_id, publication_id, rank)` and `(workspace_id, publication_id, client_id)`.
-- When opt-out occurs, the visible projection filters that client immediately even if a historical row remains stored for audit/history.
+- When opt-out occurs, the public projection filters that client immediately and the next eligible entry moves up (#6 -> #5) without reapproval; the stored row keeps the client's private rank (S57-PO-6).
+- Private rank (read-time only): the caller's own approved rank and the count of all entries of the current approved ranking (opted-out clients included), returned only while the caller is eligible apart from the opt-out (S57-PO-12).
 
 ### ClientLeaderboardPreference
 
@@ -37,10 +38,19 @@ This document is a proposed implementation model for review; it adds no product 
 - Reuse an existing username field if present; otherwise add it to the F11 signup form/RPC flow. No separate username account or identity table.
 - Username validation (S55-PO-9 Q14): 3-20 characters, English letters (A-Z), digits, underscores and dots only; case-insensitive uniqueness per workspace; reserved names (admin, support, lifter, trainer, owner) blocked case-insensitively. Apply at signup and later edits.
 
+### ClientGoalType (S57-PO-1)
+
+- `workspace_id`, `client_id`: composite relation to the canonical client.
+- `goal_type`: one of `fat_loss`, `muscle_gain`, `maintenance`.
+- `updated_by`, `updated_at`: actor and time of the latest change; every change is audited without the value.
+- Set and read only by coaching staff (trainer, workspace owner, Platform Owner; never Sales). A client without a goal type is not eligible.
+
 ### ScoreInputs (transient only)
 
 - `workoutAdherence`, `dietAdherence`: named spec 023 fields, each 0?10 integer. Their mean is the adherence component.
-- Goal-relative normalized baseline improvement by goal type: consumed from spec 023's approved progress contract.
+- Goal-relative progress (S57-PO-1): body weight from spec 023 baselines, first value vs this month's latest, normalized by goal type to 0-1.
+- Achievement instant (S57-PO-2): the latest counted check-in or body-weight measurement of the month.
+- Client code (S57-PO-3): registration approval order.
 - Current-month values are recomputed for prior winners and new candidates.
 - These inputs and all scores remain server-only and MUST NOT be persisted in the client display projection or logs.
 
@@ -56,9 +66,10 @@ This document is a proposed implementation model for review; it adds no product 
 ## Invariants
 
 1. Every publication and entry belongs to exactly one workspace; every relation verifies the same `workspace_id`.
-2. A client-visible publication has at most five entries and has an approved PO decision.
+2. A client-visible publication has an approved PO decision; its public view shows at most five entries.
 3. A new approved publication replaces the prior current result only in the approval transaction.
-4. Opt-out immediately suppresses the username from the currently visible result and all future results.
-5. Username uniqueness is scoped to workspace and checked on signup and edit under a concurrency-safe database constraint.
-6. No health values, answer values, notes, plan content, raw scores, client code or formulas are returned or logged.
-7. No duplicate eligibility engine, form scheduler, plan-delivery store, audit log or client identity is introduced.
+4. Opt-out immediately suppresses the username from the public view and all future results, promotes the next eligible entry without reapproval, and keeps the client's private rank.
+5. A client reads only their own private rank and the participant total; no other client's rank outside the public Top 5 is readable by any client or non-PO staff member.
+6. Username uniqueness is scoped to workspace and checked on signup and edit under a concurrency-safe database constraint.
+7. No health values, answer values, notes, plan content, raw scores, client code or formulas are returned or logged.
+8. No duplicate eligibility engine, form scheduler, plan-delivery store, audit log or client identity is introduced.
