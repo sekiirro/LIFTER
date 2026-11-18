@@ -103,6 +103,7 @@ describe('two-workspace isolation', () => {
         'goal_type',
         'has_username',
         'opted_out',
+        'overdue',
         'registration_approved_at',
       ]);
     const self = (await clientA.client.rpc('client_leaderboard_self')).data;
