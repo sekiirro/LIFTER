@@ -51,6 +51,40 @@ async function createIsolatedWorkspace(name: string) {
   return workspaceId;
 }
 
+async function snapshotDeniedSurfaces(workspaceId: string) {
+  const packages = await db`
+    select id,workspace_id,market,type,code
+    from public.packages
+    where workspace_id=${workspaceId}
+    order by market,type,id
+  `;
+  const offers = await db`
+    select id,workspace_id,package_id,available,current_version_id,duration_days,duration_months,tier_rank
+    from public.package_offers
+    where workspace_id=${workspaceId}
+    order by id
+  `;
+  const versions = await db`
+    select id,workspace_id,offer_id,version,name_ar,name_en,price_minor::text as price_minor,currency,commission_rate_bp,duration_days,duration_months,market,type
+    from public.package_versions
+    where workspace_id=${workspaceId}
+    order by id
+  `;
+  const promotions = await db`
+    select workspace_id,package_id,starts_at,ends_at
+    from public.package_promotion_periods
+    where workspace_id=${workspaceId}
+    order by package_id
+  `;
+  const audits = await db`
+    select action,actor_user_id,workspace_id,target_id,details
+    from public.audit_events
+    where workspace_id=${workspaceId}
+    order by occurred_at,id
+  `;
+  return { packages, offers, versions, promotions, audits };
+}
+
 describe('T055 four-category initialization (S34-PO-6 / S35-PO-1)', () => {
   it('initializes exactly four empty category package rows per workspace without fabricated commercial values', async () => {
     const ws = await createIsolatedWorkspace('T055 init workspace');
@@ -155,6 +189,14 @@ describe('T055 four-category initialization (S34-PO-6 / S35-PO-1)', () => {
 
   it('denies category initialization for every non-PO actor and rejects null/foreign workspace', async () => {
     const ws = await createIsolatedWorkspace('T055 auth workspace');
+    const before = await snapshotDeniedSurfaces(ws);
+    expect(before.packages).toEqual([]);
+    expect(before.offers).toEqual([]);
+    expect(before.versions).toEqual([]);
+    expect(before.promotions).toEqual([]);
+    // `createIsolatedWorkspace` setup itself writes workspace.created +
+    // membership.granted audit rows for this workspace; the denied calls
+    // below must add nothing, so `after` must equal `before` exactly.
     for (const [name, actor] of Object.entries(f.actors)) {
       if (name === 'po') continue;
       const denied = await actor.client.rpc(
@@ -177,6 +219,8 @@ describe('T055 four-category initialization (S34-PO-6 / S35-PO-1)', () => {
         })
       ).error,
     ).toMatchObject({ code: '42501', message: 'not_permitted' });
+    const after = await snapshotDeniedSurfaces(ws);
+    expect(after).toEqual(before);
   });
 
   it('rejects a 5th category and duplicate (workspace_id, market, type) rows at DB level', async () => {
@@ -274,6 +318,10 @@ describe('T054 PO/WO commercial terms, immutable version history, snapshots, and
     ).toBe(intlOffer!.id);
 
     // WO in own workspace + all other non-PO roles cannot rename, reprice, set commission, toggle availability, or set promo periods.
+    // Refusal must write nothing: snapshot category/package, offer, version,
+    // promotion-period and audit rows before the denied calls and require
+    // byte-identical state afterward (covers own-workspace WO denial).
+    const deniedBefore = await snapshotDeniedSurfaces(ws);
     for (const [name, actor] of Object.entries(f.actors)) {
       if (name === 'po') continue;
       const pubDenied = await actor.client.rpc('publish_package_version', {
@@ -311,6 +359,8 @@ describe('T054 PO/WO commercial terms, immutable version history, snapshots, and
       );
       expect(promoDenied.error?.code, `${name}:promo`).toBe('42501');
     }
+    const deniedAfter = await snapshotDeniedSurfaces(ws);
+    expect(deniedAfter).toEqual(deniedBefore);
   });
 
   it('appends immutable commercial versions and preserves prior versions, client, link, subscription, and trainer assignment snapshots', async () => {
@@ -547,5 +597,34 @@ describe('T054/T055 DB mutation controls (killed and rolled back)', () => {
       }),
     ).rejects.toMatchObject({ message: 'rollback_non_po_terms_mutation' });
     expect(bypassed).toBe(true);
+  });
+
+  it('mutation 4 (write without auth check): removing the PO check lets a WO initialization call write category rows, which the no-write snapshot comparison detects, then rolls back', async () => {
+    const ws = await createIsolatedWorkspace('T055 mutation no-auth-check write');
+    const before = await snapshotDeniedSurfaces(ws);
+    expect(before.packages).toEqual([]);
+    await expect(
+      db.begin(async (tx) => {
+        await tx`create or replace function public.initialize_workspace_package_categories(workspace_id uuid) returns table(package_id uuid, market text, category_type text) language plpgsql security definer set search_path = '' as $$ begin insert into public.packages (workspace_id, market, type, created_by) select workspace_id, m.market, t.category_type, auth.uid() from (values ('Egypt'), ('International')) as m(market) cross join (values ('Year-round'), ('Promotional')) as t(category_type) on conflict on constraint packages_workspace_market_type_key do nothing; return query select p.id as package_id, p.market, p.type as category_type from public.packages p where p.workspace_id = initialize_workspace_package_categories.workspace_id order by p.market, p.type; end; $$`;
+        await tx`select set_config('role','authenticated',true)`;
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.actors.woA.userId, role: 'authenticated' })},true)`;
+        const rows =
+          await tx`select public.initialize_workspace_package_categories(${ws}::uuid)`;
+        expect(rows.length).toBe(4);
+        // Observe as the table owner: the WO observation role is RLS-filtered
+        // for direct package reads, so reset role before snapshotting.
+        await tx`select set_config('role','postgres',true)`;
+        const after =
+          await tx`select id,workspace_id,market,type,code from public.packages where workspace_id=${ws} order by market,type,id`;
+        // The new no-write assertion (after == before) FAILS against this
+        // mutant: the WO call wrote rows, proving the snapshot detects it.
+        expect([{ packages: after }]).not.toEqual([
+          { packages: before.packages },
+        ]);
+        throw new Error('rollback_no_auth_check_write_mutation');
+      }),
+    ).rejects.toMatchObject({ message: 'rollback_no_auth_check_write_mutation' });
+    const restored = await snapshotDeniedSurfaces(ws);
+    expect(restored).toEqual(before);
   });
 });
