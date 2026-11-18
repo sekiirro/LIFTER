@@ -244,7 +244,7 @@ export function RegistrationLinkDialog({
                   {rows.map((row, index) => (
                     <div className={styles.installment} key={index}>
                       <Field
-                        label={`${m['registration.amount']} ${index + 1}${index === 0 ? ` (${m['registration.upfrontAmount']})` : ''}`}
+                        label={`${m['registration.amount']} ${index + 1}`}
                         inputProps={{
                           value: row.amount,
                           inputMode: 'numeric',

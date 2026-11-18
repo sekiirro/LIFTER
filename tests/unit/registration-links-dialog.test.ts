@@ -537,6 +537,14 @@ it('keeps entered amounts intact when the installment count changes', () => {
     .map((f) => (f.props.inputProps as { value?: string }).value);
   expect(amounts).toEqual(['400', '500']);
 });
+it('keeps the first custom amount accessible name exact', () => {
+  const rendered = render(props);
+  clickButton(rendered.tree, m['registration.add']);
+  const customTree = rerender(rendered.ctx, props);
+  expect(
+    elements(customTree).fields.map((field) => field.props.label),
+  ).toContain(`${m['registration.amount']} 1`);
+});
 it('closes an open dialog on workspace and package switches', () => {
   const data = {
     status: 'ok',
