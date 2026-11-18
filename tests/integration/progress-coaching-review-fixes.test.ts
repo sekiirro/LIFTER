@@ -191,7 +191,8 @@ describe('spec 023 review fixes', () => {
       // A9: a manual row is range-checked against the current check-in question on correction.
       const [row] =
         await tx`select id, updated_at::text as v from public.progress_measurements
-        where client_id = ${w.own} and measurement_type = 'bodyWeight'`;
+        where client_id = ${w.own} and measurement_type = 'bodyWeight'
+          and recorded_on = ${dates!.recent as string}::date`;
       const correct = (value: number) =>
         asUser(
           tx,
@@ -446,7 +447,7 @@ describe('spec 023 review fixes', () => {
       // client RLS policy: another client sees none of this client's rows.
       await tx`select set_config('request.jwt.claims','{}',true)`;
       await tx`insert into public.progress_measurements(workspace_id,client_id,measurement_type,value,unit_en,unit_ar,recorded_on,source_kind,entered_by,updated_by)
-        values(${w.ws},${w.own},'bodyWeight',90,'kg','كجم',${w.today}::date,'manual',${w.ownUser},${w.ownUser})`;
+        values(${w.ws},${w.own},'bodyWeight',90,'kg','كجم',${w.today}::date - 3,'manual',${w.ownUser},${w.ownUser})`;
       const foreignRows = () =>
         asUser(
           tx,
