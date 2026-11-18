@@ -46,6 +46,15 @@ const signupPrivate = [
   'redeem_signup_admission_ticket',
   'signup_guard_attempt_delete',
 ];
+// Spec 022 private helpers.
+const f22Private = [
+  'f22_delivered_revisions',
+  'f22_enqueue_client_notice',
+  'f22_guard_client_notice',
+  'f22_portal_client',
+  'f22_refund_scope',
+  'f22_subscription_summary',
+];
 const registrationPrivate = [
   'registration_link_is_valid',
   'registration_link_limits',
@@ -280,6 +289,7 @@ describe('tenancy security catalog (T007)', () => {
           'staff_display_name_is_white_space',
           ...signupPrivate,
           ...brandingPrivate,
+          ...f22Private,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
           'audit_package_created',
@@ -319,6 +329,8 @@ describe('tenancy security catalog (T007)', () => {
           'f13_create_refund_lockout_alert',
           'f13_materialize_entitlement',
           'f13_project_entitlement',
+          'f13_project_overdue',
+          'f13_client_overdue_state',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
           'f3_guard_platform_owner_profile_change',
@@ -657,6 +669,8 @@ describe('tenancy security catalog (T007)', () => {
             !assignmentPrivate.includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
+            // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
+            !f22Private.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
               'audit_events_immutable',
@@ -1592,6 +1606,7 @@ describe('registration security catalog', () => {
       'app_private.f18_guard_nutrition_selection()',
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
+      'public.client_overdue_status()',
       'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',
       'app_private.f17_audit_allowlist_guard()',

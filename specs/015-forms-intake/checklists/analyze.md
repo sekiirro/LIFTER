@@ -356,3 +356,9 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 - Scope: `tasks.md` status/evidence-only changes (T091, T095, T112, T114, T126 ticked), `traceability.md` S64 browser slice rows, and a new evidence report `reports/S64-T095-rendered-matrix.md`. No FR/SC/acceptance text, plan design, copy, token, or PO decision changed. T112's production change is a pending-state blur guard derived from the already-specified behavior; it adds no user-visible state or string.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for this evidence-only update; browser and unit evidence are recorded in traceability.md and the lane report.
+
+## S65-hyd-f15eng T088 and T113 Analyze refresh (2026-11-18)
+
+- Scope: reconciled `specs/015-forms-intake/spec.md` EN option table (`N07.2`–`N07.5` to `2 meals`–`5 meals` per already-approved S34-PO-4; line 398 note aligned with already-approved S33-PO-3; `N08.medium.foods`/`N08.high.foods` kept pending per S41-PO-3), ticked `T088` and `T113` in `specs/015-forms-intake/tasks.md`, added `S65-hyd-f15eng` evidence rows in `specs/015-forms-intake/traceability.md`, and added unit/integration regression & rollback-scoped SQL mutation assertions in `tests/unit/forms-s32-approved-intake.test.ts` and `tests/integration/forms-default-onboarding.test.ts`. No new requirement, copy, schema, or PO decision introduced.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for T088 and T113; Stack A (substituting for Stack D) integration and mutation evidence recorded in `traceability.md`.
