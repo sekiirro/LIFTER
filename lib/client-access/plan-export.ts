@@ -90,14 +90,19 @@ export async function exportClientNutritionPlan(
     request.revisionNumber,
   );
   if (result.status !== 'ok') {
+    // A denial audit row is written only for an entitlement denial of the
+    // authenticated client (restricted state). Unknown, foreign or malformed
+    // targets write nothing: the recorder derives the row's target from a
+    // caller-chosen id, so auditing them would let a client plant rows.
     // Best effort: a denial stays a denial even when the audit sink fails.
-    await audit(client, {
-      workspaceId: null,
-      planId: request.planId,
-      revisionId: null,
-      outcome: 'denied',
-      reason: result.status === 'not_found' ? 'not_found' : 'not_permitted',
-    });
+    if (result.status === 'restricted')
+      await audit(client, {
+        workspaceId: null,
+        planId: request.planId,
+        revisionId: null,
+        outcome: 'denied',
+        reason: 'not_permitted',
+      });
     return { status: 'denied' };
   }
   const { projection } = result;

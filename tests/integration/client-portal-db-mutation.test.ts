@@ -18,6 +18,9 @@ let other: PortalClient;
 let otherNotice: string;
 let awaitingNutrition: string;
 let ownerNutrition: string;
+let otherWorkout: string;
+let pendingClient: PortalClient;
+let closedClient: PortalClient;
 
 beforeAll(async () => {
   p = await portalFixture();
@@ -49,6 +52,21 @@ beforeAll(async () => {
       values(${p.fixture.wsA.id}, ${ownerNutrition}, ${ownerRevision!.id}, ${other.clientId},
         'cccccccc-cccc-4ccc-8ccc-ccccccccccc1', 'cccccccc-cccc-4ccc-8ccc-ccccccccccc2', ${p.fixture.trainerA.userId})`;
   });
+  // A second active client with a delivered plan: the leak target for K5/K8.
+  otherWorkout = await p.createDraft(
+    other.clientId,
+    'workout',
+    'F22 kill other',
+  );
+  await p.publish(otherWorkout, 1, 0);
+  // Active-subscription clients that are not approved / are deactivated (K9).
+  pendingClient = await p.makeClient({ activate: true, label: 'kill pending' });
+  closedClient = await p.makeClient({ activate: true, label: 'kill closed' });
+  await p.db.begin(async (tx) => {
+    await tx`set local session_replication_role = replica`;
+    await tx`update public.clients set approval_state='pending-approval' where id=${pendingClient.clientId}`;
+    await tx`update public.clients set deactivated_at=clock_timestamp(), deactivation_reason='closure' where id=${closedClient.clientId}`;
+  });
   const [row] = await p.db`select app_private.f22_enqueue_client_notice(
     ${p.fixture.wsA.id}::uuid, ${other.clientId}::uuid, 'workout_delivered',
     ${randomUUID()}::uuid) as id`;
@@ -65,6 +83,9 @@ async function underMutant(
   replacement: string,
   userId: string,
   probe: (tx: TransactionSql) => Promise<unknown>,
+  // Further simultaneous mutations (regex or text) for controls that are
+  // defense in depth behind another independent control.
+  extra: Array<[string | RegExp, string]> = [],
 ): Promise<unknown> {
   let observed: unknown = 'not-reached';
   try {
@@ -72,8 +93,13 @@ async function underMutant(
       const [row] =
         await tx`select pg_get_functiondef(${signature}::regprocedure) as definition`;
       const definition = row!.definition as string;
-      const mutated = definition.replace(control, replacement);
+      let mutated = definition.replace(control, replacement);
       expect(mutated, `${signature} control present`).not.toBe(definition);
+      for (const [pattern, text] of extra) {
+        const next = mutated.replace(pattern, text);
+        expect(next, `${signature} extra control present`).not.toBe(mutated);
+        mutated = next;
+      }
       await tx.unsafe(mutated);
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: userId, role: 'authenticated' })},true)`;
       await tx`set local role authenticated`;
@@ -219,5 +245,98 @@ describe('F22 database control kill tests', () => {
         ${ownerNutrition}::uuid, null::integer) as value`;
     });
     expect((real!.value as { selections: unknown[] }).selections).toEqual([]);
+  });
+
+  // K5/K8: the per-client delivery filter is defense in depth. The F19 FK
+  // (workspace, subscription, client) binds a subscription to its client, so
+  // the subscription-resolution predicate also isolates. Each test shows the
+  // client filter alone is masked (no leak), then kills BOTH independent
+  // controls and shows the leak, then checks the installed definition.
+  const subscriptionPredicate =
+    /and app_private.f19_resolve_subscription_id(d.workspace_id, d.subscription_id)s*=s*(?:p_subscription_id|(summary->>'subscription_id')::uuid)/;
+
+  it('K5 delivered-revision client filter: with the subscription binding also killed, a client reads another client’s plan', async () => {
+    const signature =
+      'app_private.f22_delivered_revisions(uuid,uuid,uuid,uuid)';
+    const control = 'd.client_id = p_client_id';
+    const probe = async (tx: TransactionSql) => {
+      const [row] =
+        await tx`select public.client_portal_plan(${otherWorkout}::uuid, null::integer) as value`;
+      return row!.value;
+    };
+    const single = (await underMutant(
+      signature,
+      control,
+      'true',
+      owner.authUserId,
+      probe,
+    )) as { status: string };
+    expect(single.status).toBe('not_found');
+    const both = (await underMutant(
+      signature,
+      control,
+      'true',
+      owner.authUserId,
+      probe,
+      [[subscriptionPredicate, '']],
+    )) as { status: string };
+    // The real controls return not_found (client-portal-access.test.ts).
+    expect(both.status).toBe('ok');
+    await stillInstalled(signature, control);
+  });
+
+  it('K8 overview client filter: with the subscription binding also killed, the overview lists another client’s plans', async () => {
+    const signature = 'public.client_portal_overview()';
+    const control = 'd.client_id = client_row.client_id';
+    const probe = async (tx: TransactionSql) => {
+      const [row] = await tx`select public.client_portal_overview() as value`;
+      return row!.value;
+    };
+    const ids = (value: unknown) =>
+      ((value as { plans: Array<{ plan_id: string }> }).plans ?? []).map(
+        (x) => x.plan_id,
+      );
+    expect(
+      ids(
+        await underMutant(signature, control, 'true', owner.authUserId, probe),
+      ),
+    ).not.toContain(otherWorkout);
+    expect(
+      ids(
+        await underMutant(signature, control, 'true', owner.authUserId, probe, [
+          [subscriptionPredicate, ''],
+        ]),
+      ),
+    ).toContain(otherWorkout);
+    await stillInstalled(signature, control);
+  });
+
+  it('K9 portal client wall: dropping the approved or not-deactivated condition lets an unapproved or closed client in', async () => {
+    const signature = 'app_private.f22_portal_client()';
+    const probe = async (tx: TransactionSql) => {
+      const [row] = await tx`select public.client_portal_overview() as value`;
+      return row!.value;
+    };
+    for (const [control, client] of [
+      ["and c.approval_state = 'approved'", pendingClient],
+      ['and c.deactivated_at is null', closedClient],
+    ] as const) {
+      // The real wall answers invalid for both (client-portal-isolation).
+      const real = await p.db.begin(async (tx) => {
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.authUserId, role: 'authenticated' })},true)`;
+        await tx`set local role authenticated`;
+        return probe(tx);
+      });
+      expect(real).toEqual({ status: 'invalid' });
+      const observed = (await underMutant(
+        signature,
+        control,
+        'and true',
+        client.authUserId,
+        probe,
+      )) as { status: string };
+      expect(observed.status, control).not.toBe('invalid');
+      await stillInstalled(signature, control);
+    }
   });
 });

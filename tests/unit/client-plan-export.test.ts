@@ -136,7 +136,7 @@ describe('F22 client plan export (nutrition)', () => {
     expect(String(result.body)).toContain('dir="rtl"');
   });
 
-  it('denies every non-ok read identically, releases no file and audits one denial', async () => {
+  it('denies every non-ok read identically and releases no file', async () => {
     for (const plan of [
       { status: 'not_found' },
       {
@@ -155,15 +155,41 @@ describe('F22 client plan export (nutrition)', () => {
         format: 'excel',
       });
       expect(result, JSON.stringify(plan)).toEqual({ status: 'denied' });
-      expect(client.calls.map(([name]) => name)).toEqual([
-        'client_portal_nutrition_plan',
-        'record_nutrition_export_audit',
-      ]);
-      expect(client.calls[1]![1]).toMatchObject({
-        p_plan_id: PLAN_ID,
-        p_revision_id: null,
-        p_outcome: 'denied',
+    }
+  });
+
+  it('writes a denial audit only for an entitlement (restricted) denial, never for not_found or invalid targets', async () => {
+    const restricted = fakeClient({
+      status: 'restricted',
+      subscription: {
+        status: 'expired',
+        effective_end_exclusive: '2026-01-01',
+      },
+    });
+    await exportClientNutritionPlan(restricted as never, {
+      ...base,
+      format: 'pdf',
+    });
+    expect(restricted.calls.map(([name]) => name)).toEqual([
+      'client_portal_nutrition_plan',
+      'record_nutrition_export_audit',
+    ]);
+    expect(restricted.calls[1]![1]).toMatchObject({
+      p_plan_id: PLAN_ID,
+      p_revision_id: null,
+      p_outcome: 'denied',
+      p_reason: 'not_permitted',
+    });
+    for (const plan of [{ status: 'not_found' }, { status: 'invalid' }, null]) {
+      const client = fakeClient(plan);
+      await exportClientNutritionPlan(client as never, {
+        ...base,
+        format: 'pdf',
       });
+      expect(
+        client.calls.map(([name]) => name),
+        JSON.stringify(plan),
+      ).toEqual(['client_portal_nutrition_plan']);
     }
   });
 
@@ -179,7 +205,16 @@ describe('F22 client plan export (nutrition)', () => {
 
   it('keeps a denial a denial when the denial audit fails', async () => {
     const result = await exportClientNutritionPlan(
-      fakeClient({ status: 'not_found' }, { auditError: true }) as never,
+      fakeClient(
+        {
+          status: 'restricted',
+          subscription: {
+            status: 'expired',
+            effective_end_exclusive: '2026-01-01',
+          },
+        },
+        { auditError: true },
+      ) as never,
       { ...base, format: 'pdf' },
     );
     expect(result).toEqual({ status: 'denied' });

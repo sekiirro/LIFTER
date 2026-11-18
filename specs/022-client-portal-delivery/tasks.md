@@ -59,8 +59,8 @@
 
 - [x] T012 [P] [US2] Unit tests for delivered-plan projection and published-revision selection in `tests/unit/client-portal-projection.test.ts` (FR-004, FR-005, SC-004, SC-005).
 - [x] T013 [P] [US2] Integration tests for projection, revision selection, entitlement, draft and foreign-client cases in `tests/integration/client-portal-access.test.ts` (FR-004, FR-005, FR-006, FR-007, FR-010, SC-004, SC-005, SC-006).
-- [x] T014 [P] [US2] Authorization and entitlement tests for plan reads across roles and workspaces in `tests/integration/client-portal-read-authorization.test.ts` (FR-004, FR-005, FR-006, FR-007, FR-010).
-- [x] T015 [P] [US2] [HIGH-RISK: authorization] Mutation-evidence tests for the fresh F13 entitlement and restricted projection control in `lib/client-access/authorize.ts`: kill/restore/diff exit 0, recorded in `specs/022-client-portal-delivery/verification-report.md` and referenced from `traceability.md` (FR-004, FR-005, FR-006, FR-007, SC-006).
+- [x] T014 [P] [US2] Authorization and entitlement tests for plan reads across roles and workspaces in `tests/integration/client-portal-access.test.ts` (the role and workspace cases of the access suite) (FR-004, FR-005, FR-006, FR-007, FR-010).
+- [x] T015 [P] [US2] [HIGH-RISK: authorization] Mutation-evidence tests for the fresh F13 entitlement and restricted projection control in `lib/client-access/portal-projection.ts` and `client_portal_overview`/`f22_portal_client`/`f22_delivered_revisions`: kill/restore evidence is the test record itself, `tests/integration/client-portal-db-mutation.test.ts` (K1, K5, K8, K9, each rolled back and followed by an installed-definition check) and the app-layer mutations in the PR body (FR-004, FR-005, FR-006, FR-007, SC-006).
 
 ### Implementation for User Story 2
 
@@ -99,9 +99,9 @@
 ### Tests for User Story 4 (write first; must fail before implementation)
 
 - [ ] T023 [P] [US4] Unit tests for export revision fidelity and guards in `tests/unit/client-plan-export.test.ts` (FR-006, FR-008, FR-010, SC-005, SC-009).
-- [ ] T024 [P] [US4] Integration tests for selected-revision fidelity, denied requests and formula safety in `tests/integration/client-plan-export.test.ts` (FR-006, FR-008, FR-010, SC-005, SC-009).
-- [ ] T025 [P] [US4] Authorization and entitlement tests for export requests across roles and workspaces in `tests/integration/client-plan-export-authorization.test.ts` (FR-006, FR-008, FR-010, FR-012, SC-006, SC-009).
-- [ ] T026 [P] [US4] [HIGH-RISK: authorization] Mutation-evidence tests for the export authorization control in `app/(client)/plans/[planId]/actions.ts`: kill/restore/diff exit 0, recorded in `specs/022-client-portal-delivery/verification-report.md` and referenced from `traceability.md` (FR-006, FR-008, FR-010, FR-012, SC-006, SC-009).
+- [ ] T024 [P] [US4] Integration tests for selected-revision fidelity, denied requests and formula safety in `tests/integration/client-nutrition-plan.test.ts` and `tests/unit/client-plan-export.test.ts` (FR-006, FR-008, FR-010, SC-005, SC-009).
+- [ ] T025 [P] [US4] Authorization and entitlement tests for export requests across roles and workspaces in `tests/integration/client-nutrition-plan.test.ts` and `tests/unit/client-plan-export-route.test.ts` (FR-006, FR-008, FR-010, FR-012, SC-006, SC-009).
+- [ ] T026 [P] [US4] [HIGH-RISK: authorization] Mutation-evidence tests for the export authorization control in `lib/client-access/plan-export.ts`, `lib/client-access/nutrition-projection.ts` and `client_portal_nutrition_plan`: the test record is `tests/integration/client-portal-db-mutation.test.ts` (K6, K7) plus the app-layer mutations M6-M8 in the Round 5 section (FR-006, FR-008, FR-010, FR-012, SC-006, SC-009).
 
 ### Implementation for User Story 4
 
@@ -122,8 +122,8 @@
 
 - [x] T030 [P] [US5] Unit tests for directory query, filter and indicator logic in `tests/unit/client-directory.test.ts` (FR-011, SC-008).
 - [x] T031 [P] [US5] Integration tests for search, filters, indicators and workspace isolation in `tests/integration/client-directory.test.ts` (FR-011, SC-008).
-- [x] T032 [P] [US5] Authorization and workspace-isolation tests for directory reads across roles and workspaces in `tests/integration/client-directory-authorization.test.ts` (FR-010, FR-011, SC-008).
-- [x] T033 [P] [US5] [HIGH-RISK: authorization] Mutation-evidence tests for the directory workspace authorization control: kill/restore/diff exit 0, recorded in `specs/022-client-portal-delivery/verification-report.md` and referenced from `traceability.md` (FR-010, FR-011, SC-008).
+- [x] T032 [P] [US5] Authorization and workspace-isolation tests for directory reads across roles and workspaces in `tests/integration/client-portal-isolation.test.ts` (FR-010, FR-011, SC-008).
+- [x] T033 [P] [US5] [HIGH-RISK: authorization] Mutation-evidence tests for the directory workspace authorization control: the test record is `tests/integration/client-portal-db-mutation.test.ts` (K2) and the app-layer mutation M3 in the PR body (FR-010, FR-011, SC-008).
 
 ### Implementation for User Story 5
 
@@ -195,3 +195,10 @@ Main now contains F17 (workout exporters, publish intake gate), F18 (`publish_nu
 | T036      | BLOCKED                                            | No check-in fact (F23 not on main) and no pending food-replacement state (the F18 selection is an immediate client selection, not a staff-actionable request). Owner: F23 check-ins; F18 replacement request.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | T037      | BLOCKED                                            | The staff check-in, replacement and planner routes do not exist. Owner: F15/F23, F18 T025, F17 T042/T043.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | T041      | INCOMPLETE                                         | Orchestrator cumulative review.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+
+Review follow-up (2026-11-18, independent review of head 0f25ee46, PASS-WITH-CONDITIONS):
+
+- Kill tests K5, K8 and K9 added. K5 (`d.client_id = p_client_id`) and K8 (`d.client_id = client_row.client_id`) are defense in depth: the F19 foreign key `(workspace, subscription, client)` binds a subscription to its client, so the subscription-resolution predicate isolates on its own. Each test shows the client filter alone is masked (no leak), then kills both independent controls and shows the leak, then checks the installed definition. K9 kills the approved and not-deactivated conditions of `f22_portal_client` separately with an unapproved and a closed client.
+- The evidence paths in T014, T015, T024, T025, T026, T032 and T033 point at real files. No `verification-report.md` is written; the test files are the record.
+- The client export no longer writes a denial audit row for unknown or foreign targets: only a restricted (entitlement) denial of the authenticated client is audited, because the F18 recorder derives the row target from a caller-chosen id. Unit test and `tests/unit/client-plan-export-route.test.ts` (staff actor 404, bad input 404, denial redirect, response headers) added.
+- Accepted LOW findings, no change: the staff directory evaluates the F13 summary once per matching row (a lateral join was not changed without a database to measure it), and the notice read surface ignores F13 entitlement by design (see FR-009).
