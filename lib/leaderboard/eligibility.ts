@@ -27,6 +27,8 @@ export type LeaderboardEligibilityFacts = {
   /** Days on which the F13 projection was `active`, capped by the source at the minimum. */
   activeDays: number;
   optedOut: boolean;
+  /** F13 FR-028 overdue input (S66-PO-2): an overdue client is not rankable. */
+  overdue: boolean;
   /** Display identity is the username only (FR-022); none means nothing to display. */
   hasUsername: boolean;
   /** Trainer-set FR-018 goal type; none means not eligible (PO 2026-11-14). */
@@ -41,7 +43,8 @@ export type LeaderboardIneligibleReason =
   | 'not_active'
   | 'insufficient_active_days'
   | 'no_username'
-  | 'no_goal_type';
+  | 'no_goal_type'
+  | 'overdue';
 
 export type LeaderboardEligibility =
   { eligible: true } | { eligible: false; reason: LeaderboardIneligibleReason };
@@ -61,6 +64,7 @@ export function deriveLeaderboardEligibility(
     return { eligible: false, reason: 'insufficient_active_days' };
   if (!facts.hasUsername) return { eligible: false, reason: 'no_username' };
   if (!facts.goalType) return { eligible: false, reason: 'no_goal_type' };
+  if (facts.overdue) return { eligible: false, reason: 'overdue' };
   return { eligible: true };
 }
 
@@ -84,6 +88,7 @@ export function parseEligibilityPool(
       !Number.isSafeInteger(record.active_days) ||
       record.active_days < 0 ||
       typeof record.opted_out !== 'boolean' ||
+      typeof record.overdue !== 'boolean' ||
       typeof record.has_username !== 'boolean' ||
       !(record.goal_type === null || isGoalType(record.goal_type)) ||
       !(
@@ -98,6 +103,7 @@ export function parseEligibilityPool(
       entitlementStatus: status as F13EntitlementStatus | null,
       activeDays: record.active_days,
       optedOut: record.opted_out,
+      overdue: record.overdue,
       hasUsername: record.has_username,
       goalType: record.goal_type as GoalType | null,
       registrationApprovedAt: record.registration_approved_at as string | null,

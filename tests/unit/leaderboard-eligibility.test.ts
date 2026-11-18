@@ -21,6 +21,7 @@ function facts(
     entitlementStatus: 'active',
     activeDays: 14,
     optedOut: false,
+    overdue: false,
     hasUsername: true,
     goalType: 'fat_loss',
     registrationApprovedAt: '2026-10-01T08:00:00.000Z',
@@ -29,6 +30,13 @@ function facts(
 }
 
 describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
+  it('S66-PO-2: an overdue client is not eligible (F13 overdue input)', () => {
+    expect(deriveLeaderboardEligibility(facts({ overdue: true }))).toEqual({
+      eligible: false,
+      reason: 'overdue',
+    });
+  });
+
   it('requires an active subscription and 14 accrued active days', () => {
     expect(deriveLeaderboardEligibility(facts())).toEqual({ eligible: true });
     expect(deriveLeaderboardEligibility(facts({ activeDays: 13 }))).toEqual({
@@ -81,7 +89,7 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
     const sql = readFileSync(
       resolve(
         process.cwd(),
-        'supabase/migrations/20261118210100_f24_client_goal_types.sql',
+        'supabase/migrations/20261203000100_f24_client_goal_types.sql',
       ),
       'utf8',
     );
@@ -91,7 +99,7 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
     const rankable = readFileSync(
       resolve(
         process.cwd(),
-        'supabase/migrations/20261118210400_f24_private_rank_eligible.sql',
+        'supabase/migrations/20261203000400_f24_private_rank_eligible.sql',
       ),
       'utf8',
     );
@@ -117,7 +125,7 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
     const sql = readFileSync(
       resolve(
         process.cwd(),
-        'supabase/migrations/20261118210000_f24_client_leaderboard.sql',
+        'supabase/migrations/20261203000000_f24_client_leaderboard.sql',
       ),
       'utf8',
     );
@@ -138,6 +146,7 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
           entitlement_status: 'active',
           active_days: 14,
           opted_out: false,
+          overdue: false,
           has_username: true,
           goal_type: 'fat_loss',
           registration_approved_at: '2026-10-01T08:00:00.000Z',
@@ -149,6 +158,7 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
       { goal_type: undefined },
       { registration_approved_at: 'not-a-time' },
       { registration_approved_at: 5 },
+      { overdue: undefined },
     ])
       expect(
         parseEligibilityPool([
@@ -157,6 +167,7 @@ describe('T016/T018 eligibility over F13 facts (FR-010-FR-014)', () => {
             entitlement_status: 'active',
             active_days: 14,
             opted_out: false,
+            overdue: false,
             has_username: true,
             goal_type: 'fat_loss',
             registration_approved_at: null,

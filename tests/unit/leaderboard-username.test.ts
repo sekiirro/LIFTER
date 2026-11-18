@@ -12,7 +12,7 @@ import {
 const migration = readFileSync(
   resolve(
     process.cwd(),
-    'supabase/migrations/20261118210000_f24_client_leaderboard.sql',
+    'supabase/migrations/20261203000000_f24_client_leaderboard.sql',
   ),
   'utf8',
 );

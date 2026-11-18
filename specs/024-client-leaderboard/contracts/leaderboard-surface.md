@@ -7,13 +7,13 @@ Proposed internal application contract; route placement follows the existing App
 - Input: authenticated user and workspace context resolved by the existing session/membership/PO authorization helpers. No caller-supplied workspace id is trusted as authorization.
 - Output: `available` plus at most five rows `{ rank, username }` (the public Top 5, derived at read time from the approved full ranking; ranks renumbered 1-5 among visible entries), or the existing empty/unavailable state. No score, client code, health value, adherence answer, measurement, note, plan data, formula or internal decision evidence.
 - Placement (S57-PO-12): the client reads the Top 5 inside the Progress area; the earlier client leaderboard route redirects to that section. No Main Navigation entry.
-- Workspace clients, staff, trainers, workspace owners and PO may read within the established spec 003 policy. Foreign workspace, anonymous and revoked callers are denied at both walls.
+- Workspace clients, staff, trainers, workspace owners and PO may read within the established spec 003 policy. Foreign workspace, anonymous and revoked callers are denied at both walls. An overdue client (F13 overdue state, S66-PO-2) receives `not_permitted` for the client read, is excluded from the public Top 5 for every viewer, and is not rankable.
 
 ## Client private rank (S57-PO-6, S57-PO-12)
 
 - Input: authenticated client session only; no client or workspace argument is accepted.
 - Output: `{ status: "ranked", period_month, rank, total }` for the caller's own entry in the current approved ranking, or `none` / `not_ranked` / `not_permitted`. `total` counts every entry of the approved ranking, opted-out clients included.
-- Returned only while the caller is eligible apart from the opt-out; an opted-out client keeps their rank. Staff, the Platform Owner, anonymous and foreign-workspace callers receive no rank.
+- Returned only while the caller is eligible apart from the opt-out and not overdue (S66-PO-2: an overdue caller gets `not_ranked`); an opted-out client keeps their rank. Staff, the Platform Owner, anonymous and foreign-workspace callers receive no rank.
 - Never returns another client's rank, username, score or input.
 
 ## Goal type (S57-PO-1)

@@ -12,12 +12,15 @@ import { anonClient, sql } from './harness';
 let f: LeaderboardContext;
 let eligible: LeaderboardClient;
 let optedOut: LeaderboardClient;
+let noGoal: LeaderboardClient;
 const db = sql();
 
 beforeAll(async () => {
   f = await leaderboardContext();
   eligible = await leaderboardClient(f);
   optedOut = await leaderboardClient(f);
+  // Not opted out, but ineligible: no trainer-set goal type (PO 2026-11-14).
+  noGoal = await leaderboardClient(f, { goalType: null });
 });
 afterAll(() => db.end());
 
@@ -45,6 +48,55 @@ describe('once-only dashboard notice', () => {
       select 1 from public.client_leaderboard_notice_seen
       where client_id=${optedOut.clientId}`;
     expect(rows).toHaveLength(0);
+  });
+
+  it('stays hidden while an un-opted-out client is ineligible, then shows once when eligible', async () => {
+    const rpc = () => noGoal.client.rpc('client_leaderboard_dashboard_notice');
+    const rows = () =>
+      db`select 1 from public.client_leaderboard_notice_seen where client_id=${noGoal.clientId}`;
+    expect((await rpc()).data).toEqual({ status: 'not_shown' });
+    expect(await rows()).toHaveLength(0);
+    const set = await f.po.client.rpc('set_client_goal_type', {
+      p_workspace_id: f.wsA.id,
+      p_client_id: noGoal.clientId,
+      p_goal_type: 'maintenance',
+    });
+    expect(set.data?.status).toBe('updated');
+    expect((await rpc()).data).toEqual({ status: 'first_view' });
+    expect((await rpc()).data).toEqual({ status: 'not_shown' });
+    expect(await rows()).toHaveLength(1);
+  });
+
+  it('mutation: stripping the eligibility check shows the notice to an ineligible client (kill evidence)', async () => {
+    const call =
+      'or not app_private.f24_client_eligible(c.workspace_id, c.id, app_private.f24_cairo_today())';
+    const rollback = new Error('rollback notice mutation');
+    let mutant: unknown = 'not-reached';
+    const ineligible = await leaderboardClient(f, { goalType: null });
+    try {
+      await db.begin(async (tx) => {
+        const [row] = await tx`
+          select pg_get_functiondef('public.client_leaderboard_dashboard_notice()'::regprocedure) as definition`;
+        const definition = row!.definition as string;
+        const mutated = definition.replace(call, '');
+        expect(mutated).not.toBe(definition);
+        await tx.unsafe(mutated);
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: ineligible.userId, role: 'authenticated' })},true)`;
+        const [result] =
+          await tx`select public.client_leaderboard_dashboard_notice() as result`;
+        mutant = result!.result;
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
+    expect(mutant).toEqual({ status: 'first_view' });
+    const [definition] = await db`
+      select pg_get_functiondef('public.client_leaderboard_dashboard_notice()'::regprocedure) as body`;
+    expect(definition?.body).toContain(call);
+    expect(
+      (await ineligible.client.rpc('client_leaderboard_dashboard_notice')).data,
+    ).toEqual({ status: 'not_shown' });
   });
 
   it('is a client-only action resolved from the session', async () => {

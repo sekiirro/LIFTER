@@ -1,8 +1,8 @@
 /**
  * FR-036, FR-039, FR-040: F24 audit events are appended to the spec 005
  * `public.audit_events` table inside the same database transaction as the
- * change (see `20261118210000_f24_client_leaderboard.sql` and
- * `20261118210100_f24_client_goal_types.sql`). This module is the
+ * change (see `20261203000000_f24_client_leaderboard.sql` and
+ * `20261203000100_f24_client_goal_types.sql`). This module is the
  * reviewed allow-list for those events: actor, time, workspace and target are
  * columns; `details` may carry only the keys listed here. Usernames, scores,
  * score inputs, health values and formula terms are never audit details.

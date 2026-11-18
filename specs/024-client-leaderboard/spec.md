@@ -147,7 +147,7 @@ A leaderboard never mixes or exposes clients across workspaces.
 
 ### Eligibility
 
-- **FR-010**: Only clients with an active subscription (F13 entitlement state) are eligible (F13; S54-PO-11).
+- **FR-010**: Only clients with an active subscription (F13 entitlement state) are eligible (F13; S54-PO-11). An overdue client (F13 FR-028 overdue input) is not rankable or public and does not see the Top 5 or the private rank (S66-PO-2).
 - **FR-011**: A client must accrue at least 14 active subscription days to become eligible (S55-PO-3 Q4).
 - **FR-012**: Freeze periods pause active-day accumulation; eligibility accrual resumes after the freeze, using F13 state without duplicating its lifecycle rules (S55-PO-3 Q4; spec 013).
 - **FR-013**: Participation is opt-out by default; no prior signup gate is imposed (S55-PO-3 Q4; BRD line 219).
@@ -289,6 +289,10 @@ None. S55-024-Q11 through S55-024-Q14 are resolved (see Clarifications above).
 ### S56-PO-4 - 2026-11-14
 
 PO S56-PO-4 (2026-11-14): "LIFTER isn't live yet. Cancel Feature Flag Spec 025, remove its blockers from other specs, and continue development normally. Reconsider flags before production. Keep tests and regression safeguards."
+
+### S66-PO-2 - 2026-11-18
+
+PO ruling S66-PO-2 (2026-11-18), option A, relayed by the coordinator: "Overdue clients (app_private.f13_client_overdue_state overdue=true) are not rankable/public and do not see the Top 5 or private rank (treat like restricted)." F24 reuses the F13 overdue state; it adds no overdue logic. See FR-010.
 
 ### S57-PO-1 - 2026-11-14
 

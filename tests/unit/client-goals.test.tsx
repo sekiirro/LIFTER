@@ -184,7 +184,7 @@ describe('F15 T048 privacy guard parity', () => {
     const sql = readFileSync(
       resolve(
         process.cwd(),
-        'supabase/migrations/20261118210300_f24_goal_read_no_answer_tables.sql',
+        'supabase/migrations/20261203000300_f24_goal_read_no_answer_tables.sql',
       ),
       'utf8',
     );

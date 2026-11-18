@@ -1,10 +1,10 @@
 ﻿# Specification Analysis: F24 Client Leaderboard
 
-**Date**: 2026-11-15  
-**Run**: full re-run after S57-PO-13 (approved copy; monthly approval label "اعتماد ترتيب الشهر" approving the full ranking), following the S57-PO-1, S57-PO-2, S57-PO-3, S57-PO-4, S57-PO-6, S57-PO-7 and S57-PO-12 decisions that changed requirement, acceptance, success-criteria, data-model, contract, plan and task text.  
+**Date**: 2026-11-18  
+**Run**: re-run after S66-PO-2 (overdue clients are not rankable or public and do not see the Top 5 or private rank), which changed FR-010, the leaderboard-surface contract and tasks (T041 added; stale T022 and T025 file references corrected). Earlier runs: 2026-11-15 after S57-PO-13.  
 **Inputs**: `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`, `research.md`, `traceability.md`, `copy-proposal.md`, `.specify/memory/constitution.md`  
 **Requirements**: 43 FRs, 10 SCs  
-**Tasks**: 40
+**Tasks**: 41
 
 ## S57 decisions applied
 
@@ -42,7 +42,7 @@ No unresolved contradiction across the FRs, scenarios, success criteria, entity 
 ## Metrics
 
 - Total requirements: 43 FRs; 10 SCs
-- Total tasks: 40
+- Total tasks: 41
 - FR task coverage: 100% (43/43)
 - Open CRITICAL: 0
 - Open HIGH: 0
@@ -55,6 +55,7 @@ PASS for Plan/Tasks/Analyze after the S57 decisions. Spec consistency passes. Tr
 
 ## History
 
+- 2026-11-18: S66-PO-2 (overdue gating) applied to FR-010, `contracts/leaderboard-surface.md` and task T041; T022 and T025 now cite real files (`leaderboard-publication.test.ts`, `leaderboard-rls.test.ts`, `decide_leaderboard_candidate`). The six F24 migrations were renumbered to 20261203000000-20261203000500 (above the highest on every origin ref) and the overdue migration is 20261203000600. No open findings.
 - 2026-11-18: F22 client dashboard is on main; T011 and T015 implemented (once-only dashboard notice, `client_leaderboard_dashboard_notice`, approved copy reused) and ticked with CI evidence from PR #110 at 63aa443a; traceability updated. Only T030 stays open (design-gate captures). No FR/SC/plan text changed. No open findings.
 - 2026-11-17: T033 evidence recorded from PR #110 (CI green at bd9294ff); tasks.md checkboxes ticked with evidence for implemented tasks. T011, T015 (F22 T016 dashboard, PR #108 unmerged) and T030 (design-gate captures) stay unticked; T001 and T035 stay cancelled. No FR/SC/plan text changed. No open findings.
 - 2026-11-15: S57-PO-12 placement and copy; S57-PO-13 approved the remaining reviewed copy. No open findings.

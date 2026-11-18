@@ -16,8 +16,8 @@ import { en } from '../../lib/i18n/messages/en';
 import { ar } from '../../lib/i18n/messages/ar';
 
 const migration = [
-  'supabase/migrations/20261118210000_f24_client_leaderboard.sql',
-  'supabase/migrations/20261118210100_f24_client_goal_types.sql',
+  'supabase/migrations/20261203000000_f24_client_leaderboard.sql',
+  'supabase/migrations/20261203000100_f24_client_goal_types.sql',
 ]
   .map((file) => readFileSync(resolve(process.cwd(), file), 'utf8'))
   .join('\n');

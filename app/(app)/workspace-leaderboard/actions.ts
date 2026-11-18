@@ -18,7 +18,7 @@ export type DecisionActionState = {
 function revalidateLeaderboard() {
   revalidatePath('/workspace-leaderboard');
   revalidatePath('/workspace-leaderboard/review');
-  revalidatePath('/leaderboard');
+  revalidatePath('/progress');
 }
 
 /**

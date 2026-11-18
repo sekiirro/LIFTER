@@ -23,7 +23,7 @@ export async function updateUsernameAction(
   );
   if (status === 'updated') {
     revalidatePath('/account/settings');
-    revalidatePath('/leaderboard');
+    revalidatePath('/progress');
   }
   return { status };
 }
@@ -37,7 +37,8 @@ export async function optOutAction(
   const status = await optOutOfLeaderboard(await getActor());
   if (status === 'opted_out' || status === 'already_opted_out') {
     revalidatePath('/account/settings');
-    revalidatePath('/leaderboard');
+    revalidatePath('/progress');
+    revalidatePath('/plans');
   }
   return { status };
 }

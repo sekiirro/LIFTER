@@ -1671,3 +1671,14 @@ A: Random code (Recommended)
 ```
 
 Architect mapping S66-R1 (not PO words): option A means a random per-workspace client code; 8 characters from an unambiguous 32-character alphabet (digits 2-9 and letters A-Z without I and O, so no 0/O/1/I); displayed as XXXX-XXXX; unique on (workspace_id, code); immutable after assignment; assigned at every client creation and backfilled for existing clients by a forward migration; staff-visible only (never exposed to other clients or anonymous); staff search is exact match only, with case and dash normalised on input. Encoded as spec 011 FR-029. Resolves open item 6 of `docs/01-traceability.md`.
+
+### S66-PO-2 - PO ruling, verbatim as relayed (F24 overdue gating)
+
+Source: the PO's ruling option A (2026-11-18) as relayed by the coordinator in the PR #110 review thread; no verbatim PO file or SHA-256 exists. The relayed text, verbatim:
+
+<!-- prettier-ignore -->
+```text
+Item 3 PO ruling: A. Overdue clients (app_private.f13_client_overdue_state overdue=true) are not rankable/public and do not see the Top 5 or private rank (treat like restricted).
+```
+
+Architect mapping S66-R2 (not PO words): an overdue client (F13 FR-028 input, reused unchanged) is excluded from `f24_client_rankable` (so also from eligibility, candidate creation, the dashboard notice and the private rank), is hidden from the public Top 5 for every viewer, and receives no Top 5 or private rank. Encoded as spec 024 FR-010 and task T041.

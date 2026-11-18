@@ -216,6 +216,7 @@ describe('fail-closed adapter (PO-DECISION-NEEDED inputs)', () => {
             entitlementStatus: 'active',
             activeDays: 20,
             optedOut: false,
+            overdue: false,
             hasUsername: true,
             goalType: 'fat_loss',
             registrationApprovedAt: '2026-10-01T08:00:00.000Z',

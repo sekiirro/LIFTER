@@ -28,8 +28,7 @@ declare actor uuid := auth.uid(); c public.clients%rowtype; inserted integer;
 begin
   if actor is null then return '{"status":"not_permitted"}'::jsonb; end if;
   select * into c from public.clients x
-    where x.auth_user_id=actor and x.approval_state='approved' and x.deactivated_at is null
-    for update;
+    where x.auth_user_id=actor and x.approval_state='approved' and x.deactivated_at is null;
   if not found then return '{"status":"not_permitted"}'::jsonb; end if;
   if exists(select 1 from public.client_leaderboard_opt_outs o
       where o.workspace_id=c.workspace_id and o.client_id=c.id)
