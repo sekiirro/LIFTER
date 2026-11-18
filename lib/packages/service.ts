@@ -2,7 +2,14 @@ import 'server-only';
 import { getActor } from '../auth/actor';
 import { authorize } from '../auth/authorize';
 import { createSessionClient } from '../supabase/server';
-import { inputRecord, isUuid, parseCode, parseTerms } from './validation';
+import {
+  inputRecord,
+  isCurrencyAllowedForMarket,
+  isUuid,
+  parseCategoryIdentity,
+  parseCode,
+  parseTerms,
+} from './validation';
 import {
   mapPackageError,
   type CreatePackageResult,
@@ -47,6 +54,39 @@ export async function createPackage(
     return { status: 'unavailable' };
   }
 }
+export async function createPackageCategory(
+  input: unknown,
+): Promise<CreatePackageResult> {
+  try {
+    const data = inputRecord(input);
+    const ctx = await pricingContext(data);
+    if (ctx.status !== 'ok') return ctx;
+    const category = parseCategoryIdentity({
+      workspaceId: ctx.workspaceId,
+      market: data.market,
+      type: data.type,
+    });
+    if (!category) return { status: 'invalid_input' };
+    const workspace = await ctx.client
+      .from('workspaces')
+      .select('id')
+      .eq('id', ctx.workspaceId)
+      .maybeSingle();
+    if (workspace.error) return { status: 'unavailable' };
+    if (!workspace.data) return { status: 'denied' };
+    const result = await ctx.client.rpc('create_package_category', {
+      workspace_id: category.workspaceId,
+      market: category.market,
+      category_type: category.type,
+    });
+    if (result.error) return mapPackageError(result.error);
+    return isUuid(result.data)
+      ? { status: 'ok', packageId: result.data }
+      : { status: 'unavailable' };
+  } catch {
+    return { status: 'unavailable' };
+  }
+}
 export async function publishPackageVersion(
   input: unknown,
 ): Promise<PublishPackageResult> {
@@ -57,6 +97,24 @@ export async function publishPackageVersion(
     if (!isUuid(data.packageId)) return { status: 'denied' };
     const terms = parseTerms(data);
     if (!terms) return { status: 'invalid_input' };
+    const category = await ctx.client
+      .from('packages')
+      .select('id,workspace_id,market,type')
+      .eq('id', data.packageId)
+      .maybeSingle();
+    if (category.error) return { status: 'unavailable' };
+    if (
+      !category.data ||
+      category.data.workspace_id !== ctx.workspaceId ||
+      !parseCategoryIdentity({
+        workspaceId: category.data.workspace_id,
+        market: category.data.market,
+        type: category.data.type,
+      })
+    )
+      return { status: 'denied' };
+    if (!isCurrencyAllowedForMarket(category.data.market, terms.currency))
+      return { status: 'invalid_input' };
     const result = await ctx.client.rpc('publish_package_version', {
       workspace_id: ctx.workspaceId,
       package_id: data.packageId,
