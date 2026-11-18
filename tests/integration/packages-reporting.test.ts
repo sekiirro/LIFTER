@@ -245,6 +245,119 @@ it('T068 creates a missing pre-migration FX snapshot, advances pending USD to re
   });
 });
 
+it('T068 repairs a missing EGP snapshot as ready at the identity rate', async () => {
+  const isolated = await (
+    await import('./registration-approval-fixture')
+  ).clientContext();
+  const purchase = await bought(isolated);
+  const eventId = purchase.approved.receipt!.event_id as string;
+  await db.begin(async (tx) => {
+    await tx`alter table public.payment_events disable trigger f12_no_update`;
+    await tx`alter table app_private.package_reporting_fx_snapshots disable trigger package_reporting_fx_snapshot_no_change`;
+    await tx`delete from app_private.package_reporting_fx_snapshots
+      where workspace_id=${isolated.wsA.id} and payment_event_id=${eventId}`;
+    await tx`update public.payment_events set currency='EGP',
+      recorded_at='2026-11-30T22:30:00Z'::timestamptz where id=${eventId}`;
+    await tx`alter table app_private.package_reporting_fx_snapshots enable trigger package_reporting_fx_snapshot_no_change`;
+    await tx`alter table public.payment_events enable trigger f12_no_update`;
+  });
+
+  const saved = await admin().rpc('save_package_reporting_fx_snapshot', {
+    p_workspace_id: isolated.wsA.id,
+    p_payment_event_id: eventId,
+    p_status: 'ready',
+    p_provider_key: null,
+    p_rate: '1',
+    p_publication_date: null,
+  });
+  expect(saved.error).toBeNull();
+  expect(saved.data).toMatchObject({ status: 'ready', rate: '1' });
+  const [row] = await db`
+    select status, source_currency, provider_key, rate::text,
+      to_char(publication_date, 'YYYY-MM-DD') as publication_date,
+      exact_egp_minor::text
+    from app_private.package_reporting_fx_snapshots
+    where workspace_id=${isolated.wsA.id} and payment_event_id=${eventId}`;
+  expect(row).toEqual({
+    status: 'ready',
+    source_currency: 'EGP',
+    provider_key: null,
+    rate: '1',
+    publication_date: null,
+    exact_egp_minor: '400',
+  });
+});
+
+it('T068 repairs a missing SAR snapshot from pending to ready', async () => {
+  const isolated = await (
+    await import('./registration-approval-fixture')
+  ).clientContext();
+  const purchase = await bought(isolated);
+  const eventId = purchase.approved.receipt!.event_id as string;
+  await db.begin(async (tx) => {
+    await tx`alter table public.payment_events disable trigger f12_no_update`;
+    await tx`alter table app_private.package_reporting_fx_snapshots disable trigger package_reporting_fx_snapshot_no_change`;
+    await tx`delete from app_private.package_reporting_fx_snapshots
+      where workspace_id=${isolated.wsA.id} and payment_event_id=${eventId}`;
+    await tx`update public.payment_events set currency='SAR',
+      recorded_at='2026-11-30T22:30:00Z'::timestamptz where id=${eventId}`;
+    await tx`alter table app_private.package_reporting_fx_snapshots enable trigger package_reporting_fx_snapshot_no_change`;
+    await tx`alter table public.payment_events enable trigger f12_no_update`;
+  });
+
+  const pending = await admin().rpc('save_package_reporting_fx_snapshot', {
+    p_workspace_id: isolated.wsA.id,
+    p_payment_event_id: eventId,
+    p_status: 'pending',
+    p_provider_key: 'SAMA',
+    p_rate: null,
+    p_publication_date: null,
+  });
+  expect(pending.error).toBeNull();
+  expect(pending.data).toMatchObject({ status: 'pending', provider: 'SAMA' });
+  const [pendingRow] = await db`
+    select status, source_currency, provider_key, rate::text, publication_date
+    from app_private.package_reporting_fx_snapshots
+    where workspace_id=${isolated.wsA.id} and payment_event_id=${eventId}`;
+  expect(pendingRow).toEqual({
+    status: 'pending',
+    source_currency: 'SAR',
+    provider_key: 'SAMA',
+    rate: null,
+    publication_date: null,
+  });
+
+  const ready = await admin().rpc('save_package_reporting_fx_snapshot', {
+    p_workspace_id: isolated.wsA.id,
+    p_payment_event_id: eventId,
+    p_status: 'ready',
+    p_provider_key: 'SAMA',
+    p_rate: '3.75',
+    p_publication_date: '2026-11-29',
+  });
+  expect(ready.error).toBeNull();
+  expect(ready.data).toMatchObject({
+    status: 'ready',
+    provider: 'SAMA',
+    rate: '3.75',
+    exact_egp_minor: '1500.00',
+  });
+  const [readyRow] = await db`
+    select status, source_currency, provider_key, rate::text,
+      to_char(publication_date, 'YYYY-MM-DD') as publication_date,
+      exact_egp_minor::text
+    from app_private.package_reporting_fx_snapshots
+    where workspace_id=${isolated.wsA.id} and payment_event_id=${eventId}`;
+  expect(readyRow).toEqual({
+    status: 'ready',
+    source_currency: 'SAR',
+    provider_key: 'SAMA',
+    rate: '3.75',
+    publication_date: '2026-11-29',
+    exact_egp_minor: '1500.00',
+  });
+});
+
 it('T068 sums exact converted collection lines before one half-up aggregate rounding', async () => {
   const isolated = await (
     await import('./registration-approval-fixture')

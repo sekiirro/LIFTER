@@ -182,5 +182,13 @@ Raw negative/reset/restored logs and structured per-mutation JSON remain in `%TE
 ## S66-R3 PR #273 review-fix attempt (2026-11-18)
 
 - Added a T068 integration case for a synthetic pre-migration USD payment event with no reporting snapshot: pending insert, pending-to-ready update, and ready immutability retry.
-- Safe Stack E reset completed and `client-accounts-provision.mjs` completed. Integration execution is blocked before test discovery: the safe wrapper status output provides only stack metadata, and `.env.stack-e` lacks `ANON_KEY` / `SERVICE_ROLE_KEY`; no keys were read or printed. RED result, EGP/SAR cases, and mutation evidence remain unverified.
+- Initial lane attempt stopped before test discovery after running outside the safe wrapper; the wrapper's env injection was corrected in the continuation below. No secrets were read or printed.
 - No task is ticked on this attempt. See `C:/Users/NEW LAP/.lifter/runs/s66-luna-fix273/report.md`.
+
+## S66-R3 continuation — PR #273 review fix (2026-11-18)
+
+- Stack E was reset through `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` and provisioned after each reset. The worktree-local profile links `supabase-stack-e/supabase/migrations` to the tracked migrations directory so CLI resets apply the repository migrations.
+- RED / kill: temporarily removed `20261215060100_packages_reporting_fx_save_fix.sql` from the migration directory, safely reset Stack E, provisioned Vault, and ran `packages-reporting.test.ts`: the USD, EGP and SAR missing-snapshot regressions failed with SQLSTATE `42703` from the old insert, while 8 other tests passed.
+- Restore: moved the exact forward migration back to its original path, safely reset and reprovisioned Stack E. No migration mutant remains installed.
+- GREEN: safe-wrapper integration run covering `packages-*`, `rls-catalog`, and `branding-function-privileges`: 13 files, 238 passed, 5 todo, 1 skipped. This includes all 11 `packages-reporting.test.ts` tests.
+- The new cases verify missing EGP snapshot creation at identity rate and missing SAR snapshot creation followed by pending-to-ready conversion; the existing USD case verifies pending-to-ready and ready immutability.
