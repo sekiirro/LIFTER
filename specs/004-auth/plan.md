@@ -189,7 +189,7 @@ Flow (requirements in spec.md FR-016 to FR-028):
 5. Hosted configuration (redirect allow-list, `token_hash` email template, sender, provider limit, CAPTCHA) is out of scope and deferred under FR-020/S38-PO-3. Local config sets `otp_expiry = 3600` (FR-021); local recovery template T044a uses `/auth/recovery` with `token_hash` and `type=recovery`; local mail goes to Inbucket.
 
 Delivery split (S65-R57): PR1a contains the T044 rate-limit/requested-audit migration and schema-dependent RED-to-GREEN tests. PR1b contains the local T050b send hook and its tests. The T044 provider call with server-built `redirectTo` and T044a email template remain for the later PR2. T044 stays unticked until all of its clauses are complete.
-   Open technical questions for the architect and the security review (not PO decisions):
+Open technical questions for the architect and the security review (not PO decisions):
 
 - AT-1: audit-before-send (FR-025, fail closed) means a provider failure after the audit row leaves a `requested` row for an email that was not sent. Options: keep the row and mark the failure in a later row, or record the request only as accepted by the provider and accept that the send and the audit are not in one transaction. Decide with the security review.
 - AT-2: the timing parity in FR-018 needs the same work on every path, including a non-sending path for unknown and non-staff addresses. The tolerance and the test method are decided here and reviewed by security.

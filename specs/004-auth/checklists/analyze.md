@@ -225,8 +225,8 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 ## 2026-11-18T06:19:29Z Analyze revalidation after fresh main merge
 
 - Scope: S65-PO-3 updates to FR-024/FR-030, SC-009/SC-015, Story 5, plan G6, data-model and T038/T049c/T050b/T044; plus latest main's T032d evidence-only task update.
-- Entry: PASS — numbered FRs, measurable SCs, Given/When/Then scenarios and clarification citing S65-PO-3 remain present; Analyze follows the latest spec/plan/tasks edits; no ambiguity introduced.
-- Consistency: PASS — hook-only request accounting remains aligned across requirements, plan, model and tasks. T032d evidence update is unrelated to these requirements. FR-024 ? T038/T049c/T050b/T044; FR-030 A / SC-015 ? T049b/T049c/T050b/T051; SC-009 ? T038.
+- Entry: PASS ï¿½ numbered FRs, measurable SCs, Given/When/Then scenarios and clarification citing S65-PO-3 remain present; Analyze follows the latest spec/plan/tasks edits; no ambiguity introduced.
+- Consistency: PASS ï¿½ hook-only request accounting remains aligned across requirements, plan, model and tasks. T032d evidence update is unrelated to these requirements. FR-024 ? T038/T049c/T050b/T044; FR-030 A / SC-015 ? T049b/T049c/T050b/T051; SC-009 ? T038.
 - Findings: 0 open CRITICAL; 0 open HIGH.
 - Verdict: PASS for continued implementation. The T044 timestamp ordering issue remains a report-level technical blocker, not a requirements inconsistency.
 
@@ -240,12 +240,14 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 - Constitution: PASS - no conflict found with the current Development Workflow & Quality Gates section. No new product ambiguity or copy was introduced.
 - Findings: 0 open CRITICAL; 0 open HIGH. The assigned migration range being lower than fresh main's maximum is a separate registry/timestamp gate recorded in the lane report.
 - Verdict: PASS for PR1a/PR1b planning and continued implementation after the migration range is re-reserved.
+
 ## 2026-11-18 Analyze - T044 test-path revalidation (date update)
 
 - Date: 2026-11-18T09:24:21Z, after the T044 task added the integration-test path. This task-path clarification changes no FR/SC or plan design text.
 - Entry remains PASS: numbered requirements, scenarios, PO clarification/no-open-ambiguities, plan coverage and FR-tagged task coverage remain current.
 - Revalidated T044 coverage: `tests/integration/staff-reset-hook-schema.test.ts` covers rate claims/limits, duplicate hook IDs, request audit idempotence, audit fail-closed behavior, and privilege/RLS boundaries. PR1a/PR1b ordering remains aligned.
 - Findings: 0 open CRITICAL; 0 open HIGH. Verdict: PASS.
+
 ## 2026-11-18 Analyze - T044 partial verification evidence (date update)
 
 - Date: 2026-11-18T09:48:33Z, after task status and traceability evidence updates. No FR/SC/acceptance or plan design text changed.

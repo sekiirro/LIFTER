@@ -166,9 +166,9 @@ Status (updated S64): T030 ticked per architect ruling S64-R37: PR #63 head f8ab
 
 T044 remains `[ ]` and is not complete. Partial traceability:
 
-| Requirement | Task | Test | Evidence | Status |
-| --- | --- | --- | --- | --- |
+| Requirement                                    | Task | Test                                                | Evidence                                                                   | Status  |
+| ---------------------------------------------- | ---- | --------------------------------------------------- | -------------------------------------------------------------------------- | ------- |
 | FR-019, FR-024, SC-009, FR-025 requested audit | T044 | `tests/integration/staff-reset-hook-schema.test.ts` | `specs/004-auth/reports/t044-verification.md` (Stack D RED/GREEN/mutation) | PARTIAL |
 
 Verified so far: T044 migration schema and its schema-dependent tests pass with a killed mutation. Remaining: T044 provider call with server-built `redirectTo` and T044a template in PR2.
-Post-rename T044 schema evidence (2026-11-18): supabase/migrations/20261130040000_staff_password_reset_hook_limits.sql applied on Stack D; 	ests/integration/staff-reset-hook-schema.test.ts passed 6/6 after reset/provisioning. The account limit threshold 5?4 mutation was killed by the fifth-request case, then restored and verified green. Detailed reset, provisioning and mutation log: specs/004-auth/reports/t044-verification.md. T044 remains unchecked until its PR2 provider call and T044a template clauses are complete.
+Post-rename T044 schema evidence (2026-11-18): supabase/migrations/20261130040000_staff_password_reset_hook_limits.sql applied on Stack D; ests/integration/staff-reset-hook-schema.test.ts passed 6/6 after reset/provisioning. The account limit threshold 5?4 mutation was killed by the fifth-request case, then restored and verified green. Detailed reset, provisioning and mutation log: specs/004-auth/reports/t044-verification.md. T044 remains unchecked until its PR2 provider call and T044a template clauses are complete.

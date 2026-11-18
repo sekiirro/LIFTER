@@ -33,11 +33,11 @@ Stack: D only (`lifter-stack-d`, API 45421, DB 45422). The integration suite use
 - Full unit passed 323 files / 3,684 tests on this base. No email was sent by the schema tests.
 - The migration has been renamed to `20261130040000` under the recorded S65 block reservation. Post-rename reset, provisioning, schema suite and mutation evidence are recorded below.
 
-
 ## Post-rename final revalidation (2026-11-18)
 
 - Reset Stack D through the safe wrapper; migration 20261130040000_staff_password_reset_hook_limits.sql applied successfully.
-- Ran 	ests/integration/client-accounts-provision.mjs after each of the post-rename resets; passed. No Vault values printed.
-- 	ests/integration/staff-reset-hook-schema.test.ts: 6/6 passed with the restored threshold.
-- Account-limit mutation lowering 5 to 4 was killed by the fifth request assertion (ate_limited instead of delivery_limited); restored threshold 5, reset, reprovisioned, and reran 6/6.
+- Ran ests/integration/client-accounts-provision.mjs after each of the post-rename resets; passed. No Vault values printed.
+- ests/integration/staff-reset-hook-schema.test.ts: 6/6 passed with the restored threshold.
+- Account-limit mutation lowering 5 to 4 was killed by the fifth request assertion (
+  ate_limited instead of delivery_limited); restored threshold 5, reset, reprovisioned, and reran 6/6.
 - No email was sent. Migration timestamp validation passed for all 312 local migrations.
