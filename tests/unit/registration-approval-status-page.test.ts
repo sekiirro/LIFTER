@@ -74,6 +74,29 @@ describe('client registration status refresh', () => {
     poller.stop();
   });
 
+  it('clears the scheduled poll while hidden and ignores a callback already queued before hiding', async () => {
+    vi.useFakeTimers();
+    const env = runtime();
+    const callbacks: (() => void)[] = [];
+    env.setTimeout = (callback, delay) => {
+      callbacks.push(callback);
+      return globalThis.setTimeout(callback, delay);
+    };
+    const load = vi.fn().mockResolvedValue(pending);
+    const poller = createStatusPoller({ runtime: env, load });
+    poller.start();
+    expect(vi.getTimerCount()).toBe(1);
+
+    env.setVisible(false);
+    expect(vi.getTimerCount()).toBe(0);
+    callbacks[0]();
+    await Promise.resolve();
+    expect(load).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(load).not.toHaveBeenCalled();
+    poller.stop();
+  });
+
   it('does not make focus trigger an immediate request or reset the current interval', async () => {
     vi.useFakeTimers();
     const env = runtime();
