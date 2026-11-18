@@ -153,8 +153,23 @@ describe('F22 client export route, workout branch (T026-T028)', () => {
     ).toBe('unavailable');
   });
 
+  it('audits a restricted denial under the workout export too, and releases nothing', async () => {
+    portalPlan.mockResolvedValue({ status: 'restricted' });
+    exportPlan.mockResolvedValue({ status: 'denied' });
+    exportWorkout.mockResolvedValue({ status: 'denied' });
+    const response = await call('?format=pdf&revision=2');
+    expect(response.status).toBe(303);
+    expect(exportWorkout).toHaveBeenCalledTimes(1);
+    expect(exportPlan).toHaveBeenCalledTimes(1);
+    exportWorkout.mockClear();
+    portalPlan.mockResolvedValue({ status: 'not_found' });
+    await call('?format=pdf&revision=2');
+    expect(exportWorkout).not.toHaveBeenCalled();
+  });
+
   it('never exports a plan the client wall did not return (restricted, foreign, unknown)', async () => {
-    for (const status of ['restricted', 'not_found', 'denied']) {
+    exportWorkout.mockClear();
+    for (const status of ['not_found', 'denied']) {
       portalPlan.mockResolvedValue({ status });
       exportPlan.mockResolvedValue({ status: 'denied' });
       const response = await call('?format=excel&revision=2');

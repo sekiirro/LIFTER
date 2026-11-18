@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { unstable_noStore as noStore } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { requireActor } from '../../../../../lib/auth/actor';
 import {
@@ -13,6 +14,9 @@ import { createSessionClient } from '../../../../../lib/supabase/server';
 import { exportClientWorkoutPlan } from '../../../../../lib/workout-planner/client-export';
 import { WorkoutPrintView } from '../../../../../components/workout-planner/WorkoutPrintView';
 
+// Per-request, uncached: the page is an audited export and entitlement is re-read every time.
+export const dynamic = 'force-dynamic';
+
 /**
  * F22 US4: the F17 workout PDF is its print view printed. Rendering this page
  * is the audited export call (`exportClientWorkoutPlan`, fail-closed audit);
@@ -25,6 +29,7 @@ export default async function ClientWorkoutPrintPage({
   params: Promise<{ planId: string }>;
   searchParams: Promise<{ revision?: string | string[] }>;
 }) {
+  noStore();
   const [{ planId }, query] = await Promise.all([params, searchParams]);
   const revision = parseRevisionParam(query.revision);
   if (!isUuid(planId) || revision === 'invalid') notFound();

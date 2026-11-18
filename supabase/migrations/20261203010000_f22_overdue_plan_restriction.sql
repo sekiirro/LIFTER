@@ -6,9 +6,13 @@
 -- are unchanged. Overdue is derived only after the summary resolved a subscription
 -- of the same workspace-scoped client, so a foreign client id returns null first.
 -- The four read bodies (overview, plan, nutrition plan, workout plan) and the workout export
--- audit recorder are otherwise the previous definitions.
+-- audit recorder are otherwise the previous definitions. client_portal_plan no longer returns
+-- raw workout revision content: it goes through the F17 client allowlist
+-- (app_private.f17_client_safe_workout_document), like client_portal_workout_plan.
 
-create or replace function app_private.f22_subscription_summary(p_workspace_id uuid, p_client_id uuid)
+-- Summary without overdue: the previous f22_subscription_summary body. The staff directory
+-- uses it so overdue is not derived for every matched client (it is a client-wall fact).
+create function app_private.f22_subscription_core(p_workspace_id uuid, p_client_id uuid)
 returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 declare
@@ -18,7 +22,6 @@ declare
   chosen uuid;
   projection jsonb;
   summary jsonb;
-  overdue_state jsonb;
 begin
   with resolved as (
     select distinct app_private.f19_resolve_subscription_id(s.workspace_id, s.id) as sid
@@ -47,11 +50,25 @@ begin
     summary := summary || jsonb_build_object('refund_scope',
       coalesce(app_private.f22_refund_scope(p_workspace_id, chosen), 'partial'));
   end if;
+  return summary;
+end $$;
+
+create or replace function app_private.f22_subscription_summary(p_workspace_id uuid, p_client_id uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  today date := (statement_timestamp() at time zone 'Africa/Cairo')::date;
+  core jsonb;
+  overdue_state jsonb;
+begin
+  core := app_private.f22_subscription_core(p_workspace_id, p_client_id);
+  if core is null then return null; end if;
   -- F13 FR-028 overdue is independent of the projected status (FR-006): it only
   -- restricts plan content and exports and never changes status or the end date.
+  -- A missing F13 value fails closed (overdue).
   overdue_state := app_private.f13_client_overdue_state(p_workspace_id, p_client_id, today);
-  return summary || jsonb_build_object('overdue',
-    coalesce((overdue_state->>'overdue')::boolean, false));
+  return core || jsonb_build_object('overdue',
+    coalesce((overdue_state->>'overdue')::boolean, true));
 end $$;
 
 create or replace function public.client_portal_overview()
@@ -126,7 +143,9 @@ begin
     'subscription', summary - 'subscription_id',
     'plan', jsonb_build_object('plan_id', p_plan_id, 'plan_kind', selected.plan_kind,
       'revision_number', selected.revision_number, 'published_at', selected.published_at,
-      'content', selected.content),
+      'content', case when selected.plan_kind = 'workout'
+        then app_private.f17_client_safe_workout_document(selected.content)
+        else selected.content end),
     'revisions', revisions);
 end $$;
 
@@ -488,6 +507,9 @@ begin
 end;
 $$;
 
+alter function app_private.f22_subscription_core(uuid, uuid) owner to postgres;
+revoke all on function app_private.f22_subscription_core(uuid, uuid)
+  from public, anon, authenticated, service_role;
 alter function app_private.f22_subscription_summary(uuid, uuid) owner to postgres;
 alter function public.client_portal_overview() owner to postgres;
 alter function public.client_portal_plan(uuid, integer) owner to postgres;

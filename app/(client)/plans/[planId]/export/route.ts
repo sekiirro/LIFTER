@@ -85,6 +85,16 @@ export async function GET(
       },
     );
   }
+  // A restricted (expired, frozen, overdue, ...) client's plan kind is deliberately not
+  // revealed by the wall, so the denial is audited under both export actions: the workout
+  // denial must not be recorded only as plan.nutrition_export. Neither call releases a file.
+  if (kind === null && portalPlan.status === 'restricted' && client)
+    await exportClientWorkoutPlan(client, {
+      planId,
+      revisionNumber: revision,
+      format: 'excel',
+      locale,
+    });
   const result = client
     ? await exportClientNutritionPlan(client, {
         planId,

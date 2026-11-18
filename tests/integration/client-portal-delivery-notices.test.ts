@@ -207,3 +207,79 @@ describe('F22 first-plan delivery notices (T022)', () => {
     );
   });
 });
+
+describe('F22 first-plan notice kills for later deliveries (review 3)', () => {
+  const signature =
+    'app_private.ready_and_publish_plan_impl(uuid,bigint,bigint,uuid)';
+  const publishSql = (
+    tx: TransactionSql,
+    planId: string,
+    draft: number,
+    published: number,
+    nutrition = false,
+  ) =>
+    asUser(tx, p.fixture.trainerA.userId, async (inner) => {
+      if (nutrition)
+        await inner`select public.publish_nutrition_revision(${planId}::uuid, ${draft}, ${published}, ${randomUUID()}::uuid)`;
+      else
+        await inner`select public.ready_and_publish_plan(${planId}::uuid, ${draft}, ${published}, ${randomUUID()}::uuid)`;
+    });
+  const countFor = async (tx: TransactionSql, clientId: string) => {
+    const [r] =
+      await tx`select count(*)::int as c from app_private.client_inbox_notices
+      where client_id = ${clientId}`;
+    return r!.c as number;
+  };
+  const withMutant = async (
+    tx: TransactionSql,
+    from: string | null,
+    to: string,
+  ) => {
+    if (from === null) return;
+    const [d] =
+      await tx`select pg_get_functiondef(${signature}::regprocedure) as def`;
+    const def = d!.def as string;
+    expect(def.split(from).length - 1, from).toBe(1);
+    await tx.unsafe(def.replace(from, to));
+  };
+
+  it('later revision of a delivered first plan adds no notice, and the kills show it', async () => {
+    const { client, a } = await pair('notice later', 'workout');
+    const draft = await p.revise(a, 1, 'notice later 2');
+    const run = (from: string | null, to: string) =>
+      probe(async (tx) => {
+        await withMutant(tx, from, to);
+        await publishSql(tx, a, draft, 1);
+        const count = await countFor(tx, client.clientId);
+        // Control keeps the pair's two notices; the mutant adds a third for the revision.
+        if (from === null) expect(count).toBe(2);
+        else expect(count, from).toBe(3);
+      });
+    await run(null, '');
+    await run(
+      "first_of_kind := target_kind = 'initial' and not exists",
+      'first_of_kind := true or not exists',
+    );
+  });
+
+  it('a first delivery of the second kind still gets its notice, and the kind-scoped test is what ensures it', async () => {
+    const client = await p.makeClient({
+      activate: false,
+      label: 'notice kind',
+    });
+    const workout = await p.createDraft(client.clientId, 'workout', 'nk w');
+    await deliver(workout);
+    const nutrition = await p.createDraft(client.clientId, 'nutrition', 'nk n');
+    const run = (from: string | null, to: string) =>
+      probe(async (tx) => {
+        await withMutant(tx, from, to);
+        await publishSql(tx, nutrition, 1, 0, true);
+        const count = await countFor(tx, client.clientId);
+        // Control: workout_delivered plus nutrition_delivered_activated. Without the
+        // plan_kind condition the nutrition delivery looks like a later delivery: no notice.
+        expect(count, String(from)).toBe(from === null ? 2 : 1);
+      });
+    await run(null, '');
+    await run('\n      and d.plan_kind = root.plan_kind);', ');');
+  });
+});

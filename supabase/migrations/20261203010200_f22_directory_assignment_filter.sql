@@ -5,7 +5,8 @@
 -- Trainers and every other caller with the existing coaching_work wall, p_assignment is ignored
 -- and rows carry no assignment key. 'unassigned' is F11's definition: approved and
 -- app_private.current_assigned_trainer is null. The directory filters, search, refund scope and
--- plans-waiting indicator are otherwise unchanged. T036 adds the open food replacement count. T034 adds an exact client-code search (#264,
+-- plans-waiting indicator are otherwise unchanged. Rows use f22_subscription_core (no overdue
+-- derivation per matched client; overdue is a client-wall fact, not a directory field). T036 adds the open food replacement count. T034 adds an exact client-code search (#264,
 -- app_private.normalize_client_code) and the formatted code on rows, both for the same owner wall. The old six-argument function is replaced
 -- (dropped) so PostgREST has no ambiguous overload. Adds no table, status or assignment write.
 
@@ -71,7 +72,7 @@ begin
   end if;
   with matched as (
     select c.id, c.name, c.approval_state,
-      app_private.f22_subscription_summary(c.workspace_id, c.id) as summary,
+      app_private.f22_subscription_core(c.workspace_id, c.id) as summary,
       case when can_assign then app_private.format_client_code(c.client_code) end as client_code,
       -- Evaluated only for an authorized caller; 'unassigned' matches F11 unassigned_clients
       -- (approved and no current responsible Trainer). Non-approved clients have no state.
