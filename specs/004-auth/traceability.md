@@ -161,3 +161,14 @@ Blame on `docs/04-changes-and-questions.md:25`, `specs/004-auth/spec.md:362`/`:3
 | Current formatting of traceability.md:22 (prettier commit 6eebdfe1b553b2b8cfce2fbb572f5368c73a969e)                                                                                             | T030 | PR #211 (branch s63-auth-audit-jobs, merged 2026-11-17T07:47:53Z; head == cited commit): merge commit a22a596df119d427f16586b67097dffeb629e7ab; pull_request CI run 44038383893 conclusion success, headSha == head, jobs docs-only (5) / validate (22) / integration shard 1/3 (23) / shard 2/3 (23) / shard 3/3 (23) / integration (5) / storage (19) all success                                 | NONE (PR #211 has zero reviews of any kind)                                                                                                                                                  |
 
 Status (updated S64): T030 ticked per architect ruling S64-R37: PR #63 head f8ab7380a22482e068a92f36bfc67b271cf9395e - CodeRabbit APPROVED on that head; CI run 42154050017 success. Constitution 1.19.0 wording consulted: `.specify/memory/constitution.md` lines 170-174 on origin/main f6a25888893fca053620d6d214659ae90d988784 (Main merge gate: ONE executed successful full CI attempt on the exact PR head, required jobs validate incl. check:secrets / three integration-shard shards / integration aggregator / storage, steps > 0; AI PR reviews optional, BLOCKING/NON-BLOCKING classification, 2-round cap, zero unresolved threads before merge; docs-only counted attempt = one full workflow_dispatch run, the pull_request run does not count).
+
+## T044 partial verification - S65-R57 PR1a
+
+T044 remains `[ ]` and is not complete. Partial traceability:
+
+| Requirement | Task | Test | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| FR-019, FR-024, SC-009, FR-025 requested audit | T044 | `tests/integration/staff-reset-hook-schema.test.ts` | `specs/004-auth/reports/t044-verification.md` (Stack D RED/GREEN/mutation) | PARTIAL |
+
+Verified so far: T044 migration schema and its schema-dependent tests pass with a killed mutation. Remaining: T044 provider call with server-built `redirectTo` and T044a template in PR2.
+Post-rename T044 schema evidence (2026-11-18): supabase/migrations/20261130040000_staff_password_reset_hook_limits.sql applied on Stack D; 	ests/integration/staff-reset-hook-schema.test.ts passed 6/6 after reset/provisioning. The account limit threshold 5?4 mutation was killed by the fifth-request case, then restored and verified green. Detailed reset, provisioning and mutation log: specs/004-auth/reports/t044-verification.md. T044 remains unchecked until its PR2 provider call and T044a template clauses are complete.
