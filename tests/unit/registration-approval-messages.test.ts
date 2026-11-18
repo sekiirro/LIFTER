@@ -39,9 +39,6 @@ describe('registration approval message parity and semantics', () => {
     );
   });
   it('has bilingual approved strings for the flexible-terms schedule editor', () => {
-    // T053: only pre-approved registration.* keys are asserted here. New
-    // upfront/count/default/anchor labels are MCQ-1 blocked: no key or
-    // expectation is invented for them in this file.
     for (const key of [
       'registration.schedule',
       'registration.amount',
@@ -51,10 +48,28 @@ describe('registration approval message parity and semantics', () => {
       'registration.total',
       'registration.sumValid',
       'registration.invalid_input',
+      'registration.upfrontAmount',
+      'registration.paymentCount',
+      'registration.defaultSplit',
+      'registration.timingAnchorNote',
     ] as const) {
       expect(ar[key], `Arabic ${key}`).toBeTruthy();
       expect(en[key], `English ${key}`).toBeTruthy();
     }
+    expect(en['registration.upfrontAmount']).toBe('Upfront amount');
+    expect(ar['registration.upfrontAmount']).toBe('المبلغ اللي هيتدفع مقدمًا');
+    expect(en['registration.paymentCount']).toBe('Number of payments');
+    expect(ar['registration.paymentCount']).toBe('عدد الأقساط');
+    expect(en['registration.defaultSplit']).toBe('Use default split');
+    expect(ar['registration.defaultSplit']).toBe(
+      'قسّم الباقي بالتقسيمة الافتراضية',
+    );
+    expect(en['registration.timingAnchorNote']).toBe(
+      'The remaining balance is due 30 days after activation (Cairo time).',
+    );
+    expect(ar['registration.timingAnchorNote']).toBe(
+      'الباقي يتدفع بعد ٣٠ يوم من التفعيل (بتوقيت القاهرة).',
+    );
   });
   it('provides bilingual standalone client status and refresh messages', () => {
     for (const key of [

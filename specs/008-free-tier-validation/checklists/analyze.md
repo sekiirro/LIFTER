@@ -155,3 +155,11 @@
 
 - Scope: `tasks.md` status-only change; T013 ticked with Evidence (S63) citing the on-main FR-006 row/summary wording and main CI run 43995126788. `traceability.md` S63 evidence note added. No requirement text changed; T012 stays unchecked.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## S65 PO-decision follow-up re-analysis (2026-11-18T05:03:44Z)
+
+- Scope: documentation-only. PO answers S65-PO-7 / S65-PO-10 / S65-PO-11 close the three T012 MCQs; `reports/t012-volume-projection.md` records the answers/outcomes and marks the MCQs ANSWERED, and `tasks.md` T012 is ticked with evidence citing those decisions and the artifact path. No `spec.md`, `plan.md`, FR/SC, scenario or requirement text changed; no code/test/stack/deploy/cloud action taken. Per S54 R6 a full re-Analyze is not triggered; this dated note records the status-only change.
+- Entry gate: PASS - numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications and PO decision citations, plan and FR-tagged task coverage remain present and unchanged.
+- Coverage: FR-to-task 8/8 and SC-to-task 4/4 unchanged. Distinct-staff total and plan-kind split remain UNVERIFIED **by PO decision** (no fixture defines the staff set; no byte projection is produced); ND-F8-2 / ND-F8-3 stay open pre-production items. No new ambiguity introduced.
+- Findings: 0 open CRITICAL, 0 open HIGH. No verification status was upgraded beyond the PO-authorized T012 tick.
+- Verdict: PASS for this documentation-only PO-decision reconciliation.
