@@ -2250,6 +2250,22 @@ describe('F11 T048 account deletion catalog', () => {
       }
     }
 
+    const [financialFk] = await db`
+      select c.conname, c.confdeltype, c.convalidated,
+        c.confrelid = 'public.audit_events'::regclass as references_audit_events,
+        pg_catalog.pg_get_constraintdef(c.oid) as definition
+      from pg_catalog.pg_constraint c
+      where c.conrelid = 'app_private.account_deletion_intents'::regclass
+        and c.conname = 'account_deletion_intents_financial_confirmation_audit_fk'
+    `;
+    expect(financialFk).toMatchObject({
+      conname: 'account_deletion_intents_financial_confirmation_audit_fk',
+      confdeltype: 'r',
+      convalidated: true,
+      references_audit_events: true,
+    });
+    expect(financialFk?.definition).toContain('REFERENCES audit_events(id)');
+
     const poFns = [
       'public.record_deletion_financial_confirmation(uuid,uuid,text,text)',
       'public.request_account_deletion(uuid,jsonb,bigint)',

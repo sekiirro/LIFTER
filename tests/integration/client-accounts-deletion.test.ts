@@ -208,7 +208,198 @@ async function expectMutationKilled(
   expect(message).not.toContain('Missing function');
 }
 
+async function prepareStepD(context: ClientContext) {
+  const created = await signupRealClient(context);
+  expect(created.ok).toBe(true);
+  if (!created.ok) throw new Error('Expected signup');
+  const request = await context.po.client.rpc('request_account_deletion', {
+    p_target_user_id: created.userId,
+    p_financial_confirmation: {
+      category: 'refunded_outside_lifter',
+      acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+    },
+  });
+  expect(request.error).toBeNull();
+  const intentId = (request.data as { intent_id: string }).intent_id;
+  const claims = await db<
+    { id: string; lease_token: string }[]
+  >`select id, lease_token from public.claim_account_deletion_intents(100)`;
+  const lease = claims.find((item) => item.id === intentId);
+  expect(lease).toBeDefined();
+  const banned = await admin().auth.admin.updateUserById(created.userId, {
+    ban_duration: '876000h',
+  });
+  expect(banned.error).toBeNull();
+  const [a] = await db<{ ok: boolean }[]>`
+    select public.advance_deletion_step_a(${intentId}, ${lease!.lease_token}) as ok
+  `;
+  expect(a?.ok).toBe(true);
+  const [b] = await db<{ ok: boolean }[]>`
+    select public.execute_deletion_step_b(${intentId}, ${lease!.lease_token}) as ok
+  `;
+  expect(b?.ok).toBe(true);
+  const [c] = await db<{ ok: boolean }[]>`
+    select public.begin_deletion_step_c(${intentId}, ${lease!.lease_token}) as ok
+  `;
+  expect(c?.ok).toBe(true);
+  const released = await admin().auth.admin.updateUserById(created.userId, {
+    email: `deleted+${intentId}@deleted.invalid`,
+    email_confirm: true,
+    phone: '',
+    user_metadata: {},
+  });
+  expect(released.error).toBeNull();
+  // GoTrue merges user_metadata on update; establish the verified step-C fixture.
+  await db`update auth.users set raw_user_meta_data = '{}'::jsonb where id = ${created.userId}`;
+  return {
+    clientId: created.clientId,
+    intentId,
+    leaseToken: lease!.lease_token,
+  };
+}
+
+async function assertStepDWaitsForWorkspaceLock(
+  prepared: Awaited<ReturnType<typeof prepareStepD>>,
+  workspaceId: string,
+) {
+  const holder = sql();
+  const observer = sql();
+  let signalReady!: () => void;
+  let releaseLock!: () => void;
+  const ready = new Promise<void>((resolve) => (signalReady = resolve));
+  const released = new Promise<void>((resolve) => (releaseLock = resolve));
+  const holding = holder.begin(async (tx) => {
+    // Hold both locks: correct D waits on advisory first; reordered D waits on
+    // this client row instead and produces no ungranted advisory lock.
+    await tx`select pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended('f11.responsible_trainer.workspace:' || ${workspaceId}::text, 0)
+    )`;
+    await tx`select id from public.clients where id = ${prepared.clientId} for update`;
+    signalReady();
+    await released;
+  });
+  await ready;
+  const stepD = db<{ ok: boolean }[]>`
+    select public.execute_deletion_step_d(${prepared.intentId}, ${prepared.leaseToken}) as ok
+  `.then((rows) => rows);
+  let waitingForWorkspace = false;
+  try {
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const [wait] = await observer`
+        select count(*)::int as count
+        from pg_locks l
+        join pg_stat_activity a on a.pid = l.pid
+        where l.locktype = 'advisory' and not l.granted
+          and a.query ilike '%execute_deletion_step_d%'
+      `;
+      if ((wait?.count as number) > 0) {
+        waitingForWorkspace = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  } finally {
+    releaseLock();
+    await holding;
+    await observer.end();
+    await holder.end();
+  }
+  expect(waitingForWorkspace).toBe(true);
+  const [result] = await stepD;
+  expect(result?.ok).toBe(true);
+}
+
 describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
+  it('rejects stale retry leases without changing any intent field and kills the expiry-predicate mutant', async () => {
+    const runProbe = async () => {
+      const context = await clientContext();
+      const created = await signupRealClient(context);
+      expect(created.ok).toBe(true);
+      if (!created.ok) throw new Error('Expected signup');
+      const request = await context.po.client.rpc('request_account_deletion', {
+        p_target_user_id: created.userId,
+        p_financial_confirmation: {
+          category: 'refunded_outside_lifter',
+          acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+        },
+      });
+      expect(request.error).toBeNull();
+      const intentId = (request.data as { intent_id: string }).intent_id;
+      const claims = await db<
+        { id: string; lease_token: string }[]
+      >`select id, lease_token from public.claim_account_deletion_intents(100)`;
+      const lease = claims.find((item) => item.id === intentId);
+      expect(lease).toBeDefined();
+      await db`update app_private.account_deletion_intents
+        set lease_expires_at = clock_timestamp() - interval '1 second'
+        where id = ${intentId}`;
+      const [before] = await db`
+        select to_jsonb(i) as row from app_private.account_deletion_intents i where id = ${intentId}
+      `;
+      const retry = await admin().rpc('retry_account_deletion_intent', {
+        p_intent_id: intentId,
+        p_lease_token: lease!.lease_token,
+        p_attempt: 1,
+        p_retry_at: new Date(Date.now() + 60_000).toISOString(),
+        p_safe_error_code: 'provider_unavailable',
+      });
+      expect(retry.error).toBeNull();
+      expect(retry.data).toBe(false);
+      const [after] = await db`
+        select to_jsonb(i) as row from app_private.account_deletion_intents i where id = ${intentId}
+      `;
+      expect(after?.row).toEqual(before?.row);
+    };
+
+    await runProbe();
+    await expectMutationKilled(
+      'public.retry_account_deletion_intent(uuid,uuid,integer,timestamp with time zone,text)',
+      (definition) =>
+        definition.replace(
+          /\s+and q\.lease_expires_at > clock_timestamp\(\)/i,
+          '',
+        ),
+      runProbe,
+    );
+  });
+
+  it('takes the workspace advisory lock before the client row and kills the reordered-lock mutant', async () => {
+    const runProbe = async () => {
+      const context = await clientContext();
+      const prepared = await prepareStepD(context);
+      await assertStepDWaitsForWorkspaceLock(prepared, context.wsA.id);
+    };
+
+    await runProbe();
+    await expectMutationKilled(
+      'app_private.deletion_execute_step_d(uuid)',
+      (definition) =>
+        definition.replace(
+          /(perform pg_catalog\.pg_advisory_xact_lock\([\s\S]*?\);\s*)(select \* into v_client[\s\S]*?for update;)/i,
+          '$2\n    $1',
+        ),
+      runProbe,
+    );
+  });
+
+  it('rejects an orphan financial confirmation audit id', async () => {
+    const context = await clientContext();
+    const created = await signupRealClient(context);
+    expect(created.ok).toBe(true);
+    if (!created.ok) throw new Error('Expected signup');
+    await expect(
+      db`insert into app_private.account_deletion_intents (
+        target_user_id, target_kind, client_id, workspace_id,
+        authorized_by_user_id, authorized_capability, financial_confirmation_audit_id
+      ) values (
+        ${created.userId}, 'client', ${created.clientId}, ${created.workspaceId},
+        ${context.po.userId}, 'delete_client', -987654321
+      )`,
+    ).rejects.toThrow(
+      /account_deletion_intents_financial_confirmation_audit_fk/,
+    );
+  });
+
   it('denies non-PO actors, direct table access, and non-service_role continuation calls', async () => {
     const context = await clientContext();
     const target = await signupRealClient(context);
