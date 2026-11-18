@@ -178,3 +178,12 @@ Raw negative/reset/restored logs and structured per-mutation JSON remain in `%TE
 
 - T064b: the teardown design for protected immutable version rows and the `packages_no_delete`/`packages_no_truncate` guards is authored in `specs/009-packages/review.md`. The independent security review is **REQUESTED / PENDING**; no reviewer has signed off and the gate has not passed. No deletion, migration or data change was made.
 - T076: `tests/integration/packages-retirement.test.ts` holds planned `it.todo` cases. The retirement operation (FR-023) has no approved contract and does not exist on main (owners T054/T055/T066), so no failing or passing test was authored. T076 stays unticked until the test passes on an implementation head.
+
+## T054/T055 verification and mutation checks (2026-11-18, Stack E)
+
+- Targeted integration suites (`packages-commercial-terms`, `packages-markets-types`, `packages-reads`, `packages-publish`, `packages-availability`, `packages-promotion-lifecycle`, `packages-c5-inventory`, `packages-c5-preflight`, `rls-catalog`, `matrix-parity`): `10/10` files passed (`624/624` tests, `--maxWorkers=1 --no-file-parallelism`) after `supabase-safe db reset --local` + `client-accounts-provision.mjs` with migration `20261124170000_f9_workspace_package_categories_init.sql`.
+- `allow 5th category`: rolled-back DB mutant dropping `packages_market_check` allowed a 5th category `'MENA'` (`tests/integration/packages-commercial-terms.test.ts::mutation 1 (allow 5th category)`), whereas intact schema rejects with `23514`; zero residual rows.
+- `allow duplicate (ws,market,type)`: rolled-back DB mutant dropping `packages_workspace_market_type_key` allowed duplicate `('Egypt', 'Year-round')` (`tests/integration/packages-commercial-terms.test.ts::mutation 2 (allow duplicate (ws,market,type))`), whereas intact schema rejects with `23505`; zero residual rows.
+- `allow non-PO terms` (DB + app):
+  - DB: rolled-back mutant removing PO wall in `publish_package_version` + guards allowed `woA` publication (`tests/integration/packages-commercial-terms.test.ts::mutation 3 (allow non-PO terms)`), whereas intact DB denies `woA` with `42501`.
+  - App: removed PO role + `set_package_pricing` wall in `lib/packages/service.ts::pricingContext`; `tests/unit/packages-commercial-terms.test.ts` FAILED (`5 failed | 4 passed`, exit 1); restored `lib/packages/service.ts` and re-ran `tests/unit/packages-commercial-terms.test.ts` (`9/9` passed, exit 0).

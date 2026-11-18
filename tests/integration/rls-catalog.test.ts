@@ -1351,6 +1351,7 @@ describe('package security catalog', () => {
     for (const name of [
       'public.create_package(text)',
       'public.create_package_category(uuid,text,text)',
+      'public.initialize_workspace_package_categories(uuid)',
       'public.publish_package_version(uuid,uuid,smallint,integer,text,text,bigint,text,integer)',
       'public.publish_package_version(uuid,uuid,smallint,integer,smallint,text,text,bigint,text,integer)',
       'public.set_package_offer_available(uuid,uuid,boolean)',
