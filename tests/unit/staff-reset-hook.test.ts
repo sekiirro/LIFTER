@@ -6,6 +6,7 @@ import {
   parseStaffResetHookPayload,
   verifyStaffResetHookSignature,
 } from '../../lib/auth/staff-reset-hook';
+import { isEligibleStaffRole } from '../../lib/auth/staff-reset';
 
 const hookKey = Buffer.from('test-hook-secret-32-bytes-long!!');
 const hookSecret = `v1,whsec_${hookKey.toString('base64')}`;
@@ -20,6 +21,13 @@ function signatureFor(body = rawBody, timestampValue = timestamp) {
 }
 
 describe('staff reset hook boundary', () => {
+  it('authorizes only staff roles for reset delivery', () => {
+    for (const role of ['platform_owner', 'workspace_owner', 'trainer', 'sales'])
+      expect(isEligibleStaffRole(role), role).toBe(true);
+    for (const role of ['client', 'unknown', null])
+      expect(isEligibleStaffRole(role), String(role)).toBe(false);
+  });
+
   it('allows only the PO-approved local test recipient', () => {
     expect(isApprovedStaffResetTestRecipient('STAFF-RESET@example.test')).toBe(
       true,
