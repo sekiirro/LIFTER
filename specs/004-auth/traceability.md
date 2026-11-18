@@ -172,3 +172,5 @@ T044 remains `[ ]` and is not complete. Partial traceability:
 
 Verified so far: T044 migration schema and its schema-dependent tests pass with a killed mutation. Remaining: T044 provider call with server-built `redirectTo` and T044a template in PR2.
 Post-rename T044 schema evidence (2026-11-18): supabase/migrations/20261130040000_staff_password_reset_hook_limits.sql applied on Stack D; ests/integration/staff-reset-hook-schema.test.ts passed 6/6 after reset/provisioning. The account limit threshold 5?4 mutation was killed by the fifth-request case, then restored and verified green. Detailed reset, provisioning and mutation log: specs/004-auth/reports/t044-verification.md. T044 remains unchecked until its PR2 provider call and T044a template clauses are complete.
+
+Candidate-head evidence: account-limit mutation killed and restored green on candidate 799be2b541ddddaff09ed02737f0e3daebb6bbbf; detailed evidence is in specs/004-auth/reports/t044-verification.md.

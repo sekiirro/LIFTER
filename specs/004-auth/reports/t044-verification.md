@@ -41,3 +41,9 @@ Stack: D only (`lifter-stack-d`, API 45421, DB 45422). The integration suite use
 - Account-limit mutation lowering 5 to 4 was killed by the fifth request assertion (
   ate_limited instead of delivery_limited); restored threshold 5, reset, reprovisioned, and reran 6/6.
 - No email was sent. Migration timestamp validation passed for all 312 local migrations.
+
+## Candidate-head mutation evidence
+
+- Candidate HEAD during the final post-rename mutation cycle: 799be2b541ddddaff09ed02737f0e3daebb6bbbf (code, migration and test tree unchanged from the report's restored green state).
+- Reset and provisioning applied the mutated migration; the 5-to-4 account-limit mutation was killed by the fifth-request case. Restored 5, reset and reprovisioned, then the schema integration suite passed 6/6 on the restored candidate tree.
+- The mutation was not committed; final working tree contains threshold 5.
