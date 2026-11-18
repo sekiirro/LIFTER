@@ -1,12 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { isValidElement, type ReactElement, type ReactNode } from 'react';
-// T053 RED: flexible-terms UI must issue the v2 paymentTerms shape with
-// upfront/count coherence (upfront = first row, count includes upfront,
-// full-price upfront yields count 1 with no zero remainder). The dialog
-// currently sends the legacy installments array, so the paymentTerms
-// assertions below fail until T054 wires the new shape. All labels used
-// here are pre-approved registration.* keys; new-copy labels are MCQ-1
-// blocked and carry no assertions in this file.
+// S63 verified payload coherence, full-price, count-change and untouched-null
+// behavior. T053 adds approved editor labels and timing coverage before T054 UI.
 const hooks = vi.hoisted(() => ({
   ctx: null as null | {
     index: number;
@@ -151,6 +146,16 @@ function setField(ctx: Context, label: string, index: number, value: string) {
   input.onChange({ target: { value } });
   return rerender(ctx, props);
 }
+function setDefaultSplit(ctx: Context, checked: boolean) {
+  const field = elements(rerender(ctx, props)).fields.find(
+    (item) => item.props.label === m['registration.defaultSplit'],
+  );
+  const input = field!.props.inputProps as {
+    onChange: (event: { currentTarget: { checked: boolean } }) => void;
+  };
+  input.onChange({ currentTarget: { checked } });
+  return rerender(ctx, props);
+}
 function clickButton(tree: ReactElement, label: string) {
   const button = elements(tree).buttons.find((b) =>
     text(b.props.children as ReactNode).includes(label),
@@ -186,7 +191,7 @@ it('issues a paymentTerms payload with upfront/count coherence for entered rows'
   clickButton(tree, m['registration.add']);
   tree = rerender(ctx, props);
   tree = setField(ctx, m['registration.amount'], 1, '800');
-  tree = setField(ctx, m['registration.offset'], 1, '30');
+  tree = setField(ctx, m['registration.offset'], 1, '45');
   await confirm(tree);
   expect(actions.issue).toHaveBeenCalledExactlyOnceWith({
     workspaceId: ws,
@@ -196,7 +201,7 @@ it('issues a paymentTerms payload with upfront/count coherence for entered rows'
       totalPaymentCount: 2,
       installments: [
         { seq: 1, amountMinor: '400', dueOffsetDays: 0 },
-        { seq: 2, amountMinor: '800', dueOffsetDays: 30 },
+        { seq: 2, amountMinor: '800', dueOffsetDays: 45 },
       ],
     },
   });
@@ -204,11 +209,9 @@ it('issues a paymentTerms payload with upfront/count coherence for entered rows'
 it('full-price upfront yields count 1 with no zero remainder row', async () => {
   const rendered = render(props);
   const ctx = rendered.ctx;
-  let tree = rendered.tree;
-  clickButton(tree, m['registration.add']);
-  tree = rerender(ctx, props);
-  tree = setField(ctx, m['registration.amount'], 0, '1200');
-  tree = setField(ctx, m['registration.offset'], 0, '0');
+  let tree = setDefaultSplit(ctx, true);
+  tree = setField(ctx, m['registration.upfrontAmount'], 0, '1200');
+  expect(text(tree)).toContain('1200 / 1200');
   await confirm(tree);
   expect(actions.issue).toHaveBeenCalledExactlyOnceWith({
     workspaceId: ws,
@@ -269,5 +272,24 @@ it('untouched schedule UI issues legacy null with no invented upfront', async ()
     workspaceId: ws,
     packageVersionId: version,
     installments: null,
+  });
+});
+
+it('derives the exact residual and 30-day activation offset from an explicit upfront amount', async () => {
+  const rendered = render(props);
+  let tree = setDefaultSplit(rendered.ctx, true);
+  tree = setField(rendered.ctx, m['registration.upfrontAmount'], 0, '400');
+  await confirm(tree);
+  expect(actions.issue).toHaveBeenCalledExactlyOnceWith({
+    workspaceId: ws,
+    packageVersionId: version,
+    paymentTerms: {
+      upfrontAmountMinor: '400',
+      totalPaymentCount: 2,
+      installments: [
+        { seq: 1, amountMinor: '400', dueOffsetDays: 0 },
+        { seq: 2, amountMinor: '800', dueOffsetDays: 30 },
+      ],
+    },
   });
 });

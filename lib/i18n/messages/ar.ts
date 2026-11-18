@@ -1222,4 +1222,9 @@ export const ar = {
     'للعرض فقط. الأغذية وقيم الخطة وهمية، ولا يُحفظ أي شيء.',
   'nutritionPlan.mealNotes': 'ملاحظات للوجبة دي',
   'nutritionPlan.foodNotes': 'ملاحظات للأكلة دي',
+  'registration.upfrontAmount': 'المبلغ اللي هيتدفع مقدمًا',
+  'registration.paymentCount': 'عدد الأقساط',
+  'registration.defaultSplit': 'قسّم الباقي بالتقسيمة الافتراضية',
+  'registration.timingAnchorNote':
+    'الباقي يتدفع بعد ٣٠ يوم من التفعيل (بتوقيت القاهرة).',
 } as const;

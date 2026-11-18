@@ -1258,4 +1258,9 @@ export const en: Record<keyof typeof ar, string> = {
     'Showcase only. Foods and plan values are mocked; nothing is saved.',
   'nutritionPlan.mealNotes': 'Notes for this meal',
   'nutritionPlan.foodNotes': 'Notes for this food',
+  'registration.upfrontAmount': 'Upfront amount',
+  'registration.paymentCount': 'Number of payments',
+  'registration.defaultSplit': 'Use default split',
+  'registration.timingAnchorNote':
+    'The remaining balance is due 30 days after activation (Cairo time).',
 };

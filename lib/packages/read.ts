@@ -5,10 +5,13 @@ import { createSessionClient } from '../supabase/server';
 import { isUuid, parsePrice } from './validation';
 import type { PackageFailure } from './results';
 export const SAFE_VERSION_COLUMNS =
-  'workspace_id,id,offer_id,version,name_ar,name_en,price_minor,currency,duration_days,duration_months,published_at,published_by';
+  'workspace_id,id,offer_id,version,name_ar,name_en,price_minor,currency,duration_days,duration_months,published_at,published_by,market,type';
 export type PackageIdentity = {
   id: string;
-  code: string;
+  workspace_id: string | null;
+  market: string | null;
+  type: string | null;
+  code: string | null;
   created_at: string;
   created_by: string;
 };
@@ -27,6 +30,8 @@ export type PackageVersion = {
   id: string;
   offer_id: string;
   version: number;
+  market: string | null;
+  type: string | null;
   name_ar: string;
   name_en: string;
   price_minor: string;
@@ -66,7 +71,10 @@ export async function loadPackageOffers(
     if (workspace.error) return { status: 'unavailable' };
     if (!workspace.data) return { status: 'denied' };
     const [packages, offers, versions] = await Promise.all([
-      client.from('packages').select('id,code,created_at,created_by'),
+      client
+        .from('packages')
+        .select('id,workspace_id,market,type,code,created_at,created_by')
+        .eq('workspace_id', workspaceId),
       client
         .from('package_offers')
         .select(
@@ -101,6 +109,8 @@ export async function loadPackageOffers(
       id: v.id,
       offer_id: v.offer_id,
       version: v.version,
+      market: v.market,
+      type: v.type,
       name_ar: v.name_ar,
       name_en: v.name_en,
       price_minor: v.price_minor,
@@ -109,6 +119,15 @@ export async function loadPackageOffers(
       duration_months: v.duration_months,
       published_at: v.published_at,
       published_by: v.published_by,
+    }));
+    const safePackages: PackageIdentity[] = packages.data.map((p) => ({
+      id: p.id,
+      workspace_id: p.workspace_id,
+      market: p.market,
+      type: p.type,
+      code: p.code,
+      created_at: p.created_at,
+      created_by: p.created_by,
     }));
     if (
       (actor.role === 'platform_owner' || actor.role === 'workspace_owner') &&
@@ -136,7 +155,7 @@ export async function loadPackageOffers(
     }
     return {
       status: 'ok',
-      packages: packages.data,
+      packages: safePackages,
       offers: offers.data,
       versions: safeVersions,
     };
