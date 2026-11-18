@@ -3,6 +3,7 @@ vi.mock('server-only', () => ({}));
 import type { Actor } from '../../lib/auth/authorize';
 import {
   canReadDirectory,
+  canUseAssignment,
   directoryHref,
   directoryRpcArgs,
   parseDirectoryQuery,
@@ -41,12 +42,14 @@ describe('F22 directory query parsing (T030; FR-011)', () => {
       search: 'synthetic@example.test',
       approvalState: 'pending-approval',
       subscriptionStatus: 'frozen',
+      assignment: null,
       page: 3,
     });
     expect(parseDirectoryQuery({})).toEqual({
       search: null,
       approvalState: null,
       subscriptionStatus: null,
+      assignment: null,
       page: 1,
     });
     expect(
@@ -83,6 +86,7 @@ describe('F22 directory query parsing (T030; FR-011)', () => {
       p_subscription_status: null,
       p_limit: 50,
       p_offset: 50,
+      p_assignment: null,
     });
     expect(directoryHref(wsA, query, 3)).toBe(
       `/clients?workspace=${wsA}&q=%2B2010&page=3`,
@@ -235,5 +239,107 @@ describe('F22 directory result and indicator parsing (T030; SC-008)', () => {
     expect(parseDirectoryResult({ status: 'ok' }, null)).toEqual({
       status: 'unavailable',
     });
+  });
+});
+
+describe('F22 directory assignment filter behind the F11 wall (T035; FR-011, S40-PO-10 item 5)', () => {
+  const assigned = { ...row, assignment: 'unassigned' };
+
+  it('parses only the two F11 assignment states and echoes them in the href', () => {
+    expect(parseDirectoryQuery({ assignment: 'unassigned' })).toMatchObject({
+      assignment: 'unassigned',
+    });
+    expect(parseDirectoryQuery({ assignment: '' })).toMatchObject({
+      assignment: null,
+    });
+    for (const assignment of ['Assigned', 'none', ['assigned', 'x']])
+      expect(parseDirectoryQuery({ assignment })).toBeNull();
+    const query = parseDirectoryQuery({ assignment: 'assigned' })!;
+    expect(directoryHref(wsA, query, 1)).toBe(
+      `/clients?workspace=${wsA}&assignment=assigned`,
+    );
+  });
+
+  it('allows the filter only for the Workspace Owner of the workspace and the Platform Owner', () => {
+    expect(canUseAssignment(actor('platform_owner', []), wsB)).toBe(true);
+    expect(canUseAssignment(actor('workspace_owner'), wsA)).toBe(true);
+    expect(canUseAssignment(actor('workspace_owner', [wsB]), wsA)).toBe(false);
+    expect(canUseAssignment(actor('trainer'), wsA)).toBe(false);
+    expect(canUseAssignment(actor('sales'), wsA)).toBe(false);
+    expect(canUseAssignment(actor(null), wsA)).toBe(false);
+    expect(canUseAssignment(actor('workspace_owner'), 'not-a-uuid')).toBe(
+      false,
+    );
+  });
+
+  it('sends the filter only when allowed', () => {
+    const query = parseDirectoryQuery({ assignment: 'unassigned' })!;
+    expect(directoryRpcArgs(wsA, query, true).p_assignment).toBe('unassigned');
+    expect(directoryRpcArgs(wsA, query, false).p_assignment).toBeNull();
+    expect(directoryRpcArgs(wsA, query).p_assignment).toBeNull();
+  });
+
+  it('ignores the parameter for a Trainer and strips any assignment state from the rows', async () => {
+    const rpc = vi.fn(async () => ({
+      data: { status: 'ok', clients: [assigned], has_more: false },
+      error: null,
+    }));
+    const query = parseDirectoryQuery({ assignment: 'unassigned' })!;
+    const result = await loadClientDirectory(
+      { rpc },
+      actor('trainer'),
+      wsA,
+      query,
+    );
+    expect(rpc).toHaveBeenCalledWith(
+      'staff_client_directory',
+      expect.objectContaining({ p_assignment: null }),
+    );
+    expect(result).toMatchObject({ status: 'ok' });
+    if (result.status === 'ok')
+      for (const r of result.rows) expect('assignment' in r).toBe(false);
+  });
+
+  it('passes the filter and keeps the assignment state for the Workspace Owner and Platform Owner', async () => {
+    const rpc = vi.fn(async () => ({
+      data: { status: 'ok', clients: [assigned], has_more: false },
+      error: null,
+    }));
+    const query = parseDirectoryQuery({ assignment: 'unassigned' })!;
+    for (const who of [actor('workspace_owner'), actor('platform_owner', [])]) {
+      const result = await loadClientDirectory({ rpc }, who, wsA, query);
+      expect(rpc).toHaveBeenLastCalledWith(
+        'staff_client_directory',
+        expect.objectContaining({ p_assignment: 'unassigned' }),
+      );
+      expect(result).toMatchObject({
+        status: 'ok',
+        rows: [{ assignment: 'unassigned' }],
+      });
+    }
+  });
+
+  it('rejects malformed assignment state in rows', () => {
+    for (const value of ['mine', 1, undefined])
+      expect(
+        parseDirectoryResult(
+          {
+            status: 'ok',
+            clients: [{ ...row, assignment: value }],
+            has_more: false,
+          },
+          null,
+        ),
+      ).toEqual({ status: 'unavailable' });
+    expect(
+      parseDirectoryResult(
+        {
+          status: 'ok',
+          clients: [{ ...row, assignment: null }],
+          has_more: false,
+        },
+        null,
+      ),
+    ).toMatchObject({ rows: [{ assignment: null }] });
   });
 });

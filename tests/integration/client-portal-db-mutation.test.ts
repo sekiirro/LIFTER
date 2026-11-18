@@ -139,7 +139,7 @@ describe('F22 database control kill tests', () => {
 
   it('K2 directory workspace wall: dropping has_workspace_access lets a foreign trainer list clients', async () => {
     const signature =
-      'public.staff_client_directory(uuid,text,text,text,integer,integer)';
+      'public.staff_client_directory(uuid,text,text,text,integer,integer,text)';
     const control =
       "or not app_private.has_workspace_access(p_workspace_id, 'coaching_work')";
     const observed = (await underMutant(

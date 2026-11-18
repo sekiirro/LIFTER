@@ -20,6 +20,7 @@ import type { NutritionDocumentV1 } from '../plans/nutrition/types';
 import {
   isUuid,
   parseSubscription,
+  planAccessGranted,
   type SubscriptionSummary,
 } from './portal-projection';
 
@@ -50,13 +51,14 @@ export function projectClientNutritionPlan(
   const subscription = parseSubscription(raw.subscription);
   if (!subscription) return { status: 'denied' };
   // Only an explicit F13 `active` state may accompany plan content.
-  if (raw.status === 'restricted' || subscription.status !== 'active')
+  if (raw.status === 'restricted' || !planAccessGranted(subscription))
     return raw.status === 'restricted' || raw.status === 'ok'
       ? {
           status: 'restricted',
           subscription: {
             status: subscription.status,
             effectiveEndExclusive: subscription.effectiveEndExclusive,
+            overdue: subscription.overdue,
             ...(subscription.refundScope
               ? { refundScope: subscription.refundScope }
               : {}),
