@@ -157,6 +157,11 @@ export function SignupForm({
   }
 
   function blurIdentityField(field: SignupIdentityField) {
+    // A submitting form disables its inputs, which can emit blur/focusout while
+    // the action is in flight. Reading FormData then sees disabled fields as
+    // absent and would mark every identity field invalid during the pending
+    // state, so blur validation is skipped until the inputs are re-enabled.
+    if (pending) return;
     setTouchedIdentityFields((current) =>
       current.includes(field) ? current : [...current, field],
     );
