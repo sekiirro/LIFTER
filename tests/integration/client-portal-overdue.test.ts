@@ -177,7 +177,7 @@ describe('F22 overdue plan restriction (T018)', () => {
       await mutate(
         tx,
         'app_private.f22_subscription_summary(uuid,uuid)',
-        `coalesce((overdue_state->>'overdue')::boolean, false)`,
+        `coalesce((overdue_state->>'overdue')::boolean, true)`,
         'false',
       );
       const r = await reads(tx, await authUser(tx, p));
