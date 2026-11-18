@@ -1,4 +1,52 @@
 export const ar = {
+  // spec 023 client progress coaching (S55-PO-10 approved copy)
+  'progress.title': 'التقدم',
+  'progress.measurements.title': 'القياسات',
+  'progress.measurements.empty': 'لسه مفيش قياسات متسجلة',
+  'progress.measurement.edit': 'عدّل القياس',
+  'checkin.completed.notGate':
+    'تقدر تدخل حسابك عادي حتى لو ما بعتّش المتابعة الأسبوعية.',
+  'checkin.adherence.workout.title': 'التزامك بالتمرين',
+  'checkin.adherence.workout.question':
+    'من 0 لـ 10، شايف إنك التزمت بتمرينك قد إيه الأسبوع ده؟',
+  'checkin.adherence.diet.title': 'التزامك بالدايت',
+  'checkin.adherence.diet.question':
+    'من 0 لـ 10، شايف إنك التزمت بالدايت قد إيه الأسبوع ده؟',
+  'checkin.reminder.dayOf.title': 'تذكير بالمتابعة الأسبوعية',
+  'checkin.reminder.dayOf.body': 'النهارده معاد متابعتك الأسبوعية.',
+  'checkin.reminder.followup.title': 'المتابعة الأسبوعية لسه ناقصة',
+  'checkin.reminder.followup.body': 'لسه ما بعتّش متابعتك الأسبوعية.',
+  'foodReplacement.notification.open': 'فيه عميل طلب بديل أكل جديد.',
+  'foodReplacement.notification.resolved':
+    'فيه تحديث على طلب بديل الأكل بتاعك.',
+  'timeline.title': 'سجل النشاط',
+  'timeline.empty': 'لسه مفيش أي أحداث هنا.',
+  'timeline.event.registration': 'التسجيل',
+  'timeline.event.renewal': 'تجديد الاشتراك',
+  'timeline.event.firstDelivery': 'استلام أول خطة',
+  'timeline.event.trainerChange': 'تغيير الكابتن المسؤول',
+  'timeline.event.replacementOpen': 'طلب بديل جديد',
+  'timeline.event.replacementApproved': 'الموافقة على البديل',
+  'timeline.event.replacementRejected': 'رفض طلب البديل',
+  'timeline.event.replacementStale': 'إغلاق طلب البديل بعد حذف الأكلة',
+  'timeline.event.freezeApply': 'تجميد الاشتراك',
+  'timeline.event.freezeRemove': 'فك تجميد الاشتراك',
+  'timeline.event.closure': 'الإغلاق',
+  // spec 023: approved by S57-PO-12 and S57-PO-13 (pinned in progress-coaching-copy test)
+  'progress.measurement.add': 'ضيف قياس جديد',
+  'progress.measurement.value': 'القيمة',
+  'progress.measurement.date': 'التاريخ',
+  'progress.measurement.save': 'احفظ القياس',
+  'progress.measurement.saved': 'القياس اتسجّل',
+  'progress.measurement.duplicateSameDay':
+    'فيه قياس متسجل لليوم ده. عدّل القياس الموجود بدل ما تضيف واحد جديد.',
+  'checkin.config.title': 'فورم المتابعة الأسبوعية',
+  'checkin.config.select': 'اختار فورم المتابعة الأسبوعية',
+  'checkin.config.save': 'استخدم الفورم ده',
+  'checkin.config.saved': 'اتحدد فورم المتابعة الأسبوعية.',
+  'checkin.config.invalid':
+    'الفورم ده لازم يكون فيه سؤالين الالتزام بالتمرين والدايت (من 0 لـ 10).',
+  'checkin.config.conflict': 'فيه فورم تاني متحدد كمتابعة أسبوعية.',
   'catalog.taxonomy.muscle.spinal_erectors': 'ناصبات العمود الفقري',
   'catalog.taxonomy.muscle.rear_delts': 'الدالية الخلفية',
   'catalog.taxonomy.muscle.hamstrings': 'أوتار الركبة',

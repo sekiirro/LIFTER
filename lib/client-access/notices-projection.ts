@@ -14,13 +14,14 @@ export const CLIENT_NOTICE_KINDS = [
   'nutrition_delivered_activated',
   'checkin_reminder_day_of',
   'checkin_reminder_followup',
+  'food_replacement_resolved',
 ] as const;
 export type ClientNoticeKind = (typeof CLIENT_NOTICE_KINDS)[number];
 
 /**
- * Approved F22 copy per kind (copy-proposal.md, S55-PO-10). F23 check-in
- * reminder kinds have no catalog key on main yet, so the F22 surface does
- * not render them; F23 adds their mapping with its approved keys.
+ * Approved copy per kind. F22 kinds use copy-proposal.md (S55-PO-10); the F23
+ * kinds use the S55-PO-10 approved F23 strings (check-in reminder body, food
+ * replacement notification) from specs/023 copy-proposal.md.
  */
 export const NOTICE_MESSAGE: Record<ClientNoticeKind, MessageKey | null> = {
   workout_delivered: 'client.portal.notice.workoutDelivered',
@@ -28,8 +29,9 @@ export const NOTICE_MESSAGE: Record<ClientNoticeKind, MessageKey | null> = {
   subscription_activated: 'client.portal.notice.subscriptionActivated',
   workout_delivered_activated: 'client.portal.notice.workoutAndActivated',
   nutrition_delivered_activated: 'client.portal.notice.nutritionAndActivated',
-  checkin_reminder_day_of: null,
-  checkin_reminder_followup: null,
+  checkin_reminder_day_of: 'checkin.reminder.dayOf.body',
+  checkin_reminder_followup: 'checkin.reminder.followup.body',
+  food_replacement_resolved: 'foodReplacement.notification.resolved',
 };
 
 export type ClientNotice = {
