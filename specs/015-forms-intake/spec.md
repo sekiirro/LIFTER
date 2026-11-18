@@ -395,7 +395,7 @@ Clarification: these exact strings apply to Arabic only. The T03 digits are West
 | N12.disclaimer | This percentage is an estimate and is not a substitute for measuring body-fat percentage. |
 <!-- prettier-ignore-end -->
 
-The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
+The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. S33-PO-3 approves the Arabic T03 option labels (`2`, `3`, `4`, `5`, `6`) and the Arabic N07 dynamic label (`الوجبة رقم {number}`). Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
 
 #### EN option translations — PO review
 
@@ -415,10 +415,10 @@ The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 en
 | N03.4 | A lot of movement or physically demanding work |
 | T04.less_than_90 | Less than an hour and a half |
 | T04.at_least_90 | An hour and a half or more |
-| N07.2 | Two meals *(pending PO review)* |
-| N07.3 | 3 meals *(pending PO review)* |
-| N07.4 | 4 meals *(pending PO review)* |
-| N07.5 | 5 meals *(pending PO review)* |
+| N07.2 | 2 meals |
+| N07.3 | 3 meals |
+| N07.4 | 4 meals |
+| N07.5 | 5 meals |
 | N07.before_first | Before the first meal |
 | N07.after_meal_n | After meal {n}, for each n from 1 through the selected meal count |
 | N07.no_fixed_time | I don't have a fixed time |
