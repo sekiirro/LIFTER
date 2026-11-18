@@ -174,3 +174,13 @@ Verified so far: T044 migration schema and its schema-dependent tests pass with 
 Post-rename T044 schema evidence (2026-11-18): supabase/migrations/20261215040000_staff_password_reset_hook_limits.sql applied on Stack D; ests/integration/staff-reset-hook-schema.test.ts passed 6/6 after reset/provisioning. The account limit threshold 5?4 mutation was killed by the fifth-request case, then restored and verified green. Detailed reset, provisioning and mutation log: specs/004-auth/reports/t044-verification.md. T044 remains unchecked until its PR2 provider call and T044a template clauses are complete.
 
 Candidate-head evidence: account-limit mutation killed and restored green on candidate 799be2b541ddddaff09ed02737f0e3daebb6bbbf; detailed evidence is in specs/004-auth/reports/t044-verification.md.
+
+## T050b partial verification — PR1b candidate
+
+T050b remains `[ ]`; available Stack D evidence does not satisfy every G6 clause. The candidate `s66-004-staff-reset-1b` adds the local send-email handler, its boundary unit tests and integration cases. Stack D reset/provision and integration results are recorded in `C:/Users/NEW LAP/.lifter/runs/s66-luna-reset1c/report.md`.
+
+| Requirement | Task | Test | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| FR-018, FR-024, FR-030 control A; SC-015 | T050b | `tests/unit/staff-reset-hook.test.ts`; `tests/integration/staff-reset-hook.test.ts` | Stack D: unit 6/6; integration 5/5, including unsigned no-send, unknown direct /recover uncounted/no-send, approved local recipient audit-before-send, denied non-staff no-send, and audit-RPC failure before mail | PARTIAL |
+
+Verified so far: signature/payload/redirect/recipient boundary unit checks pass; local hook delivery writes one requested audit before one captured email to the sole approved test recipient; the unknown-address direct request reaches no hook and sends no email. Prior local transport-timeout evidence recorded in `s63-luna-staffreset3/report.md` showed no SMTP fallback. Remaining: T051 mutation evidence across the complete recovery control set. Do not tick T050b until every clause passes.
