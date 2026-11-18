@@ -103,8 +103,11 @@ beforeAll(async () => {
 
   // Revisions carrying references the client wall must refuse as one whole.
   foreignRefPlans = {
-    foreignPrivate: await publishedPlan(
-      active,
+    // The F17 write guards refuse foreign private references, so these two
+    // revisions are poisoned after publication to prove the client wall.
+    foreignPrivate: await p.publishPoisoned(
+      active.clientId,
+      content('F17C foreign private'),
       workoutDocument('F17C foreign private', [
         { exercise: priv(privateForeign, wsB) },
       ]),
@@ -125,8 +128,9 @@ beforeAll(async () => {
       active,
       workoutDocument('F17C unknown', [{ exercise: global(randomUUID()) }]),
     ),
-    oneBadAlternative: await publishedPlan(
-      active,
+    oneBadAlternative: await p.publishPoisoned(
+      active.clientId,
+      content('F17C one bad alt'),
       workoutDocument('F17C one bad alt', [
         {
           exercise: global(globalMain),
@@ -380,16 +384,20 @@ describe('client workout projection negatives', () => {
   });
 
   it('gives a client no direct catalog, revision or staff-detail access', async () => {
-    const counts = await p.db.begin((tx) =>
-      asUser(
-        tx,
-        active.authUserId,
-        async (inner) =>
-          inner`select (select count(*)::int from public.plan_revisions) as revisions,
-          (select count(*)::int from public.plan_deliveries) as deliveries_other`,
-      ),
-    );
-    expect(counts[0]!.revisions).toBe(0);
+    // A client sees no plan revision rows directly: either the privilege is
+    // absent or RLS filters every row.
+    const revisions = await p.db
+      .begin((tx) =>
+        asUser(
+          tx,
+          active.authUserId,
+          async (inner) =>
+            inner`select count(*)::int as count from public.plan_revisions`,
+        ),
+      )
+      .then((rows) => rows[0]!.count as number)
+      .catch((error: { code?: string }) => error.code);
+    expect([0, '42501']).toContain(revisions);
     await expect(
       p.db.begin((tx) =>
         asUser(

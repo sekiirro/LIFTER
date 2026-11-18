@@ -33,7 +33,6 @@ const AUDIT_SIGNATURE =
 
 beforeAll(async () => {
   p = await workoutFixture();
-  const wsA = p.fixture.wsA.id;
   const wsB = p.fixture.wsB.id;
   owner = await p.makeClient({ activate: true });
   other = await p.makeClient({ activate: true });
@@ -60,8 +59,10 @@ beforeAll(async () => {
   marked.staff_only_marker = MARKER;
   markerPlan = await p.createDraft(owner.clientId, marked);
   await p.publish(markerPlan, 1, 0);
-  foreignPlan = await p.createDraft(
+  // The F17 write guards refuse foreign private references: poison after publish.
+  foreignPlan = await p.publishPoisoned(
     owner.clientId,
+    workoutDocument('F17K foreign safe', [{ exercise: global }]),
     workoutDocument('F17K foreign ref', [
       {
         exercise: {
@@ -72,8 +73,6 @@ beforeAll(async () => {
       },
     ]),
   );
-  await p.publish(foreignPlan, 1, 0);
-  void wsA;
 });
 afterAll(async () => p?.close());
 

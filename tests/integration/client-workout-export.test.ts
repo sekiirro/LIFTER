@@ -78,7 +78,7 @@ function sessionClient(userId: string): RpcClient {
 async function auditRows(userId: string) {
   return p.db`select workspace_id, target_id, details from public.audit_events
     where actor_user_id=${userId} and action='plan.workout_export'
-    order by created_at, id`;
+    order by id`;
 }
 
 beforeAll(async () => {

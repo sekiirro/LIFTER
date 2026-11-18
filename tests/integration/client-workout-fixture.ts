@@ -141,6 +141,29 @@ export async function workoutFixture() {
     if (saved.error) throw new Error('workout fixture save failed');
   }
 
+  /**
+   * Publish a valid plan, then overwrite its immutable revision content with
+   * `poisoned` while triggers are bypassed (session_replication_role). The F17
+   * guards refuse foreign private references at write time, so this is the
+   * only way to prove the client wall refuses them as defense in depth.
+   * Synthetic test fixture only.
+   */
+  async function publishPoisoned(
+    clientId: string,
+    safeContent: unknown,
+    poisoned: unknown,
+  ): Promise<string> {
+    const planId = await createDraft(clientId, safeContent);
+    await publish(planId, 1, 0);
+    await db.begin(async (tx) => {
+      await tx`set local session_replication_role = replica`;
+      await tx`update public.plan_revisions set content = ${tx.json(poisoned as never)}
+        where plan_id = ${planId} and revision_number = 1`;
+      await tx`set local session_replication_role = origin`;
+    });
+    return planId;
+  }
+
   async function revisionId(planId: string, revision: number) {
     const [row] = await db`select id from public.plan_revisions
       where plan_id=${planId} and revision_number=${revision}`;
@@ -211,6 +234,7 @@ export async function workoutFixture() {
     createDraft,
     publish,
     revise,
+    publishPoisoned,
     revisionId,
     asActor,
     createGlobal,

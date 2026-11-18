@@ -1052,3 +1052,9 @@ A hostile pass found that a pending next-page response could append results afte
 - Cross-reference check: task IDs and FR tags match; traceability includes the exact test names. Spec/plan text is unchanged; the data-model contract at lines 24 and 47 resolves the interaction. No open ambiguity remains.
 - Security review: the detail read preserves authorization-before-lookup, same-workspace target scope, SECURITY DEFINER, empty search_path, postgres ownership, revocations, and authenticated-only execute. The RLS test suite continues to cover the helper/function hardening contracts.
 - Result: 0 open CRITICAL findings, 0 open HIGH findings. Analyze is dated after the last tasks/spec/plan edit.
+
+## S66 T098 client wrapper for workout plan reads - 2026-11-18
+
+- tasks.md text changed: T098 added (the FR-029 client wrapper, workout side, delivered with F17 T053); traceability gains the T098 rows. Authorized by the PO for the orchestrator on 2026-11-18 (F22/F23 blockers). No FR, SC, acceptance criteria, plan, data-model or copy text changed: FR-012/FR-029 and the client/plan-workspace video contract already define this wrapper and assign it to the client boundary; F16-MCQ-9 = (a) and S37-PO-1 Q2 = A are applied unchanged.
+- Cross-reference check: task ID and FR/SC tags match; F16 still exposes no client-callable catalog function and grants nothing new; the wrapper reaches the existing plan-authorized resolvers only from a SECURITY DEFINER function that has authorized the plan and derived the workspace from stored relations.
+- Result: 0 open CRITICAL, 0 open HIGH, 0 open MCQs. Analyze is dated after the last tasks edit.
