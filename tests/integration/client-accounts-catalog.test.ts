@@ -299,6 +299,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           numeric: '1::numeric',
           boolean: 'false',
           bytea: "decode('00','hex')",
+          date: "'2050-01-01'::date",
           'timestamp with time zone': 'now()',
           'uuid[]': "'{}'::uuid[]",
         };
@@ -347,7 +348,8 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                           fn.proname === 'publish_nutrition_revision' ||
                           fn.proname === 'select_nutrition_alternative') &&
                           value.status === 'not_permitted') ||
-                        (fn.proname === 'unassigned_clients' &&
+                        ((fn.proname === 'unassigned_clients' ||
+                          fn.proname === 'find_client_by_code') &&
                           value.status === 'not_permitted') ||
                         ((fn.proname === 'assign_client_responsible_trainer' ||
                           fn.proname === 'client_responsible_trainer' ||

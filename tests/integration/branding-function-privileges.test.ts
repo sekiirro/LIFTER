@@ -222,6 +222,7 @@ describe('F14 definer function privileges', () => {
       },
       { signature: 'public.consume_f15_telegram_start(bigint, text, text)' },
       { signature: 'public.finish_f15_telegram_delivery(uuid, text)' },
+      { signature: 'public.handle_client_trainer_distribution(uuid, uuid)' },
       { signature: 'public.prepare_f15_telegram_delivery(uuid, uuid)' },
       {
         signature:

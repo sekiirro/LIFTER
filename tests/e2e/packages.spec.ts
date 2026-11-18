@@ -1,8 +1,15 @@
-import { randomUUID } from 'node:crypto';
+import { mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
+import {
+  categoryLabel,
+  marketLabel,
+  typeLabel,
+} from '../../lib/packages/category-label';
 import { tierLabel } from '../../lib/packages/tier-label';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
@@ -128,6 +135,15 @@ test.describe('local-stack authenticated package acceptance (required for review
       await expect(
         page.getByRole('heading', { name: m['packages.title'], exact: true }),
       ).toBeVisible();
+      const approvedCategoryLabels =
+        locale === 'ar'
+          ? ['مصر', 'دولي', 'وقت العـروض', 'طول السنـة']
+          : ['Egypt', 'International', 'Promotional', 'Year-Round'];
+      for (const label of approvedCategoryLabels)
+        await expect(page.getByText(label, { exact: true })).toBeVisible();
+      await expect(
+        page.getByText(m['packages.emptyCatalog'], { exact: true }),
+      ).toBeVisible();
       await expect(
         page.getByText(m['packages.empty'], { exact: true }),
         `package empty state missing for ${locale}; status=${packageResponse?.status()} workspace=${fixture.wsA.id} main=${(
@@ -139,15 +155,26 @@ test.describe('local-stack authenticated package acceptance (required for review
           .replace(/\s+/g, ' ')
           .slice(0, 300)}`,
       ).toBeVisible();
-      const code = `test-pkg-${randomUUID()}`;
-      await page.locator('input[name="code"]').fill(code);
+
+      const egyptYearRound = categoryLabel('Egypt', 'Year-round', locale);
+      const intlPromo = categoryLabel('International', 'Promotional', locale);
+
+      await page
+        .getByRole('radio', { name: marketLabel('Egypt', locale), exact: true })
+        .check();
+      await page
+        .getByRole('radio', {
+          name: typeLabel('Year-round', locale),
+          exact: true,
+        })
+        .check();
       await page
         .getByRole('button', { name: m['packages.create'], exact: true })
         .click();
       await expect(
         page
           .locator('select[name="packageId"] option')
-          .filter({ hasText: code }),
+          .filter({ hasText: egyptYearRound }),
       ).toHaveCount(1);
       for (const name of [
         'nameAr',
@@ -157,30 +184,48 @@ test.describe('local-stack authenticated package acceptance (required for review
         'commissionRateBp',
       ])
         await expect(page.locator(`input[name="${name}"]`)).toHaveValue('');
-      async function fillTerms() {
-        await page
-          .locator('select[name="packageId"]')
-          .selectOption({ label: code });
+
+      async function fillTerms(label: string, currency: string) {
+        await page.locator('select[name="packageId"]').selectOption({ label });
         await page.getByRole('radio', { name: tierLabel(1, locale) }).check();
         await page.locator('input[name="nameAr"]').fill('test-authored-ar');
         await page.locator('input[name="nameEn"]').fill('test-authored-en');
         await page.locator('input[name="priceMinor"]').fill('9007199254740993');
-        await page.locator('input[name="currency"]').fill('EGP');
+        await page.locator('input[name="currency"]').fill(currency);
         await page.locator('input[name="commissionRateBp"]').fill('0');
       }
-      await fillTerms();
+
+      // Prohibited market/currency must reject before submission with generic field error.
+      await fillTerms(egyptYearRound, 'USD');
       await page
         .getByRole('button', { name: `3 ${m['packages.months']}`, exact: true })
         .click();
       await page
         .getByRole('button', { name: m['packages.publish'], exact: true })
         .click();
-      const row = page
-        .getByRole('row')
-        .filter({ has: page.getByRole('rowheader').filter({ hasText: code }) });
+      await expect(page.locator('input[name="currency"]')).toHaveAttribute(
+        'aria-invalid',
+        'true',
+      );
+      await expect(page.getByRole('main').getByRole('alert')).toContainText(
+        m['packages.invalid_input'],
+      );
+      await expect(page.locator('tbody tr')).toHaveCount(0);
+
+      // Valid Egypt + EGP publication succeeds.
+      await page.locator('input[name="currency"]').fill('EGP');
+      await page
+        .getByRole('button', { name: m['packages.publish'], exact: true })
+        .click();
+      const row = page.getByRole('row').filter({
+        has: page.getByRole('rowheader').filter({ hasText: egyptYearRound }),
+      });
       await expect(row).toHaveCount(1);
       await expect(row).toContainText(tierLabel(1, locale));
+      await expect(row).toContainText('EGP');
+      await expect(row).not.toContainText('USD');
       await expect(row).toContainText(`${m['packages.days']}: 90`);
+
       await row
         .getByRole('button', { name: m['packages.enable'], exact: true })
         .click();
@@ -215,7 +260,8 @@ test.describe('local-stack authenticated package acceptance (required for review
       await page.getByTestId('dialog-confirm').click();
       await expect(page.getByRole('dialog')).not.toBeVisible();
       await expect(row).toContainText(m['packages.available']);
-      await fillTerms();
+
+      await fillTerms(egyptYearRound, 'EGP');
       await page
         .getByRole('button', { name: m['packages.custom'], exact: true })
         .click();
@@ -224,22 +270,88 @@ test.describe('local-stack authenticated package acceptance (required for review
         .getByRole('button', { name: m['packages.publish'], exact: true })
         .click();
       await expect(row).toHaveCount(2);
+
+      // Simultaneous International category with own USD currency and no cross-currency total.
+      await page
+        .getByRole('radio', {
+          name: marketLabel('International', locale),
+          exact: true,
+        })
+        .check();
+      await page
+        .getByRole('radio', {
+          name: typeLabel('Promotional', locale),
+          exact: true,
+        })
+        .check();
+      await page
+        .getByRole('button', { name: m['packages.create'], exact: true })
+        .click();
+      await expect(
+        page
+          .locator('select[name="packageId"] option')
+          .filter({ hasText: intlPromo }),
+      ).toHaveCount(1);
+      await fillTerms(intlPromo, 'USD');
+      await page
+        .getByRole('button', { name: `3 ${m['packages.months']}`, exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: m['packages.publish'], exact: true })
+        .click();
+      const intlRow = page.getByRole('row').filter({
+        has: page.getByRole('rowheader').filter({ hasText: intlPromo }),
+      });
+      await expect(intlRow).toHaveCount(1);
+      await expect(intlRow).toContainText('USD');
+      await expect(intlRow).not.toContainText('EGP');
+      await expect(page.locator('tfoot')).toHaveCount(0);
+
+      const screenshotDir = join(tmpdir(), 'lifter-s65-hyd-f9us5c');
+      await mkdir(screenshotDir, { recursive: true });
       for (const theme of ['light', 'dark']) {
         await context.addCookies([
           { name: THEME_COOKIE, value: theme, url: origin },
         ]);
         await page.reload();
-        await page.setViewportSize({ width: 390, height: 844 });
-        expect(
-          (
-            await new AxeBuilder({ page })
-              .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
-              .analyze()
-          ).violations,
-        ).toEqual([]);
+        await expect(
+          page.getByRole('heading', { name: m['packages.title'], exact: true }),
+        ).toBeVisible();
+        await expect(intlRow).toBeVisible();
+        for (const viewport of [
+          { width: 390, height: 844 },
+          { width: 1440, height: 900 },
+        ]) {
+          await page.setViewportSize(viewport);
+          await page.screenshot({
+            path: join(
+              screenshotDir,
+              `packages-${locale}-${theme}-${viewport.width}x${viewport.height}.png`,
+            ),
+            fullPage: true,
+          });
+          expect(
+            (
+              await new AxeBuilder({ page })
+                .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+                .analyze()
+            ).violations,
+          ).toEqual([]);
+        }
       }
       // A transport failure must be a generic error with no saved state; retry uses the real action.
-      await page.locator('input[name="code"]').fill(`test-pkg-${randomUUID()}`);
+      await page
+        .getByRole('radio', {
+          name: marketLabel('International', locale),
+          exact: true,
+        })
+        .check();
+      await page
+        .getByRole('radio', {
+          name: typeLabel('Year-round', locale),
+          exact: true,
+        })
+        .check();
       await page.route('**/packages*', async (route) => {
         if (route.request().method() === 'POST') await route.abort('failed');
         else await route.continue();
@@ -257,6 +369,15 @@ test.describe('local-stack authenticated package acceptance (required for review
       await expect(
         page.getByRole('status').filter({ hasText: m['packages.saved'] }),
       ).toBeVisible();
+      const wsBCategory = await fixture.po.client.rpc(
+        'create_package_category',
+        {
+          workspace_id: fixture.wsB.id,
+          market: 'Egypt',
+          category_type: 'Year-round',
+        },
+      );
+      expect(wsBCategory.error).toBeNull();
       await page.locator('input[name="nameEn"]').fill('test-stale');
       let release!: () => void;
       let intercepted!: () => void;
@@ -273,7 +394,15 @@ test.describe('local-stack authenticated package acceptance (required for review
         }
         await route.continue();
       });
-      await page.locator('input[name="code"]').fill(`test-pkg-${randomUUID()}`);
+      await page
+        .getByRole('radio', { name: marketLabel('Egypt', locale), exact: true })
+        .check();
+      await page
+        .getByRole('radio', {
+          name: typeLabel('Promotional', locale),
+          exact: true,
+        })
+        .check();
       await page
         .getByRole('button', { name: m['packages.create'], exact: true })
         .click();

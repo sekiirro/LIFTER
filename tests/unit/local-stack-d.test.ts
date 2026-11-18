@@ -34,9 +34,10 @@ describe('isolated local Supabase Stack D contract', () => {
     expect(authSections(stackDConfig)).toBe(authSections(rootConfig));
   });
 
-  it('selects only the configured local stack identifiers', () => {
+  it('selects configured local stack identifiers and rejects unknown stacks', () => {
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'd' })).toBe('d');
-    expect(() => selectStack({ LIFTER_SUPABASE_STACK: 'e' })).toThrow(
+    expect(selectStack({ LIFTER_SUPABASE_STACK: 'e' })).toBe('e');
+    expect(() => selectStack({ LIFTER_SUPABASE_STACK: 'f' })).toThrow(
       'Unsupported local Supabase stack',
     );
   });

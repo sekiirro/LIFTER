@@ -395,7 +395,7 @@ Clarification: these exact strings apply to Arabic only. The T03 digits are West
 | N12.disclaimer | This percentage is an estimate and is not a substitute for measuring body-fat percentage. |
 <!-- prettier-ignore-end -->
 
-The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
+The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. S33-PO-3 approves the Arabic T03 option labels (`2`, `3`, `4`, `5`, `6`) and the Arabic N07 dynamic label (`الوجبة رقم {number}`). Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
 
 #### EN option translations — PO review
 
@@ -415,10 +415,10 @@ The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 en
 | N03.4 | A lot of movement or physically demanding work |
 | T04.less_than_90 | Less than an hour and a half |
 | T04.at_least_90 | An hour and a half or more |
-| N07.2 | Two meals *(pending PO review)* |
-| N07.3 | 3 meals *(pending PO review)* |
-| N07.4 | 4 meals *(pending PO review)* |
-| N07.5 | 5 meals *(pending PO review)* |
+| N07.2 | 2 meals |
+| N07.3 | 3 meals |
+| N07.4 | 4 meals |
+| N07.5 | 5 meals |
 | N07.before_first | Before the first meal |
 | N07.after_meal_n | After meal {n}, for each n from 1 through the selected meal count |
 | N07.no_fixed_time | I don't have a fixed time |
@@ -808,3 +808,7 @@ Architect mapping S52-R1 (mapping, not PO words): retiring a form immediately bl
 ## Clarification — S53-R15 (2026-11-13)
 
 Architect mapping (not PO words): the staff adapter's successful retirement result remains backward-compatible with `FormsStaffResult` and carries the authoritative retired form snapshot. The retirement RPC response remains unchanged; the adapter obtains the snapshot through the existing authorized forms read. The existing `invalid` result is retained if that read cannot confirm the retired form. This is a technical contract correction; it adds no user-visible copy or retirement behavior. No open ambiguities remain for this compatibility fix.
+
+## Clarification — S64-PO-3 T083 (2026-11-17)
+
+PO decision S64-PO-3, verbatim from `C:/Users/NEW LAP/.lifter/runs/s64-po/s64-po-3.verbatim.txt`: "Connection + txn classes" - Retry PostgreSQL class 08 (connection) and class 40 (transaction) errors plus 55P03; unknown and PostgREST errors are permanent. Recovers common disconnects. This resolves MCQ S153-01 (`C:/Users/NEW LAP/.lifter/runs/s63-luna-s153/report.md` line ~24) for spec 015-forms-intake T083 (`lib/forms/telegram-delivery.ts` `prepare_f15_telegram_delivery` errors): SQLSTATE starting "08" or "40", or equal "55P03" maps to the existing bounded `temporary_error` retry (`permanent: false`); every other error (unknown, missing code, PostgREST) maps to the existing permanent `handler_error` dead-letter path (`permanent: true`). Both codes are already allow-listed by `supabase/migrations/20261112025800_f15_allowlisted_job_error_codes.sql`; no raw error detail is persisted or logged. **No open ambiguities remain for T083.**

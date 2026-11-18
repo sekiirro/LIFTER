@@ -9,7 +9,7 @@ import {
 
 // Independent literal oracle: columns are PO, WO, Trainer, Sales (D-09/D-10).
 const expected: Record<Capability, readonly boolean[]> = {
-  generate_recovery_link: [true, true, false, false],
+  generate_recovery_link: [true, true, true, false],
   set_package_pricing: [true, false, false, false],
   generate_registration_link: [true, true, true, true],
   configure_installment_schedule: [true, true, false, true],
@@ -74,6 +74,20 @@ describe('authorize', () => {
   it('treats revoked membership as absent', () => {
     expect(
       authorize({ ...actor, activeWorkspaceIds: [] }, 'coaching_work', 'A'),
+    ).toBe(false);
+  });
+  it('allows generate_recovery_link for trainer in active workspace only and denies sales', () => {
+    expect(authorize(actor, 'generate_recovery_link', 'A')).toBe(true);
+    expect(authorize(actor, 'generate_recovery_link', 'B')).toBe(false);
+    expect(
+      authorize(
+        { ...actor, activeWorkspaceIds: [] },
+        'generate_recovery_link',
+        'A',
+      ),
+    ).toBe(false);
+    expect(
+      authorize({ ...actor, role: 'sales' }, 'generate_recovery_link', 'A'),
     ).toBe(false);
   });
   it('allows PO without memberships for every known capability, denying unknowns', () => {

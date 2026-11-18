@@ -1065,3 +1065,207 @@ applied. No reset, start, provisioning, hosted access, or migration edit occurre
   `pg_get_functiondef`; equality was verified, then the focused detector passed
   8 / 8 executed cases (2 skipped). `git diff --exit-code` over the migration,
   T050 test and fixture returned 0. No live mutant remains.
+
+## S64 S12-3 verification — 2026-11-17 (lane s64-hy4-s123)
+
+Exact head: `de2b1fa7613ec3185e9e20dc0a3352617244b3aa` (fresh `origin/main` at lane
+start; the brief's `02db3a88…` advanced through concurrent merges of PR #231 and
+PR #233 while the worktree was created). Branch `s64-012-verification`, one PR.
+Stack A only, always through
+`node C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs --stack A --workdir <worktree> --allow-stack-a …`
+with `SUPABASE_SAFE_CLI` and `LIFTER_SUPABASE_STACK=a`; project `lifter`, API
+54321 / DB 54322, password classification `default` (no value read or printed).
+`db reset --local` applied the full migration chain through `20261122120000`,
+and the approved `tests/integration/client-accounts-provision.mjs` was run after
+each reset. `SIGNUP_*` values were loaded in-process by an untracked runner and
+redacted from all output. `PLAYWRIGHT_PORT=3000` was owned by this lane. Hosted,
+production and backup gates: **NOT EXECUTED** (out of scope). No other stack,
+worktree, branch or PR was touched.
+
+### T043 — staff/client e2e, axe and rendered matrix (GREEN)
+
+Command (Stack A env injected; `PLAYWRIGHT_PORT=3000`):
+`npx playwright test tests/e2e/registration-approval-a11y.spec.ts tests/e2e/registration-approval.spec.ts --workers=1`.
+Result: **4 passed / 0 failed** (44.1 s). Full log:
+`C:/Users/NEW LAP/.lifter/runs/s64-hy4-s123/e2e-registration-approval.log`.
+
+- Twelve-cell pending-status matrix: AR-RTL and EN-LTR × light/dark × mobile
+  390 / tablet 768×1024 / desktop 1440, each asserting the pending heading,
+  refresh control, `html[dir]`, absence of any P2 form/textbox, axe
+  (`wcag2a,wcag2aa,wcag21aa,wcag22aa`) with **0 serious and 0 critical**
+  violations, and a full-page screenshot.
+- Staff/client journeys: client, Trainer and Sales denial of
+  `/registration-approvals`; Trainer/Sales can enter `/payments`; PO approval
+  with the 400 + 800 XTS issued schedule and pre-activation 800 XTS collection
+  guard; PO-only correction of the recorded first collection; WO correction
+  control absent; client sees approved state and the manual home link; PO
+  rejection then reconsideration observed on the same signed client session
+  after manual refresh. Review, payment and approved-status screens were also
+  axe-scanned with 0 serious/critical violations.
+- The 12 regenerated status screenshots were byte-identical to the retained
+  baseline: `git status` stayed clean with 18/18 tracked PNGs in
+  `tests/integration/evidence/f12-u9/` (eight status viewports, four
+  workspace-brand/tablet images, review and payment screens). OS-temp copies:
+  `%TEMP%\lifter-f12-u9`.
+- The RED half of this gate was authored and captured in the S14 U9 addendum of
+  this document (pre-implementation missing-module/copy failures); this lane
+  re-executed the authored journeys and the GREEN gate on the exact head above.
+
+### T044 — mutation campaign Q-M01..Q-M24 (PARTIAL on this head)
+
+Seventeen mutants were executed on this exact head with a reversible defect,
+a focused detector failing at a meaningful assertion, an unconditional restore
+in `finally`, and the identical detector passing again. Full per-mutant logs:
+`C:/Users/NEW LAP/.lifter/runs/s64-hy4-s123/mutation-<ID>.log`.
+
+| ID    | Reversible defect and detector                                                                                       | Observed RED → restored GREEN                 |
+| ----- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Q-M01 | Sales `approve_registration` added to the TS capability matrix; `registration-approval-capabilities.test.ts`         | 1 failed → 1 passed                           |
+| Q-M07 | Commission tie addend `5000n` → `4999n`; `registration-approval-money.test.ts` (ties)                                | 1 failed / 4 skipped → 1 passed / 4 skipped   |
+| Q-M14 | Request-scoped self-status cache replaced by a module-global promise; `client-access.test.ts`                        | 4 failed / 2 passed → 6 passed                |
+| Q-M18 | Caller input written in the action error catch; `registration-approval-actions.test.ts` (does not log caller input)  | 1 failed / 34 skipped → 1 passed / 34 skipped |
+| Q-M19 | Upfront/count correspondence checks removed; `registration-links-flexible.test.ts`                                   | 2 failed / 13 passed → 15 passed              |
+| Q-M20 | Every second transported offset forced to 30; `registration-links-actions.test.ts`                                   | 2 failed / 48 skipped → 2 passed / 48 skipped |
+| Q-M24 | Payment request-key store regenerates on every call; `registration-approval-payment-request-keys.test.ts`            | 2 failed / 1 passed → 3 passed                |
+| Q-M02 | SQL-only Sales approval grant in `role_has_capability`; `matrix-parity.test.ts`                                      | 7 failed / 429 passed → 436 passed            |
+| Q-M04 | `NO FORCE ROW LEVEL SECURITY` on `public.subscriptions`; `registration-approval-schema.test.ts`                      | 1 failed / 6 passed → 7 passed                |
+| Q-M05 | `f12_payment_root` unique index dropped; `registration-approval-integrity.test.ts`                                   | 1 failed / 28 skipped → 1 passed / 28 skipped |
+| Q-M06 | `f12_no_update` trigger disabled on subscriptions; `registration-approval-integrity.test.ts`                         | 1 failed / 6 passed → 7 passed                |
+| Q-M10 | Canonical receipt-hash comparison bypassed in `f12_u3_operation`; `registration-approval-replay.test.ts`             | 1 failed / 16 skipped → 1 passed / 16 skipped |
+| Q-M11 | Post-wait lock authorization forced true in `f12_u3_lock_authorization`; `registration-approval-replay.test.ts`      | 1 failed / 1 passed → 2 passed                |
+| Q-M12 | Three deferred integrity triggers disabled; `registration-approval-integrity.test.ts`                                | 1 failed / 28 skipped → 1 passed / 28 skipped |
+| Q-M15 | `commission_rate_bp` added to the safe payment-status projection; `registration-approval-reads.test.ts`              | 1 failed / 9 skipped → 1 passed / 9 skipped   |
+| Q-M16 | Later due dates derived from subscription creation instead of activation; `registration-approval-activation.test.ts` | 1 failed / 1 skipped → 1 passed / 1 skipped   |
+| Q-M17 | Approval fact insert omitted in `f12_u3_purchase`; `registration-approval-audit.test.ts`                             | 1 failed / 6 skipped → 1 passed / 6 skipped   |
+
+After the campaign a read-only catalog assertion confirmed all restored state:
+forced RLS on subscriptions = true, `f12_no_update` enabled, `f12_payment_root`
+present, all three deferred integrity triggers enabled. `git status --short`
+was empty: no mutant, scratch driver or env file was staged.
+
+Survivor / gap: Q-M23 (poll while hidden / budget / one-in-flight). Two source
+mutants were applied to `components/registration-approval/status-polling.ts`
+(removing the `runtime.visible()` guards in `schedule()` and in `run()`), but
+`registration-approval-status-page.test.ts -t 'pauses while hidden or offline'`
+still passed (0 failed) in both attempts. This is recorded as a **surviving
+mutant / detector gap**, not as a killed mutation. Not executed on this head:
+Q-M03, Q-M08, Q-M09, Q-M13, Q-M21 and Q-M22; their historical RED/GREEN records
+remain in the U2/U3/U4 and S14 sections above and are cited here rather than
+claimed as re-executed. Accordingly **T044 stays unticked**.
+
+### T045 — full gate record (HEAD de2b1fa7)
+
+| Gate                                      | Result                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run typecheck`                       | PASS                                                                                                                                                                                                                                                                                                     |
+| `npm run lint`                            | PASS (`--max-warnings=0`)                                                                                                                                                                                                                                                                                |
+| `npm run format:check`                    | PASS                                                                                                                                                                                                                                                                                                     |
+| `node scripts/format-check-changed.mjs`   | PASS (see T047 push record)                                                                                                                                                                                                                                                                              |
+| `npm test`                                | **3519 passed / 1 failed / 3520** on two consecutive runs. The single failure is the pre-existing F17 property test `workout-document-property.test.ts` (29.7 s > 20 s timeout), unrelated to F12; HEAD is pristine origin/main for code.                                                                |
+| Stack A `npm run test:integration`        | **194 files passed / 5 skipped; 2344 passed / 1 expected fail / 6 skipped / 5 todo (2356)**, 1200.61 s, after reset and provisioning. The shell's exit 1 was a PowerShell stderr artifact (DEP0190), not a test failure.                                                                                 |
+| Focused e2e + axe (T043 above)            | **4 passed / 0 failed**                                                                                                                                                                                                                                                                                  |
+| `npm run build`                           | PASS                                                                                                                                                                                                                                                                                                     |
+| `npm run build:edge`                      | PASS after a local-only node_modules workaround for a Windows `symlinkSync` EPERM in OpenNext (copy instead of symlink on EPERM); no committed source changed. CI on Linux needs no workaround.                                                                                                          |
+| `npm run check:secrets`                   | PASS (rerun after `npm run build`)                                                                                                                                                                                                                                                                       |
+| `npm run size`                            | PASS (rerun after `build:edge`): web 11,518.85 KiB / 2,324.09 KiB gzip; cron 11.76 KiB / 3.53 KiB gzip; both far below 65,536 KiB.                                                                                                                                                                       |
+| `npm run check:migration-timestamps`      | PASS (300 versions, 11 documented exceptions)                                                                                                                                                                                                                                                            |
+| `npm run check:migration-versions:remote` | **GAP — external blocker**: `20261123000000` maps to two different filenames on other lanes' refs (f22 on `022-impl-client-portal`/`pr/108`; f23 on `023-impl-client-progress`/`024-impl-client-leaderboard`/`pr/109`/`pr/110`). Those PRs are explicitly out of this lane's scope and were not touched. |
+| `git diff --check`                        | PASS (see T047 push record)                                                                                                                                                                                                                                                                              |
+
+Regression coverage inside the green integration run includes F11 signup /
+admission / recovery, F9 package/market, F10 registration links, the
+bidirectional TS↔SQL capability matrix, audit, RLS catalog and recovery suites.
+Money, isolation and log-scrub behavior are exercised by the killed mutants
+above (Q-M07/M08-historical/M15/M19/M21-historical and Q-M01..04/M09..11/M14);
+no P2 form or P4 activation writer behavior is claimed from fixture seams.
+Frontend review: the design-gate checklist recorded in the U7 and U8 addenda
+above plus the rendered T043 matrix; no new token, dependency or motion was
+added by this lane.
+
+### T046 — traceability reconciliation
+
+No FR/SC, acceptance-scenario or plan design text changed in this slice, so the
+2026-11-17 status-only Analyze revalidation remains current and no full Analyze
+re-run is required. `specs/012-registration-approval/traceability.md` gains an
+S64 addendum tying the S64 evidence to the mapped FR/SC rows; all 29 FRs and 11
+SCs remain mapped (40/40). Bounded ownership deltas: none — T048 remains the
+architect's review, T053/T054 remain PARTIAL pending the COPY-F12-T054 PO
+strings, and the S47-PO-12 deletion-state clauses remain owned by unticked T055.
+Correction operationality evidence is the exact-original reversal suite plus
+the Q-M08/M22 historical mutation records; production B4/hosted/backup gates
+remain outstanding.
+
+### T047 — retained artifacts and exact-head CI
+
+The 18 retained rendered PNGs in `tests/integration/evidence/f12-u9/` were
+regenerated by the T043 run and are byte-identical to the committed baseline
+(`git status --short` clean after the run). Lane-local full outputs are retained
+under `C:/Users/NEW LAP/.lifter/runs/s64-hy4-s123/`.
+
+Exact-head `pull_request` tuple (pasted from `git rev-parse HEAD` and `gh api`):
+
+| Field                | Value                                                                       |
+| -------------------- | --------------------------------------------------------------------------- |
+| PR                   | #236 — https://github.com/sekiirro/LIFTER/pull/236                          |
+| Head SHA             | `1272d8ef2bf253edfdf7f66fd75b5c68fdffdada`                                  |
+| Base SHA             | `12b042f8cfe206a500ee69641a09b0a2fec3a070`                                  |
+| Merge-result SHA     | `665a7f861d7c8492711aa3e5dcd9e95cd996e93c`                                  |
+| CI run               | `44184629061` — https://github.com/sekiirro/LIFTER/actions/runs/44184629061 |
+| Trigger / conclusion | `pull_request` / **success** (all required jobs success)                    |
+
+Executed jobs and conclusions (all required jobs executed steps > 0):
+
+- `docs-only` pass (7 s), job 134397722670.
+- `validate` pass (4 m 38 s), job 134397723272 — includes `spec-consistency`,
+  migration timestamp check, typecheck, lint, both format gates, full `npm test`
+  (the F17 property test passes on the Linux runner, confirming the local
+  timeout is host-bound), `build:edge`, `check:secrets`, `build:cron` and `size`.
+- `integration shard 1/3` pass (10 m 13 s), job 134397811358.
+- `integration shard 2/3` pass (13 m 29 s), job 134397811461.
+- `integration shard 3/3` pass (15 m 18 s), job 134397811346.
+- `storage` pass (7 m 49 s), job 134397811173.
+- `integration` pass (5 s), job 134406997393.
+- `CodeRabbit` skipped by configuration; no AI review was requested by this lane.
+
+The PR was not merged and no merge approval was requested. T048 (architect
+review) remains the reviewer's task.
+
+## S65 T053/T054 execution supplement — 2026-11-18
+
+- Source base: `origin/main` `2cc6e2edab094979d1ca9c180e02b802ac50ce2c`; branch `s65-012-t054`.
+- Copy added append-only to `lib/i18n/messages/en.ts` and `ar.ts`, with exact PO S65-PO-8 values for `registration.upfrontAmount`, `registration.paymentCount`, `registration.defaultSplit`, and `registration.timingAnchorNote`. Duplicate scan found one occurrence of each key per locale. Message parity/value test passed (5/5).
+- RED: new labelled-control assertion failed because the UI had no `registration.upfrontAmount` field; default residual test failed because no such control existed. GREEN: `npx vitest run tests/unit/registration-links-dialog.test.ts tests/unit/registration-links-flexible-ui.test.ts tests/unit/registration-approval-messages.test.ts` passed, 33/33 tests.
+- UI coverage now asserts blank upfront default (no arbitrary amount), default residual computed with BigInt and offset 30, full-price upfront as one payment without a zero remainder, explicit payment count and custom row amounts/offsets, exact live total, no silent row-value rewrite after count changes, manager summary, locale parity, and role-gated editor visibility. Existing show-once URL and privacy cases remain in the dialog suite.
+- No database operation or e2e test was run. T050/T051 Stack A evidence is the S63 supplement above. Real rendered Stack A matrix and e2e remain U9 and are not claimed here.
+- Frontend source review: existing `Field`, `Button`, and dialog primitives retained; CSS uses design tokens and logical properties; no color/font/radius/motion/dependency added. Unit component tests passed; rendered light/dark × AR/EN × mobile/desktop screenshots and axe were not run in this scope.
+
+### S65 U1F money-math mutation check - 2026-11-18
+
+- Mutation M1: changed the default residual expression from `priceMinor - upfront` to `priceMinor - upfront + 1n` in `RegistrationLinkDialog.tsx`.
+- RED detector: `npm run test:unit -- --pool=threads --maxWorkers=4 tests/unit/registration-links-flexible-ui.test.ts -t "derives the exact residual"` failed (1 failed, 4 skipped): invalid exact total prevented the issue action, so the expected exact payment terms were absent.
+- Restored the original expression; the same detector passed (1 passed, 4 skipped). No mutant remains. DB-free UI arithmetic only; no Stack A/DB operation.
+- The separate latest full unit (307 files / 3533), targeted U1F suites (34/34), build/typecheck/lint/format gates, and exact-head CI run `44238676868` were green before this evidence-only documentation update. The updated docs need a new exact-head run.
+
+## S65 T056 — FR-022 distribution-job emit (Stack B)
+
+- **Base `origin/main`:** `e5523b64c01d0bd4b4eea6d300b8e770dd2db516`
+- **Environment:** Node `v24.19.0`, Vitest `5.1.0`, PostgreSQL `public.ecr.aws/supabase/postgres:17.11.0.006` (Stack B `lifter-stack-b`, API `25421`, DB `25422`)
+- **Migration:** `supabase/migrations/20261124120000_f12_approval_distribution_job_emit.sql` (replaces `app_private.f12_u3_purchase` to capture `registration_approval_events.id` and call `app_private.enqueue_client_trainer_distribution_job(ws, cid, aid)` inside the approval/reconsideration transaction; `20261101121000_registration_approval_operations.sql` untouched)
+
+### RED -> GREEN
+
+1. **RED** (`tests/integration/registration-approval-operations.test.ts`, pre-migration): 26 tests | 3 failed (`T056 approval enqueues one distribution job in the same transaction and keeps approval fact untouched`, `T056 rolled-back approval writes no job and retry writes exactly one`, `T056 rejection and denied approval enqueue no distribution job; reconsideration enqueues one` — all 3 failed because 0 `client.distribution` jobs were emitted) | 23 passed.
+2. **GREEN** after `db reset --local` + `client-accounts-provision.mjs`:
+   - `tests/integration/registration-approval-operations.test.ts`: 1 file passed | 26 passed.
+   - Touched integration suites (9 files: 6 core F12 files + `client-trainer-distribution.test.ts`, `rls-catalog.test.ts`, `matrix-parity.test.ts`): 9 files passed | 591 passed.
+   - Remaining 6 F12 integration files (`activation`, `client-access`, `correction-ambiguity`, `corrections`, `payments`, `reads`): 6 files passed | 52 passed.
+   - Full unit suite (`npm test -- --maxWorkers=4`): 307 files passed | 3536 passed.
+
+### Mutation Evidence (T056)
+
+Both required mutations executed on Stack B against `tests/integration/registration-approval-operations.test.ts -t T056`, restored identically (`pg_get_functiondef` equality + `git diff` clean for historical migrations), and re-verified GREEN:
+
+| Mutant  | Reversible defect                                                                                                                                                                                                                                                               | Observed RED -> restored GREEN                 |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| T056-M1 | Drop `perform app_private.enqueue_client_trainer_distribution_job(ws, cid, aid);` in `app_private.f12_u3_purchase` (`supabase/migrations/20261124120000_f12_approval_distribution_job_emit.sql:43`)                                                                             | 3 failed / 23 skipped -> 3 passed / 23 skipped |
+| T056-M2 | Break dedupe key prefix `'client.distribution:'` -> `'broken.distribution:'` in `app_private.enqueue_client_trainer_distribution_job` (`supabase/migrations/20261124040000_f11_client_trainer_distribution.sql:78`, live Stack B def only; historical migration file untouched) | 3 failed / 23 skipped -> 3 passed / 23 skipped |

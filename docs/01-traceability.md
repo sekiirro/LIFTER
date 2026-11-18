@@ -52,7 +52,7 @@ Journeys = PRD-14 (A–G). `AT-*` = proposed acceptance test ids; each becomes a
 3. Freeze behavior: limits, extension and who triggers it.
 4. Workspace lifecycle states (suspend/archive): named, but not defined.
 5. Branding, password reset, strikes, departure and PO aggregates have no acceptance checks or journeys. The AT ids above fill that.
-6. Client code format for bot lookup is unspecified. Proposed: a random per-workspace code, not sequential (to prevent enumeration).
+6. ~~Client code format for bot lookup is unspecified. Proposed: a random per-workspace code, not sequential (to prevent enumeration).~~ RESOLVED by S66-PO-1 (PO: "A: Random code (Recommended)"): random per-workspace 8-character code, displayed XXXX-XXXX, specified as spec 011 FR-029.
 
 ## S20 canonical feature traceability
 

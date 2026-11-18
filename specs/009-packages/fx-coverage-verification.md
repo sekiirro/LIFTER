@@ -105,3 +105,29 @@ The API metadata gives URLs only; it does not state licence, redistribution or r
 ### Accepted residual risk (T062 finding 2)
 
 A blended series that happens to be served for a `SAMA`-pinned request cannot be detected: `SAMA` publishes every calendar day, so no row is off-calendar, and rows do not name their provider. For `CBE` the Friday/Saturday check catches a blend. This residual risk is accepted pending PO/architect confirmation; mitigations are the explicit `providers=` pin, pair/shape validation and the per-pair plausibility bounds.
+
+## S65 re-verification (T075, lane s65-muse-f9fx)
+
+**Re-verified**: 2026-11-18 by live `curl.exe GET` (no auth, no body) against `https://api.frankfurter.dev/v2`. Observation date = today; `end_date` moved to 2026-11-17/18 since the S61-PO-1 check, as expected for a live service.
+
+### Provider and currency listings
+
+| Request URL                                 | HTTP | Response fields (abridged)                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `https://api.frankfurter.dev/v2/currencies` | 200  | Array of `{iso_code, iso_numeric, name, symbol, type, start_date, end_date}`; `EGP` (Egyptian Pound, 1994-03-24..2026-11-17), `SAR` (1986-06-01..2026-11-18), `USD` (1948-06-21..2026-11-18) all present                                                                                                                                                                                                       |
+| `https://api.frankfurter.dev/v2/providers`  | 200  | 112 providers, each `{key, name, country_code, rate_type, pivot_currency, data_url, terms_url, start_date, end_date, publish_cadence, frequency, publishes_missed, currencies[], datasets[]}`; `CBE` (Central Bank of Egypt, official rate, pivot EGP, 2024-03-03..2026-11-17, lists USD+SAR) and `SAMA` (Saudi Central Bank, indicative rate, pivot SAR, 2021-04-10..2026-11-17, lists EGP+USD+SAR) confirmed |
+
+### Pinned historical rates (exact URLs queried)
+
+Response rows carry exactly `{date, base, quote, rate}` (numeric rate), matching the `validateFxResponse` allow-list; anything else is rejected.
+
+| Currency                     | Request URL                                                                                             | HTTP | Rows observed                                                                                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `USD` via `CBE`              | `https://api.frankfurter.dev/v2/rates?base=USD&quotes=EGP&providers=CBE&from=2026-11-01&to=2026-11-15`  | 200  | 11 rows: 11-01..11-05 (Sun-Thu), 11-08..11-12 (Sun-Thu), 11-15 (Sun). No Fri 11-06/11-13 or Sat 11-07/11-14 rows. Rates 53.31825..55.7884 (within 1..1000).                             |
+| `SAR` via `SAMA`             | `https://api.frankfurter.dev/v2/rates?base=SAR&quotes=EGP&providers=SAMA&from=2026-11-01&to=2026-11-15` | 200  | 15 rows, every calendar day 11-01..11-15 incl. Fri/Sat (weekend rows repeat the prior value, e.g. 14.3802 on 11-07..11-09). Rates 14.2066..14.9343 (within 0.5..300).                   |
+| `USD` via `CBE`, holiday run | `https://api.frankfurter.dev/v2/rates?base=USD&quotes=EGP&providers=CBE&from=2026-05-24&to=2026-06-01`  | 200  | 3 rows: 05-24 (52.31575), 05-25 (52.2894), 06-01 (52.0063). Holiday run 05-26..28 plus Fri/Sat 05-29/30 and Sun 05-31 absent: fallback to the latest earlier valid publication applies. |
+| `EGP`                        | none (identity)                                                                                         | n/a  | Exactly 1, no lookup. Listing above confirms EGP is a known currency.                                                                                                                   |
+
+### Verdict
+
+`EGP`, `USD` (via `CBE`), `SAR` (via `SAMA`) all have verified historical coverage on the pinned provider's own calendar. No coverage gap: no blocker from coverage. Per architect ruling S65-R7, provider terms-of-use verification is a pre-production item, not a T059 acceptance blocker; it is recorded here as Remaining (see T062, which is not this lane).

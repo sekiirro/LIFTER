@@ -195,12 +195,45 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
     ).toEqual([]);
   });
 
-  it('renders the approved N11 minimum label in English and preserves Arabic', () => {
+  it('renders the approved N11 minimum, middle, and maximum labels in English and preserves Arabic', () => {
     expect(resolveFormLabel(question('N11').labels.minimum, 'en')).toBe(
       'I barely feel hungry',
     );
     expect(resolveFormLabel(question('N11').labels.minimum, 'ar')).toBe(
       'مش بجوع تقريبًا',
+    );
+    expect(resolveFormLabel(question('N11').labels.middle, 'en')).toBe(
+      'Moderate hunger',
+    );
+    expect(resolveFormLabel(question('N11').labels.middle, 'ar')).toBe(
+      'جوع متوسط',
+    );
+    expect(resolveFormLabel(question('N11').labels.maximum, 'en')).toBe(
+      'Very strong hunger',
+    );
+    expect(resolveFormLabel(question('N11').labels.maximum, 'ar')).toBe(
+      'جوع شديد جدًا',
+    );
+  });
+
+  it('reconciles the spec EN option translation table with S34-PO-4 and S33-PO-3 approvals', () => {
+    const spec = readFileSync(
+      resolve(root, 'specs/015-forms-intake/spec.md'),
+      'utf8',
+    );
+    expect(spec).toContain('| N07.2 | 2 meals |');
+    expect(spec).toContain('| N07.3 | 3 meals |');
+    expect(spec).toContain('| N07.4 | 4 meals |');
+    expect(spec).toContain('| N07.5 | 5 meals |');
+    expect(spec).not.toContain('Two meals *(pending PO review)*');
+    expect(spec).not.toContain(
+      'T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship.',
+    );
+    expect(spec).toContain(
+      '| N08.medium.foods | Eggs / chicken / meat / toast / fish *(pending PO review)* |',
+    );
+    expect(spec).toContain(
+      '| N08.high.foods | Salmon / smoked turkey / steak / ribeye *(pending PO review)* |',
     );
   });
 });

@@ -114,6 +114,7 @@ for (const locale of ['ar', 'en'] as const)
       const response = await page.goto(`/register/${token}`);
       expect(response!.status()).toBe(200);
       expect(response!.headers()['referrer-policy']).toBe('no-referrer');
+      expect(response!.headers()['cache-control']).toContain('private');
       expect(response!.headers()['cache-control']).toContain('no-store');
       await expect(
         page.getByRole('heading', { name: m['registration.publicInvalid'] }),
@@ -131,6 +132,11 @@ for (const locale of ['ar', 'en'] as const)
       '/register/a/b',
       `/register/${'a'.repeat(43)}/extra`,
     ]) {
+      const redirect = await page.request.get(`${origin}${path}`, {
+        maxRedirects: 0,
+      });
+      expect(redirect.headers()['cache-control']).toContain('private');
+      expect(redirect.headers()['cache-control']).toContain('no-store');
       await page.goto(path);
       await expect(page).toHaveURL(/\/login\/?$/);
       expect(page.url()).not.toContain(
@@ -229,6 +235,9 @@ test.describe('local public registration states (required for review)', () => {
         expect(response!.status(), cause).toBe(200);
         expect(response!.headers()['referrer-policy'], cause).toBe(
           'no-referrer',
+        );
+        expect(response!.headers()['cache-control'], cause).toContain(
+          'private',
         );
         expect(response!.headers()['cache-control'], cause).toContain(
           'no-store',

@@ -9,8 +9,8 @@ import type { Sql, TransactionSql } from 'postgres';
 import {
   checked,
   createLegacySynthetic,
+  createLegacyPublishedSynthetic,
   packagesFixture,
-  publish,
   publishedFixture,
   sql,
   type PackagesFixture,
@@ -100,8 +100,7 @@ async function expectRefused(
 }
 
 async function legacyMock(workspaces: string[] = [f.wsA.id]) {
-  const mock = await createLegacySynthetic(f);
-  checked(await publish(f, mock.id, { tier_rank: 1 }));
+  const mock = await createLegacyPublishedSynthetic(f);
   for (const [i, ws] of workspaces.entries())
     if (ws !== f.wsA.id)
       await db`
@@ -615,8 +614,8 @@ describe('T065 dependent-category refusals (nothing is written)', () => {
       'a client',
       'public.clients.package_version_id',
       'client',
-      `insert into public.clients(workspace_id,auth_user_id,registration_link_id,package_version_id,email_normalized,phone_e164,name)
-         values ('@ws',gen_random_uuid(),gen_random_uuid(),'@ver','t065@example.test','+15550100065','Test Client')`,
+      `insert into public.clients(workspace_id,auth_user_id,registration_link_id,package_version_id,email_normalized,phone_e164,name,client_code)
+         values ('@ws',gen_random_uuid(),gen_random_uuid(),'@ver','t065@example.test','+15550100065','Test Client','TEST2265')`,
     ],
     [
       'a subscription',

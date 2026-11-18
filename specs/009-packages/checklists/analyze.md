@@ -1,7 +1,10 @@
 # Spec Kit Analyze — F9 S43-PO-8 tier offer identity amendment
 
-**Analyzed:** 2026-11-14 17:07 UTC
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
+**Status-only refresh (2026-11-18 — S65 US5 PR2):** No requirement text changed; task status (`T040`, `T041`, `T043`, `T045`) and traceability evidence were updated only. 0 open CRITICAL/HIGH findings remain.
 **Method:** Reconciled FR-002, S43-PO-8 acceptance scenarios, offer logical key and uniqueness, publication input, T077 tags, plan, data model, contract, traceability, and availability-independent tier reads; verified the forward-only migration boundary.
+
+**S64-R20 review update:** Rechecked FR-024/FR-030 and the existing plan text against T056/T057 evidence. Supplied bounds are Cairo calendar dates with inclusive start/exclusive end; an absent start remains tied to the package creation instant. PostgreSQL tzdata boundary tests cover 2026 standard and daylight offsets. No requirement or acceptance text changed; no open CRITICAL/HIGH finding remains for this slice.
 
 ## Entry check
 
@@ -42,7 +45,7 @@
 
 ## S45 R3 review-fix analysis
 
-**Analyzed:** 2026-11-11 00:51 Africa/Cairo
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
 **Scope:** CodeRabbit round-3 fixes in the baseline/forward-contract descriptions and FR-002 traceability.
 
 - PASS: FR-002 remains rank-inclusive only in the planned delta; the shipped baseline and its old publication signature are described without tier_rank.
@@ -256,7 +259,7 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 ## 2026-11-16 S61-PO-1 (FX=B) full Analyze (Africa/Cairo)
 
-**Analyzed:** 2026-11-16 (Africa/Cairo), full cross-artifact pass over `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/packages-surface.md`, `quickstart.md`, `tasks.md`, `traceability.md`, `fx-coverage-verification.md` and `docs/04-changes-and-questions.md`.
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
 **Trigger:** PO decision S61-PO-1 "FX=B": Frankfurter v2 pinned to one named provider per currency on that provider's own publication calendar; amend FR-026, SC-017 and the T058 calendar fixtures.
 **Entry gate:** PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the amendment.
 
@@ -272,14 +275,14 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 ## 2026-11-16 Analyze (T064a/T064b record update; re-dated, no new product requirement)
 
-**Analyzed:** 2026-11-16. Recorded S61-PO-2 (Teardown Q1=A, Q2=A, Q3=A) in FR-006, FR-028, review.md and the decision register; folded independent review #1 conditions (PASS-WITH-CONDITIONS) into the T064b design (operator cleanup script, not a migration); T065 and `c5-audit-evidence.md` wording aligned; the preflight contract gained `real_catalog_row` and the Q1=A audit semantics. No FR/SC acceptance text changed beyond these decision references.
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
 
 - PASS: FR-006/FR-028 now cite the decision IDs; T065 names the operator script; the contract refusal codes match the T064a implementation.
 - PASS: this Analyze follows the latest spec, plan and task edits. 0 CRITICAL, 0 HIGH. T064b remains unticked pending independent re-review.
 
 ## 2026-11-16 S61-PO-1 T062 review fold-in Analyze (Africa/Cairo)
 
-**Analyzed:** 2026-11-16 (Africa/Cairo), full pass over spec FR-026, `fx-coverage-verification.md`, `lib/packages/fx.ts` and the FX tests after the independent T062 review (PASS-WITH-CONDITIONS).
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
 
 - PASS (finding 1, MEDIUM): FR-026 now forbids freezing a rate before provider publication provably passed the day before the transaction (row dated on or after the Cairo date, or `FX_SETTLE_DAYS` = 3); otherwise pending; ready snapshots stay immutable. **`FX_SETTLE_DAYS` = 3 is an architect parameter needing PO/architect confirmation.** Tests cover Monday 00:30 Cairo before the Sunday row (pending), after the row and after the settle period (ready).
 - PASS (finding 4): `Object.hasOwn` pin guard before any network call and in `selectFxSnapshot`; tests for `EUR`, `constructor`, `__proto__`.
@@ -291,21 +294,21 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 ## 2026-11-16 Analyze (T064b re-review N1-N6 and T065 record update; re-dated, no new product requirement)
 
-**Analyzed:** 2026-11-16. Re-review N1 defined "deletable" (FR-028, T065, `c5-audit-evidence.md`, review.md control 3, preflight contract); N2-N5 are implemented by the forward migration `20261121110000_f9_c5_package_preflight_v2.sql`; N6 lists the expected trigger set in review.md; T065 is implemented as an operator cleanup script outside `supabase/migrations` with integration tests (not yet executed in CI). No FR/SC acceptance text changed beyond the deletable definition.
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
 
 - PASS: FR-028, T065, review.md and the contract agree on the deletable definition and the NULL/empty input rules.
 - PASS: this Analyze follows the latest spec, plan and task edits. 0 CRITICAL, 0 HIGH. T064b remains unticked pending the independent re-review verdict; T065 unticked pending CI evidence.
 
 ## 2026-11-16 Analyze (task ticks and review record, no requirement change)
 
-**Analyzed:** 2026-11-16. T052, T053, T058, T064, T064a and T064b ticked from exact-head CI evidence (PR #174 head 6073d263); review.md records the independent reviews and the closure of T064b. No FR, SC, acceptance scenario or plan design text changed.
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
 
 - PASS: tick evidence matches executed CI; T059, T062, T065, T070, T075 and T076 stay unticked with their blockers recorded (provider terms of use unverified; T070 conditions not re-reviewed; T076 retirement contract missing).
 - Findings: 0 open CRITICAL, 0 open HIGH. **No open ambiguities** beyond the recorded architect parameters (FX_SETTLE_DAYS, rate bounds).
 
 ## 2026-11-16 Analyze (S61-PO-3 decision recorded)
 
-**Analyzed:** 2026-11-16. S61-PO-3 confirms FX_SETTLE_DAYS=3, the rate bounds, CBE for USD to EGP and the childless-mock rule. spec.md FR-026 now cites the decision instead of "awaiting confirmation". No other requirement text changed.
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
 
 - PASS: FR-026 matches the decision log.
 - Remaining blockers unchanged: provider terms of use (T059/T062/T075), T070 re-review, T076 retirement contract.
@@ -313,7 +316,23 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 
 ## 2026-11-17 Analyze (merge audit; task-status only)
 
-**Analyzed:** 2026-11-17 02:29 UTC. Reviewed the merged F9 task-status evidence and review record, reconciled traceability with verified tasks, and confirmed no FR, SC, acceptance scenario, or plan design text changed. T064b is unticked because the recorded T065 script predates the T064b PASS.
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
 
 - PASS: requirements and product decisions unchanged; no new product ambiguity. 0 CRITICAL, 0 HIGH requirement findings.
 - FOLLOW-UP: architect to determine whether the T064b sequencing exception is acceptable for merge, or what additional evidence is required. T065 remains unticked and no teardown has run.
+
+## 2026-11-18 Analyze (T064b design re-authored; task-status only)
+
+**Analyzed:** 2026-11-18 07:08 Africa/Cairo
+
+- PASS: no FR, SC, acceptance-scenario or plan requirement text changed — only task-status text and the new design/review document. The FR-028 pointer to "review.md section 4" is read as pointing at the T064b design; reconciling that pointer's wording is left to the architect (noted in the design header). 0 open CRITICAL, 0 HIGH.
+- PASS: T064b remains unticked pending an independent security review of the new design by a different agent; T065 implements no deletion until that PASS; no teardown has run on any stack.
+
+## 2026-11-18T05:43:55Z Analyze — T064b round-2 security re-review PASS (gate status only)
+
+**Analyzed:** 2026-11-18T05:43:55Z. Trigger: the independent round-2 security re-review of the T064b teardown design recorded its verdict; this note reconciles task/traceability status only.
+
+- Scope: `specs/009-packages/reviews/t064b-teardown-design.md` at PR #259 head `537033312e5a94cf3235084978329c5e424891a7` (PR #259 not merged; branch `s65-009-t064brev2` on that head), round-1 review `t064b-security-review.md` (FAIL, 3 BLOCKING) and round-2 re-review `t064b-security-review-r2.md` (**PASS** — all 3 BLOCKING items resolved with file:line evidence; full design re-check clean; no new BLOCKING issue).
+- PASS: no FR, SC, acceptance-scenario, plan or PO-decision text changed — only the T064b checkbox, its status note, traceability rows and this dated note. Per S54-R6 no full re-Analyze of requirements is triggered.
+- PASS: `tasks.md` T064b is ticked citing both reviews and the design; the earlier "leave unticked pending an architect ruling" continuation is closed by architect ruling S65-R8 (the T065 script is an unaccepted draft that did not shape the design). `traceability.md` FR-022/FR-028 rows and the T064b evidence line now reflect the PASS.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity introduced. T065 remains unticked pending its implementation/CI evidence and divergence reconciliation (D2/D3/D8/D9/D10/D11); T070 remains the post-implementation acceptance review; no teardown has run on any stack.
