@@ -112,6 +112,9 @@ export const ar = {
   'packages.retry': 'إعادة المحاولة',
   'auth.signInTitle': 'تسجيل الدخول',
   'auth.email': 'البريد الإلكتروني',
+  'auth.staffResetEmailSubject': 'غيّر كلمة السر بتاعتك في LIFTER',
+  'auth.staffResetEmailBody':
+    'استخدم اللينك اللي تحت عشان تغيّر كلمة السر بتاعتك في LIFTER. صلاحية اللينك بتنتهي بعد 60 دقيقة، وتقدر تستخدمه مرة واحدة بس. لو ما طلبتش الرسالة دي، تقدر تتجاهلها.',
   'auth.password': 'كلمة المرور',
   'auth.signIn': 'دخول',
   'auth.invalid_credentials': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
