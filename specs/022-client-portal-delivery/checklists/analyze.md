@@ -1,7 +1,20 @@
 # Analyze: Client Portal Delivery
 
-**Date**: 2026-11-14 (after tasks refinement; requirements unchanged)
-**Inputs**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, PO S56-PO-4
+**Date**: 2026-11-17 (Round 5 re-check after the contract addition and tasks.md status edits below; the 2026-11-15 full Analyze of the S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12 and S57-PO-13 changes still holds)
+**Inputs**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, `copy-proposal.md`, PO S56-PO-4, S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12, S57-PO-13
+
+## Changes analyzed
+
+- Review follow-up (2026-11-18, no new decision): FR-009 now states the existing behavior that notice reads ignore F13 entitlement (kind and timestamps only, no plan content). tasks.md evidence paths are repointed to real files and the missing verification-report.md reference is replaced by the test files as the record; the coverage matrix is unchanged (same task IDs). Accepted LOW findings: directory per-row F13 summary cost, notice entitlement intent. No open CRITICAL, HIGH or MEDIUM findings.
+- Round 5 (2026-11-17, no FR, SC or acceptance text changed; no new decision): contracts/client-portal.md gains the "Nutrition view and export read" section for the new client-wall read `client_portal_nutrition_plan`, which implements the already-approved FR-004 (S57-PO-9) and FR-008 for nutrition using the F18 renderer and builders; tasks.md gains the Round 5 re-audit section and slice 7 (task status and evidence, plus the blocked-owner contracts for T017/T018/T022/T023-T028/T034-T037). Findings: none open. The workout view and export, T018, T022 and T034-T037 remain blocked on the owners named there; T035 additionally needs PO wording and an F11 visibility ruling (PO-DECISION-NEEDED).
+- FR-003, User Story 1 scenario 4, SC-003, the override edge case and the Productivity point entity now follow S57-PO-11: a PO override gives an eligible new client its one unit under F19-FR-007. The S48-PO-19 zero-point clarification is kept and marked superseded. T011 is updated to match.
+- FR-005 now encodes S57-PO-5 (last covered day, display only) and S57-PO-12 (approved status labels; Refunded only for a full refund; a partial refund shows no label; the directory reuses the labels and its Refunded filter matches full refunds only). Data model, contracts, research, T016 and T035 match.
+- FR-004 encodes S57-PO-9: the plan body uses the F17/F18 shared read-only views, and P4 builds no renderer. T017 and research match.
+- FR-009 encodes S57-PO-10: an F19-owned hook, and a P4 client-recipient extension of the F15 inbox reused by spec 023. Data model (new client notice record), plan storage, contracts, research, T021 and T022 match.
+- A Client navigation reuse boundary records S57-PO-12 "Top 5 belongs inside Progress, not Main Navigation".
+- S57-PO-13: the staff directory uses separate staff status labels (same states, full-refund-only Refunded); the client labels are unchanged. FR-005, the staff directory contract, T035, data-model and copy-proposal.md match. The spec no longer calls any copy proposed or pending: the two copy statements in Assumptions and Clarifications and the empty-state wording in User Story 2 and the edge cases now say approved.
+- tasks.md gains a Slice record section for T005 (task status/traceability only; no requirement text).
+- Quickstart scenario 1 no longer describes a dark-by-default flag (removed under S56-PO-4), and quickstart no longer states that no migration is required. The plan now cites Constitution 1.17.0.
 
 ## Specification Analysis Report
 
@@ -9,27 +22,31 @@
 | --- | -------- | -------- | ----------- | ----------------------------------------------- | -------------- |
 | -   | -        | -        | -           | No open CRITICAL, HIGH, MEDIUM or LOW findings. | None.          |
 
+Resolved during this Analyze: the quickstart flag scenario and migration statement contradicted S56-PO-4 and the new client notice record (MEDIUM, fixed in `quickstart.md`); the plan cited Constitution 1.16.0 (LOW, fixed in `plan.md`).
+
 ## Coverage Summary
 
-| Requirement Key | Has Task? | Task IDs                                               | Notes                                                                |
-| --------------- | --------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
-| FR-001          | Yes       | T003, T006-T011                                        | Independent F19 delivery and idempotency                             |
-| FR-002          | Yes       | T003, T006-T008, T011                                  | Exactly-once activation                                              |
-| FR-003          | Yes       | T003, T006-T008, T011                                  | Productivity point transaction and recipient                         |
-| FR-004          | Yes       | T003, T012-T018                                        | Client plan projection and revision choice                           |
-| FR-005          | Yes       | T003, T012-T016                                        | Authoritative subscription summary                                   |
-| FR-006          | Yes       | T003, T013-T015, T018, T023-T027                       | Entitlement for reads and exports                                    |
-| FR-007          | Yes       | T003, T013-T015, T018                                  | Fresh lifecycle authorization                                        |
-| FR-008          | Yes       | T003, T023-T029                                        | Selected-revision exports                                            |
-| FR-009          | Yes       | T003, T019-T022                                        | F15 inbox notices                                                    |
-| FR-010          | Yes       | T003-T004, T013-T014, T018, T023-T027, T032-T033, T038 | Identity, privacy and workspace boundaries                           |
-| FR-011          | Yes       | T003-T004, T030-T038                                   | Approved directory fields, filters and indicators                    |
-| FR-012          | Yes       | T003, T023-T027, T042                                  | Client exports remain per-plan; comprehensive export remains PO-only |
-| FR-013          | Yes       | T003, T042                                             | No YBS access, migration or synchronization                          |
+| Requirement Key | Has Task? | Task IDs                                               | Notes                                                                      |
+| --------------- | --------- | ------------------------------------------------------ | -------------------------------------------------------------------------- |
+| FR-001          | Yes       | T003, T006-T011                                        | Independent F19 delivery and idempotency                                   |
+| FR-002          | Yes       | T003, T006-T008, T011                                  | Exactly-once activation                                                    |
+| FR-003          | Yes       | T003, T006-T008, T011                                  | One new-client unit, normal or override (S57-PO-11)                        |
+| FR-004          | Yes       | T003, T012-T018                                        | Client plan projection and revision choice; F17/F18 views (S57-PO-9)       |
+| FR-005          | Yes       | T003, T012-T016, T035                                  | Status labels, full-refund rule and last covered day (S57-PO-5, S57-PO-12) |
+| FR-006          | Yes       | T003, T013-T015, T018, T023-T027                       | Entitlement for reads and exports                                          |
+| FR-007          | Yes       | T003, T013-T015, T018                                  | Fresh lifecycle authorization                                              |
+| FR-008          | Yes       | T003, T023-T029                                        | Selected-revision exports                                                  |
+| FR-009          | Yes       | T003, T019-T022                                        | F15 inbox client-recipient extension and F19 hook (S57-PO-10)              |
+| FR-010          | Yes       | T003-T004, T013-T014, T018, T023-T027, T032-T033, T038 | Identity, privacy and workspace boundaries                                 |
+| FR-011          | Yes       | T003-T004, T030-T038                                   | Approved directory fields, filters and indicators                          |
+| FR-012          | Yes       | T003, T023-T027, T042                                  | Client exports remain per-plan; comprehensive export remains PO-only       |
+| FR-013          | Yes       | T003, T042                                             | No YBS access, migration or synchronization                                |
+
+Success criteria SC-001 to SC-010 remain mapped through their FRs. SC-003 now matches FR-003, and SC-006 matches the FR-004/FR-005 restricted projection.
 
 ## Constitution Alignment Issues
 
-None. The plan cites Constitution 1.16.0 and preserves workspace isolation, server and database authorization, vertical slices, the PO S56-PO-4 decision to proceed without a feature flag while LIFTER is not live, one cumulative AI review per feature, and local validation. Authorization/RLS requirements remain unchanged. Authorization, entitlement and export-authorization controls are marked `[HIGH-RISK: authorization]` with mutation-evidence tasks.
+None. The plan cites Constitution 1.17.0 and preserves workspace isolation, server and database authorization, vertical slices, the PO S56-PO-4 decision to proceed without a feature flag while LIFTER is not live, one cumulative AI review per feature, and local validation. The new client notice record has composite workspace keys, forced RLS, no API table privileges and foreign-workspace negative tests. The refund-scope helper reads F13 facts only and alters no F13 object. Authorization, entitlement and export-authorization controls stay marked `[HIGH-RISK: authorization]` with mutation-evidence tasks.
 
 ## Unmapped Tasks
 
@@ -47,4 +64,4 @@ None. All 43 tasks identify FR coverage; user-story tasks also carry a US label 
 
 ## Next Actions
 
-Proceed to architect review of the spec-only PR. Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); portal work proceeds without a flag and flags are reconsidered before production. No product decision is open.
+Continue implementation on the updated spec. Paused integrations stay blocked on their owners: F17/F18 views and exporters, the F19 notice hook, and F11 client code and assignment. No product decision is open in this spec.

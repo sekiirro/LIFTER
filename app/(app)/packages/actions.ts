@@ -6,6 +6,11 @@ export async function createPackage(input: unknown) {
   if (result.status === 'ok') revalidatePath('/packages');
   return result;
 }
+export async function createPackageCategory(input: unknown) {
+  const result = await service.createPackageCategory(input);
+  if (result.status === 'ok') revalidatePath('/packages');
+  return result;
+}
 export async function publishPackageVersion(input: unknown) {
   const result = await service.publishPackageVersion(input);
   if (result.status === 'ok') revalidatePath('/packages');

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createPackage,
+  createPackageCategory,
   publishPackageVersion,
   setPackageOfferAvailable,
 } from '../../app/(app)/packages/actions';
@@ -12,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   revalidate: vi.fn(),
   workspace: vi.fn(),
+  pkg: vi.fn(),
   authorize: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
@@ -37,6 +39,11 @@ const terms = {
 };
 const calls = () => [
   createPackage({ workspaceId: ws, code: 'test-pkg-fixture' }),
+  createPackageCategory({
+    workspaceId: ws,
+    market: 'Egypt',
+    type: 'Year-round',
+  }),
   publishPackageVersion(terms),
   setPackageOfferAvailable({ workspaceId: ws, offerId: id, available: true }),
 ];
@@ -56,12 +63,20 @@ beforeEach(async () => {
     activeWorkspaceIds: [],
   });
   mocks.workspace.mockResolvedValue({ data: { id: ws }, error: null });
-  const query = {
+  mocks.pkg.mockResolvedValue({
+    data: {
+      id,
+      workspace_id: ws,
+      market: 'International',
+      type: 'Year-round',
+    },
+    error: null,
+  });
+  mocks.from.mockImplementation((table: string) => ({
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    maybeSingle: mocks.workspace,
-  };
-  mocks.from.mockReturnValue(query);
+    maybeSingle: table === 'packages' ? mocks.pkg : mocks.workspace,
+  }));
   mocks.session.mockResolvedValue({ rpc: mocks.rpc, from: mocks.from });
   mocks.rpc.mockResolvedValue({ data: id, error: null });
 });
@@ -95,7 +110,7 @@ describe('package actions two walls', () => {
     mocks.actor.mockResolvedValue(null);
     for (const r of await Promise.all(calls()))
       expect(r).toEqual({ status: 'denied' });
-    expect(mocks.actor).toHaveBeenCalledTimes(3);
+    expect(mocks.actor).toHaveBeenCalledTimes(4);
   });
   it('transports exact terms without accepting actor/version/pointer overrides', async () => {
     expect(
@@ -103,6 +118,8 @@ describe('package actions two walls', () => {
         ...terms,
         publishedBy: 'forged',
         version: 999,
+        market: 'Egypt',
+        type: 'Promotional',
       }),
     ).toEqual({ status: 'ok', versionId: id });
     expect(mocks.rpc).toHaveBeenCalledWith('publish_package_version', {
@@ -117,6 +134,8 @@ describe('package actions two walls', () => {
       currency: 'USD',
       commission_rate_bp: 0,
     });
+    expect(mocks.rpc.mock.calls[0]?.[1]).not.toHaveProperty('market');
+    expect(mocks.rpc.mock.calls[0]?.[1]).not.toHaveProperty('type');
     expect(mocks.revalidate).toHaveBeenCalledExactlyOnceWith('/packages');
   });
   it('validates selected existing workspace even for global create', async () => {
@@ -214,6 +233,109 @@ describe('package actions two walls', () => {
     ).toEqual({ status: 'invalid_input' });
     expect(await createPackage({ workspaceId: ws, code: 'INVALID' })).toEqual({
       status: 'invalid_input',
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['Egypt', 'Year-round'],
+    ['Egypt', 'Promotional'],
+    ['International', 'Year-round'],
+    ['International', 'Promotional'],
+  ] as const)(
+    'creates fixed category %s / %s for verified PO and revalidates',
+    async (market, type) => {
+      expect(
+        await createPackageCategory({ workspaceId: ws, market, type }),
+      ).toEqual({ status: 'ok', packageId: id });
+      expect(mocks.rpc).toHaveBeenCalledWith('create_package_category', {
+        workspace_id: ws,
+        market,
+        category_type: type,
+      });
+      expect(mocks.revalidate).toHaveBeenCalledExactlyOnceWith('/packages');
+    },
+  );
+  it.each([
+    { workspaceId: ws, market: 'egypt', type: 'Year-round' },
+    { workspaceId: ws, market: 'Egypt', type: 'year-round' },
+    { workspaceId: ws, market: 'Egypt', type: 'Other' },
+    { workspaceId: ws, type: 'Year-round', currency: 'EGP' },
+    { workspaceId: ws },
+  ])('rejects invalid category input %# before RPC', async (input) => {
+    expect(await createPackageCategory(input)).toEqual({
+      status: 'invalid_input',
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.revalidate).not.toHaveBeenCalled();
+  });
+  it('denies category creation for missing/foreign workspace before RPC', async () => {
+    mocks.workspace.mockResolvedValue({ data: null, error: null });
+    expect(
+      await createPackageCategory({
+        workspaceId: ws,
+        market: 'Egypt',
+        type: 'Year-round',
+      }),
+    ).toEqual({ status: 'denied' });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['Egypt', 'EGP', 'ok'],
+    ['Egypt', 'USD', 'invalid_input'],
+    ['Egypt', 'SAR', 'invalid_input'],
+    ['Egypt', 'EUR', 'invalid_input'],
+    ['International', 'EGP', 'ok'],
+    ['International', 'USD', 'ok'],
+    ['International', 'SAR', 'ok'],
+    ['International', 'EUR', 'invalid_input'],
+  ] as const)(
+    'enforces app market/currency wall %s / %s -> %s before accepting RPC',
+    async (market, currency, expected) => {
+      mocks.pkg.mockResolvedValue({
+        data: { id, workspace_id: ws, market, type: 'Year-round' },
+        error: null,
+      });
+      const result = await publishPackageVersion({ ...terms, currency });
+      if (expected === 'ok') {
+        expect(result).toEqual({ status: 'ok', versionId: id });
+        expect(mocks.rpc).toHaveBeenCalledTimes(1);
+      } else {
+        expect(result).toEqual({ status: 'invalid_input' });
+        expect(mocks.rpc).not.toHaveBeenCalled();
+        expect(mocks.revalidate).not.toHaveBeenCalled();
+      }
+    },
+  );
+  it.each([
+    {
+      label: 'legacy unclassified package',
+      row: { id, workspace_id: null, market: null, type: null },
+    },
+    {
+      label: 'foreign workspace package',
+      row: {
+        id,
+        workspace_id: '00000000-0000-0000-0000-000000000099',
+        market: 'Egypt',
+        type: 'Year-round',
+      },
+    },
+    { label: 'missing package', row: null },
+  ])(
+    'denies publication for $label before calling accepting RPC',
+    async ({ row }) => {
+      mocks.pkg.mockResolvedValue({ data: row, error: null });
+      expect(
+        await publishPackageVersion({ ...terms, currency: 'EGP' }),
+      ).toEqual({ status: 'denied' });
+      expect(mocks.rpc).not.toHaveBeenCalled();
+      expect(mocks.revalidate).not.toHaveBeenCalled();
+    },
+  );
+  it('returns unavailable when target category lookup fails', async () => {
+    mocks.pkg.mockResolvedValue({ data: null, error: { message: 'db' } });
+    expect(await publishPackageVersion({ ...terms, currency: 'EGP' })).toEqual({
+      status: 'unavailable',
     });
     expect(mocks.rpc).not.toHaveBeenCalled();
   });

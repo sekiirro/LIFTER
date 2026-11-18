@@ -7,9 +7,8 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { TransactionSql } from 'postgres';
 import {
-  checked,
   createLegacySynthetic,
-  publish,
+  createLegacyPublishedSynthetic,
   packagesFixture,
   publishedFixture,
   sql,
@@ -219,8 +218,7 @@ describe('T064 refuse/escalate before any write', () => {
 
 describe('T064 deletable contract, input modes and v2 checks (N1-N5)', () => {
   it('N1 a mock with offers is refused with exactly attached_offers_or_versions and is deletable; a childless mock is clean and deletable', async () => {
-    const withOffer = await createLegacySynthetic(f);
-    checked(await publish(f, withOffer.id, { tier_rank: 1 }));
+    const withOffer = await createLegacyPublishedSynthetic(f);
     const bare = await createLegacySynthetic(f);
     const a = await runPreflight(db, [withOffer.id]);
     expect(a.status).toBe('refused');
@@ -331,8 +329,7 @@ describe('T064 re-review N3/N5 tests', () => {
       });
 
   it('N5 an unknown table that references a package offer escalates (level 1)', async () => {
-    const mock = await createLegacySynthetic(f);
-    checked(await publish(f, mock.id, { tier_rank: 1 }));
+    const mock = await createLegacyPublishedSynthetic(f);
     const report = await inRolledBackTx([mock.id], async (tx) => {
       await tx.unsafe(
         'create table public.t064_unknown_dep (id uuid primary key default gen_random_uuid(), oid uuid references public.package_offers(id))',

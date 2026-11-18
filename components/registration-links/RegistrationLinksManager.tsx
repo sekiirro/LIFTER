@@ -129,18 +129,29 @@ export function RegistrationLinksManager({
                   </p>
                 )}
                 {data.installments.some((r) => r.link_id === l.id) && (
-                  <ol>
-                    {data.installments
-                      .filter((r) => r.link_id === l.id)
-                      .map((r) => (
-                        <li key={r.seq}>
-                          <bdi>
-                            {r.amount_minor} {l.currency}
-                          </bdi>{' '}
-                          · {m['registration.offset']}: {r.due_offset_days}
-                        </li>
-                      ))}
-                  </ol>
+                  <>
+                    <p>
+                      {m['registration.paymentCount']}:{' '}
+                      {
+                        data.installments.filter((r) => r.link_id === l.id)
+                          .length
+                      }
+                    </p>
+                    <ol>
+                      {data.installments
+                        .filter((r) => r.link_id === l.id)
+                        .map((r) => (
+                          <li key={r.seq}>
+                            {r.seq === 1 &&
+                              `${m['registration.upfrontAmount']}: `}
+                            <bdi>
+                              {r.amount_minor} {l.currency}
+                            </bdi>{' '}
+                            · {m['registration.offset']}: {r.due_offset_days}
+                          </li>
+                        ))}
+                    </ol>
+                  </>
                 )}
               </li>
             ))}

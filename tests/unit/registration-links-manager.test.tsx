@@ -17,6 +17,8 @@ const version = (id: string, offerId: string) => ({
   id,
   offer_id: offerId,
   version: 1,
+  market: 'International',
+  type: 'Year-round',
   name_ar: 'same-name',
   name_en: 'same-name',
   price_minor: '1200',

@@ -136,7 +136,7 @@ describe('T059 adapter outcomes', () => {
     expect(f).not.toHaveBeenCalled();
   });
 
-  it('an existing ready snapshot is immutable and makes no network call', async () => {
+  it('an existing ready snapshot is returned frozen and makes no network call', async () => {
     const f = mockFetch(async () => json([row('2026-11-09', 99)]));
     const existing = {
       status: 'ready' as const,
@@ -144,15 +144,76 @@ describe('T059 adapter outcomes', () => {
       publicationDate: '2026-11-09',
       provider: 'CBE' as const,
     };
-    expect(
-      await fetchFxSnapshot({
-        transactionAt: AT,
-        currency: 'USD',
-        existing,
-        fetchImpl: f,
-      }),
-    ).toBe(existing);
+    const out = await fetchFxSnapshot({
+      transactionAt: AT,
+      currency: 'USD',
+      existing,
+      fetchImpl: f,
+    });
+    expect(out).toEqual(existing);
+    expect(out).not.toBe(existing);
+    expect(Object.isFrozen(out)).toBe(true);
     expect(f).not.toHaveBeenCalled();
+  });
+
+  it('ready snapshots are frozen at the API boundary and cannot be mutated', async () => {
+    const f = mockFetch(async () => json([row('2026-11-09', 54.2)]));
+    const fresh = await fetchFxSnapshot({
+      transactionAt: AT,
+      currency: 'USD',
+      fetchImpl: f,
+    });
+    expect(fresh.status).toBe('ready');
+    expect(Object.isFrozen(fresh)).toBe(true);
+    if (fresh.status === 'ready') {
+      const before = { ...fresh };
+      expect(() => {
+        (fresh as { rate: string }).rate = '999';
+      }).toThrow(TypeError);
+      expect(() => {
+        (fresh as { provider: unknown }).provider = 'SAMA';
+      }).toThrow(TypeError);
+      expect(fresh).toEqual(before);
+    }
+    const selected = selectFxSnapshot({
+      transactionAt: AT,
+      currency: 'USD',
+      publications: [{ date: '2026-11-09', rate: '54.2' }],
+    });
+    expect(Object.isFrozen(selected)).toBe(true);
+  });
+
+  it('an existing ready snapshot is returned as a frozen copy, never by reference', async () => {
+    const f = mockFetch(async () => json([row('2026-11-09', 99)]));
+    const existing = {
+      status: 'ready' as const,
+      rate: '54.2',
+      publicationDate: '2026-11-09',
+      provider: 'CBE' as const,
+    };
+    const out = await fetchFxSnapshot({
+      transactionAt: AT,
+      currency: 'USD',
+      existing,
+      fetchImpl: f,
+    });
+    expect(f).not.toHaveBeenCalled();
+    expect(out).toEqual(existing);
+    expect(out).not.toBe(existing);
+    expect(Object.isFrozen(out)).toBe(true);
+    if (out.status === 'ready') {
+      const before = { ...out };
+      expect(() => {
+        (out as { rate: string }).rate = '999';
+      }).toThrow(TypeError);
+      expect(out).toEqual(before);
+    }
+    expect(existing).toEqual({
+      status: 'ready',
+      rate: '54.2',
+      publicationDate: '2026-11-09',
+      provider: 'CBE',
+    });
   });
 
   it('empty publications -> pending, then ready on a later retry', async () => {
@@ -348,22 +409,23 @@ describe('T062 hardening', () => {
     ).toMatchObject({ status: 'ready', rate: '53.9' });
   });
 
-  it('an existing ready snapshot stays immutable regardless of the settle rule', async () => {
+  it('an existing ready snapshot stays frozen regardless of the settle rule', async () => {
     const existing = {
       status: 'ready' as const,
       rate: '54.2',
       publicationDate: '2026-11-09',
       provider: 'CBE' as const,
     };
-    expect(
-      await fetchFxSnapshot({
-        transactionAt: ASK,
-        currency: 'USD',
-        existing,
-        fetchImpl: okFetch(),
-        now: new Date('2026-11-10T00:00:00Z'),
-      }),
-    ).toBe(existing);
+    const out = await fetchFxSnapshot({
+      transactionAt: ASK,
+      currency: 'USD',
+      existing,
+      fetchImpl: okFetch(),
+      now: new Date('2026-11-10T00:00:00Z'),
+    });
+    expect(out).toEqual(existing);
+    expect(out).not.toBe(existing);
+    expect(Object.isFrozen(out)).toBe(true);
   });
 
   it.each(['EUR', 'constructor', '__proto__', 'toString', 'hasOwnProperty'])(
