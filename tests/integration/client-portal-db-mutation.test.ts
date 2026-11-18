@@ -253,7 +253,7 @@ describe('F22 database control kill tests', () => {
   // client filter alone is masked (no leak), then kills BOTH independent
   // controls and shows the leak, then checks the installed definition.
   const subscriptionPredicate =
-    /and app_private.f19_resolve_subscription_id(d.workspace_id, d.subscription_id)s*=s*(?:p_subscription_id|(summary->>'subscription_id')::uuid)/;
+    /and app_private\.f19_resolve_subscription_id\(d\.workspace_id, d\.subscription_id\)\s*=\s*(?:p_subscription_id|\(summary->>'subscription_id'\)::uuid)/;
 
   it('K5 delivered-revision client filter: with the subscription binding also killed, a client reads another client’s plan', async () => {
     const signature =
