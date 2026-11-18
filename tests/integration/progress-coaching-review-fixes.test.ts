@@ -199,7 +199,7 @@ describe('spec 023 review fixes', () => {
           f.trainerA.userId,
           async (sp) =>
             (
-              await sp`select public.correct_progress_measurement(${w.ws},${row!.id},${value},${row!.v}::timestamptz) as r`
+              await sp`select public.correct_progress_measurement(${w.ws},${row!.id},${value},${row!.v}::text::timestamptz) as r`
             )[0]!.r as { status: string },
         );
       expect((await correct(5)).status).toBe('invalid');
