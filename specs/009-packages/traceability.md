@@ -68,6 +68,8 @@ On branch `s65-009-us5c` (with `origin/main` PR #255 merged at `3fc0a6f47074c05f
 
 T066 remains unticked; verified so far: category uniqueness, four categories, market/type commercial-version snapshots, and client/link/subscription snapshot stability; remaining: explicit stable assignment snapshot coverage.
 
+Mutation checks (`lib/packages/service.ts`, kill/restore/diff exit 0, recorded in `runs/s65-hyd-f9us5c/report.md`): removing app PO + `set_package_pricing` wall killed 5/51 assertions in `tests/unit/packages-actions.test.ts`; removing `isCurrencyAllowedForMarket` pre-RPC check killed 4/51 assertions (`Egypt/USD`, `Egypt/SAR`, `Egypt/EUR`, `International/EUR`); both restored cleanly and rerun passed 51/51.
+
 ## SC mapping
 
 SC-001..SC-006 are covered by the shipped baseline test sources above. SC-007..SC-012 status:
