@@ -8,6 +8,7 @@ import {
 import type { GlassFallback } from '../ui/glass/GlassSurface';
 import type { Messages } from '../../lib/i18n';
 import { ShellNavigation } from './ShellNavigation';
+import { PlatformOwnerHeader } from './PlatformOwnerHeader';
 import styles from './AppShell.module.css';
 
 export type ShellNavigationProps = {
@@ -40,6 +41,13 @@ export function AppShell({
   fallback,
 }: AppShellProps) {
   const navigation = getNavigation(role);
+  if (role === 'platform_owner')
+    return (
+      <div className={styles.shell} data-shell="">
+        <PlatformOwnerHeader messages={messages} />
+        <Content className={styles.content}>{children}</Content>
+      </div>
+    );
   if (navigation.status === 'needs-decision')
     return <Content>{children}</Content>;
   return (

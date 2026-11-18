@@ -7,6 +7,17 @@ Docs-only recording of architect ruling S64-R46: the restricted-continuation hal
 ## S64 date-only status — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R21: the entry-point half of A-S41-4 (P-S40-5, before T062) is APPROVED; the restricted-continuation half (P-S40-1, before T048) stays OPEN. FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
+## S64 Luna S11-2 date-only status — 2026-11-18 UTC
+
+Task notes and traceability evidence changed; FR/SC requirement text did not. Direct-route implementation and verification are recorded in the S64 run report. PO decisions S64-PO-6/7 and S65-PO-1/2 resolve navigation placement, ASCII/manual slug behavior, and 50-character default overflow. No new requirement text or PO decision is inferred; per Constitution/S54-R6, no full Analyze rerun is required for task-status-only updates.
+
+## S65 S11-2 date-only status — 2026-11-18 UTC
+
+T049/T051/T056 evidence and task statuses were updated; FR/SC and plan text did not change. PO decisions S65-PO-1/2 are recorded in the referenced verbatim files. Stack C integration and E2E evidence is recorded in the s65-luna-s112b report; no full Analyze rerun is needed for task-status-only changes. No open CRITICAL/HIGH findings for this slice.
+
+## S64 Luna S11-2 date-only status — 2026-11-17 UTC
+
+T049 implementation evidence and task status changed; FR/SC text did not. Stack C passed all three workspace-creation integration tests, including the Platform Owner, denial, no-auto-provisioning, audit and idempotent-retry cases. T051/T056 await the PO navigation decision required by DESIGN.md §11 (Platform Owner mobile navigation remains unresolved); no new requirement or design decision is inferred here.
 
 ## S63 date-only status — 2026-11-17 UTC
 
