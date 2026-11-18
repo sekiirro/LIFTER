@@ -496,3 +496,10 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Evidence: full Q-M01..Q-M30 row-by-row sign-off with zero skipped Storage checks and state-restoration proof on Stack A; six mutation hooks RED then restored GREEN; browser 86/86 plus 55/55 (48 contrast cases); rendered CLS `< 0.001`; FR-026-FR-030 reconciliation with FR-026 and FR-028 explicitly PARTIAL.
 - No requirement, FR/SC, acceptance, plan or task-scope wording changed: only checkbox statuses and evidence text in `tasks.md` and `traceability.md`, plus two evidence documents. **No open ambiguities** remain for this status refresh.
 - Findings: 0 open CRITICAL, 0 open HIGH. Verdict: PASS for Spec Kit entry on this evidence update; not a new feature Analyze.
+
+## S65 F14b verification status-only revalidation - 2026-11-18T04:46:00Z
+
+- Scope: F14b owner-facing upload UI (`T-u1`), banner alt-text editor (`T-u2`), Frontend Design Gate matrix, and focused upload tests (`T-u4`), implemented on `s65-014-owner-uploads` using PO-approved copy (`S65-PO-4`) and architect guidance (`S65-R3`).
+- Evidence: Stack A DB reset (`20261215020000_branding_upload_application_seam.sql`) + Vault provision; branding/RLS integration suites 4/4 (66/66) + 6/6 (28/28); Playwright E2E 29/29 (`branding-production-ui.spec.ts`) + 325/325 (`branding-upload-hardening`, `branding-upload-visual`, `branding-editor`, `branding-registration`, `branding-banner-loaded`) with axe 0 violations and visual screenshot review; 2/2 mutations killed (alt-text publish guard & size-limit guard), restored cleanly.
+- No requirement, FR/SC, acceptance, or plan design text changed: only checkbox statuses and evidence notes in `tasks.md` and `traceability.md`. **No open ambiguities** remain.
+- Findings: 0 open CRITICAL, 0 open HIGH. Verdict: PASS for this status/evidence update.

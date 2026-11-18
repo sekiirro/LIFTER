@@ -7,8 +7,11 @@ import {
 } from '../local-stack.mjs';
 import { issueBrandingCredential } from './issue-credential.mjs';
 
-/** Create an expiring Stack-local proxy JWT in memory for Playwright's app server. */
-export async function prepareLocalBrandingProxyCredential(env = process.env) {
+/** Create an expiring Stack-local branding JWT in memory for Playwright's app server. */
+export async function prepareLocalBrandingCredential(role, env = process.env) {
+  if (role !== 'branding_proxy' && role !== 'branding_validator') {
+    throw new Error('Unsupported branding credential role');
+  }
   const stack = selectStack(env);
   loadSelectedStackEnv(env);
   const apiUrl = env.API_URL || env.SUPABASE_URL;
@@ -34,7 +37,7 @@ export async function prepareLocalBrandingProxyCredential(env = process.env) {
     expiresAt = clock.epoch + 3600;
     await db`
       select app_private.branding_credential_register(
-        ${credentialId}, 'branding_proxy', to_timestamp(${expiresAt})
+        ${credentialId}, ${role}, to_timestamp(${expiresAt})
       )
     `;
     await db`
@@ -44,9 +47,14 @@ export async function prepareLocalBrandingProxyCredential(env = process.env) {
     await db.end();
   }
   return issueBrandingCredential({
-    role: 'branding_proxy',
+    role,
     credentialId,
     expiresAt,
     secret: env.JWT_SECRET,
   });
+}
+
+/** Create an expiring Stack-local proxy JWT in memory for Playwright's app server. */
+export async function prepareLocalBrandingProxyCredential(env = process.env) {
+  return prepareLocalBrandingCredential('branding_proxy', env);
 }

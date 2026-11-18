@@ -148,12 +148,14 @@ const registrationPrivate = [
 const brandingPrivate = [
   'branding_actor_id',
   'branding_asset_attach',
+  'branding_asset_detach',
   'branding_credential_event_immutable',
   'branding_credential_register',
   'branding_credential_set_enabled',
   'branding_credential_allowed',
   'branding_current_read',
   'branding_draft_read',
+  'branding_draft_asset_read_allowed',
   'branding_draft_save',
   'branding_gc_claim',
   'branding_gc_finalize',
@@ -164,6 +166,7 @@ const brandingPrivate = [
   'branding_staging_upload_allowed',
   'branding_storage_read_allowed',
   'branding_upload_begin',
+  'branding_upload_terminalize',
   'branding_validation_prepare',
   'branding_validation_complete',
   'branding_validator_upload_binding_matches',
@@ -172,6 +175,9 @@ const brandingPrivate = [
 ];
 const brandingFunctionOwners: Record<string, string> = {
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
+  // S65-R42: terminalize deletes the staged storage row, which no role policy
+  // grants, so postgres owns it; authorization mirrors the upload RPCs.
+  branding_upload_terminalize: 'postgres',
 };
 const assignmentPrivate = [
   'allocate_client_code',
@@ -764,11 +770,14 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.authenticated_execute, row.proname).toBe(
         [
           'branding_upload_begin',
+          'branding_upload_terminalize',
           'branding_draft_save',
           'branding_asset_attach',
+          'branding_asset_detach',
           'branding_publish',
           'branding_current_read',
           'branding_draft_read',
+          'branding_draft_asset_read_allowed',
           'branding_staging_upload_allowed',
           'deletion_actor_is_denied',
           'staff_display_name_is_valid',

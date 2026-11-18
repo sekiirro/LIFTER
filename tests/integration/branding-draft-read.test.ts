@@ -117,7 +117,13 @@ it('reads an empty draft as revision zero without creating a draft row', async (
   expect(result.data).toEqual({
     workspace_id: fixture.wsA.id,
     revision: 0,
-    fields: { name: null, bannerAlt: null, color: null },
+    fields: {
+      name: null,
+      bannerAlt: null,
+      color: null,
+      logo: null,
+      banner: null,
+    },
     current_publication: null,
   });
   const after = await db<{ count: number }[]>`

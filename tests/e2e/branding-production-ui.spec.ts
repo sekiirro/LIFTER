@@ -82,7 +82,14 @@ for (const locale of ['ar', 'en'] as const) {
           page.locator('[data-branding-private-preview]'),
         ).toBeVisible();
         await expect(page.locator('form')).toHaveCount(2);
-        await expect(page.locator('input[name*="bannerAlt"]')).toHaveCount(0);
+        await expect(page.locator('input[name*="bannerAlt"]')).toHaveCount(2);
+        await expect(
+          page.getByRole('group', {
+            name: getMessages(locale)['branding.bannerAltLegend'],
+          }),
+        ).toBeVisible();
+        await expect(page.locator('[data-upload-card="logo"]')).toBeVisible();
+        await expect(page.locator('[data-upload-card="banner"]')).toBeVisible();
         await expect(
           page.getByRole('button', { name: /history|restore/i }),
         ).toHaveCount(0);
@@ -363,4 +370,103 @@ test('T033: caller-JWT editor saves by revision and publishes current draft only
       .getByRole('alert')
       .filter({ hasText: getMessages('en')['branding.staleRevision'] }),
   ).toBeVisible();
+});
+
+test('T-u1/T-u2/T-u4: owner uploads logo and banner, saves alt fallback, blocks publish without alt, and preserves prior asset on invalid upload', async ({
+  page,
+}) => {
+  const workspace = fixtures.editor.workspaces[0]!;
+  const pngBuffer = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  );
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await authenticate(page, fixtures.editor, 'en', 'light');
+  await page.goto(`/branding?workspace=${workspace.id}`);
+
+  const logoCard = page.locator('[data-upload-card="logo"]');
+  await logoCard.locator('[data-upload-file-input="logo"]').setInputFiles({
+    name: 'logo.png',
+    mimeType: 'image/png',
+    buffer: pngBuffer,
+  });
+  await expect(logoCard).toHaveAttribute('data-upload-state', 'attached', {
+    timeout: 15000,
+  });
+  await expect(
+    logoCard.locator('[data-upload-thumbnail="logo"]'),
+  ).toBeVisible();
+
+  const bannerCard = page.locator('[data-upload-card="banner"]');
+  await bannerCard.getByRole('checkbox').check();
+  await bannerCard.locator('[data-upload-file-input="banner"]').setInputFiles({
+    name: 'banner.png',
+    mimeType: 'image/png',
+    buffer: pngBuffer,
+  });
+  await expect(bannerCard).toHaveAttribute('data-upload-state', 'attached', {
+    timeout: 15000,
+  });
+  const bannerThumbnail = bannerCard.locator(
+    '[data-upload-thumbnail="banner"] img',
+  );
+  await expect(bannerThumbnail).toBeVisible();
+  const initialBannerSrc = await bannerThumbnail.getAttribute('src');
+
+  // Invalid replacement preserves the currently attached banner thumbnail.
+  await bannerCard.locator('[data-upload-file-input="banner"]').setInputFiles({
+    name: 'bad.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('not-a-valid-png'),
+  });
+  await expect(bannerCard).toHaveAttribute('data-upload-state', 'error', {
+    timeout: 15000,
+  });
+  await expect(bannerThumbnail).toHaveAttribute('src', initialBannerSrc!);
+
+  // Publishing with an attached banner and empty alt text in both locales fails.
+  await page
+    .getByRole('button', { name: getMessages('en')['branding.publishCurrent'] })
+    .click();
+  await expect(page).toHaveURL(/status=invalid_branding/);
+
+  // Saving single-locale Arabic alt text persists and falls back on reload.
+  await page.locator('input[name="bannerAltAr"]').fill('وصف الغلاف');
+  await page.locator('input[name="bannerAltEn"]').fill('');
+  await page
+    .getByRole('button', { name: getMessages('en')['branding.saveDraft'] })
+    .click();
+  await expect(page).toHaveURL(/status=saved/);
+  await page.reload();
+  await expect(page.locator('input[name="bannerAltAr"]')).toHaveValue(
+    'وصف الغلاف',
+  );
+  await expect(page.locator('input[name="bannerAltEn"]')).toHaveValue(
+    'وصف الغلاف',
+  );
+  await expect(
+    page.locator('[data-upload-card="logo"] [data-upload-thumbnail="logo"]'),
+  ).toBeVisible();
+  await expect(
+    page.locator(
+      '[data-upload-card="banner"] [data-upload-thumbnail="banner"]',
+    ),
+  ).toBeVisible();
+
+  // Publishing succeeds once required alt text is present.
+  await page
+    .getByRole('button', { name: getMessages('en')['branding.publishCurrent'] })
+    .click();
+  await expect(page).toHaveURL(/status=published/);
+
+  // Removing logo detaches it from the draft.
+  await page
+    .locator('[data-upload-card="logo"]')
+    .getByRole('button', { name: getMessages('en')['branding.removeImage'] })
+    .click();
+  await expect(page.locator('[data-upload-card="logo"]')).toHaveAttribute(
+    'data-upload-state',
+    'idle',
+    { timeout: 15000 },
+  );
 });
