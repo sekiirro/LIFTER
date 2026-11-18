@@ -46,6 +46,35 @@ const signupPrivate = [
   'redeem_signup_admission_ticket',
   'signup_guard_attempt_delete',
 ];
+// Spec 023 private helpers.
+const f23Private = [
+  'f23_adherence_question_valid',
+  'f23_adherence_value',
+  'f23_checkin_definition_valid',
+  'f23_checkin_due_index',
+  'f23_client_checkin_anchor',
+  'f23_client_frozen_on',
+  'f23_capture_checkin_adherence',
+  'f23_client_progress_visible',
+  'f23_extract_checkin_measurements',
+  'f23_measurement_question',
+  'f23_measurement_value_fits',
+  'f23_store_checkin_adherence',
+  'f23_unit_text',
+  'f23_checkin_reminders_run',
+  'f23_guard_staff_notice',
+  'f23_notify_food_request_change',
+  'f23_weekly_checkin_run',
+  'f23_weekly_checkin_schedule_activate',
+  'f23_weekly_checkin_schedule_deactivate',
+  'f23_write_measurement_correction',
+  'f23_derived_uuid_v4',
+  'f23_food_request_audit',
+  'f23_guard_food_replacement_request',
+  'f23_is_own_client',
+  'f23_nutrition_item_path',
+  'f23_reconcile_food_requests',
+];
 // Spec 022 private helpers.
 const f22Private = [
   'f22_delivered_revisions',
@@ -289,6 +318,7 @@ describe('tenancy security catalog (T007)', () => {
           'staff_display_name_is_white_space',
           ...signupPrivate,
           ...brandingPrivate,
+          ...f23Private,
           ...f22Private,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
@@ -505,6 +535,10 @@ describe('tenancy security catalog (T007)', () => {
     for (const row of rows) {
       const expectedDefiner = ![
         // Union of F15/F16 and client-notes intentionally invoker-mode functions.
+        'f23_checkin_reminders_run',
+        'f23_weekly_checkin_run',
+        'f23_weekly_checkin_schedule_activate',
+        'f23_weekly_checkin_schedule_deactivate',
         'audit_events_immutable',
         'branding_actor_id',
         'catalog_assert_exercise_text_limits',
@@ -562,6 +596,10 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        // F23 US3: trigger guard and pure SQL/plpgsql helpers are invoker routines.
+        'f23_derived_uuid_v4',
+        'f23_guard_food_replacement_request',
+        'f23_nutrition_item_path',
         'f17_client_safe_reference',
         'f17_client_safe_set',
         'f17_client_safe_item',
@@ -663,6 +701,15 @@ describe('tenancy security catalog (T007)', () => {
       }
       if (row.proname === 'staff_display_name_is_valid') {
         expect(row.service_role_execute, row.proname).toBe(true);
+      }
+      if (row.proname.startsWith('f23_')) {
+        // Spec 023: only the RLS visibility predicates are executable by authenticated.
+        expect(row.authenticated_execute, row.proname).toBe(
+          ['f23_client_progress_visible', 'f23_is_own_client'].includes(
+            row.proname,
+          ),
+        );
+        continue;
       }
       expect(row.authenticated_execute, row.proname).toBe(
         [

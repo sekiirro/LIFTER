@@ -1,6 +1,55 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  // spec 023 client progress coaching (S55-PO-10 approved copy)
+  'progress.title': 'Progress',
+  'progress.measurements.title': 'Measurements',
+  'progress.measurements.empty': 'No measurements recorded',
+  'progress.measurement.edit': 'Edit measurement',
+  'checkin.completed.notGate': 'Check-ins do not block access to your account.',
+  'checkin.adherence.workout.title': 'Workout adherence',
+  'checkin.adherence.workout.question':
+    'On a scale from 0 to 10, how closely did you follow your workout plan this week?',
+  'checkin.adherence.diet.title': 'Diet adherence',
+  'checkin.adherence.diet.question':
+    'On a scale from 0 to 10, how closely did you follow your nutrition plan this week?',
+  'checkin.reminder.dayOf.title': 'Weekly check-in reminder',
+  'checkin.reminder.dayOf.body': 'Your weekly check-in is due today.',
+  'checkin.reminder.followup.title': 'Check-in still pending',
+  'checkin.reminder.followup.body':
+    "You haven't submitted your weekly check-in yet.",
+  'foodReplacement.notification.open': 'A client requested a food replacement.',
+  'foodReplacement.notification.resolved':
+    'Your food replacement request was updated.',
+  'timeline.title': 'Timeline',
+  'timeline.empty': 'No timeline events yet.',
+  'timeline.event.registration': 'Registration',
+  'timeline.event.renewal': 'Renewal',
+  'timeline.event.firstDelivery': 'First plan delivery',
+  'timeline.event.trainerChange': 'Trainer assignment change',
+  'timeline.event.replacementOpen': 'Replacement request opened',
+  'timeline.event.replacementApproved': 'Replacement approved',
+  'timeline.event.replacementRejected': 'Replacement rejected',
+  'timeline.event.replacementStale':
+    'Replacement request closed (food removed)',
+  'timeline.event.freezeApply': 'Freeze applied',
+  'timeline.event.freezeRemove': 'Freeze removed',
+  'timeline.event.closure': 'Closure',
+  // spec 023: approved by S57-PO-12 and S57-PO-13 (pinned in progress-coaching-copy test)
+  'progress.measurement.add': 'Add measurement',
+  'progress.measurement.value': 'Value',
+  'progress.measurement.date': 'Date',
+  'progress.measurement.save': 'Save measurement',
+  'progress.measurement.saved': 'Measurement saved',
+  'progress.measurement.duplicateSameDay':
+    'A measurement already exists for this day. Edit the existing record instead.',
+  'checkin.config.title': 'Weekly check-in form',
+  'checkin.config.select': 'Choose the weekly check-in form',
+  'checkin.config.save': 'Use this form',
+  'checkin.config.saved': 'Weekly check-in form saved.',
+  'checkin.config.invalid':
+    'This form needs the workout and diet adherence questions (0–10).',
+  'checkin.config.conflict': 'Another form is already the weekly check-in.',
   'catalog.taxonomy.muscle.spinal_erectors': 'Spinal erectors',
   'catalog.taxonomy.muscle.rear_delts': 'Rear delts',
   'catalog.taxonomy.muscle.hamstrings': 'Hamstrings',
