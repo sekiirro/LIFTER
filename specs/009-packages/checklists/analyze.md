@@ -336,3 +336,9 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - PASS: no FR, SC, acceptance-scenario, plan or PO-decision text changed — only the T064b checkbox, its status note, traceability rows and this dated note. Per S54-R6 no full re-Analyze of requirements is triggered.
 - PASS: `tasks.md` T064b is ticked citing both reviews and the design; the earlier "leave unticked pending an architect ruling" continuation is closed by architect ruling S65-R8 (the T065 script is an unaccepted draft that did not shape the design). `traceability.md` FR-022/FR-028 rows and the T064b evidence line now reflect the PASS.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity introduced. T065 remains unticked pending its implementation/CI evidence and divergence reconciliation (D2/D3/D8/D9/D10/D11); T070 remains the post-implementation acceptance review; no teardown has run on any stack.
+
+## 2026-11-18 Analyze (T065 teardown conformance & verification; task-status/evidence only)
+
+**Analyzed:** 2026-11-18 (UTC). Reconciled T065 teardown script (`supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`), conformance matrix (`specs/009-packages/reviews/t065-conformance.md`), and integration/mutation tests (`tests/integration/packages-c5-teardown.test.ts`, `tests/integration/packages-verification.md`) with `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS). No FR, SC, acceptance-scenario, or plan requirement text changed — only T065 status/evidence notes; T065 remains `[ ]` pending the separate four-category initialization forward migration (D10) and T070 post-implementation acceptance review.
+
+- PASS: 0 open CRITICAL, 0 open HIGH.

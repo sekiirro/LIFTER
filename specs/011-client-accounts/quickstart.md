@@ -128,3 +128,13 @@ T039 runs only the Prerequisites and gates verification command block and the na
 ## T061 unassigned-client read evidence (2026-11-15 UTC)
 
 On Stack D, safe-reset and provision the owned stack, then run `unassigned-clients` and `tests/integration/rls-catalog.test.ts` with the integration config. This passed 46/46 tests after the final migration restore. The exact safe-wrapper command, stack injection setup, and both required mutation results are recorded in `C:/Users/NEW LAP/.lifter/runs/s57-luna-f11a2/report.md`. The T061 test covers approved/assigned/pending content, Platform Owner and own-workspace Workspace Owner reads, denied roles and foreign workspace, Trainer departure, read-only assignment access and no alert rows. The completed-deletion exclusion is deferred to T048 because its lifecycle states do not exist yet; no synthetic state is used.
+
+## S11-2 verification commands (2026-11-18 UTC)
+
+Run after provisioning Stack C through the safe wrapper; no migration was required.
+
+- Integration: node C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs --stack C --workdir <worktree>/supabase-stack-c exec -- npm run test:integration -- tests/integration/workspace-creation.test.ts
+- E2E: use the same safe-wrapper exec with PLAYWRIGHT_PORT=3100 and LIFTER_SCREENSHOT_DIR=%TEMP%\s65-luna-s112b, then run npm run e2e -- tests/e2e/workspace-creation.spec.ts --workers=1
+- Unit: npm run test:unit -- --maxWorkers=4
+- Local gates: npm run typecheck; npm run lint; FORMAT_BASE_SHA=$(git merge-base HEAD origin/main) node scripts/format-check-changed.mjs; npm run format:check; npm run check:secrets; npm run build; safe-wrapper exec -- npm run build:edge; npm run size.
+- Stack C integration passed 3/3, E2E passed 8/8, and unit passed 3,544/3,544 on the refreshed base. The single earlier asset-test timeout is recorded in the S65 run report and backlog/flakes.md.

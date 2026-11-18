@@ -192,3 +192,13 @@ Raw negative/reset/restored logs and structured per-mutation JSON remain in `%TE
 - Restore: moved the exact forward migration back to its original path, safely reset and reprovisioned Stack E. No migration mutant remains installed.
 - GREEN: safe-wrapper integration run covering `packages-*`, `rls-catalog`, and `branding-function-privileges`: 13 files, 238 passed, 5 todo, 1 skipped. This includes all 11 `packages-reporting.test.ts` tests.
 - The new cases verify missing EGP snapshot creation at identity rate and missing SAR snapshot creation followed by pending-to-ready conversion; the existing USD case verifies pending-to-ready and ready immutability.
+
+## T065 C5 teardown conformance & mutation verification (2026-11-18)
+
+- Scope: operator cleanup script `supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`, test suite `tests/integration/packages-c5-teardown.test.ts`, and conformance matrix `specs/009-packages/reviews/t065-conformance.md` against `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS).
+- Stack & versions: Stack E (`lifter-stack-e`), PostgreSQL `17.11`, Node `v24.19.0`, Vitest `5.1.0`.
+- RED -> GREEN: unmodified `origin/main` draft script FAILED `8 failed | 40 passed (48)` on the Section-7 conformance tests; amended script PASSED `48 passed (48)`, 0 skipped.
+- Executed mutations on `supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql` (all killed, restored, byte-identical):
+  1. Widen trigger disablement (`:380`, `disable trigger user;`): `14 failed | 34 passed (48)`, exit 1 (`c5_refused:post_trigger_state_unexpected`).
+  2. Skip preflight (`:328`, `if false then`): `14 failed | 34 passed (48)`, exit 1 (refusal/dependency cases killed).
+  3. Drop owner assertion (`:157`, `if false then`): `1 failed | 47 passed (48)`, exit 1 (`not_database_owner` killed).
