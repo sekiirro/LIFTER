@@ -482,6 +482,13 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'f17_client_portal_client',
+          'f17_client_subscription_summary',
+          'f17_client_resolve_global_exercise',
+          'f17_client_safe_reference',
+          'f17_client_safe_set',
+          'f17_client_safe_item',
+          'f17_client_safe_workout_document',
         ]),
       ].sort(),
     );
@@ -545,6 +552,10 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        'f17_client_safe_reference',
+        'f17_client_safe_set',
+        'f17_client_safe_item',
+        'f17_client_safe_workout_document',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -624,6 +635,13 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'f17_client_portal_client',
+          'f17_client_subscription_summary',
+          'f17_client_resolve_global_exercise',
+          'f17_client_safe_reference',
+          'f17_client_safe_set',
+          'f17_client_safe_item',
+          'f17_client_safe_workout_document',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -1592,6 +1610,7 @@ describe('registration security catalog', () => {
       'app_private.f18_guard_nutrition_selection()',
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
+      'public.client_portal_workout_plan(uuid,integer)',
       'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',
       'app_private.f17_audit_allowlist_guard()',
