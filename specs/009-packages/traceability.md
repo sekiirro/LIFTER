@@ -152,3 +152,9 @@ Stack C candidate reset stopped at `20261108230000` to capture `package_offers=0
 ## S65 T065 conformance & teardown verification (2026-11-18)
 
 - T065 [ ] (teardown verified; remaining: four-category initialization forward-migration subtask per D10 + T070 post-implementation review): clause-by-clause conformance table `specs/009-packages/reviews/t065-conformance.md`; amended operator script `supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql` closing D1–D5, D8, D11, D12 (D6 retracted; D7/D9 accepted per T064b r2; D10 out of scope); `tests/integration/packages-c5-teardown.test.ts` RED (`8 failed | 40 passed`) on `origin/main` draft -> GREEN (`48 passed (48)`, 0 skipped) on Stack E; 3/3 script-level mutations killed and restored (`tests/integration/packages-verification.md`).
+
+## S65 T037 currency matrix and T046 downstream contract
+
+- T037: `tests/unit/packages-market-type.test.ts` covers every market/currency pair, rejects EUR and XTS outside the approved set, and asserts exact own-currency formatting with no conversion. Targeted unit run passed 77/77; a mutation replacing the market allowlist with `true` was killed by five rejection cases.
+- T046: `tests/integration/packages-markets-types.test.ts` passed with the existing category/version snapshot assertions; `tests/unit/packages-fx-red.test.ts` passed same-currency reporting and separate-settlement/original-currency assertions. The downstream contract documents no F10/F12 schema change for this scope, so no migration was required. Stack C targeted integration run: 17 passed, 5 TODO, one existing retirement test file skipped.
+- Full unit suite passed 3,801/3,801 with `TZ=America/Los_Angeles`; lint, typecheck, and both formatting gates passed. The default-timezone run reproduced an unrelated existing `client-notes-ui.test.tsx` timezone expectation failure.
