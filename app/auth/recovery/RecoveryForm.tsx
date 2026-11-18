@@ -46,15 +46,22 @@ function PasswordForm({ messages: m }: { messages: Messages }) {
 
 export function RecoveryForm({
   tokenHash,
+  staffFlow,
   messages: m,
 }: {
   tokenHash: string | null;
+  staffFlow: boolean;
   messages: Messages;
 }) {
   const [result, action, pending] = useActionState(verifyRecovery, null);
   if (result?.status === 'ok') return <PasswordForm messages={m} />;
   if (!tokenHash || result?.status === 'invalid_link')
-    return <Alert tone="error" title={m['auth.invalid_link']} />;
+    return (
+      <Alert
+        tone="error"
+        title={staffFlow ? m['auth.staffInvalidLink'] : m['auth.invalid_link']}
+      />
+    );
   return (
     <form action={action} className={styles.stack}>
       <input type="hidden" name="token_hash" value={tokenHash} />
