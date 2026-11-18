@@ -1,5 +1,6 @@
 # Spec Kit Analyze — F4 Authentication, S39 round 7
 
+- Full Analyze (S64 T032 Spec Kit cycle): 2026-11-18 UTC. Requirement text (`FR-006(a)–(c)`, `FR-015`, US3 scenarios 4 and 9, `ND-F4-1`), `plan.md` (`## T032 Design`), and `tasks.md` (`T032a`–`T032d` replacing `T032` while preserving `T032` history) were updated for `S31-PO-2 SK-004-02` ("All workspace Trainers"). Full cross-artifact Analyze executed; **0 open CRITICAL, 0 open HIGH** findings (see section `## 2026-11-18 Analyze — S64 T032 Spec Kit cycle (SK-004-02)` below).
 - Date update (S64): 2026-11-18 UTC. T046 ticked with S64-PO-4 evidence (README Authentication sentence + docs/13 AI-03); no FR/SC/acceptance or plan design text changed; this is a date update only, not a new full Analyze. 0 open CRITICAL/HIGH findings.
 - Date update (S54-R6): 2026-11-17 07:14 UTC. Recorded after the T031 task-status and
   traceability evidence changes for FR-010. No FR/SC/acceptance or plan design text changed;
@@ -185,3 +186,18 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 
 - Scope: `tasks.md` T030 Status (S64) note and `traceability.md` S64 merged-PR evidence section only (evidence located by git blame → commit → PR lookup for PRs #63/#52/#211; constitution 1.19.0 wording read). No requirement text changed; T030 ticked per architect ruling S64-R37: PR #63 head f8ab7380a22482e068a92f36bfc67b271cf9395e - CodeRabbit APPROVED on that head; CI run 42154050017 success.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-18 Analyze — S64 T032 Spec Kit cycle (SK-004-02)
+
+- **Date:** 2026-11-18 UTC (executed after final edits to `spec.md`, `plan.md`, and `tasks.md`).
+- **Scope:** Full cross-artifact Analyze for requirement, design, and task changes encoding `S31-PO-2 SK-004-02` ("All workspace Trainers") across `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `traceability.md`, and `contracts/auth-surface.md`. Documentation-only PR; no code, tests, or migrations modified or executed.
+- **Entry check (Spec Kit gate):**
+  - Numbered FRs, measurable SCs, and Given/When/Then scenarios cover the touched scope: **PASS** (`FR-006(a)–(c)`, `FR-015`, `SC-003`–`SC-006`, US3 scenarios 2, 4, and 9).
+  - Clarifications cite PO sources and state remaining ambiguities: **PASS** (`S31-PO-2 SK-004-02`, `SK-004-06`, `S31-PO-3 SK-004-04`; **No open ambiguities** stated explicitly in `spec.md`).
+  - Plan covers touched scope and tasks have IDs and FR tags: **PASS** (`plan.md` § T032 Design covers Wall 1 TS `MATRIX.trainer`, Wall 2 DB `app_private.role_has_capability` / `has_workspace_access` / RLS, RPC & guard authorization path, forward migration `<reserved>`, `recovery_link.generated` audit, and 4-axis mutation plan; `tasks.md` defines dependency-ordered `T032a` [RED] -> `T032b` [IMPL] -> `T032c` [GATE] -> `T032d` [REVIEW], each tagged with FR IDs, keeping `T032`'s history line and leaving staff-reset lane tasks `T034`–`T045`, `T049a`–`e`, `T050a`–`b`, `T052` untouched).
+  - Analyze dated after latest spec/plan/tasks edits with 0 open CRITICAL/HIGH: **PASS**.
+- **Findings for T032 (`SK-004-02`) scope:**
+  - `S64-T032-1` (**LOW**, informational): `traceability.md` rows `FR-006`, `AT-AUTH-01`, and `ND-F4-1` reference `T032` rather than `T032a`–`T032d`. Non-blocking in this docs-only Spec Kit PR (`T032` remains preserved in `tasks.md` history for consistency; `traceability.md` will be updated with `T032a`–`T032d` execution and mutation evidence during implementation/acceptance).
+  - Pre-existing ND-F4-7 implementation/feasibility MEDIUM gates (`S38-F4-1`, `S38-F4-2`, `S38-F4-4`) remain unchanged and outside T032 scope.
+- **Counts (T032 scope):** Open CRITICAL: **0**. Open HIGH: **0**. Open MEDIUM: **0** (for T032; 3 pre-existing ND-F4-7 gates unchanged). Open LOW: **1** (`S64-T032-1`).
+- **Verdict:** **PASS** — Spec Kit gate satisfied for `T032a`–`T032d` implementation entry (RED tests first in `T032a`, architect migration version reservation before `T032b`, executed mutation evidence in `T032c`, and architect security review in `T032d`).
