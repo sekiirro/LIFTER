@@ -112,7 +112,7 @@ beforeAll(async () => {
   await replica(async (tx) => {
     await tx`update public.clients set approval_state = 'pending-approval'
       where id = ${pending.clientId}`;
-    await tx`update public.clients set deactivated_at = clock_timestamp()
+    await tx`update public.clients set deactivated_at = clock_timestamp(), deactivation_reason = 'closure'
       where id = ${deactivated.clientId}`;
     // Delivery bound to a different client's subscription.
     await tx`update public.plan_deliveries set subscription_id = ${other.subscriptionId}
