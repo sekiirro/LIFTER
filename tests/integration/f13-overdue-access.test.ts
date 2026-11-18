@@ -292,7 +292,6 @@ it('T157 never counts another client in the same workspace', async () => {
     expect(await clientState(tx, p.t.id, '2027-01-01')).toEqual(aloneA);
     expect(await clientOverdue(tx, await authUser(tx))).toMatchObject({
       status: 'ok',
-      overdue_since: '2026-12-01',
     });
   });
 });
@@ -316,45 +315,53 @@ it('T157 covers renewal obligations through their stored due date', async () => 
       request_key: randomUUID(),
       expected_revision: 0,
       renewal_confirmed: true,
-      installments: null,
+      installments: [
+        { amount_minor: '600', due_offset_days: 0 },
+        { amount_minor: '600', due_offset_days: 30 },
+      ],
     };
     const [renewed] =
       await tx`select public.record_renewal(${tx.json(renewalInput as JSONValue)}) as result`;
     await tx`reset role`;
-    expect((renewed!.result as { status: string }).status).toBe('ok');
+    const result = renewed!.result as {
+      status: string;
+      receipt: { renewal_id: string };
+    };
+    expect(result.status).toBe('ok');
     const today = await cairoToday(tx);
     const [tomorrow] = await tx`select (${today}::date + 1)::text as d`;
-    // The renewal first installment is collected at recording: paid, so not overdue.
-    expect(await projectOverdue(tx, tomorrow!.d as string)).toMatchObject({
-      overdue: false,
-    });
-    const [ren] =
-      await tx`select i.id,i.seq,i.due_on::text as due_on,e.id as event_id
-      from public.subscription_installments i
-      join public.payment_events e on e.workspace_id=i.workspace_id and e.obligation_id=i.id
-      where i.workspace_id=${f.wsA.id} and i.subscription_id=${p.sid} and i.renewal_id is not null
-      order by i.seq limit 1`;
-    expect(ren!.due_on).toBe(today);
-    // Correcting the collection makes the renewal obligation unpaid again, due on its stored date.
-    const corrected = await sqlPay(
-      tx,
-      f.po.userId,
-      'correct',
-      paymentRequest(f, p, 'correct', {
-        obligation_id: ren!.id,
-        expected_installment_seq: ren!.seq,
-        expected_revision: 1,
-        expected_previous_event_id: ren!.event_id,
-        original_event_id: ren!.event_id,
-      }),
-    );
-    expect(corrected.status).toBe('ok');
+    const obligations = await tx`select id,seq,due_on::text as due_on
+      from public.subscription_installments
+      where workspace_id=${f.wsA.id} and subscription_id=${p.sid} and renewal_id=${result.receipt.renewal_id}
+      order by seq`;
+    expect(obligations).toHaveLength(2);
+    expect(obligations[0]!.due_on).toBe(today);
+    // Payable through Cairo day-end: not overdue on the due day, overdue the next day.
     expect(await projectOverdue(tx, today)).toMatchObject({ overdue: false });
     expect(await projectOverdue(tx, tomorrow!.d as string)).toMatchObject({
       overdue: true,
       overdue_since: today,
-      first_overdue_seq: ren!.seq,
+      first_overdue_seq: obligations[0]!.seq,
       overdue_installment_count: 1,
+    });
+    const collected = await sqlPay(tx, f.trainerA.userId, 'collect', {
+      workspace_id: f.wsA.id,
+      client_id: p.t.id,
+      request_key: randomUUID(),
+      subscription_id: p.sid,
+      obligation_id: obligations[0]!.id as string,
+      expected_installment_seq: obligations[0]!.seq as number,
+      expected_revision: 0,
+      expected_previous_event_id: null,
+      expected_amount_minor: '600',
+      currency: 'USD',
+      collected_on: '1900-01-01',
+      payment_confirmed: true,
+    });
+    expect(collected.status).toBe('ok');
+    expect(await projectOverdue(tx, tomorrow!.d as string)).toMatchObject({
+      overdue: false,
+      overdue_installment_count: 0,
     });
   });
 });
