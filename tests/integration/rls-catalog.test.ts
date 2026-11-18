@@ -551,6 +551,9 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        // F15 T029: D1 erasure cron wrappers declare `security invoker` and enforce
+        // the postgres-owner check in the body; only d1_erase_inapplicable_answers
+        // is `security definer` (20261124150000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
         'f15_d1_erasure_run',
         'f15_d1_erasure_run_batch',
         'f15_d1_erasure_schedule_activate',
@@ -872,6 +875,45 @@ describe('tenancy security catalog (T007)', () => {
         tgenabled: 'O',
       },
     ]);
+  });
+
+  it('keeps the F15 T029 D1 erasure private tables forced-RLS, policy-free, and API-private', async () => {
+    const tables = [
+      'app_private.f15_d1_erasure_context',
+      'app_private.form_d1_erasure_controls',
+      'app_private.form_d1_erasure_hold_alerts',
+    ];
+    for (const rel of tables) {
+      const [row] = await db`select relrowsecurity, relforcerowsecurity
+        from pg_catalog.pg_class where oid = ${rel}::regclass`;
+      expect(row, rel).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies = await db`
+        select policyname from pg_catalog.pg_policies
+        where schemaname = 'app_private'
+          and tablename = ${rel.slice('app_private.'.length)}`;
+      expect(
+        policies.map((policy) => policy.policyname),
+        rel,
+      ).toEqual([]);
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const priv of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+          expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+        }
+      }
+    }
   });
 });
 
