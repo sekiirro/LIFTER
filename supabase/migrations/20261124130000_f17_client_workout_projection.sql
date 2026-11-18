@@ -16,59 +16,12 @@
 -- provenance, versions, lifecycle) is ever returned. Adds no table, status,
 -- delivery entity, renderer or export engine.
 --
+-- The client wall and F13 subscription summary are F22's own
+-- app_private.f22_portal_client() / f22_subscription_summary() (no second copy).
+--
 -- Every client-facing failure that could reveal another client's data
 -- (foreign plan, undelivered revision, draft-only plan, a nutrition plan id,
 -- unknown id, unresolvable or foreign exercise reference) is one `not_found`.
-
--- The authenticated, approved and not deactivated client row (F11/F13 wall).
-create function app_private.f17_client_portal_client()
-returns table(workspace_id uuid, client_id uuid)
-language sql stable security definer set search_path = '' as $$
-  select c.workspace_id, c.id
-  from public.clients c
-  where auth.uid() is not null
-    and c.auth_user_id = auth.uid()
-    and c.approval_state = 'approved'
-    and c.deactivated_at is null
-$$;
-
--- F13 authoritative subscription summary for one client; null (fail closed)
--- unless exactly one continuous subscription is resolvable. Same selection
--- rule as the F22 portal summary so both client reads agree.
-create function app_private.f17_client_subscription_summary(p_workspace_id uuid, p_client_id uuid)
-returns jsonb
-language plpgsql stable security definer set search_path = '' as $$
-declare
-  today date := (statement_timestamp() at time zone 'Africa/Cairo')::date;
-  current_count integer;
-  resolved_count integer;
-  chosen uuid;
-  projection jsonb;
-begin
-  with resolved as (
-    select distinct app_private.f19_resolve_subscription_id(s.workspace_id, s.id) as sid
-    from public.subscriptions s
-    where s.workspace_id = p_workspace_id and s.client_id = p_client_id
-  ), projected as (
-    select r.sid, app_private.f13_project_entitlement(p_workspace_id, r.sid, today) as value
-    from resolved r
-  )
-  select count(*) filter (where p.value->>'status' in ('active', 'frozen'))::integer,
-    count(*)::integer,
-    coalesce(
-      (array_agg(p.sid order by p.sid) filter (where p.value->>'status' in ('active', 'frozen')))[1],
-      (array_agg(p.sid order by p.sid))[1])
-    into current_count, resolved_count, chosen
-  from projected p;
-  if current_count > 1 or (current_count = 0 and resolved_count <> 1) or chosen is null then
-    return null;
-  end if;
-  projection := app_private.f13_project_entitlement(p_workspace_id, chosen, today);
-  return jsonb_build_object(
-    'subscription_id', chosen,
-    'status', projection->>'status',
-    'effective_end_exclusive', projection->>'effective_end_exclusive');
-end $$;
 
 -- Allowlist projections of the F17 document schema v1. Only the keys the F17
 -- parser accepts are copied; anything else coach-authored JSON might carry is
@@ -212,9 +165,9 @@ declare
   found_exercise boolean;
   exercise_rows jsonb := '[]'::jsonb;
 begin
-  select * into client_row from app_private.f17_client_portal_client();
+  select * into client_row from app_private.f22_portal_client();
   if not found then return jsonb_build_object('status', 'invalid'); end if;
-  summary := app_private.f17_client_subscription_summary(client_row.workspace_id, client_row.client_id);
+  summary := app_private.f22_subscription_summary(client_row.workspace_id, client_row.client_id);
   if summary is null then return jsonb_build_object('status', 'invalid'); end if;
   if summary->>'status' is distinct from 'active' then
     return jsonb_build_object('status', 'restricted',
@@ -334,18 +287,12 @@ begin
     'exercises', exercise_rows);
 end $$;
 
-alter function app_private.f17_client_portal_client() owner to postgres;
-alter function app_private.f17_client_subscription_summary(uuid, uuid) owner to postgres;
 alter function app_private.f17_client_safe_reference(jsonb) owner to postgres;
 alter function app_private.f17_client_safe_set(jsonb) owner to postgres;
 alter function app_private.f17_client_safe_item(jsonb) owner to postgres;
 alter function app_private.f17_client_safe_workout_document(jsonb) owner to postgres;
 alter function app_private.f17_client_resolve_global_exercise(uuid) owner to postgres;
 alter function public.client_portal_workout_plan(uuid, integer) owner to postgres;
-revoke all on function app_private.f17_client_portal_client()
-  from public, anon, authenticated, service_role;
-revoke all on function app_private.f17_client_subscription_summary(uuid, uuid)
-  from public, anon, authenticated, service_role;
 revoke all on function app_private.f17_client_safe_reference(jsonb)
   from public, anon, authenticated, service_role;
 revoke all on function app_private.f17_client_safe_set(jsonb)
@@ -433,10 +380,19 @@ begin
       and c.deactivated_at is null
   );
 
+  if not v_staff and v_revision_id is not null and not exists (
+    select 1 from public.plan_revisions r
+    where r.id = v_revision_id and r.plan_id = v_plan_id
+  ) then
+    -- A revision id that does not belong to the given plan is never stored.
+    v_revision_id := null;
+  end if;
+
   if p_outcome = 'denied' then
-    if v_any_client and not v_own_client and not v_staff then
-      -- A client probing a plan that is not theirs: no foreign identity is
-      -- stored or derived.
+    if not v_staff and not v_own_client then
+      -- Any non-staff caller (foreign client, pending client, foreign
+      -- trainer, anyone else) probing a plan that is not theirs: no foreign
+      -- workspace, plan or revision identity is stored or derived.
       v_workspace_id := null;
       v_plan_id := null;
       v_revision_id := null;
@@ -480,6 +436,9 @@ begin
         and d.revision_id = v_revision_id
         and d.plan_kind = 'workout'
     )
+    -- A lapsed or restricted client cannot record an export that never
+    -- happened: the client read is gated on F13 active, so is its audit.
+    and (app_private.f22_subscription_summary(v_workspace_id, v_client_id) ->> 'status') = 'active'
   ) then
     raise exception 'not_permitted' using errcode = '42501';
   end if;

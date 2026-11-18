@@ -434,8 +434,7 @@ describe('client workout projection negatives', () => {
       expect(grant!.allowed, role).toBe(role === 'authenticated');
     }
     for (const helper of [
-      'app_private.f17_client_portal_client()',
-      'app_private.f17_client_subscription_summary(uuid,uuid)',
+      'app_private.f22_portal_client()',
       'app_private.f17_client_safe_reference(jsonb)',
       'app_private.f17_client_safe_set(jsonb)',
       'app_private.f17_client_safe_item(jsonb)',

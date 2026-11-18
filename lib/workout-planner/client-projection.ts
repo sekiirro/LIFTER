@@ -40,6 +40,7 @@ export type ClientWorkoutExercise = {
 export type ClientWorkoutSubscription = {
   status: string;
   effectiveEndExclusive: string | null;
+  refundScope?: 'full' | 'partial';
 };
 
 export type ClientWorkoutProjection = {
@@ -83,12 +84,27 @@ function exactKeys(
 }
 
 function parseSubscription(raw: unknown): ClientWorkoutSubscription | null {
-  if (!isRecord(raw) || !exactKeys(raw, ['status', 'effective_end_exclusive']))
+  if (
+    !isRecord(raw) ||
+    !exactKeys(raw, ['status', 'effective_end_exclusive', 'refund_scope'])
+  )
+    return null;
+  if (
+    raw.refund_scope !== undefined &&
+    raw.refund_scope !== 'full' &&
+    raw.refund_scope !== 'partial'
+  )
     return null;
   if (typeof raw.status !== 'string' || raw.status === '') return null;
   const end = raw.effective_end_exclusive;
   if (end !== null && end !== undefined && typeof end !== 'string') return null;
-  return { status: raw.status, effectiveEndExclusive: end ?? null };
+  return {
+    status: raw.status,
+    effectiveEndExclusive: end ?? null,
+    ...(raw.refund_scope === undefined
+      ? {}
+      : { refundScope: raw.refund_scope }),
+  };
 }
 
 /** Same identity the F17 payload builder resolves a reference by. */
@@ -130,7 +146,8 @@ const EXERCISE_KEYS = [
 ] as const;
 
 function parseExercise(raw: unknown): ClientWorkoutExercise | null {
-  // Closed shape: any extra (staff-only or private catalog) field denies.
+  // Closed shape: any extra (staff-only or private catalog) field denies,
+  // including a supplied version or overrideVersion (stamped below).
   if (!isRecord(raw) || !exactKeys(raw, EXERCISE_KEYS)) return null;
   if (typeof raw.name !== 'string' || raw.name === '') return null;
   if (

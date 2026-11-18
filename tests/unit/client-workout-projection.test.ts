@@ -60,6 +60,29 @@ describe('projectClientWorkoutPlan', () => {
     });
   });
 
+  it('keeps the F22 refund scope on a restricted refunded subscription', () => {
+    expect(
+      projectClientWorkoutPlan(
+        {
+          status: 'restricted',
+          subscription: {
+            status: 'refunded',
+            effective_end_exclusive: '2026-01-01',
+            refund_scope: 'full',
+          },
+        },
+        request,
+      ),
+    ).toEqual({
+      status: 'restricted',
+      subscription: {
+        status: 'refunded',
+        effectiveEndExclusive: '2026-01-01',
+        refundScope: 'full',
+      },
+    });
+  });
+
   it('never releases content when the subscription is not active, even if the DB said ok', () => {
     const result = projectClientWorkoutPlan(
       rawOk({
@@ -93,6 +116,10 @@ describe('projectClientWorkoutPlan', () => {
       { payload: { defaults: {} } },
       { name_ar: 'x' },
       { effective_fields: {} },
+      // parseExercise stamps its own version/overrideVersion for keying, so a
+      // supplied one must be rejected by the closed shape (kills mutant M4).
+      { version: 1 },
+      { overrideVersion: 3 },
     ]) {
       const exercises = rawExercises();
       Object.assign(exercises[0]!, extra);

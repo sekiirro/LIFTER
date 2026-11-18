@@ -125,7 +125,7 @@ describe('F17 client workout DB mutation kills (role and entitlement walls)', ()
   it('K1 role wall: removing the signed-identity client match lets staff read; installed wall refuses staff', async () => {
     const control = 'and c.auth_user_id = auth.uid()';
     const mutant = await underMutant(
-      'app_private.f17_client_portal_client()',
+      'app_private.f22_portal_client()',
       [
         [
           control,
@@ -141,7 +141,7 @@ describe('F17 client workout DB mutation kills (role and entitlement walls)', ()
       asUser(tx, p.fixture.po.userId, (inner) => readPlan(ownerPlan, inner)),
     );
     expect(installed).toEqual({ status: 'invalid' });
-    await stillInstalled('app_private.f17_client_portal_client()', [control]);
+    await stillInstalled('app_private.f22_portal_client()', [control]);
   });
 
   it('K2 entitlement wall: removing the F13 active gate releases content to a restricted client', async () => {
