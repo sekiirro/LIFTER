@@ -15,11 +15,13 @@ export default async function StaffLayout({
 }) {
   const actor = await requireActor();
   const navigationRole =
-    actor.role === 'trainer'
-      ? 'trainer'
-      : actor.role === null
-        ? 'client'
-        : null;
+    actor.role === 'platform_owner'
+      ? 'platform_owner'
+      : actor.role === 'trainer'
+        ? 'trainer'
+        : actor.role === null
+          ? 'client'
+          : null;
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const workspaceId =
     actor.activeWorkspaceIds.length === 1 ? actor.activeWorkspaceIds[0]! : null;
