@@ -151,13 +151,18 @@ const brandingFunctionOwners: Record<string, string> = {
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
 };
 const assignmentPrivate = [
+  'allocate_client_code',
+  'assign_client_code',
   'current_assigned_trainer',
   'enqueue_client_trainer_distribution_job',
   'end_assignments_on_membership_revocation',
   'end_assignments_on_trainer_role_change',
   'end_client_trainer_assignments',
+  'format_client_code',
+  'guard_client_code_immutable',
   'guard_client_trainer_assignment',
   'guard_client_trainer_assignment_truncate',
+  'normalize_client_code',
   'write_client_trainer_distribution',
 ];
 afterAll(async () => {
@@ -2039,6 +2044,7 @@ describe('F11 responsible-Trainer assignment catalog', () => {
       'public.assign_client_responsible_trainer(uuid,uuid,uuid)',
       'public.client_responsible_trainer(uuid,uuid)',
       'public.unassigned_clients(uuid)',
+      'public.find_client_by_code(uuid,text)',
     ]) {
       const [fn] = await db`select prosecdef,proconfig,
         pg_catalog.pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;

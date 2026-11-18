@@ -464,6 +464,7 @@ export async function pendingHttpAccess(
             'assign_client_responsible_trainer',
             'client_responsible_trainer',
             'unassigned_clients',
+            'find_client_by_code',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
