@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import {
   getNavigation,
   type NavItem,
@@ -9,6 +10,14 @@ import type { GlassFallback } from '../ui/glass/GlassSurface';
 import type { Messages } from '../../lib/i18n';
 import { ShellNavigation } from './ShellNavigation';
 import styles from './AppShell.module.css';
+
+const PlatformOwnerHeader = dynamic(
+  () =>
+    import('./PlatformOwnerHeader').then(
+      (module) => module.PlatformOwnerHeader,
+    ),
+  { ssr: true },
+);
 
 export type ShellNavigationProps = {
   items: readonly NavItem[];
@@ -40,6 +49,13 @@ export function AppShell({
   fallback,
 }: AppShellProps) {
   const navigation = getNavigation(role);
+  if (role === 'platform_owner')
+    return (
+      <div className={styles.shell} data-shell="">
+        <PlatformOwnerHeader messages={messages} />
+        <Content className={styles.content}>{children}</Content>
+      </div>
+    );
   if (navigation.status === 'needs-decision')
     return <Content>{children}</Content>;
   return (
