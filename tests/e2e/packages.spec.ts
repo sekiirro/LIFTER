@@ -1,10 +1,7 @@
-import { randomUUID } from 'node:crypto';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
 import { expect, test, type BrowserContext } from '@playwright/test';
-import { getMessages } from '../../lib/i18n';
-import { tierLabel } from '../../lib/packages/tier-label';
-import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { LOCALE_COOKIE } from '../../lib/design/preferences';
 
 const origin = new URL(process.env.PLAYWRIGHT_BASE_URL!).origin;
 for (const locale of ['ar', 'en'] as const)
