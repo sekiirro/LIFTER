@@ -1,3 +1,6 @@
+import { mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
 import { expect, test, type BrowserContext } from '@playwright/test';
@@ -138,6 +141,9 @@ test.describe('local-stack authenticated package acceptance (required for review
           : ['Egypt', 'International', 'Promotional', 'Year-Round'];
       for (const label of approvedCategoryLabels)
         await expect(page.getByText(label, { exact: true })).toBeVisible();
+      await expect(
+        page.getByText(m['packages.emptyCatalog'], { exact: true }),
+      ).toBeVisible();
       await expect(
         page.getByText(m['packages.empty'], { exact: true }),
         `package empty state missing for ${locale}; status=${packageResponse?.status()} workspace=${fixture.wsA.id} main=${(
@@ -301,16 +307,29 @@ test.describe('local-stack authenticated package acceptance (required for review
       await expect(intlRow).not.toContainText('EGP');
       await expect(page.locator('tfoot')).toHaveCount(0);
 
+      const screenshotDir = join(tmpdir(), 'lifter-s65-hyd-f9us5c');
+      await mkdir(screenshotDir, { recursive: true });
       for (const theme of ['light', 'dark']) {
         await context.addCookies([
           { name: THEME_COOKIE, value: theme, url: origin },
         ]);
         await page.reload();
+        await expect(
+          page.getByRole('heading', { name: m['packages.title'], exact: true }),
+        ).toBeVisible();
+        await expect(intlRow).toBeVisible();
         for (const viewport of [
           { width: 390, height: 844 },
           { width: 1440, height: 900 },
         ]) {
           await page.setViewportSize(viewport);
+          await page.screenshot({
+            path: join(
+              screenshotDir,
+              `packages-${locale}-${theme}-${viewport.width}x${viewport.height}.png`,
+            ),
+            fullPage: true,
+          });
           expect(
             (
               await new AxeBuilder({ page })
@@ -350,6 +369,15 @@ test.describe('local-stack authenticated package acceptance (required for review
       await expect(
         page.getByRole('status').filter({ hasText: m['packages.saved'] }),
       ).toBeVisible();
+      const wsBCategory = await fixture.po.client.rpc(
+        'create_package_category',
+        {
+          workspace_id: fixture.wsB.id,
+          market: 'Egypt',
+          category_type: 'Year-round',
+        },
+      );
+      expect(wsBCategory.error).toBeNull();
       await page.locator('input[name="nameEn"]').fill('test-stale');
       let release!: () => void;
       let intercepted!: () => void;

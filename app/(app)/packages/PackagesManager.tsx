@@ -203,6 +203,15 @@ export function PackagesManager({
   }
 
   const current = new Map(data.versions.map((v) => [v.id, v]));
+  const offerItems = data.offers.map((offer) => {
+    const v = current.get(offer.current_version_id ?? '');
+    const pkg = packageById.get(offer.package_id);
+    const pkgLabel =
+      v && isPackageMarket(v.market) && isPackageType(v.type)
+        ? categoryLabel(v.market, v.type, locale)
+        : formatPackageName(pkg, locale, offer.package_id);
+    return { offer, v, pkgLabel, available: offer.available };
+  });
   if (switching)
     return (
       <main className={styles.main} aria-busy="true">
@@ -351,7 +360,7 @@ export function PackagesManager({
                   ))}
                 </select>
               </label>
-              <div className={styles.presets}>
+              <div className={`${styles.presets} ${styles.tierGroup}`}>
                 {TIER_RANKS.map((rank) => (
                   <label
                     key={rank}
@@ -370,7 +379,7 @@ export function PackagesManager({
                   </label>
                 ))}
               </div>
-              <div className={styles.stack}>
+              <div className={`${styles.stack} ${styles.spanFull}`}>
                 <p id="duration-label">{m['packages.duration']}</p>
                 <div
                   className={styles.presets}
@@ -491,40 +500,97 @@ export function PackagesManager({
           </form>
         )}
       </section>
-      {data.offers.length === 0 ? (
+      {offerItems.length === 0 ? (
         <EmptyState title={m['packages.empty']} />
       ) : (
-        <div className={styles.tableWrap}>
-          <table>
-            <caption>{m['packages.title']}</caption>
-            <thead>
-              <tr>
-                {(
-                  [
-                    'package',
-                    'duration',
-                    'version',
-                    'price',
-                    'rate',
-                    'availability',
-                  ] as const
-                ).map((key) => (
-                  <th scope="col" key={key}>
-                    {m[`packages.${key}`]}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.offers.map((offer) => {
-                const v = current.get(offer.current_version_id ?? '');
-                const pkg = packageById.get(offer.package_id);
-                const pkgLabel =
-                  v && isPackageMarket(v.market) && isPackageType(v.type)
-                    ? categoryLabel(v.market, v.type, locale)
-                    : formatPackageName(pkg, locale, offer.package_id);
-                const available = offer.available;
-                return (
+        <>
+          <ul className={styles.mobileCards} aria-label={m['packages.title']}>
+            {offerItems.map(({ offer, v, pkgLabel, available }) => (
+              <li key={offer.id} className={styles.offerCard}>
+                <div className={styles.offerCardHeader}>
+                  <div>
+                    <strong>
+                      <bdi>{pkgLabel}</bdi>
+                      {' · '}
+                      {tierLabel(offer.tier_rank, locale)}
+                    </strong>
+                    {v && (
+                      <p className={styles.authored}>
+                        {locale === 'ar' ? v.name_ar : v.name_en}
+                      </p>
+                    )}
+                  </div>
+                  <span
+                    className={
+                      available
+                        ? styles.statusAvailable
+                        : styles.statusUnavailable
+                    }
+                  >
+                    {available
+                      ? m['packages.available']
+                      : m['packages.unavailableOffer']}
+                  </span>
+                </div>
+                <dl className={styles.offerMeta}>
+                  <dt>{m['packages.duration']}</dt>
+                  <dd className={styles.numeric}>
+                    {m['packages.days']}: {offer.duration_days}
+                  </dd>
+                  <dt>{m['packages.version']}</dt>
+                  <dd className={styles.numeric}>{v?.version}</dd>
+                  <dt>{m['packages.price']}</dt>
+                  <dd className={styles.numeric}>
+                    {v && (
+                      <bdi>
+                        {formatMinorUnits(v.price_minor, v.currency, locale)}
+                      </bdi>
+                    )}
+                  </dd>
+                  {v?.commission_rate_bp !== undefined && (
+                    <>
+                      <dt>{m['packages.rate']}</dt>
+                      <dd className={styles.numeric}>
+                        <bdi>
+                          {formatCommission(v.commission_rate_bp, locale)}
+                        </bdi>
+                      </dd>
+                    </>
+                  )}
+                </dl>
+                <Button
+                  disabled={pending}
+                  variant="secondary"
+                  onClick={() => setConfirm({ ...offer, available })}
+                >
+                  {available ? m['packages.disable'] : m['packages.enable']}
+                </Button>
+              </li>
+            ))}
+          </ul>
+          <div className={styles.tableWrap}>
+            <table>
+              <caption>{m['packages.title']}</caption>
+              <thead>
+                <tr>
+                  {(
+                    [
+                      'package',
+                      'duration',
+                      'version',
+                      'price',
+                      'rate',
+                      'availability',
+                    ] as const
+                  ).map((key) => (
+                    <th scope="col" key={key}>
+                      {m[`packages.${key}`]}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {offerItems.map(({ offer, v, pkgLabel, available }) => (
                   <tr key={offer.id}>
                     <th scope="row">
                       <bdi>{pkgLabel}</bdi>
@@ -577,11 +643,11 @@ export function PackagesManager({
                       </Button>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
       <ConfirmDialog
         open={confirm !== null}

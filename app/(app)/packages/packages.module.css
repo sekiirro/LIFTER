@@ -111,7 +111,46 @@
   background: var(--color-bg);
   border: 1px solid var(--color-border);
 }
+.mobileCards {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.offerCard {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  min-inline-size: 0;
+}
+.offerCardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--space-2);
+}
+.offerMeta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+.offerMeta dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.offerMeta dd {
+  margin: 0;
+  font-weight: 500;
+}
 .tableWrap {
+  display: none;
   overflow-x: auto;
   background: var(--color-card);
   border: 1px solid var(--color-border);
@@ -149,9 +188,20 @@
   white-space: nowrap;
 }
 @media (min-width: 48rem) {
+  .mobileCards {
+    display: none;
+  }
+  .tableWrap {
+    display: block;
+  }
   .fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
   }
+  .tierGroup {
+    align-self: end;
+  }
+  .spanFull,
   .submitRow {
     grid-column: 1 / -1;
   }
