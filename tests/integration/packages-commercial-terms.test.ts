@@ -600,7 +600,9 @@ describe('T054/T055 DB mutation controls (killed and rolled back)', () => {
   });
 
   it('mutation 4 (write without auth check): removing the PO check lets a WO initialization call write category rows, which the no-write snapshot comparison detects, then rolls back', async () => {
-    const ws = await createIsolatedWorkspace('T055 mutation no-auth-check write');
+    const ws = await createIsolatedWorkspace(
+      'T055 mutation no-auth-check write',
+    );
     const before = await snapshotDeniedSurfaces(ws);
     expect(before.packages).toEqual([]);
     await expect(
@@ -623,7 +625,9 @@ describe('T054/T055 DB mutation controls (killed and rolled back)', () => {
         ]);
         throw new Error('rollback_no_auth_check_write_mutation');
       }),
-    ).rejects.toMatchObject({ message: 'rollback_no_auth_check_write_mutation' });
+    ).rejects.toMatchObject({
+      message: 'rollback_no_auth_check_write_mutation',
+    });
     const restored = await snapshotDeniedSurfaces(ws);
     expect(restored).toEqual(before);
   });
