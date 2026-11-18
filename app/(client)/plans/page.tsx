@@ -6,6 +6,8 @@ import { readClientPortalOverview } from '../../../lib/client-access/portal';
 import { readClientNotices } from '../../../lib/client-access/notices';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
+import { takeLeaderboardDashboardNotice } from '../../../lib/leaderboard/service';
+import { LeaderboardDashboardNotice } from '../../../components/leaderboard/DashboardNotice';
 import { Alert } from '../../../components/ui/Alert';
 import { Bidi } from '../../../components/ui/Bidi';
 import { EmptyState } from '../../../components/ui/States';
@@ -26,6 +28,11 @@ export default async function ClientPlansPage() {
     readClientNotices(),
   ]);
   if (overview.status === 'denied') notFound();
+  // F24 FR-005: shown once, when the client first becomes eligible.
+  const leaderboardNotice =
+    overview.status === 'ok'
+      ? await takeLeaderboardDashboardNotice(actor)
+      : 'not_shown';
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
 
@@ -37,6 +44,9 @@ export default async function ClientPlansPage() {
         locale={locale}
         messages={m}
       />
+      {leaderboardNotice === 'first_view' && (
+        <LeaderboardDashboardNotice messages={m} />
+      )}
       {/* FR-004: the restricted dashboard shows only status, end date and the restricted state. */}
       {overview.status === 'ok' && (
         <ClientNotices result={notices} locale={locale} messages={m} />

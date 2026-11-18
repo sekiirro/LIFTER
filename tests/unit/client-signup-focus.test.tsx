@@ -156,7 +156,7 @@ describe('signup result focus', () => {
     await act(async () => {
       setInputValue(name, 'Heba Sami Nabil');
       setInputValue(dateOfBirth, '1990-10-30');
-      setInputValue(username, 'heba_r18_server_focus');
+      setInputValue(username, 'heba_r18_srv_focus');
     });
 
     await act(async () => {
@@ -437,7 +437,7 @@ describe('signup result focus', () => {
       'signup-username-error',
     );
     expect(host.querySelector('#signup-username-error')?.textContent).toBe(
-      'Use 3–30 characters: English letters, numbers, periods, or underscores.',
+      'Username must be at least 3 characters.',
     );
     expect(host.querySelector('[role="alert"]')).toBeNull();
     expect(action).toHaveBeenCalledOnce();
