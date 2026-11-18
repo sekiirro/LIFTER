@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { ClientLeaderboardSection } from '../../../components/leaderboard/ClientLeaderboardSection';
 import { MeasurementAdd } from '../../../components/progress-coaching/MeasurementAdd';
 import { MeasurementCorrection } from '../../../components/progress-coaching/MeasurementCorrection';
 import {
@@ -104,6 +105,8 @@ export default async function ClientProgressPage() {
           locale={locale}
           messages={messages}
         />
+        {/* F24 (S57-PO-12): Top 5 and private rank live inside Progress. */}
+        <ClientLeaderboardSection locale={locale} messages={messages} />
       </main>
     </ToastProvider>
   );

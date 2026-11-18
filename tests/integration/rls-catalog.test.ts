@@ -75,6 +75,29 @@ const f23Private = [
   'f23_nutrition_item_path',
   'f23_reconcile_food_requests',
 ];
+// Spec 024 private helpers (all revoked from every API role).
+const f24Private = [
+  'f24_active_days',
+  'f24_cairo_today',
+  'f24_client_eligible',
+  'f24_client_rankable',
+  'f24_current_view',
+  'f24_eligibility_facts',
+  'f24_guard_current',
+  'f24_guard_entry',
+  'f24_guard_publication',
+  'f24_initial_subscription',
+  'f24_public_entries',
+  'f24_publication_entries',
+  'f24_username_issue',
+  'f24_visible_username',
+];
+// Spec 024 immutability/swap guards run with the caller's rights.
+const f24Invoker = [
+  'f24_guard_current',
+  'f24_guard_entry',
+  'f24_guard_publication',
+];
 // Spec 022 private helpers.
 const f22Private = [
   'f22_delivered_revisions',
@@ -324,6 +347,7 @@ describe('tenancy security catalog (T007)', () => {
           ...signupPrivate,
           ...brandingPrivate,
           ...f23Private,
+          ...f24Private,
           ...f22Private,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
@@ -607,6 +631,7 @@ describe('tenancy security catalog (T007)', () => {
         'f23_derived_uuid_v4',
         'f23_guard_food_replacement_request',
         'f23_nutrition_item_path',
+        ...f24Invoker,
         'f17_client_safe_reference',
         'f17_client_safe_set',
         'f17_client_safe_item',
@@ -710,6 +735,12 @@ describe('tenancy security catalog (T007)', () => {
       }
       if (row.proname === 'staff_display_name_is_valid') {
         expect(row.service_role_execute, row.proname).toBe(true);
+      }
+      if (row.proname.startsWith('f24_')) {
+        // Spec 024: helpers are reachable only through the public F24 RPCs.
+        expect(row.authenticated_execute, row.proname).toBe(false);
+        expect(row.service_role_execute, row.proname).toBe(false);
+        continue;
       }
       if (row.proname.startsWith('f23_')) {
         // Spec 023: only the RLS visibility predicates are executable by authenticated.
@@ -1122,6 +1153,34 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'client_leaderboard_notice_seen_immutable',
+        relname: 'client_leaderboard_notice_seen',
+        type: 27,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_notice_seen_no_truncate',
+        relname: 'client_leaderboard_notice_seen',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_opt_outs_immutable',
+        relname: 'client_leaderboard_opt_outs',
+        type: 27,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_opt_outs_no_truncate',
+        relname: 'client_leaderboard_opt_outs',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
         tgname: 'f12_no_update',
         relname: 'payment_events',
         type: 19,
@@ -1209,6 +1268,27 @@ describe('audit security catalog (T005)', () => {
         tgname: 'f13_no_update',
         relname: 'trainer_productivity_points',
         type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_current_no_truncate',
+        relname: 'leaderboard_current_publications',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_entries_no_truncate',
+        relname: 'leaderboard_entries',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_publications_no_truncate',
+        relname: 'leaderboard_publications',
+        type: 34,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
       },
