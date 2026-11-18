@@ -5,6 +5,21 @@ export const PACKAGE_MARKETS = ['Egypt', 'International'] as const;
 export const PACKAGE_TYPES = ['Year-round', 'Promotional'] as const;
 export type PackageMarket = (typeof PACKAGE_MARKETS)[number];
 export type PackageType = (typeof PACKAGE_TYPES)[number];
+export const MARKET_CURRENCIES: Record<PackageMarket, readonly string[]> = {
+  Egypt: ['EGP'],
+  International: ['EGP', 'USD', 'SAR'],
+};
+export function isPackageMarket(value: unknown): value is PackageMarket {
+  return (PACKAGE_MARKETS as readonly unknown[]).includes(value);
+}
+export function isPackageType(value: unknown): value is PackageType {
+  return (PACKAGE_TYPES as readonly unknown[]).includes(value);
+}
+export function allowedCurrenciesForMarket(
+  market: PackageMarket,
+): readonly string[] {
+  return MARKET_CURRENCIES[market];
+}
 export function isUuid(value: unknown): value is string {
   return (
     typeof value === 'string' &&
@@ -37,10 +52,8 @@ export function isCurrencyAllowedForMarket(
 ): boolean {
   if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency))
     return false;
-  if (market === 'Egypt') return currency === 'EGP';
-  if (market === 'International')
-    return ['EGP', 'USD', 'SAR'].includes(currency);
-  return false;
+  if (!isPackageMarket(market)) return false;
+  return MARKET_CURRENCIES[market].includes(currency);
 }
 export function parseCode(value: unknown): string | null {
   return typeof value === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value)
