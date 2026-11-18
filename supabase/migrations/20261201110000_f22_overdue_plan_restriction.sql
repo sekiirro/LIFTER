@@ -51,7 +51,7 @@ begin
   overdue_state := app_private.f13_client_overdue_state(p_workspace_id, p_client_id, today);
   return summary || jsonb_build_object('overdue',
     coalesce((overdue_state->>'overdue')::boolean, false));
-end $;
+end $$;
 
 create or replace function public.client_portal_overview()
 returns jsonb
