@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   graph,
@@ -6,7 +7,10 @@ import {
   type Context,
 } from './registration-approval-fixture';
 import { pending } from './client-accounts-fixture';
-import { admin, createStaff } from './harness';
+import { admin, checked, createStaff, loadEnv } from './harness';
+import { issue } from './registration-links-fixture';
+import { FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT } from '../../lib/client-accounts/deletion-policy';
+import { drainAccountDeletions } from '../../workers/cron/src/account-deletion';
 
 let db: ReturnType<typeof sql>;
 beforeAll(() => {
@@ -511,37 +515,121 @@ describe('F11 responsible-Trainer assignment T050', () => {
 
   it('S56-R12 refuses assignment for non-active clients and deletion-intended Trainers', async () => {
     const context = await clientContext();
-    const clientA = (await approvedClient(context)).client;
-    const clientB = (await approvedClient(context)).client;
-
-    for (const deletionState of [
-      'deletion_pending',
-      'release_pending',
-      'released',
-    ] as const) {
-      await db.begin(async (tx) => {
-        await tx`select set_config('app.deletion_transition_proof', ${`assign-r12-${deletionState}`}, true)`;
-        await tx`
-          update public.clients
-          set deletion_state = ${deletionState}
-          where id = ${clientA}
-        `;
-      });
-      const assignClient = await context.po.client.rpc(
-        'assign_client_responsible_trainer',
-        {
-          p_workspace_id: context.wsA.id,
-          p_client_id: clientA,
-          p_trainer_user_id: context.trainerA.userId,
-        },
-      );
-      expect(assignClient.data).toMatchObject({ status: 'not_permitted' });
+    const createdAuth = await admin().auth.admin.createUser({
+      email: `s56-r12-${randomUUID()}@example.test`,
+      password: `F11-${randomUUID()}-aA1!`,
+      email_confirm: true,
+    });
+    if (createdAuth.error || !createdAuth.data.user) {
+      throw new Error(createdAuth.error?.message ?? 'Missing auth user');
     }
+    const clientAAuthId = createdAuth.data.user.id;
+    const clientA = (
+      await db.begin((tx) => graph(tx, context, { authUserId: clientAAuthId }))
+    ).client;
+    const linkB = checked(await issue(context)) as string;
+    const clientB = (
+      await db.begin((tx) => graph(tx, { ...context, link: linkB }))
+    ).client;
+
+    // 1) deletion_pending via real request_account_deletion
+    const clientRequest = await context.po.client.rpc(
+      'request_account_deletion',
+      {
+        p_target_user_id: clientAAuthId,
+        p_financial_confirmation: {
+          category: 'other',
+          acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+        },
+      },
+    );
+    expect(clientRequest.data).toMatchObject({ status: 'deletion_pending' });
+    const intentId = (clientRequest.data as { intent_id: string }).intent_id;
+
+    const assignPending = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientA,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignPending.data).toMatchObject({ status: 'not_permitted' });
+
+    // 2) release_pending via step A + step B
+    await db`
+      update auth.users
+      set banned_until = '9999-12-31T23:59:59Z'::timestamptz
+      where id = ${clientAAuthId}
+    `;
+    const claimed = await admin().rpc('claim_account_deletion_intents', {
+      p_limit: 100,
+    });
+    const leased = (
+      claimed.data as Array<{ id: string; lease_token: string }>
+    ).find((item) => item.id === intentId)!;
+    expect(
+      (
+        await admin().rpc('advance_deletion_step_a', {
+          p_intent_id: intentId,
+          p_lease_token: leased.lease_token,
+        })
+      ).data,
+    ).toBe(true);
+    expect(
+      (
+        await admin().rpc('execute_deletion_step_b', {
+          p_intent_id: intentId,
+          p_lease_token: leased.lease_token,
+        })
+      ).data,
+    ).toBe(true);
+
+    const assignReleasePending = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientA,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignReleasePending.data).toMatchObject({
+      status: 'not_permitted',
+    });
+
+    // 3) released via restricted continuation (step C + step D)
+    await db`
+      update app_private.account_deletion_intents
+      set lease_token = null, lease_expires_at = null
+      where id = ${intentId}
+    `;
+    const env = loadEnv();
+    await drainAccountDeletions(
+      {
+        SUPABASE_URL: env.apiUrl,
+        SUPABASE_SERVICE_ROLE_KEY: env.serviceRoleKey,
+      },
+      { limit: 100 },
+    );
+    const [releasedRow] = await db`
+      select deletion_state from public.clients where id = ${clientA}
+    `;
+    expect(releasedRow?.deletion_state).toBe('released');
+
+    const assignReleased = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientA,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignReleased.data).toMatchObject({ status: 'not_permitted' });
 
     const request = await context.po.client.rpc('request_account_deletion', {
       p_target_user_id: context.trainerB.userId,
     });
-    expect(request.data).toMatchObject({ status: 'ok' });
+    expect(request.data).toMatchObject({ status: 'deletion_pending' });
 
     const assignTrainer = await context.po.client.rpc(
       'assign_client_responsible_trainer',

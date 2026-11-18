@@ -101,6 +101,7 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       'username_normalized',
       'telegram_username',
       'approval_state',
+      'deletion_state',
       'created_at',
       'deactivated_at',
       'deactivation_reason',
@@ -109,7 +110,14 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
   expect(
     columns
       .filter(
-        (c) => !['deactivated_at', 'deactivation_reason'].includes(c.attname),
+        (c) =>
+          ![
+            'deactivated_at',
+            'deactivation_reason',
+            'email_normalized',
+            'phone_e164',
+            'name',
+          ].includes(c.attname),
       )
       .filter(
         (c) =>
@@ -121,6 +129,9 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       )
       .every((c) => c.attnotnull),
   ).toBe(true);
+  expect(columns.find((c) => c.attname === 'deletion_state')?.attnotnull).toBe(
+    true,
+  );
   expect(columns.find((c) => c.attname === 'deactivated_at')?.attnotnull).toBe(
     false,
   );

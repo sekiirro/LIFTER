@@ -1,5 +1,9 @@
 # Analyze — F11 client accounts
 
+## S64 T047/T048 date-only status — 2026-11-18 UTC
+
+Task completion status (`T047`, `T048`), S56-R12/S57-PO-1 dependency resolution notes, and Stack B execution/mutation evidence updated in `tasks.md` and `traceability.md`. FR/SC requirement text is unchanged; out-of-scope tasks (`T050`, `T054`, `T058`, `T059`, `T060`, `T062`, `T063`) remain unticked. No full Analyze rerun required.
+
 ## S64 date-only status (S64-R46) — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R46: the restricted-continuation half of A-S41-4 (P-S40-1, before T048) is APPROVED, so A-S41-4 is now CLOSED (entry-point half S64-R21, restricted-continuation half S64-R46). FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.

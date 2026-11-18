@@ -1,8 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { graph, clientContext, sql } from './registration-approval-fixture';
 import { pending } from './client-accounts-fixture';
+import { admin, loadEnv } from './harness';
 import { checked, issue } from './registration-links-fixture';
 import type { Context } from './registration-approval-fixture';
+import { FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT } from '../../lib/client-accounts/deletion-policy';
+import { drainAccountDeletions } from '../../workers/cron/src/account-deletion';
 
 let db: ReturnType<typeof sql>;
 beforeAll(() => {
@@ -212,27 +216,83 @@ describe('F11 T061 unassigned-client read', () => {
 
   it('excludes deletion_pending, release_pending, and released clients from unassigned_clients', async () => {
     const context = await clientContext();
-    const ids = await approvedClient(context);
-
-    for (const deletionState of [
-      'deletion_pending',
-      'release_pending',
-      'released',
-    ] as const) {
-      await db.begin(async (tx) => {
-        await tx`select set_config('app.deletion_transition_proof', ${`s56-r12-${deletionState}`}, true)`;
-        await tx`
-          update public.clients
-          set deletion_state = ${deletionState}
-          where id = ${ids.client}
-        `;
-      });
-      const read = await context.po.client.rpc('unassigned_clients', {
-        p_workspace_id: context.wsA.id,
-      });
-      expect(read.error).toBeNull();
-      const rows = (read.data as Array<{ client_id: string }>) ?? [];
-      expect(rows.some((row) => row.client_id === ids.client)).toBe(false);
+    const createdAuth = await admin().auth.admin.createUser({
+      email: `s56-r12-unassigned-${randomUUID()}@example.test`,
+      password: `F11-${randomUUID()}-aA1!`,
+      email_confirm: true,
+    });
+    if (createdAuth.error || !createdAuth.data.user) {
+      throw new Error(createdAuth.error?.message ?? 'Missing auth user');
     }
+    const authUserId = createdAuth.data.user.id;
+    const link = checked(await issue(context)) as string;
+    const ids = await db.begin((tx) =>
+      graph(tx, { ...context, link }, { authUserId }),
+    );
+
+    const req = await context.po.client.rpc('request_account_deletion', {
+      p_target_user_id: authUserId,
+      p_financial_confirmation: {
+        category: 'other',
+        acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+      },
+    });
+    expect(req.data).toMatchObject({ status: 'deletion_pending' });
+    const intentId = (req.data as { intent_id: string }).intent_id;
+    expect(await unassignedIds(context.po, context.wsA.id)).not.toContain(
+      ids.client,
+    );
+
+    await db`
+      update auth.users
+      set banned_until = '9999-12-31T23:59:59Z'::timestamptz
+      where id = ${authUserId}
+    `;
+    const claimed = await admin().rpc('claim_account_deletion_intents', {
+      p_limit: 100,
+    });
+    const leased = (
+      claimed.data as Array<{ id: string; lease_token: string }>
+    ).find((item) => item.id === intentId)!;
+    expect(
+      (
+        await admin().rpc('advance_deletion_step_a', {
+          p_intent_id: intentId,
+          p_lease_token: leased.lease_token,
+        })
+      ).data,
+    ).toBe(true);
+    expect(
+      (
+        await admin().rpc('execute_deletion_step_b', {
+          p_intent_id: intentId,
+          p_lease_token: leased.lease_token,
+        })
+      ).data,
+    ).toBe(true);
+    expect(await unassignedIds(context.po, context.wsA.id)).not.toContain(
+      ids.client,
+    );
+
+    await db`
+      update app_private.account_deletion_intents
+      set lease_token = null, lease_expires_at = null
+      where id = ${intentId}
+    `;
+    const env = loadEnv();
+    await drainAccountDeletions(
+      {
+        SUPABASE_URL: env.apiUrl,
+        SUPABASE_SERVICE_ROLE_KEY: env.serviceRoleKey,
+      },
+      { limit: 100 },
+    );
+    const [releasedRow] = await db`
+      select deletion_state from public.clients where id = ${ids.client}
+    `;
+    expect(releasedRow?.deletion_state).toBe('released');
+    expect(await unassignedIds(context.po, context.wsA.id)).not.toContain(
+      ids.client,
+    );
   });
 });

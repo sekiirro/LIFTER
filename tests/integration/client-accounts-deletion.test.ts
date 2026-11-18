@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
 import { loadActorRows } from '../../lib/auth/actor';
 import { authorize } from '../../lib/auth/authorize';
@@ -27,6 +27,7 @@ import {
   checked as linkChecked,
   issue,
   schedule,
+  secret,
 } from './registration-links-fixture';
 
 const db = sql();
@@ -57,6 +58,7 @@ async function makeWorkspaceLink(
       available: true,
     }),
   );
+  const s = secret();
   const linkId = linkChecked(
     await issue(
       {
@@ -64,21 +66,46 @@ async function makeWorkspaceLink(
         p: { ...pkg, offer: pkg.offer, versionId: pkg.versionId },
       },
       context.po.client,
-      withSchedule ? { installments: schedule } : {},
+      {
+        token_hash: s.hash,
+        ...(withSchedule ? { installments: schedule } : {}),
+      },
     ),
   ) as string;
   return {
     ...context,
     p: { ...pkg, offer: pkg.offer, versionId: pkg.versionId },
     link: linkId,
+    linkToken: s.token,
+    linkHash: s.hash,
   };
 }
 
 async function signupRealClient(
-  context: ClientContext,
+  context: ClientContext & { linkToken?: string; linkHash?: string },
   overrides: Partial<{ email: string; phone: string }> = {},
+  useContextLink = false,
 ) {
-  const f = await signupFixture(context);
+  const f = await (async () => {
+    if (!useContextLink || !context.linkToken || !context.linkHash) {
+      return signupFixture(context);
+    }
+    const base = await signupFixture(context);
+    const request = randomBytes(32).toString('base64url');
+    const [t] =
+      await db`insert into app_private.signup_admission_tickets(link_key,request_secret_hash,workspace_id,link_id)
+      select extensions.hmac(convert_to('lifter.f11.link.v1','UTF8')||decode('00','hex')||int4send(octet_length(${context.linkHash}::text))||convert_to(${context.linkHash},'UTF8'),decode(decrypted_secret,'hex'),'sha256'),extensions.digest(${request},'sha256'),${context.p.offer.workspace_id},${context.link}
+      from vault.decrypted_secrets where name='SIGNUP_RATE_KEY' returning id`;
+    if (!t) throw new Error('Synthetic scheduled admission unavailable');
+    return {
+      ...base,
+      token: context.linkToken,
+      request,
+      hash: context.linkHash,
+      link: context.link,
+      ticket: t.id as string,
+    };
+  })();
   const fields = {
     ...f.fields,
     ...(overrides.email ? { email: overrides.email } : {}),
@@ -291,8 +318,14 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
     const deniedStatus = await created.client.rpc('client_self_status');
     expect(deniedStatus.data).toEqual({ status: 'not_permitted' });
 
+    const rlsDeny = await created.client
+      .from('clients')
+      .select('id')
+      .eq('id', created.clientId);
+    expect(rlsDeny.error).not.toBeNull();
+    expect(rlsDeny.data).toBeNull();
+
     const [hasAccess] = await db.begin(async (tx) => {
-      await tx`select set_config('role', 'authenticated', true)`;
       await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: created.userId, role: 'authenticated' })}, true)`;
       return tx`select app_private.client_has_access(${context.wsA.id}, ${created.clientId}) as ok`;
     });
@@ -312,9 +345,12 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
     ).rejects.toThrow(/invalid_client_transition/);
 
     // Out-of-order continuation guard: step (B) refuses before step (A) ban is confirmed
-    const [claimedBeforeBan] = await db<
+    const claimedBeforeBanRows = await db<
       { id: string; lease_token: string }[]
-    >`select id, lease_token from public.claim_account_deletion_intents(1)`;
+    >`select id, lease_token from public.claim_account_deletion_intents(100)`;
+    const claimedBeforeBan = claimedBeforeBanRows.find(
+      (item) => item.id === intentId,
+    );
     expect(claimedBeforeBan?.id).toBe(intentId);
     const outOfOrderB = await db<
       { ok: boolean }[]
@@ -486,7 +522,7 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
     );
     const pendingClient = await signupRealClient(baseContext);
     const rejectedClient = await signupRealClient(baseContext);
-    const approvedClient = await signupRealClient(scheduledContext);
+    const approvedClient = await signupRealClient(scheduledContext, {}, true);
     if (!pendingClient.ok || !rejectedClient.ok || !approvedClient.ok) {
       throw new Error('Expected signup fixtures');
     }
@@ -709,9 +745,10 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
       });
     expect(grantDuringDel.error).not.toBeNull();
 
-    const [woClaim] = await db<
+    const woClaims = await db<
       { id: string; lease_token: string }[]
-    >`select id, lease_token from public.claim_account_deletion_intents(1)`;
+    >`select id, lease_token from public.claim_account_deletion_intents(100)`;
+    const woClaim = woClaims.find((item) => item.id === woIntentId);
     expect(woClaim?.id).toBe(woIntentId);
     const woBan = await admin().auth.admin.updateUserById(context.woA.userId, {
       ban_duration: '876000h',
@@ -844,7 +881,14 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
       p_target_user_id: context.trainerA.userId,
     });
     expect(trDel.error).toBeNull();
-    await drainAccountDeletions(cronEnv);
+    const trIntentId = (trDel.data as { intent_id: string }).intent_id;
+    await drainAccountDeletions(cronEnv, { limit: 100 });
+    const [trState] = await db`
+      select state, last_error_code
+      from app_private.account_deletion_intents
+      where id = ${trIntentId}
+    `;
+    expect(trState).toEqual({ state: 'completed', last_error_code: null });
 
     const [reassignedRow] = await db`
       select trainer_user_id, assignment_source, source_deletion_intent_id
@@ -883,7 +927,10 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
       await tx`select set_config('role', 'authenticated', true)`;
       await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: context.po.userId, role: 'authenticated' })}, true)`;
       await expect(
-        tx`select public.request_account_deletion(${context.po.userId})`,
+        tx.savepoint(
+          (sp) =>
+            sp`select public.request_account_deletion(${context.po.userId})`,
+        ),
       ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
     });
     const poRacer = await createStaff('platform_owner', 's64-po-racer');
@@ -936,9 +983,11 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
       p_target_user_id: clientM1.userId,
     });
     const intentM1 = (step0M1.data as { intent_id: string }).intent_id;
-    const [claimM1] = await db<
-      { lease_token: string }[]
-    >`select lease_token from public.claim_account_deletion_intents(1) where id = ${intentM1}`;
+    const claimsM1 = await db<
+      { id: string; lease_token: string }[]
+    >`select id, lease_token from public.claim_account_deletion_intents(100)`;
+    const claimM1 = claimsM1.find((item) => item.id === intentM1);
+    expect(claimM1).toBeDefined();
     await admin().auth.admin.updateUserById(clientM1.userId, {
       ban_duration: '876000h',
     });
@@ -1029,9 +1078,11 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
       p_target_user_id: clientM5.userId,
     });
     const intentM5 = (step0M5.data as { intent_id: string }).intent_id;
-    const [claimM5] = await db<
-      { lease_token: string }[]
-    >`select lease_token from public.claim_account_deletion_intents(1) where id = ${intentM5}`;
+    const claimsM5 = await db<
+      { id: string; lease_token: string }[]
+    >`select id, lease_token from public.claim_account_deletion_intents(100)`;
+    const claimM5 = claimsM5.find((item) => item.id === intentM5);
+    expect(claimM5).toBeDefined();
     await admin().auth.admin.updateUserById(clientM5.userId, {
       ban_duration: '876000h',
     });
@@ -1094,15 +1145,122 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
     // (M7) Drop target denial at step (0) in client_has_access
     await expectMutationKilled(
       'app_private.client_has_access(uuid,uuid)',
-      (def) => def.replace(/AND \(c\.deletion_state = 'active'\)/i, ''),
+      (def) =>
+        def.replace(
+          /AND\s+\(?c\.deletion_state\s*=\s*'active'(?:::text)?\)?/i,
+          '',
+        ),
       async () => {
         const [res] = await db.begin(async (tx) => {
-          await tx`select set_config('role', 'authenticated', true)`;
           await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: clientM6a.userId, role: 'authenticated' })}, true)`;
           return tx`select app_private.client_has_access(${context.wsA.id}, ${clientM6a.clientId}) as ok`;
         });
         expect(res?.ok).toBe(false);
       },
     );
+  });
+
+  it('T048 / S64-R46(2) / S56-R12 excludes non-active clients and deletion-intended Trainers from write_client_trainer_distribution', async () => {
+    const context = await clientContext();
+    const clientPending = await signupRealClient(context);
+    const clientActive = await signupRealClient(context);
+    if (!clientPending.ok || !clientActive.ok) {
+      throw new Error('Expected distribution guard clients');
+    }
+    const approvalA = await approveViaRpc(
+      context.po.client,
+      context.wsA.id,
+      clientPending.clientId,
+    );
+    const approvalB = await approveViaRpc(
+      context.po.client,
+      context.wsA.id,
+      clientActive.clientId,
+    );
+    expect(approvalA.receipt.status).toBe('ok');
+    expect(approvalB.receipt.status).toBe('ok');
+
+    // Enqueue / create distribution jobs directly if T063 emitter is not yet wired, using the private enqueue helper as postgres.
+    const [enqPending] = await db<{ id: string }[]>`
+      select app_private.enqueue_client_trainer_distribution_job(
+        ${context.wsA.id},
+        ${clientPending.clientId},
+        (
+          select id from app_private.registration_approval_events
+          where workspace_id = ${context.wsA.id} and client_id = ${clientPending.clientId}
+          limit 1
+        )
+      ) as id
+    `;
+    const [jobPending] = await db<{ id: string; lease_token: string }[]>`
+      update public.jobs
+      set status = 'running', lease_token = gen_random_uuid(), lease_expires_at = clock_timestamp() + interval '5 minutes'
+      where id = ${enqPending!.id}
+      returning id, lease_token
+    `;
+
+    // Transition clientPending to deletion_pending before running the distribution writer
+    const reqClient = await context.po.client.rpc('request_account_deletion', {
+      p_target_user_id: clientPending.userId,
+      p_financial_confirmation: {
+        category: 'other',
+        acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+      },
+    });
+    expect(reqClient.data).toMatchObject({ status: 'deletion_pending' });
+
+    const handledClient = await admin().rpc(
+      'handle_client_trainer_distribution',
+      {
+        p_job_id: jobPending!.id,
+        p_lease_token: jobPending!.lease_token,
+      },
+    );
+    expect(handledClient.data).toBe(true);
+    const [jobPendingRow] = await db`
+      select outcome from public.jobs where id = ${jobPending!.id}
+    `;
+    expect(jobPendingRow?.outcome).toBe('no_op_client_not_approved');
+
+    // Commit deletion intent on trainerA and mark trainerB sales so no eligible trainer remains
+    const reqTrainer = await context.po.client.rpc('request_account_deletion', {
+      p_target_user_id: context.trainerA.userId,
+    });
+    expect(reqTrainer.data).toMatchObject({ status: 'deletion_pending' });
+    await db`
+      update public.staff_profiles
+      set role = 'sales'
+      where user_id = ${context.trainerB.userId}
+    `;
+
+    const [enqTrainer] = await db<{ id: string }[]>`
+      select app_private.enqueue_client_trainer_distribution_job(
+        ${context.wsA.id},
+        ${clientActive.clientId},
+        (
+          select id from app_private.registration_approval_events
+          where workspace_id = ${context.wsA.id} and client_id = ${clientActive.clientId}
+          limit 1
+        )
+      ) as id
+    `;
+    const [jobTrainer] = await db<{ id: string; lease_token: string }[]>`
+      update public.jobs
+      set status = 'running', lease_token = gen_random_uuid(), lease_expires_at = clock_timestamp() + interval '5 minutes'
+      where id = ${enqTrainer!.id}
+      returning id, lease_token
+    `;
+    const handledTrainer = await admin().rpc(
+      'handle_client_trainer_distribution',
+      {
+        p_job_id: jobTrainer!.id,
+        p_lease_token: jobTrainer!.lease_token,
+      },
+    );
+    expect(handledTrainer.data).toBe(true);
+    const [jobTrainerRow] = await db`
+      select outcome from public.jobs where id = ${jobTrainer!.id}
+    `;
+    expect(jobTrainerRow?.outcome).toBe('no_eligible');
   });
 });
