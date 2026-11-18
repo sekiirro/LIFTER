@@ -128,6 +128,12 @@ test.describe('local-stack authenticated package acceptance (required for review
       await expect(
         page.getByRole('heading', { name: m['packages.title'], exact: true }),
       ).toBeVisible();
+      const approvedCategoryLabels =
+        locale === 'ar'
+          ? ['مصر', 'دولي', 'وقت العـروض', 'طول السنـة']
+          : ['Egypt', 'International', 'Promotional', 'Year-Round'];
+      for (const label of approvedCategoryLabels)
+        await expect(page.getByText(label, { exact: true })).toBeVisible();
       await expect(
         page.getByText(m['packages.empty'], { exact: true }),
         `package empty state missing for ${locale}; status=${packageResponse?.status()} workspace=${fixture.wsA.id} main=${(
@@ -180,6 +186,8 @@ test.describe('local-stack authenticated package acceptance (required for review
         .filter({ has: page.getByRole('rowheader').filter({ hasText: code }) });
       await expect(row).toHaveCount(1);
       await expect(row).toContainText(tierLabel(1, locale));
+      await expect(row).toContainText('EGP');
+      await expect(row).not.toContainText('USD');
       await expect(row).toContainText(`${m['packages.days']}: 90`);
       await row
         .getByRole('button', { name: m['packages.enable'], exact: true })
