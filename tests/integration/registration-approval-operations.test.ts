@@ -224,3 +224,180 @@ it('T042 real F11 client session observes pending then approved status without s
     approval_state: 'approved',
   });
 });
+
+it('T056 approval enqueues one distribution job in the same transaction and keeps approval fact untouched', async () => {
+  const t = await registered(f);
+  const req = request(f, t);
+  let txResult: Awaited<ReturnType<typeof sqlCall>> | undefined;
+  let txJobs: Array<Record<string, unknown>> = [];
+  let txFact: Record<string, unknown> | undefined;
+
+  await probe(async (tx) => {
+    txResult = await sqlCall(tx, f.po.userId, 'approve', req);
+    [txFact] = await tx`
+      select id, workspace_id, client_id, subscription_id, schema_version, kind
+      from app_private.registration_approval_events
+      where workspace_id = ${f.wsA.id} and client_id = ${t.id}`;
+    txJobs = await tx`
+      select kind, workspace_id, status, payload, idempotency_key, max_attempts
+      from public.jobs
+      where workspace_id = ${f.wsA.id}
+        and kind = 'client.distribution'
+        and payload->>'client_id' = ${t.id}`;
+  });
+
+  expect(txResult?.status).toBe('ok');
+  expect(txFact).toMatchObject({
+    workspace_id: f.wsA.id,
+    client_id: t.id,
+    subscription_id: txResult?.receipt?.subscription_id,
+    schema_version: 1,
+    kind: 'registration.approved',
+  });
+  expect(txJobs).toEqual([
+    {
+      kind: 'client.distribution',
+      workspace_id: f.wsA.id,
+      status: 'pending',
+      payload: { client_id: t.id, approval_id: txFact!.id },
+      idempotency_key: `client.distribution:${t.id}:${txFact!.id}`,
+      max_attempts: 5,
+    },
+  ]);
+  expect(
+    await db`select id from public.jobs where workspace_id = ${f.wsA.id} and kind = 'client.distribution' and payload->>'client_id' = ${t.id}`,
+  ).toHaveLength(0);
+
+  const committed = await call(f.actors.woA.client, 'approve', req);
+  expect(committed.status).toBe('ok');
+  const [fact] = await db`
+    select id, workspace_id, client_id, subscription_id, schema_version, kind
+    from app_private.registration_approval_events
+    where workspace_id = ${f.wsA.id} and client_id = ${t.id}`;
+  expect(fact).toMatchObject({
+    workspace_id: f.wsA.id,
+    client_id: t.id,
+    subscription_id: committed.receipt?.subscription_id,
+    schema_version: 1,
+    kind: 'registration.approved',
+  });
+  const jobs = await db`
+    select id, kind, workspace_id, status, payload, idempotency_key, max_attempts
+    from public.jobs
+    where workspace_id = ${f.wsA.id}
+      and kind = 'client.distribution'
+      and payload->>'client_id' = ${t.id}`;
+  expect(jobs).toEqual([
+    {
+      id: expect.any(String),
+      kind: 'client.distribution',
+      workspace_id: f.wsA.id,
+      status: 'pending',
+      payload: { client_id: t.id, approval_id: fact!.id },
+      idempotency_key: `client.distribution:${t.id}:${fact!.id}`,
+      max_attempts: 5,
+    },
+  ]);
+
+  const replay = await call(f.actors.woA.client, 'approve', req);
+  expect(replay).toEqual(committed);
+  const stale = await call(f.po.client, 'approve', request(f, t));
+  expect(stale).toEqual({ status: 'stale_state' });
+  const afterReplayJobs = await db`
+    select id from public.jobs
+    where workspace_id = ${f.wsA.id}
+      and kind = 'client.distribution'
+      and payload->>'client_id' = ${t.id}`;
+  expect(afterReplayJobs).toHaveLength(1);
+  expect(afterReplayJobs[0]?.id).toBe(jobs[0]?.id);
+});
+
+it('T056 rolled-back approval writes no job and retry writes exactly one', async () => {
+  const t = await registered(f);
+  const req = request(f, t);
+
+  await probe(async (tx) => {
+    await tx.unsafe(
+      "create function pg_temp.t056_fail() returns trigger language plpgsql as $$ begin raise exception 'T056 synthetic failure' using errcode='23514'; end $$",
+    );
+    await tx`create constraint trigger t056_fail_deferred after insert on app_private.registration_approval_events deferrable initially deferred for each row execute function pg_temp.t056_fail()`;
+    expect(await sqlCall(tx, f.po.userId, 'approve', req)).toEqual({
+      status: 'unavailable',
+    });
+    expect(
+      await tx`select id from public.jobs where workspace_id = ${f.wsA.id} and kind = 'client.distribution' and payload->>'client_id' = ${t.id}`,
+    ).toHaveLength(0);
+  });
+
+  expect(
+    await db`select id from public.jobs where workspace_id = ${f.wsA.id} and kind = 'client.distribution' and payload->>'client_id' = ${t.id}`,
+  ).toHaveLength(0);
+
+  const retry = await call(f.po.client, 'approve', req);
+  expect(retry.status).toBe('ok');
+  const [fact] = await db`
+    select id from app_private.registration_approval_events
+    where workspace_id = ${f.wsA.id} and client_id = ${t.id}`;
+  const jobs = await db`
+    select kind, workspace_id, payload, idempotency_key
+    from public.jobs
+    where workspace_id = ${f.wsA.id}
+      and kind = 'client.distribution'
+      and payload->>'client_id' = ${t.id}`;
+  expect(jobs).toEqual([
+    {
+      kind: 'client.distribution',
+      workspace_id: f.wsA.id,
+      payload: { client_id: t.id, approval_id: fact!.id },
+      idempotency_key: `client.distribution:${t.id}:${fact!.id}`,
+    },
+  ]);
+});
+
+it('T056 rejection and denied approval enqueue no distribution job; reconsideration enqueues one', async () => {
+  const tDenied = await registered(f);
+  expect(
+    await call(f.actors.salesA.client, 'approve', request(f, tDenied)),
+  ).toEqual({ status: 'not_permitted' });
+  expect(
+    await call(
+      f.po.client,
+      'approve',
+      request(f, tDenied, 'approve', { expected_amount_minor: '1199' }),
+    ),
+  ).toEqual({ status: 'invalid_input', fields: [] });
+  expect(
+    await db`select id from public.jobs where workspace_id = ${f.wsA.id} and kind = 'client.distribution' and payload->>'client_id' = ${tDenied.id}`,
+  ).toHaveLength(0);
+
+  const tRejected = await registered(f);
+  expect(
+    (await call(f.actors.woA.client, 'reject', request(f, tRejected, 'reject')))
+      .status,
+  ).toBe('ok');
+  expect(
+    await db`select id from public.jobs where workspace_id = ${f.wsA.id} and kind = 'client.distribution' and payload->>'client_id' = ${tRejected.id}`,
+  ).toHaveLength(0);
+
+  expect(
+    (await call(f.po.client, 'reconsider', request(f, tRejected, 'reconsider')))
+      .status,
+  ).toBe('ok');
+  const [fact] = await db`
+    select id from app_private.registration_approval_events
+    where workspace_id = ${f.wsA.id} and client_id = ${tRejected.id}`;
+  const jobs = await db`
+    select kind, workspace_id, payload, idempotency_key
+    from public.jobs
+    where workspace_id = ${f.wsA.id}
+      and kind = 'client.distribution'
+      and payload->>'client_id' = ${tRejected.id}`;
+  expect(jobs).toEqual([
+    {
+      kind: 'client.distribution',
+      workspace_id: f.wsA.id,
+      payload: { client_id: tRejected.id, approval_id: fact!.id },
+      idempotency_key: `client.distribution:${tRejected.id}:${fact!.id}`,
+    },
+  ]);
+});
