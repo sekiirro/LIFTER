@@ -70,10 +70,13 @@ const selfProgress = (tx: TransactionSql, user: string) =>
     return r!.v as { measurements_status: string; measurements: unknown[] };
   });
 
-const visible = async (tx: TransactionSql, clientId: string) =>
-  (
-    await tx`select app_private.f23_client_progress_visible(${f.wsA.id},${clientId}) as v`
-  )[0]!.v as boolean;
+// client_has_access is bound to the caller, so visibility is evaluated as that client.
+const visible = (tx: TransactionSql, clientId: string, user: string) =>
+  asUser(tx, user, async () => {
+    const [r] =
+      await tx`select app_private.f23_client_progress_visible(${f.wsA.id},${clientId}) as v`;
+    return r!.v as boolean;
+  });
 
 it('restricts own measurements while overdue and restores them when it clears', async () => {
   await probe(async (tx) => {
@@ -127,8 +130,8 @@ it('keeps another client of the same workspace unaffected and negatives foreign 
     await tx`select set_config('request.jwt.claims','{}',true)`;
     await activateDaysAgo(tx, p, 45);
     await activateDaysAgo(tx, p2, 5);
-    expect(await visible(tx, p.t.id)).toBe(false);
-    expect(await visible(tx, p2.t.id)).toBe(true);
+    expect(await visible(tx, p.t.id, user1)).toBe(false);
+    expect(await visible(tx, p2.t.id, user2)).toBe(true);
     expect((await selfProgress(tx, user2)).measurements_status).toBe('ok');
     // The overdue client cannot read the other client's rows either way.
     const foreign = await asUser(
@@ -150,7 +153,7 @@ it('kills a mutant that ignores the overdue input', async () => {
     const user = await userOf(tx, p.t.id);
     await tx`select set_config('request.jwt.claims','{}',true)`;
     await activateDaysAgo(tx, p, 45);
-    expect(await visible(tx, p.t.id)).toBe(false);
+    expect(await visible(tx, p.t.id, user)).toBe(false);
     const identity = 'app_private.f23_client_progress_visible(uuid,uuid)';
     const [d] =
       await tx`select pg_get_functiondef(${identity}::regprocedure) as def`;
@@ -163,7 +166,7 @@ it('kills a mutant that ignores the overdue input', async () => {
     await tx.unsafe(mutant);
     let failed = false;
     try {
-      expect(await visible(tx, p.t.id)).toBe(false);
+      expect(await visible(tx, p.t.id, user)).toBe(false);
     } catch {
       failed = true;
     }
