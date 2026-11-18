@@ -43,6 +43,7 @@ export const MATRIX: Readonly<Record<Role, readonly Capability[]>> = {
     'read_form_answers',
   ],
   trainer: [
+    'generate_recovery_link',
     'generate_registration_link',
     'record_payment',
     'manage_freeze',
