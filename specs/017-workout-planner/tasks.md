@@ -82,6 +82,7 @@
 - [x] **T050 (60m) — Performance benchmark and size-cap decision.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-022; SC-014). Re-benchmark a 7-day/40-exercise plan and the maximum accepted document; choose the final cap from evidence. RED first. Mutation: remove each measured assertion and prove the gate fails. No historical number is accepted without a fresh measurement. Evidence: `tests/integration/f17-plan-performance.test.ts`, `tests/unit/workout-performance-benchmark.test.ts`, `verification.md` (T050).
 - [x] **T051 (50m) — Migration validation and release gate.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-022; SC-014). Unique versions above the highest across all refs, fresh + upgrade paths, audit atomicity, zero direct DML, all mutation evidence recorded. RED first. Mutation: remove each security-critical assertion in turn and prove the gate fails. Evidence: `npm run check:migration-versions:remote` (438 remote refs, no collisions); Stack A fresh reset + provision through merged main; Stack A upgrade from `20261122010000` through pending migrations + provision; `tests/integration/workout-export-audit.test.ts` (atomic rollback), `tests/integration/workout-negative-matrix.test.ts` (direct-DML and guard mutants), `verification.md` (T051).
 - [x] **T052 (45m) — Frontend Design Gate evidence and handoff.** `[UI][INDEPENDENT]` (FR-024; SC-013). Rendered AR/EN × light/dark × mobile/desktop screenshots, all states, accessibility evidence. RED first. Mutation: remove one role-gated control or accessible name and prove the suite fails. Evidence: `tests/e2e/f17-design-gate.spec.ts` (8 cells, full-page + 5 per-state screenshots and per-cell axe JSON), 56 PNGs + 8 axe JSON under `C:/Users/NEW LAP/.lifter/runs/s63-hy4-f17ui/screenshots`; skill-catalog review, checklist and no-production-change note in `verification.md` and the lane report; RED→GREEN mutation kills (role-gated control + accessible name) recorded in `verification.md` (S63 T045/T052).
+- [x] **T054 (60m) — Client-safe workout projection and export (F22 T017/T023–T028 workout side).** `[DB/SECURITY][EXPORT][RISK: HIGH][NEEDS-STACK]` (FR-017, FR-018, FR-025; SC-008; F16 client-plan resolver contract, F16-MCQ-9, T058 workout side). Client-derived (no client, workspace or entitlement id from the caller), F13-gated read of only the caller's own delivered workout revision: allowlisted document plus name and current authorized video per referenced exercise, no staff-only or private catalog field; a separate client-safe reader feeds the existing F17 print view and Excel writer (the staff reader and its `coaching_work` checks are not weakened); every export and denial is audited through the existing F17 recorder, success fails closed. RED first. Mutation: remove the F13 gate, the own-client filter, the workspace scoping, the allowlist or the audit gate and prove the negative test fails. Authorized by user message 2026-11-18: 'Own and resolve ALL F22/F23 blockers, including ... F16/F17 client-safe workout projection/export'. Evidence: `supabase/migrations/20261124130000_f17_client_workout_projection.sql` (`public.client_portal_workout_plan`), `lib/workout-planner/client-projection.ts`, `lib/workout-planner/client-export.ts`, `tests/unit/client-workout-projection.test.ts`, `tests/unit/client-workout-export.test.ts`, `tests/unit/client-workout-print-view.test.tsx`, `tests/integration/client-workout-projection.test.ts`, `tests/integration/client-workout-export.test.ts`, `tests/integration/client-workout-db-mutation.test.ts`, `tests/integration/client-workout-wall-mutation.test.ts` (undelivered revision, nutrition plan, pending/deactivated client, foreign-subscription delivery, recorder scrub and active-gate kills); `verification.md` (T054); CI green on last code commit `ff9ec443` (run 44267318913: validate, integration shards 1-3, integration, storage, docs-only; later commits are docs-only).
 
 ## Dependency order
 
@@ -116,15 +117,15 @@ Shared fixtures are appended, never overwritten, under concurrency.
 | FR-014      | T005, T018, T030                         |
 | FR-015      | T019, T020, T021, T042                   |
 | FR-016      | T006, T036                               |
-| FR-017      | T007, T037, T038, T039                   |
-| FR-018      | T007, T037, T038, T041                   |
+| FR-017      | T007, T037, T038, T039, T054             |
+| FR-018      | T007, T037, T038, T041, T054             |
 | FR-019      | T008, T040                               |
 | FR-020      | T001, T016, T017, T024, T047             |
 | FR-021      | T014, T019, T026, T049                   |
 | FR-022      | T010, T015, T050, T051                   |
 | FR-023      | T031, T032                               |
 | FR-024      | T032, T042, T043, T044, T045, T052       |
-| FR-025      | T020, T039, T047                         |
+| FR-025      | T020, T039, T047, T054                   |
 | FR-026      | Excluded by spec; no tasks               |
 | FR-027      | T019, T020, T022                         |
 
@@ -137,7 +138,7 @@ Shared fixtures are appended, never overwritten, under concurrency.
 | SC-005    | T005, T011, T013, T024, T028             |
 | SC-006    | T012, T018, T019, T020, T021, T042       |
 | SC-007    | T006, T036                               |
-| SC-008    | T007, T037, T038, T039, T041             |
+| SC-008    | T007, T037, T038, T039, T041, T054       |
 | SC-009    | T008, T040                               |
 | SC-010    | T001, T014, T016, T017, T026, T047, T049 |
 | SC-011    | T005, T011, T031, T034, T035             |
