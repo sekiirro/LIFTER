@@ -1,6 +1,6 @@
 # T012 — Offline pilot-unit → relation volume projection (S31-PO-4)
 
-**Status**: ARTIFACT COMPLETE; T012 **NOT** ticked — unverifiable inputs remain (see §6 MCQ).
+**Status**: ARTIFACT COMPLETE; T012 **ticked** per PO decisions S65-PO-7 / S65-PO-10 / S65-PO-11 (all three MCQs in §6 ANSWERED on 2026-11-18). Distinct-staff total and plan-kind split remain **UNVERIFIED by PO decision**; ND-F8-2 / ND-F8-3 stay pre-production.
 **Date**: 2026-11-18
 **Base**: `origin/main` `ed90bde55c3f819d1898f17372bd77ba96ba661c` (worktree `LFTR-s65-t012`, branch `s65-008-t012`).
 **Method**: offline only. No DB stack, no Supabase CLI, no deploy, no cloud read/write. Schema facts were read from `supabase/migrations` on the base commit; the projection is a pure function in `scripts/free-tier/lib/pilot-volumes.mjs`.
@@ -8,6 +8,8 @@
 ## 1. Governing decisions (verbatim sources)
 
 - PO **S65-PO-7** (`C:/Users/NEW LAP/.lifter/runs/s65-po/s65-po-7.verbatim.txt`): "Close T012 for v1 on the offline projection with a recorded schema-verified volume artifact; deploy/auth measurements stay as the existing pre-production items."
+- PO **S65-PO-10** (`C:/Users/NEW LAP/.lifter/runs/s65-po/s65-po-10.verbatim.txt`): "S65-T012-1: C — Leave unverified. LIFTER is pre-production; the pilot was test-only. Verify fixtures if available, never invent figures."
+- PO **S65-PO-11** (`C:/Users/NEW LAP/.lifter/runs/s65-po/s65-po-11.verbatim.txt`): "S65-T012-2: A" — option text: Row volume is enough: Close T012 on the row-volume projection; byte/DB-size measurement stays the existing deployment item (ND-F8-2). Plan kind split stays unverified.
 - Architect **S65-R12** (`C:/Users/NEW LAP/.lifter/runs/s65-arch/rulings.md:14`): a measurement lane produces the artifact (offline projection, each S31-PO-4 pilot unit verified against schema), then T012 closes docs-only citing it.
 - Pilot **S31-PO-4 / SK-008-01** (`C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md:191`): "Illustrative pilot: 2 workspaces, 150 clients/workspace, 2 staff/workspace, 2 plans/client, 2 new plan versions/client/month. Verify schema and units."
 - Derived volumes recorded in `specs/008-free-tier-validation/spec.md:80,94` and `plan.md:35`: 300 clients and 600 new plan versions/month; "staff count and the plans-per-client count are inputs for other tables and are not factors of the plan-version volume."
@@ -68,34 +70,38 @@ This is a **row-volume** projection only. It is not a byte-size projection and m
 
 Per `tasks.md:71`, the byte projection whose per-row basis is unknown is **deferred / invalid**, not completed. ND-F8-2 (deploy) and ND-F8-3 (authenticated routes) remain pre-production items per S65-PO-7.
 
-## 6. PO-DECISION-NEEDED — MCQ (T012 not ticked)
+## 6. PO-DECISION-NEEDED — MCQs ANSWERED (2026-11-18)
 
-The brief requires: "Mark any input you cannot verify UNVERIFIED; if any is unverifiable, do NOT tick T012 (write MCQ in report.md)." Unverifiable inputs remain (§5), so T012 stays `[ ]`.
+All three MCQs were escalated to the PO and answered on 2026-11-18. **T012 is ticked** in `tasks.md`, citing S65-PO-7, S65-PO-10 and S65-PO-11 and the artifact path `specs/008-free-tier-validation/reports/t012-volume-projection.md`.
 
-1. **MCQ-S65-T012-1 — distinct staff total.** How many distinct `public.staff_profiles` / `auth.users` rows does the illustrative pilot assume?
-   - (A) 4 — each workspace has its own 2 staff (2 workspaces × 2). Implication: `staff_profiles` volume 4.
-   - (B) 2 — the same 2 staff serve both workspaces. Implication: `staff_profiles` volume 2, memberships still 4.
-   - (C) Leave distinct-staff total UNVERIFIED and exclude `staff_profiles`/`auth.users` from the volume artifact. Implication: row-volume projection stays partial.
-   - Recommendation: (C) for this artifact; it is the only option that invents nothing. Blocked: complete row-volume projection and the T012 tick.
+### MCQ-S65-T012-1 — distinct staff total — ANSWERED: (C)
 
-2. **MCQ-S65-T012-2 — byte-level projection basis.** Does S65-PO-7's "offline projection" require a byte-level `projectUsage` result, or is the schema-verified row-volume projection in §4 sufficient?
-   - (A) Row-volume projection is sufficient; byte/DB-size projection stays a deployment item (ND-F8-2). Implication: T012 can be ticked once MCQ-S65-T012-1 is resolved.
-   - (B) A byte-level result is required. Implication: impossible offline with no DB; T012 stays blocked until a measured local db-usage JSON exists (conflicts with "No DB stack (offline)").
-   - Recommendation: (A), consistent with the PO's "deploy/auth measurements stay as the existing pre-production items". Blocked: T012 tick.
+- PO **S65-PO-10** (verbatim): "S65-T012-1: C — Leave unverified. LIFTER is pre-production; the pilot was test-only. Verify fixtures if available, never invent figures."
+- Outcome: the distinct `public.staff_profiles` / `auth.users` total stays **UNVERIFIED** and those two tables are **excluded** from the volume artifact; the row-volume projection remains partial for them (§5). No figure invented.
+- Fixture search (per S65-PO-10): searched `tests/**`, `supabase/seed*.sql` and `scripts/**`. No `supabase/seed*.sql` exists in the repo. The only pilot-named files are `scripts/free-tier/lib/pilot-volumes.mjs` and `tests/unit/free-tier-pilot-volumes.test.ts`; they encode only the decided pilot units (2 workspaces × 2 staff → 4 memberships) and themselves record the distinct-staff total as UNVERIFIED (`scripts/free-tier/lib/pilot-volumes.mjs:61-67`; `tests/unit/free-tier-pilot-volumes.test.ts:10-18`). No fixture defines the distinct staff set, so the UNVERIFIED/excluded status stands.
 
-3. **MCQ-S65-T012-3 — plan-kind split.** If a byte projection is later required, how should the 600 plans be split between `workout` and `nutrition` (which determines `nutrition_plan_version_contents` rows)?
-   - (A) Leave UNVERIFIED; record as a MISSING volume. (B) PO supplies a split. (C) Treat all 600 as one kind (would be an invented assumption).
-   - Recommendation: (A). Blocked: any byte projection involving `nutrition_plan_version_contents`.
+### MCQ-S65-T012-2 — byte-level projection basis — ANSWERED: (A)
+
+- PO **S65-PO-11** (verbatim): "S65-T012-2: A" — option text: Row volume is enough: Close T012 on the row-volume projection; byte/DB-size measurement stays the existing deployment item (ND-F8-2). Plan kind split stays unverified.
+- Outcome: the schema-verified **row-volume** projection (§4) is sufficient to close T012. No byte/DB-size projection is attempted; it stays the existing deployment item **ND-F8-2** (pre-production). No byte figure is claimed.
+
+### MCQ-S65-T012-3 — plan-kind split — ANSWERED: (A) (consequence of S65-PO-11)
+
+- Outcome: the `workout`/`nutrition` split of the 600 plans stays **UNVERIFIED**, recorded as a MISSING volume. Because no byte projection is produced (MCQ-S65-T012-2 = A), `nutrition_plan_version_contents` rows are not estimated (§5). No split is invented.
+
+### Standing pre-production items
+
+- **ND-F8-2** (deployment / byte-DB-size measurement) and **ND-F8-3** (authenticated-route measurement) remain explicitly open, pre-production items per S65-PO-7 and S65-PO-11. No deploy, cloud, or authenticated-route action was taken.
 
 ## 7. T012 clause status
 
 - "Verify each S31-PO-4 pilot unit against the current schema" — **done** (§3).
-- "check the supplied relation's row estimate" — **not possible offline**: the only supplied estimate is a synthetic `reltuples = -1` fixture, which T012 itself says to defer/invalidate (§5).
+- "check the supplied relation's row estimate" — **deferred/invalidated per T012's own rule and PO decision**: the only supplied estimate is a synthetic `reltuples = -1` fixture (unknown basis), which T012 instructs to defer/invalidate; S65-PO-7 / S65-PO-11 accept the schema-verified row-volume projection in its place (§5, §6).
 - "record the mapping and source in the projection volume artifact" — **done** (§3, §4).
-- "complete offline projection after verification" — **row projection done; byte projection deferred/invalid** (§4, §5).
-- "defer deployment-dependent and authenticated-route measurements" — **done** (ND-F8-2/ND-F8-3 remain pre-production).
+- "complete offline projection after verification" — **row projection done; byte projection deferred/invalid per S65-PO-11 (stays ND-F8-2)** (§4, §5, §6).
+- "defer deployment-dependent and authenticated-route measurements" — **done** (ND-F8-2/ND-F8-3 remain pre-production per S65-PO-7 / S65-PO-11).
 
-**Conclusion:** artifact delivered, T012 remains unchecked pending the MCQs above.
+**Conclusion:** artifact delivered; all three MCQs ANSWERED by the PO on 2026-11-18 (S65-PO-7 / S65-PO-10 / S65-PO-11); **T012 ticked** in `tasks.md`. Distinct-staff total and plan-kind split remain UNVERIFIED by PO decision; ND-F8-2 / ND-F8-3 stay pre-production.
 
 ## 8. Evidence / reproduction
 
