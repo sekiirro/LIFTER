@@ -8,6 +8,7 @@ import {
 } from './registration-approval-fixture';
 import { pending } from './client-accounts-fixture';
 import { admin, checked, createStaff, loadEnv } from './harness';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 import { issue } from './registration-links-fixture';
 import { FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT } from '../../lib/client-accounts/deletion-policy';
 import { drainAccountDeletions } from '../../workers/cron/src/account-deletion';
@@ -145,6 +146,44 @@ describe('F11 responsible-Trainer assignment T050', () => {
     expect(invalidBeforeAuthorization.data).toMatchObject({
       status: 'not_permitted',
     });
+  });
+
+  it('kills the T050 active same-workspace membership guard mutation', async () => {
+    const context = await clientContext();
+    const clientId = (await approvedClient(context)).client;
+    let probeError: unknown = null;
+    try {
+      await withCrashSafeFunctionMutant(
+        'public.assign_client_responsible_trainer(uuid, uuid, uuid)',
+        (definition) =>
+          definition.replace(
+            /if membership_id is null then return jsonb_build_object\('status', 'not_permitted'\); end if;/,
+            "if false then return jsonb_build_object('status', 'not_permitted'); end if;",
+          ),
+        async () => {
+          const crossWorkspace = await context.po.client.rpc(
+            'assign_client_responsible_trainer',
+            {
+              p_workspace_id: context.wsA.id,
+              p_client_id: clientId,
+              p_trainer_user_id: context.trainerB.userId,
+            },
+          );
+          expect(crossWorkspace.error).toBeNull();
+          expect(crossWorkspace.data).toMatchObject({
+            status: 'not_permitted',
+          });
+        },
+      );
+    } catch (error) {
+      probeError = error;
+    }
+    expect(
+      probeError,
+      'Mutant survived for T050 membership authorization',
+    ).not.toBeNull();
+    expect(String(probeError)).not.toContain('Mutation did not change');
+    expect(String(probeError)).not.toContain('Missing function');
   });
 
   it('refuses assignment before approval and writes no row', async () => {

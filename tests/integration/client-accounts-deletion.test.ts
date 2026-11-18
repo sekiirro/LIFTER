@@ -739,6 +739,20 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
       select id from public.subscriptions
       where workspace_id = ${baseContext.wsA.id} and client_id = ${approvedClient.clientId}
     `;
+    const [financialBefore] = await db`
+      select
+        (select count(*)::int from public.payment_events
+          where workspace_id = ${baseContext.wsA.id} and subscription_id = ${sub!.id}) as payment_events,
+        (select count(*)::int from public.refund_operations
+          where workspace_id = ${baseContext.wsA.id} and subscription_id = ${sub!.id}) as refunds,
+        (select count(*)::int from public.refund_allocation_events
+          where workspace_id = ${baseContext.wsA.id} and subscription_id = ${sub!.id}) as refund_allocations,
+        (select count(*)::int from public.subscription_obligation_cancellations c
+          join public.subscription_installments i on i.workspace_id = c.workspace_id and i.id = c.obligation_id
+          where c.workspace_id = ${baseContext.wsA.id} and i.subscription_id = ${sub!.id}) as cancellations,
+        (select count(*)::int from public.subscription_manual_date_adjustments
+          where workspace_id = ${baseContext.wsA.id} and subscription_id = ${sub!.id}) as corrections
+    `;
 
     const delPending = await baseContext.po.client.rpc(
       'request_account_deletion',
@@ -809,6 +823,51 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
     );
     expect(badAck.error?.message).toContain('invalid_financial_confirmation');
 
+    const [confirmationCountBeforeInvalid] = await db`
+      select count(*)::int as count from public.audit_events
+      where action = 'account_deletion.financial_confirmed'
+        and target_id = ${approvedClient.clientId}
+    `;
+    const missingCategory = await baseContext.po.client.rpc(
+      'record_deletion_financial_confirmation',
+      {
+        p_workspace_id: baseContext.wsA.id,
+        p_client_id: approvedClient.clientId,
+        p_category: null,
+        p_acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.ar,
+      },
+    );
+    expect(missingCategory.error?.message).toContain(
+      'invalid_financial_confirmation',
+    );
+    const missingAcknowledgement = await baseContext.po.client.rpc(
+      'record_deletion_financial_confirmation',
+      {
+        p_workspace_id: baseContext.wsA.id,
+        p_client_id: approvedClient.clientId,
+        p_category: 'forfeited_under_contract',
+        p_acknowledgement: null,
+      },
+    );
+    expect(missingAcknowledgement.error?.message).toContain(
+      'invalid_financial_confirmation',
+    );
+    const [confirmationCountAfterInvalid] = await db`
+      select count(*)::int as count from public.audit_events
+      where action = 'account_deletion.financial_confirmed'
+        and target_id = ${approvedClient.clientId}
+    `;
+    expect(confirmationCountAfterInvalid?.count).toBe(
+      confirmationCountBeforeInvalid?.count,
+    );
+    const missingConf = await baseContext.po.client.rpc(
+      'request_account_deletion',
+      { p_target_user_id: approvedClient.userId },
+    );
+    expect(missingConf.error?.message).toContain(
+      'financial_confirmation_required',
+    );
+
     expect(FINANCIAL_RESOLUTION_CATEGORIES.forfeited_under_contract.ar).toBe(
       'تم التنازل عن المبلغ حسب العقد',
     );
@@ -824,6 +883,26 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
     expect(conf.error).toBeNull();
     const confAuditId = (conf.data as { confirmation_audit_id: number })
       .confirmation_audit_id;
+    const [confirmationAudit] = await db`
+      select action, target_table, target_id, workspace_id, details
+      from public.audit_events where id = ${confAuditId}
+    `;
+    expect(confirmationAudit).toMatchObject({
+      action: 'account_deletion.financial_confirmed',
+      target_table: 'clients',
+      target_id: approvedClient.clientId,
+      workspace_id: baseContext.wsA.id,
+      details: {
+        category: 'forfeited_under_contract',
+        acknowledgement_verified: true,
+      },
+    });
+    const [confirmationCount] = await db`
+      select count(*)::int as count from public.audit_events
+      where action = 'account_deletion.financial_confirmed'
+        and target_id = ${approvedClient.clientId}
+    `;
+    expect(confirmationCount?.count).toBe(1);
 
     const delApproved = await baseContext.po.client.rpc(
       'request_account_deletion',
@@ -883,6 +962,21 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
     `;
     expect(consumedIntent?.state).toBe('completed');
     expect(consumedIntent?.financial_confirmation_consumed_at).not.toBeNull();
+    const [financialAfter] = await db`
+      select
+        (select count(*)::int from public.payment_events
+          where workspace_id = ${baseContext.wsA.id} and subscription_id = ${sub!.id}) as payment_events,
+        (select count(*)::int from public.refund_operations
+          where workspace_id = ${baseContext.wsA.id} and subscription_id = ${sub!.id}) as refunds,
+        (select count(*)::int from public.refund_allocation_events
+          where workspace_id = ${baseContext.wsA.id} and subscription_id = ${sub!.id}) as refund_allocations,
+        (select count(*)::int from public.subscription_obligation_cancellations c
+          join public.subscription_installments i on i.workspace_id = c.workspace_id and i.id = c.obligation_id
+          where c.workspace_id = ${baseContext.wsA.id} and i.subscription_id = ${sub!.id}) as cancellations,
+        (select count(*)::int from public.subscription_manual_date_adjustments
+          where workspace_id = ${baseContext.wsA.id} and subscription_id = ${sub!.id}) as corrections
+    `;
+    expect(financialAfter).toEqual(financialBefore);
 
     const secondClient = await signupRealClient(baseContext);
     if (!secondClient.ok) throw new Error('Expected second signup');
@@ -901,6 +995,81 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
     expect(reuseAttempt.error?.message).toContain(
       'invalid_financial_confirmation',
     );
+  });
+
+  it('kills the T059 SQL NULL validation bypass mutation', async () => {
+    const context = await clientContext();
+    await expectMutationKilled(
+      'public.record_deletion_financial_confirmation(uuid, uuid, text, text)',
+      (definition) =>
+        definition.replace(
+          /app_private\.deletion_financial_confirmation_valid\(p_category,\s*p_acknowledgement\)\s+is\s+not\s+true/,
+          'not app_private.deletion_financial_confirmation_valid(p_category, p_acknowledgement)',
+        ),
+      async () => {
+        const mutationProbe = await context.po.client.rpc(
+          'record_deletion_financial_confirmation',
+          {
+            p_workspace_id: context.wsA.id,
+            p_client_id: randomUUID(),
+            p_category: null,
+            p_acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+          },
+        );
+        expect(mutationProbe.error?.message).toContain(
+          'invalid_financial_confirmation',
+        );
+      },
+    );
+  });
+
+  it('uses F11 safe deletion for an old Platform Owner after add-first replacement without inserting memberships (003 T026(c))', async () => {
+    const context = await clientContext();
+    const replacement = await createStaff(
+      'platform_owner',
+      's66-t026c-replacement-po',
+    );
+    const replacementActor = await loadActorRows(
+      replacement.client,
+      replacement.userId,
+    );
+    expect(replacementActor?.role).toBe('platform_owner');
+
+    const [membershipCountBefore] = await db`
+      select count(*)::int as count
+      from public.workspace_memberships
+      where user_id = ${context.po.userId}
+    `;
+    const deletion = await replacement.client.rpc('request_account_deletion', {
+      p_target_user_id: context.po.userId,
+    });
+    expect(deletion.error).toBeNull();
+    const intentId = (deletion.data as { intent_id: string }).intent_id;
+    await drainAccountDeletions(cronEnv, { limit: 100 });
+
+    const [intent] = await db`
+      select state from app_private.account_deletion_intents where id = ${intentId}
+    `;
+    expect(intent?.state).toBe('completed');
+
+    const oldActor = await loadActorRows(context.po.client, context.po.userId);
+    expect(oldActor?.role).toBeNull();
+    expect(authorize(oldActor!, 'manage_staff_access', context.wsA.id)).toBe(
+      false,
+    );
+
+    const [membershipCountAfter] = await db`
+      select count(*)::int as count
+      from public.workspace_memberships
+      where user_id = ${context.po.userId}
+    `;
+    expect(membershipCountAfter?.count).toBe(membershipCountBefore?.count);
+    const [activeMemberships] = await db`
+      select count(*)::int as count
+      from public.workspace_memberships
+      where user_id = ${context.po.userId} and revoked_at is null
+    `;
+    expect(activeMemberships?.count).toBe(0);
   });
 
   it('supports staff deletions (last WO, Trainer reassignment, membership-grant interleaving, PO self-deletion) and enforces FR-026 last-PO refusal/race', async () => {
@@ -1044,6 +1213,10 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
 
     // 3. Trainer deletion: reassigns client to eligible trainerBackup, keeps ended row
     const trainerBackup = await createStaff('trainer', 's64-trainer-backup');
+    const trainerBalanced = await createStaff(
+      'trainer',
+      's66-trainer-balanced',
+    );
     checked(
       await context.po.client.from('workspace_memberships').insert({
         workspace_id: context.wsA.id,
@@ -1051,6 +1224,31 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
         granted_by: context.po.userId,
       }),
     );
+    checked(
+      await context.po.client.from('workspace_memberships').insert({
+        workspace_id: context.wsA.id,
+        user_id: trainerBalanced.userId,
+        granted_by: context.po.userId,
+      }),
+    );
+    const alreadyAssignedClient = await signupRealClient(context);
+    if (!alreadyAssignedClient.ok)
+      throw new Error('Expected alreadyAssignedClient');
+    await approveViaRpc(
+      context.po.client,
+      context.wsA.id,
+      alreadyAssignedClient.clientId,
+    );
+    const backupAssignment = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: alreadyAssignedClient.clientId,
+        p_trainer_user_id: trainerBackup.userId,
+      },
+    );
+    expect(backupAssignment.data).toMatchObject({ status: 'ok' });
+
     const activeClient = await signupRealClient(context);
     if (!activeClient.ok) throw new Error('Expected activeClient');
     await approveViaRpc(
@@ -1067,6 +1265,31 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
       },
     );
     expect(assigned.data).toMatchObject({ status: 'ok' });
+
+    checked(
+      await context.po.client.from('workspace_memberships').insert({
+        workspace_id: context.wsB.id,
+        user_id: context.trainerA.userId,
+        granted_by: context.po.userId,
+      }),
+    );
+    const workspaceBContext = await makeWorkspaceLink(context, context.wsB.id);
+    const activeClientB = await signupRealClient(workspaceBContext, {}, true);
+    if (!activeClientB.ok) throw new Error('Expected activeClientB');
+    await approveViaRpc(
+      context.po.client,
+      context.wsB.id,
+      activeClientB.clientId,
+    );
+    const assignedB = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsB.id,
+        p_client_id: activeClientB.clientId,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignedB.data).toMatchObject({ status: 'ok' });
 
     const trDel = await context.po.client.rpc('request_account_deletion', {
       p_target_user_id: context.trainerA.userId,
@@ -1089,11 +1312,91 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
         and ended_at is null
     `;
     expect(reassignedRow).toEqual({
-      trainer_user_id: trainerBackup.userId,
+      trainer_user_id: trainerBalanced.userId,
       assignment_source: 'trainer_deletion',
       source_deletion_intent_id: (trDel.data as { intent_id: string })
         .intent_id,
     });
+    const [reassignedRowB] = await db`
+      select trainer_user_id, assignment_source, source_deletion_intent_id
+      from public.client_trainer_assignments
+      where workspace_id = ${context.wsB.id}
+        and client_id = ${activeClientB.clientId}
+        and ended_at is null
+    `;
+    expect(reassignedRowB).toEqual({
+      trainer_user_id: context.trainerB.userId,
+      assignment_source: 'trainer_deletion',
+      source_deletion_intent_id: (trDel.data as { intent_id: string })
+        .intent_id,
+    });
+
+    const endedDepartingAssignments = await db`
+      select workspace_id, client_id, ended_at, ended_by_system
+      from public.client_trainer_assignments
+      where trainer_user_id = ${context.trainerA.userId}
+        and client_id in (${activeClient.clientId}, ${activeClientB.clientId})
+      order by workspace_id
+    `;
+    expect(endedDepartingAssignments).toHaveLength(2);
+    expect(
+      endedDepartingAssignments.every(
+        (row) => row.ended_at !== null && row.ended_by_system === true,
+      ),
+    ).toBe(true);
+    const revokedTrainerMemberships = await db`
+      select workspace_id from public.workspace_memberships
+      where user_id = ${context.trainerA.userId} and revoked_at is null
+    `;
+    expect(revokedTrainerMemberships).toHaveLength(0);
+
+    // With the only remaining workspace-B Trainer deleted, both of its clients
+    // keep their ended history and remain unassigned.
+    const noEligibleContext = await makeWorkspaceLink(context, context.wsB.id);
+    const noEligibleClient = await signupRealClient(
+      noEligibleContext,
+      {},
+      true,
+    );
+    if (!noEligibleClient.ok) throw new Error('Expected noEligibleClient');
+    await approveViaRpc(
+      context.po.client,
+      context.wsB.id,
+      noEligibleClient.clientId,
+    );
+    const assignedToLastTrainer = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsB.id,
+        p_client_id: noEligibleClient.clientId,
+        p_trainer_user_id: context.trainerB.userId,
+      },
+    );
+    expect(assignedToLastTrainer.data).toMatchObject({ status: 'ok' });
+    const lastTrainerDeletion = await context.po.client.rpc(
+      'request_account_deletion',
+      { p_target_user_id: context.trainerB.userId },
+    );
+    expect(lastTrainerDeletion.error).toBeNull();
+    await drainAccountDeletions(cronEnv, { limit: 100 });
+    const stillActiveInWorkspaceB = await db`
+      select client_id from public.client_trainer_assignments
+      where workspace_id = ${context.wsB.id}
+        and client_id in (${activeClientB.clientId}, ${noEligibleClient.clientId})
+        and ended_at is null
+    `;
+    expect(stillActiveInWorkspaceB).toHaveLength(0);
+    const preservedUnassignedHistory = await db`
+      select client_id, ended_at, ended_by_system
+      from public.client_trainer_assignments
+      where workspace_id = ${context.wsB.id}
+        and client_id in (${activeClientB.clientId}, ${noEligibleClient.clientId})
+        and ended_at is not null
+    `;
+    expect(preservedUnassignedHistory).toHaveLength(3);
+    expect(
+      preservedUnassignedHistory.every((row) => row.ended_by_system === true),
+    ).toBe(true);
 
     // 4. PO self-deletion while another valid PO exists (S41-PO-1 MCQ-20 = A)
     const selfDel = await extraPo.client.rpc('request_account_deletion', {
@@ -1123,6 +1426,18 @@ describe('F11 T047/T048/T059/T060 account deletion guarded release', () => {
             sp`select public.request_account_deletion(${context.po.userId})`,
         ),
       ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+    });
+    const [lastPoState] = await db`
+      select
+        (select owner_count::int from app_private.f3_platform_owner_state where singleton) as owner_count,
+        (select count(*)::int from app_private.account_deletion_intents
+          where target_user_id = ${context.po.userId}) as deletion_intents,
+        (select role::text from public.staff_profiles where user_id = ${context.po.userId}) as role
+    `;
+    expect(lastPoState).toEqual({
+      owner_count: 1,
+      deletion_intents: 0,
+      role: 'platform_owner',
     });
     const poRacer = await createStaff('platform_owner', 's64-po-racer');
     await db`
