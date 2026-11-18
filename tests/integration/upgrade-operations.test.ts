@@ -308,6 +308,100 @@ it('T048 refuses an upgrade with an unsettled installment before any writes', as
   });
 });
 
+it('T048 refuses an upgrade while a payment remains pending after locking', async () => {
+  const { f, purchase } = await egp750Purchase();
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1400',
+    currency: 'EGP',
+    duration_days: 90,
+  });
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const [pending] = await tx`
+      select i.id, i.amount_minor::text as amount_minor,
+        coalesce(sum(e.amount_minor), 0)::text as collected_minor
+      from public.subscription_installments i
+      left join public.payment_events e
+        on e.workspace_id=i.workspace_id and e.subscription_id=i.subscription_id
+        and e.obligation_id=i.id
+      where i.subscription_id=${purchase.sid}
+      group by i.id, i.amount_minor
+      having coalesce(sum(e.amount_minor), 0)<>i.amount_minor
+      order by i.seq
+      limit 1`;
+    expect(pending).toMatchObject({
+      amount_minor: '250',
+      collected_minor: '0',
+    });
+
+    const [before] = await tx`
+      select
+        (select to_jsonb(s) from public.subscriptions s where s.id=${purchase.sid}) as subscription,
+        (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
+        (select count(*)::int from app_private.subscription_upgrade_operations where subscription_id=${purchase.sid}) as operations,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payment_events,
+        (select count(*)::int from public.audit_events a where a.workspace_id=${f.wsA.id} and a.target_table='subscription_upgrades' and a.target_id in
+        (select u.id from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid})) as audits`;
+
+    const result = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: target,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      upgrade_confirmed: true,
+    });
+
+    expect(result.status).not.toBe('ok');
+    const [after] = await tx`
+      select
+        (select to_jsonb(s) from public.subscriptions s where s.id=${purchase.sid}) as subscription,
+        (select count(*)::int from public.subscription_upgrades where subscription_id=${purchase.sid}) as upgrades,
+        (select count(*)::int from app_private.subscription_upgrade_operations where subscription_id=${purchase.sid}) as operations,
+        (select count(*)::int from public.subscription_installments where subscription_id=${purchase.sid}) as installments,
+        (select count(*)::int from public.payment_events where subscription_id=${purchase.sid}) as payment_events,
+        (select count(*)::int from public.audit_events a where a.workspace_id=${f.wsA.id} and a.target_table='subscription_upgrades' and a.target_id in
+        (select u.id from public.subscription_upgrades u where u.workspace_id=${f.wsA.id} and u.subscription_id=${purchase.sid})) as audits`;
+    expect(after).toEqual(before);
+  });
+});
+
+it('T048 pending payment refusal is killed when the settlement guard is mutated', async () => {
+  await withCrashSafeFunctionMutant(
+    'public.record_subscription_upgrade(jsonb)',
+    (definition) =>
+      definition.replace(
+        'if exists(\n    select 1 from public.subscription_installments i',
+        'if false and exists(\n    select 1 from public.subscription_installments i',
+      ),
+    async () => {
+      const { f, purchase } = await egp750Purchase();
+      const target = await targetOffer(f, {
+        tier_rank: 2,
+        price_minor: '1400',
+        currency: 'EGP',
+        duration_days: 90,
+      });
+      await probe(async (tx) => {
+        await activate(tx, f, purchase);
+        const result = await upgrade(tx, f.trainerA.userId, {
+          workspace_id: f.wsA.id,
+          client_id: purchase.t.id,
+          subscription_id: purchase.sid,
+          package_offer_id: target,
+          request_key: randomUUID(),
+          expected_revision: 0,
+          upgrade_confirmed: true,
+        });
+        expect(result.status).toBe('ok');
+      });
+    },
+  );
+});
+
 it('T048 revalidates after the shared locks and retains the pre-write over-balance guard', async () => {
   const [row] = await db`
     select pg_get_functiondef('public.record_subscription_upgrade(jsonb)'::regprocedure) as definition`;
