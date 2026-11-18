@@ -304,6 +304,54 @@ describe('T058 latest prior valid publication, strictly before the Africa/Cairo 
   });
 });
 
+describe('T059 Cairo DST transition boundaries (2026 tzdata)', () => {
+  it('spring-forward: 21:00Z is still Apr 23, 22:00Z is Apr 24 (midnight hour skipped)', async () => {
+    const publications = [
+      { date: '2026-04-22', rate: '54.10' }, // Wednesday
+      { date: '2026-04-23', rate: '54.20' }, // Thursday
+    ];
+    // 21:00Z = 23:00 Cairo Apr 23 (UTC+2): strictly before -> Apr 22.
+    expect(
+      await select({
+        transactionAt: '2026-04-23T21:00:00Z',
+        currency: USD,
+        publications,
+      }),
+    ).toEqual(ready('54.10', '2026-04-22'));
+    // 22:00Z = 01:00 Cairo Apr 24 (UTC+3): strictly before -> Apr 23.
+    expect(
+      await select({
+        transactionAt: '2026-04-23T22:00:00Z',
+        currency: USD,
+        publications,
+      }),
+    ).toEqual(ready('54.20', '2026-04-23'));
+  });
+
+  it('fall-back: the repeated 23:00 hour stays Oct 29; 00:30 is Oct 30', async () => {
+    const publications = [
+      { date: '2026-10-28', rate: '14.00' }, // Wednesday
+      { date: '2026-10-29', rate: '14.10' }, // Thursday
+    ];
+    // 21:30Z = 23:30 Cairo Oct 29 (second pass, UTC+2): same-date row excluded.
+    expect(
+      await select({
+        transactionAt: '2026-10-29T21:30:00Z',
+        currency: SAR,
+        publications,
+      }),
+    ).toEqual(ready('14.00', '2026-10-28', 'SAMA'));
+    // 22:30Z = 00:30 Cairo Oct 30: strictly before -> Oct 29.
+    expect(
+      await select({
+        transactionAt: '2026-10-29T22:30:00Z',
+        currency: SAR,
+        publications,
+      }),
+    ).toEqual(ready('14.10', '2026-10-29', 'SAMA'));
+  });
+});
+
 describe('T058 exact per-line conversion and one half-up rounding per reported aggregate', () => {
   const line = (
     id: string,

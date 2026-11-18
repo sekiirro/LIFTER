@@ -434,8 +434,8 @@ export async function pendingHttpAccess(
           boolean: false,
           bytea: '\\x00',
           numeric: 1,
+          date: '2050-01-01',
           'timestamp with time zone': new Date().toISOString(),
-          date: '2026-01-01',
           'uuid[]': [],
         };
         if (!(type in values))
@@ -477,6 +477,7 @@ export async function pendingHttpAccess(
             'set_client_goal_type',
             'client_goal_read',
             'client_leaderboard_my_rank',
+            'find_client_by_code',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&

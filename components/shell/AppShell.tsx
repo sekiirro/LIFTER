@@ -5,6 +5,7 @@ import {
   type NavKey,
   type Role,
 } from '../../lib/design/navigation';
+import type { GlassFallback } from '../ui/glass/GlassSurface';
 import type { Messages } from '../../lib/i18n';
 import { ShellNavigation } from './ShellNavigation';
 import styles from './AppShell.module.css';
@@ -15,6 +16,8 @@ export type ShellNavigationProps = {
   hrefFor?: (key: NavKey) => string;
   messages: Messages;
   className?: string;
+  /** Dev/test hook: force the glass surface fallback variant. Defaults to auto. */
+  fallback?: GlassFallback;
 };
 export type AppShellProps = Omit<
   ShellNavigationProps,
@@ -34,6 +37,7 @@ export function AppShell({
   children,
   contentAs: Content = 'main',
   workspaceId,
+  fallback,
 }: AppShellProps) {
   const navigation = getNavigation(role);
   if (navigation.status === 'needs-decision')
@@ -46,6 +50,7 @@ export function AppShell({
         activeKey={requestedActiveKey}
         messages={messages}
         workspaceId={workspaceId}
+        fallback={fallback}
         railClassName={styles.rail}
         bottomClassName={styles.bottom}
       />

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { randomInt, randomUUID } from 'node:crypto';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import type { RegistrationFixture } from '../integration/registration-links-fixture';
 import { expectHeroAxeClean } from './registration-hero-evidence';
 
 const origin =
@@ -25,6 +26,15 @@ const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
 let token: string;
+let fixture: RegistrationFixture;
+
+async function issueToken() {
+  const { issue, secret, checked } =
+    await import('../integration/registration-links-fixture');
+  const issued = secret();
+  checked(await issue(fixture, fixture.po.client, { token_hash: issued.hash }));
+  return issued.token;
+}
 
 function dateInputOffsetFromToday(days: number) {
   const date = new Date();
@@ -39,7 +49,7 @@ test.describe.serial('T038 invitation signup UI', () => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     const { registrationFixture, secret, issue, checked } =
       await import('../integration/registration-links-fixture');
-    const fixture = await registrationFixture();
+    fixture = await registrationFixture();
     const issued = secret();
     checked(
       await issue(fixture, fixture.po.client, { token_hash: issued.hash }),
@@ -200,7 +210,9 @@ test.describe.serial('T038 invitation signup UI', () => {
     await nameField.press('Tab');
     await expect(dateOfBirthField).toBeFocused();
     await nameField.fill('Heba Sami Nabil');
-    await dateOfBirthField.fill(dateInputOffsetFromToday(2));
+    const futureDateOfBirth = dateInputOffsetFromToday(2);
+    expect(Date.parse(futureDateOfBirth)).toBeGreaterThan(Date.now());
+    await dateOfBirthField.fill(futureDateOfBirth);
     await page
       .getByLabel(messages['clientSignup.username'], { exact: true })
       .fill('testclientr23');
@@ -387,5 +399,195 @@ test.describe.serial('T038 invitation signup UI', () => {
       fullPage: true,
     });
     await expectHeroAxeClean(page);
+  });
+
+  test('renders, focuses and clears a server-reported username error without a session', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en') as SignupTestMessages;
+    const firstToken = await issueToken();
+    const duplicateToken = await issueToken();
+    const username = `t091srv${randomUUID().replaceAll('-', '').slice(0, 10)}`;
+    const fillProfile = async (
+      targetToken: string,
+      email: string,
+      nationalNumber: string,
+    ) => {
+      await page.goto(`/register/${targetToken}`);
+      await page
+        .getByLabel(messages['clientSignup.name'], { exact: true })
+        .fill('Heba Sami Nabil');
+      await page
+        .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+        .fill('1990-04-12');
+      await page
+        .getByLabel(messages['clientSignup.username'], { exact: true })
+        .fill(username);
+      await page
+        .getByLabel(messages['clientSignup.email'], { exact: true })
+        .fill(email);
+      await page
+        .getByRole('textbox', { name: messages['clientSignup.phone'] })
+        .fill(nationalNumber);
+      await page
+        .getByLabel(messages['clientSignup.password'], { exact: true })
+        .fill('Complex!2345');
+    };
+
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.41' });
+    await fillProfile(
+      firstToken,
+      `t091-first-${randomUUID()}@example.test`,
+      `010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`,
+    );
+    await page
+      .getByRole('button', { name: messages['clientSignup.submit'] })
+      .click();
+    await expect(page.locator('form p[role="status"]')).toHaveText(
+      messages['clientSignup.complete'],
+    );
+
+    await fillProfile(
+      duplicateToken,
+      `t091-second-${randomUUID()}@example.test`,
+      `010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`,
+    );
+    await page
+      .getByRole('button', { name: messages['clientSignup.submit'] })
+      .click();
+    const usernameField = page.getByLabel(messages['clientSignup.username'], {
+      exact: true,
+    });
+    await expect(usernameField).toBeFocused();
+    await expect(usernameField).toHaveAttribute('aria-invalid', 'true');
+    await expect(usernameField).toHaveAttribute(
+      'aria-describedby',
+      'signup-username-error',
+    );
+    await expect(page.locator('#signup-username-error')).toHaveText(
+      messages['clientSignup.usernameUnavailable'],
+    );
+    await expect(usernameField).toBeFocused();
+    await expectHeroAxeClean(page);
+
+    await usernameField.fill(`${username}x`);
+    await expect(page.locator('#signup-username-error')).toHaveCount(0);
+    await expect(usernameField).not.toHaveAttribute('aria-invalid', 'true');
+    await expect(usernameField).toBeFocused();
+    expect(
+      (await context.cookies(origin)).some((cookie) =>
+        cookie.name.startsWith('sb-'),
+      ),
+    ).toBe(false);
+  });
+
+  test('skips blur validation while submission is pending', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en') as SignupTestMessages;
+    const signupToken = await issueToken();
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/register/${signupToken}`);
+    await page
+      .getByLabel(messages['clientSignup.name'], { exact: true })
+      .fill('Heba Sami Nabil');
+    await page
+      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+      .fill('1990-04-12');
+    await page
+      .getByLabel(messages['clientSignup.username'], { exact: true })
+      .fill(`t112pend${randomUUID().replaceAll('-', '').slice(0, 8)}`);
+    await page
+      .getByLabel(messages['clientSignup.email'], { exact: true })
+      .fill(`t112-${randomUUID()}@example.test`);
+    await page
+      .getByRole('textbox', { name: messages['clientSignup.phone'] })
+      .fill(`010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`);
+    await page
+      .getByLabel(messages['clientSignup.password'], { exact: true })
+      .fill('Complex!2345');
+    const nameField = page.getByLabel(messages['clientSignup.name'], {
+      exact: true,
+    });
+    await nameField.focus();
+
+    let release: () => void = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/register/**', async (route) => {
+      if (route.request().method() === 'POST') await held;
+      await route.continue();
+    });
+    await page
+      .getByRole('button', { name: messages['clientSignup.submit'] })
+      .click();
+    await expect(page.locator('form p[role="status"]')).toHaveText(
+      messages['clientSignup.pending'],
+    );
+    await expect(nameField).toBeDisabled();
+
+    await nameField.dispatchEvent('focusout', { bubbles: true });
+    await expect(page.locator('#signup-name-error')).toHaveCount(0);
+    await expect(nameField).not.toHaveAttribute('aria-invalid', 'true');
+    await expectHeroAxeClean(page);
+
+    // The held POST outlives the one-time signup admission ticket, so only the
+    // pending-state behavior is asserted here; completion is covered by the
+    // dedicated unthrottled signup test above.
+    release();
+  });
+
+  test('scopes preference cookies to the configured origin and a non-default hostname', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const configured = new URL(origin);
+    const alternateHostname =
+      configured.hostname === '127.0.0.1' ? 'localhost' : '127.0.0.1';
+    const alternateOrigin = `${configured.protocol}//${alternateHostname}:${configured.port}`;
+    expect(alternateOrigin).not.toBe(configured.origin);
+
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'ar', url: configured.origin },
+      { name: THEME_COOKIE, value: 'dark', url: configured.origin },
+    ]);
+    await page.goto(`/register/${token}`);
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+    await context.clearCookies();
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: alternateOrigin },
+      { name: THEME_COOKIE, value: 'light', url: alternateOrigin },
+    ]);
+    await page.goto(`${alternateOrigin}/register/${token}`);
+    await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    const alternateCookies = (await context.cookies(alternateOrigin)).filter(
+      (cookie) => cookie.name === LOCALE_COOKIE || cookie.name === THEME_COOKIE,
+    );
+    expect(alternateCookies).toHaveLength(2);
+    for (const cookie of alternateCookies) {
+      expect(cookie.domain).toBe(alternateHostname);
+      expect(cookie.path).toBe('/');
+    }
+    expect(
+      (await context.cookies(configured.origin)).some(
+        (cookie) => cookie.name === LOCALE_COOKIE,
+      ),
+    ).toBe(false);
   });
 });

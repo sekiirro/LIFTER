@@ -136,13 +136,14 @@ describe('F11 client recovery linkage', () => {
     });
   });
 
-  it('keeps existing PO and WO scope while denying foreign, role, self, staff and anonymous targets', async () => {
+  it('keeps existing PO, WO and own-workspace Trainer scope while denying foreign, role, self, staff and anonymous targets', async () => {
     for (const [caller, target, allowed, workspaceId] of [
       [po, targetA, true, targetA.workspaceId],
       [po, targetB, true, targetB.workspaceId],
       [woA, targetA, true, targetA.workspaceId],
       [woA, targetB, false, null],
-      [trainerA, targetA, false, null],
+      [trainerA, targetA, true, targetA.workspaceId],
+      [trainerA, targetB, false, null],
       [salesA, targetA, false, null],
     ] as const) {
       const result = await caller.client.rpc('recovery_link_authorize', {

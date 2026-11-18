@@ -287,7 +287,7 @@ export type FoodReplacementResult = {
 
 const ALLOWED: Record<string, readonly FoodReplacementStatus[]> = {
   submit: ['created', 'already_open', 'stale_version', 'invalid'],
-  cancel: ['cancelled', 'not_open'],
+  cancel: ['cancelled', 'not_open', 'already_prepared'],
   reject: ['rejected', 'not_open'],
   approve: [
     'prepared',

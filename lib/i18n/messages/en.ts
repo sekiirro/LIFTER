@@ -13,6 +13,14 @@ export const en: Record<keyof typeof ar, string> = {
   'checkin.adherence.diet.title': 'Diet adherence',
   'checkin.adherence.diet.question':
     'On a scale from 0 to 10, how closely did you follow your nutrition plan this week?',
+  'checkin.reminder.dayOf.title': 'Weekly check-in reminder',
+  'checkin.reminder.dayOf.body': 'Your weekly check-in is due today.',
+  'checkin.reminder.followup.title': 'Check-in still pending',
+  'checkin.reminder.followup.body':
+    "You haven't submitted your weekly check-in yet.",
+  'foodReplacement.notification.open': 'A client requested a food replacement.',
+  'foodReplacement.notification.resolved':
+    'Your food replacement request was updated.',
   'timeline.title': 'Timeline',
   'timeline.empty': 'No timeline events yet.',
   'timeline.event.registration': 'Registration',
@@ -1347,4 +1355,54 @@ export const en: Record<keyof typeof ar, string> = {
     'Showcase only. Foods and plan values are mocked; nothing is saved.',
   'nutritionPlan.mealNotes': 'Notes for this meal',
   'nutritionPlan.foodNotes': 'Notes for this food',
+  'registration.upfrontAmount': 'Upfront amount',
+  'registration.paymentCount': 'Number of payments',
+  'registration.defaultSplit': 'Use default split',
+  'registration.timingAnchorNote':
+    'The remaining balance is due 30 days after activation (Cairo time).',
+  // F22 client portal + staff directory: approved S55-PO-10/S55-PO-11 (specs/022-client-portal-delivery/copy-proposal.md).
+  'client.portal.nav': 'Client Portal',
+  'client.portal.title': 'Your plans',
+  'client.portal.deliveredPlans': 'Delivered plans',
+  'client.portal.workout': 'Workout plan',
+  'client.portal.nutrition': 'Nutrition plan',
+  'client.portal.subscriptionStatus': 'Subscription status',
+  'client.portal.subscriptionStatus.awaitingActivation': 'Awaiting Activation',
+  'client.portal.subscriptionStatus.future': 'Future',
+  'client.portal.subscriptionStatus.active': 'Active',
+  'client.portal.subscriptionStatus.frozen': 'Frozen',
+  'client.portal.subscriptionStatus.expired': 'Expired',
+  'client.portal.subscriptionStatus.refunded': 'Refunded',
+  'client.portal.subscriptionEndDate': 'Subscription ends',
+  'client.portal.emptyPlans': 'No plans have been delivered yet.',
+  'client.portal.restricted':
+    'Plans are currently unavailable due to your subscription status.',
+  'client.portal.viewPlan': 'View plan',
+  'client.portal.revision': 'Published revision',
+  'client.portal.exportPdf': 'Download PDF',
+  'client.portal.exportExcel': 'Download Excel',
+  'client.portal.exportUnavailable': 'This plan cannot be exported right now.',
+  'client.portal.notice.workoutDelivered':
+    'Your workout plan is ready to view.',
+  'client.portal.notice.nutritionDelivered':
+    'Your nutrition plan is ready to view.',
+  'client.portal.notice.subscriptionActivated':
+    'Your subscription is now active.',
+  'client.portal.notice.workoutAndActivated':
+    'Your workout plan is ready, and your subscription is now active.',
+  'client.portal.notice.nutritionAndActivated':
+    'Your nutrition plan is ready, and your subscription is now active.',
+  'client.portal.inbox.markRead': 'Mark as read',
+  'client.portal.inbox.empty': 'You are all caught up.',
+  'staff.clientDirectory.title': 'Clients',
+  'staff.clientDirectory.search': 'Search clients',
+  'staff.clientDirectory.filters': 'Filters',
+  'staff.clientDirectory.plansWaitingForDelivery': 'Plans waiting for delivery',
+  'staff.clientDirectory.subscriptionStatus.awaitingActivation':
+    'Awaiting Activation',
+  'staff.clientDirectory.subscriptionStatus.future': 'Future',
+  'staff.clientDirectory.subscriptionStatus.active': 'Active',
+  'staff.clientDirectory.subscriptionStatus.frozen': 'Frozen',
+  'staff.clientDirectory.subscriptionStatus.expired': 'Expired',
+  'staff.clientDirectory.subscriptionStatus.refunded': 'Refunded',
 };

@@ -61,6 +61,9 @@ const f23Private = [
   'f23_measurement_value_fits',
   'f23_store_checkin_adherence',
   'f23_unit_text',
+  'f23_checkin_reminders_run',
+  'f23_guard_staff_notice',
+  'f23_notify_food_request_change',
   'f23_weekly_checkin_run',
   'f23_weekly_checkin_schedule_activate',
   'f23_weekly_checkin_schedule_deactivate',
@@ -95,11 +98,21 @@ const f24Invoker = [
   'f24_guard_entry',
   'f24_guard_publication',
 ];
+// Spec 022 private helpers.
+const f22Private = [
+  'f22_delivered_revisions',
+  'f22_enqueue_client_notice',
+  'f22_guard_client_notice',
+  'f22_portal_client',
+  'f22_refund_scope',
+  'f22_subscription_summary',
+];
 const registrationPrivate = [
   'registration_link_is_valid',
   'registration_link_limits',
   'guard_registration_link_insert',
   'guard_registration_link_update',
+  'guard_registration_link_promotion_period',
   'guard_registration_installment_insert',
   'validate_registration_link_schedule',
   'check_registration_link_schedule',
@@ -161,12 +174,19 @@ const brandingFunctionOwners: Record<string, string> = {
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
 };
 const assignmentPrivate = [
+  'allocate_client_code',
+  'assign_client_code',
   'current_assigned_trainer',
+  'enqueue_client_trainer_distribution_job',
   'end_assignments_on_membership_revocation',
   'end_assignments_on_trainer_role_change',
   'end_client_trainer_assignments',
+  'format_client_code',
+  'guard_client_code_immutable',
   'guard_client_trainer_assignment',
   'guard_client_trainer_assignment_truncate',
+  'normalize_client_code',
+  'write_client_trainer_distribution',
 ];
 afterAll(async () => {
   await db.end();
@@ -328,9 +348,11 @@ describe('tenancy security catalog (T007)', () => {
           ...brandingPrivate,
           ...f23Private,
           ...f24Private,
+          ...f22Private,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
           'audit_package_created',
+          'audit_package_promotion_period',
           'audit_events_immutable',
           'audit_row_change',
           'cancel_f15_client_alerts',
@@ -366,6 +388,8 @@ describe('tenancy security catalog (T007)', () => {
           'f13_create_refund_lockout_alert',
           'f13_materialize_entitlement',
           'f13_project_entitlement',
+          'f13_project_overdue',
+          'f13_client_overdue_state',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
           'f3_guard_platform_owner_profile_change',
@@ -454,8 +478,10 @@ describe('tenancy security catalog (T007)', () => {
           'guard_membership_update',
           'guard_package_offer_update',
           'guard_package_offer_category',
+          'guard_package_promotion_period',
           'guard_package_version_insert',
           'guard_package_version_market',
+          'guard_registration_link_promotion_period',
           'has_workspace_access',
           'is_platform_owner',
           'jobs_updated_at',
@@ -523,15 +549,22 @@ describe('tenancy security catalog (T007)', () => {
           'f18_guard_nutrition_selection',
           'f18_audit_allowlist_guard',
           'package_c5_preflight',
+          'package_promotion_period_active',
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'f17_client_resolve_global_exercise',
+          'f17_client_safe_reference',
+          'f17_client_safe_set',
+          'f17_client_safe_item',
+          'f17_client_safe_workout_document',
         ]),
       ].sort(),
     );
     for (const row of rows) {
       const expectedDefiner = ![
         // Union of F15/F16 and client-notes intentionally invoker-mode functions.
+        'f23_checkin_reminders_run',
         'f23_weekly_checkin_run',
         'f23_weekly_checkin_schedule_activate',
         'f23_weekly_checkin_schedule_deactivate',
@@ -597,6 +630,10 @@ describe('tenancy security catalog (T007)', () => {
         'f23_guard_food_replacement_request',
         'f23_nutrition_item_path',
         ...f24Invoker,
+        'f17_client_safe_reference',
+        'f17_client_safe_set',
+        'f17_client_safe_item',
+        'f17_client_safe_workout_document',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -639,6 +676,9 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_productivity_unit',
           'f18_guard_plan_version_content',
           'f18_guard_nutrition_selection',
+          'audit_package_promotion_period',
+          'guard_package_promotion_period',
+          'package_promotion_period_active',
           'package_c5_preflight',
           'f18_selection_audit',
           'f18_is_self_approved_client',
@@ -673,6 +713,11 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'f17_client_resolve_global_exercise',
+          'f17_client_safe_reference',
+          'f17_client_safe_set',
+          'f17_client_safe_item',
+          'f17_client_safe_workout_document',
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
@@ -721,10 +766,15 @@ describe('tenancy security catalog (T007)', () => {
             !assignmentPrivate.includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
+            // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
+            !f22Private.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
               'audit_events_immutable',
+              'audit_package_promotion_period',
               'audit_row_change',
+              'guard_package_promotion_period',
+              'package_promotion_period_active',
               'catalog_assert_exercise_text_limits',
               'catalog_create_food_legacy',
               'catalog_food_duplicate_exists',
@@ -974,7 +1024,7 @@ describe('audit security catalog (T005)', () => {
       join pg_catalog.pg_namespace n on n.oid = c.relnamespace
       join pg_catalog.pg_proc p on p.oid = t.tgfoid
       where n.nspname = 'public' and not t.tgisinternal
-        and p.proname in ('audit_row_change', 'audit_package_created', 'audit_events_immutable', 'f18_audit_allowlist_guard')
+        and p.proname in ('audit_row_change', 'audit_package_created', 'audit_package_promotion_period', 'audit_events_immutable', 'f18_audit_allowlist_guard')
       order by t.tgname,c.relname`;
     expect(triggers).toEqual([
       {
@@ -1025,6 +1075,13 @@ describe('audit security catalog (T005)', () => {
         type: 17,
         tgenabled: 'O',
         proname: 'audit_row_change',
+      },
+      {
+        tgname: 'audit_package_promotion_period',
+        relname: 'package_promotion_periods',
+        type: 21,
+        tgenabled: 'O',
+        proname: 'audit_package_promotion_period',
       },
       {
         tgname: 'audit_package_versions',
@@ -1392,9 +1449,7 @@ describe('package security catalog', () => {
           await db`select has_column_privilege(${role},'public.package_versions',${column.column_name},'SELECT') as allowed`;
         expect(grant?.allowed).toBe(
           role === 'authenticated' &&
-            !['commission_rate_bp', 'market', 'type'].includes(
-              column.column_name,
-            ),
+            column.column_name !== 'commission_rate_bp',
         );
       }
     const [view] =
@@ -1418,6 +1473,8 @@ describe('package security catalog', () => {
       'duration_months',
       'published_at',
       'published_by',
+      'market',
+      'type',
     ]);
     expect(
       projection.find((r) => r.column_name === 'price_minor')?.data_type,
@@ -1443,18 +1500,28 @@ describe('package security catalog', () => {
       'public.publish_package_version(uuid,uuid,smallint,integer,text,text,bigint,text,integer)',
       'public.publish_package_version(uuid,uuid,smallint,integer,smallint,text,text,bigint,text,integer)',
       'public.set_package_offer_available(uuid,uuid,boolean)',
+      'public.set_package_promotion_period(uuid,uuid,date,date)',
       'public.get_package_version_commissions(uuid)',
       'app_private.guard_package_offer_update()',
       'app_private.guard_package_offer_category()',
+      'app_private.guard_package_promotion_period()',
       'app_private.guard_package_version_insert()',
       'app_private.guard_package_version_market()',
       'app_private.audit_package_created()',
+      'app_private.audit_package_promotion_period()',
+      'app_private.package_promotion_period_active(uuid,timestamptz)',
+      'app_private.guard_registration_link_promotion_period()',
     ]) {
       const [fn] =
         await db`select prosecdef,proconfig,provolatile,pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
       expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
       expect(fn?.proconfig).toContain('search_path=""');
-      expect(fn?.provolatile).toBe(name.includes('commissions') ? 's' : 'v');
+      expect(fn?.provolatile).toBe(
+        name.includes('commissions') ||
+          name.includes('package_promotion_period_active')
+          ? 's'
+          : 'v',
+      );
       for (const role of ['anon', 'authenticated', 'service_role']) {
         const [grant] =
           await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
@@ -1499,7 +1566,7 @@ describe('registration security catalog', () => {
       }
       const triggers =
         await db`select tgname,tgenabled,tgdeferrable,tginitdeferred from pg_trigger where tgrelid=${'public.' + table}::regclass and not tgisinternal`;
-      expect(triggers.length).toBe(table === 'registration_links' ? 7 : 5);
+      expect(triggers.length).toBe(table === 'registration_links' ? 8 : 5);
       for (const t of triggers) {
         expect(t.tgenabled).toBe('O');
         if (t.tgname.includes('schedule') || t.tgname.endsWith('_issued'))
@@ -1671,6 +1738,8 @@ describe('registration security catalog', () => {
       'app_private.f18_guard_nutrition_selection()',
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
+      'public.client_overdue_status()',
+      'public.client_portal_workout_plan(uuid,integer)',
       'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',
       'app_private.f17_audit_allowlist_guard()',
@@ -1792,6 +1861,15 @@ describe('registration security catalog', () => {
         tgdeferrable: false,
         tginitdeferred: false,
         proname: 'forbid_delete',
+      },
+      {
+        tgname: 'registration_links_promotion_period_guard',
+        relname: 'registration_links',
+        type: 7,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'guard_registration_link_promotion_period',
       },
       {
         tgname: 'registration_links_schedule',
@@ -2032,6 +2110,7 @@ describe('F11 responsible-Trainer assignment catalog', () => {
       'public.assign_client_responsible_trainer(uuid,uuid,uuid)',
       'public.client_responsible_trainer(uuid,uuid)',
       'public.unassigned_clients(uuid)',
+      'public.find_client_by_code(uuid,text)',
     ]) {
       const [fn] = await db`select prosecdef,proconfig,
         pg_catalog.pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;

@@ -1660,3 +1660,14 @@ Also Don't respect constitution and use the roster's 10 as I said
 ```
 
 Architect mapping S61-R12 (not PO words; C:/Users/NEW LAP/.lifter/runs/s61-arch/s61-architect-rulings.md): (1) Constitution amendment 1.17.0→1.18.0: one successful full CI attempt per exact PR head is sufficient; a main advance alone triggers no rerun or tree comparison; a new head still needs a new green; MERGEABLE (not CONFLICTING) is still required at merge. PO direction is applied operationally NOW; constitution text changes when the amendment PR merges on the PO's explicit `merge #N at <sha>`. (2) Concurrency = roster 10 agents, overriding the constitution's 9 by PO direction. The 5-PR-writer limit is not addressed by PO-1 and stays in force pending the PO's answer (S61-R6 updated).
+
+### S66-PO-1 - PO words, verbatim (F11 client code for F22 T034)
+
+Source: the PO's answer in the Claude Code session on 2026-11-18 to the AskUserQuestion prompt, recorded verbatim (no verbatim file or SHA-256 exists); the question was the client-code format question for F22 T034 (open item 6 of `docs/01-traceability.md`).
+
+<!-- prettier-ignore -->
+```text
+A: Random code (Recommended)
+```
+
+Architect mapping S66-R1 (not PO words): option A means a random per-workspace client code; 8 characters from an unambiguous 32-character alphabet (digits 2-9 and letters A-Z without I and O, so no 0/O/1/I); displayed as XXXX-XXXX; unique on (workspace_id, code); immutable after assignment; assigned at every client creation and backfilled for existing clients by a forward migration; staff-visible only (never exposed to other clients or anonymous); staff search is exact match only, with case and dash normalised on input. Encoded as spec 011 FR-029. Resolves open item 6 of `docs/01-traceability.md`.

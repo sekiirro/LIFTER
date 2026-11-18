@@ -103,7 +103,20 @@ describe('recovery generation', () => {
       expect(mocks.admin).not.toHaveBeenCalled();
     },
   );
-  it.each(['trainer', 'sales', null])(
+  it('allows own-workspace trainer to generate a recovery link', async () => {
+    mocks.actor.mockResolvedValue({
+      userId: 'actor',
+      role: 'trainer',
+      activeWorkspaceIds: ['A'],
+    });
+    expect(await generateRecoveryLink(target)).toEqual({
+      status: 'ok',
+      link: `https://lifter.example/auth/recovery?token_hash=${token}&type=recovery`,
+    });
+    expect(mocks.generateLink).toHaveBeenCalledOnce();
+    expect(mocks.rpc).toHaveBeenCalledTimes(2);
+  });
+  it.each(['sales', null])(
     'app wall denies role %s despite forged RPC workspace',
     async (role) => {
       mocks.actor.mockResolvedValue({
@@ -115,15 +128,22 @@ describe('recovery generation', () => {
       expect(mocks.generateLink).not.toHaveBeenCalled();
     },
   );
-  it('denies a foreign workspace despite a successful preflight', async () => {
-    mocks.actor.mockResolvedValue({
-      userId: 'actor',
-      role: 'workspace_owner',
-      activeWorkspaceIds: ['B'],
-    });
-    expect(await generateRecoveryLink(target)).toEqual({ status: 'denied' });
-    expect(mocks.generateLink).not.toHaveBeenCalled();
-  });
+  it.each([
+    ['workspace_owner', ['B']],
+    ['trainer', ['B']],
+    ['trainer', []],
+  ] as const)(
+    'denies %s with workspace %j despite a successful preflight',
+    async (role, activeWorkspaceIds) => {
+      mocks.actor.mockResolvedValue({
+        userId: 'actor',
+        role,
+        activeWorkspaceIds,
+      });
+      expect(await generateRecoveryLink(target)).toEqual({ status: 'denied' });
+      expect(mocks.generateLink).not.toHaveBeenCalled();
+    },
+  );
   it.each([
     [{ code: '42501', message: 'not_permitted' }, 'denied'],
     [{ code: 'P0001', message: 'rate_limited' }, 'rate_limited'],

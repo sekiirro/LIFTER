@@ -91,6 +91,15 @@ describe('submit / cancel input (one open per food, cancel without edit)', () =>
     expect(parseSubmitInput([valid])).toBeNull();
   });
 
+  it('maps a cancel after approval to already_prepared (B1)', () => {
+    expect(
+      mapOperationResult('cancel', {
+        data: { status: 'already_prepared' },
+        error: null,
+      }),
+    ).toEqual({ status: 'already_prepared' });
+  });
+
   it('cancel and reject take only a request id, so a request text cannot be edited (FR-020)', () => {
     expect(parseRequestIdInput({ requestId: REQUEST })).toEqual({
       requestId: REQUEST,

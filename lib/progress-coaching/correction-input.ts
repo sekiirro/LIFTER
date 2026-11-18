@@ -77,6 +77,14 @@ export type MeasurementWriteResult = { status: MeasurementWriteStatus };
 const MEASUREMENT_TYPE = /^[A-Za-z0-9_.-]{1,64}$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** The database refuses entries older than 366 Cairo days; the parser mirrors it with a little slack. */
+export const MEASUREMENT_MAX_AGE_DAYS = 366;
+
+function withinEntryWindow(recordedOn: string, now: number = Date.now()) {
+  const at = Date.parse(`${recordedOn}T00:00:00Z`);
+  return at >= now - (MEASUREMENT_MAX_AGE_DAYS + 2) * 86_400_000;
+}
+
 function isRecord(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === 'object' && !Array.isArray(input);
 }
@@ -118,7 +126,8 @@ export function parseOwnEntryInput(input: unknown): OwnEntryInput | null {
     !isValue(value) ||
     typeof recordedOn !== 'string' ||
     !ISO_DATE.test(recordedOn) ||
-    Number.isNaN(Date.parse(`${recordedOn}T00:00:00Z`))
+    Number.isNaN(Date.parse(`${recordedOn}T00:00:00Z`)) ||
+    !withinEntryWindow(recordedOn)
   )
     return null;
   return { workspaceId, clientId, measurementType, value, recordedOn };

@@ -1,5 +1,30 @@
 # Analyze: 023 Client Progress Coaching (P5 Progress)
 
+## Re-run 2026-11-18 (notifications on the F22 inbox seam, after PR #108)
+
+Date: 2026-11-18. Scope: `specs/023-client-progress-coaching/`. No FR, SC, acceptance or plan design text changed. Changed text in this pass:
+
+- `tasks.md`: migration names renumbered to 20261125030000 and 20261125030100 (F22 took 20261123000000); evidence for T010, T014, T033 and T040 now that `app_private.f22_enqueue_client_notice` is on main.
+- Decision recorded (no new FR): reminders and food replacement notices are produced in the database (hourly job, triggers) rather than by `lib/.../reminders.ts` and a reminders route; staff notices use a sibling inbox table because the F15 inbox is form-alert specific. All copy is the S55-PO-10 approved copy; no new strings.
+
+T028 is implemented on the merged F13 overdue input (PR #265, app_private.f13_client_overdue_state): measurements are restricted while overdue, in SQL (migration 20261125030300).
+
+Result: 0 open CRITICAL, 0 open HIGH. No task in this spec waits on another PR; T051 (docs/) and T054 are orchestrator-owned.
+
+### Review follow-up 2026-11-18 (two independent reviews of PR #109, PASS-WITH-CONDITIONS)
+
+No FR, SC, acceptance or plan design text changed. Recorded decisions and accepted findings:
+
+- A1: `record_progress_measurement` and `parseOwnEntryInput` refuse dates older than 366 Cairo days (migration 20261125030400); the spec sets no floor, so 366 days is an implementation bound, not a product rule.
+- A2: the check-in extraction trigger takes the same `clients` row lock as the manual entry. Covered by a definition assertion, not a concurrent-connection test.
+- A3/A4: each policy in `f23_weekly_checkin_run` runs in a subtransaction; a failure is audited as `form.weekly_checkin_policy_skipped` and the other workspaces still run. The day's audience is a snapshot taken when the daily run materializes: a client who activates later in the day, or whose due day arrives after the run, is picked up on the next due day (FR-001/FR-009 are per due day; there is no catch-up by design, FR-002).
+- A5: confirmed. `scripts/check-migration-timestamps.mjs` validates only the 14-digit UTC format and uniqueness (plus the 11 documented merged exceptions) and `audit-migration-identity` checks uniqueness across origin refs. Neither requires versions to sort after main's newest, and LIFTER has no live database (pre-live, S56-PO-4), so the 20261118200000-200800 F23 versions stay as they are, like F22's 20261118100000 migrations. Renumbering is not required.
+- A8: `record_progress_measurement` keeps its `p_client_id` argument (the client wall already rejects any id but the caller's; removing it changes the signature, the 024 contract tests and the catalog fixtures). Accepted LOW.
+- A10: `list_progress_measurements` is the audited, plan-access-aware read path for staff and the client; the staff RLS read grant on `progress_measurements` stays because the F23 mutation tests and the spec 024 readers depend on direct row reads inside the same database walls.
+- B1: a client cancel after approval returns `already_prepared`; the request stays open with its history and audit.
+- B2: the day-of reminder is skipped once the follow-up instant has passed (late start or outage); the follow-up is still sent.
+- B3-B5 accepted LOW: approval is open to any `coaching_work` staff (FR-013 and F19 draft rules); a former assigned trainer keeps notices already sent; a cancelled request leaves its `replacementOpen` timeline event (cancel is not a fixed meaningful event, so only open, approved, rejected and stale are projected, and an open event for a cancelled request remains as history).
+
 ## Re-run 2026-11-17 (US3 implementation, after the F18 merge)
 
 Date: 2026-11-17. Scope: `specs/023-client-progress-coaching/`. No FR, SC, acceptance or plan design text changed. Changed text in this pass:

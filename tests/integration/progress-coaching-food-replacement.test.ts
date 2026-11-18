@@ -478,3 +478,31 @@ describe('F18 mapping and fallback preserved, no SLA escalation (FR-026, FR-028,
     expect(await countAlerts()).toEqual(alertsBefore);
   });
 });
+
+describe('cancel and approval ordering (B1)', () => {
+  it('refuses a client cancel after approval and keeps history; refuses approval after publish', async () => {
+    const { planId, revisionId } = await x.publish(x.doc());
+    const created = await submit(revisionId, ITEM_NO_ALTS, 'Please add tuna');
+    const requestId = (created.data as { request_id: string }).request_id;
+    expect((await approve(requestId, 1)).data).toMatchObject({
+      status: 'prepared',
+    });
+
+    const cancelled = await x.client.client.rpc(
+      'cancel_food_replacement_request',
+      { p_request_id: requestId },
+    );
+    expect(cancelled.data).toEqual({ status: 'already_prepared' });
+    const row = await requestRow(requestId);
+    expect(row.status).toBe('open');
+    expect(row.prepared_alternative_id).not.toBeNull();
+    const [audit] =
+      await x.db`select count(*)::int as n from public.audit_events
+      where target_id = ${requestId} and action = 'progress.food_replacement_cancelled'`;
+    expect(audit!.n).toBe(0);
+
+    await publishDraft(planId, 2, 1);
+    expect((await requestRow(requestId)).status).toBe('approved');
+    expect((await approve(requestId, 3)).data).toEqual({ status: 'not_open' });
+  });
+});
