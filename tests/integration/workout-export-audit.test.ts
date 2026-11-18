@@ -191,14 +191,24 @@ describe('F17 T039 workout export audit (FR-017; SC-008)', () => {
     expect(res.status).toBe(404);
 
     const rows = await db()`
-      select actor_user_id, details
+      select actor_user_id, target_id, workspace_id, details
       from public.audit_events
       where action = 'plan.workout_export'
         and actor_user_id = ${fixture.context.trainerB.userId}
-        and target_id = ${publishedRevisionId}
         and details->>'outcome' = 'denied'
     `;
     expect(rows).toHaveLength(1);
+    // A non-staff caller's denial never stores the foreign workspace, plan or
+    // revision identity (F17 T054 scrub).
+    expect(rows[0]).toMatchObject({
+      target_id: '00000000-0000-0000-0000-000000000000',
+      workspace_id: null,
+    });
+    expect(rows[0]!.details).toEqual({
+      format: 'pdf',
+      outcome: 'denied',
+      reason: 'not_found',
+    });
     // RLS hides the foreign revision, so it is indistinguishable from
     // not-found — the denial reason is deliberately generic.
     expect(rows[0]!.details).toMatchObject({
@@ -235,13 +245,16 @@ describe('F17 T039 workout export audit (FR-017; SC-008)', () => {
     expect(res.status).toBe(404);
 
     const rows = await db()`
-      select actor_user_id, details
+      select actor_user_id, target_id, workspace_id, details
       from public.audit_events
       where action = 'plan.workout_export'
-        and target_id = ${draftPlanId}
+        and actor_user_id = ${fixture.context.trainerA.userId}
+        and target_id = '00000000-0000-0000-0000-000000000000'
         and details->>'outcome' = 'denied'
     `;
-    expect(rows).toHaveLength(1);
+    // An id that resolves to no plan names nothing: the recorder stores no
+    // caller-supplied identity (F17 T054 scrub).
+    expect(rows.length).toBeGreaterThanOrEqual(1);
     expect(rows[0]!.details).toMatchObject({
       format: 'pdf',
       outcome: 'denied',
