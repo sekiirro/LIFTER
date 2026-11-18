@@ -45,6 +45,7 @@ describe('cron drain (T004)', () => {
           kind: j.kind,
           workspaceId: j.workspace_id,
           payload: j.payload,
+          leaseToken: j.lease_token,
         },
       ]),
     );

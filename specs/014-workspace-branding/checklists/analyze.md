@@ -482,3 +482,10 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Evidence: full unit 305 files / 3514 tests; branding integration 15 files / 86 tests on Stack B; focused e2e 20 (registration-links) + 302 (branding-registration, banner-loaded) + 29 (branding-registration) + 33 (screenshot matrices) + 6 (client-signup) passed; T054, T062 and T063 ticked on executed assertions; T041, T055 and T056 retain explicit remaining clauses.
 - No requirement, FR/SC, acceptance, plan or task-scope wording changed; this is a date/status refresh after task-status and traceability evidence updates. **No open ambiguities** remain.
 - Findings: 0 open CRITICAL, 0 open HIGH. Verdict: PASS for Spec Kit entry on this evidence update.
+
+## S64 Hy4 verification status-only revalidation - 2026-11-18T03:20:00Z
+
+- Scope: closure evidence for T041, T055 and T056 on executed head `f6a25888893fca053620d6d214659ae90d988784`, with `origin/main` `c101617d9735660ff0db23ba78b96e832a8120c4` merged before push under architect ruling S64-R36. T039, T040 and the T043 closure remain deferred by S63-PO-4; the T058 skip stands.
+- Evidence: full Q-M01..Q-M30 row-by-row sign-off with zero skipped Storage checks and state-restoration proof on Stack A; six mutation hooks RED then restored GREEN; browser 86/86 plus 55/55 (48 contrast cases); rendered CLS `< 0.001`; FR-026-FR-030 reconciliation with FR-026 and FR-028 explicitly PARTIAL.
+- No requirement, FR/SC, acceptance, plan or task-scope wording changed: only checkbox statuses and evidence text in `tasks.md` and `traceability.md`, plus two evidence documents. **No open ambiguities** remain for this status refresh.
+- Findings: 0 open CRITICAL, 0 open HIGH. Verdict: PASS for Spec Kit entry on this evidence update; not a new feature Analyze.

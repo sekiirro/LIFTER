@@ -114,11 +114,13 @@ const brandingFunctionOwners: Record<string, string> = {
 };
 const assignmentPrivate = [
   'current_assigned_trainer',
+  'enqueue_client_trainer_distribution_job',
   'end_assignments_on_membership_revocation',
   'end_assignments_on_trainer_role_change',
   'end_client_trainer_assignments',
   'guard_client_trainer_assignment',
   'guard_client_trainer_assignment_truncate',
+  'write_client_trainer_distribution',
 ];
 const deletionPrivate = [
   'deletion_actor_is_denied',

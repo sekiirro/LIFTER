@@ -10,7 +10,7 @@ F4 adds:
 - **Session refresh**: an edge `middleware.ts` that also routes anonymous visitors (public allow-list) to `/login`.
 - **Actor resolution**: a server-verified `getActor()` that feeds the existing `authorize()`.
 - **Recovery links, server-side**:
-  - a new capability, `generate_recovery_link` (PO/WO; all workspace Trainers may issue for clients in that workspace per S31-PO-2; future implementation requires a new spec cycle, RLS, tests, and security review)
+  - a new capability, `generate_recovery_link` (PO, WO, and all workspace Trainers for clients in their active workspace per S31-PO-2 SK-004-02; Trainers remain denied until T032a–T032d are implemented, mutation-tested and security-reviewed)
   - an append-only `recovery_link_issuances` table audited as `recovery_link.generated`
   - DB-enforced rate limits
   - an authorize → generate → record ordering, so every link shown has exactly one audit row
@@ -34,7 +34,7 @@ F4 adds:
 | Principle                                                                             | Status                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | I Isolation                                                                           | The actor is derived server-side from a verified session. Generation is checked by the DB guard (`has_workspace_access` on the target's workspace) and app-layer `authorize()`. Denials are generic, so client existence isn't revealed. Foreign-workspace negative tests. ✅                                                                                                                                                         |
-| III Least privilege                                                                   | The new capability is limited to PO and WO, Trainer is deny-by-default until ND-F4-1, and Sales is denied. Matrix parity is tested. ✅                                                                                                                                                                                                                                                                                                |
+| III Least privilege                                                                   | `generate_recovery_link` is granted to PO, WO, and all workspace Trainers with active workspace membership for clients in that workspace (`S31-PO-2 SK-004-02`, tracked for implementation by T032a–T032d; Trainers remain denied in code until T032a–T032d ship); Sales, foreign/revoked memberships, and staff/self targets (`SK-004-06`) stay denied. Matrix parity across both walls is tested. ✅                                |
 | IV Scope                                                                              | PO manual reset links: BRD lines 40/104/130. WO/Trainer extension: owner decision 2026-10-27, registered as D-19 and approved by the PO (S31-PO-2 SK-004-01). Self-service email reset is sequenced, not removed (ND-F4-7, D-07). No 2FA or device-management screen (PRD-12). ✅                                                                                                                                                     |
 | VII Privacy                                                                           | Recovery tokens are hashed by the provider, single-use and expiring. LIFTER stores no secret. The link is shown once and never logged. The audit holds ids only. The service-role key is server-only, enforced by the build and a CI scan. ✅ — 60-minute expiry decided (ND-F4-3); remaining gaps before production: hosted configuration verification (provider OTP-expiry) and session-lifetime enforcement (open ND-F4-3 blocker) |
 | VIII UI                                                                               | `/login` and `/auth/recovery` are built on Design System components, AR (RTL) default plus EN, with axe e2e. ✅                                                                                                                                                                                                                                                                                                                       |
@@ -57,7 +57,59 @@ Generation sequence (server action `generateRecoveryLink(targetUserId)`):
 
 ## NEEDS DECISION
 
-ND-F4-1..7, as listed in [spec.md](spec.md#decision-register-owner-sub-decisions). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) are now decided (spec Clarifications; S31-PO-3 SK-004-04); ND-F4-6 is decided as clients only (S31-PO-2 SK-004-06). The limits are not yet configured to the decided values: task T031 (FR-010). S35-PO-1 decided ND-F4-5=A (option a) and ND-F4-7 (staff email reset, specified in the ND-F4-7 Design section above, not built); ND-F4-3 session-lifetime remains an open security blocker.
+ND-F4-1..7, as listed in [spec.md](spec.md#decision-register-owner-sub-decisions). The interim behavior is deny or minimal in every case. ND-F4-1 (all workspace Trainers, `S31-PO-2 SK-004-02`), ND-F4-3 (expiry), ND-F4-4 (limits, `S31-PO-3 SK-004-04`), and ND-F4-6 (clients only, `S31-PO-2 SK-004-06`) are decided in spec Clarifications. ND-F4-1's Spec Kit design is specified in [T032 Design](#t032-design-all-workspace-trainers-fr-006-s31-po-2-sk-004-02) below and remains unimplemented pending tasks T032a–T032d; ND-F4-4 limits are implemented by T031. S35-PO-1 decided ND-F4-5=A (option a) and ND-F4-7 (staff email reset, specified in the ND-F4-7 Design section below, not built); ND-F4-3 session-lifetime remains an open security blocker.
+
+## T032 Design — All workspace Trainers (FR-006; S31-PO-2 SK-004-02)
+
+Status: specification and design only (no code, tests, or migration created here). Implementation is gated on `T032a` (RED) -> `T032b` (IMPL) -> `T032c` (mutation evidence) -> `T032d` (architect security review).
+
+### 1. Permission-matrix change in BOTH walls
+
+- **Wall 1 — TypeScript capability matrix (`lib/auth/capabilities.ts`)**:
+  - Add `'generate_recovery_link'` to `MATRIX.trainer`. `CAPABILITIES`, `MATRIX.platform_owner`, and `MATRIX.workspace_owner` already include `'generate_recovery_link'`; `MATRIX.sales` MUST remain unchanged (denied).
+  - `authorize(actor, 'generate_recovery_link', workspaceId)` (`lib/auth/authorize.ts`) already enforces `workspaceId.trim().length > 0`, `actor.role !== null`, active workspace membership (`actor.activeWorkspaceIds.includes(workspaceId)` for non-PO roles), and `roleHasCapability(actor.role, 'generate_recovery_link')`. Thus a Trainer passes Wall 1 if and only if they hold an active (`revoked_at === null`) membership in the client's workspace.
+  - Unit expectations in `tests/unit/authorize.test.ts` (`expected.generate_recovery_link`: `[true, true, false, false]` -> `[true, true, true, false]`) and parity expectations in `tests/integration/matrix-parity.test.ts` (`MATRIX.trainer`) update together with Wall 2.
+- **Wall 2 — Database `role_has_capability` & RLS (`app_private.role_has_capability` / `app_private.has_workspace_access`)**:
+  - Redefine `app_private.role_has_capability(r public.staff_role, cap text)` starting from its latest definition on `origin/main` (`supabase/migrations/20261112021800_f15_shared_forms_capability_reconciliation.sql:3-38`), moving **only** `'generate_recovery_link'` from `('platform_owner', 'workspace_owner')` to `('platform_owner', 'workspace_owner', 'trainer')`. All other capability branches (including PO-only capabilities, `'approve_registration'`, `'manage_branding'`, and Sales capabilities) MUST remain unchanged.
+  - Preserve `language sql immutable security definer set search_path = ''`, `owner to postgres`, `revoke all ... from public, anon, authenticated, service_role`, and `grant execute ... to authenticated`.
+  - Database RLS and `SECURITY DEFINER` authorization continue to gate through `app_private.has_workspace_access(ws, 'generate_recovery_link')` (`supabase/migrations/20261027140000_access_capability_for_po.sql:1-18`), which requires `auth.uid() is not null`, `app_private.role_has_capability(app_private.current_staff_role(), 'generate_recovery_link')`, and an active row in `public.workspace_memberships` (`workspace_id = ws and user_id = auth.uid() and revoked_at is null`) for non-PO actors. `public.recovery_link_issuances` retains RLS enabled and forced with `revoke all` from `public, anon, authenticated, service_role` and no direct API policies.
+
+### 2. Recovery-link RPC and authorization path
+
+- Entry path: `app/auth/recovery/generate-action.ts` (`generateRecoveryLinkAction`) -> `lib/auth/recovery-link.ts` (`generateRecoveryLink(targetUserId)`).
+- Sequence (preserving steps 1–6 in § Design above):
+  1. `getActor()` derives `actor` (`userId`, `role`, `activeWorkspaceIds`) strictly from the server-verified session and `loadActorRows`.
+  2. `client.rpc('recovery_link_authorize', { target: targetUserId })` runs `app_private.recovery_link_guard(target)` (`supabase/migrations/20261122060000_auth_recovery_limits_t031.sql:27-58`) under the caller's JWT. The guard verifies:
+     - `auth.uid() is not null`,
+     - `ws := app_private.recovery_target_workspace(target)` is non-null (still `null::uuid` in production until P1 client accounts per ND-F4-5=A, exercised via the test seam in integration tests),
+     - `app_private.has_workspace_access(ws, 'generate_recovery_link')` is true (now true for any active Trainer in `ws`, false for foreign/revoked Trainers and for Sales),
+     - `target <> auth.uid()` and `not exists (select 1 from public.staff_profiles where user_id = target)` (staff and self targets denied per SK-004-06 / D-16),
+     - rolling limits in `app_private.recovery_link_limits()` (10 links per issuing staff account per rolling hour, 3 per client per rolling 24 hours across all issuers). Every Trainer counts as an issuing staff account under the per-actor limit and shares the per-client 24h limit with PO and WO.
+     - All authorization/target failures raise identical `42501 'not_permitted'` -> `{ status: 'denied' }`; limit failures raise `P0001 'rate_limited'` -> `{ status: 'rate_limited' }`.
+  3. App-layer second wall `authorize(actor, 'generate_recovery_link', ws)` verifies the same capability and active membership in `ws` before any admin Auth call.
+  4. Admin `getUserById` + `generateLink({ type: 'recovery', email })` generates `hashed_token`.
+  5. `client.rpc('recovery_link_record', { target: targetUserId })` acquires target and actor transaction advisory locks, re-runs `app_private.recovery_link_guard(target)`, and inserts into `public.recovery_link_issuances`. No RPC signature change is required for SK-004-02.
+
+### 3. New forward migration
+
+- File: `supabase/migrations/<reserved>_trainer_recovery_link_capability.sql`
+- Version: `<reserved>` (version reserved later by the architect in `migration-registry.md`, strictly above the highest migration version across all origin refs at commit/push time; committed migrations are never edited).
+- Contents: transactional forward `create or replace function app_private.role_has_capability(r public.staff_role, cap text)` (copied from `20261112021800_f15_shared_forms_capability_reconciliation.sql` with `'generate_recovery_link'` granted to `('platform_owner', 'workspace_owner', 'trainer')`) plus exact `owner to postgres`, `revoke all`, and `grant execute ... to authenticated` restoration.
+
+### 4. Audit
+
+- Each successful Trainer generation inserts one row into `public.recovery_link_issuances` (`workspace_id = ws`, `target_user_id = target`, `issued_by = auth.uid()`).
+- The existing `AFTER INSERT` trigger `audit_recovery_link_issuances` (`app_private.audit_row_change()`) appends exactly one `public.audit_events` row with `actor_user_id = auth.uid()` (the Trainer), `action = 'recovery_link.generated'`, `target_table = 'recovery_link_issuances'`, `target_id = new.id`, `workspace_id = new.workspace_id`, and `details = { "target_user_id": new.target_user_id }` (no link, token, email, phone, or name).
+- Refused attempts (foreign/revoked Trainer, staff/self target, Sales, rate-limited) fail before insert and emit zero `recovery_link_issuances` and zero `audit_events` rows.
+
+### 5. Mutation plan (T032c)
+
+Before acceptance, execute RED -> GREEN -> mutation testing on the candidate head across all four required axes, then restore all files/DB state and verify clean `git diff` (exit 0):
+
+1. **Allowed own workspace**: Temporarily remove `'trainer'` from `MATRIX.trainer` (`lib/auth/capabilities.ts`, Wall 1) and independently from the `'generate_recovery_link'` branch of `app_private.role_has_capability` (Wall 2) -> confirm `tests/unit/authorize.test.ts`, `tests/unit/recovery-link.test.ts`, `tests/integration/matrix-parity.test.ts`, and `tests/integration/auth-recovery.test.ts` (Trainer own-workspace preflight/record/audit assertions) FAIL.
+2. **Denied other workspace**: Temporarily bypass the active workspace-membership check in `app_private.has_workspace_access` (and separately in `authorize()`) for Trainer -> confirm foreign-workspace Trainer (`trainerB` -> `cA`) and revoked-membership Trainer negative tests in `tests/integration/auth-recovery.test.ts` and `tests/unit/authorize.test.ts` FAIL.
+3. **Denied staff targets**: Temporarily remove `exists (select 1 from public.staff_profiles where user_id = target)` or `target = auth.uid()` from `app_private.recovery_link_guard` -> confirm Trainer targeting staff (`woA`, `po`, another trainer, `salesA`) and Trainer self-target negative tests in `tests/integration/auth-recovery.test.ts` FAIL.
+4. **Denied non-Trainer roles unchanged**: Temporarily grant `'generate_recovery_link'` to `'sales'` (in Wall 1 and separately in Wall 2) or allow `null` role -> confirm Sales denial (`tests/unit/authorize.test.ts`, `tests/integration/auth-recovery.test.ts`) and `tests/integration/matrix-parity.test.ts` (`sales` and `null` role parity) FAIL, while PO and WO grants and all unrelated capabilities remain intact.
 
 ## Project Structure
 
