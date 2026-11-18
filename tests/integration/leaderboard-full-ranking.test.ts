@@ -191,7 +191,7 @@ describe('private rank walls', () => {
   it('mutation: dropping the own-client filter leaks another client’s rank (kill evidence)', async () => {
     const own = 'and e.client_id=c.id';
     const rollback = new Error('rollback my-rank mutation');
-    let mutant: unknown = 'not-reached';
+    const mutant: Array<{ rank?: unknown }> = [];
     try {
       await db.begin(async (tx) => {
         const [row] = await tx`
@@ -200,17 +200,22 @@ describe('private rank walls', () => {
         const mutated = definition.replace(own, '');
         expect(mutated).not.toBe(definition);
         await tx.unsafe(mutated);
-        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: ranked[6]!.userId, role: 'authenticated' })},true)`;
-        const [result] =
-          await tx`select public.client_leaderboard_my_rank() as result`;
-        mutant = result!.result;
+        // An unfiltered mutant returns the same arbitrary row to every caller,
+        // so it cannot be right for both the first and the last client.
+        for (const index of [0, 6]) {
+          await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: ranked[index]!.userId, role: 'authenticated' })},true)`;
+          const [result] =
+            await tx`select public.client_leaderboard_my_rank() as result`;
+          mutant.push(result!.result as { rank?: unknown });
+        }
         throw rollback;
       });
     } catch (error) {
       if (error !== rollback) throw error;
     }
-    // Client #7 must see rank 7; the mutant returns some other client's rank.
-    expect(mutant).not.toMatchObject({ rank: 7 });
+    // Clients #1 and #7 must see ranks 1 and 7; the mutant cannot satisfy both.
+    expect(mutant).toHaveLength(2);
+    expect([mutant[0]!.rank, mutant[1]!.rank]).not.toEqual([1, 7]);
     const [definition] = await db`
       select pg_get_functiondef('public.client_leaderboard_my_rank()'::regprocedure) as body`;
     expect(definition?.body).toContain(own);
