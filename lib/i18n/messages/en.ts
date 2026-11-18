@@ -231,6 +231,16 @@ export const en: Record<keyof typeof ar, string> = {
   'auth.staffResetEmailSubject': 'Reset your LIFTER password',
   'auth.staffResetEmailBody':
     'Use the link below to reset your LIFTER password. The link expires in 60 minutes and can be used once. If you didn’t request this email, you can ignore it.',
+  'auth.staffResetTitle': 'Reset your password',
+  'auth.staffResetHelp':
+    'Enter your staff account email address and we’ll send a reset link if the account is eligible.',
+  'auth.requestReset': 'Send reset link',
+  'auth.sendingReset': 'Sending…',
+  'auth.staffResetConfirm':
+    "If an account exists for this email address, you'll receive password reset instructions.",
+  'auth.staffInvalidLink':
+    'This password reset link is invalid or has expired. Request a new link to continue.',
+  'auth.invalidEmail': 'Enter a valid email address.',
   'auth.password': 'Password',
   'auth.signIn': 'Sign in',
   'auth.invalid_credentials': 'Invalid email or password.',

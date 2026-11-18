@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   updateUser: vi.fn(),
   redirect: vi.fn(),
 }));
+vi.mock('server-only', () => ({}));
 vi.mock('../../lib/supabase/server', () => ({
   createSessionClient: mocks.factory,
 }));

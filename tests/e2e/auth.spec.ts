@@ -1,6 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
+import { mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { LOCALE_COOKIE } from '../../lib/design/preferences';
+import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
 const origin = new URL(process.env.PLAYWRIGHT_BASE_URL!).origin;
@@ -33,6 +36,19 @@ for (const locale of ['ar', 'en'] as const) {
         ).violations,
       ).toEqual([]);
     }
+    await page.goto('/login');
+    const resetRegion = page.getByRole('region', {
+      name: m['auth.staffResetTitle'],
+    });
+    await expect(resetRegion).toBeVisible();
+    await expect(resetRegion.getByLabel(m['auth.email'])).toHaveAttribute(
+      'autocomplete',
+      'email',
+    );
+    await expect(
+      resetRegion.getByRole('button', { name: m['auth.requestReset'] }),
+    ).toBeVisible();
+    await page.goto('/auth/recovery?token_hash=fake&type=recovery');
     await expect(
       page.getByRole('button', { name: m['auth.continue'], exact: true }),
     ).toBeVisible();
@@ -99,4 +115,54 @@ test('closing the recovery dialog clears the displayed link', async ({
   await expect(
     page.getByRole('button', { name: m['auth.recoveryTitle'] }),
   ).toBeFocused();
+});
+
+test('staff reset request visual matrix stays accessible', async ({
+  page,
+  context,
+}) => {
+  const output = join(tmpdir(), 'lftr-s66-luna-r004b');
+  mkdirSync(output, { recursive: true });
+  for (const locale of ['ar', 'en'] as const) {
+    for (const theme of ['light', 'dark'] as const) {
+      for (const width of [390, 1440] as const) {
+        await page.setViewportSize({
+          width,
+          height: width === 390 ? 844 : 1000,
+        });
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: locale, url: origin },
+          { name: THEME_COOKIE, value: theme, url: origin },
+        ]);
+        await page.goto('/login');
+        await expect(page.locator('html')).toHaveAttribute(
+          'dir',
+          locale === 'ar' ? 'rtl' : 'ltr',
+        );
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect(
+          page.getByRole('heading', {
+            name: getMessages(locale)['auth.staffResetTitle'],
+          }),
+        ).toBeVisible();
+        expect(
+          (
+            await new AxeBuilder({ page })
+              .withTags([
+                'wcag2a',
+                'wcag2aa',
+                'wcag21a',
+                'wcag21aa',
+                'wcag22aa',
+              ])
+              .analyze()
+          ).violations,
+        ).toEqual([]);
+        await page.screenshot({
+          path: join(output, `${locale}-${theme}-${width}.png`),
+          fullPage: true,
+        });
+      }
+    }
+  }
 });

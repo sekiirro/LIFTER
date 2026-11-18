@@ -222,6 +222,16 @@ export const ar = {
   'auth.staffResetEmailSubject': 'غيّر كلمة السر بتاعتك في LIFTER',
   'auth.staffResetEmailBody':
     'استخدم اللينك اللي تحت عشان تغيّر كلمة السر بتاعتك في LIFTER. صلاحية اللينك بتنتهي بعد 60 دقيقة، وتقدر تستخدمه مرة واحدة بس. لو ما طلبتش الرسالة دي، تقدر تتجاهلها.',
+  'auth.staffResetTitle': 'تغيير كلمة السر',
+  'auth.staffResetHelp':
+    'اكتب الإيميل بتاع حساب الموظف، وهنبعتلك لينك تغيير كلمة السر لو الحساب ده مؤهل.',
+  'auth.requestReset': 'ابعت لينك تغيير كلمة السر',
+  'auth.sendingReset': 'بنبعت…',
+  'auth.staffResetConfirm':
+    'لو الإيميل ده مسجّل عندنا، هتوصلك رسالة فيها لينك تغيير كلمة السر.',
+  'auth.staffInvalidLink':
+    'اللينك ده مش شغال أو صلاحيته انتهت. اطلب لينك جديد عشان تقدر تغيّر كلمة السر.',
+  'auth.invalidEmail': 'اكتب إيميل صحيح.',
   'auth.password': 'كلمة المرور',
   'auth.signIn': 'دخول',
   'auth.invalid_credentials': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
