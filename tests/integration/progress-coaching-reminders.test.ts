@@ -239,22 +239,30 @@ describe('spec 023 weekly check-in reminders (client inbox seam)', () => {
 
   it('keeps the run owner-only and kills mutants of the 10:00 gate and the answered check', async () => {
     const f = await clientContext();
+    const otherLink = checked(await issue(f)) as string;
     await probe(async (tx) => {
       const ws = f.wsA.id;
       const own = await graph(tx, f);
+      const other = await graph(tx, f, { linkId: otherLink });
       const [clock] =
         await tx`select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as today`;
       const today = clock!.today as string;
       await tx`select set_config('request.jwt.claims','{}',true)`;
-      await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id,activation_source)
-        values(${ws},${own.subscription},
-          ((${today}::date - 7)::timestamp + interval '9 hours') at time zone 'Africa/Cairo',${randomUUID()},'po_override')`;
+      for (const subscription of [own.subscription, other.subscription])
+        await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id,activation_source)
+          values(${ws},${subscription},
+            ((${today}::date - 7)::timestamp + interval '9 hours') at time zone 'Africa/Cairo',${randomUUID()},'po_override')`;
       await configureCheckin(tx, f);
       await tx`select app_private.f23_weekly_checkin_run(${today}::date)`;
       const [assignment] = await tx`select id from public.form_assignments
         where workspace_id = ${ws} and client_id = ${own.client}
           and occurrence_key = ${'weekly_checkin:' + today}`;
       const assignmentId = assignment!.id as string;
+      // The first client has already answered; the second has not.
+      await tx`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
+        values(${ws},${assignmentId},1,${tx.json({ workoutAdherence: 5, dietAdherence: 5 })})`;
+      await tx`insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
+        values(${ws},${assignmentId},1,clock_timestamp())`;
 
       for (const actor of [f.po.userId, f.trainerA.userId, f.trainerB.userId])
         await denied(
@@ -288,10 +296,6 @@ describe('spec 023 weekly check-in reminders (client inbox seam)', () => {
       expect(gateInvariantFailed, '10:00 gate mutant must fail').toBe(true);
 
       // Answered check-ins: the mutant without the submission filter keeps reminding.
-      await tx`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
-        values(${ws},${assignmentId},1,${tx.json({ workoutAdherence: 5, dietAdherence: 5 })})`;
-      await tx`insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
-        values(${ws},${assignmentId},1,clock_timestamp())`;
       const late = () =>
         tx`select app_private.f23_checkin_reminders_run(
           (((${today}::date)::timestamp + interval '11 hours') at time zone 'Africa/Cairo')) as n`.then(
