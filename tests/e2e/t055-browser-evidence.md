@@ -1,6 +1,6 @@
 # T055 — browser / theme / locale / viewport / a11y / contrast / performance evidence
 
-**Implementation head:** `f6a25888893fca053620d6d214659ae90d988784` (fresh `origin/main`, contains PR #231 branding merge `7eaf619d`).
+**Implementation head:** `f6a25888893fca053620d6d214659ae90d988784` (fresh `origin/main`, contains PR #231 branding merge `7eaf619d`). Before push this branch merged `origin/main` at `c101617d9735660ff0db23ba78b96e832a8120c4`; the only added implementation delta is a 5-line spec-015 `app/register/[token]/SignupForm.tsx` pending-submit blur guard, which does not touch any branding component, design token, i18n message, middleware or branding route. All branding rendered sources are unchanged between the executed head and the PR head.
 **Environment:** `PLAYWRIGHT_PORT=3000` (owned by lane s64-hy4-f14); Stack A environment injected through `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` (`LIFTER_SUPABASE_STACK=a`, `--allow-stack-a`). Production build (`npm run build`) served by `scripts/branding/start-playwright-server.mjs`.
 
 ## Source-continuity proof (prior evidence → this head)
@@ -43,6 +43,6 @@ All runs used the unmodified test harness and unmodified assertions. The `> log 
 
 ## CI / review evidence
 
-- Pull-request CI run IDs on this exact head are recorded in `C:/Users/NEW LAP/.lifter/runs/s64-hy4-f14/report.md` and the PR body (not in this file, to keep the tested head stable).
+- Pull-request CI run IDs on the PR head (merge of `c101617d...`) are recorded in `C:/Users/NEW LAP/.lifter/runs/s64-hy4-f14/report.md` and the PR body (not in this file, to keep the tested head stable).
 - CodeRabbit / AI review: **not run - optional under constitution 1.19.0** (`.specify/memory/constitution.md` line 171: "AI PR reviews are optional and provider-independent"; this lane did not request one).
 - Independent architect full-diff review: not requested by this lane; the architect reviews the exact SHA before merge under standing approval.
