@@ -31,6 +31,12 @@ function dependencies(
     stage: vi.fn(async () => {
       calls.push('stage');
     }),
+    removeStagedObject: vi.fn(async () => {
+      calls.push('remove');
+    }),
+    terminalizeUpload: vi.fn(async () => {
+      calls.push('terminalize');
+    }),
     inspectStaging: vi.fn(async () => true),
     retryStaging: vi.fn(async () => true),
     validate: vi.fn(() => {
@@ -67,9 +73,9 @@ describe('branding upload service', () => {
     const { deps, calls } = dependencies();
     const result = await createBrandingUploadService(deps).upload(input());
     expect(calls).toEqual([
+      'validate',
       'begin',
       'stage',
-      'validate',
       'prepare',
       'promote',
       'complete',
@@ -140,6 +146,44 @@ describe('branding upload service', () => {
       }),
     ).resolves.toEqual({ ok: false, code: 'too_large' });
     expect(oversized.deps.beginUpload).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['malformed image structure', 'invalid_type'],
+    ['animated image', 'invalid_type'],
+    ['invalid image dimensions or pixel count', 'bad_dimensions'],
+  ] as const)(
+    'rejects %s before creating an upload or staging bytes',
+    async (_description, code) => {
+      const { deps } = dependencies({
+        validate: vi.fn(() => {
+          throw Object.assign(new Error('Invalid branding image'), { code });
+        }),
+      });
+
+      await expect(
+        createBrandingUploadService(deps).upload(input()),
+      ).resolves.toEqual({ ok: false, code });
+
+      expect(deps.beginUpload).not.toHaveBeenCalled();
+      expect(deps.stage).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects an unrecognized sniffed type before creating an upload or staging bytes', async () => {
+    const { deps } = dependencies();
+    const unrecognized = new File([new Uint8Array([1, 2, 3])], 'brand.bin');
+
+    await expect(
+      createBrandingUploadService(deps).upload({
+        ...input(),
+        file: unrecognized,
+      }),
+    ).resolves.toEqual({ ok: false, code: 'invalid_type' });
+
+    expect(deps.validate).not.toHaveBeenCalled();
+    expect(deps.beginUpload).not.toHaveBeenCalled();
+    expect(deps.stage).not.toHaveBeenCalled();
   });
 
   it('preserves existing attachment authority on validation, promotion, and stale attach failures', async () => {
@@ -214,5 +258,115 @@ describe('branding upload service', () => {
     ).resolves.toMatchObject({ ok: true, newRevision: 5 });
     expect(deps.stage).not.toHaveBeenCalled();
     expect(deps.attach).not.toHaveBeenCalled();
+  });
+
+  it('never compensates the success path', async () => {
+    const { deps } = dependencies();
+    await expect(
+      createBrandingUploadService(deps).upload(input()),
+    ).resolves.toMatchObject({ ok: true });
+    expect(deps.removeStagedObject).not.toHaveBeenCalled();
+    expect(deps.terminalizeUpload).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'stage forbidden',
+      {
+        stage: vi.fn(async () => {
+          throw Object.assign(new Error('RLS denied'), { code: '42501' });
+        }),
+      },
+      'forbidden',
+    ],
+    [
+      'interrupted reconcile',
+      {
+        stage: vi.fn(async () => {
+          throw new Error('storage response interrupted');
+        }),
+        inspectStaging: vi.fn(async () => false),
+        retryStaging: vi.fn(async () => false),
+      },
+      'interrupted',
+    ],
+    [
+      'prepare failure',
+      {
+        prepare: vi.fn(async () => {
+          throw new Error('validator unavailable');
+        }),
+      },
+      'interrupted',
+    ],
+    [
+      'promote failure',
+      {
+        promote: vi.fn(async () => {
+          throw new Error('private storage detail');
+        }),
+      },
+      'interrupted',
+    ],
+    [
+      'complete failure',
+      {
+        complete: vi.fn(async () => {
+          throw new Error('receipt write lost');
+        }),
+      },
+      'interrupted',
+    ],
+    [
+      'stale attach',
+      {
+        attach: vi.fn(async () => {
+          throw Object.assign(new Error('stale'), { code: '40001' });
+        }),
+      },
+      'stale_revision',
+    ],
+    [
+      'ambiguous attach without proof',
+      {
+        attach: vi.fn(async () => {
+          throw new Error('response lost');
+        }),
+        readAfterAmbiguousAttach: vi.fn(async () => null),
+      },
+      'interrupted',
+    ],
+  ] as const)(
+    'removes the staged object and terminalizes the upload on %s',
+    async (_description, overrides, code) => {
+      const { deps } = dependencies(overrides);
+      await expect(
+        createBrandingUploadService(deps).upload(input()),
+      ).resolves.toEqual({ ok: false, code });
+      expect(deps.removeStagedObject).toHaveBeenCalledTimes(1);
+      expect(deps.removeStagedObject).toHaveBeenCalledWith(
+        input().workspaceId,
+        'upload-id',
+      );
+      expect(deps.terminalizeUpload).toHaveBeenCalledTimes(1);
+      expect(deps.terminalizeUpload).toHaveBeenCalledWith('upload-id');
+    },
+  );
+
+  it('keeps the original failure code when compensation itself fails', async () => {
+    const { deps } = dependencies({
+      prepare: vi.fn(async () => {
+        throw new Error('validator unavailable');
+      }),
+      removeStagedObject: vi.fn(async () => {
+        throw new Error('remove denied');
+      }),
+      terminalizeUpload: vi.fn(async () => {
+        throw new Error('terminalize lost');
+      }),
+    });
+    await expect(
+      createBrandingUploadService(deps).upload(input()),
+    ).resolves.toEqual({ ok: false, code: 'interrupted' });
   });
 });

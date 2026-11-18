@@ -148,6 +148,16 @@ export async function uploadBrandingAsset(
         });
       if (error) throw codedError(storageFailureCode(error));
     },
+    removeStagedObject: async (workspaceId, uploadId) => {
+      const { error } = await requireSession()
+        .storage.from('branding-staging')
+        .remove([`${workspaceId}/staging/${uploadId}`]);
+      if (error) throw codedError('interrupted');
+    },
+    terminalizeUpload: async (uploadId) =>
+      createSupabaseBrandingUploadRepository(
+        requireSession(),
+      ).terminalizeUpload(uploadId),
     inspectStaging: async (workspaceId, uploadId) => {
       const { data, error } = await requireSession()
         .storage.from('branding-staging')

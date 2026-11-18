@@ -34,6 +34,8 @@ export type BrandingUploadServiceDependencies = {
     bytes: Uint8Array,
     contentType: 'image/png' | 'image/webp',
   ): Promise<void>;
+  removeStagedObject(workspaceId: string, uploadId: string): Promise<void>;
+  terminalizeUpload(uploadId: string): Promise<void>;
   inspectStaging(workspaceId: string, uploadId: string): Promise<boolean>;
   retryStaging(
     workspaceId: string,
@@ -139,6 +141,23 @@ export function createBrandingUploadService(
       return failure('forbidden');
     }
 
+    let bytes: Uint8Array;
+    let processed: BrandingImageResult;
+    let ingressType: 'image/png' | 'image/webp';
+    try {
+      bytes = new Uint8Array(await input.file.arrayBuffer());
+      if (bytes.byteLength > limits.maxIngressBytes)
+        return failure('too_large');
+      const sniffedType = contentType(bytes);
+      if (!sniffedType) return failure('invalid_type');
+      processed = dependencies.validate(bytes, input.assetRole);
+      if (processed.mediaType !== sniffedType) return failure('invalid_type');
+      ingressType = sniffedType;
+    } catch (error) {
+      const code = knownErrorCode(error);
+      return failure(code ?? 'invalid_type');
+    }
+
     let uploadId: string;
     try {
       uploadId = await dependencies.beginUpload(
@@ -150,8 +169,6 @@ export function createBrandingUploadService(
       const code = knownErrorCode(error);
       if (code === 'stale_revision') {
         try {
-          const bytes = new Uint8Array(await input.file.arrayBuffer());
-          const processed = dependencies.validate(bytes, input.assetRole);
           const persisted = await dependencies.readAfterAmbiguousAttach(
             input.workspaceId,
             input.assetRole,
@@ -178,6 +195,20 @@ export function createBrandingUploadService(
     }
 
     const stagingObject = `${input.workspaceId}/staging/${uploadId}`;
+    async function compensate(): Promise<void> {
+      try {
+        await dependencies.removeStagedObject(input.workspaceId, uploadId);
+      } catch {
+        // The terminalize RPC owns staged-byte removal; a denied best-effort
+        // storage remove never changes the failure result.
+      }
+      try {
+        await dependencies.terminalizeUpload(uploadId);
+      } catch {
+        // Terminal state is enforced server-side; the bounded GC collects
+        // abandoned staging rows after 30 minutes.
+      }
+    }
     let uploadState: BrandingUpload = createBrandingUpload({
       id: uploadId,
       workspaceId: input.workspaceId,
@@ -186,11 +217,6 @@ export function createBrandingUploadService(
       stagingObjectKey: stagingObject,
     });
     try {
-      const bytes = new Uint8Array(await input.file.arrayBuffer());
-      if (bytes.byteLength > limits.maxIngressBytes)
-        return failure('too_large');
-      const ingressType = contentType(bytes);
-      if (!ingressType) return failure('invalid_type');
       try {
         await dependencies.stage(
           input.workspaceId,
@@ -200,8 +226,10 @@ export function createBrandingUploadService(
         );
       } catch (error) {
         const stageError = knownErrorCode(error);
-        if (stageError === 'forbidden' || stageError === 'stale_revision')
+        if (stageError === 'forbidden' || stageError === 'stale_revision') {
+          await compensate();
           return failure(stageError);
+        }
         const interrupted = interruptBrandingUpload(uploadState, 'staging');
         const reconciled = await reconcileBrandingUpload(interrupted, {
           storage: {
@@ -222,22 +250,16 @@ export function createBrandingUploadService(
             }),
           },
         });
-        if (reconciled.status !== 'staging') return failure('interrupted');
+        if (reconciled.status !== 'staging') {
+          await compensate();
+          return failure('interrupted');
+        }
         uploadState = reconciled;
       }
 
-      let processed: BrandingImageResult;
       uploadState = transitionBrandingUpload(uploadState, {
         type: 'validation_started',
       });
-      try {
-        processed = dependencies.validate(bytes, input.assetRole);
-      } catch (error) {
-        uploadState = transitionBrandingUpload(uploadState, {
-          type: 'validation_failed',
-        });
-        return failure(knownErrorCode(error) ?? 'invalid_type');
-      }
       uploadState = transitionBrandingUpload(uploadState, {
         type: 'validation_succeeded',
         validatedBytes: processed.bytes,
@@ -278,7 +300,10 @@ export function createBrandingUploadService(
           currentDraftRevision: newRevision - 1,
           assetId: validatedObject,
         });
-        if (uploadState.status !== 'attached') return failure('stale_revision');
+        if (uploadState.status !== 'attached') {
+          await compensate();
+          return failure('stale_revision');
+        }
         return {
           ok: true,
           assetRole: input.assetRole,
@@ -287,8 +312,10 @@ export function createBrandingUploadService(
         };
       } catch (error) {
         const code = knownErrorCode(error);
-        if (code === 'stale_revision' || code === 'forbidden')
+        if (code === 'stale_revision' || code === 'forbidden') {
+          await compensate();
           return failure(code);
+        }
         const persisted = await dependencies
           .readAfterAmbiguousAttach(input.workspaceId, input.assetRole)
           .catch(() => null);
@@ -310,10 +337,12 @@ export function createBrandingUploadService(
               thumbnailUrl: `/api/branding/draft-image?workspace=${encodeURIComponent(input.workspaceId)}&role=${input.assetRole}&v=${persisted.revision}`,
             };
         }
+        await compensate();
         return failure('interrupted');
       }
     } catch (error) {
       const code = knownErrorCode(error);
+      await compensate();
       return failure(
         code === 'forbidden' ||
           code === 'stale_revision' ||

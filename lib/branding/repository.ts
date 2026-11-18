@@ -183,6 +183,7 @@ export type BrandingUploadRepository = {
     role: 'logo' | 'banner',
     expectedRevision: number,
   ): Promise<string>;
+  terminalizeUpload(uploadId: string): Promise<void>;
   attachUpload(uploadId: string, expectedRevision: number): Promise<number>;
 };
 
@@ -200,6 +201,14 @@ export function createSupabaseBrandingUploadRepository(
       if (typeof data !== 'string')
         throw new Error('Invalid branding upload response');
       return data;
+    },
+    async terminalizeUpload(uploadId) {
+      const { data, error } = await client.rpc('branding_upload_terminalize', {
+        upload_id: uploadId,
+      });
+      if (error) throwRpcError(error);
+      if (typeof data !== 'boolean')
+        throw new Error('Invalid branding terminalize response');
     },
     async attachUpload(uploadId, expectedRevision) {
       const { data, error } = await client.rpc('branding_asset_attach', {

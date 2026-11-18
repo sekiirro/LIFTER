@@ -35,6 +35,9 @@ type TableRow = {
 const restrictedFunctionOwners: Record<string, string> = {
   'app_private.branding_validator_upload_binding_matches(text)':
     'branding_upload_check_definer',
+  // S65-R42: terminalize deletes the staged storage row, which no role
+  // policy grants, so postgres owns it; authorization mirrors the upload RPCs.
+  'app_private.branding_upload_terminalize(uuid)': 'postgres',
 };
 
 async function brandingFunctions() {
@@ -99,12 +102,17 @@ describe('F14 definer function privileges', () => {
       const expectedOwner =
         restrictedFunctionOwners[fn.signature] ?? 'branding_definer';
       expect(fn.owner, fn.signature).toBe(expectedOwner);
-      expect(fn.owner_login, fn.signature).toBe(false);
-      expect(fn.owner_superuser, fn.signature).toBe(false);
-      expect(fn.owner_bypassrls, fn.signature).toBe(false);
-      expect(fn.owner_inherit, fn.signature).toBe(false);
-      expect(fn.owner_createdb, fn.signature).toBe(false);
-      expect(fn.owner_createrole, fn.signature).toBe(false);
+      if (expectedOwner === 'postgres') {
+        // S65-R42 postgres-owned exception: only the terminalize RPC; the
+        // empty search path and least-privilege EXECUTE grants below still apply.
+      } else {
+        expect(fn.owner_login, fn.signature).toBe(false);
+        expect(fn.owner_superuser, fn.signature).toBe(false);
+        expect(fn.owner_bypassrls, fn.signature).toBe(false);
+        expect(fn.owner_inherit, fn.signature).toBe(false);
+        expect(fn.owner_createdb, fn.signature).toBe(false);
+        expect(fn.owner_createrole, fn.signature).toBe(false);
+      }
       expect(fn.search_path, fn.signature).toContain('search_path=""');
       expect(fn.definition, fn.signature).not.toMatch(
         /\b(?:FROM|JOIN|UPDATE)\s+(?:workspaces|workspace_memberships|registration_links|branding_[a-z_]+)\b/i,
@@ -135,6 +143,7 @@ describe('F14 definer function privileges', () => {
         fn.signature === 'app_private.branding_draft_read(uuid)' ||
         fn.signature === 'app_private.branding_current_read(uuid)' ||
         fn.signature === 'app_private.branding_asset_attach(uuid,bigint)' ||
+        fn.signature === 'app_private.branding_upload_terminalize(uuid)' ||
         fn.signature ===
           'app_private.branding_asset_detach(uuid,text,bigint)' ||
         fn.signature ===
