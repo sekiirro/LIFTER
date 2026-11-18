@@ -18,7 +18,11 @@ import {
 } from './packages-fixture';
 import { bought } from './registration-approval-payment-fixture';
 import { clientContext } from './client-accounts-fixture';
-import { PREFLIGHT_FN, runPreflight } from './packages-c5-preflight-contract';
+import {
+  PREFLIGHT_FN,
+  rowSnapshot,
+  runPreflight,
+} from './packages-c5-preflight-contract';
 
 const db = sql();
 const script = readFileSync(
@@ -56,6 +60,8 @@ type Args = {
   stackEnv?: string;
   poApprovalRef?: string;
   backupRestoreRef?: string;
+  runRecord?: Record<string, unknown>;
+  prepareAfterSettings?: boolean;
 };
 
 // Cluster-unique stack identity, the same value an operator records (control A5).
@@ -86,6 +92,38 @@ function mutate(needle: string, replacement: string, text: string = CORE) {
 
 async function settings(q: Sql | TransactionSql, a: Args) {
   const stack = await stackIdentity(q);
+  const preflight = await runPreflight(q, a.pkgs);
+  const runId = a.runId ?? newRun();
+  const runUtc = a.runUtc ?? '2026-11-18T08:00:00Z';
+  const operatorId = a.operatorId ?? 'operator:t065-test';
+  const reviewerId = a.reviewerId ?? 'reviewer:t064b-r2';
+  const reviewRef = a.reviewRef ?? 'T064b-r2-PASS';
+  const scriptSha256 = a.scriptSha256 ?? SCRIPT_SHA256;
+  const stackId = a.stackId ?? stack.id;
+  const stackIdSource = a.stackIdSource ?? stack.source;
+  const stackEnv = a.stackEnv ?? 'local';
+  const preflightCapturedUtc = a.preflightCapturedUtc ?? '2026-11-18T07:59:00Z';
+  const poApprovalRef = a.poApprovalRef ?? '';
+  const backupRestoreRef = a.backupRestoreRef ?? '';
+  const runRecord = {
+    status: 'PASS',
+    run_id: runId,
+    run_utc: runUtc,
+    operator_id: operatorId,
+    reviewer_id: reviewerId,
+    review_ref: reviewRef,
+    script_sha256: scriptSha256,
+    expected_stack_id: stackId,
+    stack_id_source: stackIdSource,
+    stack_env: stackEnv,
+    package_ids: a.pkgs?.slice().sort() ?? null,
+    workspace_ids: a.ws.slice().sort(),
+    preflight_captured_utc: preflightCapturedUtc,
+    preflight,
+    po_approval_ref: poApprovalRef,
+    backup_restore_ref: backupRestoreRef,
+  };
+  const record = { ...runRecord, ...a.runRecord };
   const set = (k: string, v: string) => q`select set_config(${k}, ${v}, true)`;
   if (a.rawPkgs !== undefined) {
     await set('c5.package_ids', a.rawPkgs);
@@ -93,21 +131,19 @@ async function settings(q: Sql | TransactionSql, a: Args) {
     await set('c5.package_ids', a.pkgs.join(','));
   }
   await set('c5.workspace_ids', a.rawWs ?? a.ws.join(','));
-  await set('c5.run_id', a.runId ?? newRun());
-  await set('c5.run_utc', a.runUtc ?? '2026-11-18T08:00:00Z');
-  await set('c5.operator_id', a.operatorId ?? 'operator:t065-test');
-  await set('c5.reviewer_id', a.reviewerId ?? 'reviewer:t064b-r2');
-  await set('c5.review_ref', a.reviewRef ?? 'T064b-r2-PASS');
-  await set('c5.script_sha256', a.scriptSha256 ?? SCRIPT_SHA256);
-  await set(
-    'c5.preflight_captured_utc',
-    a.preflightCapturedUtc ?? '2026-11-18T07:59:00Z',
-  );
-  await set('c5.expected_stack_id', a.stackId ?? stack.id);
-  await set('c5.stack_id_source', a.stackIdSource ?? stack.source);
-  await set('c5.stack_env', a.stackEnv ?? 'local');
-  await set('c5.po_approval_ref', a.poApprovalRef ?? '');
-  await set('c5.backup_restore_ref', a.backupRestoreRef ?? '');
+  await set('c5.run_id', runId);
+  await set('c5.run_utc', runUtc);
+  await set('c5.operator_id', operatorId);
+  await set('c5.reviewer_id', reviewerId);
+  await set('c5.review_ref', reviewRef);
+  await set('c5.script_sha256', scriptSha256);
+  await set('c5.preflight_captured_utc', preflightCapturedUtc);
+  await set('c5.expected_stack_id', stackId);
+  await set('c5.stack_id_source', stackIdSource);
+  await set('c5.stack_env', stackEnv);
+  await set('c5.po_approval_ref', poApprovalRef);
+  await set('c5.backup_restore_ref', backupRestoreRef);
+  await set('c5.run_record', JSON.stringify(record));
 }
 
 async function runIn(tx: TransactionSql, a: Args, text: string = CORE) {
@@ -127,8 +163,14 @@ async function expectRefused(
 ) {
   await expect(
     db.begin(async (tx) => {
-      if (prepare) await prepare(tx);
-      await runIn(tx, a, text);
+      if (prepare && a.prepareAfterSettings) {
+        await settings(tx, a);
+        await prepare(tx);
+        await tx.unsafe(text);
+      } else {
+        if (prepare) await prepare(tx);
+        await runIn(tx, a, text);
+      }
       throw new Error('rollback: the script unexpectedly succeeded');
     }),
   ).rejects.toThrow(new RegExp(`c5_refused:${code}`));
@@ -1089,13 +1131,24 @@ describe('T065 additional refusal branches (A4/A5/A6/C3/C6/D1/D2/D3/D8)', () => 
   ];
   it.each(cases)('refuses %s (%s)', async (code, _label, prepare) => {
     const mock = await legacyMock();
-    await expectRefused({ pkgs: [mock.id], ws: [f.wsA.id] }, code, prepare);
+    await expectRefused(
+      {
+        pkgs: [mock.id],
+        ws: [f.wsA.id],
+        ...(code === 'not_database_owner'
+          ? { prepareAfterSettings: true }
+          : {}),
+      },
+      code,
+      prepare,
+    );
     expect(await counts(mock.id)).toMatchObject({ p: 1, o: 1, v: 1 });
   });
 
   it('refuses missing or malformed run_id, review_ref and A4 provenance fields (D1)', async () => {
     const mock = await legacyMock();
     const a: Args = { pkgs: [mock.id], ws: [f.wsA.id] };
+    const before = await rowSnapshot(db);
     await expectRefused({ ...a, runId: '' }, 'missing_run_or_review_reference');
     await expectRefused(
       { ...a, reviewRef: '' },
@@ -1135,15 +1188,51 @@ describe('T065 additional refusal branches (A4/A5/A6/C3/C6/D1/D2/D3/D8)', () => 
       'invalid_run_record_provenance',
     );
     await expectRefused(
+      { ...a, runRecord: { script_sha256: 'a'.repeat(64) } },
+      'run_record_mismatch',
+    );
+    await expectRefused(
+      { ...a, reviewRef: 'fabricated-pass-reference' },
+      'unrecognized_review_pass',
+    );
+    await expectRefused(
+      { ...a, runRecord: { package_ids: [] } },
+      'run_record_mismatch',
+    );
+    await expectRefused(
+      { ...a, runRecord: { reviewer_id: 'reviewer:unrelated' } },
+      'run_record_mismatch',
+    );
+    await expectRefused(
+      {
+        ...a,
+        runRecord: {
+          preflight: {
+            status: 'clean',
+            input_mode: 'list',
+            deletable: true,
+            synthetic_only: true,
+            workspace_ids: [],
+            targets: [],
+            dependencies: [],
+            refusals: [],
+          },
+        },
+      },
+      'run_record_mismatch',
+    );
+    await expectRefused(
       { ...a, preflightCapturedUtc: '2026-11-18T09:00:00Z' }, // after runUtc 08:00:00Z
       'invalid_run_record_provenance',
     );
+    expect(await rowSnapshot(db)).toEqual(before);
     expect(await counts(mock.id)).toMatchObject({ p: 1 });
   });
 
   it('enforces explicit stack_id_source with no silent fallback (D3) and non-local PO/backup approvals (D2)', async () => {
     const mock = await legacyMock();
     const a: Args = { pkgs: [mock.id], ws: [f.wsA.id] };
+    const before = await rowSnapshot(db);
 
     await expectRefused(
       { ...a, stackEnv: 'production' },
@@ -1154,12 +1243,43 @@ describe('T065 additional refusal branches (A4/A5/A6/C3/C6/D1/D2/D3/D8)', () => 
       'missing_non_local_approvals',
     );
     await expectRefused(
-      { ...a, stackIdSource: 'unknown' },
+      {
+        ...a,
+        stackEnv: 'local',
+        stackId: 'unclassified-production-system-id',
+        poApprovalRef: 'PO-S61-PO-2',
+        backupRestoreRef: 'D14-RESTORE-TEST-20261118',
+      },
+      'stack_identity_mismatch',
+    );
+    await expectRefused(
+      {
+        ...a,
+        stackEnv: 'non_local',
+        poApprovalRef: 'placeholder',
+        backupRestoreRef: 'placeholder',
+      },
+      'invalid_non_local_approval_reference',
+    );
+    await expectRefused(
+      {
+        ...a,
+        stackEnv: 'non_local',
+        stackIdSource: 'unknown',
+        poApprovalRef: 'PO-S61-PO-2',
+        backupRestoreRef: 'D14-RESTORE-20261118-T064B',
+      },
       'invalid_stack_id_source',
     );
     // D3: if pg_control_system raises insufficient_privilege, it MUST NOT silently fall back to lifter.stack_id.
     await expectRefused(
-      { ...a, stackIdSource: 'pg_control_system' },
+      {
+        ...a,
+        stackEnv: 'non_local',
+        stackIdSource: 'pg_control_system',
+        poApprovalRef: 'PO-S61-PO-2',
+        backupRestoreRef: 'D14-RESTORE-20261118-T064B',
+      },
       'stack_identity_source_unavailable',
       async (tx) => {
         await tx.unsafe(`set local lifter.stack_id = 'forced-fallback-id'`);
@@ -1169,6 +1289,7 @@ describe('T065 additional refusal branches (A4/A5/A6/C3/C6/D1/D2/D3/D8)', () => 
         "raise insufficient_privilege using message = 'simulated';",
       ),
     );
+    expect(await rowSnapshot(db)).toEqual(before);
     // Explicit lifter.stack_id source works when declared.
     await teardown(
       {
@@ -1176,8 +1297,8 @@ describe('T065 additional refusal branches (A4/A5/A6/C3/C6/D1/D2/D3/D8)', () => 
         stackIdSource: 'lifter.stack_id',
         stackId: 'explicit-stack-id',
         stackEnv: 'non_local',
-        poApprovalRef: 'PO-APPROVAL-S65',
-        backupRestoreRef: 'D14-RESTORE-20261118',
+        poApprovalRef: 'PO-S61-PO-2',
+        backupRestoreRef: 'D14-RESTORE-20261118-T064B',
       },
       CORE.replace(
         'set local search_path = pg_catalog;',

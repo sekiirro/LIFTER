@@ -26,7 +26,11 @@
 --     -v stack_env='local' \
 --     -v po_approval_ref='' \
 --     -v backup_restore_ref='' \
+--     -v run_record='<one-line JSON of the recorded PASS>' \
 --     -f supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql
+--   Before execution, independently compute SHA-256 from this exact file and check the hash,
+--   review_ref, operator/reviewer, stack identity, allow-list and captured preflight against ONE
+--   recorded PASS. Supply the matching run_record as the one-line JSON parameter.
 --
 -- Parameter rules (enforced fail-closed inside the transaction; A4, A5, A6, D3, G2):
 --   run_id:                 ^c5-<yyyymmdd>-<n>$ (<= 40 chars).
@@ -39,9 +43,12 @@
 --   stack_id_source:        'pg_control_system' (pg_control_system().system_identifier) or 'lifter.stack_id'
 --                           (owner-maintained alter database <db> set lifter.stack_id = '<unique id>');
 --                           no silent fallback is permitted (current_database() is 'postgres' everywhere).
---   stack_env:              'local' (Stacks A-E) or 'non_local' ('production' and all other values refused).
---   po_approval_ref:        1-120 chars of [A-Za-z0-9._:/#-]; REQUIRED when stack_env = 'non_local'.
---   backup_restore_ref:     1-120 chars of [A-Za-z0-9._:/#-]; REQUIRED (verified restore test, D-14) when non_local.
+--   stack_env:              classification from the independently verified A4 run record; only 'local'
+--                           or 'non_local'. It is bound to the same recorded and live stack identity.
+--   run_record:             JSON of the recorded A4 PASS; fields, allow-list and captured preflight
+--                           output are compared with settings and the locked live preflight below.
+--   po_approval_ref:        PO-S<n>-PO-<n>; REQUIRED when stack_env = 'non_local'.
+--   backup_restore_ref:     D14-RESTORE-YYYYMMDD-<record id>; REQUIRED when stack_env = 'non_local'.
 --
 -- Out-of-band run record (A4, A5, A6, C7, D9, D11 — MUST be recorded BEFORE execution):
 --   1. UTC run timestamp (`run_utc`) and `run_id`.
@@ -74,7 +81,8 @@ select set_config('c5.package_ids', :'package_ids', true),
        set_config('c5.stack_id_source', :'stack_id_source', true),
        set_config('c5.stack_env', :'stack_env', true),
        set_config('c5.po_approval_ref', :'po_approval_ref', true),
-       set_config('c5.backup_restore_ref', :'backup_restore_ref', true);
+       set_config('c5.backup_restore_ref', :'backup_restore_ref', true),
+       set_config('c5.run_record', :'run_record', true);
 -- ==== core ====
 -- In autocommit mode each statement is its own transaction, so this setting would be gone when the DO
 -- block runs; the block then refuses (D1: refuse if not inside one transaction).
@@ -108,6 +116,8 @@ declare
   v_stack_env text := nullif(pg_catalog.current_setting('c5.stack_env', true), '');
   v_po_approval text := nullif(pg_catalog.current_setting('c5.po_approval_ref', true), '');
   v_backup_restore text := nullif(pg_catalog.current_setting('c5.backup_restore_ref', true), '');
+  v_run_record_raw text := nullif(pg_catalog.current_setting('c5.run_record', true), '');
+  v_run_record jsonb;
   v_actual_stack text;
   fk_hash_before text;
   fk_hash_after text;
@@ -157,16 +167,19 @@ begin
   if current_user <> 'postgres' then
     raise exception 'c5_refused:not_database_owner' using errcode = 'C5001';
   end if;
-  -- A6 (D2): stack environment must be 'local' or 'non_local' (never production); non_local requires PO approval + verified restore.
+  -- A6 (D2): the run record, not a second caller-declared label, binds the stack class.
   if v_stack_env is null or v_stack_env not in ('local', 'non_local') then
     raise exception 'c5_refused:invalid_stack_environment' using errcode = 'C5001';
   end if;
   if v_stack_env = 'non_local' and (
        v_po_approval is null or v_backup_restore is null
-       or v_po_approval !~ '^[A-Za-z0-9._:/#-]{1,120}$'
-       or v_backup_restore !~ '^[A-Za-z0-9._:/#-]{1,120}$')
+       or v_po_approval !~ '^PO-S[0-9]+-PO-[0-9]+$'
+       or v_backup_restore !~ '^D14-RESTORE-[0-9]{8}-[A-Za-z0-9._-]{1,80}$')
   then
-    raise exception 'c5_refused:missing_non_local_approvals' using errcode = 'C5001';
+    if v_po_approval is null or v_backup_restore is null then
+      raise exception 'c5_refused:missing_non_local_approvals' using errcode = 'C5001';
+    end if;
+    raise exception 'c5_refused:invalid_non_local_approval_reference' using errcode = 'C5001';
   end if;
   -- A5 (D3): stack identity source is declared explicitly; no silent fallback.
   if v_stack_id_source is null or v_stack_id_source not in ('pg_control_system', 'lifter.stack_id') then
@@ -201,6 +214,33 @@ begin
      or v_preflight_utc !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$'
   then
     raise exception 'c5_refused:invalid_run_record_provenance' using errcode = 'C5001';
+  end if;
+  begin
+    v_run_record := v_run_record_raw::jsonb;
+  exception when others then
+    raise exception 'c5_refused:invalid_run_record' using errcode = 'C5001';
+  end;
+  if v_run_record is null or v_run_record ->> 'status' is distinct from 'PASS' then
+    raise exception 'c5_refused:missing_recorded_pass' using errcode = 'C5001';
+  end if;
+  -- T064b security-review round 2 is the only recorded design PASS reference.
+  if v_review is distinct from 'T064b-r2-PASS' then
+    raise exception 'c5_refused:unrecognized_review_pass' using errcode = 'C5001';
+  end if;
+  if v_run_record ->> 'run_id' is distinct from v_run
+     or v_run_record ->> 'run_utc' is distinct from v_run_utc
+     or v_run_record ->> 'operator_id' is distinct from v_operator
+     or v_run_record ->> 'reviewer_id' is distinct from v_reviewer
+     or v_run_record ->> 'review_ref' is distinct from v_review
+     or v_run_record ->> 'script_sha256' is distinct from v_script_sha
+     or v_run_record ->> 'expected_stack_id' is distinct from v_expected_stack
+     or v_run_record ->> 'stack_id_source' is distinct from v_stack_id_source
+     or v_run_record ->> 'stack_env' is distinct from v_stack_env
+     or v_run_record ->> 'preflight_captured_utc' is distinct from v_preflight_utc
+     or v_run_record ->> 'po_approval_ref' is distinct from coalesce(v_po_approval, '')
+     or v_run_record ->> 'backup_restore_ref' is distinct from coalesce(v_backup_restore, '')
+  then
+    raise exception 'c5_refused:run_record_mismatch' using errcode = 'C5001';
   end if;
   begin
     v_run_ts := v_run_utc::timestamptz;
@@ -249,6 +289,11 @@ begin
   v_pkgs := array(select distinct x::uuid from unnest(v_pkg_tokens) x order by 1);
   if cardinality(v_pkgs) = 0 then
     raise exception 'c5_refused:empty_allow_list' using errcode = 'C5001';
+  end if;
+  if v_run_record -> 'package_ids' is distinct from to_jsonb(v_pkgs::text[])
+     or v_run_record -> 'workspace_ids' is distinct from to_jsonb(v_ws::text[])
+  then
+    raise exception 'c5_refused:run_record_mismatch' using errcode = 'C5001';
   end if;
 
   -- C6: origin replication role, never replica.
@@ -327,6 +372,9 @@ begin
   v_rep := app_private.package_c5_preflight(v_pkgs);
   if v_rep ->> 'input_mode' <> 'list' or not (v_rep ->> 'deletable')::boolean then
     raise exception 'c5_refused:preflight_not_deletable:%', (v_rep -> 'refusals')::text using errcode = 'C5001';
+  end if;
+  if v_run_record -> 'preflight' is distinct from v_rep then
+    raise exception 'c5_refused:run_record_mismatch' using errcode = 'C5001';
   end if;
   if (select array_agg((t ->> 'package_id')::uuid order by (t ->> 'package_id')::uuid)
         from jsonb_array_elements(v_rep -> 'targets') t) is distinct from v_pkgs then
