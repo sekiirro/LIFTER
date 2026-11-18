@@ -84,7 +84,11 @@ describe('client registration status refresh', () => {
     };
     const load = vi.fn().mockResolvedValue(pending);
     const poller = createStatusPoller({ runtime: env, load });
+    env.setVisible(false);
     poller.start();
+    expect(vi.getTimerCount()).toBe(0);
+
+    env.setVisible(true);
     expect(vi.getTimerCount()).toBe(1);
 
     env.setVisible(false);
