@@ -18,6 +18,44 @@ function readResult(sequence: number) {
 }
 
 describe('Supabase branding repository publication result', () => {
+  it('restores bilingual banner alt text and authenticated draft preview handles', async () => {
+    const workspaceId = 'c671d83a-9870-41cb-82cd-1c93a0484d8d';
+    const rpc = vi.fn().mockResolvedValueOnce({
+      data: {
+        workspace_id: workspaceId,
+        revision: 7,
+        fields: {
+          name: { ar: 'الاسم', en: 'Name' },
+          bannerAlt: { ar: 'لافتة', en: '' },
+          color: '#059669',
+          logo: {
+            bucket: 'branding-validated',
+            object: `${workspaceId}/validated/logo/${'a'.repeat(64)}.png`,
+            content_type: 'image/png',
+            byte_size: 128,
+          },
+          banner: null,
+        },
+        current_publication: null,
+      },
+      error: null,
+    });
+    const repository = createSupabaseBrandingRepository({
+      rpc,
+    } as unknown as SupabaseClient);
+
+    const draft = await repository.getDraft(workspaceId);
+    expect(draft?.fields.bannerAltText).toEqual({ ar: 'لافتة', en: 'لافتة' });
+    expect(draft?.assets?.logo).toEqual({
+      thumbnailUrl: `/api/branding/draft-image?workspace=${workspaceId}&role=logo&v=7`,
+      bucket: 'branding-validated',
+      object: `${workspaceId}/validated/logo/${'a'.repeat(64)}.png`,
+      contentType: 'image/png',
+      byteSize: 128,
+    });
+    expect(draft?.assets?.banner).toBeUndefined();
+  });
+
   it('returns null when no draft revision has been created', async () => {
     const rpc = vi.fn().mockResolvedValueOnce({
       data: {

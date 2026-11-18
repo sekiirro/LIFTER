@@ -14,6 +14,10 @@ Requirement text changed: new FR-029 (client code) and task T064; FR total is no
 
 Gate verdict: CRITICAL 0, HIGH 0. T064 stays unticked until exact-head CI is green.
 
+## S64 T047/T048 date-only status — 2026-11-18 UTC
+
+Task completion status (`T047`, `T048`), S56-R12/S57-PO-1 dependency resolution notes, and Stack B execution/mutation evidence updated in `tasks.md` and `traceability.md`. FR/SC requirement text is unchanged; out-of-scope tasks (`T050`, `T054`, `T058`, `T059`, `T060`, `T062`, `T063`) remain unticked. No full Analyze rerun required.
+
 ## S64 date-only status (S64-R46) — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R46: the restricted-continuation half of A-S41-4 (P-S40-1, before T048) is APPROVED, so A-S41-4 is now CLOSED (entry-point half S64-R21, restricted-continuation half S64-R46). FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
@@ -21,6 +25,18 @@ Docs-only recording of architect ruling S64-R46: the restricted-continuation hal
 ## S64 date-only status — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R21: the entry-point half of A-S41-4 (P-S40-5, before T062) is APPROVED; the restricted-continuation half (P-S40-1, before T048) stays OPEN. FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
+
+## S64 Luna S11-2 date-only status — 2026-11-18 UTC
+
+Task notes and traceability evidence changed; FR/SC requirement text did not. Direct-route implementation and verification are recorded in the S64 run report. PO decisions S64-PO-6/7 and S65-PO-1/2 resolve navigation placement, ASCII/manual slug behavior, and 50-character default overflow. No new requirement text or PO decision is inferred; per Constitution/S54-R6, no full Analyze rerun is required for task-status-only updates.
+
+## S65 S11-2 date-only status — 2026-11-18 UTC
+
+T049/T051/T056 evidence and task statuses were updated; FR/SC and plan text did not change. PO decisions S65-PO-1/2 are recorded in the referenced verbatim files. Stack C integration and E2E evidence is recorded in the s65-luna-s112b report; no full Analyze rerun is needed for task-status-only changes. No open CRITICAL/HIGH findings for this slice.
+
+## S64 Luna S11-2 date-only status — 2026-11-17 UTC
+
+T049 implementation evidence and task status changed; FR/SC text did not. Stack C passed all three workspace-creation integration tests, including the Platform Owner, denial, no-auto-provisioning, audit and idempotent-retry cases. T051/T056 await the PO navigation decision required by DESIGN.md §11 (Platform Owner mobile navigation remains unresolved); no new requirement or design decision is inferred here.
 
 ## S63 date-only status — 2026-11-17 UTC
 
