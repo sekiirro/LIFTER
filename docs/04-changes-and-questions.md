@@ -1671,3 +1671,95 @@ A: Random code (Recommended)
 ```
 
 Architect mapping S66-R1 (not PO words): option A means a random per-workspace client code; 8 characters from an unambiguous 32-character alphabet (digits 2-9 and letters A-Z without I and O, so no 0/O/1/I); displayed as XXXX-XXXX; unique on (workspace_id, code); immutable after assignment; assigned at every client creation and backfilled for existing clients by a forward migration; staff-visible only (never exposed to other clients or anonymous); staff search is exact match only, with case and dash normalised on input. Encoded as spec 011 FR-029. Resolves open item 6 of `docs/01-traceability.md`.
+
+### S66-PO-2 - PO ruling, verbatim as relayed (F24 overdue gating)
+
+Source: the PO's ruling option A (2026-11-18) as relayed by the coordinator in the PR #110 review thread; no verbatim PO file or SHA-256 exists. The relayed text, verbatim:
+
+<!-- prettier-ignore -->
+```text
+Item 3 PO ruling: A. Overdue clients (app_private.f13_client_overdue_state overdue=true) are not rankable/public and do not see the Top 5 or private rank (treat like restricted).
+```
+
+Architect mapping S66-R2 (not PO words): an overdue client (F13 FR-028 input, reused unchanged) is excluded from `f24_client_rankable` (so also from eligibility, candidate creation, the dashboard notice and the private rank), is hidden from the public Top 5 for every viewer, and receives no Top 5 or private rank. Encoded as spec 024 FR-010 and task T041.
+
+### S57-PO-1 to S57-PO-11 - PO answers, verbatim (2026-11-14)
+
+Source: Claude Code session https://claude.ai/code/session_014udyWnahqjLL8vfwQacqMc (multiple-choice answers on specs 022-024). Each entry quotes the PO's free-text answer or the selected option label, with the option text the PO saw.
+
+<!-- prettier-ignore -->
+```text
+S57-PO-1 (024 FR-018 goal-relative progress): "i choose A + Add a Goals section under Client Details with a Goal Type dropdown: Fat Loss, Muscle Gain, Maintenance. Show the client's F15 Near-term Goal as reference. Trainers can update Goal Type."
+  Option A as presented: Trainers pick a goal type per client: fat loss, muscle gain or maintain. Progress uses body weight from 023 baselines (first value vs this month's latest). Fat loss: % lost / 10%, capped at 1. Gain: % gained / 5%, capped at 1. Maintain: 1 - |% change| / 3%, floored at 0. No goal set means the client isn't eligible.
+S57-PO-2 (024 FR-021 achievement date): selected "Last scoring input" - the timestamp of the client's latest check-in or measurement counted in this month's score, so whoever reached the score first ranks higher.
+S57-PO-3 (024 FR-021 client code): selected "Registration order" - earlier registration approval ranks higher.
+S57-PO-4 (024 FR-017 monthly adherence): selected "Monthly mean" - mean of (workout + diet) / 2 across all of the month's check-ins that have both answers.
+S57-PO-5 (022 subscription end display): selected "Last covered day" - display-only shift; F13 data is unchanged.
+S57-PO-6 (024 ranking and opt-out): "Rank ALL eligible clients monthly. Each client sees their private rank and total participants; public Leaderboard shows Top 5 only. Opt-out hides the client publicly, preserves their private rank, and automatically promotes the next eligible client (#6 → #5). PO approves the full ranking; promotions require no reapproval."
+S57-PO-7 (024 signup username messages): selected "Keep generic" - keep the single generic 'unavailable' message.
+S57-PO-8 (023 FR-012/FR-013 client measurements): selected "Add + edit own" - clients can also edit their own manual entries; trainers correct everything.
+S57-PO-9 (022 client plan viewer): selected "F17/F18 shared view" - F17 and F18 each build one read-only plan view that their print/export and the client portal both reuse.
+S57-PO-10 (022/023 client notices): selected "F19 hook + F22 inbox" - F19 adds a delivery/activation hook as its own task; F22 extends the F15 inbox to client recipients and sends the approved notices; 023 reminders reuse that client inbox.
+S57-PO-11 (022 FR-003 PO-override productivity unit): selected "F19 is right" - override still gives the one new-client unit; fix F22 FR-003, US1 #4 and SC-003 to match.
+```
+
+### S57-PO-12 - PO words, verbatim (2026-11-15)
+
+Source: same session as S57-PO-1.
+
+<!-- prettier-ignore -->
+```text
+Continue F22/F23/F24 independent tasks in parallel. Do not wait for F17/F18/F19 completion.
+Pause only blocked integrations. Do not modify F17/F18/F19-owned code or duplicate their functionality.
+Focus on UI, approved copy, full ranking, measurements, tests, and security. Keep PRs updated, clearly report blockers, and coordinate shared files.
+No merge without my authorization.
+Apply these approved Egyptian Arabic copy changes to F22/F23/F24:
+**F22 — Subscription Status**
+- Active: اشتراكك شغّال
+- Frozen: اشتراكك متوقف مؤقتًا
+- Expired: اشتراكك انتهى
+- Awaiting Activation: اشتراكك لسه ما اتفعّلش
+- Future: اشتراكك لسه ما بدأش
+- Refunded: فلوس الاشتراك اترجعت (only if fully refunded)
+
+**F23 — Measurements**
+- Add measurement: ضيف قياس جديد
+- Edit measurement: عدّل القياس
+- Measurement saved: القياس اتسجّل
+- No measurements recorded: لسه مفيش قياسات متسجلة
+
+**F24 — Leaderboard**
+- Top 5: أفضل 5
+- Your rank: ترتيبك
+- Rank {rank} of {total}: إنت في المركز {rank} من {total}
+- Username unavailable: اليوزرنيم ده مش متاح
+- Turn off participation: وقف ظهوري في الترتيب
+
+Top 5 belongs inside Progress, not Main Navigation. Every eligible client sees their private full rank; only the public Top 5 is visible to others.
+Preserve all other approved copy. Update specs, UI strings, and affected tests. No merge without authorization.
+```
+
+Implementation mapping (not PO words): each decision is recorded in the affected spec (specs 022, 023, 024) in implementation PRs #108, #109 and #110. Proposed copy not listed in S57-PO-12 remains pending PO approval.
+
+### S57-PO-13 - PO words, verbatim (2026-11-15)
+
+Source: Claude Code session https://claude.ai/code/session_014udyWnahqjLL8vfwQacqMc.
+
+<!-- prettier-ignore -->
+```text
+Approve the reviewed EN/Arabic UI copy for F22/F23/F24, with these changes:
+
+Check-in saved: "اتحدد فورم المتابعة الأسبوعية."
+
+Preserve the previously approved duplicate-measurement message.
+
+Use separate staff subscription status labels: شغّال، متوقف مؤقتًا، منتهي، مستني التفعيل، لسه ما بدأش، تم رد المبلغ.
+
+F24 monthly approval: "اعتماد ترتيب الشهر" (full ranking, not just Top 5).
+
+Approve the remaining reviewed Measurement, Check-in, Leaderboard, Account Settings and Goals copy.
+
+Finish all independent tasks and tests in #108–#110. Don't implement blocked dependencies or change F17/F18/F19-owned code.
+```
+
+Implementation mapping (not PO words): the proposed strings recorded in the spec copy proposals of #108, #109 and #110 become approved, with the changes above.

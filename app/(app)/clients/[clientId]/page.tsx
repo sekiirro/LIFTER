@@ -8,7 +8,10 @@ import { resolveStaffClientContext } from '../../../../lib/client-notes/client-d
 import { isUuid } from '../../../../lib/client-notes/validation';
 import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
 import { getMessages } from '../../../../lib/i18n';
+import { ClientGoals } from '../../../../components/client-goals/ClientGoals';
+import { readClientGoal } from '../../../../lib/leaderboard/client-goals';
 import { ClientDetailsTabs } from './ClientDetailsTabs';
+import { setClientGoalTypeAction } from './goal-actions';
 
 export default async function ClientDetailsPage({
   params,
@@ -42,6 +45,11 @@ export default async function ClientDetailsPage({
   const store = await cookies();
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
   const messages = getMessages(locale);
+  const goal = await readClientGoal(
+    actor,
+    clientContext.workspaceId,
+    clientContext.clientId,
+  );
 
   return (
     <ClientDetailsTabs
@@ -54,6 +62,32 @@ export default async function ClientDetailsPage({
       notes={result.status === 'ok' ? result.notes : []}
       hasMore={result.status === 'ok' ? result.hasMore : false}
       status={result.status === 'ok' ? 'ready' : 'error'}
+      goals={
+        goal.status === 'ok' ? (
+          <ClientGoals
+            action={setClientGoalTypeAction}
+            workspaceId={clientContext.workspaceId}
+            clientId={clientContext.clientId}
+            goalType={goal.goalType}
+            nearTermGoal={goal.nearTermGoal}
+            messages={{
+              title: messages['clientGoals.title'],
+              goalType: messages['clientGoals.goalType'],
+              goalTypes: {
+                fat_loss: messages['clientGoals.goalType.fatLoss'],
+                muscle_gain: messages['clientGoals.goalType.muscleGain'],
+                maintenance: messages['clientGoals.goalType.maintenance'],
+              },
+              notSet: messages['clientGoals.notSet'],
+              nearTermGoal: messages['clientGoals.nearTermGoal'],
+              nearTermGoalEmpty: messages['clientGoals.nearTermGoalEmpty'],
+              save: messages['clientGoals.save'],
+              saved: messages['clientGoals.saved'],
+              failed: messages['states.error.description'],
+            }}
+          />
+        ) : null
+      }
     />
   );
 }
