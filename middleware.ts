@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
 
 function setRegistrationPrivacyHeaders(response: NextResponse) {
   response.headers.set('Referrer-Policy', 'no-referrer');
-  response.headers.set('Cache-Control', 'no-store');
+  response.headers.set('Cache-Control', 'private, no-store');
   return response;
 }
 

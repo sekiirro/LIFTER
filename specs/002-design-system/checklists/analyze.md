@@ -118,3 +118,10 @@
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S64 re-date (2026-11-18) — T049 tick + traceability only
+
+- Date: 2026-11-18T04:20:00Z (s64-hy4-ui2 lane), after the T049 status tick and FR-028/SC-009 traceability update.
+- Scope: T049 ticked only after all five FR-028 fallback conditions had executed browser coverage (`tests/e2e/shell-fallback-matrix.spec.ts` for the four new conditions, existing `tests/e2e/shell-q16.spec.ts` over-budget case). No FR/SC/acceptance-scenario or plan design text changed; no new product ambiguity introduced.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static re-date per S54-R6 (no full Analyze required).
+- Verdict: PASS — re-affirmation only.

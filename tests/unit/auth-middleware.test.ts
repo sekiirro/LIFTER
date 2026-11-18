@@ -39,7 +39,7 @@ describe('auth middleware', () => {
       );
       expect(r.headers.get('location')).toBeNull();
       expect(r.headers.get('Referrer-Policy')).toBe('no-referrer');
-      expect(r.headers.get('Cache-Control')).toBe('no-store');
+      expect(r.headers.get('Cache-Control')).toBe('private, no-store');
       vi.stubEnv('APP_ORIGIN', '');
       const noEnv = await middleware(
         new NextRequest('http://localhost:3000' + path),
@@ -58,7 +58,7 @@ describe('auth middleware', () => {
     const r = await middleware(new NextRequest('http://localhost:3000' + path));
     expect(r.status).toBe(307);
     expect(r.headers.get('Referrer-Policy')).toBe('no-referrer');
-    expect(r.headers.get('Cache-Control')).toBe('no-store');
+    expect(r.headers.get('Cache-Control')).toBe('private, no-store');
   });
   it.each([
     '/register',
@@ -86,7 +86,7 @@ describe('auth middleware', () => {
       );
       expect(response.headers.get('location')).toBeNull();
       expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
-      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expect(response.headers.get('Cache-Control')).toBe('private, no-store');
     },
   );
   it.each(['/register-prefix/a', '/register/a/nested'])(
@@ -97,7 +97,7 @@ describe('auth middleware', () => {
       );
       expect(response.status).toBe(307);
       expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
-      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expect(response.headers.get('Cache-Control')).toBe('private, no-store');
       const destination = new URL(response.headers.get('location')!);
       expect(destination.pathname).toBe('/login');
       expect(destination.search).toBe('');
@@ -161,7 +161,7 @@ describe('auth middleware', () => {
         new NextRequest(`http://localhost:3000${path}`),
       );
       expect(response.headers.get('location')).toBeNull();
-      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expect(response.headers.get('Cache-Control')).toBe('private, no-store');
       expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
     },
   );
@@ -172,7 +172,7 @@ describe('auth middleware', () => {
       ),
     );
     expect(response.status).toBe(307);
-    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
     expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
     expect(new URL(response.headers.get('location')!).search).toBe('');
   });

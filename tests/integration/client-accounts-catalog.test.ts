@@ -299,6 +299,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           numeric: '1::numeric',
           boolean: 'false',
           bytea: "decode('00','hex')",
+          date: "'2050-01-01'::date",
           'timestamp with time zone': 'now()',
           'uuid[]': "'{}'::uuid[]",
         };

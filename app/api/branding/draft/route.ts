@@ -5,19 +5,27 @@ import { createSupabaseBrandingRepository } from '../../../../lib/branding/repos
 import { createSessionClient } from '../../../../lib/supabase/server';
 import { isUuid } from '../../../../lib/registration-links/validation';
 
+// Q-M16: every draft response, including denials and errors, is private and
+// non-cacheable. Keep this directive in one place so error paths cannot drift.
+const PRIVATE_HEADERS = { 'Cache-Control': 'private, no-store' };
+
+function unavailable(status: number) {
+  return NextResponse.json(
+    { status: 'unavailable' },
+    { status, headers: PRIVATE_HEADERS },
+  );
+}
+
 export async function GET(request: Request) {
   const workspaceId = new URL(request.url).searchParams.get('workspace');
-  if (!workspaceId || !isUuid(workspaceId))
-    return NextResponse.json({ status: 'unavailable' }, { status: 404 });
+  if (!workspaceId || !isUuid(workspaceId)) return unavailable(404);
   const client = await createSessionClient();
-  if (!client)
-    return NextResponse.json({ status: 'unavailable' }, { status: 401 });
+  if (!client) return unavailable(401);
   const { data, error } = await client.auth.getUser();
-  if (error || !data.user)
-    return NextResponse.json({ status: 'unavailable' }, { status: 401 });
+  if (error || !data.user) return unavailable(401);
   const actor = await loadActorRows(client, data.user.id);
   if (!actor || !authorize(actor, 'manage_branding', workspaceId)) {
-    return NextResponse.json({ status: 'unavailable' }, { status: 404 });
+    return unavailable(404);
   }
   let draft;
   try {
@@ -26,9 +34,9 @@ export async function GET(request: Request) {
       request.signal,
     ).getDraft(workspaceId);
   } catch {
-    return NextResponse.json({ status: 'unavailable' }, { status: 404 });
+    return unavailable(404);
   }
   return NextResponse.json(draft, {
-    headers: { 'Cache-Control': 'no-store', Vary: 'Cookie' },
+    headers: { ...PRIVATE_HEADERS, Vary: 'Cookie' },
   });
 }

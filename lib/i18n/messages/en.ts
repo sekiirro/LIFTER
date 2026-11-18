@@ -1258,6 +1258,11 @@ export const en: Record<keyof typeof ar, string> = {
     'Showcase only. Foods and plan values are mocked; nothing is saved.',
   'nutritionPlan.mealNotes': 'Notes for this meal',
   'nutritionPlan.foodNotes': 'Notes for this food',
+  'registration.upfrontAmount': 'Upfront amount',
+  'registration.paymentCount': 'Number of payments',
+  'registration.defaultSplit': 'Use default split',
+  'registration.timingAnchorNote':
+    'The remaining balance is due 30 days after activation (Cairo time).',
   // F22 client portal + staff directory: approved S55-PO-10/S55-PO-11 (specs/022-client-portal-delivery/copy-proposal.md).
   'client.portal.nav': 'Client Portal',
   'client.portal.title': 'Your plans',

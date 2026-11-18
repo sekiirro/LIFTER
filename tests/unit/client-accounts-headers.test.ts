@@ -25,6 +25,7 @@ it('T025 sets route-level privacy headers for framework and boundary responses',
   expect(config).toContain("source: '/register/:token'");
   expect(config).toContain("'Referrer-Policy'");
   expect(config).toContain("'Cache-Control'");
+  expect(config).toContain("value: 'private, no-store'");
   expect(middlewareSource).toContain('registrationPath');
   expect(middlewareSource).toContain('registrationTree');
 });
@@ -44,7 +45,7 @@ it('T025 applies privacy headers after cookie refresh response recreation', asyn
     new NextRequest('http://localhost:3000/register/' + 'x'.repeat(43)),
   );
   expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
-  expect(response.headers.get('Cache-Control')).toBe('no-store');
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
 });
 
 it('T025 keeps privacy headers when the session environment is missing', async () => {
@@ -53,5 +54,5 @@ it('T025 keeps privacy headers when the session environment is missing', async (
     new NextRequest('http://localhost:3000/register/' + 'x'.repeat(43)),
   );
   expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
-  expect(response.headers.get('Cache-Control')).toBe('no-store');
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
 });

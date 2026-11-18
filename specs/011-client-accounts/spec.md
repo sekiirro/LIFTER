@@ -12,6 +12,10 @@ Sources: [Constitution v1.1.0](../../.specify/memory/constitution.md); [roadmap]
 
 ## Clarifications
 
+### Session 2026-11-17 — S40 gate closure (S63-PO-10)
+
+S40 gate closed (S63-PO-10, 2026-11-17): audit found zero open ambiguities — see audit table summary below (full table: `C:/Users/NEW LAP/.lifter/runs/s63-muse-s40/s40-audit.md`). Every S40-scope PO question is decided and every S40 copy string is approved byte-exact: S40-F11-MCQ-1..9 decided (S40-PO-10; S40-PO-13 MCQ-1=B, MCQ-2=A, MCQ-11=defaults; S40-R19 MCQ-4/-8/-10, ratified S47-PO-6); S40-F11-MCQ-12..20 decided (S41-PO-1/2/3); S41-GAP-MCQ-1/2 decided (S41-PO-4); S41-GAP-MCQ-3 decided (S41-PO-11); GOV1F-MCQ-1/2 decided (S47-PO-11/12); copy rows 1-9 and P1-P9 approved byte-exact (S41-PO-3/4/5). The remaining open marks are not S40 ambiguities: ND-F5-1/B4 audit retention and the ND-F11-9a admin-review design are decided deferrals owned by another feature's scope; the A-S41-4 design gates and the plan P-S40-2 cardinality working assumption are architect-owned; unticked tasks and their dependency blockers (spec 003 T015, F15 branch, A-S41-4 approvals) are work remaining, not questions. No requirement text changed.
+
 ### Session 2026-11-03 — compliance reconciliation
 
 - **Decision register:** `docs/04-changes-and-questions.md` D-08, D-16, D-19, and D-20; the existing F11 PO decisions in this section; ND-F11-9a/9b and ND-F11-7 below.

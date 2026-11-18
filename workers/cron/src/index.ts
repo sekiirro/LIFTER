@@ -1,5 +1,5 @@
 import { drain } from './drain';
-import { handlers } from './handlers';
+import { createHandlers } from './handlers';
 import { createRpc, type Env } from './rpc';
 import { drainRefundAuthLockouts } from './refund-auth-lockout';
 import { createBrandingGc, runBrandingGc } from './branding-gc';
@@ -32,7 +32,13 @@ const worker = {
   scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(
       runScheduledJobs([
-        { name: 'jobs', run: () => drain({ rpc: createRpc(env), handlers }) },
+        {
+          name: 'jobs',
+          run: async () => {
+            const rpc = createRpc(env);
+            await drain({ rpc, handlers: createHandlers(rpc) });
+          },
+        },
         {
           name: 'branding_gc',
           run: () => runBrandingGc(createBrandingGc(env)),
