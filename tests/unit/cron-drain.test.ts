@@ -355,6 +355,7 @@ describe('cron edge wiring', () => {
         '/rest/v1/rpc/alert_expired_refund_auth_lockouts',
       );
       expect(paths).toContain('/rest/v1/rpc/claim_refund_auth_lockout_jobs');
+      expect(paths).toContain('/rest/v1/rpc/claim_account_deletion_intents');
     } finally {
       vi.unstubAllGlobals();
     }
@@ -373,6 +374,8 @@ describe('cron edge wiring', () => {
         if (url.includes('/rpc/jobs_claim'))
           throw new Error('private provider payload');
         if (url.includes('/rpc/branding_gc_claim')) return Response.json([]);
+        if (url.includes('/rpc/claim_account_deletion_intents'))
+          return Response.json([]);
         if (url.includes('/rpc/alert_expired_refund_auth_lockouts'))
           return Response.json(0);
         if (url.includes('/rpc/claim_refund_auth_lockout_jobs')) {

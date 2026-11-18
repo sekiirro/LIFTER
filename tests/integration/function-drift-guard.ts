@@ -41,7 +41,7 @@ export const guardedFunctions = [
   },
   {
     identity: 'public.read_form_assignment_context(uuid)',
-    migration: '20261112031600_f15_direct_rpc_answer_validation.sql',
+    migration: '20261124080000_f11_account_deletion.sql',
     name: 'public.read_form_assignment_context',
   },
   {

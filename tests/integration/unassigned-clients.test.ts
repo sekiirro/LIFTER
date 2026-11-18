@@ -209,4 +209,30 @@ describe('F11 T061 unassigned-client read', () => {
     expect(update.error).not.toBeNull();
     expect(remove.error).not.toBeNull();
   });
+
+  it('excludes deletion_pending, release_pending, and released clients from unassigned_clients', async () => {
+    const context = await clientContext();
+    const ids = await approvedClient(context);
+
+    for (const deletionState of [
+      'deletion_pending',
+      'release_pending',
+      'released',
+    ] as const) {
+      await db.begin(async (tx) => {
+        await tx`select set_config('app.deletion_transition_proof', ${`s56-r12-${deletionState}`}, true)`;
+        await tx`
+          update public.clients
+          set deletion_state = ${deletionState}
+          where id = ${ids.client}
+        `;
+      });
+      const read = await context.po.client.rpc('unassigned_clients', {
+        p_workspace_id: context.wsA.id,
+      });
+      expect(read.error).toBeNull();
+      const rows = (read.data as Array<{ client_id: string }>) ?? [];
+      expect(rows.some((row) => row.client_id === ids.client)).toBe(false);
+    }
+  });
 });

@@ -2,6 +2,7 @@ import { drain } from './drain';
 import { handlers } from './handlers';
 import { createRpc, type Env } from './rpc';
 import { drainRefundAuthLockouts } from './refund-auth-lockout';
+import { drainAccountDeletions } from './account-deletion';
 import { createBrandingGc, runBrandingGc } from './branding-gc';
 import type { ExecutionContext, ScheduledController } from './types';
 
@@ -43,6 +44,10 @@ const worker = {
             const result = await drainRefundAuthLockouts(env);
             if (result.alertSweepError) console.error(result.alertSweepError);
           },
+        },
+        {
+          name: 'account_deletions',
+          run: () => drainAccountDeletions(env),
         },
       ]),
     );

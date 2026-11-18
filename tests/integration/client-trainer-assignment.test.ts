@@ -285,7 +285,7 @@ describe('F11 responsible-Trainer assignment T050', () => {
     }
   });
 
-  it('refuses a service-role Trainer departure with an active assignment, but allows an unassigned departure', async () => {
+  it('allows a service-role Trainer departure by system-ending active assignments while keeping history', async () => {
     const context = await clientContext();
     const clientId = (await approvedClient(context)).client;
     const assigned = await context.po.client.rpc(
@@ -298,27 +298,39 @@ describe('F11 responsible-Trainer assignment T050', () => {
     );
     expect(assigned.data).toMatchObject({ status: 'ok' });
 
-    // The service-role grant on staff_profiles.role is a real NULL-auth.uid path.
+    // S57-PO-1: the NULL-auth.uid service-role staff departure path atomically ends active assignments with ended_by_system = true.
     const departure = await admin()
       .from('staff_profiles')
       .update({ role: 'sales' })
       .eq('user_id', context.trainerA.userId);
-    expect(departure.error?.message).toBe(
-      'client_trainer_assignment_immutable',
-    );
+    expect(departure.error).toBeNull();
 
     const [state] = await db`
-      select p.role,
+      select p.role::text,
         count(a.id)::int as total,
         count(a.id) filter(where a.ended_at is null)::int as active,
-        count(a.id) filter(where a.ended_at is not null)::int as ended
+        count(a.id) filter(where a.ended_at is not null and a.ended_by is null and a.ended_by_system)::int as system_ended
       from public.staff_profiles p
       left join public.client_trainer_assignments a
         on a.workspace_id=${context.wsA.id} and a.client_id=${clientId}
           and a.trainer_user_id=p.user_id
       where p.user_id=${context.trainerA.userId}
       group by p.role`;
-    expect(state).toEqual({ role: 'trainer', total: 1, active: 1, ended: 0 });
+    expect(state).toEqual({
+      role: 'sales',
+      total: 1,
+      active: 0,
+      system_ended: 1,
+    });
+
+    const lookup = await context.po.client.rpc('client_responsible_trainer', {
+      p_workspace_id: context.wsA.id,
+      p_client_id: clientId,
+    });
+    expect(lookup.data).toMatchObject({
+      status: 'ok',
+      trainer_user_id: null,
+    });
 
     const unassignedDeparture = await admin()
       .from('staff_profiles')
@@ -495,5 +507,56 @@ describe('F11 responsible-Trainer assignment T050', () => {
       await departure?.catch(() => undefined);
       await departureDb.end();
     }
+  });
+
+  it('S56-R12 refuses assignment for non-active clients and deletion-intended Trainers', async () => {
+    const context = await clientContext();
+    const clientA = (await approvedClient(context)).client;
+    const clientB = (await approvedClient(context)).client;
+
+    for (const deletionState of [
+      'deletion_pending',
+      'release_pending',
+      'released',
+    ] as const) {
+      await db.begin(async (tx) => {
+        await tx`select set_config('app.deletion_transition_proof', ${`assign-r12-${deletionState}`}, true)`;
+        await tx`
+          update public.clients
+          set deletion_state = ${deletionState}
+          where id = ${clientA}
+        `;
+      });
+      const assignClient = await context.po.client.rpc(
+        'assign_client_responsible_trainer',
+        {
+          p_workspace_id: context.wsA.id,
+          p_client_id: clientA,
+          p_trainer_user_id: context.trainerA.userId,
+        },
+      );
+      expect(assignClient.data).toMatchObject({ status: 'not_permitted' });
+    }
+
+    const request = await context.po.client.rpc('request_account_deletion', {
+      p_target_user_id: context.trainerB.userId,
+    });
+    expect(request.data).toMatchObject({ status: 'ok' });
+
+    const assignTrainer = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: clientB,
+        p_trainer_user_id: context.trainerB.userId,
+      },
+    );
+    expect(assignTrainer.data).toMatchObject({ status: 'not_permitted' });
+
+    const rows = await db`
+      select id from public.client_trainer_assignments
+      where client_id in (${clientA}, ${clientB})
+    `;
+    expect(rows).toEqual([]);
   });
 });
