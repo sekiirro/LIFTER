@@ -103,6 +103,8 @@ describe('package actions two walls', () => {
         ...terms,
         publishedBy: 'forged',
         version: 999,
+        market: 'Egypt',
+        type: 'Promotional',
       }),
     ).toEqual({ status: 'ok', versionId: id });
     expect(mocks.rpc).toHaveBeenCalledWith('publish_package_version', {
@@ -117,6 +119,8 @@ describe('package actions two walls', () => {
       currency: 'USD',
       commission_rate_bp: 0,
     });
+    expect(mocks.rpc.mock.calls[0]?.[1]).not.toHaveProperty('market');
+    expect(mocks.rpc.mock.calls[0]?.[1]).not.toHaveProperty('type');
     expect(mocks.revalidate).toHaveBeenCalledExactlyOnceWith('/packages');
   });
   it('validates selected existing workspace even for global create', async () => {

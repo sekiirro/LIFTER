@@ -11,7 +11,7 @@ import {
 import { localSupabaseContainer } from '../integration/local-docker';
 
 describe('isolated local Supabase stack contract', () => {
-  it('requires local selection and supports explicit A-D profiles in CI', () => {
+  it('requires local selection and supports explicit A-E profiles in CI', () => {
     const ciEnv = { CI: 'true' } as Parameters<typeof selectStack>[0];
     const ciWithA = { ...ciEnv, LIFTER_SUPABASE_STACK: 'a' };
 
@@ -22,10 +22,11 @@ describe('isolated local Supabase stack contract', () => {
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'b' })).toBe('b');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'c' })).toBe('c');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'd' })).toBe('d');
+    expect(selectStack({ LIFTER_SUPABASE_STACK: 'e' })).toBe('e');
     expect(() => selectStack({ LIFTER_SUPABASE_STACK: '' })).toThrow(
       /Set LIFTER_SUPABASE_STACK/,
     );
-    for (const invalid of ['remote', 'B', 'e']) {
+    for (const invalid of ['remote', 'B', 'f']) {
       expect(() => selectStack({ LIFTER_SUPABASE_STACK: invalid })).toThrow(
         'Unsupported local Supabase stack',
       );

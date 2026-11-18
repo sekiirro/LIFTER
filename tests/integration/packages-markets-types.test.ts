@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  createSynthetic,
   createLegacySynthetic,
   packagesFixture,
   sql,
   type PackagesFixture,
 } from './packages-fixture';
 import { admin } from './harness';
+import { bought, clientContext } from './registration-approval-payment-fixture';
 
 const db = sql();
 let f: PackagesFixture;
@@ -57,6 +59,20 @@ describe('package market and type identity', () => {
       }
     }
     expect(new Set(ids.values()).size).toBe(8);
+    for (const workspaceId of [f.wsA.id, f.wsB.id]) {
+      const rows = await db`
+        select market,type from public.packages where workspace_id=${workspaceId}
+      `;
+      expect(rows).toHaveLength(4);
+      expect(rows.map((row) => `${row.market}:${row.type}`).sort()).toEqual(
+        [
+          'Egypt:Promotional',
+          'Egypt:Year-round',
+          'International:Promotional',
+          'International:Year-round',
+        ].sort(),
+      );
+    }
     const duplicate = await category(f.wsA.id, 'Egypt', 'Year-round');
     expect(duplicate.error).toBeNull();
     expect(duplicate.data).toBe(ids.get(`${f.wsA.id}:Egypt:Year-round`));
@@ -97,6 +113,24 @@ describe('package market and type identity', () => {
         db`update public.packages set market='International' where id=${id}`,
       ).rejects.toMatchObject({ code: '23514' });
     }
+  });
+
+  it('enforces the package-row natural key on workspace, market and type', async () => {
+    const constraints = await db`
+      select array_agg(a.attname order by key.ordinality) as columns
+      from pg_constraint c
+      cross join lateral unnest(c.conkey) with ordinality as key(attnum, ordinality)
+      join pg_attribute a on a.attrelid=c.conrelid and a.attnum=key.attnum
+      where c.conrelid='public.packages'::regclass and c.contype='u'
+      group by c.oid
+    `;
+    expect(
+      constraints.some(
+        (row) =>
+          JSON.stringify(row.columns) ===
+          JSON.stringify(['workspace_id', 'market', 'type']),
+      ),
+    ).toBe(true);
   });
 
   it('denies category creation to every non-PO role before validating parameters', async () => {
@@ -169,29 +203,137 @@ describe('package market and type identity', () => {
     },
   );
 
-  it('preserves publication for unclassified legacy packages without inferring market or type', async () => {
+  it('fails closed for unclassified legacy packages without creating offers or versions', async () => {
     const legacy = await createLegacySynthetic(f);
-    const result = await publish(f.wsA.id, legacy.id, 'EGP');
-    expect(result.error).toBeNull();
-    expect(typeof result.data).toBe('string');
-    const snapshot = await db`
-      select p.workspace_id, p.market as package_market, p.type as package_type,
-        v.market as version_market, v.type as version_type, v.currency
-      from public.package_versions v
-      join public.package_offers o on o.id=v.offer_id
-      join public.packages p on p.id=o.package_id
-      where v.id=${result.data}
+    const before = await db`
+      select (select count(*)::int from public.package_offers where package_id=${legacy.id}) as offers,
+        (select count(*)::int from public.package_versions v join public.package_offers o on o.id=v.offer_id
+          where o.package_id=${legacy.id}) as versions
     `;
-    expect(snapshot).toEqual([
+    const result = await publish(f.wsA.id, legacy.id, 'EGP');
+    expect(result.error?.code).toBe('42501');
+    expect(result.error?.message).toBe('not_permitted');
+    const after = await db`
+      select (select count(*)::int from public.package_offers where package_id=${legacy.id}) as offers,
+        (select count(*)::int from public.package_versions v join public.package_offers o on o.id=v.offer_id
+          where o.package_id=${legacy.id}) as versions
+    `;
+    expect(after).toEqual(before);
+  });
+
+  it('keeps market/type as immutable category snapshots across commercial versions', async () => {
+    const isolated = await createSynthetic(f);
+    const packageId = (
+      await category(isolated.workspace_id, 'International', 'Promotional')
+    ).data as string;
+    const first = await publish(isolated.workspace_id, packageId, 'USD');
+    expect(first.error).toBeNull();
+    const second = await f.po.client.rpc('publish_package_version', {
+      workspace_id: isolated.workspace_id,
+      package_id: packageId,
+      duration_months: null,
+      duration_days: 61,
+      tier_rank: 1,
+      name_ar: 'test-authored-revised-ar',
+      name_en: 'test-authored-revised-en',
+      price_minor: '9007199254740994',
+      currency: 'SAR',
+      commission_rate_bp: 0,
+    });
+    expect(second.error).toBeNull();
+    expect(second.data).not.toBe(first.data);
+    const snapshots = await db`
+      select version,market,type,currency,price_minor::text as price_minor
+      from public.package_versions
+      where offer_id in (
+        select id from public.package_offers where package_id=${packageId}
+      )
+      order by version
+    `;
+    expect(snapshots).toEqual([
       {
-        workspace_id: null,
-        package_market: null,
-        package_type: null,
-        version_market: null,
-        version_type: null,
-        currency: 'EGP',
+        version: 1,
+        market: 'International',
+        type: 'Promotional',
+        currency: 'USD',
+        price_minor: '9007199254740993',
+      },
+      {
+        version: 2,
+        market: 'International',
+        type: 'Promotional',
+        currency: 'SAR',
+        price_minor: '9007199254740994',
       },
     ]);
+    const categoryRow = await db`
+      select workspace_id,market,type from public.packages where id=${packageId}
+    `;
+    expect(categoryRow).toEqual([
+      {
+        workspace_id: isolated.workspace_id,
+        market: 'International',
+        type: 'Promotional',
+      },
+    ]);
+  });
+
+  it('keeps issued client and subscription snapshots stable after a new commercial version', async () => {
+    const context = await clientContext();
+    const purchase = await bought(context);
+    const before = await db`
+      select c.package_version_id as client_version_id,
+        l.package_version_id as link_version_id,
+        l.price_minor::text as link_price_minor,l.currency as link_currency,
+        s.package_version_id as subscription_version_id,
+        s.price_minor::text as subscription_price_minor,s.currency as subscription_currency,
+        s.commission_rate_bp,s.duration_days,s.duration_months
+      from public.clients c
+      join public.registration_links l on l.workspace_id=c.workspace_id and l.id=c.registration_link_id
+      join public.subscriptions s on s.workspace_id=c.workspace_id and s.client_id=c.id
+      where c.id=${purchase.t.id}
+    `;
+    expect(before).toHaveLength(1);
+    const newVersionResult = await context.po.client.rpc(
+      'publish_package_version',
+      {
+        workspace_id: context.p.workspace_id,
+        package_id: context.p.id,
+        duration_months: null,
+        duration_days: 61,
+        tier_rank: 1,
+        name_ar: 'test-authored-revised-ar',
+        name_en: 'test-authored-revised-en',
+        price_minor: '1300',
+        currency: 'USD',
+        commission_rate_bp: 17,
+      },
+    );
+    expect(newVersionResult.error).toBeNull();
+    const newVersion = newVersionResult.data as string;
+    expect(newVersion).not.toBe(context.p.versionId);
+    const after = await db`
+      select c.package_version_id as client_version_id,
+        l.package_version_id as link_version_id,
+        l.price_minor::text as link_price_minor,l.currency as link_currency,
+        s.package_version_id as subscription_version_id,
+        s.price_minor::text as subscription_price_minor,s.currency as subscription_currency,
+        s.commission_rate_bp,s.duration_days,s.duration_months
+      from public.clients c
+      join public.registration_links l on l.workspace_id=c.workspace_id and l.id=c.registration_link_id
+      join public.subscriptions s on s.workspace_id=c.workspace_id and s.client_id=c.id
+      where c.id=${purchase.t.id}
+    `;
+    expect(after).toEqual(before);
+    expect(after[0]).toMatchObject({
+      client_version_id: context.p.versionId,
+      link_version_id: context.p.versionId,
+      subscription_version_id: context.p.versionId,
+      link_price_minor: '1200',
+      subscription_price_minor: '1200',
+      link_currency: 'USD',
+      subscription_currency: 'USD',
+    });
   });
 
   it('does not rewrite existing package version identifiers or terms', async () => {
