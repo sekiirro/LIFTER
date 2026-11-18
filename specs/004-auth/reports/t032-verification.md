@@ -22,6 +22,7 @@
 
 - **Full unit suite (`vitest run --maxWorkers=4`)**: **307 passed (307 files), 3532 passed (3532 tests)**.
 - **Touched integration + RLS catalog (`tests/integration/auth-recovery.test.ts`, `tests/integration/matrix-parity.test.ts`, `tests/integration/f13-cross-feature-contract.test.ts`, `tests/integration/rls-catalog.test.ts`)**: **4 passed (4 files), 516 passed (516 tests)**.
+- **F11 client recovery linkage (`tests/integration/client-accounts-recovery.test.ts`, updated after CI run `44231604480` shard 1/3)**: **1 passed (1 file), 13 passed (13 tests)**. Mutated source, T032 tests, and defining migration (`1184410d8f13dcf8321f53c4b1788297b97ada58`) unchanged.
 
 ## 3. T032c Mutation Evidence (4-Axis Kill Matrix)
 
