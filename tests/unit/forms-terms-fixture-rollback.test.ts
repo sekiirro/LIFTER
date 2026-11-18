@@ -184,6 +184,12 @@ const COMMIT_REQUIRED = [
     reason:
       'Playwright fixture: the running Next server reads committed rows on separate connections; cannot be rolled back',
   },
+  {
+    file: 'tests/e2e/progress-coaching-screenshots.spec.ts',
+    signature: /f23-e2e-/,
+    reason:
+      'F23 Playwright fixture: the running Next server reads the committed check-in form and terms rows on separate connections; cannot be rolled back',
+  },
 ];
 
 type Site = { file: string; index: number; source: string };

@@ -41,18 +41,18 @@ export const guardedFunctions = [
   },
   {
     identity: 'public.read_form_assignment_context(uuid)',
-    migration: '20261130010000_f11_account_deletion.sql',
+    migration: '20261215010000_f11_account_deletion.sql',
     name: 'public.read_form_assignment_context',
   },
   {
     identity: 'app_private.deletion_execute_step_d(uuid)',
-    migration: '20261130010100_f11_account_deletion_fixes.sql',
+    migration: '20261215010100_f11_account_deletion_fixes.sql',
     name: 'app_private.deletion_execute_step_d',
   },
   {
     identity:
       'public.retry_account_deletion_intent(uuid,uuid,integer,timestamptz,text)',
-    migration: '20261130010100_f11_account_deletion_fixes.sql',
+    migration: '20261215010100_f11_account_deletion_fixes.sql',
     name: 'public.retry_account_deletion_intent',
   },
   {

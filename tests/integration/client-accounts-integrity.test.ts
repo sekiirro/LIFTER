@@ -105,6 +105,7 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       'created_at',
       'deactivated_at',
       'deactivation_reason',
+      'client_code',
     ].sort(),
   );
   expect(

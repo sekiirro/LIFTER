@@ -1,5 +1,19 @@
 # Analyze — F11 client accounts
 
+## S66 re-analysis (S66-PO-1 client code) — 2026-11-18 UTC
+
+Requirement text changed: new FR-029 (client code) and task T064; FR total is now 29 (FR-001 to FR-029). Static review against spec, tasks and traceability.
+
+| Check                                                  | Result | Evidence                                                                                                       |
+| ------------------------------------------------------ | ------ | -------------------------------------------------------------------------------------------------------------- |
+| FR-029 has a task and a traceability row               | PASS   | T064; `traceability.md` FR-029 row                                                                             |
+| Decision recorded verbatim in the S-register           | PASS   | `docs/04-changes-and-questions.md` S66-PO-1 ("A: Random code (Recommended)")                                   |
+| No permission expanded                                 | PASS   | `find_client_by_code` reuses the exact F11 owner-or-Platform-Owner predicate; the column has no API-role grant |
+| Existing FR-001..FR-028 and SC-001..SC-023 unchanged   | PASS   | only an added FR and task                                                                                      |
+| F22 FR-011 and F24 FR-021 consumers unaffected in text | PASS   | both already name client code; this FR defines it                                                              |
+
+Gate verdict: CRITICAL 0, HIGH 0. T064 stays unticked until exact-head CI is green.
+
 ## S64 T047/T048 date-only status — 2026-11-18 UTC
 
 Task completion status (`T047`, `T048`), S56-R12/S57-PO-1 dependency resolution notes, and Stack B execution/mutation evidence updated in `tasks.md` and `traceability.md`. FR/SC requirement text is unchanged; out-of-scope tasks (`T050`, `T054`, `T058`, `T059`, `T060`, `T062`, `T063`) remain unticked. No full Analyze rerun required.
