@@ -35,3 +35,12 @@ T061 and SC-020 are implemented and verified locally on Stack D. The FR-027 row 
 
 S57-PO-1 dependency: system-actor end record for departures without a signed-in Platform Owner is pending T048/T058 (S57-PO-1); until then such a role change is refused while active assignments exist.
 S57-R2 B1 RED/GREEN/mutation evidence: concurrent assignment-first membership-revocation and role-change tests fail on the prior migration and pass with 20261118220100_f11_assignment_workspace_serialization.sql; mutation removing the manual-writer workspace lock makes both fail again. Stack D assignment suite 10/10 and F19 activation suite 11/11 passed. Full evidence: C:/Users/NEW LAP/.lifter/runs/s57-luna-f11a1e/report.md.
+
+## S64 T058/T062 partial evidence (Stack B, 2026-11-18)
+
+| Requirement | Task       | Evidence                                                                                                  | Status                                                                                                                                                                                                    |
+| ----------- | ---------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-028      | T058, T062 | `tests/integration/client-trainer-distribution.test.ts` 6/6; touched suites 4 files / 29 tests on Stack B | PARTIAL: job consumer, balanced system assignment, no-op outcomes, lease retry, backlog and shared workspace lock verified. T063 approval emit and T048 deletion-intent/reassignment clauses remain open. |
+| SC-021      | T058, T062 | same focused and touched integration runs                                                                 | PARTIAL: system-distribution assignment and permitted no-op outcomes verified. Trainer-deletion reassignment and F11 overlapping-deletion exclusion remain open pending T048 intent contract.             |
+
+T058 and T062 remain unticked. See `C:/Users/NEW LAP/.lifter/runs/s64-luna-t062/report.md` MCQ-1/MCQ-2 for blockers and recommendations.
