@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { loadActorRows } from '../../lib/auth/actor';
 import { isRecoverySession } from '../../lib/auth/recovery-session';
@@ -8,6 +8,7 @@ import {
   anonClient,
   checked,
   createStaff,
+  loadEnv,
   sql,
   twoWorkspaceFixture,
 } from './harness';
@@ -123,6 +124,126 @@ describe('actor', () => {
       userId: cA.userId,
       role: null,
       activeWorkspaceIds: [],
+    });
+  });
+});
+
+describe('staff-reset-permitted (T038a)', () => {
+  it('the app action reaches the hook for eligible staff outside the permitted test recipient, stays generic, and sends no mail', async () => {
+    const staff = await createStaff('trainer', 'reset-not-permitted');
+    const before = await db`
+      select count(*)::int as count
+      from app_private.staff_password_reset_hook_requests
+      where auth_user_id = ${staff.userId}
+    `;
+    expect(
+      Boolean(
+        process.env.APP_ORIGIN &&
+        process.env.SUPABASE_URL &&
+        process.env.SUPABASE_ANON_KEY &&
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+      ),
+    ).toBe(true);
+    const actionClient = anonClient();
+    const resetPasswordForEmail = vi.fn(
+      (email: string, options: { redirectTo: string }) =>
+        actionClient.auth.resetPasswordForEmail(email, options),
+    );
+    vi.resetModules();
+    vi.doMock('server-only', () => ({}));
+    vi.doMock('../../lib/supabase/server', () => ({
+      createSessionClient: async () => ({ auth: { resetPasswordForEmail } }),
+    }));
+    const { requestStaffReset } = await import('../../app/login/actions');
+    const form = new FormData();
+    form.set('email', staff.email);
+    const response = await requestStaffReset(null, form);
+    vi.doUnmock('../../lib/supabase/server');
+    vi.resetModules();
+    expect(response).toEqual({ status: 'ok' });
+    expect(resetPasswordForEmail).toHaveBeenCalledWith(staff.email, {
+      redirectTo: 'http://127.0.0.1:3103/auth/recovery',
+    });
+
+    const after = await db`
+      select count(*)::int as count
+      from app_private.staff_password_reset_hook_requests
+      where auth_user_id = ${staff.userId}
+    `;
+    expect(after[0]!.count).toBe(before[0]!.count + 1);
+    const rows = await db`
+      select outcome
+      from app_private.staff_password_reset_hook_requests
+      where auth_user_id = ${staff.userId}
+      order by occurred_at desc
+      limit 1
+    `;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.outcome).toBe('denied');
+    const { apiUrl } = loadEnv();
+    const inbucket = new URL(
+      '/api/v1/mail/' + encodeURIComponent(staff.email),
+      apiUrl,
+    );
+    inbucket.port = '35424';
+    const mailResponse = await fetch(inbucket);
+    expect(mailResponse.ok).toBe(true);
+    expect(await mailResponse.json()).toEqual([]);
+  });
+});
+
+describe('staff-reset-guard (T049a)', () => {
+  it('a staff password update without an intent is refused and leaves the password unchanged', async () => {
+    const staff = await createStaff('trainer', 'reset-guard-no-intent');
+    const originalPassword = `Original-${randomUUID()}-Aa1!`;
+    const setPassword = await admin().auth.admin.updateUserById(staff.userId, {
+      password: originalPassword,
+    });
+    if (setPassword.error)
+      throw new Error('guard fixture password setup failed');
+    const userClient = anonClient();
+    const signedIn = await userClient.auth.signInWithPassword({
+      email: staff.email,
+      password: originalPassword,
+    });
+    if (signedIn.error) throw new Error('guard fixture sign-in failed');
+    const changedPassword = `NoIntent-${randomUUID()}-Aa1!`;
+    const result = await userClient.auth.updateUser({
+      password: changedPassword,
+    });
+    try {
+      expect(result.error).not.toBeNull();
+    } finally {
+      if (!result.error) {
+        const restored = await admin().auth.admin.updateUserById(staff.userId, {
+          password: originalPassword,
+        });
+        if (restored.error)
+          throw new Error('guard fixture password restore failed');
+      }
+    }
+    const oldPasswordWorks = await anonClient().auth.signInWithPassword({
+      email: staff.email,
+      password: originalPassword,
+    });
+    expect(oldPasswordWorks.error).toBeNull();
+  });
+});
+
+describe('staff-reset-intent (T049d)', () => {
+  it('provides the idempotent begin, one-way complete/abort, and reconciliation RPCs', async () => {
+    const [functions] = await db`
+      select
+        to_regprocedure('public.staff_password_reset_begin()') is not null as begin,
+        to_regprocedure('public.staff_password_reset_complete(uuid)') is not null as complete,
+        to_regprocedure('public.staff_password_reset_abort(uuid)') is not null as abort,
+        to_regprocedure('app_private.staff_password_reset_reconcile()') is not null as reconcile
+    `;
+    expect(functions).toEqual({
+      begin: true,
+      complete: true,
+      abort: true,
+      reconcile: true,
     });
   });
 });

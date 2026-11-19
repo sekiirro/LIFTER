@@ -229,6 +229,10 @@ export const ar = {
   'auth.sendingReset': 'بنبعت…',
   'auth.staffResetConfirm':
     'لو الإيميل ده مسجّل عندنا، هتوصلك رسالة فيها لينك تغيير كلمة السر.',
+  'auth.staffResetLimited':
+    'لو الإيميل ده مسجّل عندنا، هتوصلك رسالة فيها لينك تغيير كلمة السر.',
+  'auth.staffResetUnavailable':
+    'لو الإيميل ده مسجّل عندنا، هتوصلك رسالة فيها لينك تغيير كلمة السر.',
   'auth.staffInvalidLink':
     'اللينك ده مش شغال أو صلاحيته انتهت. اطلب لينك جديد عشان تقدر تغيّر كلمة السر.',
   'auth.invalidEmail': 'اكتب إيميل صحيح.',
@@ -237,13 +241,13 @@ export const ar = {
   'auth.invalid_credentials': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
   'auth.unavailable': 'الخدمة غير متاحة الآن. يرجى المحاولة مرة أخرى.',
   'auth.continue': 'متابعة',
-  'auth.newPassword': 'كلمة المرور الجديدة',
-  'auth.confirmPassword': 'تأكيد كلمة المرور',
-  'auth.setPassword': 'حفظ كلمة المرور',
+  'auth.newPassword': 'كلمة السر الجديدة',
+  'auth.confirmPassword': 'تأكيد كلمة السر',
+  'auth.setPassword': 'حفظ كلمة السر',
   'auth.invalid_link':
     'هذا الرابط غير صالح أو انتهت صلاحيته. اطلب رابطًا جديدًا من مدرّبك أو إدارة مساحة العمل.',
-  'auth.weak_password': 'اختر كلمة مرور أقوى.',
-  'auth.mismatch': 'كلمتا المرور غير متطابقتين.',
+  'auth.weak_password': 'اختر كلمة سر أقوى.',
+  'auth.mismatch': 'كلمتا السر غير متطابقتين.',
   'auth.signedIn': 'تم تسجيل الدخول',
   'auth.signOut': 'تسجيل الخروج',
   'auth.recoveryTitle': 'إنشاء رابط استعادة كلمة المرور',
@@ -1391,4 +1395,14 @@ export const ar = {
   'staff.clientDirectory.subscriptionStatus.frozen': 'متوقف مؤقتًا',
   'staff.clientDirectory.subscriptionStatus.expired': 'منتهي',
   'staff.clientDirectory.subscriptionStatus.refunded': 'تم رد المبلغ',
+  'auth.choosePasswordTitle': 'اختار كلمة سر جديدة',
+  'auth.savingPassword': 'بنحفظ…',
+  'auth.resetSuccessLogin':
+    'اتغيّرت كلمة السر بتاعتك. سجّل دخول بكلمة السر الجديدة.',
+  'auth.resetLoginNext':
+    'الجلسة بتاعت استعادة كلمة السر انتهت. كمّل لتسجيل الدخول.',
+  'auth.resetNotChanged':
+    'كلمة السر بتاعتك ما اتغيّرتش. اطلب لينك جديد وحاول تاني.',
+  'auth.resetCheckLogin':
+    'مقدرناش نتأكد لو كلمة السر بتاعتك اتغيّرت ولا لأ. جرّب تسجّل دخول بكلمة السر الجديدة. لو ما نفعش، اطلب لينك جديد لتغيير كلمة السر.',
 } as const;

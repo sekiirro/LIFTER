@@ -112,6 +112,38 @@ describe('staff password reset request', () => {
     }
   });
 
+  it('T042 matches approved copy-proposal auth rows and the five FR-031 bytes', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const copy = readFileSync(
+      resolve(process.cwd(), 'specs/004-auth/copy-proposal.md'),
+      'utf8',
+    );
+    const rows = copy
+      .split(/\r?\n/)
+      .map((line) => line.match(/^\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|/))
+      .filter((match): match is RegExpMatchArray => Boolean(match))
+      .flatMap((match) => {
+        const key = match[1]!.match(/`(auth\.[^`]+)`/)?.[1];
+        return key ? [[key, match[2]!.trim(), match[3]!.trim()] as const] : [];
+      });
+    expect(rows.length).toBeGreaterThan(0);
+    for (const [key, english, arabic] of rows) {
+      expect(en[key as keyof typeof en]).toBe(english);
+      expect(ar[key as keyof typeof ar]).toBe(arabic);
+    }
+    expect(en['auth.newPassword']).toBe('New password');
+    expect(ar['auth.newPassword']).toBe('كلمة السر الجديدة');
+    expect(en['auth.confirmPassword']).toBe('Confirm password');
+    expect(ar['auth.confirmPassword']).toBe('تأكيد كلمة السر');
+    expect(en['auth.setPassword']).toBe('Set password');
+    expect(ar['auth.setPassword']).toBe('حفظ كلمة السر');
+    expect(en['auth.weak_password']).toBe('Choose a stronger password.');
+    expect(ar['auth.weak_password']).toBe('اختر كلمة سر أقوى.');
+    expect(en['auth.mismatch']).toBe('The passwords do not match.');
+    expect(ar['auth.mismatch']).toBe('كلمتا السر غير متطابقتين.');
+  });
+
   it('T042b preserves approved reset copy bytes and rendered request confirmation', () => {
     expect(en['auth.staffResetConfirm']).toBe(generic.en);
     expect(ar['auth.staffResetConfirm']).toBe(generic.ar);

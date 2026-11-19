@@ -238,6 +238,10 @@ export const en: Record<keyof typeof ar, string> = {
   'auth.sendingReset': 'Sending…',
   'auth.staffResetConfirm':
     "If an account exists for this email address, you'll receive password reset instructions.",
+  'auth.staffResetLimited':
+    "If an account exists for this email address, you'll receive password reset instructions.",
+  'auth.staffResetUnavailable':
+    "If an account exists for this email address, you'll receive password reset instructions.",
   'auth.staffInvalidLink':
     'This password reset link is invalid or has expired. Request a new link to continue.',
   'auth.invalidEmail': 'Enter a valid email address.',
@@ -1431,4 +1435,14 @@ export const en: Record<keyof typeof ar, string> = {
   'staff.clientDirectory.subscriptionStatus.frozen': 'Frozen',
   'staff.clientDirectory.subscriptionStatus.expired': 'Expired',
   'staff.clientDirectory.subscriptionStatus.refunded': 'Refunded',
+  'auth.choosePasswordTitle': 'Choose a new password',
+  'auth.savingPassword': 'Saving…',
+  'auth.resetSuccessLogin':
+    'Your password has been changed. Sign in with your new password.',
+  'auth.resetLoginNext':
+    'Your recovery session has ended. Continue to sign in.',
+  'auth.resetNotChanged':
+    'Your password wasn’t changed. Request a new reset link and try again.',
+  'auth.resetCheckLogin':
+    'We couldn’t confirm whether your password changed. Try signing in with your new password. If it doesn’t work, request a new reset link.',
 };
