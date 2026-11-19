@@ -179,32 +179,20 @@ Candidate-head evidence: account-limit mutation killed and restored green on can
 
 Candidate `s66-004-staff-reset-1b` plus the T051 authorization assertion is tested at `4ed4dad8a009891734f587573fe4fb2637cdb6fe`. Full mutation details, killed assertions, restoration, clean-diff checks, tool/image versions, and blockers: [reports/t051-verification.md](reports/t051-verification.md). Lane run log: `C:/Users/NEW LAP/.lifter/runs/s67-luna-reset1b/report.md`.
 
-| Requirement                              | Task  | Test                                                                                | Evidence                                                                                                                                                                                                           | Status  |
-| ---------------------------------------- | ----- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| Requirement                              | Task  | Test                                                                                | Evidence                                                                                                                                                                                      | Status                    |
+| ---------------------------------------- | ----- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
 | FR-018, FR-024, FR-030 control A; SC-015 | T050b | `tests/unit/staff-reset-hook.test.ts`; `tests/integration/staff-reset-hook.test.ts` | Candidate SHA above: unit 7/7, integration 5/5; hook signature, role authorization, recipient allowlist, audit-before-send, and request-limit mutations killed/restored; local-only recipient | PARTIAL (T051 incomplete) |
 
 T050b stays `[ ]` because T051's full acceptance set is not present on this candidate. The branch lacks T050a's session-bound intent/guard and successful-reset session-revocation implementation and tests; those mutations remain unrun. T051 stays `[ ]` and partial. MCQ-1 and the exact blocked clauses are recorded in the verification report. No task is ticked.
 
 ## S66-R9 / s66-luna-r004b local evidence (historical, not pushed)
 
-| Task | Test evidence | Commit | Status |
-| --- | --- | --- | --- |
-| T034 | `tests/unit/staff-reset.test.ts::T034 eligibility covers the approved staff roles and excludes clients/unknown identities` | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally; task ticked |
-| T036 | `tests/unit/staff-reset.test.ts::T036 builds redirectTo from APP_ORIGIN and refuses a non-secure public origin`; `T035` cases assert action redirect argument | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally; task ticked |
-| T042b | `tests/unit/staff-reset.test.ts::T042b preserves approved reset copy bytes and rendered request confirmation` | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally under S66-R9 Q3; task ticked |
-| T035 | `tests/unit/staff-reset.test.ts::T035` cases; timing todo records AT-2 method/tolerance pending (S66-R9) | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked |
-| T037 | `tests/unit/auth-logs.test.ts::does not log an email, token or link during a reset request`; no-referrer todo pending T045 | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked |
-| T042 | `tests/unit/staff-reset.test.ts::T042` covers request-page keys only; full approved table and FR-031 byte checks remain | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked |
-| T043 | `tests/unit/staff-reset.test.ts`, `tests/e2e/auth.spec.ts` request form; send-hook dependency absent and required full unit gate has one unrelated failure | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked; not safe to push |
-## S66-R9 / s66-luna-r004b local evidence (not pushed)
-
-| Task | Test evidence | Commit | Status |
-| --- | --- | --- | --- |
-| T034 | `tests/unit/staff-reset.test.ts::T034 eligibility covers the approved staff roles and excludes clients/unknown identities` | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally; task ticked |
-| T036 | `tests/unit/staff-reset.test.ts::T036 builds redirectTo from APP_ORIGIN and refuses a non-secure public origin`; `T035` cases assert action redirect argument | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally; task ticked |
-| T042b | `tests/unit/staff-reset.test.ts::T042b preserves approved reset copy bytes and rendered request confirmation` | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally under S66-R9 Q3; task ticked |
-| T035 | `tests/unit/staff-reset.test.ts::T035` cases; timing todo records AT-2 method/tolerance pending (S66-R9) | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked |
-| T037 | `tests/unit/auth-logs.test.ts::does not log an email, token or link during a reset request`; no-referrer todo pending T045 | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked |
-| T042 | `tests/unit/staff-reset.test.ts::T042` covers request-page keys only; full approved table and FR-031 byte checks remain | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked |
-| T043 | `tests/unit/staff-reset.test.ts`, `tests/e2e/auth.spec.ts` request form; send-hook dependency absent and required full unit gate has one unrelated failure | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked; not safe to push |
-
+| Task  | Test evidence                                                                                                                                                 | Commit                                     | Status                                        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------- |
+| T034  | `tests/unit/staff-reset.test.ts::T034 eligibility covers the approved staff roles and excludes clients/unknown identities`                                    | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally; task ticked                 |
+| T036  | `tests/unit/staff-reset.test.ts::T036 builds redirectTo from APP_ORIGIN and refuses a non-secure public origin`; `T035` cases assert action redirect argument | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally; task ticked                 |
+| T042b | `tests/unit/staff-reset.test.ts::T042b preserves approved reset copy bytes and rendered request confirmation`                                                 | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Verified locally under S66-R9 Q3; task ticked |
+| T035  | `tests/unit/staff-reset.test.ts::T035` cases; timing todo records AT-2 method/tolerance pending (S66-R9)                                                      | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked                             |
+| T037  | `tests/unit/auth-logs.test.ts::does not log an email, token or link during a reset request`; no-referrer todo pending T045                                    | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked                             |
+| T042  | `tests/unit/staff-reset.test.ts::T042` covers request-page keys only; full approved table and FR-031 byte checks remain                                       | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked                             |
+| T043  | `tests/unit/staff-reset.test.ts`, `tests/e2e/auth.spec.ts` request form; send-hook dependency absent and required full unit gate has one unrelated failure    | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked; not safe to push           |

@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildStaffResetEmailLink,
   isApprovedStaffResetTestRecipient,
@@ -7,6 +7,8 @@ import {
   verifyStaffResetHookSignature,
 } from '../../lib/auth/staff-reset-hook';
 import { isEligibleStaffRole } from '../../lib/auth/staff-reset';
+
+vi.mock('server-only', () => ({}));
 
 const hookKey = Buffer.from('test-hook-secret-32-bytes-long!!');
 const hookSecret = `v1,whsec_${hookKey.toString('base64')}`;
@@ -22,7 +24,12 @@ function signatureFor(body = rawBody, timestampValue = timestamp) {
 
 describe('staff reset hook boundary', () => {
   it('authorizes only staff roles for reset delivery', () => {
-    for (const role of ['platform_owner', 'workspace_owner', 'trainer', 'sales'])
+    for (const role of [
+      'platform_owner',
+      'workspace_owner',
+      'trainer',
+      'sales',
+    ])
       expect(isEligibleStaffRole(role), role).toBe(true);
     for (const role of ['client', 'unknown', null])
       expect(isEligibleStaffRole(role), String(role)).toBe(false);

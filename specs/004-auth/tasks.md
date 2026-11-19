@@ -209,7 +209,8 @@ F4 execution order (round 6): (1) complete T033's PO/spec entry checks; (2) writ
 One Codex pass for Phases 1–7 (bounded, single worktree), then Claude's review in Phase 8. MVP = US2 + US1 (sign-in with a verified actor). US3 completes the owner's recovery requirement, which stays closed for clients until P1 (ND-F4-5).
 
 ## s66-luna-r004b status
+
 - T035 — Verified so far: generic action mapping for simulated provider policy/audit/transport failures and timeout. Remaining: direct-Auth status/body evidence and AT-2 method/tolerance; unticked.
 - T037 — Verified so far: no console output on the valid request action. Remaining: Referrer-Policy assertion pending T045; unticked.
 - T042 — Verified so far: request-page catalog keys exist in both locales. Remaining: full approved-copy table and FR-031 byte checks; unticked.
-- T043 — Verified so far: requestStaffReset, fixed recovery redirect, and login request form implemented; targeted tests pass. Remaining: prerequisite RED tasks T038a/T049a-e, server-side send-hook eligibility enforcement absent from origin/main, and full unit failures; unticked.
+- T043 � Verified so far on s67 PR2 candidate: requestStaffReset, fixed recovery redirect and login request form; targeted unit and auth e2e pass. Remaining: prerequisites T038a/T049a-e have no RED coverage; T035/T037/T042 remain partial; do not tick T043.

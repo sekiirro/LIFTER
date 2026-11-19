@@ -1,12 +1,7 @@
 import 'server-only';
 
 export type StaffResetRole =
-  | 'platform_owner'
-  | 'workspace_owner'
-  | 'trainer'
-  | 'sales'
-  | 'client'
-  | null;
+  'platform_owner' | 'workspace_owner' | 'trainer' | 'sales' | 'client' | null;
 
 export function isSyntacticallyValidStaffResetEmail(value: string): boolean {
   const email = value.trim();
