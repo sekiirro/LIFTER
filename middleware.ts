@@ -40,9 +40,13 @@ export async function middleware(request: NextRequest) {
   const publicPath =
     registrationPath ||
     brandingProxyPath ||
-    ['/login', '/auth/recovery', '/api/health', '/print-sample'].includes(
-      path,
-    ) ||
+    [
+      '/login',
+      '/auth/recovery',
+      '/api/health',
+      '/api/internal/staff-reset-hook',
+      '/print-sample',
+    ].includes(path) ||
     path === '/showcase' ||
     path.startsWith('/showcase/') ||
     path.startsWith('/_next/') ||
