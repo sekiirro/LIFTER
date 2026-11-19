@@ -148,12 +148,14 @@ const registrationPrivate = [
 const brandingPrivate = [
   'branding_actor_id',
   'branding_asset_attach',
+  'branding_asset_detach',
   'branding_credential_event_immutable',
   'branding_credential_register',
   'branding_credential_set_enabled',
   'branding_credential_allowed',
   'branding_current_read',
   'branding_draft_read',
+  'branding_draft_asset_read_allowed',
   'branding_draft_save',
   'branding_gc_claim',
   'branding_gc_finalize',
@@ -164,6 +166,7 @@ const brandingPrivate = [
   'branding_staging_upload_allowed',
   'branding_storage_read_allowed',
   'branding_upload_begin',
+  'branding_upload_terminalize',
   'branding_validation_prepare',
   'branding_validation_complete',
   'branding_validator_upload_binding_matches',
@@ -172,6 +175,9 @@ const brandingPrivate = [
 ];
 const brandingFunctionOwners: Record<string, string> = {
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
+  // S65-R42: terminalize deletes the staged storage row, which no role policy
+  // grants, so postgres owns it; authorization mirrors the upload RPCs.
+  branding_upload_terminalize: 'postgres',
 };
 const assignmentPrivate = [
   'allocate_client_code',
@@ -187,6 +193,18 @@ const assignmentPrivate = [
   'guard_client_trainer_assignment_truncate',
   'normalize_client_code',
   'write_client_trainer_distribution',
+];
+const deletionPrivate = [
+  'deletion_actor_is_denied',
+  'deletion_begin_step_c',
+  'deletion_claim_release_proof',
+  'deletion_execute_step_b',
+  'deletion_execute_step_d',
+  'deletion_financial_confirmation_valid',
+  'deletion_guard_intent_update',
+  'deletion_guard_membership_insert',
+  'deletion_mark_banned',
+  'deletion_transition_proof',
 ];
 afterAll(async () => {
   await db.end();
@@ -333,6 +351,7 @@ describe('tenancy security catalog (T007)', () => {
         ...new Set([
           ...registrationPrivate,
           ...assignmentPrivate,
+          ...deletionPrivate,
           ...approvalFunctions.map((signature) => signature.split('(')[0]!),
           'client_has_access',
           'client_note_trim_whitespace',
@@ -713,6 +732,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          ...deletionPrivate,
           'f17_client_resolve_global_exercise',
           'f17_client_safe_reference',
           'f17_client_safe_set',
@@ -750,12 +770,16 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.authenticated_execute, row.proname).toBe(
         [
           'branding_upload_begin',
+          'branding_upload_terminalize',
           'branding_draft_save',
           'branding_asset_attach',
+          'branding_asset_detach',
           'branding_publish',
           'branding_current_read',
           'branding_draft_read',
+          'branding_draft_asset_read_allowed',
           'branding_staging_upload_allowed',
+          'deletion_actor_is_denied',
           'staff_display_name_is_valid',
         ].includes(row.proname) ||
           (!row.proname.startsWith('f12_') &&
@@ -764,6 +788,7 @@ describe('tenancy security catalog (T007)', () => {
             !row.proname.startsWith('f17_') &&
             !registrationPrivate.includes(row.proname) &&
             !assignmentPrivate.includes(row.proname) &&
+            !deletionPrivate.includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
@@ -2349,6 +2374,100 @@ describe('F17 T031 / T047 workout operation keys and RPC catalog', () => {
         authenticated: true,
         anon: false,
         service_role: false,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
+  });
+});
+
+describe('F11 T048 account deletion catalog', () => {
+  it('locks app_private.account_deletion_intents and enforces narrow worker and PO RPC grants', async () => {
+    const rel = 'app_private.account_deletion_intents';
+    const [row] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid = ${rel}::regclass`;
+    expect(row, rel).toEqual({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+    });
+    const policies = await db`select policyname from pg_policies
+      where schemaname = 'app_private' and tablename = 'account_deletion_intents'`;
+    expect(policies).toEqual([]);
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const priv of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] =
+          await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+        expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+      }
+    }
+
+    const [financialFk] = await db`
+      select c.conname, c.confdeltype, c.convalidated,
+        c.confrelid = 'public.audit_events'::regclass as references_audit_events,
+        pg_catalog.pg_get_constraintdef(c.oid) as definition
+      from pg_catalog.pg_constraint c
+      where c.conrelid = 'app_private.account_deletion_intents'::regclass
+        and c.conname = 'account_deletion_intents_financial_confirmation_audit_fk'
+    `;
+    expect(financialFk).toMatchObject({
+      conname: 'account_deletion_intents_financial_confirmation_audit_fk',
+      confdeltype: 'r',
+      convalidated: true,
+      references_audit_events: true,
+    });
+    expect(financialFk?.definition).toContain('REFERENCES audit_events(id)');
+
+    const poFns = [
+      'public.record_deletion_financial_confirmation(uuid,uuid,text,text)',
+      'public.request_account_deletion(uuid,jsonb,bigint)',
+    ];
+    for (const sig of poFns) {
+      const [fn] = await db`select p.prosecdef, p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
+
+    const workerFns = [
+      'public.claim_account_deletion_intents(integer)',
+      'public.advance_deletion_step_a(uuid,uuid)',
+      'public.execute_deletion_step_b(uuid,uuid)',
+      'public.begin_deletion_step_c(uuid,uuid)',
+      'public.execute_deletion_step_d(uuid,uuid)',
+      'public.retry_account_deletion_intent(uuid,uuid,integer,timestamptz,text)',
+    ];
+    for (const sig of workerFns) {
+      const [fn] = await db`select p.prosecdef, p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: false,
+        anon: false,
+        service_role: true,
       });
       expect(fn?.proconfig, sig).toContain('search_path=""');
     }

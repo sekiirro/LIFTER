@@ -189,3 +189,12 @@ Raw negative/reset/restored logs and structured per-mutation JSON remain in `%TE
 - `allow non-PO terms` (DB + app):
   - DB: rolled-back mutant removing PO wall in `publish_package_version` + guards allowed `woA` publication (`tests/integration/packages-commercial-terms.test.ts::mutation 3 (allow non-PO terms)`), whereas intact DB denies `woA` with `42501`.
   - App: removed PO role + `set_package_pricing` wall in `lib/packages/service.ts::pricingContext`; `tests/unit/packages-commercial-terms.test.ts` FAILED (`5 failed | 4 passed`, exit 1); restored `lib/packages/service.ts` and re-ran `tests/unit/packages-commercial-terms.test.ts` (`9/9` passed, exit 0).
+## T065 C5 teardown conformance & mutation verification (2026-11-18)
+
+- Scope: operator cleanup script `supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`, test suite `tests/integration/packages-c5-teardown.test.ts`, and conformance matrix `specs/009-packages/reviews/t065-conformance.md` against `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS).
+- Stack & versions: Stack E (`lifter-stack-e`), PostgreSQL `17.11`, Node `v24.19.0`, Vitest `5.1.0`.
+- RED -> GREEN: unmodified `origin/main` draft script FAILED `8 failed | 40 passed (48)` on the Section-7 conformance tests; amended script PASSED `48 passed (48)`, 0 skipped.
+- Executed mutations on `supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql` (all killed, restored, byte-identical):
+  1. Widen trigger disablement (`:380`, `disable trigger user;`): `14 failed | 34 passed (48)`, exit 1 (`c5_refused:post_trigger_state_unexpected`).
+  2. Skip preflight (`:328`, `if false then`): `14 failed | 34 passed (48)`, exit 1 (refusal/dependency cases killed).
+  3. Drop owner assertion (`:157`, `if false then`): `1 failed | 47 passed (48)`, exit 1 (`not_database_owner` killed).
