@@ -75,8 +75,11 @@ describe('staff password reset request', () => {
       else mocks.resetPasswordForEmail.mockResolvedValue({ error });
       const form = new FormData();
       form.set('email', 'person@example.test');
+      const startedAt = performance.now();
       const result = await requestStaffReset(null, form);
+      const elapsed = performance.now() - startedAt;
       expect(result).toEqual({ status: 'ok' });
+      expect(elapsed).toBeGreaterThanOrEqual(500);
       expect(JSON.stringify(result)).not.toMatch(
         /private@example|token secret|timeout/i,
       );
@@ -84,10 +87,74 @@ describe('staff password reset request', () => {
         'person@example.test',
         { redirectTo: 'https://app.example.test/auth/recovery' },
       );
+      expect(mocks.resetPasswordForEmail).toHaveBeenCalledTimes(1);
     },
   );
 
-  it.todo('T035 timing parity: AT-2 method/tolerance pending (S66-R9)');
+  it('T035 records 30 interleaved response-floor samples for each request class', async () => {
+    const { requestStaffReset } = await import('../../app/login/actions');
+    const labels = [
+      'eligible-permitted',
+      'unknown',
+      'client',
+      'policy-refused',
+      'audit-failure',
+      'hook-unavailable',
+      'timeout',
+    ] as const;
+    const samples = new Map<(typeof labels)[number], number[]>();
+    for (const label of labels) samples.set(label, []);
+    const form = new FormData();
+    form.set('email', 'person@example.test');
+
+    for (let iteration = 0; iteration < 30; iteration += 1) {
+      for (const label of labels) {
+        if (label === 'policy-refused')
+          mocks.resetPasswordForEmail.mockResolvedValue({
+            error: { message: 'policy refused' },
+          });
+        else if (label === 'audit-failure')
+          mocks.resetPasswordForEmail.mockResolvedValue({
+            error: { message: 'audit failed' },
+          });
+        else if (label === 'hook-unavailable')
+          mocks.resetPasswordForEmail.mockResolvedValue({
+            error: { message: 'hook unavailable' },
+          });
+        else if (label === 'timeout')
+          mocks.resetPasswordForEmail.mockRejectedValue(new Error('timeout'));
+        else mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
+
+        const startedAt = performance.now();
+        expect(await requestStaffReset(null, form)).toEqual({ status: 'ok' });
+        samples.get(label)!.push(performance.now() - startedAt);
+      }
+    }
+
+    const median = (values: number[]) => {
+      const sorted = [...values].sort((left, right) => left - right);
+      return sorted[Math.floor(sorted.length / 2)]!;
+    };
+    const reference = median(samples.get('eligible-permitted')!);
+    process.stdout.write(
+      `T035 timing samples ms: ${JSON.stringify(
+        Object.fromEntries(
+          labels.map((label) => [
+            label,
+            {
+              n: samples.get(label)!.length,
+              median: Number(median(samples.get(label)!).toFixed(1)),
+            },
+          ]),
+        ),
+      )}\n`,
+    );
+    for (const label of labels) {
+      const values = samples.get(label)!;
+      expect(values).toHaveLength(30);
+      expect(Math.abs(median(values) - reference)).toBeLessThanOrEqual(100);
+    }
+  }, 180_000);
 
   it('T036 builds redirectTo from APP_ORIGIN and refuses a non-secure public origin', async () => {
     const { buildStaffResetRedirectTo } =

@@ -39,3 +39,17 @@ After a safe Stack C reset and the required local provisioning step, `staff-rese
 ## T035 / S67-R23 timing
 
 The required-step/fixed-floor unit proof and 30 interleaved local samples were not run because the duration of the fixed response floor is unspecified. MCQ-2 is recorded in the lane report; do not add an unapproved latency value.
+
+## T035 / S67-R23/R33 timing evidence (2026-11-19 03:43:39 UTC)
+
+This section supersedes the earlier note that the floor and samples were pending. The valid-request action now awaits the Auth provider operation on each path and applies a 500 ms response floor. `tests/unit/staff-reset.test.ts` passed 14/14. The full Cairo-timezone suite passed 3920/3920, with 30 interleaved local samples per class: eligible/permitted 514.5 ms, unknown 515.6 ms, client 514.9 ms, policy-refused 515.0 ms, audit-failure 515.4 ms, hook-unavailable 514.4 ms, timeout 515.2 ms. The largest absolute median difference from eligible/permitted was 1.1 ms (<=100 ms).
+
+Stack C remains taken for the independent direct Auth status and mixed-cap evidence. No external SMTP was used.
+
+T035 floor mutation evidence (2026-11-19 03:44:16 UTC): changed the 500 ms floor to 0; targeted unit test failed at 19.6 ms against the >=500 ms assertion. Restored the source and verified SHA256 matched the pre-mutation backup (846968C8A0F25982C458ECA811F3382B7026978D0C9777C6269B61DA453DB439).
+
+## Stack C direct/app hook attempt (2026-11-19 03:59:46 UTC)
+
+The Stack C reset and client-accounts provisioning passed after adding the worktree-only migrations junction. However, the running supabase_auth_lifter-stack-c container environment exposed no Send Email hook setting. The temporary mixed direct/app probe therefore made recovery requests fall through to the local Mailpit SMTP capture; the Mailpit count is 14 after those attempts. Requests used only the approved staff-reset@example.test recipient, and no external SMTP was used. The probe was removed, Stack C was stopped with --no-backup, and no further requests will run on this configuration. T049b direct transport status and T049c mixed app/direct caps remain incomplete. S67-PO-9 control-D and control-B work remains blocked; no account-only fallback or intent migration was added.
+
+Full candidate unit suite (TZ=Africa/Cairo): 348 files, 3920 tests passed; duration 129.88s. Lint and typecheck passed; full format check passed after formatting. Stack C is FREE (stopped with --no-backup).

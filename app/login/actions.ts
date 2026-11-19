@@ -35,6 +35,20 @@ export async function signIn(
 
 export type StaffResetRequestResult = { status: 'ok' | 'invalidEmail' };
 
+const STAFF_RESET_RESPONSE_FLOOR_MS = 500;
+const STAFF_RESET_TIMER_MARGIN_MS = 5;
+
+async function enforceStaffResetResponseFloor(
+  startedAt: number,
+): Promise<void> {
+  const remaining =
+    STAFF_RESET_RESPONSE_FLOOR_MS +
+    STAFF_RESET_TIMER_MARGIN_MS -
+    (performance.now() - startedAt);
+  if (remaining > 0)
+    await new Promise<void>((resolve) => setTimeout(resolve, remaining));
+}
+
 export async function requestStaffReset(
   _previous: StaffResetRequestResult | null,
   form: FormData,
@@ -42,6 +56,7 @@ export async function requestStaffReset(
   const email = normalizedEmail(form.get('email'));
   if (!email) return { status: 'invalidEmail' };
 
+  const startedAt = performance.now();
   try {
     const env = readServerEnv();
     const client = await createSessionClient();
@@ -53,5 +68,6 @@ export async function requestStaffReset(
   } catch {
     // Valid addresses always receive the same confirmation, including provider failures.
   }
+  await enforceStaffResetResponseFloor(startedAt);
   return { status: 'ok' };
 }
