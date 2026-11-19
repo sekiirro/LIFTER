@@ -1287,3 +1287,7 @@ Both required mutations executed on Stack B against `tests/integration/registrat
 - CI fixture parity: `.github/workflows/ci.yml` exports local stack variables, runs `client-accounts-provision.mjs`, and the provisioner exports Vault keys through `GITHUB_ENV`. Locally S67 used fixed non-secret test-only values (`11…` and `22…`) in local Vault and the wrapper-launched integration process; no `.env*` file or secret value was read or printed.
 - Stack setup: Stack E API/DB ports 55421/55422. The per-worktree shim links the existing root migration directory through an untracked junction; all resets/provisioning used `supabase-safe.mjs`. No migration was changed. One reset returned container exit 1; status remained available and the immediate safe reset retry completed.
 - No mutants were committed. Temporary helpers and the Stack E shim are untracked and will be removed with the worktree.
+
+### Exact-head CI follow-up
+
+- Initial pull_request run `44428733115` tested head `51615e58223a2df3c773aa24468cd61929d04778`. Integration shards 1–3, storage, docs-only and the summary integration job passed. `validate` failed only because `checklists/analyze.md` predated the T044 task-status/evidence update. Added the constitution-required dated status-only revalidation for 2026-11-19; no requirement or plan text changed. The follow-up head/run is recorded after CI completes.
