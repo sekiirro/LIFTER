@@ -1,14 +1,20 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { admin, checked, createStaff, sql } from './harness';
+import { admin, checked, createStaff, loadEnv, sql } from './harness';
 import { clientContext, pending } from './client-accounts-fixture';
 import { graph } from './registration-approval-fixture';
 import { issue } from './registration-links-fixture';
 import { drain, type Rpc } from '../../workers/cron/src/drain';
 import { createHandlers } from '../../workers/cron/src/handlers';
+import { drainAccountDeletions } from '../../workers/cron/src/account-deletion';
 
 const db = sql();
 const service = admin();
+const env = loadEnv();
+const cronEnv = {
+  SUPABASE_URL: env.apiUrl,
+  SUPABASE_SERVICE_ROLE_KEY: env.serviceRoleKey,
+};
 
 async function approvedClient() {
   const context = await clientContext();
@@ -399,5 +405,82 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
       from public.client_trainer_assignments where client_id=${clientId} and ended_at is null`;
     expect(rows?.count).toBe(0);
     await service.rpc('jobs_complete', { id: jobId, lease: lease.lease_token });
+  });
+
+  it('keeps a deleted Trainer out of assignment and distribution after restoration attempts (T050)', async () => {
+    const context = await clientContext();
+    const originalClient = await db.begin((tx) => graph(tx, context));
+    const manual = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: originalClient.client,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(manual.data).toMatchObject({ status: 'ok' });
+
+    const deletion = await context.po.client.rpc('request_account_deletion', {
+      p_target_user_id: context.trainerA.userId,
+    });
+    expect(deletion.error).toBeNull();
+    await drainAccountDeletions(cronEnv, { limit: 100 });
+
+    const restoredMembership = await context.po.client
+      .from('workspace_memberships')
+      .insert({
+        workspace_id: context.wsA.id,
+        user_id: context.trainerA.userId,
+        granted_by: context.po.userId,
+      });
+    expect(restoredMembership.error).toMatchObject({
+      code: '42501',
+      message: 'not_permitted',
+    });
+    const roleRestore = await admin()
+      .from('staff_profiles')
+      .update({ role: 'trainer' })
+      .eq('user_id', context.trainerA.userId);
+    expect(roleRestore.error).toMatchObject({
+      code: '42501',
+      message: 'not_permitted',
+    });
+
+    const [oldCurrentTrainer] = await db`
+      select app_private.current_assigned_trainer(
+        ${context.wsA.id}::uuid, ${originalClient.client}::uuid
+      ) as trainer_user_id
+    `;
+    expect(oldCurrentTrainer?.trainer_user_id).toBeNull();
+
+    const nextLinkId = checked(await issue(context)) as string;
+    const nextClient = await db.begin((tx) =>
+      graph(tx, context, { linkId: nextLinkId }),
+    );
+    const jobId = await enqueue(
+      nextClient.client,
+      nextClient.fact,
+      context.wsA.id,
+    );
+    const claimed = await claim(jobId);
+    const handled = await handle(claimed);
+    expect(handled.error).toBeNull();
+    expect(handled.data).toBe(true);
+    expect(await outcome(jobId)).toMatchObject({
+      outcome: 'no_eligible',
+      status: 'running',
+    });
+    const [newAssignments] = await db`
+      select count(*)::int as count from public.client_trainer_assignments
+      where workspace_id = ${context.wsA.id}
+        and client_id = ${nextClient.client}
+        and trainer_user_id = ${context.trainerA.userId}
+        and ended_at is null
+    `;
+    expect(newAssignments?.count).toBe(0);
+    await service.rpc('jobs_complete', {
+      id: jobId,
+      lease: claimed.lease_token,
+    });
   });
 });
