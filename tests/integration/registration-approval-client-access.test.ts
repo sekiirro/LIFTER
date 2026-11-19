@@ -1,7 +1,9 @@
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { createRecoveryClientTarget } from './client-accounts-fixture';
-import { admin } from './harness';
+import { admin, loadEnv } from './harness';
+import { FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT } from '../../lib/client-accounts/deletion-policy';
+import { drainAccountDeletions } from '../../workers/cron/src/account-deletion';
 import {
   clientContext,
   probe,
@@ -9,6 +11,7 @@ import {
   type Context,
 } from './registration-approval-fixture';
 import {
+  call,
   request as decisionRequest,
   sqlCall,
 } from './registration-approval-operations-fixture';
@@ -214,5 +217,140 @@ it('T024 foreign and nonexistent users receive the same denial; no target can be
     const [result] = await tx`select public.client_self_status() as result`;
     expect(result!.result).toEqual({ status: 'not_permitted' });
     await tx`reset role`;
+  });
+});
+
+async function transitionClientDeletion(
+  context: Context,
+  authUserId: string,
+  targetState: 'deletion_pending' | 'release_pending' | 'released',
+) {
+  const req = await context.po.client.rpc('request_account_deletion', {
+    p_target_user_id: authUserId,
+    p_financial_confirmation: {
+      category: 'other',
+      acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+    },
+  });
+  if (req.error || req.data?.status !== 'deletion_pending') {
+    throw new Error(`request_account_deletion failed: ${JSON.stringify(req)}`);
+  }
+  const intentId = (req.data as { intent_id: string }).intent_id;
+  if (targetState === 'deletion_pending') {
+    return intentId;
+  }
+
+  await db`
+    update auth.users
+    set banned_until = '9999-12-31T23:59:59Z'::timestamptz
+    where id = ${authUserId}
+  `;
+  const claimed = await admin().rpc('claim_account_deletion_intents', {
+    p_limit: 100,
+  });
+  const leased = (
+    claimed.data as Array<{ id: string; lease_token: string }>
+  )?.find((item) => item.id === intentId);
+  if (!leased) {
+    throw new Error(
+      `claim_account_deletion_intents failed to find intent ${intentId}`,
+    );
+  }
+  const adv = await admin().rpc('advance_deletion_step_a', {
+    p_intent_id: intentId,
+    p_lease_token: leased.lease_token,
+  });
+  if (adv.error || adv.data !== true) {
+    throw new Error(`advance_deletion_step_a failed: ${JSON.stringify(adv)}`);
+  }
+  const execB = await admin().rpc('execute_deletion_step_b', {
+    p_intent_id: intentId,
+    p_lease_token: leased.lease_token,
+  });
+  if (execB.error || execB.data !== true) {
+    throw new Error(`execute_deletion_step_b failed: ${JSON.stringify(execB)}`);
+  }
+  if (targetState === 'release_pending') {
+    return intentId;
+  }
+
+  await db`
+    update app_private.account_deletion_intents
+    set lease_token = null, lease_expires_at = null
+    where id = ${intentId}
+  `;
+  const env = loadEnv();
+  await drainAccountDeletions(
+    {
+      SUPABASE_URL: env.apiUrl,
+      SUPABASE_SERVICE_ROLE_KEY: env.serviceRoleKey,
+    },
+    { limit: 100 },
+  );
+  return intentId;
+}
+
+describe('T055 deletion-state client access cases', () => {
+  it.each(['deletion_pending', 'release_pending', 'released'] as const)(
+    'T055 client in %s is denied self-status and has no client access',
+    async (lifecycleState) => {
+      const target = await registered(f);
+      const approval = await call(
+        f.po.client,
+        'approve',
+        approvalRequest(f, target),
+      );
+      expect(approval.status).toBe('ok');
+
+      await transitionClientDeletion(f, target.userId, lifecycleState);
+
+      await probe(async (tx) => {
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: target.userId, role: 'authenticated' })},true)`;
+        await tx`set local role authenticated`;
+        const [status] = await tx`select public.client_self_status() as result`;
+        expect(status!.result).toEqual({ status: 'not_permitted' });
+        await tx`reset role`;
+
+        const [access] =
+          await tx`select app_private.client_has_access(${f.wsA.id},${target.id}) as allowed`;
+        expect(access!.allowed).toBe(false);
+
+        for (const table of [
+          'subscriptions',
+          'subscription_installments',
+          'payment_events',
+          'subscription_activations',
+        ]) {
+          await tx.unsafe(`grant select on public.${table} to authenticated`);
+          await tx`set local role authenticated`;
+          expect(await tx.unsafe(`select * from public.${table}`)).toEqual([]);
+          await tx`reset role`;
+        }
+      });
+    },
+  );
+
+  it('T055 deleted rejected client is denied self-status and has no access', async () => {
+    const target = await registered(f);
+    const rej = await call(
+      f.po.client,
+      'reject',
+      decisionRequest(f, target, 'reject'),
+    );
+    expect(rej.status).toBe('ok');
+
+    await transitionClientDeletion(f, target.userId, 'released');
+
+    await probe(async (tx) => {
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: target.userId, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      const [status] = await tx`select public.client_self_status() as result`;
+      expect(status!.result).toEqual({ status: 'not_permitted' });
+      await tx`reset role`;
+
+      const [access] =
+        await tx`select app_private.client_has_access(${f.wsA.id},${target.id}) as allowed`;
+      expect(access!.allowed).toBe(false);
+    });
   });
 });
