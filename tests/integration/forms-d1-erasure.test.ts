@@ -87,7 +87,7 @@ describe('T029 D1 privacy erasure (DB security, atomicity, legal holds, and muta
 
         await expect(
           tx.savepoint(async (sp) => {
-            await sp`truncate public.audit_events`;
+            await sp`truncate public.audit_events cascade`;
           }),
         ).rejects.toThrow('Audit events are immutable');
 
