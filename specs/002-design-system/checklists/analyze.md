@@ -132,3 +132,10 @@
 - Scope: T048 ticked only after all its clauses had executed passing tests: new `tests/unit/q16-sidebar.test.tsx` (5) and `tests/e2e/q16-sidebar-verify.spec.ts` (5), plus re-run `shell-q16.spec.ts` (16) and `shell-fallback-matrix.spec.ts` (6) = 28/28 on port 3105; full unit 3978 passed. No FR/SC/acceptance-scenario or plan design text changed; no new product ambiguity introduced. No sidebar/glass source was changed (no defect found).
 - Findings: 0 open CRITICAL, 0 open HIGH. Static re-date per S54-R6 / constitution (task-status + traceability evidence only; no full Analyze required).
 - Verdict: PASS — re-affirmation only.
+
+## S67 re-date (2026-11-19) — T046 tick + SC-008 traceability only
+
+- Date: 2026-11-19 (s67-glm-t046 lane), after the executed paired TBT gate run and the T046 status tick with the SC-008 traceability update.
+- Scope: T046 ticked only after the approved paired TBT gate executed unchanged on Stack B (`scripts/perf/glass-tbt-ab.mjs`, 15 interleaved measured pairs per arm per viewport, 2 warm-ups, approved thresholds only): desktop paired median +5 ms CI95 [-8, +10], mobile -6 ms CI95 [-15, +32], both <= +50 ms; raw samples, medians, load readings and tool versions attached in `specs/002-design-system/tbt-gate-evidence.md`. No FR/SC/acceptance-scenario or plan design text changed; no new product ambiguity introduced.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static re-date per S54-R6 / constitution (task-status + traceability evidence only; no full Analyze required).
+- Verdict: PASS — re-affirmation only.
