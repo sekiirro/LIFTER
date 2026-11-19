@@ -112,6 +112,26 @@ describe('staff reset hook boundary', () => {
     expect(
       parseStaffResetHookPayload(
         {
+          user: {
+            id: '11111111-1111-4111-8111-111111111111',
+            email: 'client@example.test',
+          },
+          email_data: {
+            email_action_type: 'recovery',
+            token_hash: 'opaque-token-hash',
+            redirect_to: 'http://localhost:3104/',
+          },
+        },
+        'http://localhost:3104',
+      ),
+    ).toMatchObject({
+      email: 'client@example.test',
+      tokenHash: 'opaque-token-hash',
+      locale: 'ar',
+    });
+    expect(
+      parseStaffResetHookPayload(
+        {
           user: { id: '11111111-1111-4111-8111-111111111111', email: 'x@test' },
           email_data: {
             email_action_type: 'signup',
@@ -124,7 +144,7 @@ describe('staff reset hook boundary', () => {
     ).toBeNull();
   });
 
-  it('rejects redirects outside the configured recovery page and defaults to Arabic', () => {
+  it('rejects external redirects and defaults to Arabic', () => {
     const payload = {
       user: {
         id: '11111111-1111-4111-8111-111111111111',
