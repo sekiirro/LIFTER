@@ -3,7 +3,7 @@ import { getActor } from '../auth/actor';
 import { authorize, type Actor } from '../auth/authorize';
 import { createSessionClient } from '../supabase/server';
 import { tierLabel, type TierRank } from './tier-label';
-import { inputRecord, isUuid, parseInteger } from './validation';
+import { inputRecord, isPackageName, isUuid, parseInteger } from './validation';
 import { mapPackageError, type PackageFailure } from './results';
 
 export const TIER_LOCALES = ['ar', 'en'] as const;
@@ -20,10 +20,9 @@ export type TierNameReadResult =
 const TIER_RANK_SET: ReadonlySet<unknown> = new Set([1, 2, 3]);
 const TIER_LOCALE_SET: ReadonlySet<unknown> = new Set<string>(TIER_LOCALES);
 
-// A display label must be non-blank. No length cap is imposed: the spec
-// specifies none for tier display names (MCQ-S67-T078-2).
+// Reuse the package publication-name validator for identical normalization.
 export function isTierName(value: unknown): value is string {
-  return typeof value === 'string' && /\S/u.test(value);
+  return isPackageName(value);
 }
 
 type TierNameInput = {
@@ -73,10 +72,8 @@ export async function renamePlatformTierName(
   }
 }
 
-// FR-035 grants the workspace-local override to the Workspace Owner of that
-// workspace only. The Platform Owner's granted power is the global rename,
-// so it is denied here (fail-closed, Constitution III); Sales, Trainers,
-// revoked members, non-staff and anonymous are denied before any transport.
+// FR-035 permits the PO to override any workspace and a Workspace Owner to
+// override only a workspace they own; other actors are denied before transport.
 export async function setWorkspaceTierNameOverride(
   input: unknown,
 ): Promise<TierNameMutationResult> {
@@ -86,9 +83,10 @@ export async function setWorkspaceTierNameOverride(
     if (
       !actor ||
       actor.deleted === true ||
-      actor.role !== 'workspace_owner' ||
       !isUuid(data.workspaceId) ||
-      !actor.activeWorkspaceIds.includes(data.workspaceId)
+      (actor.role !== 'platform_owner' &&
+        (actor.role !== 'workspace_owner' ||
+          !actor.activeWorkspaceIds.includes(data.workspaceId)))
     )
       return { status: 'denied' };
     const parsed = parseTierNameInput(data);

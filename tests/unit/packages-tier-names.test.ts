@@ -106,6 +106,8 @@ describe('tier-name app walls', () => {
     ['empty name', { ...validGlobal, name: '' }],
     ['name missing', { tierRank: 2, locale: 'en' }],
     ['non-string name', { ...validGlobal, name: 7 }],
+    ['121 code points', { ...validGlobal, name: 'x'.repeat(121) }],
+    ['121 astral code points', { ...validGlobal, name: '😀'.repeat(121) }],
   ])('rejects global rename input %s before any RPC', async (_label, input) => {
     mocks.actor.mockResolvedValue(actors.po);
     await expect(renamePlatformTierName(input)).resolves.toEqual({
@@ -155,7 +157,20 @@ describe('tier-name app walls', () => {
       name: 'Workspace Gold',
     });
   });
-  it.each(['po', 'woOther', 'sales', 'trainer', 'deletedWo'])(
+  it('lets the PO override any valid workspace', async () => {
+    mocks.actor.mockResolvedValue(actors.po);
+    const input = { ...validOverride, workspaceId: otherWs };
+    await expect(setWorkspaceTierNameOverride(input)).resolves.toEqual({
+      status: 'ok',
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith('set_package_tier_name_override', {
+      workspace_id: otherWs,
+      tier_rank: 2,
+      locale: 'en',
+      name: 'Workspace Gold',
+    });
+  });
+  it.each(['woOther', 'sales', 'trainer', 'deletedWo'])(
     'denies the override for actor %s even with an accepting RPC',
     async (key) => {
       mocks.actor.mockResolvedValue(actors[key as keyof typeof actors]);
@@ -188,11 +203,35 @@ describe('tier-name app walls', () => {
     ['locale invalid', { ...validOverride, locale: 'de' }],
     ['blank name', { ...validOverride, name: ' \t ' }],
     ['empty name', { ...validOverride, name: '' }],
+    ['121 code points', { ...validOverride, name: 'x'.repeat(121) }],
   ])('rejects override input %s before any RPC', async (_label, input) => {
     mocks.actor.mockResolvedValue(actors.wo);
     await expect(setWorkspaceTierNameOverride(input)).resolves.toEqual({
       status: 'invalid_input',
     });
+    expect(mocks.session).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it('accepts exactly 120 Unicode code points for both mutation types', async () => {
+    mocks.actor.mockResolvedValue(actors.po);
+    const name = '😀'.repeat(120);
+    await expect(
+      renamePlatformTierName({ ...validGlobal, name }),
+    ).resolves.toEqual({ status: 'ok' });
+    expect(mocks.rpc).toHaveBeenLastCalledWith('set_package_tier_name', {
+      tier_rank: 2,
+      locale: 'en',
+      name,
+    });
+    await expect(
+      setWorkspaceTierNameOverride({ ...validOverride, name }),
+    ).resolves.toEqual({ status: 'ok' });
+  });
+  it('denies a Workspace Owner target outside their own workspace before RPC', async () => {
+    mocks.actor.mockResolvedValue(actors.wo);
+    await expect(
+      setWorkspaceTierNameOverride({ ...validOverride, workspaceId: otherWs }),
+    ).resolves.toEqual({ status: 'denied' });
     expect(mocks.session).not.toHaveBeenCalled();
     expect(mocks.rpc).not.toHaveBeenCalled();
   });

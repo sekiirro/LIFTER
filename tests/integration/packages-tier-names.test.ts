@@ -104,6 +104,8 @@ describe('package tier display names (T078)', () => {
       { tier_rank: null, locale: 'en', name: 'nope' },
       { tier_rank: 2, locale: null, name: 'nope' },
       { tier_rank: 2, locale: 'en', name: null },
+      { tier_rank: 2, locale: 'en', name: 'x'.repeat(121) },
+      { tier_rank: 2, locale: 'en', name: '😀'.repeat(121) },
     ]) {
       const r = await f.po.client.rpc('set_package_tier_name', patch);
       expect(r.error?.code).toBe('22023');
@@ -135,12 +137,35 @@ describe('package tier display names (T078)', () => {
     ]);
   });
 
-  it('denies overrides for foreign workspaces, PO, Sales, Trainer and anonymous', async () => {
+  it('lets the PO set a workspace override in any workspace', async () => {
+    const name = '😀'.repeat(120);
+    const existing = await f.po.client.rpc('set_package_tier_name_override', {
+      workspace_id: f.wsA.id,
+      tier_rank: 2,
+      locale: 'en',
+      name: 'PO replaces workspace override',
+    });
+    expect(existing.error).toBeNull();
+    expect((await resolved(f.woA.client, f.wsA.id))['2/en']).toBe(
+      'PO replaces workspace override',
+    );
+    const result = await f.po.client.rpc('set_package_tier_name_override', {
+      workspace_id: f.wsB.id,
+      tier_rank: 3,
+      locale: 'en',
+      name,
+    });
+    expect(result.error).toBeNull();
+    expect((await resolved(f.trainerB.client, f.wsB.id))['3/en']).toBe(name);
+    expect(
+      await db`select workspace_id,tier_rank,locale,name from public.package_tier_name_overrides where workspace_id=${f.wsB.id}`,
+    ).toEqual([{ workspace_id: f.wsB.id, tier_rank: 3, locale: 'en', name }]);
+  });
+
+  it('denies overrides for foreign workspaces, Sales, Trainer and anonymous', async () => {
     const cases: [string, typeof f.po.client, string][] = [
       ['woA->wsB', f.woA.client, f.wsB.id],
       ['woB->wsA', f.actors.woB.client, f.wsA.id],
-      ['po->wsA', f.po.client, f.wsA.id],
-      ['po->wsB', f.po.client, f.wsB.id],
       ['salesA->wsA', f.salesA.client, f.wsA.id],
       ['trainerA->wsA', f.trainerA.client, f.wsA.id],
       ['salesB->wsB', f.actors.salesB.client, f.wsB.id],
@@ -163,7 +188,7 @@ describe('package tier display names (T078)', () => {
         expect(r.error?.message, name).toBe('not_permitted');
     }
     expect(
-      await db`select count(*)::int as count from public.package_tier_name_overrides where tier_rank=3`,
+      await db`select count(*)::int as count from public.package_tier_name_overrides where tier_rank=3 and name like 'denied-%'`,
     ).toEqual([{ count: 0 }]);
   });
 
@@ -172,6 +197,7 @@ describe('package tier display names (T078)', () => {
       { tier_rank: 5, locale: 'en', name: 'nope' },
       { tier_rank: 2, locale: 'de', name: 'nope' },
       { tier_rank: 2, locale: 'en', name: ' \t ' },
+      { tier_rank: 2, locale: 'en', name: 'x'.repeat(121) },
     ]) {
       const r = await f.woA.client.rpc('set_package_tier_name_override', {
         workspace_id: f.wsA.id,
@@ -180,6 +206,19 @@ describe('package tier display names (T078)', () => {
       expect(r.error?.code).toBe('22023');
       expect(r.error?.message).toBe('invalid_input');
     }
+  });
+
+  it('enforces the 1–120 name constraint directly in both tables', async () => {
+    const longName = '😀'.repeat(121);
+    const validName = '😀'.repeat(120);
+    await db`insert into public.package_tier_names(tier_rank,locale,name,updated_by) values (1,'en',${validName},${f.po.userId})`;
+    await db`insert into public.package_tier_name_overrides(workspace_id,tier_rank,locale,name,updated_by) values (${f.wsA.id},1,'en',${validName},${f.po.userId})`;
+    await expect(
+      db`insert into public.package_tier_names(tier_rank,locale,name,updated_by) values (1,'en',${longName},${f.po.userId})`,
+    ).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      db`insert into public.package_tier_name_overrides(workspace_id,tier_rank,locale,name,updated_by) values (${f.wsA.id},1,'en',${longName},${f.po.userId})`,
+    ).rejects.toMatchObject({ code: '23514' });
   });
 
   it('scopes the resolved read to active staff of that workspace', async () => {
@@ -268,6 +307,16 @@ describe('package tier display names (T078)', () => {
           tier_rank: 3,
           locale: 'en',
           name: 'WSB Platinum Label',
+        })
+      ).error,
+    ).toBeNull();
+    expect(
+      (
+        await f.po.client.rpc('set_package_tier_name_override', {
+          workspace_id: f.wsA.id,
+          tier_rank: 2,
+          locale: 'en',
+          name: 'PO Workspace Label',
         })
       ).error,
     ).toBeNull();

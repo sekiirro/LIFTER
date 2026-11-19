@@ -343,3 +343,10 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 **Analyzed:** 2026-11-18 (UTC). Reconciled T065 teardown script (`supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`), conformance matrix (`specs/009-packages/reviews/t065-conformance.md`), and integration/mutation tests (`tests/integration/packages-c5-teardown.test.ts`, `tests/integration/packages-verification.md`) with `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS). No FR, SC, acceptance-scenario, or plan requirement text changed — only T065 status/evidence notes; T065 remains `[ ]` pending the separate four-category initialization forward migration (D10) and T070 post-implementation acceptance review.
 
 - PASS: 0 open CRITICAL, 0 open HIGH.
+
+## 2026-11-19 Analyze (S67-PO-10 FR-035 requirement delta)
+
+- Scope: compared FR-035 and its Given/When/Then scenarios in `spec.md`, tier-name design in `plan.md`, and T079 coverage in `tasks.md` against S67-PO-10; constitution 1.19.0 quality gates remain applicable.
+- PASS: all three PO decisions are explicit and consistent: 1–120 Unicode-code-point, nonblank publication-name validation; zero audit rows; PO may override any workspace while Workspace Owners remain own-workspace only and Sales/Trainer/anonymous are denied.
+- PASS: FR-035/SC-025 maps to T078 (existing behavior) and T079 (new constraints/authorization), with database, application, and test/evidence work identified. No conflicting requirement or plan assumption found.
+- Findings: 0 open CRITICAL, 0 open HIGH; no open ambiguity for this scope.
