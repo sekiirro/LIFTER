@@ -1270,6 +1270,25 @@ Both required mutations executed on Stack B against `tests/integration/registrat
 | T056-M1 | Drop `perform app_private.enqueue_client_trainer_distribution_job(ws, cid, aid);` in `app_private.f12_u3_purchase` (`supabase/migrations/20261124120000_f12_approval_distribution_job_emit.sql:43`)                                                                             | 3 failed / 23 skipped -> 3 passed / 23 skipped |
 | T056-M2 | Break dedupe key prefix `'client.distribution:'` -> `'broken.distribution:'` in `app_private.enqueue_client_trainer_distribution_job` (`supabase/migrations/20261124040000_f11_client_trainer_distribution.sql:78`, live Stack B def only; historical migration file untouched) | 3 failed / 23 skipped -> 3 passed / 23 skipped |
 
+## S67 T055 — deletion-state operations, replay, and client access (Stack B)
+
+- **Base `origin/main`:** `eebc9dca05311333afa5e5286b1d83b5f66b44f7`
+- **Environment:** Node `v24.19.0`, Vitest `5.1.0`, PostgreSQL `public.ecr.aws/supabase/postgres:17.11.0.006` (Stack B `lifter-stack-b`, API `25421`, DB `25422`)
+- **Suites touched:**
+  - `tests/integration/registration-approval-operations.test.ts` (34 passed)
+  - `tests/integration/registration-approval-replay.test.ts` (23 passed)
+  - `tests/integration/registration-approval-client-access.test.ts` (9 passed)
+- **Total integration tests:** 66 passed across the three touched files.
+- **Verification outcomes:**
+  1. For each operation (approve, reject, registration_reconsider) whose receipt predates deletion, an exact authorized replay re-authorizes and returns the identical earlier receipt without duplicate subscription, obligation, payment, or audit rows.
+  2. New approve, reject, or registration_reconsider is refused with the FR-017 `stale_state` response under the client lock and creates zero subscription, obligation, or payment rows across all deletion lifecycle states (`deletion_pending`, `release_pending`, `released`).
+  3. For a deleted rejected client, `approval_state` remains `rejected` and new `registration_reconsider` is refused with `stale_state`, creating no subscription or payment.
+  4. S47-PO-12 surface verified:
+     - A PO correction reversal on an unreversed collection recorded before deletion appends one reversal whose `amount_minor` and `commission_minor` are the exact negation of the original stored values, leaving the original unchanged with no new collection, charge, or obligation. Unauthorized actor (WO) is denied (`not_permitted`).
+     - A new `installment_collect` for a client in any F11 deletion lifecycle state (`deletion_pending`, `release_pending`, `released`) is refused for an authorized actor with `stale_state` and creates zero financial or audit rows; an unauthorized actor receives generic `not_permitted` and no target detail (SC-012).
+     - For an `installment_collect` receipt predating deletion, exact authorized replay in any of the three deletion states returns the identical earlier receipt under FR-011 and creates zero duplicate rows; unauthorized replay receives `not_permitted` before receipt or state is disclosed (FR-011, FR-017).
+  5. Deleted client access verified: client in `deletion_pending`, `release_pending`, or `released` is denied `client_self_status` (`not_permitted`), `client_has_access` returns false, and client JWT has zero base-table reads.
+
 ## S67 T044 remainder — 2026-11-19
 
 - Fresh base: `eebc9dca05311333afa5e5286b1d83b5f66b44f7`; branch `s67-012-t044`; disposable Stack E only. Existing 17 S64 kills remain the historical S64 evidence cited above. No migration file was edited; DB mutations were discarded by safe reset.

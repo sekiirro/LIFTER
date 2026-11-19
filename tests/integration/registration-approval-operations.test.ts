@@ -1,6 +1,14 @@
-﻿import { afterAll, beforeAll, expect, it } from 'vitest';
+﻿import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { calculateCommissionMinor } from '../../lib/registration-approval/money';
 import { createRecoveryClientTarget } from './client-accounts-fixture';
+import { admin, loadEnv } from './harness';
+import { FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT } from '../../lib/client-accounts/deletion-policy';
+import { drainAccountDeletions } from '../../workers/cron/src/account-deletion';
+import {
+  bought,
+  pay,
+  paymentRequest,
+} from './registration-approval-payment-fixture';
 import {
   clientContext,
   registered,
@@ -400,4 +408,237 @@ it('T056 rejection and denied approval enqueue no distribution job; reconsiderat
       idempotency_key: `client.distribution:${tRejected.id}:${fact!.id}`,
     },
   ]);
+});
+
+async function transitionClientDeletion(
+  context: Context,
+  authUserId: string,
+  targetState: 'deletion_pending' | 'release_pending' | 'released',
+) {
+  const req = await context.po.client.rpc('request_account_deletion', {
+    p_target_user_id: authUserId,
+    p_financial_confirmation: {
+      category: 'other',
+      acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+    },
+  });
+  if (req.error || req.data?.status !== 'deletion_pending') {
+    throw new Error(`request_account_deletion failed: ${JSON.stringify(req)}`);
+  }
+  const intentId = (req.data as { intent_id: string }).intent_id;
+  if (targetState === 'deletion_pending') {
+    return intentId;
+  }
+
+  await db`
+    update auth.users
+    set banned_until = '9999-12-31T23:59:59Z'::timestamptz
+    where id = ${authUserId}
+  `;
+  const claimed = await admin().rpc('claim_account_deletion_intents', {
+    p_limit: 100,
+  });
+  const leased = (
+    claimed.data as Array<{ id: string; lease_token: string }>
+  )?.find((item) => item.id === intentId);
+  if (!leased) {
+    throw new Error(
+      `claim_account_deletion_intents failed to find intent ${intentId}`,
+    );
+  }
+  const adv = await admin().rpc('advance_deletion_step_a', {
+    p_intent_id: intentId,
+    p_lease_token: leased.lease_token,
+  });
+  if (adv.error || adv.data !== true) {
+    throw new Error(`advance_deletion_step_a failed: ${JSON.stringify(adv)}`);
+  }
+  const execB = await admin().rpc('execute_deletion_step_b', {
+    p_intent_id: intentId,
+    p_lease_token: leased.lease_token,
+  });
+  if (execB.error || execB.data !== true) {
+    throw new Error(`execute_deletion_step_b failed: ${JSON.stringify(execB)}`);
+  }
+  if (targetState === 'release_pending') {
+    return intentId;
+  }
+
+  await db`
+    update app_private.account_deletion_intents
+    set lease_token = null, lease_expires_at = null
+    where id = ${intentId}
+  `;
+  const env = loadEnv();
+  await drainAccountDeletions(
+    {
+      SUPABASE_URL: env.apiUrl,
+      SUPABASE_SERVICE_ROLE_KEY: env.serviceRoleKey,
+    },
+    { limit: 100 },
+  );
+  return intentId;
+}
+
+describe('T055 deletion-state operations and S47-PO-12 surface', () => {
+  it.each(['deletion_pending', 'release_pending', 'released'] as const)(
+    'T055 new approve or reject is refused with stale-state under client lock and zero writes: %s',
+    async (lifecycleState) => {
+      const t = await registered(f);
+      await transitionClientDeletion(f, t.userId, lifecycleState);
+      const before = await state(db, t);
+
+      const approveResult = await call(f.po.client, 'approve', request(f, t));
+      expect(approveResult).toEqual({ status: 'stale_state' });
+
+      const rejectResult = await call(
+        f.po.client,
+        'reject',
+        request(f, t, 'reject'),
+      );
+      expect(rejectResult).toEqual({ status: 'stale_state' });
+
+      expect(await state(db, t)).toEqual(before);
+
+      const [subs] =
+        await db`select count(*)::int as c from public.subscriptions where client_id = ${t.id}`;
+      expect(subs!.c).toBe(0);
+      const [insts] = await db`
+        select count(*)::int as c from public.subscription_installments i
+        join public.subscriptions s on s.id = i.subscription_id
+        where s.client_id = ${t.id}`;
+      expect(insts!.c).toBe(0);
+      const [pays] = await db`
+        select count(*)::int as c from public.payment_events e
+        join public.subscriptions s on s.id = e.subscription_id
+        where s.client_id = ${t.id}`;
+      expect(pays!.c).toBe(0);
+    },
+  );
+
+  it('T055 for a deleted rejected client, approval_state remains rejected and registration_reconsider is refused with stale-state creating no subscription or payment', async () => {
+    const t = await registered(f);
+    const rej = await call(f.po.client, 'reject', request(f, t, 'reject'));
+    expect(rej.status).toBe('ok');
+
+    await transitionClientDeletion(f, t.userId, 'released');
+
+    const [cRow] =
+      await db`select approval_state, deletion_state from public.clients where id = ${t.id}`;
+    expect(cRow).toEqual({
+      approval_state: 'rejected',
+      deletion_state: 'released',
+    });
+
+    const before = await state(db, t);
+
+    const r = await call(
+      f.po.client,
+      'reconsider',
+      request(f, t, 'reconsider'),
+    );
+    expect(r).toEqual({ status: 'stale_state' });
+
+    expect(await state(db, t)).toEqual(before);
+
+    const [subs] =
+      await db`select count(*)::int as c from public.subscriptions where client_id = ${t.id}`;
+    expect(subs!.c).toBe(0);
+  });
+
+  it.each(['deletion_pending', 'release_pending', 'released'] as const)(
+    'T055 new installment_collect in %s refused with stale-state for authorized actor, not_permitted for unauthorized (SC-012)',
+    async (lifecycleState) => {
+      const p = await bought(f);
+      await transitionClientDeletion(f, p.t.userId, lifecycleState);
+
+      const unauthReq = paymentRequest(f, p, 'collect', {
+        obligation_id: p.rows[1]!.id,
+        expected_installment_seq: 2,
+        expected_revision: 0,
+        expected_previous_event_id: null,
+      });
+      const unauthRes = await pay(f.actors.salesB.client, 'collect', unauthReq);
+      expect(unauthRes).toEqual({ status: 'not_permitted' });
+
+      const authReq = paymentRequest(f, p, 'collect', {
+        obligation_id: p.rows[1]!.id,
+        expected_installment_seq: 2,
+        expected_revision: 0,
+        expected_previous_event_id: null,
+      });
+      const authRes = await pay(f.po.client, 'collect', authReq);
+      expect(authRes).toEqual({ status: 'stale_state' });
+
+      const [evCount] = await db`
+        select count(*)::int as c from public.payment_events
+        where subscription_id = ${p.sid}`;
+      expect(evCount!.c).toBe(1);
+
+      const [auditCount] = await db`
+        select count(*)::int as c from public.audit_events
+        where action = 'payment.collected'
+          and details->>'obligation_id' = ${p.rows[1]!.id}`;
+      expect(auditCount!.c).toBe(0);
+    },
+  );
+
+  it('T055 PO correction reversal on unreversed collection recorded before deletion appends exact negation reversal and leaves original unchanged (FR-014, SC-012, S47-PO-12)', async () => {
+    const p = await bought(f);
+    const [orig] = await db`
+      select id, amount_minor, commission_minor, kind, reverses_event_id
+      from public.payment_events
+      where subscription_id = ${p.sid} and installment_seq = 1`;
+    expect(orig!.kind).toBe('collection');
+    expect(orig!.reverses_event_id).toBeNull();
+
+    await transitionClientDeletion(f, p.t.userId, 'released');
+
+    const woRes = await pay(
+      f.actors.woA.client,
+      'correct',
+      paymentRequest(f, p, 'correct'),
+    );
+    expect(woRes).toEqual({ status: 'not_permitted' });
+
+    const corrRes = await pay(
+      f.po.client,
+      'correct',
+      paymentRequest(f, p, 'correct'),
+    );
+    expect(corrRes.status).toBe('ok');
+    expect(corrRes.receipt?.outcome).toBe('reversed');
+    expect(corrRes.receipt?.amount_minor).toBe(
+      String(-Number(orig!.amount_minor)),
+    );
+
+    const events = await db`
+      select id, amount_minor::text, commission_minor::text, kind, reverses_event_id
+      from public.payment_events
+      where subscription_id = ${p.sid} and obligation_id = ${p.rows[0]!.id}
+      order by revision`;
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({
+      id: orig!.id,
+      amount_minor: orig!.amount_minor.toString(),
+      commission_minor: orig!.commission_minor.toString(),
+      kind: 'collection',
+      reverses_event_id: null,
+    });
+    expect(events[1]).toMatchObject({
+      kind: 'correction_reversal',
+      amount_minor: String(-Number(orig!.amount_minor)),
+      commission_minor: String(-Number(orig!.commission_minor)),
+      reverses_event_id: orig!.id,
+    });
+
+    const [instCount] = await db`
+      select count(*)::int as c from public.subscription_installments
+      where subscription_id = ${p.sid}`;
+    expect(instCount!.c).toBe(3);
+    const [collCount] = await db`
+      select count(*)::int as c from public.payment_events
+      where subscription_id = ${p.sid} and kind = 'collection'`;
+    expect(collCount!.c).toBe(1);
+  });
 });
