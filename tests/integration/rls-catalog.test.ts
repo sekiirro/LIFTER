@@ -499,6 +499,8 @@ describe('tenancy security catalog (T007)', () => {
           'guard_package_offer_category',
           'guard_package_promotion_period',
           'guard_package_reporting_fx_snapshot',
+          'guard_package_tier_name_override_update',
+          'guard_package_tier_name_update',
           'guard_package_version_insert',
           'guard_package_version_market',
           'guard_registration_link_promotion_period',
@@ -939,6 +941,8 @@ describe('tenancy security catalog (T007)', () => {
               'guard_package_offer_category',
               'guard_package_version_insert',
               'guard_package_version_market',
+              'guard_package_tier_name_override_update',
+              'guard_package_tier_name_update',
               'jobs_updated_at',
               'lock_catalog_food_request',
               'normalize_catalog_food_identity_v1',
@@ -2541,5 +2545,89 @@ describe('F11 T048 account deletion catalog', () => {
       });
       expect(fn?.proconfig, sig).toContain('search_path=""');
     }
+  });
+});
+
+// T078 (FR-035/SC-025): tier display-name tables are RPC-only, with no API
+// table grants, immutable identity columns and no authorized delete path.
+describe('package tier name security catalog (T078)', () => {
+  it.each(['package_tier_names', 'package_tier_name_overrides'])(
+    '%s forces RLS with no policies, no API grants and identity guards',
+    async (table) => {
+      const relation = `public.${table}`;
+      const [row] =
+        await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass`;
+      expect(row).toMatchObject({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies =
+        await db`select policyname from pg_policies where schemaname='public' and tablename=${table}`;
+      expect(policies).toEqual([]);
+      for (const role of ['anon', 'authenticated', 'service_role'])
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role},${relation},${privilege}) as allowed`;
+          expect(grant?.allowed).toBe(false);
+        }
+      const triggers =
+        await db`select tgname,tgtype::int as type,tgenabled from pg_trigger where tgrelid=${relation}::regclass and not tgisinternal order by tgname`;
+      expect(triggers).toEqual(
+        [
+          { tgname: `${table}_guard`, type: 19, tgenabled: 'O' },
+          { tgname: `${table}_no_delete`, type: 11, tgenabled: 'O' },
+          { tgname: `${table}_no_truncate`, type: 34, tgenabled: 'O' },
+        ].sort((a, b) => a.tgname.localeCompare(b.tgname)),
+      );
+    },
+  );
+  it('hardens the T078 tier-name RPCs and private guards', async () => {
+    for (const name of [
+      'public.set_package_tier_name(smallint,text,text)',
+      'public.set_package_tier_name_override(uuid,smallint,text,text)',
+      'public.get_package_tier_names(uuid)',
+      'app_private.guard_package_tier_name_update()',
+      'app_private.guard_package_tier_name_override_update()',
+    ]) {
+      const [fn] =
+        await db`select prosecdef,proconfig,provolatile,pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn?.proconfig).toContain('search_path=""');
+      expect(fn?.provolatile).toBe(
+        name.includes('get_package_tier_names') ? 's' : 'v',
+      );
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
+        expect(grant?.allowed).toBe(
+          role === 'authenticated' && name.startsWith('public.'),
+        );
+      }
+    }
+    expect(
+      (
+        await db`select column_name from information_schema.columns where table_schema='public' and table_name='package_tier_names' order by ordinal_position`
+      ).map((column) => column.column_name),
+    ).toEqual(['tier_rank', 'locale', 'name', 'updated_by', 'updated_at']);
+    expect(
+      (
+        await db`select column_name from information_schema.columns where table_schema='public' and table_name='package_tier_name_overrides' order by ordinal_position`
+      ).map((column) => column.column_name),
+    ).toEqual([
+      'workspace_id',
+      'tier_rank',
+      'locale',
+      'name',
+      'updated_by',
+      'updated_at',
+    ]);
   });
 });
