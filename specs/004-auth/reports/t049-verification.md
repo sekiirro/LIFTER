@@ -31,3 +31,11 @@ Recommendation: option 2, following the existing plan's no-bypass rule. Independ
 ## Mutation evidence
 
 Not run. No T050a migration or new high-risk control exists on this candidate. Existing PR1b hook mutation evidence is retained at reports/t051-verification.md and remains partial; it does not cover the new T038a route assertion or any session-bound intent/guard control.
+
+## Stack C hook and schema evidence
+
+After a safe Stack C reset and the required local provisioning step, `staff-reset-hook.test.ts` passed 5/5 and `staff-reset-hook-schema.test.ts` passed 6/6. The suites cover unsigned requests, direct unknown-address skip/no mail, one approved-recipient audit-before-send, non-staff refusal, requested-audit RPC failure, request/delivery limits, global cap, deduplication, and schema/RLS/ACL behavior. T049b/c remain unticked: unavailable-hook/timeout caller status, control-D begin cases, and mixed direct/app cap evidence remain uncovered. One approved local recipient email was captured; no other recipient or external SMTP was used.
+
+## T035 / S67-R23 timing
+
+The required-step/fixed-floor unit proof and 30 interleaved local samples were not run because the duration of the fixed response floor is unspecified. MCQ-2 is recorded in the lane report; do not add an unapproved latency value.

@@ -2,7 +2,10 @@ import { createHash, randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { admin, anonClient, loadEnv, sql } from './harness';
 
-const LOCAL_STACK_D = process.env.LIFTER_SUPABASE_STACK === 'd';
+const LOCAL_STACK = ['c', 'd'].includes(
+  process.env.LIFTER_SUPABASE_STACK ?? '',
+);
+const STACK_C = process.env.LIFTER_SUPABASE_STACK === 'c';
 const TEST_RECIPIENT = 'staff-reset@example.test';
 const db = sql();
 let testUserId: string | null = null;
@@ -10,21 +13,28 @@ let refusedUserId: string | null = null;
 const REFUSED_TEST_EMAIL = 'staff-reset-refused@example.test';
 
 async function capturedMessageCount() {
-  const response = await fetch('http://127.0.0.1:45424/api/v1/messages');
+  const url = new URL('/api/v1/messages', loadEnv().apiUrl);
+  url.port = STACK_C ? '35424' : '45424';
+  const response = await fetch(url);
   if (!response.ok) throw new Error('Local message capture is unavailable');
   const result = (await response.json()) as { messages_count?: number };
   return result.messages_count ?? 0;
 }
 
+function appOrigin() {
+  return STACK_C
+    ? 'http://127.0.0.1:3103'
+    : (process.env.APP_ORIGIN ?? 'http://localhost:3104');
+}
+
 function recoveryRedirect(locale: 'ar' | 'en') {
-  const appOrigin = process.env.APP_ORIGIN ?? 'http://localhost:3104';
-  const url = new URL('/auth/recovery', appOrigin);
+  const url = new URL('/auth/recovery', appOrigin());
   url.searchParams.set('flow', 'staff');
   url.searchParams.set('locale', locale);
   return url.toString();
 }
 
-describe.skipIf(!LOCAL_STACK_D)('staff reset send-email hook (Stack D)', () => {
+describe.skipIf(!LOCAL_STACK)('staff reset send-email hook', () => {
   beforeAll(() => {
     loadEnv();
   });
@@ -39,14 +49,12 @@ describe.skipIf(!LOCAL_STACK_D)('staff reset send-email hook (Stack D)', () => {
 
   it('rejects unsigned hook requests before any mail side effect', async () => {
     const messagesBefore = await capturedMessageCount();
-    const response = await fetch(
-      `${process.env.APP_ORIGIN ?? 'http://localhost:3104'}/api/internal/staff-reset-hook`,
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: '{}',
-      },
-    );
+    const hookUrl = new URL('/api/internal/staff-reset-hook', appOrigin());
+    const response = await fetch(hookUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    });
     expect(response.status).toBe(401);
     expect(await capturedMessageCount()).toBe(messagesBefore);
   });

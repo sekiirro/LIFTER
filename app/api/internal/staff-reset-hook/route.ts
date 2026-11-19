@@ -109,9 +109,12 @@ export async function POST(request: NextRequest) {
       event.locale,
     );
     const messages = getMessages(event.locale);
+    const smtpPort = Number(process.env.STAFF_RESET_LOCAL_SMTP_PORT ?? '45425');
+    if (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535)
+      return emptyResponse(503);
     const smtp = nodemailer.createTransport({
       host: '127.0.0.1',
-      port: 45425,
+      port: smtpPort,
       secure: false,
       connectionTimeout: 5000,
       greetingTimeout: 5000,
