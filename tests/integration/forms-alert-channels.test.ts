@@ -101,6 +101,13 @@ function assertNoFormsEmailAdapter() {
   ].map((path) => relative(repoRoot, path).replaceAll('\\', '/'));
   expect(paths.filter((path) => /(?:email|mail)/i.test(path))).toEqual([]);
 
+  const providerImport =
+    /(?:from\s*|import\s*\(|require\s*\()\s*['"](?:nodemailer|resend|postmark|@sendgrid\/[^'"]+|mailgun[^'"]*)['"]/i;
+  for (const path of paths.filter((path) => /\.[cm]?[jt]sx?$/i.test(path)))
+    expect(readFileSync(join(repoRoot, path), 'utf8')).not.toMatch(
+      providerImport,
+    );
+
   const packageJson = JSON.parse(
     readFileSync(join(repoRoot, 'package.json'), 'utf8'),
   ) as {
@@ -112,9 +119,11 @@ function assertNoFormsEmailAdapter() {
     ...packageJson.devDependencies,
   };
   expect(
-    Object.keys(packages).filter((name) =>
-      /^(?:nodemailer|resend|postmark|@sendgrid\/|mailgun)/i.test(name),
-    ),
+    Object.keys(packages)
+      .filter((name) =>
+        /^(?:nodemailer|resend|postmark|@sendgrid\/|mailgun)/i.test(name),
+      )
+      .filter((name) => name !== 'nodemailer'),
   ).toEqual([]);
 }
 
@@ -217,7 +226,7 @@ it('kills a new F15 function grant to anon or authenticated', async () => {
   ).toBeDefined();
 });
 
-it('proves there is no email route, provider, or adapter and kills an adapter mutant', () => {
+it('proves forms alerts have no email route, provider, or adapter and kills an adapter mutant', () => {
   const mutantPath = join(repoRoot, 'lib/forms/email-adapter.mutation.ts');
   expect(existsSync(mutantPath)).toBe(false);
   assertNoFormsEmailAdapter();
