@@ -22,7 +22,12 @@ function signatureFor(body = rawBody, timestampValue = timestamp) {
 
 describe('staff reset hook boundary', () => {
   it('authorizes only staff roles for reset delivery', () => {
-    for (const role of ['platform_owner', 'workspace_owner', 'trainer', 'sales'])
+    for (const role of [
+      'platform_owner',
+      'workspace_owner',
+      'trainer',
+      'sales',
+    ])
       expect(isEligibleStaffRole(role), role).toBe(true);
     for (const role of ['client', 'unknown', null])
       expect(isEligibleStaffRole(role), String(role)).toBe(false);
