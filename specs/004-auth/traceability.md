@@ -229,3 +229,11 @@ Commit `ab9b5aa2cc3b36fe233f7fd6d2808a12821f8cfc` on `s67-004-reset-pr2` records
 | T043        | Existing implementation and UI evidence retained from parent candidate.                                    | Unticked: required T038a and T049a-e RED coverage is incomplete; T035 remains partial.                                                        |
 
 Stack C reset used the candidate migration set and a temporary local migrations junction; no migration was created. Integration run: 31 passed, 3 failed (the T038a/T049a/T049d RED cases above). Full unit run: 3,914 passed, 5 existing unrelated failures, 1 AT-2 todo. Lint, typecheck, full format and changed-format passed. Auth e2e did not complete; the initial run refused an already occupied port and the correctly scoped run was interrupted after hanging during startup. No SMTP or external email was invoked. No new mutation evidence was generated.
+
+## S67 PR2c verification
+
+| Requirement | Task | Test | Evidence | Status |
+| --- | --- | --- | --- | --- |
+| FR-019, FR-028; SC-015 | T038a | tests/integration/auth-recovery.test.ts::staff-reset-permitted | Stack C; commit 2dc3f74e; one passing test; hook request row incremented with denied, generic response retained, Mailpit search found no message to the non-permitted target. | VERIFIED |
+
+No recipient email or external SMTP was used. Stack C hook configuration was local to the worktree and is not part of the commit. The inherited T050b mutation evidence remains partial; T051 is still open.
