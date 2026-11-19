@@ -293,6 +293,11 @@ describe('F14 definer function privileges', () => {
         signature:
           'public.retry_refund_auth_lockout_job(uuid, integer, timestamp with time zone, text)',
       },
+      { signature: 'public.staff_password_reset_hook_audit(text)' },
+      {
+        signature:
+          'public.staff_password_reset_hook_claim(text, uuid, text, boolean, boolean)',
+      },
     ]);
 
     const deniedRoles = await db<
