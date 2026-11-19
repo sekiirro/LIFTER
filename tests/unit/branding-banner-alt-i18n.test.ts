@@ -56,7 +56,7 @@ describe('branding banner alt-text i18n', () => {
       'Enter a description in at least one language; the available description will be used as fallback.',
     );
     expect(ar['branding.bannerSizeHint']).toBe(
-      'Recommended 1600×800 (2:1). Keep important content away from the edges and the lower part of the image.',
+      'المقاس المناسب 1600×800 (2:1). خلّي الحاجات المهمة بعيد عن الأطراف وعن الجزء اللي تحت في الصورة.',
     );
     expect(en['branding.bannerSizeHint']).toBe(
       'Recommended 1600×800 (2:1). Keep important content away from the edges and the lower part of the image.',
