@@ -1,7 +1,9 @@
 ﻿import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createRecoveryClientTarget } from './client-accounts-fixture';
-import { admin } from './harness';
+import { admin, loadEnv } from './harness';
+import { FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT } from '../../lib/client-accounts/deletion-policy';
+import { drainAccountDeletions } from '../../workers/cron/src/account-deletion';
 import {
   bought,
   paymentRequest,
@@ -395,4 +397,176 @@ it('T015 anonymous and service_role have no RPC EXECUTE; private primitives are 
     status: 'rpc_error',
     code: '42501',
   });
+});
+
+async function transitionClientDeletion(
+  context: Context,
+  authUserId: string,
+  targetState: 'deletion_pending' | 'release_pending' | 'released',
+) {
+  const req = await context.po.client.rpc('request_account_deletion', {
+    p_target_user_id: authUserId,
+    p_financial_confirmation: {
+      category: 'other',
+      acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+    },
+  });
+  if (req.error || req.data?.status !== 'deletion_pending') {
+    throw new Error(`request_account_deletion failed: ${JSON.stringify(req)}`);
+  }
+  const intentId = (req.data as { intent_id: string }).intent_id;
+  if (targetState === 'deletion_pending') {
+    return intentId;
+  }
+
+  await db`
+    update auth.users
+    set banned_until = '9999-12-31T23:59:59Z'::timestamptz
+    where id = ${authUserId}
+  `;
+  const claimed = await admin().rpc('claim_account_deletion_intents', {
+    p_limit: 100,
+  });
+  const leased = (
+    claimed.data as Array<{ id: string; lease_token: string }>
+  )?.find((item) => item.id === intentId);
+  if (!leased) {
+    throw new Error(
+      `claim_account_deletion_intents failed to find intent ${intentId}`,
+    );
+  }
+  const adv = await admin().rpc('advance_deletion_step_a', {
+    p_intent_id: intentId,
+    p_lease_token: leased.lease_token,
+  });
+  if (adv.error || adv.data !== true) {
+    throw new Error(`advance_deletion_step_a failed: ${JSON.stringify(adv)}`);
+  }
+  const execB = await admin().rpc('execute_deletion_step_b', {
+    p_intent_id: intentId,
+    p_lease_token: leased.lease_token,
+  });
+  if (execB.error || execB.data !== true) {
+    throw new Error(`execute_deletion_step_b failed: ${JSON.stringify(execB)}`);
+  }
+  if (targetState === 'release_pending') {
+    return intentId;
+  }
+
+  await db`
+    update app_private.account_deletion_intents
+    set lease_token = null, lease_expires_at = null
+    where id = ${intentId}
+  `;
+  const env = loadEnv();
+  await drainAccountDeletions(
+    {
+      SUPABASE_URL: env.apiUrl,
+      SUPABASE_SERVICE_ROLE_KEY: env.serviceRoleKey,
+    },
+    { limit: 100 },
+  );
+  return intentId;
+}
+
+describe('T055 deletion-state replay cases', () => {
+  it('T055 pre-deletion approve receipt: exact authorized replay in deletion returns identical receipt and creates zero duplicate rows, unauthorized receives not_permitted', async () => {
+    const t = await registered(f);
+    const req = request(f, t);
+    const earlierReceipt = await call(f.po.client, 'approve', req);
+    expect(earlierReceipt.status).toBe('ok');
+
+    await transitionClientDeletion(f, t.userId, 'released');
+    const before = await state(db, t);
+
+    const unauth = await call(f.actors.salesA.client, 'approve', req);
+    expect(unauth).toEqual({ status: 'not_permitted' });
+    expect(await state(db, t)).toEqual(before);
+
+    const replay = await call(f.po.client, 'approve', req);
+    expect(replay).toEqual(earlierReceipt);
+    expect(await state(db, t)).toEqual(before);
+  });
+
+  it('T055 pre-deletion reject receipt: exact authorized replay in deletion returns identical receipt and creates zero duplicate rows, unauthorized receives not_permitted', async () => {
+    const t = await registered(f);
+    const req = request(f, t, 'reject');
+    const earlierReceipt = await call(f.po.client, 'reject', req);
+    expect(earlierReceipt.status).toBe('ok');
+
+    await transitionClientDeletion(f, t.userId, 'released');
+    const before = await state(db, t);
+
+    const unauth = await call(f.actors.salesA.client, 'reject', req);
+    expect(unauth).toEqual({ status: 'not_permitted' });
+    expect(await state(db, t)).toEqual(before);
+
+    const replay = await call(f.po.client, 'reject', req);
+    expect(replay).toEqual(earlierReceipt);
+    expect(await state(db, t)).toEqual(before);
+  });
+
+  it('T055 pre-deletion registration_reconsider receipt: exact authorized replay in deletion returns identical receipt and creates zero duplicate rows, unauthorized receives not_permitted', async () => {
+    const t = await registered(f);
+    const rej = await call(f.po.client, 'reject', request(f, t, 'reject'));
+    expect(rej.status).toBe('ok');
+
+    const req = request(f, t, 'reconsider');
+    const earlierReceipt = await call(f.po.client, 'reconsider', req);
+    expect(earlierReceipt.status).toBe('ok');
+
+    await transitionClientDeletion(f, t.userId, 'released');
+    const before = await state(db, t);
+
+    const unauth = await call(f.actors.salesA.client, 'reconsider', req);
+    expect(unauth).toEqual({ status: 'not_permitted' });
+    expect(await state(db, t)).toEqual(before);
+
+    const replay = await call(f.po.client, 'reconsider', req);
+    expect(replay).toEqual(earlierReceipt);
+    expect(await state(db, t)).toEqual(before);
+  });
+
+  it.each(['deletion_pending', 'release_pending', 'released'] as const)(
+    'T055 exact authorized replay of pre-deletion installment_collect in %s returns earlier receipt and creates zero rows, unauthorized receives not_permitted (FR-011, FR-017)',
+    async (lifecycleState) => {
+      const p = await bought(f);
+      await db`insert into public.subscription_activations(workspace_id, subscription_id, activated_at, delivery_event_id, activation_source)
+        values(${f.wsA.id}, ${p.sid}, now(), ${randomUUID()}, 'po_override')`;
+
+      const req2 = paymentRequest(f, p, 'collect', {
+        obligation_id: p.rows[1]!.id,
+        expected_installment_seq: 2,
+        expected_revision: 0,
+        expected_previous_event_id: null,
+      });
+      const earlierReceipt = await pay(f.po.client, 'collect', req2);
+      expect(earlierReceipt.status).toBe('ok');
+
+      await transitionClientDeletion(f, p.t.userId, lifecycleState);
+
+      const eventsBefore = await db`
+        select id from public.payment_events
+        where subscription_id = ${p.sid}`;
+      const auditBefore = await db`
+        select id from public.audit_events
+        where details->>'client_id' = ${p.t.id}`;
+
+      const unauth = await pay(f.actors.salesB.client, 'collect', req2);
+      expect(unauth).toEqual({ status: 'not_permitted' });
+
+      const replay = await pay(f.po.client, 'collect', req2);
+      expect(replay).toEqual(earlierReceipt);
+
+      const eventsAfter = await db`
+        select id from public.payment_events
+        where subscription_id = ${p.sid}`;
+      expect(eventsAfter).toHaveLength(eventsBefore.length);
+
+      const auditAfter = await db`
+        select id from public.audit_events
+        where details->>'client_id' = ${p.t.id}`;
+      expect(auditAfter).toHaveLength(auditBefore.length);
+    },
+  );
 });
