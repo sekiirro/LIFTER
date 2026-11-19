@@ -136,14 +136,8 @@ describe('staff-reset-permitted (T038a)', () => {
       from app_private.staff_password_reset_hook_requests
       where auth_user_id = ${staff.userId}
     `;
-    expect(
-      Boolean(
-        process.env.APP_ORIGIN &&
-        process.env.SUPABASE_URL &&
-        process.env.SUPABASE_ANON_KEY &&
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-      ),
-    ).toBe(true);
+    // The integration harness validates the selected Stack C environment
+    // before this file is loaded; wrapper aliases need not use SUPABASE_* names.
     const actionClient = anonClient();
     const resetPasswordForEmail = vi.fn(
       (email: string, options: { redirectTo: string }) =>
@@ -151,6 +145,9 @@ describe('staff-reset-permitted (T038a)', () => {
     );
     vi.resetModules();
     vi.doMock('server-only', () => ({}));
+    vi.doMock('../../lib/supabase/env', () => ({
+      readServerEnv: () => ({ appOrigin: 'http://127.0.0.1:3103' }),
+    }));
     vi.doMock('../../lib/supabase/server', () => ({
       createSessionClient: async () => ({ auth: { resetPasswordForEmail } }),
     }));
@@ -164,6 +161,8 @@ describe('staff-reset-permitted (T038a)', () => {
     expect(resetPasswordForEmail).toHaveBeenCalledWith(staff.email, {
       redirectTo: 'http://127.0.0.1:3103/auth/recovery',
     });
+    const providerResult = await resetPasswordForEmail.mock.results[0]!.value;
+    expect(Boolean(providerResult.error)).toBe(false);
 
     const after = await db`
       select count(*)::int as count
@@ -181,14 +180,15 @@ describe('staff-reset-permitted (T038a)', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]!.outcome).toBe('denied');
     const { apiUrl } = loadEnv();
-    const inbucket = new URL(
-      '/api/v1/mail/' + encodeURIComponent(staff.email),
-      apiUrl,
-    );
-    inbucket.port = '35424';
-    const mailResponse = await fetch(inbucket);
+    const mailSearch = new URL('/api/v1/search', apiUrl);
+    mailSearch.port = '35424';
+    mailSearch.searchParams.set('query', `to:"${staff.email}"`);
+    const mailResponse = await fetch(mailSearch);
     expect(mailResponse.ok).toBe(true);
-    expect(await mailResponse.json()).toEqual([]);
+    const mailSummary = (await mailResponse.json()) as {
+      messages_count: number;
+    };
+    expect(mailSummary.messages_count).toBe(0);
   });
 });
 
