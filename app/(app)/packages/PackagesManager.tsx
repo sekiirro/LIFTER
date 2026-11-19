@@ -697,29 +697,47 @@ export function PackagesManager({
         </>
       )}
       <ConfirmDialog
-        open={confirm !== null}
+        open={confirm !== null || confirmInit}
         title={
-          confirm
-            ? confirm.available
-              ? m['packages.retireConfirmTitle']
-              : m['packages.reactivateConfirmTitle']
-            : ''
+          confirmInit
+            ? m['packages.initializeCategoriesConfirmTitle']
+            : confirm
+              ? confirm.available
+                ? m['packages.retireConfirmTitle']
+                : m['packages.reactivateConfirmTitle']
+              : ''
         }
         description={
-          confirm
-            ? confirm.available
-              ? m['packages.retireConfirmBody']
-              : m['packages.reactivateConfirmBody']
-            : undefined
+          confirmInit
+            ? m['packages.initializeCategoriesConfirmBody']
+            : confirm
+              ? confirm.available
+                ? m['packages.retireConfirmBody']
+                : m['packages.reactivateConfirmBody']
+              : undefined
         }
         confirmLabel={m['packages.confirm']}
         cancelLabel={m['packages.cancel']}
         loading={pending}
         tone={confirm?.available ? 'destructive' : 'default'}
         onCancel={() => {
-          if (!busy.current) setConfirm(null);
+          if (!busy.current) {
+            setConfirm(null);
+            setConfirmInit(false);
+          }
         }}
         onConfirm={() => {
+          if (confirmInit) {
+            void run(
+              () =>
+                initializePackageCategories({
+                  workspaceId,
+                }).finally(() => setConfirmInit(false)),
+              undefined,
+              'initializeCategoriesSuccess',
+            );
+            return;
+          }
           if (!confirm) return;
           const target = confirm;
           const willRetire = target.available;
@@ -749,27 +767,6 @@ export function PackagesManager({
           </p>
         )}
       </ConfirmDialog>
-      <ConfirmDialog
-        open={confirmInit}
-        title={m['packages.initializeCategoriesConfirmTitle']}
-        description={m['packages.initializeCategoriesConfirmBody']}
-        confirmLabel={m['packages.confirm']}
-        cancelLabel={m['packages.cancel']}
-        loading={pending}
-        onCancel={() => {
-          if (!busy.current) setConfirmInit(false);
-        }}
-        onConfirm={() => {
-          void run(
-            () =>
-              initializePackageCategories({
-                workspaceId,
-              }).finally(() => setConfirmInit(false)),
-            undefined,
-            'initializeCategoriesSuccess',
-          );
-        }}
-      />
     </main>
   );
 }
