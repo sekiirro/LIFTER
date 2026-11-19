@@ -15,8 +15,14 @@ let finalGuardActors:
   | undefined;
 
 async function ownerCount() {
-  const [row] =
-    await db`select count(*)::int as n from public.staff_profiles where role = 'platform_owner'`;
+  const [row] = await db`
+    select count(*)::int as n
+    from public.staff_profiles s
+    where s.role = 'platform_owner'
+      and not exists (
+        select 1 from app_private.account_deletion_intents di
+        where di.target_user_id = s.user_id
+      )`;
   return Number(row?.n ?? 0);
 }
 
@@ -197,7 +203,15 @@ describe('T021 final Platform Owner demotion characterization and RED cases', ()
       expect(await ownerCount()).toBeGreaterThanOrEqual(ownersBefore);
     } finally {
       await db`update app_private.f3_platform_owner_state
-        set owner_count = (select count(*)::int from public.staff_profiles where role = 'platform_owner')
+        set owner_count = (
+          select count(*)::int
+          from public.staff_profiles s
+          where s.role = 'platform_owner'
+            and not exists (
+              select 1 from app_private.account_deletion_intents di
+              where di.target_user_id = s.user_id
+            )
+        )
         where singleton`;
     }
     expect(await guardedOwnerCount()).toBe(await ownerCount());
