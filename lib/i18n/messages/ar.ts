@@ -237,6 +237,9 @@ export const ar = {
   'workspaces.error': 'حصلت مشكلة ومقدرناش نكمّل طلبك. جرّب تاني.',
   'auth.signInTitle': 'تسجيل الدخول',
   'auth.email': 'البريد الإلكتروني',
+  'auth.staffResetEmailSubject': 'غيّر كلمة السر بتاعتك في LIFTER',
+  'auth.staffResetEmailBody':
+    'استخدم اللينك اللي تحت عشان تغيّر كلمة السر بتاعتك في LIFTER. صلاحية اللينك بتنتهي بعد 60 دقيقة، وتقدر تستخدمه مرة واحدة بس. لو ما طلبتش الرسالة دي، تقدر تتجاهلها.',
   'auth.password': 'كلمة المرور',
   'auth.signIn': 'دخول',
   'auth.invalid_credentials': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
@@ -1354,7 +1357,7 @@ export const ar = {
   'branding.bannerAltHint':
     'أدخل وصفًا بلغة واحدة على الأقل؛ سيُستخدم الوصف المتاح عند غياب الآخر.',
   'branding.bannerSizeHint':
-    'Recommended 1600×800 (2:1). Keep important content away from the edges and the lower part of the image.',
+    'المقاس المناسب 1600×800 (2:1). خلّي الحاجات المهمة بعيد عن الأطراف وعن الجزء اللي تحت في الصورة.',
   'branding.uploadFailed':
     'تعذر رفع الصورة. تحقق من نوع الملف وحجمه وأبعاده ثم حاول مجددًا.',
   'branding.chooseImage': 'اختر صورة',

@@ -447,3 +447,21 @@ Scope: the exact-head CodeRabbit review `5877600535` (CHANGES_REQUESTED on `212d
 - Entry verdict for this status update: 0 open CRITICAL, 0 open HIGH, zero
   F12 requirement ambiguities. CI's spec-consistency date-order gate is
   satisfied by this dated status-only entry.
+
+## S67 T055 status-only revalidation — 2026-11-19
+
+- No `spec.md`, `plan.md`, task requirement text, acceptance scenario or
+  contract text changed in the S67 T055 slice. Only task execution status
+  and traceability evidence were recorded: T055 ticked with executed Stack B
+  integration assertions across operations, client access, and replay suites,
+  verifying deletion lifecycle states (`deletion_pending`, `release_pending`,
+  `released`) under SC-012, FR-011, FR-014, and FR-017; SC-012 updated to
+  VERIFIED.
+- Entry verdict for this status update: 0 open CRITICAL, 0 open HIGH, zero
+  F12 requirement ambiguities. CI's spec-consistency date-order gate is
+  satisfied by this dated status-only entry.
+
+## S67 T044 status-only revalidation — 2026-11-19
+
+- No spec, plan, task requirement, acceptance, or contract text changed. Only T044 execution status and mutation evidence were recorded after the six required reruns and Q-M23 detector repair. All 24 Q-M ids are now killed or retained under the task's explicitly accepted S64 evidence; this is a status/evidence update, not a full Analyze rerun.
+- Entry verdict: 0 open CRITICAL, 0 open HIGH, and zero F12 requirement ambiguities. No product decision, new requirement, default, or copy was introduced. This dated status-only entry satisfies CI's Analyze date-order gate.

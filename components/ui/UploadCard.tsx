@@ -269,7 +269,9 @@ export function UploadCardView({
         </p>
         {role === 'banner' && (
           <p className={styles.guidance}>
-            <Bidi dir="ltr">{messages['branding.bannerSizeHint']}</Bidi>
+            <Bidi dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+              {messages['branding.bannerSizeHint']}
+            </Bidi>
           </p>
         )}
       </header>

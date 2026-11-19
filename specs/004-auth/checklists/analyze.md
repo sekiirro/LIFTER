@@ -1,5 +1,6 @@
 # Spec Kit Analyze — F4 Authentication, S39 round 7
 
+- Date update (S67-R27, 2026-11-19 UTC): T051 status was clarified in tasks.md and traceability.md. No FR/SC/acceptance or plan design text changed; date update only, not a new full Analyze. 0 open CRITICAL/HIGH findings.
 - Full Analyze (S64 T032 Spec Kit cycle): 2026-11-18 UTC. Requirement text (`FR-006(a)–(c)`, `FR-015`, US3 scenarios 4 and 9, `ND-F4-1`), `plan.md` (`## T032 Design`), and `tasks.md` (`T032a`–`T032d` replacing `T032` while preserving `T032` history) were updated for `S31-PO-2 SK-004-02` ("All workspace Trainers"). Full cross-artifact Analyze executed; **0 open CRITICAL, 0 open HIGH** findings (see section `## 2026-11-18 Analyze — S64 T032 Spec Kit cycle (SK-004-02)` below).
 - Date update (S64): 2026-11-18 UTC. T046 ticked with S64-PO-4 evidence (README Authentication sentence + docs/13 AI-03); no FR/SC/acceptance or plan design text changed; this is a date update only, not a new full Analyze. 0 open CRITICAL/HIGH findings.
 - Date update (S54-R6): 2026-11-17 07:14 UTC. Recorded after the T031 task-status and
@@ -211,3 +212,45 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 
 - Scope: `tasks.md` (`T032d` ticked with Evidence (S65-R26) citing PR #251 head `ef4698401e83611072335bf45835daaa1c3afa06`, merge `408c5ac652629df20009d20ee584c723df2c8b44`, and `specs/004-auth/reports/t032-verification.md`) and `traceability.md` T032d-pending rows updated (FR-006, FR-015, AT-AUTH-01, ND-F4-1). No requirement or plan design text changed.
 - CRITICAL: 0 open; HIGH: 0 open.
+
+## 2026-11-18 Analyze — S65-PO-3 hook-only request accounting
+
+- **Date:** 2026-11-18T05:10:19Z (run after latest edits to spec.md, plan.md, and tasks.md).
+- **Scope:** S65-PO-3 requirement change across spec.md FR-024/FR-030, SC-009/SC-015 and User Story 5 scenarios; plan.md G6 and hook flow; data-model.md; tasks.md T038/T049c/T050b and T044 PR sequencing.
+- **Entry check:** PASS — numbered FRs, measurable SCs and Given/When/Then scenarios cover this scope; Clarifications cites the verbatim PO source and states **No open ambiguities**; plan covers the hook boundary and G6; changed tasks retain IDs and FR/SC tags.
+- **Coverage:** FR-024 → T038, T049c, T050b, T044; FR-030 control A / SC-015 → T049b/T049c/T050b and T051; SC-009 → T038. All changed requirements have task coverage; no changed task is unmapped.
+- **Consistency:** PASS — only hook-reaching requests are counted/rate-limited; an unknown-address direct /recover request skipped by Auth is uncounted and sends no email. FR, scenarios, plan, data model and affected tasks agree. T044 migration is PR1; provider call and T044a remain PR2.
+- **Findings:** 0 open CRITICAL; 0 open HIGH; no unresolved requirement ambiguity. Migration timestamp ordering is a separate technical gate noted in the lane report, not a spec inconsistency.
+- **Verdict:** PASS for continued implementation under the revised requirements.
+
+## 2026-11-18T06:19:29Z Analyze revalidation after fresh main merge
+
+- Scope: S65-PO-3 updates to FR-024/FR-030, SC-009/SC-015, Story 5, plan G6, data-model and T038/T049c/T050b/T044; plus latest main's T032d evidence-only task update.
+- Entry: PASS � numbered FRs, measurable SCs, Given/When/Then scenarios and clarification citing S65-PO-3 remain present; Analyze follows the latest spec/plan/tasks edits; no ambiguity introduced.
+- Consistency: PASS � hook-only request accounting remains aligned across requirements, plan, model and tasks. T032d evidence update is unrelated to these requirements. FR-024 ? T038/T049c/T050b/T044; FR-030 A / SC-015 ? T049b/T049c/T050b/T051; SC-009 ? T038.
+- Findings: 0 open CRITICAL; 0 open HIGH.
+- Verdict: PASS for continued implementation. The T044 timestamp ordering issue remains a report-level technical blocker, not a requirements inconsistency.
+
+## 2026-11-18 Analyze - S65-R57 PR1a/PR1b delivery split
+
+- Date: 2026-11-18T09:10:30Z (after the latest plan/task edits).
+- Entry: PASS - numbered FRs/SCs and Given/When/Then acceptance scenarios remain; Clarifications cites S65-PO-3 and states no open ambiguities; plan and tasks cover the changed delivery sequence with FR tags.
+- Scope: S65-PO-3 hook-only accounting across FR-024/FR-030, SC-009/SC-015, plan, data model and tasks; S65-R57 PR1a/PR1b sequencing for T044 and T050b.
+- Coverage: FR-024 / SC-009 -> T038, T049c, T050b, T044. FR-025 requested audit -> T039 and T044. FR-030 control A / SC-015 -> T049b, T049c, T050b and T051. No changed requirement is unmapped; T044 remains unticked until its later provider-call clause is complete.
+- Consistency: PASS - PR1a delivers the rate-limit/requested-audit schema and schema-dependent tests before PR1b's hook/tests; the later provider call and T044a template stay outside those slices. Only hook-reaching requests are counted; a direct unknown-address request skipped by Auth is uncounted and sends no email.
+- Constitution: PASS - no conflict found with the current Development Workflow & Quality Gates section. No new product ambiguity or copy was introduced.
+- Findings: 0 open CRITICAL; 0 open HIGH. The assigned migration range being lower than fresh main's maximum is a separate registry/timestamp gate recorded in the lane report.
+- Verdict: PASS for PR1a/PR1b planning and continued implementation after the migration range is re-reserved.
+
+## 2026-11-18 Analyze - T044 test-path revalidation (date update)
+
+- Date: 2026-11-18T09:24:21Z, after the T044 task added the integration-test path. This task-path clarification changes no FR/SC or plan design text.
+- Entry remains PASS: numbered requirements, scenarios, PO clarification/no-open-ambiguities, plan coverage and FR-tagged task coverage remain current.
+- Revalidated T044 coverage: `tests/integration/staff-reset-hook-schema.test.ts` covers rate claims/limits, duplicate hook IDs, request audit idempotence, audit fail-closed behavior, and privilege/RLS boundaries. PR1a/PR1b ordering remains aligned.
+- Findings: 0 open CRITICAL; 0 open HIGH. Verdict: PASS.
+
+## 2026-11-18 Analyze - T044 partial verification evidence (date update)
+
+- Date: 2026-11-18T09:48:33Z, after task status and traceability evidence updates. No FR/SC/acceptance or plan design text changed.
+- T044 remains unticked and explicitly records verified schema/test scope plus its remaining provider-call/template clauses. `traceability.md` cites the partial test evidence report.
+- Entry and coverage remain PASS; 0 open CRITICAL and 0 open HIGH findings.

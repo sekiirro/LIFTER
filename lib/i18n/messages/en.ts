@@ -246,6 +246,9 @@ export const en: Record<keyof typeof ar, string> = {
   'workspaces.error': 'Unable to complete the request. Please try again.',
   'auth.signInTitle': 'Sign in',
   'auth.email': 'Email',
+  'auth.staffResetEmailSubject': 'Reset your LIFTER password',
+  'auth.staffResetEmailBody':
+    'Use the link below to reset your LIFTER password. The link expires in 60 minutes and can be used once. If you didn’t request this email, you can ignore it.',
   'auth.password': 'Password',
   'auth.signIn': 'Sign in',
   'auth.invalid_credentials': 'Invalid email or password.',

@@ -498,6 +498,7 @@ describe('tenancy security catalog (T007)', () => {
           'guard_package_offer_update',
           'guard_package_offer_category',
           'guard_package_promotion_period',
+          'guard_package_reporting_fx_snapshot',
           'guard_package_version_insert',
           'guard_package_version_market',
           'guard_registration_link_promotion_period',
@@ -532,6 +533,7 @@ describe('tenancy security catalog (T007)', () => {
           'retire_workspace_form',
           'role_has_capability',
           'save_workspace_form_draft',
+          'seed_package_reporting_fx_pending',
           'set_catalog_operation_result',
           'set_default_onboarding_form',
           'signup_auth_identity_column',
@@ -572,6 +574,12 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'd1_erase_inapplicable_answers',
+          'f15_d1_erasure_run',
+          'f15_d1_erasure_run_batch',
+          'f15_d1_erasure_schedule_activate',
+          'f15_d1_erasure_schedule_deactivate',
+          'guard_form_d1_erasure_control',
           'f17_client_resolve_global_exercise',
           'f17_client_safe_reference',
           'f17_client_safe_set',
@@ -644,6 +652,13 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        // F15 T029: D1 erasure cron wrappers declare `security invoker` and enforce
+        // the postgres-owner check in the body; only d1_erase_inapplicable_answers
+        // is `security definer` (20261215030000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
+        'f15_d1_erasure_run',
+        'f15_d1_erasure_run_batch',
+        'f15_d1_erasure_schedule_activate',
+        'f15_d1_erasure_schedule_deactivate',
         // F23 US3: trigger guard and pure SQL/plpgsql helpers are invoker routines.
         'f23_derived_uuid_v4',
         'f23_guard_food_replacement_request',
@@ -697,6 +712,8 @@ describe('tenancy security catalog (T007)', () => {
           'f18_guard_nutrition_selection',
           'audit_package_promotion_period',
           'guard_package_promotion_period',
+          'guard_package_reporting_fx_snapshot',
+          'seed_package_reporting_fx_pending',
           'package_promotion_period_active',
           'package_c5_preflight',
           'f18_selection_audit',
@@ -732,6 +749,12 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'd1_erase_inapplicable_answers',
+          'f15_d1_erasure_run',
+          'f15_d1_erasure_run_batch',
+          'f15_d1_erasure_schedule_activate',
+          'f15_d1_erasure_schedule_deactivate',
+          'guard_form_d1_erasure_control',
           ...deletionPrivate,
           'f17_client_resolve_global_exercise',
           'f17_client_safe_reference',
@@ -799,6 +822,8 @@ describe('tenancy security catalog (T007)', () => {
               'audit_package_promotion_period',
               'audit_row_change',
               'guard_package_promotion_period',
+              'guard_package_reporting_fx_snapshot',
+              'seed_package_reporting_fx_pending',
               'package_promotion_period_active',
               'catalog_assert_exercise_text_limits',
               'catalog_create_food_legacy',
@@ -959,6 +984,12 @@ describe('tenancy security catalog (T007)', () => {
               'f19_guard_plan_revision_contributors',
               'f19_track_plan_draft_contributor',
               'f19_set_plan_revision_contributor_actions',
+              'd1_erase_inapplicable_answers',
+              'f15_d1_erasure_run',
+              'f15_d1_erasure_run_batch',
+              'f15_d1_erasure_schedule_activate',
+              'f15_d1_erasure_schedule_deactivate',
+              'guard_form_d1_erasure_control',
             ].includes(row.proname)),
       );
     }
@@ -986,6 +1017,45 @@ describe('tenancy security catalog (T007)', () => {
         tgenabled: 'O',
       },
     ]);
+  });
+
+  it('keeps the F15 T029 D1 erasure private tables forced-RLS, policy-free, and API-private', async () => {
+    const tables = [
+      'app_private.f15_d1_erasure_context',
+      'app_private.form_d1_erasure_controls',
+      'app_private.form_d1_erasure_hold_alerts',
+    ];
+    for (const rel of tables) {
+      const [row] = await db`select relrowsecurity, relforcerowsecurity
+        from pg_catalog.pg_class where oid = ${rel}::regclass`;
+      expect(row, rel).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies = await db`
+        select policyname from pg_catalog.pg_policies
+        where schemaname = 'app_private'
+          and tablename = ${rel.slice('app_private.'.length)}`;
+      expect(
+        policies.map((policy) => policy.policyname),
+        rel,
+      ).toEqual([]);
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const priv of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+          expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+        }
+      }
+    }
   });
 });
 
