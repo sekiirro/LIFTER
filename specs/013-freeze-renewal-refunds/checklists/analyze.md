@@ -478,7 +478,6 @@ The review-hardening tests (cancelled obligations with M5, cross-client isolatio
 - Sales design constraints: award using the stored link issuer for the newly created client, in the transaction that establishes the new-client fact; exclude PO/WO issuers; enforce uniqueness in PostgreSQL and preserve immutable/audited, forced-RLS/no-direct-grant properties. Existing registration-link and client-signup transactions provide the required source facts. This does not require changing 009 frozen artifacts.
 - Risk sweep: duplicate/replay, role exclusion, cross-workspace isolation, returning client, and zero awards from upgrade/renewal/publication must be integration assertions; RLS catalog must cover new table/function metadata. **CRITICAL: 0. HIGH: 0. No open product ambiguities.**
 
-
 ## S68-PO-4 T044 re-analysis (2026-11-19)
 
 - **Analyzed inputs:** spec.md FR-041, SC-019/026, acceptance scenario 12 and S68 decision register; plan.md T044; tasks.md T044/T044a. These edits follow PO sources S68-PO-2/3/4; source hashes are recorded in spec.md.
@@ -487,7 +486,7 @@ The review-hardening tests (cancelled obligations with M5, cross-client isolatio
 - **Finding A1 - HIGH, product ambiguity:** staff_profiles.role is mutable; registration_links stores creator and issuance time without a role snapshot. PO-2/3/4 set Sales issuer and approval-created-new-client trigger but do not explicitly resolve a role change between issuance and approval. The spec records S68-T044-MCQ-1 with three options and recommendation. T044a Sales role eligibility and test expectations are blocked pending PO selection.
 - **Coverage:** FR-041 has T044/T044a; SC-019/026 have T044/T044a. T044 is covered by existing F19 tests; T044a has a complete task mapping but cannot be implemented while A1 is open.
 - **Verdict:** 0 CRITICAL, 1 HIGH, 0 MEDIUM/LOW for this focused scope. Spec Kit entry gate FAIL because A1 is an unresolved HIGH product ambiguity. No implementation may begin. Resolve S68-T044-MCQ-1, update the artifacts, rerun Analyze to 0 CRITICAL/HIGH, then resume.
-\n- This S68-PO-4 re-analysis supersedes the earlier same-date S68-PO-2/3 inventory above: the current branch contains the F19 Trainer award path and integration tests, so the earlier no-writer finding is historical and no longer current.\n
+  \n- This S68-PO-4 re-analysis supersedes the earlier same-date S68-PO-2/3 inventory above: the current branch contains the F19 Trainer award path and integration tests, so the earlier no-writer finding is historical and no longer current.\n
 
 ## S68-PO-5 / S68-R16 T044 re-analysis (2026-11-19T11:45:00Z)
 
@@ -496,14 +495,16 @@ The review-hardening tests (cancelled obligations with M5, cross-client isolatio
 - **Consistency:** PO-5 role-at-issuance is consistent across FR, scenario, measurable criteria, PO register, plan and T044a. R16's NULL/no-backfill rule is explicit in FR, scenario, plan, task and register. Task IDs carry the touched FR/SC tags. Trainer verification remains separate and F19-backed; no duplicate Trainer implementation is planned. Security and approval-transaction constraints remain in the plan/task.
 - **Findings:** 0 CRITICAL, 0 HIGH, 0 MEDIUM, 0 LOW for the T044 scope. **No open ambiguities** for T044 role timing or legacy snapshot treatment. Entry gate PASS; T044a may proceed.
 
-
 ## S68 PO source fidelity refresh (2026-11-19T12:10:51Z)
 
 The S68-PO-5 register now includes the complete answer wording from the cited source. No behavior or scope changed. Rechecked FR-041, SC-019/026, scenario 12, plan T044, task T044a, and PO-5/R16 references: they remain consistent, with no open ambiguities. **Entry check PASS; 0 CRITICAL, 0 HIGH.**
-
 
 ## S68 T044 completion re-analysis (2026-11-19T12:16:29Z)
 
 - Rechecked after task completion and traceability edits: FR-041, SC-019/026, scenario 12, resolved S68-PO-5/S68-R16 register, T044/T044a plan and FR/SC task tags, and both traceability rows. T044/T044a are checked only with current-code Stack C test evidence; Trainer award behavior remains F19-backed and unchanged.
 - The standard Spec Kit prerequisite script still cannot initialize because `.specify/feature.json` is absent; this focused manual Analyze records the cross-artifact check. No requirement changed in this refresh.
 - **Entry check PASS; 0 CRITICAL, 0 HIGH. No open ambiguities** for T044 productivity scope.
+
+## S68 changed-Markdown formatting refresh (2026-11-19T12:28:13Z)
+
+Prettier formatted the touched Markdown after CI's changed-file gate flagged the edited docs. No requirements, decisions, tasks, or implementation scope changed. Rechecked the FR-041 / SC-019/026 / scenario 12 / plan T044 / tasks T044/T044a / traceability links: consistent; **0 CRITICAL, 0 HIGH; no open ambiguities**. Entry gate PASS.
