@@ -32,13 +32,14 @@ export async function registered(
     | readonly { seq: number; amount_minor: string; due_offset_days: number }[]
     | null = null,
   expiresAt?: string,
+  linkIssuer: SupabaseClient = f.po.client,
 ) {
   const s = expiresAt ? await backdated(f, expiresAt) : secret();
   const link =
     'id' in s
       ? (s.id as string)
       : (checked(
-          await issue(f, f.po.client, {
+          await issue(f, linkIssuer, {
             token_hash: s.hash,
             installments: rows,
           }),

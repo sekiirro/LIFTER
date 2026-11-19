@@ -488,3 +488,15 @@ The review-hardening tests (cancelled obligations with M5, cross-client isolatio
 - **Coverage:** FR-041 has T044/T044a; SC-019/026 have T044/T044a. T044 is covered by existing F19 tests; T044a has a complete task mapping but cannot be implemented while A1 is open.
 - **Verdict:** 0 CRITICAL, 1 HIGH, 0 MEDIUM/LOW for this focused scope. Spec Kit entry gate FAIL because A1 is an unresolved HIGH product ambiguity. No implementation may begin. Resolve S68-T044-MCQ-1, update the artifacts, rerun Analyze to 0 CRITICAL/HIGH, then resume.
 \n- This S68-PO-4 re-analysis supersedes the earlier same-date S68-PO-2/3 inventory above: the current branch contains the F19 Trainer award path and integration tests, so the earlier no-writer finding is historical and no longer current.\n
+
+## S68-PO-5 / S68-R16 T044 re-analysis (2026-11-19T11:45:00Z)
+
+- **Entry check: PASS** for the touched scope. `spec.md` has numbered FR-041, measurable SC-019/026 and Given/When/Then scenario 12 for both role-change directions, NULL legacy snapshot, and immutability; the PO register cites S68-PO-5 source and S68-R16, and states no open ambiguities; `plan.md` covers issuance snapshot/approval award; `tasks.md` maps T044a to FR-041/SC-019/026; this analysis is dated after those edits. Constitution baseline remains 1.19.0.
+- **Analyze execution:** `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireSpec -RequireTasks -IncludeTasks` was attempted once and reports `.specify/feature.json` missing. Following the prior lane's procedure, this is a focused manual cross-artifact analysis of FR-041, SC-019/026, scenario 12, plan T044 and tasks T044/T044a; no extension hooks file exists.
+- **Consistency:** PO-5 role-at-issuance is consistent across FR, scenario, measurable criteria, PO register, plan and T044a. R16's NULL/no-backfill rule is explicit in FR, scenario, plan, task and register. Task IDs carry the touched FR/SC tags. Trainer verification remains separate and F19-backed; no duplicate Trainer implementation is planned. Security and approval-transaction constraints remain in the plan/task.
+- **Findings:** 0 CRITICAL, 0 HIGH, 0 MEDIUM, 0 LOW for the T044 scope. **No open ambiguities** for T044 role timing or legacy snapshot treatment. Entry gate PASS; T044a may proceed.
+
+
+## S68 PO source fidelity refresh (2026-11-19T12:10:51Z)
+
+The S68-PO-5 register now includes the complete answer wording from the cited source. No behavior or scope changed. Rechecked FR-041, SC-019/026, scenario 12, plan T044, task T044a, and PO-5/R16 references: they remain consistent, with no open ambiguities. **Entry check PASS; 0 CRITICAL, 0 HIGH.**
