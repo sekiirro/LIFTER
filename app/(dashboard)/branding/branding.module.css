@@ -61,6 +61,35 @@
   gap: var(--space-4);
 }
 
+.bannerAltFields {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.bannerAltLegend {
+  padding: 0;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  line-height: var(--line-height-heading);
+}
+
+.bannerAltHint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.bannerAltInputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
 .workspace {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
@@ -96,6 +125,10 @@
 @media (min-width: 48rem) {
   .main {
     inline-size: min(100% - 2 * var(--space-6), 56rem);
+  }
+
+  .bannerAltInputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

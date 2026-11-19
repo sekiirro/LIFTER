@@ -1,8 +1,17 @@
+import type { PackageMarket, PackageType } from './validation';
+
 export type PackageFailure = {
   status: 'denied' | 'invalid_input' | 'unavailable';
 };
 export type CreatePackageResult =
   { status: 'ok'; packageId: string } | PackageFailure;
+export type InitializedCategory = {
+  packageId: string;
+  market: PackageMarket;
+  type: PackageType;
+};
+export type InitializeCategoriesResult =
+  { status: 'ok'; categories: InitializedCategory[] } | PackageFailure;
 export type PublishPackageResult =
   { status: 'ok'; versionId: string } | PackageFailure;
 export type AvailabilityResult =

@@ -1,6 +1,9 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { prepareLocalBrandingProxyCredential } from './local-playwright-credential.mjs';
+import {
+  prepareLocalBrandingCredential,
+  prepareLocalBrandingProxyCredential,
+} from './local-playwright-credential.mjs';
 import { resolvePlaywrightBaseUrl } from '../playwright-port.mjs';
 
 // The Stack-safe CLI exports API_URL/ANON_KEY/SERVICE_ROLE_KEY while Next's
@@ -23,6 +26,12 @@ process.env.LIFTER_E2E_ALLOW_HTTP ??= 'true';
 
 const credential = await prepareLocalBrandingProxyCredential();
 if (credential) process.env.BRANDING_PROXY_JWT = credential;
+if (!process.env.BRANDING_VALIDATOR_JWT) {
+  const validatorCredential =
+    await prepareLocalBrandingCredential('branding_validator');
+  if (validatorCredential)
+    process.env.BRANDING_VALIDATOR_JWT = validatorCredential;
+}
 
 const server = spawn(
   process.execPath,

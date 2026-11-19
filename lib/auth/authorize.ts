@@ -4,6 +4,7 @@ export type Actor = {
   userId: string;
   role: Role | null;
   activeWorkspaceIds: readonly string[];
+  deleted?: boolean;
 };
 
 export function authorize(
@@ -12,6 +13,7 @@ export function authorize(
   workspaceId: string,
 ): boolean {
   return (
+    actor.deleted !== true &&
     workspaceId.trim().length > 0 &&
     actor.role !== null &&
     (actor.role === 'platform_owner' ||

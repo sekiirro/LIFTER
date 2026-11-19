@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   BrandingServiceError,
   type BrandingDraft,
+  type BrandingDraftAsset,
   type BrandingRepository,
   type BrandingVersion,
   type PublishRepositoryResult,
@@ -46,10 +47,38 @@ function hasPersistedName(fields: unknown): boolean {
 
 function asDraft(result: ReadResult): BrandingDraft | null {
   if (!hasPersistedName(result.fields) && result.revision === 0) return null;
+  const rawFields = result.fields as Record<string, unknown>;
+  const assets: Partial<Record<'logo' | 'banner', BrandingDraftAsset>> = {};
+  for (const role of ['logo', 'banner'] as const) {
+    const value = rawFields[role];
+    if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+    const asset = value as Record<string, unknown>;
+    if (
+      asset.bucket === 'branding-validated' &&
+      typeof asset.object === 'string' &&
+      (asset.content_type === 'image/png' ||
+        asset.content_type === 'image/webp') &&
+      Number.isSafeInteger(asset.byte_size) &&
+      (asset.byte_size as number) > 0
+    )
+      assets[role] = {
+        thumbnailUrl: `/api/branding/draft-image?workspace=${encodeURIComponent(result.workspace_id)}&role=${role}&v=${result.revision}`,
+        bucket: 'branding-validated',
+        object: asset.object,
+        contentType: asset.content_type,
+        byteSize: asset.byte_size as number,
+      };
+  }
+  const persisted = {
+    name: rawFields.name,
+    bannerAlt: rawFields.bannerAlt,
+    color: rawFields.color,
+  };
   return {
     workspaceId: result.workspace_id,
     revision: result.revision,
-    fields: fromPersistedBrandingFields(result.fields),
+    fields: fromPersistedBrandingFields(persisted),
+    assets,
   };
 }
 
@@ -154,6 +183,7 @@ export type BrandingUploadRepository = {
     role: 'logo' | 'banner',
     expectedRevision: number,
   ): Promise<string>;
+  terminalizeUpload(uploadId: string): Promise<void>;
   attachUpload(uploadId: string, expectedRevision: number): Promise<number>;
 };
 
@@ -171,6 +201,14 @@ export function createSupabaseBrandingUploadRepository(
       if (typeof data !== 'string')
         throw new Error('Invalid branding upload response');
       return data;
+    },
+    async terminalizeUpload(uploadId) {
+      const { data, error } = await client.rpc('branding_upload_terminalize', {
+        upload_id: uploadId,
+      });
+      if (error) throwRpcError(error);
+      if (typeof data !== 'boolean')
+        throw new Error('Invalid branding terminalize response');
     },
     async attachUpload(uploadId, expectedRevision) {
       const { data, error } = await client.rpc('branding_asset_attach', {
