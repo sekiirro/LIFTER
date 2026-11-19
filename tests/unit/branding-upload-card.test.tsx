@@ -32,11 +32,12 @@ function renderCard(
     errorMessage?: string | null;
     identityOnlyConfirmed?: boolean;
     disabledReason?: string;
+    locale?: 'en' | 'ar';
   },
 ) {
   return renderToStaticMarkup(
     createElement(UploadCardView, {
-      locale: 'en',
+      locale: options?.locale ?? 'en',
       role,
       status,
       thumbnailUrl: options?.thumbnailUrl ?? null,
@@ -90,6 +91,13 @@ describe('Upload Card states, roles, and accessibility', () => {
     expect(html).toContain(messages['branding.identityOnlyConfirm']);
   });
 
+  it('uses the locale direction for the banner size hint wrapper', () => {
+    const enHtml = renderCard('banner', 'idle', { locale: 'en' });
+    const arHtml = renderCard('banner', 'idle', { locale: 'ar' });
+
+    expect(enHtml).toMatch(/<bdi dir="ltr">\s*Recommended 1600/);
+    expect(arHtml).toMatch(/<bdi dir="rtl">\s*المقاس/);
+  });
   it('renders uploading and error states with progress, busy, and recovery feedback', () => {
     const uploading = renderCard('logo', 'uploading');
     const failed = renderCard('logo', 'error', {
