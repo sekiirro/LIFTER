@@ -189,6 +189,7 @@ Raw negative/reset/restored logs and structured per-mutation JSON remain in `%TE
 - `allow non-PO terms` (DB + app):
   - DB: rolled-back mutant removing PO wall in `publish_package_version` + guards allowed `woA` publication (`tests/integration/packages-commercial-terms.test.ts::mutation 3 (allow non-PO terms)`), whereas intact DB denies `woA` with `42501`.
   - App: removed PO role + `set_package_pricing` wall in `lib/packages/service.ts::pricingContext`; `tests/unit/packages-commercial-terms.test.ts` FAILED (`5 failed | 4 passed`, exit 1); restored `lib/packages/service.ts` and re-ran `tests/unit/packages-commercial-terms.test.ts` (`9/9` passed, exit 0).
+
 ## T065 C5 teardown conformance & mutation verification (2026-11-18)
 
 - Scope: operator cleanup script `supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`, test suite `tests/integration/packages-c5-teardown.test.ts`, and conformance matrix `specs/009-packages/reviews/t065-conformance.md` against `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS).
