@@ -196,3 +196,18 @@ T050b stays `[ ]` because T051's full acceptance set is not present on this cand
 | T037  | `tests/unit/auth-logs.test.ts::does not log an email, token or link during a reset request`; no-referrer todo pending T045                                    | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked                             |
 | T042  | `tests/unit/staff-reset.test.ts::T042` covers request-page keys only; full approved table and FR-031 byte checks remain                                       | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked                             |
 | T043  | `tests/unit/staff-reset.test.ts`, `tests/e2e/auth.spec.ts` request form; send-hook dependency absent and required full unit gate has one unrelated failure    | `a4bbe71210ad754edf5727e8e047dd0a27f8bb24` | Partial; unticked; not safe to push           |
+
+## S67 PR2 candidate verification
+
+Implementation/test evidence commit: `428d494720ab20f83cdb9a4ee0c243be99364cb4` on `s67-004-reset-pr2` (stacked on PR1b `ea01c2a317bd531c8791d4cb41843d87902fea1d`).
+
+| Task  | Test evidence                                                                                                              | Status                                                                                                                              |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| T034  | `tests/unit/staff-reset.test.ts::T034 eligibility covers the approved staff roles and excludes clients/unknown identities` | Verified on candidate; checked                                                                                                      |
+| T036  | `tests/unit/staff-reset.test.ts::T036 builds redirectTo from APP_ORIGIN and refuses a non-secure public origin`            | Verified on candidate; checked                                                                                                      |
+| T042b | `tests/unit/staff-reset.test.ts::T042b preserves approved reset copy bytes and rendered request confirmation`              | Verified on candidate; checked                                                                                                      |
+| T043  | `tests/unit/staff-reset.test.ts`; `tests/e2e/auth.spec.ts::staff reset request visual matrix stays accessible`             | Partial: unit and e2e pass; unticked because required RED prerequisites T038a/T049a-e are absent, and T035/T037/T042 remain partial |
+
+Candidate checks: targeted unit 4 files, 52 passed/2 todo; full unit under TZ=Africa/Cairo, 348 files, 3,914 passed/2 todo; lint, typecheck, both format gates passed; auth e2e on port 3103, 6/6 passed. No integration suite was modified or run. Stack C unused; no reset request or SMTP invoked.
+
+No new authorization, rate-limit or audit guard was added in this slice. Inherited T050b mutation evidence remains recorded in `reports/t051-verification.md`; it is partial at its documented candidate SHA, not a claim of T051 completion. `npm run build:edge` failed on Windows `EPERM` creating a traced-files symlink, so the bundle-size report could not be produced.
