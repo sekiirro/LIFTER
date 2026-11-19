@@ -86,7 +86,7 @@ export function parsePrice(value: unknown): string | null {
   const amount = BigInt(value);
   return amount > 0n && amount <= BIGINT_MAX ? String(amount) : null;
 }
-function isName(value: unknown): value is string {
+export function isPackageName(value: unknown): value is string {
   return (
     typeof value === 'string' &&
     [...value].length >= 1 &&
@@ -122,8 +122,8 @@ export function parseTerms(
     (durationMonths !== null &&
       (!PRESET_MONTHS.some((m) => m === durationMonths) ||
         durationDays !== durationMonths * 30)) ||
-    !isName(input.nameAr) ||
-    !isName(input.nameEn) ||
+    !isPackageName(input.nameAr) ||
+    !isPackageName(input.nameEn) ||
     priceMinor === null ||
     typeof input.currency !== 'string' ||
     !/^[A-Z]{3}$/.test(input.currency) ||

@@ -236,11 +236,15 @@ No task is complete or ticked by this documentation-only cycle. RED-first descri
 
 ## S43-PO-6/7 tier requirements tasks
 
-These tasks follow separately labelled architect mapping in spec.md. T077 has its forward migration; T078 remains unchecked.
+These tasks follow separately labelled architect mapping in spec.md. T077 has its forward migration; T078 is verified as recorded below.
 
 - [x] T077 [FR-002, FR-034, FR-036, SC-024, SC-026] Implement all three immutable Silver < Gold < Platinum tier offers within every category, with rank in the offer identity and publication input using a new forward migration; fail closed on unranked legacy rows with no default/backfill; add a separate reviewed cleanup script that removes only verified test offers without protected or restrictive references; preserve audit/payment records and shipped migration history; add explicit-rank and rank/duration fixtures, including cleanup refusal coverage. Decisions resolved by S43-PO-8 and S48-PO-10; Stack C baseline/candidate regression passed at `537b51a5`; explicit-rank F9 E2E coverage passed 3/3 on test fix `cb32f8ea`.
-- [ ] T078 [FR-035, SC-025] Specify PO global per-locale renaming and Workspace Owner overrides within their workspace only; keep rank and terms unchanged. Decision resolved by S43-PO-8; implementation/tests remain unstarted.
+- [x] T078 [FR-035, SC-025] Specify PO global per-locale renaming and Workspace Owner overrides within their workspace only; keep rank and terms unchanged. Decision resolved by S43-PO-8. Original implementation and evidence are retained below.
+      Verified: migration `supabase/migrations/20261216030000_f9_tier_display_names.sql`, `lib/packages/tier-names.ts`, actions and tests as recorded in the S67 T078 evidence. S67-PO-10 supersedes the prior open name-length and PO-override questions; see T079 for the additional implementation.
 
 ## S43-PO-8 resolved tier tasks
 
-T077 is verified as recorded below; T078 remains unstarted. T077 covers three ranked offers per each of the four categories, offer-level immutable rank placement, workspace/category/duration/rank uniqueness and publication input, and rank/duration eligibility fixtures. T078 covers PO global per-locale renaming, workspace-only Workspace Owner overrides, authorization/audit coverage, and proof that names change neither rank nor commercial terms.
+T077 and T078 are verified as recorded below. T077 covers three ranked offers per each of the four categories, offer-level immutable rank placement, workspace/category/duration/rank uniqueness and publication input, and rank/duration eligibility fixtures. T078 covers initial PO global per-locale renaming and workspace-only Workspace Owner overrides. T079 closes the S67-PO-10 decisions for 1–120-character validation, zero audit rows, and PO workspace overrides while retaining Workspace Owner own-workspace scope.
+
+- [x] T079 [FR-035, SC-025] Enforce 1–120 Unicode-code-point tier names for global renames and workspace overrides using the publication-name rule in database constraints/RPCs and the shared `isPackageName` app validator; allow PO overrides in any workspace while restricting Workspace Owners to their own workspace and denying Sales/Trainer/anonymous; preserve zero audit rows. Add unit/integration tests and record the required guard mutation evidence. Decision: S67-PO-10.
+      Verified: Stack C tier-name integration 12/12, RLS catalog 49/49, full unit 4,032 passed (24 expected failures); lint, typecheck, repo format, changed-file format, migration timestamp and secret-scan gates passed. Six DB/app guard mutations killed/restored with clean `git diff --exit-code`; details in `tests/integration/packages-verification.md` §T079 and FR-035 rows in `traceability.md`.
