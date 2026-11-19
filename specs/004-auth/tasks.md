@@ -214,3 +214,12 @@ One Codex pass for Phases 1–7 (bounded, single worktree), then Claude's review
 - T037 — Verified on s67-pr2b: no console output across accepted, policy-refused, audit-failure and hook-timeout requests; `/auth/recovery` emits no-referrer. Targeted unit suite passes; ticked.
 - T042 — Verified on s67-pr2b: all approved copy-proposal auth rows plus FR-029 rendered output and FR-031 five-key bytes. Targeted unit suite passes; ticked.
 - T043 — Verified so far on s67-pr2b: requestStaffReset, fixed recovery redirect and login request form remain covered by earlier candidate evidence. Remaining: T038a did not reach the authoritative hook; T049a and T049d are RED (guard and intent RPCs absent); T049b/T049c/T049e are not covered; T035 remains partial; do not tick T043.
+
+## S67 PR2c status (2026-11-19)
+
+- T038a — Verified on Stack C: the app action reached the local authoritative hook; the hook claim outcome was denied, the generic result was retained, and Mailpit returned no message to the non-permitted target. Evidence: tests/integration/auth-recovery.test.ts::staff-reset-permitted; commit 2dc3f74e; traceability above. T038a is ticked.
+- T049a — Verified so far on Stack C: direct staff password update without an intent succeeds; a second signed-in session also succeeds; client manual recovery succeeds. The GoTrue auth.users trigger context probe observed NULL for auth.jwt()->>'session_id' although the verified recovery JWT had a session_id. Remaining: session-bound control B cannot be implemented under plan G2 without trusted context; T049a stays unticked.
+- T049d — Verified so far: all four intent/reconciliation functions are absent; RED coverage now includes idempotent begin, one-way complete/abort, and stale-open reconciliation. Remaining: implementation is blocked with T050a by failed G2; T049d stays unticked.
+- T049b, T049c — Not yet verified on Stack C.
+- T035 — S67-R23 sets the method: same required steps and fixed response floor in unit tests, plus 30 interleaved local samples per class with median difference at most 100 ms. Evidence is still pending.
+- T043 — Existing request action/form code remains; acceptance is blocked by the incomplete T049a-e and T035 prerequisites. Do not tick.

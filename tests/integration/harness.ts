@@ -63,9 +63,13 @@ export function checked<T>(result: {
   return result.data;
 }
 
-export async function createStaff(role: Role | null, label: string) {
+export async function createStaff(
+  role: Role | null,
+  label: string,
+  initialPassword?: string,
+) {
   const email = `f3+${label}-${randomUUID()}@example.test`;
-  const password = `F3-${randomUUID()}-aA1!`;
+  const password = initialPassword ?? `F3-${randomUUID()}-aA1!`;
   const created = await admin().auth.admin.createUser({
     email,
     password,
