@@ -39,7 +39,7 @@ port = 45429
 [auth]
 enable_signup = false
 minimum_password_length = 8
-site_url = "http://localhost:3104"
+site_url = "http://localhost:3104/auth/recovery"
 additional_redirect_urls = ["http://localhost:3104/**"]
 
 [auth.hook.custom_access_token]

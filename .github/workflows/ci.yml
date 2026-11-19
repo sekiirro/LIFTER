@@ -231,10 +231,26 @@ jobs:
           echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
           echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
+          hook_secret="$(sed -n '/^\[auth\.hook\.send_email\]/,/^\[/s/^[[:space:]]*secrets[[:space:]]*=[[:space:]]*\"\([^\"]*\)\".*/\1/p' supabase/config.toml)"
+          test -n "$hook_secret"
+          echo "::add-mask::$hook_secret"
+          printf 'STAFF_RESET_HOOK_SECRET=%s\n' "$hook_secret" >> "$GITHUB_ENV"
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
       - name: Wait for Storage readiness
         run: node scripts/wait-storage-ready.mjs
+      - name: Start local staff-reset hook receiver
+        shell: bash
+        run: |
+          nohup npm run dev -- --hostname 0.0.0.0 --port 3104 > "$RUNNER_TEMP/staff-reset-hook.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3104/api/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          tail -n 60 "$RUNNER_TEMP/staff-reset-hook.log"
+          exit 1
       - name: Verify Docker CLI for the provider-fault spec
         run: docker version --format '{{.Client.Version}}' > /dev/null && docker info > /dev/null
       - name: Record shard ${{ matrix.shard }} suite inventories

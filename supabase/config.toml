@@ -13,6 +13,7 @@ shadow_port = 54320
 
 [auth]
 enable_signup = false
+site_url = "http://localhost:3000/auth/recovery"
 minimum_password_length = 8
 
 [auth.hook.custom_access_token]
