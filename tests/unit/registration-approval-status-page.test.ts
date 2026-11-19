@@ -93,7 +93,8 @@ describe('client registration status refresh', () => {
 
     env.setVisible(false);
     expect(vi.getTimerCount()).toBe(0);
-    callbacks[0]();
+    expect(callbacks).toHaveLength(1);
+    callbacks[0]?.();
     await Promise.resolve();
     expect(load).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(15_000);
