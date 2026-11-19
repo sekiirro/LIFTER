@@ -397,6 +397,8 @@ describe('T054 PO/WO commercial terms, immutable version history, snapshots, and
       select id,workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,assigned_at,workspace_membership_id,ended_at,ended_by
       from public.client_trainer_assignments where client_id=${purchase.t.id} and ended_at is null
     `;
+    const assignmentRowsBefore =
+      await db`select * from public.client_trainer_assignments where client_id=${purchase.t.id} and ended_at is null`;
     expect(assignmentBefore?.trainer_user_id).toBe(context.trainerA.userId);
 
     // PO edits name, price, currency, and commission -> appends v2 then v3.
@@ -450,11 +452,14 @@ describe('T054 PO/WO commercial terms, immutable version history, snapshots, and
       select id,workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,assigned_at,workspace_membership_id,ended_at,ended_by
       from public.client_trainer_assignments where client_id=${purchase.t.id} and ended_at is null
     `;
+    const assignmentRowsAfter =
+      await db`select * from public.client_trainer_assignments where client_id=${purchase.t.id} and ended_at is null`;
     expect(v1After).toEqual(v1Before);
     expect(clientAfter).toEqual(clientBefore);
     expect(linkAfter).toEqual(linkBefore);
     expect(subAfter).toEqual(subBefore);
     expect(assignmentAfter).toEqual(assignmentBefore);
+    expect(assignmentRowsAfter).toEqual(assignmentRowsBefore);
 
     const allVersions = await db`
       select version,market,type,currency,price_minor::text,commission_rate_bp

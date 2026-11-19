@@ -278,10 +278,28 @@ describe('package market and type identity', () => {
     ]);
   });
 
-  it('keeps issued client and subscription snapshots stable after a new commercial version', async () => {
+  it('keeps issued client, subscription and trainer assignment snapshots stable after a new commercial version and after offer availability changes', async () => {
     const context = await clientContext();
     const purchase = await bought(context);
-    const before = await db`
+    const assignResult = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: purchase.t.id,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignResult.error).toBeNull();
+    expect(assignResult.data).toMatchObject({ status: 'ok' });
+
+    const setAvailable = async (available: boolean) =>
+      context.po.client.rpc('set_package_offer_available', {
+        workspace_id: context.p.offer.workspace_id,
+        offer_id: context.p.offer.id,
+        available,
+      });
+
+    const compositeBefore = await db`
       select c.package_version_id as client_version_id,
         l.package_version_id as link_version_id,
         l.price_minor::text as link_price_minor,l.currency as link_currency,
@@ -293,7 +311,11 @@ describe('package market and type identity', () => {
       join public.subscriptions s on s.workspace_id=c.workspace_id and s.client_id=c.id
       where c.id=${purchase.t.id}
     `;
-    expect(before).toHaveLength(1);
+    expect(compositeBefore).toHaveLength(1);
+    const assignmentBefore =
+      await db`select * from public.client_trainer_assignments where client_id=${purchase.t.id} and ended_at is null`;
+    expect(assignmentBefore).toHaveLength(1);
+
     const newVersionResult = await context.po.client.rpc(
       'publish_package_version',
       {
@@ -312,7 +334,8 @@ describe('package market and type identity', () => {
     expect(newVersionResult.error).toBeNull();
     const newVersion = newVersionResult.data as string;
     expect(newVersion).not.toBe(context.p.versionId);
-    const after = await db`
+
+    const compositeAfterPublish = await db`
       select c.package_version_id as client_version_id,
         l.package_version_id as link_version_id,
         l.price_minor::text as link_price_minor,l.currency as link_currency,
@@ -324,8 +347,11 @@ describe('package market and type identity', () => {
       join public.subscriptions s on s.workspace_id=c.workspace_id and s.client_id=c.id
       where c.id=${purchase.t.id}
     `;
-    expect(after).toEqual(before);
-    expect(after[0]).toMatchObject({
+    const assignmentAfterPublish =
+      await db`select * from public.client_trainer_assignments where client_id=${purchase.t.id} and ended_at is null`;
+    expect(compositeAfterPublish).toEqual(compositeBefore);
+    expect(assignmentAfterPublish).toEqual(assignmentBefore);
+    expect(compositeAfterPublish[0]).toMatchObject({
       client_version_id: context.p.versionId,
       link_version_id: context.p.versionId,
       subscription_version_id: context.p.versionId,
@@ -334,6 +360,18 @@ describe('package market and type identity', () => {
       link_currency: 'USD',
       subscription_currency: 'USD',
     });
+
+    // Ensure offer is available first, then retire (set available false) and re-check.
+    const availResult = await setAvailable(true);
+    expect(availResult.error).toBeNull();
+    const retireResult = await setAvailable(false);
+    expect(retireResult.error).toBeNull();
+    const assignmentAfterRetire =
+      await db`select * from public.client_trainer_assignments where client_id=${purchase.t.id} and ended_at is null`;
+    expect(assignmentAfterRetire).toEqual(assignmentBefore);
+
+    // restore availability for any downstream consumers
+    await setAvailable(true);
   });
 
   it('does not rewrite existing package version identifiers or terms', async () => {
