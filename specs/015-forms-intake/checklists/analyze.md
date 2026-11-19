@@ -365,6 +365,6 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 
 ## S67-R18 docs-only evidence refresh — 2026-11-19 (date update only)
 
-- Scope: `tasks.md` T129 cancellation and `traceability.md` disposition entries for T055/T100/T129; no requirement, plan, or behavior text changed. T055/T100 remain open until clean replay CI evidence is recorded.
+- Scope: tasks.md T055/T100 status and evidence updated after clean replay CI run 44440763482 on PR head 7c6a6c2940cc16dd7b7a91b65bdad9b511cd8bdf; tasks.md T129 cancellation and matching traceability.md rows. No requirement, plan, or behavior text changed.
 - Findings: 0 open CRITICAL, 0 open HIGH.
-- Verdict: PASS for this evidence-only disposition; CI replay evidence is required before T055/T100 are ticked.
+- Verdict: PASS for this evidence-only disposition; clean migration replay passed on the documented PR head.
