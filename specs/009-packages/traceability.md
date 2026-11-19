@@ -120,14 +120,14 @@ No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI
 | FR                                      | Task | Test/evidence status                                                                                                        |
 | --------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------- |
 | FR-002, FR-034, FR-036 / SC-024, SC-026 | T077 | Verified on Stack C by the baseline-vs-candidate F9/F13 regression; details and test evidence below.                        |
-| FR-035 / SC-025                         | T078 | S43-PO-8 resolves PO global per-locale names and workspace-local Workspace Owner overrides; implementation/tests unstarted. |
+| FR-035 / SC-025                         | T078 | Verified: PO global per-locale names and workspace-local Workspace Owner overrides implemented and tested on Stack A; see the S67 T078 evidence section below. |
 
 ## S43-PO-8 decision traceability
 
 | FR / SC                                 | Task | Decision and coverage                                                                                                                                                                                 |
 | --------------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | FR-002, FR-034, FR-036 / SC-024, SC-026 | T077 | Resolved by S43-PO-8; legacy cleanup resolved by S48-PO-10. Rank identity, rank/duration eligibility, fail-closed migration and cleanup refusal are implemented and verified; see S48 evidence below. |
-| FR-035 / SC-025                         | T078 | Resolved: PO global per-locale names and workspace-local Workspace Owner overrides; rank and terms are invariant. Implementation and tests remain unstarted.                                          |
+| FR-035 / SC-025                         | T078 | Resolved: PO global per-locale names and workspace-local Workspace Owner overrides; rank and terms are invariant. Implemented and verified on Stack A; see the S67 T078 evidence section below.                                          |
 
 ## S48 T077 implementation evidence
 
@@ -162,3 +162,17 @@ Stack C candidate reset stopped at `20261108230000` to capture `package_offers=0
 - T037: `tests/unit/packages-market-type.test.ts` covers every market/currency pair, rejects EUR and XTS outside the approved set, and asserts exact own-currency formatting with no conversion. Targeted unit run passed 77/77; a mutation replacing the market allowlist with `true` was killed by five rejection cases.
 - T046: `tests/integration/packages-markets-types.test.ts` passed with the existing category/version snapshot assertions; `tests/unit/packages-fx-red.test.ts` passed same-currency reporting and separate-settlement/original-currency assertions. The downstream contract documents no F10/F12 schema change for this scope, so no migration was required. Stack C targeted integration run: 17 passed, 5 TODO, one existing retirement test file skipped.
 - Full unit suite passed 3,801/3,801 with `TZ=America/Los_Angeles`; lint, typecheck, and both formatting gates passed. The default-timezone run reproduced an unrelated existing `client-notes-ui.test.tsx` timezone expectation failure.
+
+## S67 T078 implementation evidence (2026-11-19, Stack A)
+
+| FR / SC | Task | Test | Evidence |
+| --- | --- | --- | --- |
+| FR-035; SC-025 | T078 | `tests/integration/packages-tier-names.test.ts::package tier display names (T078) > lets the PO rename a tier globally per locale for every workspace`; `::resolves no stored rows before any rename so defaults stay authoritative` | Stack A clean reset; PO global rename visible in wsA and wsB reads, one row per (rank, locale) after re-rename; zero stored rows pre-rename keep the PO-approved defaults authoritative (`lib/packages/tier-label.ts`, unit-tested byte-exactly in `tests/unit/packages-tier-label.test.ts`). |
+| FR-035; SC-025 | T078 | `tests/integration/packages-tier-names.test.ts::lets a Workspace Owner override a tier name only inside their own workspace` | Override visible only in the owning workspace; wsB retains the global name; resolution is override > global rename > PO-approved default. |
+| FR-035; SC-025 | T078 | `tests/integration/packages-tier-names.test.ts::denies overrides for foreign workspaces, PO, Sales, Trainer and anonymous`; `::denies the global rename for every non-PO identity` | 42501 before validation for WO foreign workspace, PO-on-override (fail-closed: FR-035 grants the PO only the global rename; Constitution III), Sales/Trainer/revoked/non-staff/anonymous; zero residual rows. |
+| FR-035; SC-025 | T078 | `tests/integration/packages-tier-names.test.ts::changes no rank, duration, price, currency or version terms row` | Full-row snapshots of `packages`/`package_offers`/`package_versions` identical before/after global rename + WO override, and zero new `audit_events` rows attributable to the actors (FR-011 enumerates creation/publication/availability only; rename audit shape is MCQ-S67-T078-3). |
+| FR-035; SC-025 | T078 | `tests/integration/packages-tier-names.test.ts::keeps rank and locale identity immutable and blocks direct table edits and deletes`; `tests/integration/rls-catalog.test.ts::package tier name security catalog (T078)` | Identity columns immutable (23514), direct edits denied (42501), deletes/truncates denied (23514), RLS forced with zero policies and zero API grants, SECURITY DEFINER + `search_path=""` + owner postgres on all three RPCs and both guards. |
+| FR-035; SC-025 | T078 | `tests/unit/packages-tier-names.test.ts::tier-name app walls` (38/38) | Two app walls deny before any transport even for accepting RPC mocks; invalid inputs return `invalid_input` without RPC; no console logging; `tier-names-actions.ts` revalidates only after ok. |
+| FR-035; SC-025 | T078 | Mutation evidence | 9 guards killed and restored (4 SECURITY DEFINER walls, grants/policies drift, 2 trigger guards, 2 app walls) with `git diff --exit-code` clean restores; recorded in `tests/integration/packages-verification.md` §T078. |
+
+Open PO decisions recorded, not invented: MCQ-S67-T078-2 (no name length cap specified; none imposed) and MCQ-S67-T078-3 (no dedicated rename audit action specified; renames emit zero audit rows per FR-011).

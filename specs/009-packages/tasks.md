@@ -231,10 +231,11 @@ No task is complete or ticked by this documentation-only cycle. RED-first descri
 
 ## S43-PO-6/7 tier requirements tasks
 
-These tasks follow separately labelled architect mapping in spec.md. T077 has its forward migration; T078 remains unchecked.
+These tasks follow separately labelled architect mapping in spec.md. T077 has its forward migration; T078 is verified as recorded below.
 
 - [x] T077 [FR-002, FR-034, FR-036, SC-024, SC-026] Implement all three immutable Silver < Gold < Platinum tier offers within every category, with rank in the offer identity and publication input using a new forward migration; fail closed on unranked legacy rows with no default/backfill; add a separate reviewed cleanup script that removes only verified test offers without protected or restrictive references; preserve audit/payment records and shipped migration history; add explicit-rank and rank/duration fixtures, including cleanup refusal coverage. Decisions resolved by S43-PO-8 and S48-PO-10; Stack C baseline/candidate regression passed at `537b51a5`; explicit-rank F9 E2E coverage passed 3/3 on test fix `cb32f8ea`.
-- [ ] T078 [FR-035, SC-025] Specify PO global per-locale renaming and Workspace Owner overrides within their workspace only; keep rank and terms unchanged. Decision resolved by S43-PO-8; implementation/tests remain unstarted.
+- [x] T078 [FR-035, SC-025] Specify PO global per-locale renaming and Workspace Owner overrides within their workspace only; keep rank and terms unchanged. Decision resolved by S43-PO-8.
+      Verified: migration `supabase/migrations/20261216030000_f9_tier_display_names.sql` (RPC-only `package_tier_names`/`package_tier_name_overrides`, PO-only global rename, workspace_owner own-workspace override, FR-008-scoped resolved read, identity/actor guards, no delete path), `lib/packages/tier-names.ts` and `app/(app)/packages/tier-names-actions.ts` (two app walls, generic failures, no logging); resolution is override > global rename > PO-approved default, and renames/overrides change no rank, duration, price, currency, version terms or audit rows. `tests/integration/packages-tier-names.test.ts` 10/10 and `tests/unit/packages-tier-names.test.ts` 38/38 on Stack A after RED; `tests/integration/rls-catalog.test.ts` 48/48 with the T078 catalog block; 9 mutation kills (4 SECURITY DEFINER walls, grants/policies drift, 2 trigger guards, 2 app walls) recorded in `tests/integration/packages-verification.md` §T078. Open (not invented): rename audit action shape (MCQ-S67-T078-3; per FR-011 renames emit no audit rows) and name length cap (MCQ-S67-T078-2; none imposed).
 
 ## S43-PO-8 resolved tier tasks
 
