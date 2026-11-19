@@ -460,4 +460,3 @@ Scope: the exact-head CodeRabbit review `5877600535` (CHANGES_REQUESTED on `212d
 - Entry verdict for this status update: 0 open CRITICAL, 0 open HIGH, zero
   F12 requirement ambiguities. CI's spec-consistency date-order gate is
   satisfied by this dated status-only entry.
-
