@@ -235,5 +235,7 @@ Stack C reset used the candidate migration set and a temporary local migrations 
 | Requirement | Task | Test | Evidence | Status |
 | --- | --- | --- | --- | --- |
 | FR-019, FR-028; SC-015 | T038a | tests/integration/auth-recovery.test.ts::staff-reset-permitted | Stack C; commit 2dc3f74e; one passing test; hook request row incremented with denied, generic response retained, Mailpit search found no message to the non-permitted target. | VERIFIED |
+| FR-030 control B, FR-025(a-b); SC-015 | T049a | tests/integration/auth-recovery.test.ts::staff-reset-guard | Commit e14dc11f263e4b80b5c5f1086e9a4ad56c7d0ce3; Stack C RED: direct staff password changes without intent succeeded; client manual recovery passed. G2 probe found no trusted session_id in auth.users trigger context. | BLOCKED |
+| FR-025(a,c-g); SC-004, SC-012 | T049d | tests/integration/auth-recovery.test.ts::staff-reset-intent | Commit e14dc11f263e4b80b5c5f1086e9a4ad56c7d0ce3; Stack C RED: intent/reconcile RPCs absent; expanded tests cover idempotent begin, one-way closure, and stale reconciliation. T050a remains blocked by G2. | BLOCKED |
 
-No recipient email or external SMTP was used. Stack C hook configuration was local to the worktree and is not part of the commit. The inherited T050b mutation evidence remains partial; T051 is still open.
+No email message or external SMTP was used. Stack C hook configuration was local to the worktree and is not part of the commit. The inherited T050b mutation evidence remains partial; T051 is still open.

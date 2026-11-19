@@ -4,6 +4,8 @@ Date: 2026-11-19 UTC
 Stack: C, local only  
 Candidate baseline: aa114e0426a22a84de34fbec6c18713499ff1453
 
+Expanded RED test and status evidence commit: e14dc11f263e4b80b5c5f1086e9a4ad56c7d0ce3.
+
 ## RED evidence
 
 - T049a direct staff update without an intent succeeded and changed the password; its test cleanup restored the fixture password. A second signed-in session also changed the password without an intent; the test now restores the fixture password on that unexpected-success path. These controls remain RED.
