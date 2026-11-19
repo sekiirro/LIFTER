@@ -14,6 +14,10 @@ Requirement text changed: new FR-029 (client code) and task T064; FR total is no
 
 Gate verdict: CRITICAL 0, HIGH 0. T064 stays unticked until exact-head CI is green.
 
+## S64 T047/T048 date-only status — 2026-11-18 UTC
+
+Task completion status (`T047`, `T048`), S56-R12/S57-PO-1 dependency resolution notes, and Stack B execution/mutation evidence updated in `tasks.md` and `traceability.md`. FR/SC requirement text is unchanged; out-of-scope tasks (`T050`, `T054`, `T058`, `T059`, `T060`, `T062`, `T063`) remain unticked. No full Analyze rerun required.
+
 ## S64 date-only status (S64-R46) — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R46: the restricted-continuation half of A-S41-4 (P-S40-1, before T048) is APPROVED, so A-S41-4 is now CLOSED (entry-point half S64-R21, restricted-continuation half S64-R46). FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
@@ -711,3 +715,7 @@ Scope: the exact-head CodeRabbit review `5875403722` (CHANGES_REQUESTED on `72db
 - CRITICAL open: 0. HIGH open: 0. MEDIUM open: 1 (A-S50-G4, the pre-existing S40 gate and working assumption). LOW open: 1 (A-S50-G2, pre-existing).
 - No PO product question is raised by this round and no option, default, copy string or test expectation was invented. Architect ruling S51-R10 verified the finding as a consistency correction inside already-decided scope.
 - This is a static document review. It makes no implementation-conformity claim, and the S40 implementation gate stays closed.
+
+## S66 status refresh — 2026-11-18
+
+Only task statuses and traceability evidence changed; requirement, acceptance, plan, and task text is unchanged. No full re-analysis is required under S54-R6. Existing verdict remains 0 open CRITICAL and 0 open HIGH.

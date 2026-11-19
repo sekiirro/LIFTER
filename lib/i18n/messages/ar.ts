@@ -1346,6 +1346,37 @@ export const ar = {
     'للعرض فقط. الأغذية وقيم الخطة وهمية، ولا يُحفظ أي شيء.',
   'nutritionPlan.mealNotes': 'ملاحظات للوجبة دي',
   'nutritionPlan.foodNotes': 'ملاحظات للأكلة دي',
+  // APPROVED (PO S20 F14b & S65-PO-4)
+  'branding.logoLabel': 'شعار مساحة العمل',
+  'branding.bannerLabel': 'صورة الغلاف',
+  'branding.bannerAltLegend': 'وصف صورة الغلاف (بالعربية أو الإنجليزية)',
+  'branding.bannerAltHint':
+    'أدخل وصفًا بلغة واحدة على الأقل؛ سيُستخدم الوصف المتاح عند غياب الآخر.',
+  'branding.bannerSizeHint':
+    'المقاس المناسب 1600×800 (2:1). خلّي الحاجات المهمة بعيد عن الأطراف وعن الجزء اللي تحت في الصورة.',
+  'branding.uploadFailed':
+    'تعذر رفع الصورة. تحقق من نوع الملف وحجمه وأبعاده ثم حاول مجددًا.',
+  'branding.chooseImage': 'اختر صورة',
+  'branding.replaceImage': 'استبدال الصورة',
+  'branding.removeImage': 'إزالة الصورة',
+  'branding.retryImage': 'إعادة محاولة الرفع',
+  'branding.retryRemove': 'إعادة محاولة الإزالة',
+  'branding.reloadDraft': 'إعادة تحميل المسودة',
+  'branding.workspaceUnavailable':
+    'تعذّر تأكيد الوصول إلى مساحة العمل، لذلك تم تعطيل عناصر التحكم في العلامة.',
+  'branding.uploadInProgress':
+    'لا يزال إجراء آخر في العلامة قيد التنفيذ. انتظر حتى ينتهي قبل المتابعة.',
+  'branding.uploadingImage': 'جارٍ رفع الصورة…',
+  'branding.removingImage': 'جارٍ إزالة الصورة…',
+  'branding.imageAttached': 'تم إرفاق الصورة بالمسودة.',
+  'branding.imageRemoved': 'تمت إزالة الصورة من المسودة.',
+  'branding.identityOnlyConfirm':
+    'أؤكد أن صورة الغلاف تحتوي على محتوى الهوية فقط، دون أسعار أو بيانات اتصال أو دعوات لاتخاذ إجراء أو روابط.',
+  'branding.identityOnlyRequired': 'أكد محتوى الغلاف قبل الرفع.',
+  'branding.logoUploadGuidance':
+    'PNG أو WebP · حتى 4 MiB · حتى 2048 × 2048 بكسل · حتى 1,000,000 بكسل',
+  'branding.bannerUploadGuidance':
+    'PNG أو WebP · حتى 8 MiB · حتى 4096 × 2048 بكسل · حتى 4,000,000 بكسل',
   'registration.upfrontAmount': 'المبلغ اللي هيتدفع مقدمًا',
   'registration.paymentCount': 'عدد الأقساط',
   'registration.defaultSplit': 'قسّم الباقي بالتقسيمة الافتراضية',

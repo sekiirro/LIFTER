@@ -51,6 +51,53 @@ type RpcMethods = {
     };
     result: boolean;
   };
+  claim_account_deletion_intents: {
+    args: { p_limit: number };
+    result: Array<{
+      id: string;
+      target_user_id: string;
+      target_kind: 'client' | 'staff';
+      state:
+        | 'pending_ban'
+        | 'banned_pending_db'
+        | 'release_pending'
+        | 'auth_release_in_progress'
+        | 'completed';
+      attempts: number;
+      lease_token: string;
+    }>;
+  };
+  advance_deletion_step_a: {
+    args: { p_intent_id: string; p_lease_token: string };
+    result: boolean;
+  };
+  execute_deletion_step_b: {
+    args: { p_intent_id: string; p_lease_token: string };
+    result: boolean;
+  };
+  begin_deletion_step_c: {
+    args: { p_intent_id: string; p_lease_token: string };
+    result: boolean;
+  };
+  execute_deletion_step_d: {
+    args: { p_intent_id: string; p_lease_token: string };
+    result: boolean;
+  };
+  retry_account_deletion_intent: {
+    args: {
+      p_intent_id: string;
+      p_lease_token: string;
+      p_attempt: number;
+      p_retry_at: string;
+      p_safe_error_code:
+        | 'provider_unavailable'
+        | 'auth_admin_unavailable'
+        | 'metadata_not_empty'
+        | 'step_b_failed'
+        | 'step_d_failed';
+    };
+    result: boolean;
+  };
 };
 
 export type Rpc = <Name extends keyof RpcMethods>(

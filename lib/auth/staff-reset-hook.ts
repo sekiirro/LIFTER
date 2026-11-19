@@ -105,9 +105,11 @@ export function parseStaffResetHookPayload(
   } catch {
     return null;
   }
+  const defaultSiteRedirect =
+    redirectUrl.pathname === '/' && !redirectUrl.search && !redirectUrl.hash;
   if (
     redirectUrl.origin !== appUrl.origin ||
-    redirectUrl.pathname !== '/auth/recovery' ||
+    (redirectUrl.pathname !== '/auth/recovery' && !defaultSiteRedirect) ||
     redirectUrl.username ||
     redirectUrl.password
   )

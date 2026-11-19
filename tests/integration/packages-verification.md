@@ -179,6 +179,31 @@ Raw negative/reset/restored logs and structured per-mutation JSON remain in `%TE
 - T064b: the teardown design for protected immutable version rows and the `packages_no_delete`/`packages_no_truncate` guards is authored in `specs/009-packages/review.md`. The independent security review is **REQUESTED / PENDING**; no reviewer has signed off and the gate has not passed. No deletion, migration or data change was made.
 - T076: `tests/integration/packages-retirement.test.ts` holds planned `it.todo` cases. The retirement operation (FR-023) has no approved contract and does not exist on main (owners T054/T055/T066), so no failing or passing test was authored. T076 stays unticked until the test passes on an implementation head.
 
+## S66-R3 PR #273 review-fix attempt (2026-11-18)
+
+- Added a T068 integration case for a synthetic pre-migration USD payment event with no reporting snapshot: pending insert, pending-to-ready update, and ready immutability retry.
+- Initial lane attempt stopped before test discovery after running outside the safe wrapper; the wrapper's env injection was corrected in the continuation below. No secrets were read or printed.
+- No task is ticked on this attempt. See `C:/Users/NEW LAP/.lifter/runs/s66-luna-fix273/report.md`.
+
+## S66-R3 continuation — PR #273 review fix (2026-11-18)
+
+- Stack E was reset through `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs` and provisioned after each reset. The worktree-local profile links `supabase-stack-e/supabase/migrations` to the tracked migrations directory so CLI resets apply the repository migrations.
+- RED / kill: temporarily removed `20261215060100_packages_reporting_fx_save_fix.sql` from the migration directory, safely reset Stack E, provisioned Vault, and ran `packages-reporting.test.ts`: the USD, EGP and SAR missing-snapshot regressions failed with SQLSTATE `42703` from the old insert, while 8 other tests passed.
+- Restore: moved the exact forward migration back to its original path, safely reset and reprovisioned Stack E. No migration mutant remains installed.
+- GREEN: safe-wrapper integration run covering `packages-*`, `rls-catalog`, and `branding-function-privileges`: 13 files, 238 passed, 5 todo, 1 skipped. This includes all 11 `packages-reporting.test.ts` tests.
+- The new cases verify missing EGP snapshot creation at identity rate and missing SAR snapshot creation followed by pending-to-ready conversion; the existing USD case verifies pending-to-ready and ready immutability.
+
+## T054/T055 verification and mutation checks (2026-11-18, Stack E; fix round 1 re-verified 2026-11-18 on Stack A)
+
+- Targeted integration suites (`packages-commercial-terms`, `packages-markets-types`, `packages-reads`, `packages-publish`, `packages-availability`, `packages-promotion-lifecycle`, `packages-c5-inventory`, `packages-c5-preflight`, `rls-catalog`, `matrix-parity`): `10/10` files passed (`625/625` tests, `--maxWorkers=1 --no-file-parallelism`) after `supabase-safe db reset --local` + `client-accounts-provision.mjs` with migration `20261215050000_f9_workspace_package_categories_init.sql` (renamed from `20261124170000` / `20261130050000` per S65-PO-17 / S66-R2 standing rule; reserved range `20261215050000-20261215055959`).
+- No-write snapshots for denied DB calls (`tests/integration/packages-commercial-terms.test.ts`): the non-PO initialization test snapshots category/package rows, offers, versions, promotion periods and audit rows before the denial loop and asserts byte-identical state afterward; the PO/WO commercial-terms test snapshots the same surfaces after PO setup and asserts the WO (own workspace) plus all other non-PO publish/availability/promotion denials change nothing.
+- `write without auth check` (`tests/integration/packages-commercial-terms.test.ts::mutation 4 (write without auth check)`): rolled-back DB mutant removing the PO wall in `initialize_workspace_package_categories` let a WO call write all four category rows (mutant returned 4 ids), so the new no-write snapshot comparison (`after` vs `before`) FAILED as required; rolled back with zero residual rows (`restored` equals `before`).
+- `allow 5th category`: rolled-back DB mutant dropping `packages_market_check` allowed a 5th category `'MENA'` (`tests/integration/packages-commercial-terms.test.ts::mutation 1 (allow 5th category)`), whereas intact schema rejects with `23514`; zero residual rows.
+- `allow duplicate (ws,market,type)`: rolled-back DB mutant dropping `packages_workspace_market_type_key` allowed duplicate `('Egypt', 'Year-round')` (`tests/integration/packages-commercial-terms.test.ts::mutation 2 (allow duplicate (ws,market,type))`), whereas intact schema rejects with `23505`; zero residual rows.
+- `allow non-PO terms` (DB + app):
+  - DB: rolled-back mutant removing PO wall in `publish_package_version` + guards allowed `woA` publication (`tests/integration/packages-commercial-terms.test.ts::mutation 3 (allow non-PO terms)`), whereas intact DB denies `woA` with `42501`.
+  - App: removed PO role + `set_package_pricing` wall in `lib/packages/service.ts::pricingContext`; `tests/unit/packages-commercial-terms.test.ts` FAILED (`5 failed | 4 passed`, exit 1); restored `lib/packages/service.ts` and re-ran `tests/unit/packages-commercial-terms.test.ts` (`9/9` passed, exit 0).
+
 ## T065 C5 teardown conformance & mutation verification (2026-11-18)
 
 - Scope: operator cleanup script `supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`, test suite `tests/integration/packages-c5-teardown.test.ts`, and conformance matrix `specs/009-packages/reviews/t065-conformance.md` against `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS).
