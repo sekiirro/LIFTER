@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   refresh: vi.fn(),
   createCategory: vi.fn(),
+  initializeCategories: vi.fn(),
   publishVersion: vi.fn(),
   toggleAvailable: vi.fn(),
 }));
@@ -24,6 +25,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('../../app/(app)/packages/actions', () => ({
   createPackageCategory: mocks.createCategory,
+  initializePackageCategories: mocks.initializeCategories,
   publishPackageVersion: mocks.publishVersion,
   setPackageOfferAvailable: mocks.toggleAvailable,
 }));
@@ -127,6 +129,50 @@ const populatedData: Extract<PackageReadResult, { status: 'ok' }> = {
   ],
 };
 
+const fullCategoriesData: Extract<PackageReadResult, { status: 'ok' }> = {
+  status: 'ok',
+  packages: [
+    {
+      id: pkgEgyptId,
+      workspace_id: wsA,
+      market: 'Egypt',
+      type: 'Year-round',
+      code: null,
+      created_at: '2026-11-18T00:00:00Z',
+      created_by: 'po',
+    },
+    {
+      id: 'pkg-eg-promo',
+      workspace_id: wsA,
+      market: 'Egypt',
+      type: 'Promotional',
+      code: null,
+      created_at: '2026-11-18T00:00:00Z',
+      created_by: 'po',
+    },
+    {
+      id: 'pkg-intl-yr',
+      workspace_id: wsA,
+      market: 'International',
+      type: 'Year-round',
+      code: null,
+      created_at: '2026-11-18T00:00:00Z',
+      created_by: 'po',
+    },
+    {
+      id: pkgIntlId,
+      workspace_id: wsA,
+      market: 'International',
+      type: 'Promotional',
+      code: null,
+      created_at: '2026-11-18T00:00:00Z',
+      created_by: 'po',
+    },
+  ],
+  offers: [],
+  versions: [],
+};
+
 let host: HTMLDivElement;
 let root: Root;
 
@@ -145,6 +191,10 @@ beforeEach(() => {
   mocks.createCategory.mockResolvedValue({
     status: 'ok',
     packageId: pkgEgyptId,
+  });
+  mocks.initializeCategories.mockResolvedValue({
+    status: 'ok',
+    categories: [],
   });
   mocks.publishVersion.mockResolvedValue({
     status: 'ok',
@@ -382,7 +432,7 @@ describe('PackagesManager market/type UI (T045)', () => {
     });
 
     const enableBtn = [...host.querySelectorAll('button')].find(
-      (b) => b.textContent?.trim() === m['packages.enable'],
+      (b) => b.textContent?.trim() === m['packages.reactivateOffer'],
     )!;
     await act(async () => {
       enableBtn.click();
@@ -424,5 +474,202 @@ describe('PackagesManager market/type UI (T045)', () => {
       resolveLate({ status: 'ok', packageId: pkgEgyptId });
     });
     expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+
+  describe('PO category initialization control (S65-PO-15/20)', () => {
+    it.each(['en', 'ar'] as const)(
+      'renders category initialization control when fewer than 4 categories exist in %s',
+      (locale) => {
+        renderManager(locale, populatedData); // 2 categories
+        const m = getMessages(locale);
+        const heading = [...host.querySelectorAll('h2')].find(
+          (h) => h.textContent?.trim() === m['packages.initializeCategories'],
+        );
+        expect(heading).toBeTruthy();
+        expect(host.textContent).toContain(
+          m['packages.initializeCategoriesHelp'],
+        );
+        const initBtn = [...host.querySelectorAll('button')].find(
+          (b) => b.textContent?.trim() === m['packages.initializeCategories'],
+        );
+        expect(initBtn).toBeTruthy();
+      },
+    );
+
+    it('does NOT render category initialization control when all 4 categories exist', () => {
+      renderManager('en', fullCategoriesData);
+      const m = getMessages('en');
+      const heading = [...host.querySelectorAll('h2')].find(
+        (h) => h.textContent?.trim() === m['packages.initializeCategories'],
+      );
+      expect(heading).toBeUndefined();
+      const initBtn = [...host.querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === m['packages.initializeCategories'],
+      );
+      expect(initBtn).toBeUndefined();
+    });
+
+    it.each(['en', 'ar'] as const)(
+      'opens ConfirmDialog with approved strings and initializes categories in %s',
+      async (locale) => {
+        renderManager(locale, emptyData);
+        const m = getMessages(locale);
+        const initBtn = [...host.querySelectorAll('button')].find(
+          (b) => b.textContent?.trim() === m['packages.initializeCategories'],
+        )!;
+        await act(async () => {
+          initBtn.click();
+        });
+
+        const dialog = [
+          ...host.querySelectorAll('[data-testid="confirm-dialog"]'),
+        ].find((d) =>
+          d.textContent?.includes(
+            m['packages.initializeCategoriesConfirmTitle'],
+          ),
+        )!;
+        expect(dialog).toBeTruthy();
+        expect(dialog.textContent).toContain(
+          m['packages.initializeCategoriesConfirmTitle'],
+        );
+        expect(dialog.textContent).toContain(
+          m['packages.initializeCategoriesConfirmBody'],
+        );
+
+        const confirmBtn = dialog.querySelector(
+          '[data-testid="dialog-confirm"]',
+        ) as HTMLButtonElement;
+        await act(async () => {
+          confirmBtn.click();
+        });
+
+        expect(mocks.initializeCategories).toHaveBeenCalledWith({
+          workspaceId: wsA,
+        });
+        expect(mocks.refresh).toHaveBeenCalledTimes(1);
+        expect(host.textContent).toContain(
+          m['packages.initializeCategoriesSuccess'],
+        );
+      },
+    );
+
+    it('displays error alert if initializePackageCategories fails', async () => {
+      mocks.initializeCategories.mockResolvedValue({ status: 'denied' });
+      renderManager('en', emptyData);
+      const m = getMessages('en');
+      const initBtn = [...host.querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === m['packages.initializeCategories'],
+      )!;
+      await act(async () => {
+        initBtn.click();
+      });
+      const dialog = [
+        ...host.querySelectorAll('[data-testid="confirm-dialog"]'),
+      ].find((d) =>
+        d.textContent?.includes(m['packages.initializeCategoriesConfirmTitle']),
+      )!;
+      const confirmBtn = dialog.querySelector(
+        '[data-testid="dialog-confirm"]',
+      ) as HTMLButtonElement;
+      await act(async () => {
+        confirmBtn.click();
+      });
+      expect(host.textContent).toContain(m['packages.denied']);
+    });
+  });
+
+  describe('PO reversible offer retirement (S65-PO-15/20)', () => {
+    it.each(['en', 'ar'] as const)(
+      'renders retired badge and reactivate button for inactive offers, and available badge with retire button for active offers in %s',
+      (locale) => {
+        renderManager(locale, populatedData);
+        const m = getMessages(locale);
+        expect(host.textContent).toContain(m['packages.retiredBadge']);
+        expect(host.textContent).toContain(m['packages.available']);
+        expect(host.textContent).not.toContain(m['packages.unavailableOffer']);
+        expect(host.textContent).not.toContain(m['packages.disable']);
+        expect(host.textContent).not.toContain(m['packages.enable']);
+
+        const retireBtns = [...host.querySelectorAll('button')].filter(
+          (b) => b.textContent?.trim() === m['packages.retireOffer'],
+        );
+        const reactivateBtns = [...host.querySelectorAll('button')].filter(
+          (b) => b.textContent?.trim() === m['packages.reactivateOffer'],
+        );
+        // populatedData has 1 available offer and 1 retired offer; both appear in mobile card and table
+        expect(retireBtns.length).toBeGreaterThanOrEqual(1);
+        expect(reactivateBtns.length).toBeGreaterThanOrEqual(1);
+      },
+    );
+
+    it.each(['en', 'ar'] as const)(
+      'retires an available offer via ConfirmDialog with approved copy in %s',
+      async (locale) => {
+        renderManager(locale, populatedData);
+        const m = getMessages(locale);
+        const retireBtn = [...host.querySelectorAll('button')].find(
+          (b) => b.textContent?.trim() === m['packages.retireOffer'],
+        )!;
+        await act(async () => {
+          retireBtn.click();
+        });
+
+        const dialog = host.querySelector('[data-testid="confirm-dialog"]')!;
+        expect(dialog).toBeTruthy();
+        expect(dialog.textContent).toContain(m['packages.retireConfirmTitle']);
+        expect(dialog.textContent).toContain(m['packages.retireConfirmBody']);
+
+        const confirmBtn = dialog.querySelector(
+          '[data-testid="dialog-confirm"]',
+        ) as HTMLButtonElement;
+        await act(async () => {
+          confirmBtn.click();
+        });
+
+        expect(mocks.toggleAvailable).toHaveBeenCalledWith({
+          workspaceId: wsA,
+          offerId: 'offer-usd',
+          available: false,
+        });
+        expect(host.textContent).toContain(m['packages.retireSuccess']);
+      },
+    );
+
+    it.each(['en', 'ar'] as const)(
+      'reactivates a retired offer via ConfirmDialog with approved copy in %s',
+      async (locale) => {
+        renderManager(locale, populatedData);
+        const m = getMessages(locale);
+        const reactivateBtn = [...host.querySelectorAll('button')].find(
+          (b) => b.textContent?.trim() === m['packages.reactivateOffer'],
+        )!;
+        await act(async () => {
+          reactivateBtn.click();
+        });
+
+        const dialog = host.querySelector('[data-testid="confirm-dialog"]')!;
+        expect(dialog).toBeTruthy();
+        expect(dialog.textContent).toContain(
+          m['packages.reactivateConfirmTitle'],
+        );
+        expect(dialog.textContent).toContain(
+          m['packages.reactivateConfirmBody'],
+        );
+
+        const confirmBtn = dialog.querySelector(
+          '[data-testid="dialog-confirm"]',
+        ) as HTMLButtonElement;
+        await act(async () => {
+          confirmBtn.click();
+        });
+
+        expect(mocks.toggleAvailable).toHaveBeenCalledWith({
+          workspaceId: wsA,
+          offerId: 'offer-egp',
+          available: true,
+        });
+        expect(host.textContent).toContain(m['packages.reactivateSuccess']);
+      },
+    );
   });
 });
