@@ -1,5 +1,6 @@
 # Spec Kit Analyze — F9 S43-PO-8 tier offer identity amendment
 
+**Status-only refresh (2026-11-20 - S69 cumulative closeout T032/T051/T063/T071):** No FR/SC/requirement text changed. Current accepted SHA is `b39e3c4bd8aea5ffd43f3069d9a3b5d0e7e4973a`; T032/T051/T063/T071 are closed; only pre-production T059 remains unticked per S65-R7. Final Analyze records 0 CRITICAL, 0 HIGH, 0 open PO-DECISION-NEEDED, and all 14 F9 migrations verified across 330 remote refs. ND-F9-2/3/5, BLOCKED-COPY, and S68-PO-3 F-1 remain tracked.
 **Analyzed:** 2026-11-18 07:08 Africa/Cairo
 **Status-only refresh (2026-11-20 — S69 beam-r295 merge of origin/main):** No FR/SC/requirement text changed; merged #296 closeout ticks/evidence and #295 T055 UI verification into tasks.md/traceability.md. Analyze date refreshed to satisfy freshness gate. 0 open CRITICAL/HIGH findings remain.
 **Status-only refresh (2026-11-19 — S67 T078):** No FR/SC/requirement text changed; `T078` was ticked with implementation evidence and traceability was updated only. 0 open CRITICAL/HIGH findings remain.
@@ -392,3 +393,13 @@ This is a document-consistency Analyze. Runtime, mutation, CI and all-ref migrat
 - PASS: lint, typecheck, check:secrets, and production webpack build. The default Turbopack build is incompatible with this checkout external node_modules/next junction; the supported webpack build completed successfully.
 - PASS: no new migration; reporting reuses 20261218010000. T032/T051/T059/T063/T071 remain unticked. Provider terms-of-use and separately recorded verification blockers remain unchanged.
 - Findings: 0 open CRITICAL, 0 open HIGH, 0 new product ambiguities.
+
+## S69 cumulative closeout Analyze - 2026-11-20 (T063 / T071)
+
+**Analyzed baseline:** `b39e3c4bd8aea5ffd43f3069d9a3b5d0e7e4973a`. This final status reconciliation supersedes the earlier open-task notes in the historical Analyze snapshots (including the prior notes near L18, L372, L376, and L393); no requirement text changed.
+
+- Findings: 0 CRITICAL, 0 HIGH, 0 open PO-DECISION-NEEDED.
+- All 14 F9 migrations (`20261029120000` through `20261218010000`) verified across 330 remote refs; zero version conflicts and zero migrations added.
+- T032, T051, T063, and T071 are closed on the accepted SHA. T032 evidence records 8/8 independent quickstart section 4 mutant kills and a clean Stack C rerun; T051 is ACCEPTED by independent read-only review `s69-luna-009rev`; T063/T071 reconcile immutable history, four-category invariants, role/security matrices, and full FR-001..FR-036 / SC-001..SC-026 traceability.
+- T059 is the only unticked task and remains a pre-production provider terms-of-use gate per S65-R7.
+- Retained gates: ND-F9-2/3/5, BLOCKED-COPY, and S68-PO-3 F-1 accepted SAMA provenance residual risk. The documented Windows OpenNext edge symlink host note remains.

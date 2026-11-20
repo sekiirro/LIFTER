@@ -1,23 +1,26 @@
-﻿# T051 independent review
+# T051 independent cumulative review
 
-**Reviewed baseline SHA:** `3b869e58f3629583100251986f3b0c2072d0b505` (`origin/main`, `s69-009-verify`). The independent implementation/design review covered `lib/packages/`, `app/(app)/packages/`, package migrations, the integration and E2E evidence, and FR/SC mappings in `specs/009-packages/`. The baseline matched the requested SHA and was clean before these evidence files were added.
+**Verdict: ACCEPTED**
+**Accepted baseline SHA:** `b39e3c4bd8aea5ffd43f3069d9a3b5d0e7e4973a` (`origin/main`).
+**Review:** `s69-luna-009rev`, independent strictly read-only cumulative feature AI review (gpt-6-luna; Constitution 1.16.0/1.19.0 and T051).
 
-## Diff and design review
+## Continuity and blocker closure
 
-The reviewed package implementation uses generic failure mapping, signed session clients, exact integer money transport, explicit safe reads, and both application authorization and database authorization. The route denies non-platform-owner access before returning package terms. Publication, reads, availability changes, reporting FX, and tier names use separate service/RPC paths. No new implementation defect was found in this review.
+The prior `3b869e58f3629583100251986f3b0c2072d0b505` snapshot was BLOCKED / NOT ACCEPTED because the eight independent quickstart section 4 mutants had not each been killed, PO/WO reporting hardening and the Reports UI/design gate were incomplete. Those blockers are now closed:
 
-The clean Stack C package run recorded 720/720 integration tests passing across 15 files; T065 teardown was 48/48. Authenticated Playwright was 5/5, including the 8-cell AR/EN × light/dark × 390/1440 matrix with zero axe violations. Unit was 4,048 passed plus 24 expected-fail. The regular Next.js production build passed. On this Windows host, OpenNext edge bundling failed at a symlink with `EPERM`; the size check could not run successfully because the edge worker artifact was absent.
+- PR #306 (`f3b6d5bcb44fb508732b3c7cbdef7568eb1f951e` -> merge `eb2c278ec2eaf9279cac334af887c82f490e157a`; workflow_dispatch `44715396179`; `main_run` `44720816505`) recorded all 8 independent quickstart section 4 mutant kills and a clean Stack C rerun (722/722 integration, 418/418 unit) in `specs/009-packages/reviews/s69-t032-eight-mutants.md`. Mutations were tested at `d4d5d18516b0de020404f93a8ae50cd88922226c`, an ancestor of the accepted SHA; intervening commits do not touch mutated package money/read paths.
+- PR #304 (`dd87696d3d1d8b15d9a9b1c5505aeef2b16078c3` -> merge `01dd87bc128fd5c09170f4dc4b60a3baa17d89a5`; run `44709630461`) closed S69-PO-6 A1/A2/A3: PO/WO server-side hardening, nullable `client_name`, 32 byte-exact `reports.*` keys, and 4 mutation kills.
+- PR #307 (`ba82aedd44e06876c05575c3b2be3405c2061949` -> merge b39e3c4bd8aea5ffd43f3069d9a3b5d0e7e4973a; run `44719715252`) delivered Reports UI T072/T073/T074 and the T061/T069 8-cell Reports Design Gate (Playwright 7/7, axe 0 per cell, 8 screenshots at `C:/Users/NEW LAP/.lifter/runs/s69-luna-009rep-ui/screenshots/`).
+- Cumulative prior evidence also includes PR #295 (`845247e3` -> `0bc6fc94`, run `44664939634`; 8 Packages screenshots at `C:/Users/NEW LAP/.lifter/runs/s68-gemini-f9ui/screenshots/`), #288, #290, #296, #297, #299, and #300.
 
-## Traceability and retained gates
+## Findings and retained gates
 
-Existing FR/SC-to-task mappings and the prior T034 reconciliation were inspected read-only. This lane did not edit `tasks.md`, `traceability.md`, or the integration verification ledger; reviewer ticks remain for the post-#295 closeout owner. `BLOCKED-COPY`, `ND-F9-2`, `ND-F9-3`, and `ND-F9-5` remain explicit. Provider terms-of-use verification and other pre-production gates remain open. No deployment or production-data claim is made.
+**BLOCKING: 0. NON-BLOCKING: 2.** The two deferred findings are `tests/e2e/reports.spec.ts:19` (hardcoded Windows screenshot directory) and `tests/e2e/reports.spec.ts:172-174` (unformatted `400 USD` regex); both are logged in `C:/Users/NEW LAP/.lifter/backlog/review-deferred.md`.
 
-## Mutation verdict and review status
+The repo-wide `npm run check:migration-versions:remote` gate passes across 330 remote refs: 14 F9 migrations from `20261029120000` through `20261218010000`, zero conflicts, zero migrations added.
 
-The passing integration run exercised existing in-suite mutation/rollback controls, including T065 controls. The eight independent §4 variants (trigger removal, commission-column grant, commission RPC role weakening, serialization weakening, composite-FK removal, audit mutation, each authorization wall independently, and numeric rounding mutation) were **not** each run as separate mutant-kill experiments. Accordingly, the review is **BLOCKED / NOT ACCEPTED** for independent T051 acceptance; the reviewed SHA is recorded, but there is no accepted implementation SHA from this campaign. The local OpenNext edge/size limitation is also retained for exact-head CI follow-up.
+Open/pre-production gates remain: T059 provider terms-of-use verification (pre-production per S65-R7), ND-F9-2, ND-F9-3, ND-F9-5, BLOCKED-COPY (copy beyond approved labels and the 32 `reports.*` keys), S68-PO-3 F-1 accepted SAMA provenance residual risk, and the documented Windows OpenNext edge symlink host note. No deployment or production-readiness claim is made.
 
-No task checkbox or protected implementation/spec file was changed by this review.
+## Scope and conclusion
 
-## Repository-wide checks
-
-The all-remote-ref migration-version scan passed across 603 refs with no filename/version conflicts. This lane adds no migration.
+This is a cumulative documentation review of the implementation, mutation evidence, design evidence, and FR/SC traceability at the exact accepted baseline. T032, T051, T063, and T071 evidence is reconciled in the task list, traceability matrix, and final Analyze. The accepted baseline includes all cumulative PRs listed above. No blocking finding remains; the two non-blocking E2E observations and all open/pre-production gates are retained explicitly.
