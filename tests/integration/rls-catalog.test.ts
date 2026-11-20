@@ -409,6 +409,7 @@ describe('tenancy security catalog (T007)', () => {
           'f13_project_entitlement',
           'f13_project_overdue',
           'f13_client_overdue_state',
+          'f13_award_sales_productivity_unit',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
           'f3_guard_platform_owner_profile_change',
@@ -482,6 +483,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_valid_builder_definition',
           'f15_valid_slider_label',
           'forbid_delete',
+          'f13_guard_sales_productivity_unit',
           'guard_client_trainer_assignment',
           'guard_client_trainer_assignment_truncate',
           'guard_exercise_version_retired_fields',
@@ -499,6 +501,8 @@ describe('tenancy security catalog (T007)', () => {
           'guard_package_offer_category',
           'guard_package_promotion_period',
           'guard_package_reporting_fx_snapshot',
+          'guard_package_tier_name_override_update',
+          'guard_package_tier_name_update',
           'guard_package_version_insert',
           'guard_package_version_market',
           'guard_registration_link_promotion_period',
@@ -939,6 +943,8 @@ describe('tenancy security catalog (T007)', () => {
               'guard_package_offer_category',
               'guard_package_version_insert',
               'guard_package_version_market',
+              'guard_package_tier_name_override_update',
+              'guard_package_tier_name_update',
               'jobs_updated_at',
               'lock_catalog_food_request',
               'normalize_catalog_food_identity_v1',
@@ -2166,6 +2172,71 @@ describe('F19 T021 activation catalog', () => {
   });
 });
 
+describe('F13 T044a Sales productivity catalog', () => {
+  it('forces RLS, grants no direct access, and installs immutable-award guards', async () => {
+    const [table] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid='public.sales_productivity_units'::regclass`;
+    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    const policies = await db`select * from pg_policies
+      where schemaname='public' and tablename='sales_productivity_units'`;
+    expect(policies).toHaveLength(0);
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] = await db`select has_table_privilege(${role},
+          'public.sales_productivity_units', ${privilege}) as allowed`;
+        expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
+      }
+    const triggers = await db`select tgname, tgtype::int as type, p.proname
+      from pg_trigger t join pg_proc p on p.oid=t.tgfoid
+      where tgrelid='public.sales_productivity_units'::regclass and not tgisinternal order by tgname`;
+    expect(triggers).toEqual([
+      {
+        tgname: 'sales_productivity_units_immutable',
+        type: 31,
+        proname: 'f13_guard_sales_productivity_unit',
+      },
+      {
+        tgname: 'sales_productivity_units_no_truncate',
+        type: 34,
+        proname: 'f13_guard_sales_productivity_unit',
+      },
+    ]);
+    const issuerTriggers =
+      await db`select tgname, tgtype::int as type, p.proname
+      from pg_trigger t join pg_proc p on p.oid=t.tgfoid
+      where tgrelid='public.registration_links'::regclass and tgname='registration_links_insert_guard'`;
+    expect(issuerTriggers).toEqual([
+      {
+        tgname: 'registration_links_insert_guard',
+        type: 7,
+        proname: 'guard_registration_link_insert',
+      },
+    ]);
+    const [award] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='app_private.f13_award_sales_productivity_unit()'::regprocedure`;
+    expect(award).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(award?.proconfig).toContain('search_path=""');
+  });
+});
+
 describe('F11 responsible-Trainer assignment catalog', () => {
   it('forces RLS, exposes only scoped reads, and grants no table writes', async () => {
     const [table] = await db`select relrowsecurity, relforcerowsecurity
@@ -2541,5 +2612,89 @@ describe('F11 T048 account deletion catalog', () => {
       });
       expect(fn?.proconfig, sig).toContain('search_path=""');
     }
+  });
+});
+
+// T078 (FR-035/SC-025): tier display-name tables are RPC-only, with no API
+// table grants, immutable identity columns and no authorized delete path.
+describe('package tier name security catalog (T078)', () => {
+  it.each(['package_tier_names', 'package_tier_name_overrides'])(
+    '%s forces RLS with no policies, no API grants and identity guards',
+    async (table) => {
+      const relation = `public.${table}`;
+      const [row] =
+        await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass`;
+      expect(row).toMatchObject({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies =
+        await db`select policyname from pg_policies where schemaname='public' and tablename=${table}`;
+      expect(policies).toEqual([]);
+      for (const role of ['anon', 'authenticated', 'service_role'])
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role},${relation},${privilege}) as allowed`;
+          expect(grant?.allowed).toBe(false);
+        }
+      const triggers =
+        await db`select tgname,tgtype::int as type,tgenabled from pg_trigger where tgrelid=${relation}::regclass and not tgisinternal order by tgname`;
+      expect(triggers).toEqual(
+        [
+          { tgname: `${table}_guard`, type: 19, tgenabled: 'O' },
+          { tgname: `${table}_no_delete`, type: 11, tgenabled: 'O' },
+          { tgname: `${table}_no_truncate`, type: 34, tgenabled: 'O' },
+        ].sort((a, b) => a.tgname.localeCompare(b.tgname)),
+      );
+    },
+  );
+  it('hardens the T078 tier-name RPCs and private guards', async () => {
+    for (const name of [
+      'public.set_package_tier_name(smallint,text,text)',
+      'public.set_package_tier_name_override(uuid,smallint,text,text)',
+      'public.get_package_tier_names(uuid)',
+      'app_private.guard_package_tier_name_update()',
+      'app_private.guard_package_tier_name_override_update()',
+    ]) {
+      const [fn] =
+        await db`select prosecdef,proconfig,provolatile,pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn?.proconfig).toContain('search_path=""');
+      expect(fn?.provolatile).toBe(
+        name.includes('get_package_tier_names') ? 's' : 'v',
+      );
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
+        expect(grant?.allowed).toBe(
+          role === 'authenticated' && name.startsWith('public.'),
+        );
+      }
+    }
+    expect(
+      (
+        await db`select column_name from information_schema.columns where table_schema='public' and table_name='package_tier_names' order by ordinal_position`
+      ).map((column) => column.column_name),
+    ).toEqual(['tier_rank', 'locale', 'name', 'updated_by', 'updated_at']);
+    expect(
+      (
+        await db`select column_name from information_schema.columns where table_schema='public' and table_name='package_tier_name_overrides' order by ordinal_position`
+      ).map((column) => column.column_name),
+    ).toEqual([
+      'workspace_id',
+      'tier_rank',
+      'locale',
+      'name',
+      'updated_by',
+      'updated_at',
+    ]);
   });
 });

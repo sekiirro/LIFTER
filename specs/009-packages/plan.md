@@ -250,7 +250,7 @@ PO wording is byte-exact in specs/009-packages/spec.md; interpretation is separa
 
 ### S43-PO-8 scope now specified
 
-The four market/type categories each contain Silver, Gold, and Platinum tier offers; rank belongs to the tier offer within its category. PO renames are global per locale, Workspace Owner overrides are workspace-local, and neither changes rank or terms. T077 and T078 are unblocked for implementation planning. **architect mapping (S43-R10).**
+The four market/type categories each contain Silver, Gold, and Platinum tier offers; rank belongs to the tier offer within its category. PO renames are global per locale and PO overrides may target any workspace; Workspace Owner overrides are limited to their own workspace. Both name forms use the publication-name rule (1–120 Unicode code points, nonblank). Renames and overrides emit no audit rows and do not change rank or terms. T077, T078, and T079 are covered by this design. **architect mapping (S43-R10); S67-PO-10.**
 
 ### S48-PO-10 migration and legacy cleanup
 

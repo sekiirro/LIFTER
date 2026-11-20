@@ -1,6 +1,7 @@
 # Spec Kit Analyze — F9 S43-PO-8 tier offer identity amendment
 
 **Analyzed:** 2026-11-18 07:08 Africa/Cairo
+**Status-only refresh (2026-11-19 — S67 T078):** No FR/SC/requirement text changed; `T078` was ticked with implementation evidence and traceability was updated only. 0 open CRITICAL/HIGH findings remain.
 **Status-only refresh (2026-11-19 — S67 merge of origin/main into s65-009-t055):** No requirement text changed by this lane; origin/main updates to tasks.md (T037/T046 status ticks) were merged. Analyze date refreshed to satisfy freshness gate. 0 open CRITICAL/HIGH findings remain.
 **Status-only refresh (2026-11-18 — S65 US5 PR2):** No requirement text changed; task status (`T040`, `T041`, `T043`, `T045`) and traceability evidence were updated only. 0 open CRITICAL/HIGH findings remain.
 **Method:** Reconciled FR-002, S43-PO-8 acceptance scenarios, offer logical key and uniqueness, publication input, T077 tags, plan, data model, contract, traceability, and availability-independent tier reads; verified the forward-only migration boundary.
@@ -343,3 +344,18 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 **Analyzed:** 2026-11-18 (UTC). Reconciled T065 teardown script (`supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`), conformance matrix (`specs/009-packages/reviews/t065-conformance.md`), and integration/mutation tests (`tests/integration/packages-c5-teardown.test.ts`, `tests/integration/packages-verification.md`) with `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS). No FR, SC, acceptance-scenario, or plan requirement text changed — only T065 status/evidence notes; T065 remains `[ ]` pending the separate four-category initialization forward migration (D10) and T070 post-implementation acceptance review.
 
 - PASS: 0 open CRITICAL, 0 open HIGH.
+
+## 2026-11-19 Analyze (S67-PO-10 FR-035 requirement delta)
+
+- Scope: compared FR-035 and its Given/When/Then scenarios in `spec.md`, tier-name design in `plan.md`, and T079 coverage in `tasks.md` against S67-PO-10; constitution 1.19.0 quality gates remain applicable.
+- PASS: all three PO decisions are explicit and consistent: 1–120 Unicode-code-point, nonblank publication-name validation; zero audit rows; PO may override any workspace while Workspace Owners remain own-workspace only and Sales/Trainer/anonymous are denied.
+- PASS: FR-035/SC-025 maps to T078 (existing behavior) and T079 (new constraints/authorization), with database, application, and test/evidence work identified. No conflicting requirement or plan assumption found.
+- Findings: 0 open CRITICAL, 0 open HIGH; no open ambiguity for this scope.
+
+## 2026-11-19 Analyze (S68 closeout T034/T062/T066/T076; task-status only)
+
+**Analyzed:** 2026-11-19 (UTC). Trigger: S68 documentation-only closeout — T034 reconciliation recorded verbatim (`specs/009-packages/reviews/t034-reconciliation.md`), the T062 independent FX security review copied to `specs/009-packages/reviews/t062-fx-security-review.md` with its two PO decisions (S68-PO-3 Q1/Q2) added to the spec PO decision register, T066/T076 ticked on merged PR #290/#288 CI evidence, the stale FR-001 test citation repaired, and PR #273-introduced mojibake repaired in `traceability.md`. No FR, SC, acceptance-scenario or plan requirement text changed.
+
+- PASS: T034/T062/T066/T076 evidence cites exact merged PR heads and verified CI runs (PR #288 head `16e51c76977e6bb4253d266b8bdfe94c0d00cc8c`, run `44458288230`; PR #290 head `5dc1f7596486f066104c205d98f257f925754ebf`, run `44465484474`; both `pull_request`, conclusion `success`, head SHAs verified against the PRs). No new product ambiguity: S68-PO-3 Q1/Q2 close the T062 review's two recorded decision items; provider terms-of-use stays a pre-production blocker (S65-R7).
+- PASS: the mojibake repair is byte-level only (→ ×6, –, — ×2, ›, ×, and the double-encoded U+FFFD restored to § from the referenced `packages-verification.md` heading); `tasks.md`, this file and `tests/integration/packages-verification.md` scanned clean; the mojibake-pattern grep gate on `traceability.md` is 0.
+- Findings: 0 open CRITICAL, 0 open HIGH.
