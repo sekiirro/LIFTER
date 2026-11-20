@@ -259,3 +259,13 @@ S67-R27 disposition: T051 remains `[ ]`. Hook-scope mutations for T050b (signatu
 | FR-018, FR-030 controls A/D; FR-025(a); SC-015 | T049b | `tests/integration/staff-reset-hook.test.ts::T049b direct Auth records unavailable-hook status and body without SMTP fallback`                                             | Commit `85beb3f0`; Stack D Auth environment had Send Email hook enabled, local hook URI and secrets present. Unavailable transport status/body captured; no SMTP fallback. Control-D acceptance remains blocked pre-production by S67-PO-9.                                                                                            | PARTIAL / UNCHECKED |
 
 S68 disposition: T035 and T049c are ticked with the Stack D evidence above. T049b remains unticked because its Control-D subset is blocked by S67-PO-9. T050a/Control B and T043 remain unticked and blocked by S67-PO-9. No migration was added.
+
+## S69 PR2 fix verification (2026-11-20)
+
+Per architect ruling S69-R1: `T038a` is Control A (hook-level test-recipient permission check implemented in `T050b`), not blocked by S67-PO-9, and is moved from `tests/integration/auth-recovery.test.ts` into `tests/integration/staff-reset-hook.test.ts` (`T038a app action reaches the hook for eligible staff outside the permitted test recipient, stays generic, and sends no mail`) using `LOCAL_STACK`, `appOrigin()`, `appReset()`, and dynamic Mailpit port (`35424` on Stack C, `45424` on Stack D). In CI (where `LOCAL_STACK` is unset), `T038a` skips cleanly with `staff-reset-hook.test.ts`; on Stack D with the local hook receiver running, `T038a` executes and passes (`it`, not `it.fails`). Only the 8 Control-B tests (4 `T049a` + 4 `T049d`) retain `redIt` (`it.fails`) in `tests/integration/auth-recovery.test.ts`.
+
+- Stack D (`tests/integration/staff-reset-hook-schema.test.ts`): 6/6 passed after clean DB reset.
+- Stack D (`tests/integration/staff-reset-hook.test.ts`): 7 passed (including `T038a` and `T049c`), 1 conditional skip (`T049b` transport outage test requires `S68_HOOK_UNAVAILABLE=1`).
+- Stack D (`tests/integration/auth-recovery.test.ts`, normal mode): 32 passed, 8 expected fail (`4 T049a` + `4 T049d`), 0 failures.
+- Stack D (`tests/integration/auth-recovery.test.ts`, `AUTH_RECOVERY_RED_STRICT=1`): 32 passed, 8 failed (`4 T049a` + `4 T049d`; `T038a` not failing).
+- `T043`, `T049a`, `T049b`, `T049d`, `T050a` remain unticked per S67-PO-9. No migration was added.

@@ -4,7 +4,7 @@
  * `npm run test:integration -- tests/integration/auth-recovery.test.ts`.
  */
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { loadActorRows } from '../../lib/auth/actor';
 import { isRecoverySession } from '../../lib/auth/recovery-session';
@@ -13,7 +13,6 @@ import {
   anonClient,
   checked,
   createStaff,
-  loadEnv,
   sql,
   twoWorkspaceFixture,
 } from './harness';
@@ -132,74 +131,6 @@ describe('actor', () => {
       activeWorkspaceIds: [],
     });
   });
-});
-
-describe('staff-reset-permitted (T038a)', () => {
-  // T038a is blocked by the selected test-permission configuration (tasks.md:175; S67-PO-9).
-  redIt(
-    'the app action reaches the hook for eligible staff outside the permitted test recipient, stays generic, and sends no mail',
-    async () => {
-      const staff = await createStaff('trainer', 'reset-not-permitted');
-      const before = await db`
-      select count(*)::int as count
-      from app_private.staff_password_reset_hook_requests
-      where auth_user_id = ${staff.userId}
-    `;
-      // The integration harness validates the selected Stack C environment
-      // before this file is loaded; wrapper aliases need not use SUPABASE_* names.
-      const actionClient = anonClient();
-      const resetPasswordForEmail = vi.fn(
-        (email: string, options: { redirectTo: string }) =>
-          actionClient.auth.resetPasswordForEmail(email, options),
-      );
-      vi.resetModules();
-      vi.doMock('server-only', () => ({}));
-      vi.doMock('../../lib/supabase/env', () => ({
-        readServerEnv: () => ({ appOrigin: 'http://127.0.0.1:3103' }),
-      }));
-      vi.doMock('../../lib/supabase/server', () => ({
-        createSessionClient: async () => ({ auth: { resetPasswordForEmail } }),
-      }));
-      const { requestStaffReset } = await import('../../app/login/actions');
-      const form = new FormData();
-      form.set('email', staff.email);
-      const response = await requestStaffReset(null, form);
-      vi.doUnmock('../../lib/supabase/server');
-      vi.resetModules();
-      expect(response).toEqual({ status: 'ok' });
-      expect(resetPasswordForEmail).toHaveBeenCalledWith(staff.email, {
-        redirectTo: 'http://127.0.0.1:3103/auth/recovery',
-      });
-      const providerResult = await resetPasswordForEmail.mock.results[0]!.value;
-      expect(Boolean(providerResult.error)).toBe(false);
-
-      const after = await db`
-      select count(*)::int as count
-      from app_private.staff_password_reset_hook_requests
-      where auth_user_id = ${staff.userId}
-    `;
-      expect(after[0]!.count).toBe(before[0]!.count + 1);
-      const rows = await db`
-      select outcome
-      from app_private.staff_password_reset_hook_requests
-      where auth_user_id = ${staff.userId}
-      order by occurred_at desc
-      limit 1
-    `;
-      expect(rows).toHaveLength(1);
-      expect(rows[0]!.outcome).toBe('denied');
-      const { apiUrl } = loadEnv();
-      const mailSearch = new URL('/api/v1/search', apiUrl);
-      mailSearch.port = '35424';
-      mailSearch.searchParams.set('query', `to:"${staff.email}"`);
-      const mailResponse = await fetch(mailSearch);
-      expect(mailResponse.ok).toBe(true);
-      const mailSummary = (await mailResponse.json()) as {
-        messages_count: number;
-      };
-      expect(mailSummary.messages_count).toBe(0);
-    },
-  );
 });
 
 describe('staff-reset-guard (T049a)', () => {

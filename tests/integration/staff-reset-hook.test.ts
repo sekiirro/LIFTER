@@ -1,10 +1,15 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { admin, anonClient, loadEnv, sql } from './harness';
+import { admin, anonClient, createStaff, loadEnv, sql } from './harness';
+
+let sessionClientOverride: (() => ReturnType<typeof anonClient>) | null = null;
 
 vi.mock('server-only', () => ({}));
 vi.mock('../../lib/supabase/server', async () => ({
-  createSessionClient: async () => (await import('./harness')).anonClient(),
+  createSessionClient: async () =>
+    sessionClientOverride
+      ? sessionClientOverride()
+      : (await import('./harness')).anonClient(),
 }));
 
 const LOCAL_STACK = ['c', 'd'].includes(
@@ -17,10 +22,14 @@ let testUserId: string | null = null;
 let refusedUserId: string | null = null;
 const REFUSED_TEST_EMAIL = 'staff-reset-refused@example.test';
 
-async function capturedMessageCount() {
-  const url = new URL('/api/v1/messages', loadEnv().apiUrl);
+function mailpitUrl(pathname: string) {
+  const url = new URL(pathname, loadEnv().apiUrl);
   url.port = STACK_C ? '35424' : '45424';
-  const response = await fetch(url);
+  return url;
+}
+
+async function capturedMessageCount() {
+  const response = await fetch(mailpitUrl('/api/v1/messages'));
   if (!response.ok) throw new Error('Local message capture is unavailable');
   const result = (await response.json()) as { messages_count?: number };
   return result.messages_count ?? 0;
@@ -285,6 +294,60 @@ describe.skipIf(!LOCAL_STACK)('staff reset send-email hook', () => {
       );
     },
   );
+
+  it('T038a app action reaches the hook for eligible staff outside the permitted test recipient, stays generic, and sends no mail', async () => {
+    const staff = await createStaff('trainer', 'reset-not-permitted');
+    const [before] = await db<{ count: number }[]>`
+      select count(*)::int as count
+      from app_private.staff_password_reset_hook_requests
+      where auth_user_id = ${staff.userId}
+    `;
+    const actionClient = anonClient();
+    const resetPasswordForEmail = vi.spyOn(
+      actionClient.auth,
+      'resetPasswordForEmail',
+    );
+    const origin = appOrigin();
+    sessionClientOverride = () => actionClient;
+    vi.stubEnv('APP_ORIGIN', origin);
+    let response: Awaited<ReturnType<typeof appReset>>;
+    try {
+      response = await appReset(staff.email);
+    } finally {
+      sessionClientOverride = null;
+      vi.unstubAllEnvs();
+    }
+    expect(response).toEqual({ status: 'ok' });
+    expect(resetPasswordForEmail).toHaveBeenCalledWith(staff.email, {
+      redirectTo: new URL('/auth/recovery', origin).toString(),
+    });
+    const providerResult = await resetPasswordForEmail.mock.results[0]!.value;
+    expect(Boolean(providerResult.error)).toBe(false);
+
+    const [after] = await db<{ count: number }[]>`
+      select count(*)::int as count
+      from app_private.staff_password_reset_hook_requests
+      where auth_user_id = ${staff.userId}
+    `;
+    expect(after?.count).toBe((before?.count ?? 0) + 1);
+    const [latest] = await db<{ outcome: string }[]>`
+      select outcome
+      from app_private.staff_password_reset_hook_requests
+      where auth_user_id = ${staff.userId}
+      order by occurred_at desc
+      limit 1
+    `;
+    expect(latest?.outcome).toBe('denied');
+
+    const mailSearch = mailpitUrl('/api/v1/search');
+    mailSearch.searchParams.set('query', `to:"${staff.email}"`);
+    const mailResponse = await fetch(mailSearch);
+    expect(mailResponse.ok).toBe(true);
+    const mailSummary = (await mailResponse.json()) as {
+      messages_count: number;
+    };
+    expect(mailSummary.messages_count).toBe(0);
+  });
 
   it('T049c enforces account and global caps across mixed app/direct requests', async () => {
     await ensureApprovedStaffFixture();
