@@ -360,3 +360,26 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - PASS: T034/T062/T066/T076 evidence cites exact merged PR heads and verified CI runs (PR #288 head `16e51c76977e6bb4253d266b8bdfe94c0d00cc8c`, run `44458288230`; PR #290 head `5dc1f7596486f066104c205d98f257f925754ebf`, run `44465484474`; both `pull_request`, conclusion `success`, head SHAs verified against the PRs). No new product ambiguity: S68-PO-3 Q1/Q2 close the T062 review's two recorded decision items; provider terms-of-use stays a pre-production blocker (S65-R7).
 - PASS: the mojibake repair is byte-level only (→ ×6, –, — ×2, ›, ×, and the double-encoded U+FFFD restored to § from the referenced `packages-verification.md` heading); `tasks.md`, this file and `tests/integration/packages-verification.md` scanned clean; the mojibake-pattern grep gate on `traceability.md` is 0.
 - Findings: 0 open CRITICAL, 0 open HIGH.
+
+## S69-PO-6 fresh full Analyze — 2026-11-20
+
+**Scope reviewed:** complete current `spec.md` (FR-001..FR-036, SC-001..SC-026 and acceptance scenarios), `plan.md`, all task statuses and FR tags in `tasks.md`, `contracts/packages-surface.md`, data model and API/read contracts, plus `traceability.md`. This pass supersedes earlier snapshots for current-state coherence and covers S69-PO-6 A1/A2/A3 (approval SHA-256 `9D53FB69C5A24E336505BED8608EB085E6603BF44104B8EE4F8E9278BACE26AD`).
+
+| Analyze area                                       | Result  | Evidence / reconciliation                                                                                                                                                                                                          |
+| -------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Numbered FRs, measurable SCs, acceptance scenarios | PASS    | FR-031/FR-032 and SC-016 now define exact role × workspace behavior, full nullable client-name projection, both server authorization walls, and zero-data denials; S69 amendment is cited. Existing FR/SC scope remains intact.    |
+| Spec ↔ plan ↔ contract                             | PASS    | Plan and surface contract agree on PO/WO-only access, active own-workspace scope for WO, server-side DB and app enforcement, and nullable `client_name` on authorized report rows.                                                 |
+| Spec ↔ tasks ↔ traceability                        | PASS    | T060 covers reporting data/authorization evidence; T061 covers landed copy. T035 is superseded/N-A by A3 and FR-021/SC-011 point to T038/T050/T066/T064a. UI tasks T069/T072/T073/T074 remain open and unticked.                   |
+| Approved copy and deferred UI boundary             | PASS    | Exactly 9 S65-PO-20 and 23 S69-PO-6 A1 keys (32 total) are byte-exact EN/AR and tested. No report UI component/page is in this slice; all remaining unapproved UI copy stays BLOCKED-COPY.                                         |
+| Security and data exposure                         | PASS    | All three RPCs require PO/WO and workspace access; app layer checks server-derived actor before RPC; anonymous/non-staff and unauthorized roles cannot receive rows or names. Commission RPC already had the required guard.       |
+| Migration and forward compatibility                | PASS    | New reporting-only migration is in reserved `20261218010000-20261218015959`; pushed migration history is preserved. All-ref origin migration maximum scan remains a required pre-push gate.                                        |
+| Deliberately open verification/production items    | TRACKED | T032 eight-mutant campaign and T051 cumulative review remain open; T059 provider terms remain pre-production; T063/T071 post-UI Analyze and T069/T072/T073/T074 UI remain open by scope. These are not requirement contradictions. |
+
+### Findings
+
+- Open CRITICAL: **0**.
+- Open HIGH: **0**.
+- Open requirement contradictions: **0**.
+- Open PO decisions introduced by this amendment: **0**.
+
+This is a document-consistency Analyze. Runtime, mutation, CI and all-ref migration gates are recorded separately in the lane report and must pass before push.

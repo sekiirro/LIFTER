@@ -250,3 +250,14 @@ Each mutation followed drop guard → RED → restore → `git diff --exit-code`
 Final T079 targeted baseline: tier-name unit 43/43; tier-name integration 12/12; RLS catalog 49/49. The existing zero-audit assertion remains in `tests/integration/packages-tier-names.test.ts` and passes with PO and Workspace Owner mutations.
 
 Final repository gates: full unit 4,032 passed / 24 expected failures; lint, typecheck, `npm run format:check`, `node scripts/format-check-changed.mjs`, migration timestamps (342 validated, 11 documented exceptions), `npm run check:secrets`, and `npm run build:cron` passed. `npm run build:edge` compiled Next.js, typecheck, and static pages, then failed bundling with Windows `EPERM` creating a symlink under `.open-next`; the dependent `npm run size` check could not pass because `.open-next/worker.js` was not produced. This platform build limitation is recorded for exact-head CI verification.
+
+## S69-PO-6 mutation kills (Stack B)
+
+Disposable transactional probes in `tests/integration/stack-b-mutations.tmp.test.ts` applied each database mutant inside a transaction and forced rollback after the focused denial assertion proved it would fail:
+
+- `package_monthly_collections`: removing the PO/WO role guard let Sales through; the expected `not_permitted` assertion failed (KILLED).
+- `package_installment_report`: removing the PO/WO role guard let Trainer through; the expected `not_permitted` assertion failed (KILLED).
+- `package_installment_report`: removing `has_workspace_access(workspace_id, null)` let a foreign-workspace WO through; the expected `not_permitted` assertion failed (KILLED).
+- `lib/packages/reporting.ts`: removing the app PO/WO role check caused `tests/unit/packages-reporting.test.ts` to fail 3 denial cases (Sales, Trainer, Client) and prove RPC setup was reached (KILLED); source restored byte-for-byte in `finally`.
+
+All three database function mutations rolled back at transaction end; the app source mutation restored byte-for-byte. The final Stack B reporting suite and app-wall unit suite passed on the restored implementation.
