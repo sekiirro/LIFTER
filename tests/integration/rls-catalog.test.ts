@@ -409,6 +409,7 @@ describe('tenancy security catalog (T007)', () => {
           'f13_project_entitlement',
           'f13_project_overdue',
           'f13_client_overdue_state',
+          'f13_award_sales_productivity_unit',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
           'f3_guard_platform_owner_profile_change',
@@ -482,6 +483,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_valid_builder_definition',
           'f15_valid_slider_label',
           'forbid_delete',
+          'f13_guard_sales_productivity_unit',
           'guard_client_trainer_assignment',
           'guard_client_trainer_assignment_truncate',
           'guard_exercise_version_retired_fields',
@@ -2167,6 +2169,71 @@ describe('F19 T021 activation catalog', () => {
         proname: 'f19_guard_activation_source',
       },
     ]);
+  });
+});
+
+describe('F13 T044a Sales productivity catalog', () => {
+  it('forces RLS, grants no direct access, and installs immutable-award guards', async () => {
+    const [table] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid='public.sales_productivity_units'::regclass`;
+    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    const policies = await db`select * from pg_policies
+      where schemaname='public' and tablename='sales_productivity_units'`;
+    expect(policies).toHaveLength(0);
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] = await db`select has_table_privilege(${role},
+          'public.sales_productivity_units', ${privilege}) as allowed`;
+        expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
+      }
+    const triggers = await db`select tgname, tgtype::int as type, p.proname
+      from pg_trigger t join pg_proc p on p.oid=t.tgfoid
+      where tgrelid='public.sales_productivity_units'::regclass and not tgisinternal order by tgname`;
+    expect(triggers).toEqual([
+      {
+        tgname: 'sales_productivity_units_immutable',
+        type: 31,
+        proname: 'f13_guard_sales_productivity_unit',
+      },
+      {
+        tgname: 'sales_productivity_units_no_truncate',
+        type: 34,
+        proname: 'f13_guard_sales_productivity_unit',
+      },
+    ]);
+    const issuerTriggers =
+      await db`select tgname, tgtype::int as type, p.proname
+      from pg_trigger t join pg_proc p on p.oid=t.tgfoid
+      where tgrelid='public.registration_links'::regclass and tgname='registration_links_insert_guard'`;
+    expect(issuerTriggers).toEqual([
+      {
+        tgname: 'registration_links_insert_guard',
+        type: 7,
+        proname: 'guard_registration_link_insert',
+      },
+    ]);
+    const [award] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='app_private.f13_award_sales_productivity_unit()'::regprocedure`;
+    expect(award).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(award?.proconfig).toContain('search_path=""');
   });
 });
 
