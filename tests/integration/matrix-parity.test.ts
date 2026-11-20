@@ -500,6 +500,108 @@ describe('has_workspace_access parity', () => {
 });
 
 describe('package operation parity', () => {
+  it('scopes market/type reads to active workspaces and denies sales/trainer commission reads', async () => {
+    const { packagesFixture, publishedFixture } =
+      await import('./packages-fixture');
+    const fixture = await packagesFixture();
+    const publishedA = await publishedFixture(fixture, {
+      tier_rank: 1,
+      workspace_id: fixture.wsA.id,
+    });
+    const publishedB = await publishedFixture(fixture, {
+      tier_rank: 1,
+      workspace_id: fixture.wsB.id,
+    });
+    const categories = new Map([
+      [
+        fixture.wsA.id,
+        { id: publishedA.id, market: 'International', type: 'Year-round' },
+      ],
+      [
+        fixture.wsB.id,
+        { id: publishedB.id, market: 'International', type: 'Year-round' },
+      ],
+    ]);
+    const versionsByWorkspace = new Map([
+      [fixture.wsA.id, publishedA.versionId],
+      [fixture.wsB.id, publishedB.versionId],
+    ]);
+    for (const [name, identity] of Object.entries(fixture.actors)) {
+      const role =
+        name === 'po'
+          ? 'platform_owner'
+          : name.startsWith('wo')
+            ? 'workspace_owner'
+            : name.startsWith('sales') || name === 'revoked'
+              ? 'sales'
+              : name.startsWith('trainer')
+                ? 'trainer'
+                : null;
+      const actor: Actor = {
+        userId: identity.userId ?? '',
+        role,
+        activeWorkspaceIds: name.endsWith('A')
+          ? [fixture.wsA.id]
+          : name.endsWith('B')
+            ? [fixture.wsB.id]
+            : [],
+      };
+      for (const workspaceId of [fixture.wsA.id, fixture.wsB.id]) {
+        const canRead = authorize(
+          actor,
+          'generate_registration_link',
+          workspaceId,
+        );
+        const packages = await identity.client
+          .from('packages')
+          .select('id,market,type')
+          .eq('workspace_id', workspaceId);
+        const versions = await identity.client
+          .from('package_versions_safe')
+          .select('id,market,type')
+          .eq('workspace_id', workspaceId);
+        if (name === 'anon') {
+          expect(packages.error).not.toBeNull();
+          expect(versions.error).not.toBeNull();
+        } else {
+          const category = categories.get(workspaceId)!;
+          expect(packages.data, `${name}/${workspaceId} packages`).toEqual(
+            canRead
+              ? [
+                  {
+                    id: category.id,
+                    market: category.market,
+                    type: category.type,
+                  },
+                ]
+              : [],
+          );
+          expect(
+            versions.data,
+            `${name}/${workspaceId} package_versions_safe`,
+          ).toEqual(
+            canRead
+              ? [
+                  {
+                    id: versionsByWorkspace.get(workspaceId),
+                    market: 'International',
+                    type: 'Year-round',
+                  },
+                ]
+              : [],
+          );
+        }
+        if (role === 'sales' || role === 'trainer') {
+          const commissions = await identity.client.rpc(
+            'get_package_version_commissions',
+            { workspace_id: workspaceId },
+          );
+          expect(commissions.error).not.toBeNull();
+        }
+      }
+    }
+  });
+
   it('pricing and registration scope match app/DB for active, revoked, null-role and membership-free PO', async () => {
     const { packagesFixture, createSynthetic, publish, publishedFixture } =
       await import('./packages-fixture');
