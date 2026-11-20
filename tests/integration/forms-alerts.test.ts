@@ -814,3 +814,98 @@ it('mutation: removing legacy owner-stage suppression is caught', async () => {
     },
   );
 });
+
+// 011 T053 / FR-024 / SC-017: the client-late Trainer alert is deferred. Release
+// code must emit zero Trainer alert rows and zero Trainer notifications when a
+// client submission deadline passes without an accepted submission, both when a
+// responsible Trainer is assigned to the client and when none is assigned.
+it('011 T053 / SC-017 (FR-024): passed client deadline emits zero Trainer alert rows or notifications, with and without an assigned Trainer', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await expect(
+    db.begin(async (tx) => {
+      const withTrainer = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-06-01T10:00:00.000Z',
+        f.po.userId,
+      );
+      const withoutTrainer = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-06-02T10:00:00.000Z',
+        f.po.userId,
+      );
+      // Assigned-Trainer case: a responsible Trainer is set on the client-late
+      // schedule. Unassigned case: it is explicitly null.
+      await tx`update app_private.form_alert_schedules set trainer_user_id=${f.trainerA.userId}
+        where workspace_id=${f.wsA.id} and source_assignment_id=${withTrainer} and alert_kind='client_late'`;
+      await tx`update app_private.form_alert_schedules set trainer_user_id=null
+        where workspace_id=${f.wsA.id} and source_assignment_id=${withoutTrainer} and alert_kind='client_late'`;
+
+      // Neither deadline has an accepted submission.
+      const [submissions] = await tx`select count(*)::int as n
+        from app_private.form_submissions
+        where workspace_id=${f.wsA.id}
+          and assignment_id in (${withTrainer}::uuid,${withoutTrainer}::uuid)`;
+      expect(submissions?.n).toBe(0);
+
+      // Evaluate after both deadlines (and after a 24h Trainer stage would have
+      // fired had the deferred alert been enabled).
+      expect(await core(tx, f.wsA.id, '2026-06-03T12:00:00.000Z')).toEqual({
+        status: 'ok',
+        enqueued: 4,
+      });
+
+      // Sanity: the only notices are the PO/WO client-owners-immediate stages.
+      const ownerOccurrences = await tx`select o.stage,o.recipient_user_id
+        from app_private.form_alert_occurrences o
+        where o.workspace_id=${f.wsA.id}
+          and o.schedule_id in (
+            select id from app_private.form_alert_schedules
+            where workspace_id=${f.wsA.id}
+              and source_assignment_id in (${withTrainer}::uuid,${withoutTrainer}::uuid)
+          )`;
+      expect(ownerOccurrences).toHaveLength(4);
+      expect(
+        ownerOccurrences.every(
+          (row) => row.stage === 'client_owners_immediate',
+        ),
+      ).toBe(true);
+      expect(
+        ownerOccurrences.map((row) => row.recipient_user_id).sort(),
+      ).toEqual([f.po.userId, f.woA.userId, f.po.userId, f.woA.userId].sort());
+
+      // SC-017: zero Trainer alert rows and zero Trainer notifications, in both
+      // the assigned and the unassigned Trainer case.
+      const trainerIds = [f.trainerA.userId, f.trainerB.userId];
+      const [trainerOccurrences] = await tx`select count(*)::int as n
+        from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id}
+          and recipient_user_id=any(${trainerIds}::uuid[])`;
+      expect(trainerOccurrences?.n).toBe(0);
+      const [trainerStageRows] = await tx`select count(*)::int as n
+        from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and stage='client_trainer_24h'`;
+      expect(trainerStageRows?.n).toBe(0);
+      const [trainerDeliveries] = await tx`select count(*)::int as n
+        from app_private.form_alert_deliveries
+        where workspace_id=${f.wsA.id}
+          and recipient_user_id=any(${trainerIds}::uuid[])`;
+      expect(trainerDeliveries?.n).toBe(0);
+      const [trainerInbox] = await tx`select count(*)::int as n
+        from app_private.form_alert_inbox
+        where workspace_id=${f.wsA.id}
+          and recipient_user_id=any(${trainerIds}::uuid[])`;
+      expect(trainerInbox?.n).toBe(0);
+      const [trainerJobs] = await tx`select count(*)::int as n
+        from public.jobs
+        where kind='forms.alert'
+          and payload->>'recipient_id'=any(${trainerIds}::text[])`;
+      expect(trainerJobs?.n).toBe(0);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
