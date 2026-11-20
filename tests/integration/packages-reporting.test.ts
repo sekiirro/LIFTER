@@ -8,15 +8,18 @@ import {
   type Context,
   type Purchase,
 } from './registration-approval-payment-fixture';
-import { admin } from './harness';
+import { admin, anonClient } from './harness';
 
 const db = sql();
 let f: Context;
 let p: Purchase;
+let clientName: string;
 
 beforeAll(async () => {
   f = await (await import('./registration-approval-fixture')).clientContext();
   p = await bought(f);
+  const [client] = await db`select name from public.clients where id=${p.t.id}`;
+  clientName = client!.name as string;
   await db.begin((tx) => activate(tx, f, p));
   // A Cairo-local December collection immediately follows a November UTC
   // timestamp. The fixture is synthetic and the mutation is restored in-scope.
@@ -49,6 +52,7 @@ it('T068 reports actual collection rows in their Africa/Cairo collection month a
         amount_minor: '400',
         currency: 'USD',
         package_id: expect.any(String),
+        client_name: clientName,
       }),
     ],
     accounting_events: [],
@@ -103,6 +107,7 @@ it('T068 keeps correction accounting events separate from actual collection rows
       event_id: reversed.receipt!.event_id,
       kind: 'correction_reversal',
       amount_minor: '-400',
+      client_name: 'U3 synthetic client',
     }),
   ]);
 });
@@ -443,6 +448,7 @@ it('T060 returns installment due, paid, remaining, and installment-client data f
     installments: expect.arrayContaining([
       expect.objectContaining({
         subscription_id: p.sid,
+        client_name: clientName,
         seq: 1,
         due_on: null,
         amount_minor: '400',
@@ -495,33 +501,75 @@ it('T068 keeps snapshot storage private and limits its writer to service_role', 
   });
 });
 
-it('T060 keeps package commission readable by PO/WO and denied to Sales/Trainer', async () => {
-  for (const role of ['po', 'woA'] as const) {
-    const allowed = await f.actors[role].client.rpc(
-      'package_commission_report',
-      {
-        workspace_id: f.wsA.id,
+it('S69-PO-6 restricts all reporting RPCs to PO/own-workspace WO and projects full client names', async () => {
+  const calls = [
+    (client: (typeof f.actors.po)['client'], workspaceId: string) =>
+      client.rpc('package_monthly_collections', {
+        workspace_id: workspaceId,
         month_start: '2026-12-01',
-      },
-    );
-    expect(allowed.error, role).toBeNull();
-    expect(allowed.data.status, role).toBe('ok');
+      }),
+    (client: (typeof f.actors.po)['client'], workspaceId: string) =>
+      client.rpc('package_commission_report', {
+        workspace_id: workspaceId,
+        month_start: '2026-12-01',
+      }),
+    (client: (typeof f.actors.po)['client'], workspaceId: string) =>
+      client.rpc('package_installment_report', { workspace_id: workspaceId }),
+  ];
+  for (const workspaceId of [f.wsA.id, f.wsB.id]) {
+    for (const call of calls) {
+      const allowed = await call(f.actors.po.client, workspaceId);
+      expect(allowed.error).toBeNull();
+      expect(allowed.data.status).toBe('ok');
+      if (workspaceId === f.wsA.id && 'collections' in allowed.data) {
+        expect(allowed.data.collections[0]).toMatchObject({
+          client_name: clientName,
+        });
+      }
+      if (workspaceId === f.wsA.id && 'installments' in allowed.data) {
+        expect(allowed.data.installments[0]).toMatchObject({
+          client_name: clientName,
+        });
+      }
+    }
+  }
+  for (const call of calls) {
+    const own = await call(f.actors.woA.client, f.wsA.id);
+    expect(own.error).toBeNull();
+    expect(own.data.status).toBe('ok');
+    if ('collections' in own.data)
+      expect(own.data.collections[0]).toMatchObject({
+        client_name: clientName,
+      });
+    if ('installments' in own.data)
+      expect(own.data.installments[0]).toMatchObject({
+        client_name: clientName,
+      });
+    const foreign = await call(f.actors.woA.client, f.wsB.id);
+    expect(foreign.error).toBeNull();
+    expect(foreign.data).toEqual({ status: 'not_permitted' });
   }
   for (const role of ['salesA', 'trainerA'] as const) {
-    const denied = await f.actors[role].client.rpc(
-      'package_commission_report',
-      {
-        workspace_id: f.wsA.id,
-        month_start: '2026-12-01',
-      },
-    );
-    expect(denied.error, role).toBeNull();
-    expect(denied.data, role).toEqual({ status: 'not_permitted' });
-    const collections = await f.actors[role].client.rpc(
-      'package_monthly_collections',
-      { workspace_id: f.wsA.id, month_start: '2026-12-01' },
-    );
-    expect(collections.error, role).toBeNull();
-    expect(JSON.stringify(collections.data), role).not.toMatch(/commission/i);
+    for (const workspaceId of [f.wsA.id, f.wsB.id]) {
+      for (const call of calls) {
+        const denied = await call(f.actors[role].client, workspaceId);
+        expect(denied.error, `${role} ${workspaceId}`).toBeNull();
+        expect(denied.data, `${role} ${workspaceId}`).toEqual({
+          status: 'not_permitted',
+        });
+      }
+    }
+  }
+  const clientClient = anonClient();
+  const clientLogin = await clientClient.auth.signInWithPassword({
+    email: p.t.email,
+    password: p.t.password,
+  });
+  expect(clientLogin.error).toBeNull();
+  for (const call of calls) {
+    const clientResult = await call(clientClient, f.wsA.id);
+    expect(clientResult.error?.code).toBe('42501');
+    const anonymousResult = await call(f.actors.anon.client, f.wsA.id);
+    expect(anonymousResult.error?.code).toBe('42501');
   }
 });

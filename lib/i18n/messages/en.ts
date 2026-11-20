@@ -1,6 +1,44 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  'reports.collections.empty': 'No collections in this period.',
+  'reports.collections.loadError':
+    'Unable to load collections. Please try again.',
+  'reports.collections.help':
+    'Shows actual collections only. Settlement records are separate.',
+  'reports.commissions.empty': 'No commissions in this period.',
+  'reports.commissions.loadError':
+    'Unable to load commissions. Please try again.',
+  'reports.commissions.help':
+    'Converted commission is visible to the Platform Owner and workspace owners only.',
+  'reports.installments.empty': 'No installments due.',
+  'reports.installments.loadError':
+    'Unable to load installments. Please try again.',
+  'reports.installments.help':
+    'Lists due dates with paid and remaining amounts.',
+  'reports.title': 'Reports',
+  'reports.month': 'Month',
+  'reports.previousMonth': 'Previous month',
+  'reports.nextMonth': 'Next month',
+  'reports.loading': 'Loading reports…',
+  'reports.denied': 'You cannot view reports.',
+  'reports.section.collections': 'Collections',
+  'reports.section.commissions': 'Commissions',
+  'reports.section.installments': 'Installments',
+  'reports.column.date': 'Date',
+  'reports.column.package': 'Package',
+  'reports.column.client': 'Client',
+  'reports.column.amount': 'Amount',
+  'reports.column.currency': 'Currency',
+  'reports.column.convertedEgp': 'Converted (EGP)',
+  'reports.column.commission': 'Commission',
+  'reports.column.pendingRates': 'Pending rates',
+  'reports.column.dueOn': 'Due date',
+  'reports.column.paid': 'Paid',
+  'reports.column.remaining': 'Remaining',
+  'reports.totalConvertedEgp': 'Converted total (EGP)',
+  'reports.statusPendingRate': 'Rate pending',
+  'reports.installmentClient': 'Installment client',
   // spec 023 client progress coaching (S55-PO-10 approved copy)
   'progress.title': 'Progress',
   'progress.measurements.title': 'Measurements',
