@@ -2,7 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { admin, loadEnv, sql } from './harness';
 
-const LOCAL_STACK_D = process.env.LIFTER_SUPABASE_STACK === 'd';
+const LOCAL_STACK = ['c', 'd'].includes(
+  process.env.LIFTER_SUPABASE_STACK ?? '',
+);
 const db = sql();
 const runId = randomUUID();
 const hookPrefix = `t044-${runId}`;
@@ -36,68 +38,66 @@ async function claimRequest(
   return result.data;
 }
 
-describe.skipIf(!LOCAL_STACK_D)(
-  'T044 staff reset hook schema (Stack D)',
-  () => {
-    beforeAll(() => {
-      loadEnv();
-      testUserId = randomUUID();
-    });
+describe.skipIf(!LOCAL_STACK)('T044 staff reset hook schema', () => {
+  beforeAll(() => {
+    loadEnv();
+    testUserId = randomUUID();
+  });
 
-    afterEach(async () => {
-      const [schema] = await db<{ available: boolean }[]>`
+  afterEach(async () => {
+    const [schema] = await db<{ available: boolean }[]>`
       select to_regclass('app_private.staff_password_reset_hook_requests')
         is not null as available
     `;
-      if (!schema?.available) return;
-      await db`
+    if (!schema?.available) return;
+    await db`
       delete from app_private.staff_password_reset_hook_requests
       where hook_id like ${`${hookPrefix}-%`}
     `;
-    });
+  });
 
-    afterAll(async () => {
-      await db.end();
-    });
+  afterAll(async () => {
+    await db.end();
+  });
 
-    it('applies account and delivery limits to hook-reaching claims', async () => {
-      const hash = targetHash('one-account');
-      const outcomes: unknown[] = [];
-      for (let index = 0; index < 6; index += 1) {
-        outcomes.push(await claimRequest(nextHookId(), hash));
-      }
+  it('applies account and delivery limits to hook-reaching claims', async () => {
+    const hash = targetHash('one-account');
+    const outcomes: unknown[] = [];
+    for (let index = 0; index < 6; index += 1) {
+      outcomes.push(await claimRequest(nextHookId(), hash));
+    }
 
-      expect(outcomes).toEqual([
-        'accepted',
-        'accepted',
-        'delivery_limited',
-        'delivery_limited',
-        'delivery_limited',
-        'rate_limited',
-      ]);
-    });
+    expect(outcomes).toEqual([
+      'accepted',
+      'accepted',
+      'delivery_limited',
+      'delivery_limited',
+      'delivery_limited',
+      'rate_limited',
+    ]);
+  });
 
-    it('applies the global request cap across distinct targets', async () => {
-      const outcomes: unknown[] = [];
-      for (let index = 0; index < 11; index += 1) {
-        outcomes.push(
-          await claimRequest(nextHookId(), targetHash(`target-${index}`)),
-        );
-      }
+  it('applies the global request cap across distinct targets', async () => {
+    const outcomes: unknown[] = [];
+    for (let index = 0; index < 11; index += 1) {
+      outcomes.push(
+        await claimRequest(nextHookId(), targetHash(`target-${index}`)),
+      );
+    }
 
-      expect(outcomes).toEqual([
-        'accepted',
-        'accepted',
-        ...Array.from({ length: 8 }, () => 'delivery_limited'),
-        'rate_limited',
-      ]);
-    });
+    expect(outcomes).toEqual([
+      'accepted',
+      'accepted',
+      ...Array.from({ length: 8 }, () => 'delivery_limited'),
+      'rate_limited',
+    ]);
+  });
 
-    it('counts denied hook requests and does not reserve delivery for them', async () => {
-      const hash = targetHash('denied');
-      const first = await claimRequest(nextHookId(), hash, false, true);
-      const second = await claimRequest(nextHookId(), hash, false, true);
-      const [counts] = await db<{ requests: string; deliveries: string }[]>`
+  it('counts denied hook requests and does not reserve delivery for them', async () => {
+    const hash = targetHash('denied');
+    const first = await claimRequest(nextHookId(), hash, false, true);
+    const second = await claimRequest(nextHookId(), hash, false, true);
+    const [counts] = await db<{ requests: string; deliveries: string }[]>`
       select
         count(*)::text as requests,
         count(*) filter (where delivery_reserved)::text as deliveries
@@ -105,28 +105,28 @@ describe.skipIf(!LOCAL_STACK_D)(
       where target_hash = decode(${hash}, 'hex')
     `;
 
-      expect(first).toBe('denied');
-      expect(second).toBe('denied');
-      expect(counts?.requests).toBe('2');
-      expect(counts?.deliveries).toBe('0');
-    });
+    expect(first).toBe('denied');
+    expect(second).toBe('denied');
+    expect(counts?.requests).toBe('2');
+    expect(counts?.deliveries).toBe('0');
+  });
 
-    it('keeps the request table private and exposes only service-role RPCs', async () => {
-      const [privileges] = await db<
-        {
-          row_security: boolean;
-          force_row_security: boolean;
-          service_table_access: boolean;
-          anon_claim: boolean;
-          authenticated_claim: boolean;
-          service_claim: boolean;
-          anon_audit: boolean;
-          authenticated_audit: boolean;
-          service_audit: boolean;
-          claim_is_definer: boolean;
-          claim_config: string[] | null;
-        }[]
-      >`
+  it('keeps the request table private and exposes only service-role RPCs', async () => {
+    const [privileges] = await db<
+      {
+        row_security: boolean;
+        force_row_security: boolean;
+        service_table_access: boolean;
+        anon_claim: boolean;
+        authenticated_claim: boolean;
+        service_claim: boolean;
+        anon_audit: boolean;
+        authenticated_audit: boolean;
+        service_audit: boolean;
+        claim_is_definer: boolean;
+        claim_config: string[] | null;
+      }[]
+    >`
       select
         relation.relrowsecurity as row_security,
         relation.relforcerowsecurity as force_row_security,
@@ -175,45 +175,44 @@ describe.skipIf(!LOCAL_STACK_D)(
         and relation.relname = 'staff_password_reset_hook_requests'
     `;
 
-      expect(privileges?.row_security).toBe(true);
-      expect(privileges?.force_row_security).toBe(true);
-      expect(privileges?.service_table_access).toBe(false);
-      expect(privileges?.anon_claim).toBe(false);
-      expect(privileges?.authenticated_claim).toBe(false);
-      expect(privileges?.service_claim).toBe(true);
-      expect(privileges?.anon_audit).toBe(false);
-      expect(privileges?.authenticated_audit).toBe(false);
-      expect(privileges?.service_audit).toBe(true);
-      expect(privileges?.claim_is_definer).toBe(true);
-      expect(privileges?.claim_config).toContain('search_path=""');
-    });
+    expect(privileges?.row_security).toBe(true);
+    expect(privileges?.force_row_security).toBe(true);
+    expect(privileges?.service_table_access).toBe(false);
+    expect(privileges?.anon_claim).toBe(false);
+    expect(privileges?.authenticated_claim).toBe(false);
+    expect(privileges?.service_claim).toBe(true);
+    expect(privileges?.anon_audit).toBe(false);
+    expect(privileges?.authenticated_audit).toBe(false);
+    expect(privileges?.service_audit).toBe(true);
+    expect(privileges?.claim_is_definer).toBe(true);
+    expect(privileges?.claim_config).toContain('search_path=""');
+  });
 
-    it('deduplicates hook IDs and writes the requested audit exactly once', async () => {
-      if (!testUserId)
-        throw new Error('T044 synthetic user was not initialized');
-      const hookId = nextHookId();
-      const hash = targetHash('audit');
-      const rollback = new Error('rollback T044 audit fixture');
+  it('deduplicates hook IDs and writes the requested audit exactly once', async () => {
+    if (!testUserId) throw new Error('T044 synthetic user was not initialized');
+    const hookId = nextHookId();
+    const hash = targetHash('audit');
+    const rollback = new Error('rollback T044 audit fixture');
 
-      await expect(
-        db.begin(async (tx) => {
-          const [firstClaim] = await tx<{ outcome: string }[]>`
+    await expect(
+      db.begin(async (tx) => {
+        const [firstClaim] = await tx<{ outcome: string }[]>`
           select public.staff_password_reset_hook_claim(
             ${hookId}, ${testUserId}, ${hash}, true, true
           ) as outcome
         `;
-          const [duplicateClaim] = await tx<{ outcome: string }[]>`
+        const [duplicateClaim] = await tx<{ outcome: string }[]>`
           select public.staff_password_reset_hook_claim(
             ${hookId}, ${testUserId}, ${hash}, true, true
           ) as outcome
         `;
-          const [firstAudit] = await tx<{ written: boolean }[]>`
+        const [firstAudit] = await tx<{ written: boolean }[]>`
           select public.staff_password_reset_hook_audit(${hookId}) as written
         `;
-          const [secondAudit] = await tx<{ written: boolean }[]>`
+        const [secondAudit] = await tx<{ written: boolean }[]>`
           select public.staff_password_reset_hook_audit(${hookId}) as written
         `;
-          const [rows] = await tx<{ count: string; audit_written: boolean }[]>`
+        const [rows] = await tx<{ count: string; audit_written: boolean }[]>`
           select
             count(audit.id)::text as count,
             bool_or(request.audit_written) as audit_written
@@ -224,25 +223,25 @@ describe.skipIf(!LOCAL_STACK_D)(
           where request.hook_id = ${hookId}
         `;
 
-          expect(firstClaim?.outcome).toBe('accepted');
-          expect(duplicateClaim?.outcome).toBe('duplicate');
-          expect(firstAudit?.written).toBe(true);
-          expect(secondAudit?.written).toBe(true);
-          expect(rows?.count).toBe('1');
-          expect(rows?.audit_written).toBe(true);
-          throw rollback;
-        }),
-      ).rejects.toBe(rollback);
-    });
+        expect(firstClaim?.outcome).toBe('accepted');
+        expect(duplicateClaim?.outcome).toBe('duplicate');
+        expect(firstAudit?.written).toBe(true);
+        expect(secondAudit?.written).toBe(true);
+        expect(rows?.count).toBe('1');
+        expect(rows?.audit_written).toBe(true);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
 
-    it('fails the audit claim closed when the requested audit insert fails', async () => {
-      const hookId = nextHookId();
-      const hash = targetHash('audit-failure');
-      expect(await claimRequest(hookId, hash)).toBe('accepted');
+  it('fails the audit claim closed when the requested audit insert fails', async () => {
+    const hookId = nextHookId();
+    const hash = targetHash('audit-failure');
+    expect(await claimRequest(hookId, hash)).toBe('accepted');
 
-      await expect(
-        db.begin(async (tx) => {
-          await tx`create function public.t044_test_reject_requested_audit()
+    await expect(
+      db.begin(async (tx) => {
+        await tx`create function public.t044_test_reject_requested_audit()
           returns trigger language plpgsql set search_path = '' as $$
           begin
             if new.action = 'staff_password_reset.requested' then
@@ -250,26 +249,25 @@ describe.skipIf(!LOCAL_STACK_D)(
             end if;
             return new;
           end $$`;
-          await tx`create trigger t044_test_reject_requested_audit
+        await tx`create trigger t044_test_reject_requested_audit
           before insert on public.audit_events
           for each row execute function public.t044_test_reject_requested_audit()`;
-          await tx`select public.staff_password_reset_hook_audit(${hookId})`;
-        }),
-      ).rejects.toThrow('synthetic requested-audit failure');
+        await tx`select public.staff_password_reset_hook_audit(${hookId})`;
+      }),
+    ).rejects.toThrow('synthetic requested-audit failure');
 
-      const [request] = await db<{ audit_written: boolean }[]>`
+    const [request] = await db<{ audit_written: boolean }[]>`
       select audit_written
       from app_private.staff_password_reset_hook_requests
       where hook_id = ${hookId}
     `;
-      expect(request?.audit_written).toBe(false);
-      const [audit] = await db<{ count: string }[]>`
+    expect(request?.audit_written).toBe(false);
+    const [audit] = await db<{ count: string }[]>`
       select count(*)::text as count
       from public.audit_events
       where action = 'staff_password_reset.requested'
         and target_id = ${testUserId}
     `;
-      expect(audit?.count).toBe('0');
-    });
-  },
-);
+    expect(audit?.count).toBe('0');
+  });
+});

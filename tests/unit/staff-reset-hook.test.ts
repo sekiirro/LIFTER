@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildStaffResetEmailLink,
   isApprovedStaffResetTestRecipient,
@@ -7,6 +7,8 @@ import {
   verifyStaffResetHookSignature,
 } from '../../lib/auth/staff-reset-hook';
 import { isEligibleStaffRole } from '../../lib/auth/staff-reset';
+
+vi.mock('server-only', () => ({}));
 
 const hookKey = Buffer.from('test-hook-secret-32-bytes-long!!');
 const hookSecret = `v1,whsec_${hookKey.toString('base64')}`;

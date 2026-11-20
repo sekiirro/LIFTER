@@ -1,3 +1,8 @@
+/*
+ * Blocked controls use it.fails by default.
+ * Strict mode: set AUTH_RECOVERY_RED_STRICT=1 when running
+ * `npm run test:integration -- tests/integration/auth-recovery.test.ts`.
+ */
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -17,6 +22,7 @@ import {
 } from './client-accounts-fixture';
 
 const db = sql();
+const redIt = process.env.AUTH_RECOVERY_RED_STRICT ? it : it.fails;
 let f: Awaited<ReturnType<typeof twoWorkspaceFixture>>;
 let cA: Awaited<ReturnType<typeof createStaff>>;
 let cB: Awaited<ReturnType<typeof createStaff>>;
@@ -125,6 +131,468 @@ describe('actor', () => {
       activeWorkspaceIds: [],
     });
   });
+});
+
+describe('staff-reset-guard (T049a)', () => {
+  // T049a control B is blocked pre-production (tasks.md:183; S67-PO-9).
+  redIt(
+    'a staff password update without an intent is refused and leaves the password unchanged',
+    async () => {
+      const originalPassword = `Original-${randomUUID()}-Aa1!`;
+      const staff = await createStaff(
+        'trainer',
+        'reset-guard-no-intent',
+        originalPassword,
+      );
+      const userClient = anonClient();
+      const signedIn = await userClient.auth.signInWithPassword({
+        email: staff.email,
+        password: originalPassword,
+      });
+      if (signedIn.error) throw new Error('guard fixture sign-in failed');
+      const changedPassword = `NoIntent-${randomUUID()}-Aa1!`;
+      const result = await userClient.auth.updateUser({
+        password: changedPassword,
+      });
+      try {
+        expect(result.error).not.toBeNull();
+      } finally {
+        if (!result.error) {
+          const restored = await admin().auth.admin.updateUserById(
+            staff.userId,
+            {
+              password: originalPassword,
+            },
+          );
+          if (restored.error)
+            throw new Error('guard fixture password restore failed');
+        }
+      }
+      const oldPasswordWorks = await anonClient().auth.signInWithPassword({
+        email: staff.email,
+        password: originalPassword,
+      });
+      expect(oldPasswordWorks.error).toBeNull();
+    },
+  );
+
+  // T049a control B is blocked pre-production (tasks.md:183; S67-PO-9).
+  redIt(
+    'a second signed-in staff session cannot update the password without an intent',
+    async () => {
+      const originalPassword = `Original-${randomUUID()}-Aa1!`;
+      const staff = await createStaff(
+        'trainer',
+        'reset-guard-second-session',
+        originalPassword,
+      );
+      const secondSession = anonClient();
+      const signedIn = await secondSession.auth.signInWithPassword({
+        email: staff.email,
+        password: originalPassword,
+      });
+      expect(signedIn.error).toBeNull();
+
+      const result = await secondSession.auth.updateUser({
+        password: `NoIntent-${randomUUID()}-Aa1!`,
+      });
+      try {
+        expect(result.error).not.toBeNull();
+      } finally {
+        if (!result.error) {
+          const restored = await admin().auth.admin.updateUserById(
+            staff.userId,
+            {
+              password: originalPassword,
+            },
+          );
+          if (restored.error)
+            throw new Error(
+              'unexpectedly changed fixture password could not be restored',
+            );
+        }
+      }
+      expect(
+        (
+          await anonClient().auth.signInWithPassword({
+            email: staff.email,
+            password: originalPassword,
+          })
+        ).error,
+      ).toBeNull();
+    },
+  );
+
+  // T049a control B is blocked pre-production (tasks.md:183; S67-PO-9).
+  redIt(
+    'only the recovery session that opened the intent can change a staff password',
+    async () => {
+      const originalPassword = `Original-${randomUUID()}-Aa1!`;
+      const staff = await createStaff(
+        'trainer',
+        'reset-guard-session-bound',
+        originalPassword,
+      );
+      const recoverySession = anonClient();
+      const hash = await hashedToken(staff.email);
+      expect((await verify(recoverySession, hash)).error).toBeNull();
+      const claims = await recoverySession.auth.getClaims();
+      expect(claims.error).toBeNull();
+      const recoverySessionId = claims.data?.claims.session_id;
+      expect(typeof recoverySessionId).toBe('string');
+
+      const begin = await recoverySession.rpc('staff_password_reset_begin');
+      expect(begin.error).toBeNull();
+      const intentId = begin.data as string;
+      const competingSession = anonClient();
+      expect(
+        (
+          await competingSession.auth.signInWithPassword({
+            email: staff.email,
+            password: originalPassword,
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await competingSession.rpc('staff_password_reset_complete', {
+            p_intent_id: intentId,
+          })
+        ).error,
+      ).not.toBeNull();
+      expect(
+        (
+          await competingSession.auth.updateUser({
+            password: `Competing-${randomUUID()}-Aa1!`,
+          })
+        ).error,
+      ).not.toBeNull();
+
+      const newPassword = `Recovery-${randomUUID()}-Aa1!`;
+      expect(
+        (await recoverySession.auth.updateUser({ password: newPassword }))
+          .error,
+      ).toBeNull();
+      expect(
+        (
+          await recoverySession.auth.updateUser({
+            password: `SecondChange-${randomUUID()}-Aa1!`,
+          })
+        ).error,
+      ).not.toBeNull();
+      const [intent] = await db`
+      select auth_user_id, session_id, state, password_changed_at
+      from app_private.staff_password_reset_intents
+      where intent_id = ${intentId}
+    `;
+      expect(intent).toMatchObject({
+        auth_user_id: staff.userId,
+        session_id: recoverySessionId,
+        state: 'open',
+      });
+      expect(intent?.password_changed_at).not.toBeNull();
+    },
+  );
+
+  // T049a trusted request context is blocked pre-production (tasks.md:183; S67-PO-9).
+  redIt(
+    'GoTrue provides a trusted recovery session_id to the auth.users password trigger',
+    async () => {
+      const staff = await createStaff(
+        'trainer',
+        'reset-guard-context-probe',
+        `Context-${randomUUID()}-Aa1!`,
+      );
+      const recoverySession = anonClient();
+      expect(
+        (await verify(recoverySession, await hashedToken(staff.email))).error,
+      ).toBeNull();
+      const claims = await recoverySession.auth.getClaims();
+      const expectedSessionId = claims.data?.claims.session_id;
+      expect(typeof expectedSessionId).toBe('string');
+
+      await db`create table public.test_staff_reset_context_probe (
+      user_id uuid not null,
+      session_id text,
+      amr jsonb
+    )`;
+      await db.unsafe(`
+      create function public.test_capture_staff_reset_context()
+      returns trigger language plpgsql security definer set search_path = '' as $$
+      begin
+        insert into public.test_staff_reset_context_probe(user_id, session_id, amr)
+        values (new.id, auth.jwt()->>'session_id', auth.jwt()->'amr');
+        return new;
+      end
+      $$
+    `);
+      await db`create trigger a_test_capture_staff_reset_context
+      before update of encrypted_password on auth.users
+      for each row execute function public.test_capture_staff_reset_context()`;
+      try {
+        const changed = await recoverySession.auth.updateUser({
+          password: `ContextChanged-${randomUUID()}-Aa1!`,
+        });
+        expect(changed.error).toBeNull();
+        const [context] = await db`
+        select session_id, amr from public.test_staff_reset_context_probe
+        where user_id = ${staff.userId}
+      `;
+        expect(context?.session_id).toBe(expectedSessionId);
+        expect(context?.amr).toEqual(claims.data?.claims.amr);
+      } finally {
+        await db`drop trigger if exists a_test_capture_staff_reset_context on auth.users`;
+        await db`drop function if exists public.test_capture_staff_reset_context()`;
+        await db`drop table if exists public.test_staff_reset_context_probe`;
+      }
+    },
+  );
+
+  it('does not block a client manual recovery password change', async () => {
+    const oldPassword = `Original-${randomUUID()}-Aa1!`;
+    const client = await createStaff(
+      null,
+      'reset-guard-client-manual',
+      oldPassword,
+    );
+    const recoverySession = anonClient();
+    expect(
+      (await verify(recoverySession, await hashedToken(client.email))).error,
+    ).toBeNull();
+    expect(
+      (
+        await recoverySession.auth.updateUser({
+          password: `ClientRecovery-${randomUUID()}-Aa1!`,
+        })
+      ).error,
+    ).toBeNull();
+  });
+});
+
+describe('staff-reset-intent (T049d)', () => {
+  // T049d control B is blocked pre-production (tasks.md:186; S67-PO-9).
+  redIt(
+    'provides the idempotent begin, one-way complete/abort, and reconciliation RPCs',
+    async () => {
+      const [functions] = await db`
+      select
+        to_regprocedure('public.staff_password_reset_begin()') is not null as begin,
+        to_regprocedure('public.staff_password_reset_complete(uuid)') is not null as complete,
+        to_regprocedure('public.staff_password_reset_abort(uuid)') is not null as abort,
+        to_regprocedure('app_private.staff_password_reset_reconcile()') is not null as reconcile
+    `;
+      expect(functions).toEqual({
+        begin: true,
+        complete: true,
+        abort: true,
+        reconcile: true,
+      });
+    },
+  );
+
+  // T049d control B is blocked pre-production (tasks.md:186; S67-PO-9).
+  redIt(
+    'retries begin from one recovery session without duplicating its intent or start audit',
+    async () => {
+      const staff = await createStaff(
+        'trainer',
+        'reset-intent-idempotent',
+        `Intent-${randomUUID()}-Aa1!`,
+      );
+      const recoverySession = anonClient();
+      expect(
+        (await verify(recoverySession, await hashedToken(staff.email))).error,
+      ).toBeNull();
+
+      const first = await recoverySession.rpc('staff_password_reset_begin');
+      expect(first.error).toBeNull();
+      const retry = await recoverySession.rpc('staff_password_reset_begin');
+      expect(retry.error).toBeNull();
+      expect(retry.data).toBe(first.data);
+
+      const [intentCount] = await db`
+      select count(*)::int as count
+      from app_private.staff_password_reset_intents
+      where auth_user_id = ${staff.userId} and state = 'open'
+    `;
+      const [startCount] = await db`
+      select count(*)::int as count
+      from public.audit_events
+      where action = 'staff_password_reset.completion_started'
+        and details->>'intent_id' = ${first.data as string}
+    `;
+      expect(intentCount?.count).toBe(1);
+      expect(startCount?.count).toBe(1);
+    },
+  );
+
+  // T049d control B is blocked pre-production (tasks.md:186; S67-PO-9).
+  redIt(
+    'closes completed and aborted intents once and records one matching audit event',
+    async () => {
+      const completedPassword = `IntentComplete-${randomUUID()}-Aa1!`;
+      const completedStaff = await createStaff(
+        'trainer',
+        'reset-intent-completed',
+        completedPassword,
+      );
+      const completedSession = anonClient();
+      expect(
+        (
+          await verify(
+            completedSession,
+            await hashedToken(completedStaff.email),
+          )
+        ).error,
+      ).toBeNull();
+      const completedBegin = await completedSession.rpc(
+        'staff_password_reset_begin',
+      );
+      expect(completedBegin.error).toBeNull();
+      const completedId = completedBegin.data as string;
+      expect(
+        (
+          await completedSession.auth.updateUser({
+            password: `IntentNew-${randomUUID()}-Aa1!`,
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await completedSession.rpc('staff_password_reset_complete', {
+            p_intent_id: completedId,
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await completedSession.rpc('staff_password_reset_complete', {
+            p_intent_id: completedId,
+          })
+        ).error,
+      ).not.toBeNull();
+      expect(
+        (
+          await completedSession.rpc('staff_password_reset_abort', {
+            p_intent_id: completedId,
+          })
+        ).error,
+      ).not.toBeNull();
+
+      const abortedStaff = await createStaff(
+        'trainer',
+        'reset-intent-aborted',
+        `IntentAbort-${randomUUID()}-Aa1!`,
+      );
+      const abortedSession = anonClient();
+      expect(
+        (await verify(abortedSession, await hashedToken(abortedStaff.email)))
+          .error,
+      ).toBeNull();
+      const abortedBegin = await abortedSession.rpc(
+        'staff_password_reset_begin',
+      );
+      expect(abortedBegin.error).toBeNull();
+      const abortedId = abortedBegin.data as string;
+      expect(
+        (
+          await abortedSession.rpc('staff_password_reset_abort', {
+            p_intent_id: abortedId,
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await abortedSession.rpc('staff_password_reset_abort', {
+            p_intent_id: abortedId,
+          })
+        ).error,
+      ).not.toBeNull();
+      expect(
+        (
+          await abortedSession.rpc('staff_password_reset_complete', {
+            p_intent_id: abortedId,
+          })
+        ).error,
+      ).not.toBeNull();
+
+      const [rows] = await db`
+      select
+        (select count(*)::int from app_private.staff_password_reset_intents
+         where intent_id = ${completedId} and state = 'completed') as completed,
+        (select count(*)::int from public.audit_events
+         where action = 'staff_password_reset.completed'
+           and details->>'intent_id' = ${completedId}) as completed_audit,
+        (select count(*)::int from app_private.staff_password_reset_intents
+         where intent_id = ${abortedId} and state = 'aborted') as aborted,
+        (select count(*)::int from public.audit_events
+         where action = 'staff_password_reset.completion_aborted'
+           and details->>'intent_id' = ${abortedId}) as aborted_audit
+    `;
+      expect(rows).toEqual({
+        completed: 1,
+        completed_audit: 1,
+        aborted: 1,
+        aborted_audit: 1,
+      });
+    },
+  );
+
+  // T049d control B is blocked pre-production (tasks.md:186; S67-PO-9).
+  redIt(
+    'reconciles only stale open intents once and preserves the password-changed fact',
+    async () => {
+      const staff = await createStaff(
+        'trainer',
+        'reset-intent-reconcile',
+        `IntentReconcile-${randomUUID()}-Aa1!`,
+      );
+      const recoverySession = anonClient();
+      expect(
+        (await verify(recoverySession, await hashedToken(staff.email))).error,
+      ).toBeNull();
+      const claims = await recoverySession.auth.getClaims();
+      const sessionId = claims.data?.claims.session_id;
+      expect(typeof sessionId).toBe('string');
+      const intentId = randomUUID();
+      await db`
+      insert into app_private.staff_password_reset_intents (
+        intent_id, auth_user_id, session_id, state, started_at,
+        recovery_verified_at, password_changed_at
+      ) values (
+        ${intentId}, ${staff.userId}, ${sessionId as string}, 'open',
+        now() - interval '901 seconds', now() - interval '901 seconds', null
+      )
+    `;
+
+      await db`select app_private.staff_password_reset_reconcile()`;
+      const [first] = await db`
+      select state, password_changed_at, closed_at
+      from app_private.staff_password_reset_intents where intent_id = ${intentId}
+    `;
+      const [event] = await db`
+      select details from public.audit_events
+      where action = 'staff_password_reset.completion_reconciled'
+        and details->>'intent_id' = ${intentId}
+    `;
+      await db`select app_private.staff_password_reset_reconcile()`;
+      const [count] = await db`
+      select count(*)::int as count from public.audit_events
+      where action = 'staff_password_reset.completion_reconciled'
+        and details->>'intent_id' = ${intentId}
+    `;
+      expect(first).toMatchObject({
+        state: 'reconciled',
+        password_changed_at: null,
+      });
+      expect(first?.closed_at).not.toBeNull();
+      expect(event?.details).toEqual({
+        intent_id: intentId,
+        password_changed: false,
+      });
+      expect(count?.count).toBe(1);
+    },
+  );
 });
 
 describe('recovery', () => {

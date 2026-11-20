@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       { key: 'Cache-Control', value: 'private, no-store' },
     ];
     return [
+      { source: '/auth/recovery', headers },
       { source: '/register/:token', headers },
       { source: '/register/:token/:path*', headers },
     ];

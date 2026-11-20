@@ -87,8 +87,11 @@ async function signIn(page: Page) {
     { name: 'lifter_theme', value: 'light', url: origin },
   ]);
   await page.goto('/login');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(password);
+  const signInForm = page.locator('form').filter({
+    has: page.getByLabel('Password', { exact: true }),
+  });
+  await signInForm.getByLabel('Email', { exact: true }).fill(email);
+  await signInForm.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/$/u);
   await expect(page.getByRole('link', { name: 'Staff forms' })).toBeVisible();
@@ -252,8 +255,11 @@ test('anonymous and Sales users receive no production Forms content', async ({
     { name: 'lifter_theme', value: 'light', url: origin },
   ]);
   await page.goto('/login');
-  await page.getByLabel('Email').fill(salesEmail);
-  await page.getByLabel('Password').fill(salesPassword);
+  const signInForm = page.locator('form').filter({
+    has: page.getByLabel('Password', { exact: true }),
+  });
+  await signInForm.getByLabel('Email', { exact: true }).fill(salesEmail);
+  await signInForm.getByLabel('Password', { exact: true }).fill(salesPassword);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/$/u);
   await page.goto('/forms');
