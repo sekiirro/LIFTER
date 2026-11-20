@@ -434,6 +434,13 @@ S43-PO-7 (2026-11-10): Arabic tier names are سيلفر، جولد، بلاتي�
 
   Architect mapping (not PO words): the PO's examples name `CBE` and `SAMA`; the exact keys were read from live `/v2/providers`. Rates are quoted to EGP: `USD`→`EGP` from `CBE` (the only listed provider whose pivot is EGP and which publishes USD), `SAR`→`EGP` from `SAMA` (Saudi Central Bank, SAR pivot, publishes EGP), `EGP`→`EGP` exactly 1 with no lookup. This supersedes the ECB/TARGET business-day calendar of S36-PO-3 only; the "latest prior valid publication strictly before the Africa/Cairo date", exact per-line conversion, one half-up rounding per aggregate, pending/retry and EGP-identity rules of S33-PO-6/S36-PO-2/S36-PO-3 are unchanged. FR-026, FR-031, SC-017, SC-022, acceptance scenario 8 and the T058 calendar fixtures are amended accordingly. Provider terms of use remain a recorded blocker until verified (see T075/T062); the blended v2 series and Frankfurter v1 are not used.
 
+- S68-PO-3 (T062 review decisions, 2026-11-19, verbatim `C:/Users/NEW LAP/.lifter/runs/s68-po/s68-po-3.verbatim.txt`, SHA-256 `1895223ce458b7587242c16543053d6bcd7ef65f69d6b50e0c83bdfa8235f521`):
+
+  > Q1 (009 T062 SAR provenance): A: "Accept the risk (Recommended)" - option text: Keep the SAMA pin plus bounds as they are. The residual risk is recorded as accepted and T062 can pass. No code change.
+  > Q2 (FX settle interval FX_SETTLE_DAYS = 3): A: "Confirm 3 days (Recommended)" - option text: A rate counts as final 3 calendar days after its date. No code change; the value is recorded as PO-approved.
+
+  These close the two decision items raised by the independent T062 FX security review (`specs/009-packages/reviews/t062-fx-security-review.md`, verdict PASS-WITH-FINDINGS): the F-1 (P2) SAMA provenance residual risk is accepted while retaining the explicit SAMA query pin and bounds, and the `FX_SETTLE_DAYS = 3` settle interval in `lib/packages/fx.ts` is confirmed. No code change is authorized by this entry; the T062 acceptance is recorded in `tasks.md` and `traceability.md`. Provider terms-of-use verification remains a pre-production blocker (S65-R7) unaffected by this entry.
+
 - No open product ambiguities remain from S33-01..12, C1–C5, LABELS, PD-S34-NEW-01, PD-S34-NEW-02 or the S36-PO-2/S36-PO-3 F9 scopes.
 
 ### Remaining blockers
