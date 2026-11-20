@@ -17,6 +17,10 @@ export default async function HomePage() {
       {actor.role === 'platform_owner' && (
         <a href="/packages">{m['packages.title']}</a>
       )}
+      {(actor.role === 'platform_owner' ||
+        actor.role === 'workspace_owner') && (
+        <Link href="/reports">{m['reports.title']}</Link>
+      )}
       {actor.role &&
         roleHasCapability(actor.role, 'generate_registration_link') && (
           <a href="/registration-links">{m['registration.title']}</a>
