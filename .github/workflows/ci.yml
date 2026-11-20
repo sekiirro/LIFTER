@@ -234,9 +234,22 @@ jobs:
               raise SystemExit("expected one local [auth] section without site_url")
           config.write_text(text.replace(marker, marker + 'site_url = "http://localhost:3000"\n', 1))
           PY
-      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - run: supabase start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
       - name: Export local stack environment
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+      - name: Verify local mail capture (Inbucket) is reachable
+        shell: bash
+        run: |
+          mail_url="${INBUCKET_URL:-http://127.0.0.1:54324}"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error --max-time 5 "$mail_url/" > /dev/null; then
+              echo "Local mail capture HTTP endpoint reachable at $mail_url (local-only; no hosted Auth/SMTP change)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Local mail capture HTTP endpoint did not become reachable at $mail_url" >&2
+          exit 1
       - name: Export app server environment
         run: |
           echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
