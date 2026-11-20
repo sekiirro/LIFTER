@@ -1479,7 +1479,7 @@ describe('jobs security catalog (T006)', () => {
 
 describe('package security catalog', () => {
   it.each(['packages', 'package_offers', 'package_versions'])(
-    '%s forces RLS, scoped SELECT and no API writes',
+    '%s forces RLS, scoped SELECT and blocks direct-write bypasses',
     async (table) => {
       const relation = `public.${table}`;
       const [row] =
@@ -1607,6 +1607,34 @@ describe('package security catalog', () => {
       'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE RESTRICT',
     ])
       expect(fks.map((f) => f.definition)).toContain(definition);
+  });
+  it('enforces non-empty package identity and hardens category initialization', async () => {
+    const [constraint] = await db`
+      select contype,convalidated,pg_get_constraintdef(oid) as definition
+      from pg_constraint where conrelid='public.packages'::regclass
+        and conname='packages_identity_not_empty'
+    `;
+    expect(constraint).toMatchObject({
+      contype: 'c',
+      convalidated: true,
+      definition: 'CHECK (((workspace_id IS NOT NULL) OR (code IS NOT NULL)))',
+    });
+    const [fn] = await db`
+      select prosecdef,proconfig,pg_get_userbyid(proowner) as owner
+      from pg_proc where oid='public.initialize_workspace_package_categories(uuid)'::regprocedure
+    `;
+    expect(fn).toMatchObject({
+      prosecdef: true,
+      proconfig: ['search_path=""'],
+      owner: 'postgres',
+    });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      const [grant] = await db`
+        select has_function_privilege(${role},
+          'public.initialize_workspace_package_categories(uuid)','EXECUTE') as allowed
+      `;
+      expect(grant?.allowed).toBe(role === 'authenticated');
+    }
   });
   it('hardens package RPCs and private guards', async () => {
     for (const name of [
