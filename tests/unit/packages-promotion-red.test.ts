@@ -1,10 +1,9 @@
 /**
- * T067 [FR-024, FR-026, FR-030, SC-021] - RED-first unit tests (spec 009).
+ * T067 [FR-024, FR-026, FR-030, SC-021] - unit tests (spec 009).
  *
  * Promotion window/link rules (FR-024/FR-030/SC-021): these tests specify the
- * pure unit-level promotion evaluation a later task must implement in
- * `lib/packages/promotion.ts`. That module does NOT exist yet and no
- * placeholder is created here. The observable rules mirror the settled
+ * pure unit-level promotion evaluation implemented in
+ * `lib/packages/promotion.ts`. The observable rules mirror the settled
  * database contract `app_private.package_promotion_period_active`
  * (migration 20261124020000_f9_package_promotion_periods.sql, verified by the
  * T056/T057 integration tests) and FR-024/FR-030/SC-021:
@@ -17,16 +16,15 @@
  *   - expiry blocks new registration links only; issued-link snapshots are
  *     never rewritten, so the evaluation MUST stay pure (no input mutation).
  *
- * RED convention (planned-RED, merge-safe, as landed for T058 in
- * `tests/unit/packages-fx-red.test.ts` at cbcca5e4): every promotion case is
- * `it.fails(...)` and therefore passes in CI while the module is absent. Run
+ * RED convention (as landed for T058 in `tests/unit/packages-fx-red.test.ts`
+ * at cbcca5e4): these cases were planned-RED via `it.fails(...)` and merge-safe
+ * while the module was absent. With the implementing task landed, `redIt` is
+ * now `it` so every case runs as a real test. Both
+ * `npx vitest run tests/unit/packages-promotion-red.test.ts` and
  * `PROMOTION_RED_STRICT=1 npx vitest run tests/unit/packages-promotion-red.test.ts`
- * to see the real RED failures. When the implementing task lands, `it.fails`
- * turns into a failure, which is the signal to drop `.fails` (set
- * `redIt = it`) in that PR.
+ * must pass 100%.
  *
- * Proposed module contract (the implementing task may refine names, not the
- * observable rules):
+ * Module contract (names as implemented in `lib/packages/promotion.ts`):
  *   type PromotionPeriod = {
  *     createdAt: string;        // ISO instant of the category's creation
  *     startsAt: string | null;   // Africa/Cairo date 'YYYY-MM-DD' or null
@@ -67,8 +65,8 @@ const PROMOTION_MODULE = '/lib/packages/promotion';
 const loadPromotion = async (): Promise<PromotionModule> =>
   (await import(/* @vite-ignore */ PROMOTION_MODULE)) as PromotionModule;
 
-// Planned-RED marker (T067): merge-safe while the module is absent.
-const redIt = process.env.PROMOTION_RED_STRICT ? it : it.fails;
+// T067 is implemented in lib/packages/promotion.ts; all cases are real tests.
+const redIt = it;
 
 const active = async (period: PromotionPeriod, at: string): Promise<boolean> =>
   (await loadPromotion()).isPromotionPeriodActive(period, at);
