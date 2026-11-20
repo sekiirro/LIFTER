@@ -383,3 +383,12 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Open PO decisions introduced by this amendment: **0**.
 
 This is a document-consistency Analyze. Runtime, mutation, CI and all-ref migration gates are recorded separately in the lane report and must pass before push.
+
+## 2026-11-20 S69 dashboard UI closeout (status only)
+
+**Analyzed:** 2026-11-20 UTC. Reconciled T061/T069/T072/T073/T074 task status and traceability with the completed Reports dashboard, Stack B integration and Playwright runs, and the 8-cell screenshot/accessibility gate. No FR, SC, acceptance scenario, PO decision or plan text changed.
+
+- PASS: ReportsView unit tests 10/10; full unit suite 4,177/4,177; Stack B reporting integration 11/11; authenticated Playwright 7/7; all eight design-gate cells axe-clean and keyboard/focus verified.
+- PASS: lint, typecheck, check:secrets, and production webpack build. The default Turbopack build is incompatible with this checkout external node_modules/next junction; the supported webpack build completed successfully.
+- PASS: no new migration; reporting reuses 20261218010000. T032/T051/T059/T063/T071 remain unticked. Provider terms-of-use and separately recorded verification blockers remain unchanged.
+- Findings: 0 open CRITICAL, 0 open HIGH, 0 new product ambiguities.
