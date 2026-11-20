@@ -37,6 +37,7 @@ import {
 } from '../../../lib/packages/validation';
 import {
   createPackageCategory,
+  initializePackageCategories,
   publishPackageVersion,
   setPackageOfferAvailable,
 } from './actions';
@@ -74,7 +75,14 @@ export function PackagesManager({
   const active = useRef(true);
   const currencyId = useId();
   const [message, setMessage] = useState<
-    'saved' | 'denied' | 'invalid_input' | 'unavailable' | null
+    | 'saved'
+    | 'initializeCategoriesSuccess'
+    | 'retireSuccess'
+    | 'reactivateSuccess'
+    | 'denied'
+    | 'invalid_input'
+    | 'unavailable'
+    | null
   >(null);
   const [market, setMarket] = useState<PackageMarket | null>(null);
   const [categoryType, setCategoryType] = useState<PackageType | null>(null);
@@ -88,6 +96,7 @@ export function PackagesManager({
     undefined,
   );
   const [confirm, setConfirm] = useState<PackageOffer | null>(null);
+  const [confirmInit, setConfirmInit] = useState(false);
 
   useEffect(() => {
     active.current = true;
@@ -101,6 +110,11 @@ export function PackagesManager({
       status: 'ok' | 'denied' | 'invalid_input' | 'unavailable';
     }>,
     done?: () => void,
+    successMessage:
+      | 'saved'
+      | 'initializeCategoriesSuccess'
+      | 'retireSuccess'
+      | 'reactivateSuccess' = 'saved',
   ) {
     if (busy.current) return;
     busy.current = true;
@@ -111,7 +125,7 @@ export function PackagesManager({
       if (!active.current) return;
       if (result.status === 'ok') {
         done?.();
-        setMessage('saved');
+        setMessage(successMessage);
         router.refresh();
       } else setMessage(result.status);
     } catch {
@@ -143,6 +157,12 @@ export function PackagesManager({
   }
 
   const packageById = new Map(data.packages.map((p) => [p.id, p]));
+  const distinctCategories = new Set(
+    data.packages
+      .filter((p) => isPackageMarket(p.market) && isPackageType(p.type))
+      .map((p) => `${p.market}:${p.type}`),
+  );
+  const showInitializeCategories = distinctCategories.size < 4;
   const selectedPackage = packageById.get(selectedPackageId);
   const selectedMarket =
     selectedPackage && isPackageMarket(selectedPackage.market)
@@ -240,6 +260,7 @@ export function PackagesManager({
             setMonths(null);
             setCurrencyError(undefined);
             setConfirm(null);
+            setConfirmInit(false);
             router.push(
               `/packages?workspace=${encodeURIComponent(e.target.value)}`,
             );
@@ -255,9 +276,33 @@ export function PackagesManager({
       {pending && <p role="status">{m['packages.pending']}</p>}
       {message && (
         <Alert
-          tone={message === 'saved' ? 'success' : 'error'}
+          tone={
+            message === 'saved' ||
+            message === 'initializeCategoriesSuccess' ||
+            message === 'retireSuccess' ||
+            message === 'reactivateSuccess'
+              ? 'success'
+              : 'error'
+          }
           title={m[`packages.${message}`]}
         />
+      )}
+      {showInitializeCategories && (
+        <section className={styles.card} aria-labelledby="init-heading">
+          <h2 id="init-heading">{m['packages.initializeCategories']}</h2>
+          <p className={styles.authored}>
+            {m['packages.initializeCategoriesHelp']}
+          </p>
+          <div className={styles.submitRow}>
+            <Button
+              disabled={pending}
+              variant="secondary"
+              onClick={() => setConfirmInit(true)}
+            >
+              {m['packages.initializeCategories']}
+            </Button>
+          </div>
+        </section>
       )}
       <section className={styles.card} aria-labelledby="create-heading">
         <h2 id="create-heading">{m['packages.create']}</h2>
@@ -529,7 +574,7 @@ export function PackagesManager({
                   >
                     {available
                       ? m['packages.available']
-                      : m['packages.unavailableOffer']}
+                      : m['packages.retiredBadge']}
                   </span>
                 </div>
                 <dl className={styles.offerMeta}>
@@ -563,7 +608,9 @@ export function PackagesManager({
                   variant="secondary"
                   onClick={() => setConfirm({ ...offer, available })}
                 >
-                  {available ? m['packages.disable'] : m['packages.enable']}
+                  {available
+                    ? m['packages.retireOffer']
+                    : m['packages.reactivateOffer']}
                 </Button>
               </li>
             ))}
@@ -630,7 +677,7 @@ export function PackagesManager({
                       >
                         {available
                           ? m['packages.available']
-                          : m['packages.unavailableOffer']}
+                          : m['packages.retiredBadge']}
                       </span>
                       <Button
                         disabled={pending}
@@ -638,8 +685,8 @@ export function PackagesManager({
                         onClick={() => setConfirm({ ...offer, available })}
                       >
                         {available
-                          ? m['packages.disable']
-                          : m['packages.enable']}
+                          ? m['packages.retireOffer']
+                          : m['packages.reactivateOffer']}
                       </Button>
                     </td>
                   </tr>
@@ -650,31 +697,76 @@ export function PackagesManager({
         </>
       )}
       <ConfirmDialog
-        open={confirm !== null}
-        title={m['packages.confirmTitle']}
+        open={confirm !== null || confirmInit}
+        title={
+          confirmInit
+            ? m['packages.initializeCategoriesConfirmTitle']
+            : confirm
+              ? confirm.available
+                ? m['packages.retireConfirmTitle']
+                : m['packages.reactivateConfirmTitle']
+              : ''
+        }
         description={
-          confirm
-            ? `${workspaces.find((w) => w.id === workspaceId)?.name} / ${formatPackageName(packageById.get(confirm.package_id), locale, confirm.package_id)} / ${m['packages.days']}: ${confirm.duration_days} / ${confirm.available ? m['packages.disable'] : m['packages.enable']}`
-            : undefined
+          confirmInit
+            ? m['packages.initializeCategoriesConfirmBody']
+            : confirm
+              ? confirm.available
+                ? m['packages.retireConfirmBody']
+                : m['packages.reactivateConfirmBody']
+              : undefined
         }
         confirmLabel={m['packages.confirm']}
         cancelLabel={m['packages.cancel']}
         loading={pending}
+        tone={confirm?.available ? 'destructive' : 'default'}
         onCancel={() => {
-          if (!busy.current) setConfirm(null);
+          if (!busy.current) {
+            setConfirm(null);
+            setConfirmInit(false);
+          }
         }}
         onConfirm={() => {
+          if (confirmInit) {
+            void run(
+              () =>
+                initializePackageCategories({
+                  workspaceId,
+                }).finally(() => setConfirmInit(false)),
+              undefined,
+              'initializeCategoriesSuccess',
+            );
+            return;
+          }
           if (!confirm) return;
           const target = confirm;
-          void run(() =>
-            setPackageOfferAvailable({
-              workspaceId,
-              offerId: target.id,
-              available: !target.available,
-            }).finally(() => setConfirm(null)),
+          const willRetire = target.available;
+          void run(
+            () =>
+              setPackageOfferAvailable({
+                workspaceId,
+                offerId: target.id,
+                available: !target.available,
+              }).finally(() => setConfirm(null)),
+            undefined,
+            willRetire ? 'retireSuccess' : 'reactivateSuccess',
           );
         }}
-      />
+      >
+        {confirm && (
+          <p className={styles.authored}>
+            <bdi>
+              {workspaces.find((w) => w.id === workspaceId)?.name} /{' '}
+              {formatPackageName(
+                packageById.get(confirm.package_id),
+                locale,
+                confirm.package_id,
+              )}{' '}
+              / {m['packages.days']}: {confirm.duration_days}
+            </bdi>
+          </p>
+        )}
+      </ConfirmDialog>
     </main>
   );
 }

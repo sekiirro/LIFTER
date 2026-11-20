@@ -142,6 +142,15 @@ test.describe('local-stack authenticated package acceptance (required for review
       for (const label of approvedCategoryLabels)
         await expect(page.getByText(label, { exact: true })).toBeVisible();
       await expect(
+        page.getByRole('heading', {
+          name: m['packages.initializeCategories'],
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(m['packages.initializeCategoriesHelp'], { exact: true }),
+      ).toBeVisible();
+      await expect(
         page.getByText(m['packages.emptyCatalog'], { exact: true }),
       ).toBeVisible();
       await expect(
@@ -226,17 +235,27 @@ test.describe('local-stack authenticated package acceptance (required for review
       await expect(row).not.toContainText('USD');
       await expect(row).toContainText(`${m['packages.days']}: 90`);
 
+      await expect(row).toContainText(m['packages.retiredBadge']);
       await row
-        .getByRole('button', { name: m['packages.enable'], exact: true })
+        .getByRole('button', {
+          name: m['packages.reactivateOffer'],
+          exact: true,
+        })
         .click();
       await expect(page.getByTestId('dialog-cancel')).toBeFocused();
       await page.keyboard.press('Escape');
       await expect(page.getByRole('dialog')).not.toBeVisible();
       await expect(
-        row.getByRole('button', { name: m['packages.enable'], exact: true }),
+        row.getByRole('button', {
+          name: m['packages.reactivateOffer'],
+          exact: true,
+        }),
       ).toBeFocused();
       await row
-        .getByRole('button', { name: m['packages.enable'], exact: true })
+        .getByRole('button', {
+          name: m['packages.reactivateOffer'],
+          exact: true,
+        })
         .click();
       await expect(page.getByRole('dialog')).toContainText(
         `${m['packages.days']}: 90`,
@@ -251,12 +270,43 @@ test.describe('local-stack authenticated package acceptance (required for review
         m['packages.unavailable'],
       );
       await expect(
-        row.getByRole('button', { name: m['packages.enable'], exact: true }),
+        row.getByRole('button', {
+          name: m['packages.reactivateOffer'],
+          exact: true,
+        }),
       ).toBeVisible();
       await page.unroute('**/packages*');
       await row
-        .getByRole('button', { name: m['packages.enable'], exact: true })
+        .getByRole('button', {
+          name: m['packages.reactivateOffer'],
+          exact: true,
+        })
         .click();
+      await page.getByTestId('dialog-confirm').click();
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+      await expect(row).toContainText(m['packages.available']);
+
+      // Reversible retirement: retire active offer back to retired state
+      await row
+        .getByRole('button', { name: m['packages.retireOffer'], exact: true })
+        .click();
+      await expect(page.getByRole('dialog')).toContainText(
+        m['packages.retireConfirmTitle'],
+      );
+      await page.getByTestId('dialog-confirm').click();
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+      await expect(row).toContainText(m['packages.retiredBadge']);
+
+      // Make available again
+      await row
+        .getByRole('button', {
+          name: m['packages.reactivateOffer'],
+          exact: true,
+        })
+        .click();
+      await expect(page.getByRole('dialog')).toContainText(
+        m['packages.reactivateConfirmTitle'],
+      );
       await page.getByTestId('dialog-confirm').click();
       await expect(page.getByRole('dialog')).not.toBeVisible();
       await expect(row).toContainText(m['packages.available']);
@@ -307,7 +357,7 @@ test.describe('local-stack authenticated package acceptance (required for review
       await expect(intlRow).not.toContainText('EGP');
       await expect(page.locator('tfoot')).toHaveCount(0);
 
-      const screenshotDir = join(tmpdir(), 'lifter-s65-hyd-f9us5c');
+      const screenshotDir = join(tmpdir(), 'lifter-s67-f9ui-screenshots');
       await mkdir(screenshotDir, { recursive: true });
       for (const theme of ['light', 'dark']) {
         await context.addCookies([
