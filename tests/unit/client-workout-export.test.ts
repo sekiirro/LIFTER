@@ -127,6 +127,7 @@ describe('client workout export', () => {
       subscription: {
         status: 'expired',
         effective_end_exclusive: '2026-01-01',
+        overdue: false,
       },
     });
     const result = await exportClientWorkoutPlan(client, {

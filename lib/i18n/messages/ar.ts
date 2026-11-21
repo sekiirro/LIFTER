@@ -1471,6 +1471,9 @@ export const ar = {
   'staff.clientDirectory.search': 'دوّر على عميل',
   'staff.clientDirectory.filters': 'فلترة',
   'staff.clientDirectory.plansWaitingForDelivery': 'خطط مستنية تتبعت',
+  'staff.clientDirectory.searchPlaceholder':
+    'دوّر بالاسم أو الإيميل أو رقم التليفون أو كود العميل',
+  'staff.clientDirectory.pendingFoodReplacements': 'طلبات تبديل أكل لسه مستنية',
   'staff.clientDirectory.subscriptionStatus.awaitingActivation':
     'مستني التفعيل',
   'staff.clientDirectory.subscriptionStatus.future': 'لسه ما بدأش',

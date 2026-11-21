@@ -105,6 +105,7 @@ const f22Private = [
   'f22_guard_client_notice',
   'f22_portal_client',
   'f22_refund_scope',
+  'f22_subscription_core',
   'f22_subscription_summary',
 ];
 const registrationPrivate = [

@@ -3,7 +3,10 @@
  *
  * Search covers existing F11 identity fields (name, email, phone); filters
  * use existing F11 approval state and F13 projected subscription status. No
- * status or assignment state is introduced here. The database function
+ * status is introduced here. The assignment filter and assignment state reuse
+ * F11's existing wall (FR-027, S40-PO-10 item 5: the Workspace Owner of the
+ * workspace and the Platform Owner, the predicate of `unassigned_clients`) and
+ * are ignored for every other caller, Trainers included. The database function
  * `staff_client_directory` repeats every check at the second wall.
  */
 import { authorize, type Actor } from '../auth/authorize';
@@ -24,6 +27,9 @@ export const APPROVAL_STATES = [
 ] as const;
 export type ApprovalState = (typeof APPROVAL_STATES)[number];
 
+export const ASSIGNMENT_FILTERS = ['assigned', 'unassigned'] as const;
+export type AssignmentFilter = (typeof ASSIGNMENT_FILTERS)[number];
+
 export const DIRECTORY_PAGE_SIZE = 50;
 export const DIRECTORY_SEARCH_MAX = 100;
 export const DIRECTORY_MAX_PAGE = 200;
@@ -32,6 +38,8 @@ export type DirectoryQuery = {
   search: string | null;
   approvalState: ApprovalState | null;
   subscriptionStatus: SubscriptionStatus | null;
+  /** Honoured only for callers passing {@link canUseAssignment}; see there. */
+  assignment: AssignmentFilter | null;
   page: number;
 };
 
@@ -43,6 +51,19 @@ export type DirectoryRow = {
   /** Only with `refunded`: F13 full vs partial refund (S57-PO-12). */
   refundScope: RefundScope | null;
   plansWaitingForDelivery: number;
+  /** F23 food replacement requests still open for this client (T036). */
+  pendingFoodReplacements: number;
+  /**
+   * F11 assignment state; present only for callers passing
+   * {@link canUseAssignment}. Never carries the trainer identity.
+   */
+  assignment?: AssignmentFilter | null;
+  /**
+   * F11 client code (`XXXX-XXXX`); present only for callers passing
+   * {@link canUseAssignment} (#264: Platform Owner or the workspace's
+   * Workspace Owner). Searchable by exact code for the same callers.
+   */
+  clientCode?: string;
 };
 
 export type DirectoryResult =
@@ -63,13 +84,21 @@ export function parseDirectoryQuery(params: {
   q?: SearchValue;
   approval?: SearchValue;
   subscription?: SearchValue;
+  assignment?: SearchValue;
   page?: SearchValue;
 }): DirectoryQuery | null {
   const q = single(params.q);
   const approval = single(params.approval);
   const subscription = single(params.subscription);
+  const assignment = single(params.assignment);
   const page = single(params.page);
-  if (q === null || approval === null || subscription === null || page === null)
+  if (
+    q === null ||
+    approval === null ||
+    subscription === null ||
+    assignment === null ||
+    page === null
+  )
     return null;
   const search = q?.trim() ? q.trim() : null;
   if (search !== null && [...search].length > DIRECTORY_SEARCH_MAX) return null;
@@ -84,13 +113,25 @@ export function parseDirectoryQuery(params: {
       return null;
     subscriptionStatus = subscription as SubscriptionStatus;
   }
+  let assignmentFilter: AssignmentFilter | null = null;
+  if (assignment !== undefined && assignment !== '') {
+    if (!(ASSIGNMENT_FILTERS as readonly string[]).includes(assignment))
+      return null;
+    assignmentFilter = assignment as AssignmentFilter;
+  }
   let pageNumber = 1;
   if (page !== undefined && page !== '') {
     if (!/^[1-9][0-9]{0,3}$/u.test(page)) return null;
     pageNumber = Number(page);
     if (pageNumber > DIRECTORY_MAX_PAGE) return null;
   }
-  return { search, approvalState, subscriptionStatus, page: pageNumber };
+  return {
+    search,
+    approvalState,
+    subscriptionStatus,
+    assignment: assignmentFilter,
+    page: pageNumber,
+  };
 }
 
 /**
@@ -101,7 +142,26 @@ export function canReadDirectory(actor: Actor, workspaceId: unknown): boolean {
   return isUuid(workspaceId) && authorize(actor, 'coaching_work', workspaceId);
 }
 
-export function directoryRpcArgs(workspaceId: string, query: DirectoryQuery) {
+/**
+ * App-layer copy of the F11 assignment wall (the predicate of
+ * `public.unassigned_clients`): the Platform Owner, or a Workspace Owner of
+ * this workspace. Trainers and Sales never filter by or see assignment, even
+ * though they may read the directory. The database repeats the check.
+ */
+export function canUseAssignment(actor: Actor, workspaceId: unknown): boolean {
+  return (
+    isUuid(workspaceId) &&
+    (actor.role === 'platform_owner' ||
+      (actor.role === 'workspace_owner' &&
+        actor.activeWorkspaceIds.includes(workspaceId)))
+  );
+}
+
+export function directoryRpcArgs(
+  workspaceId: string,
+  query: DirectoryQuery,
+  assignmentAllowed = false,
+) {
   return {
     p_workspace_id: workspaceId,
     p_search: query.search,
@@ -109,6 +169,7 @@ export function directoryRpcArgs(workspaceId: string, query: DirectoryQuery) {
     p_subscription_status: query.subscriptionStatus,
     p_limit: DIRECTORY_PAGE_SIZE,
     p_offset: (query.page - 1) * DIRECTORY_PAGE_SIZE,
+    p_assignment: assignmentAllowed ? query.assignment : null,
   };
 }
 
@@ -125,10 +186,29 @@ function parseRow(value: unknown): DirectoryRow | null {
     subscription_status,
     refund_scope,
     plans_waiting_for_delivery,
+    pending_food_replacements,
   } = value;
+  const hasAssignment = 'assignment' in value;
+  const hasCode = 'client_code' in value;
   if (
-    Object.keys(value).sort().join(',') !==
-      'approval_state,client_id,name,plans_waiting_for_delivery,refund_scope,subscription_status' ||
+    Object.keys(value)
+      .filter((key) => key !== 'assignment' && key !== 'client_code')
+      .sort()
+      .join(',') !==
+      'approval_state,client_id,name,pending_food_replacements,plans_waiting_for_delivery,refund_scope,subscription_status' ||
+    (hasCode &&
+      !(
+        typeof value.client_code === 'string' &&
+        /^[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/u.test(value.client_code)
+      )) ||
+    typeof pending_food_replacements !== 'number' ||
+    !Number.isSafeInteger(pending_food_replacements) ||
+    pending_food_replacements < 0 ||
+    (hasAssignment &&
+      !(
+        value.assignment === null ||
+        (ASSIGNMENT_FILTERS as readonly unknown[]).includes(value.assignment)
+      )) ||
     !isUuid(client_id) ||
     typeof name !== 'string' ||
     !(APPROVAL_STATES as readonly unknown[]).includes(approval_state) ||
@@ -153,6 +233,11 @@ function parseRow(value: unknown): DirectoryRow | null {
     subscriptionStatus: subscription_status as SubscriptionStatus | null,
     refundScope: refund_scope as RefundScope | null,
     plansWaitingForDelivery: plans_waiting_for_delivery,
+    pendingFoodReplacements: pending_food_replacements,
+    ...(hasCode ? { clientCode: value.client_code as string } : {}),
+    ...(hasAssignment
+      ? { assignment: value.assignment as AssignmentFilter | null }
+      : {}),
   };
 }
 
@@ -195,6 +280,7 @@ export function directoryHref(
   if (query.approvalState) params.set('approval', query.approvalState);
   if (query.subscriptionStatus)
     params.set('subscription', query.subscriptionStatus);
+  if (query.assignment) params.set('assignment', query.assignment);
   if (page > 1) params.set('page', String(page));
   return `/clients?${params.toString()}`;
 }

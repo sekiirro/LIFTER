@@ -120,6 +120,7 @@ describe('F22 subscription status labels (T016/T035; S57-PO-12)', () => {
         subscription: {
           status: 'refunded',
           effective_end_exclusive: null,
+          overdue: false,
           refund_scope: scope,
         },
       });
@@ -128,6 +129,7 @@ describe('F22 subscription status labels (T016/T035; S57-PO-12)', () => {
         subscription: {
           status: 'refunded',
           effectiveEndExclusive: null,
+          overdue: false,
           refundScope: 'partial',
         },
       });
@@ -141,6 +143,7 @@ describe('F22 subscription status labels (T016/T035; S57-PO-12)', () => {
         subscription: {
           status: 'expired',
           effective_end_exclusive: '2026-11-01',
+          overdue: false,
           refund_scope: 'full',
         },
       }),

@@ -41,6 +41,8 @@ export type ClientWorkoutSubscription = {
   status: string;
   effectiveEndExclusive: string | null;
   refundScope?: 'full' | 'partial';
+  /** F13 FR-028 overdue fact from the F22 summary; overdue restricts plan content (FR-006). */
+  overdue: boolean;
 };
 
 export type ClientWorkoutProjection = {
@@ -86,7 +88,12 @@ function exactKeys(
 function parseSubscription(raw: unknown): ClientWorkoutSubscription | null {
   if (
     !isRecord(raw) ||
-    !exactKeys(raw, ['status', 'effective_end_exclusive', 'refund_scope'])
+    !exactKeys(raw, [
+      'status',
+      'effective_end_exclusive',
+      'refund_scope',
+      'overdue',
+    ])
   )
     return null;
   if (
@@ -96,11 +103,14 @@ function parseSubscription(raw: unknown): ClientWorkoutSubscription | null {
   )
     return null;
   if (typeof raw.status !== 'string' || raw.status === '') return null;
+  // A summary without a boolean overdue fact fails closed (denied).
+  if (typeof raw.overdue !== 'boolean') return null;
   const end = raw.effective_end_exclusive;
   if (end !== null && end !== undefined && typeof end !== 'string') return null;
   return {
     status: raw.status,
     effectiveEndExclusive: end ?? null,
+    overdue: raw.overdue,
     ...(raw.refund_scope === undefined
       ? {}
       : { refundScope: raw.refund_scope }),
@@ -181,7 +191,11 @@ export function projectClientWorkoutPlan(
   const subscription = parseSubscription(raw.subscription);
   if (!subscription) return { status: 'denied' };
   // Only an explicit F13 `active` state may accompany plan content.
-  if (raw.status === 'restricted' || subscription.status !== 'active')
+  if (
+    raw.status === 'restricted' ||
+    subscription.status !== 'active' ||
+    subscription.overdue
+  )
     return raw.status === 'restricted' || raw.status === 'ok'
       ? { status: 'restricted', subscription }
       : { status: 'denied' };

@@ -138,17 +138,15 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
       'F22 e2e n',
     );
     await p.publish(nutrition, 1, 0);
-    // Synthetic inbox rows through the F22 producer seam (the F19 delivery hook
-    // is not on main): one unread and one read notice for the captures.
-    const [unread] = await p.db`select app_private.f22_enqueue_client_notice(
-      ${p.fixture.wsA.id}::uuid, ${active.clientId}::uuid, 'workout_delivered',
-      gen_random_uuid()) as id`;
-    const [read] = await p.db`select app_private.f22_enqueue_client_notice(
-      ${p.fixture.wsA.id}::uuid, ${active.clientId}::uuid,
-      'nutrition_delivered_activated', gen_random_uuid()) as id`;
-    if (!unread?.id || !read?.id) throw new Error('F22 e2e notice seed failed');
-    await p.db`update app_private.client_inbox_notices
-      set read_at=clock_timestamp() where id=${read.id as string}`;
+    // The F19 delivery hook (T022) wrote one notice per first-plan delivery above
+    // (workout and nutrition, both delivered after the override activation). Mark the
+    // nutrition one read so the captures show one unread and one read notice.
+    const marked = await p.db`update app_private.client_inbox_notices
+      set read_at=clock_timestamp()
+      where workspace_id=${p.fixture.wsA.id} and client_id=${active.clientId}
+        and notice_kind='nutrition_delivered'
+      returning id`;
+    if (marked.length !== 1) throw new Error('F22 e2e hook notice missing');
     activeClient = activeUser;
     awaitingClient = awaitingUser;
 

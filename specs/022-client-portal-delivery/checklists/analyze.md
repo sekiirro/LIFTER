@@ -65,3 +65,15 @@ None. All 43 tasks identify FR coverage; user-story tasks also carry a US label 
 ## Next Actions
 
 Continue implementation on the updated spec. Paused integrations stay blocked on their owners: F17/F18 views and exporters, the F19 notice hook, and F11 client code and assignment. No product decision is open in this spec.
+
+## Round 6 re-audit against main (2026-11-18, re-dated after independent review)
+
+Scope: the F22 blockers delivered by the orchestrator PR (F13 overdue input, F19 delivery notice hook, F11 client code and assignment wall, F16/F17 client workout projection, F23 facts). Only the tasks.md Round 6 section and tick state changed; no FR, SC, plan, contract or copy text changed. Ticked tasks T017, T018, T022-T028 and T034 have exact-head green CI on `68bd6a76` (run 44315256704: validate, integration shards 1-3, integration, storage, docs-only).
+
+- FR-006/FR-007: overdue is consumed from F13 (`f13_client_overdue_state`) and restricts every plan read and export, workout included; F22 computes no overdue.
+- FR-009: the F19 hook is the single delivery writer `ready_and_publish_plan_impl`; one notice per first-plan delivery, activation text on the activating delivery; exactly two notices per pair.
+- FR-011: the assignment filter and client code are behind the F11 owner-or-Platform-Owner wall and never widen `coaching_work`; Trainers get the parameter ignored and no assignment or code. Remaining partial: T035 and T034 UI (no approved copy), T036 new check-ins (no F23 definition), T037 other links (no routes).
+
+- Review follow-ups applied: workout content in `client_portal_plan` goes through the F17 allowlist; `record_nutrition_export_audit` and `record_workout_export_audit` apply the active-and-not-overdue client condition; the overdue default fails closed; migrations re-dated to `20261203010000`-`20261203010300`.
+
+Critical 0, High 0.

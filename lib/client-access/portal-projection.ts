@@ -33,7 +33,22 @@ export type SubscriptionSummary = {
    * label for `full` only.
    */
   refundScope?: RefundScope;
+  /**
+   * F13 FR-028 independent overdue input (S66). Overdue restricts plan content
+   * and exports (FR-006) but never changes the F13 status or the end date.
+   */
+  overdue: boolean;
 };
+
+/**
+ * F13 plan entitlement (FR-028): only an explicit `active` state that is not
+ * overdue grants plan content or exports.
+ */
+export function planAccessGranted(
+  subscription: Pick<SubscriptionSummary, 'status' | 'overdue'>,
+): boolean {
+  return subscription.status === 'active' && !subscription.overdue;
+}
 
 export const REFUND_SCOPES = ['full', 'partial'] as const;
 export type RefundScope = (typeof REFUND_SCOPES)[number];
@@ -98,6 +113,9 @@ export function parseSubscription(value: unknown): SubscriptionSummary | null {
     return null;
   if (end !== null && !(typeof end === 'string' && datePattern.test(end)))
     return null;
+  // A summary without a boolean overdue fact fails closed (denied).
+  const overdue = value.overdue;
+  if (typeof overdue !== 'boolean') return null;
   const scope = value.refund_scope;
   if (status === 'refunded') {
     // A refunded summary without a known scope fails closed to `partial`
@@ -106,12 +124,14 @@ export function parseSubscription(value: unknown): SubscriptionSummary | null {
       status,
       effectiveEndExclusive: end,
       refundScope: scope === 'full' ? 'full' : 'partial',
+      overdue,
     };
   }
   if (scope !== undefined && scope !== null) return null;
   return {
     status: status as SubscriptionStatus,
     effectiveEndExclusive: end,
+    overdue,
   };
 }
 
@@ -154,6 +174,7 @@ function restricted(subscription: SubscriptionSummary): {
     subscription: {
       status: subscription.status,
       effectiveEndExclusive: subscription.effectiveEndExclusive,
+      overdue: subscription.overdue,
       ...(subscription.refundScope
         ? { refundScope: subscription.refundScope }
         : {}),
@@ -167,7 +188,7 @@ export function projectClientPortalOverview(
   if (!isRecord(raw)) return { status: 'denied' };
   const subscription = parseSubscription(raw.subscription);
   if (!subscription) return { status: 'denied' };
-  if (raw.status === 'restricted' || subscription.status !== 'active')
+  if (raw.status === 'restricted' || !planAccessGranted(subscription))
     return raw.status === 'restricted' || raw.status === 'ok'
       ? restricted(subscription)
       : { status: 'denied' };
@@ -192,7 +213,7 @@ export function projectClientPortalPlan(
   if (raw.status === 'not_found') return { status: 'not_found' };
   const subscription = parseSubscription(raw.subscription);
   if (!subscription) return { status: 'denied' };
-  if (raw.status === 'restricted' || subscription.status !== 'active')
+  if (raw.status === 'restricted' || !planAccessGranted(subscription))
     return raw.status === 'restricted' || raw.status === 'ok'
       ? restricted(subscription)
       : { status: 'denied' };
