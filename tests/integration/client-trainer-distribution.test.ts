@@ -7,6 +7,7 @@ import { issue } from './registration-links-fixture';
 import { drain, type Rpc } from '../../workers/cron/src/drain';
 import { createHandlers } from '../../workers/cron/src/handlers';
 import { drainAccountDeletions } from '../../workers/cron/src/account-deletion';
+import { FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT } from '../../lib/client-accounts/deletion-policy';
 
 const db = sql();
 const service = admin();
@@ -184,6 +185,43 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
     expect(complete.data).toBe(true);
   });
 
+  it('never selects a Trainer with a committed deletion intent', async () => {
+    const { context, clientId, approvalId } = await approvedClient();
+    const deletingTrainer = await createStaff('trainer', 'distribution-deleting');
+    checked(
+      await context.po.client.from('workspace_memberships').insert({
+        workspace_id: context.wsA.id,
+        user_id: deletingTrainer.userId,
+        granted_by: context.po.userId,
+      }),
+    );
+    await db`update public.workspace_memberships
+      set revoked_at=statement_timestamp(), revoked_by=${context.po.userId}
+      where workspace_id=${context.wsA.id} and user_id in (
+        ${context.trainerA.userId}, ${context.trainerB.userId}
+      ) and revoked_at is null`;
+
+    const deletion = await context.po.client.rpc('request_account_deletion', {
+      p_target_user_id: deletingTrainer.userId,
+    });
+    expect(deletion.error).toBeNull();
+    expect(deletion.data).toMatchObject({ status: 'deletion_pending' });
+
+    const jobId = await enqueue(clientId, approvalId, context.wsA.id);
+    const lease = await claim(jobId);
+    const result = await handle(lease);
+    expect(result.error).toBeNull();
+    expect(result.data).toBe(true);
+    expect(await outcome(jobId)).toMatchObject({ outcome: 'no_eligible' });
+    const [assignments] = await db`select count(*)::int as count
+      from public.client_trainer_assignments
+      where workspace_id=${context.wsA.id} and client_id=${clientId}
+        and ended_at is null`;
+    expect(assignments?.count).toBe(0);
+    await service.rpc('jobs_complete', { id: jobId, lease: lease.lease_token });
+    await drainAccountDeletions(cronEnv, { limit: 100 });
+  });
+
   it('deduplicates an approval job, assigns by balance, and preserves completion across a retry', async () => {
     const { context, clientId, approvalId } = await approvedClient();
     const trainerC = await createStaff('trainer', 'distribution-balance');
@@ -261,6 +299,172 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
       id: secondJob,
       lease: secondLease.lease_token,
     });
+  });
+
+  it('keeps concurrent delivery of one leased approval to one active assignment', async () => {
+    const { context, clientId, approvalId } = await approvedClient();
+    const jobId = await enqueue(clientId, approvalId, context.wsA.id);
+    const lease = await claim(jobId);
+    const [first, second] = await Promise.all([handle(lease), handle(lease)]);
+    expect(first.error).toBeNull();
+    expect(second.error).toBeNull();
+    expect(first.data).toBe(true);
+    expect(second.data).toBe(true);
+    expect(await outcome(jobId)).toMatchObject({ outcome: 'assigned' });
+    const [rows] = await db`select count(*)::int as count
+      from public.client_trainer_assignments
+      where workspace_id=${context.wsA.id} and client_id=${clientId}
+        and ended_at is null`;
+    expect(rows?.count).toBe(1);
+    await service.rpc('jobs_complete', { id: jobId, lease: lease.lease_token });
+  });
+
+  it('reassigns automatic and PO rows when their Trainer account is deleted', async () => {
+    const context = await clientContext();
+    const trainerC = await createStaff('trainer', 'distribution-deletion-replacement');
+    checked(
+      await context.po.client.from('workspace_memberships').insert({
+        workspace_id: context.wsA.id,
+        user_id: trainerC.userId,
+        granted_by: context.po.userId,
+      }),
+    );
+
+    const automatic = await db.begin((tx) => graph(tx, context));
+    const automaticJob = await enqueue(
+      automatic.client,
+      automatic.fact,
+      context.wsA.id,
+    );
+    const automaticLease = await claim(automaticJob);
+    expect((await handle(automaticLease)).data).toBe(true);
+    await service.rpc('jobs_complete', {
+      id: automaticJob,
+      lease: automaticLease.lease_token,
+    });
+    const [automaticAssignment] = await db`select trainer_user_id
+      from public.client_trainer_assignments
+      where workspace_id=${context.wsA.id} and client_id=${automatic.client}
+        and ended_at is null`;
+    const deletingTrainerId = automaticAssignment?.trainer_user_id as string;
+    const replacementTrainerId =
+      deletingTrainerId === context.trainerA.userId
+        ? trainerC.userId
+        : context.trainerA.userId;
+
+    const manualLink = checked(await issue(context)) as string;
+    const manual = await db.begin((tx) =>
+      graph(tx, context, { linkId: manualLink }),
+    );
+    const override = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: manual.client,
+        p_trainer_user_id: deletingTrainerId,
+      },
+    );
+    expect(override.data).toMatchObject({ status: 'ok' });
+
+    const deletion = await context.po.client.rpc('request_account_deletion', {
+      p_target_user_id: deletingTrainerId,
+    });
+    expect(deletion.data).toMatchObject({ status: 'deletion_pending' });
+    await drainAccountDeletions(cronEnv, { limit: 100 });
+
+    for (const clientId of [automatic.client, manual.client]) {
+      const [rows] = await db`select assignment_source, trainer_user_id,
+        source_deletion_intent_id, ended_at from public.client_trainer_assignments
+        where workspace_id=${context.wsA.id} and client_id=${clientId}
+          and ended_at is null`;
+      expect(rows).toMatchObject({
+        assignment_source: 'trainer_deletion',
+        trainer_user_id: replacementTrainerId,
+        source_deletion_intent_id: (deletion.data as { intent_id: string }).intent_id,
+        ended_at: null,
+      });
+    }
+    for (const clientId of [automatic.client, manual.client]) {
+      const [history] = await db`select count(*)::int as count
+        from public.client_trainer_assignments
+        where workspace_id=${context.wsA.id} and client_id=${clientId}
+          and trainer_user_id=${deletingTrainerId}
+          and ended_at is not null and ended_by_system`;
+      expect(history?.count).toBe(1);
+    }
+  });
+
+  it('ends but does not reassign a client already in the F11 deletion lifecycle', async () => {
+    const context = await clientContext();
+    const trainerC = await createStaff('trainer', 'distribution-overlap-replacement');
+    checked(
+      await context.po.client.from('workspace_memberships').insert({
+        workspace_id: context.wsA.id,
+        user_id: trainerC.userId,
+        granted_by: context.po.userId,
+      }),
+    );
+    const client = await db.begin((tx) => graph(tx, context));
+    const assignment = await context.po.client.rpc(
+      'assign_client_responsible_trainer',
+      {
+        p_workspace_id: context.wsA.id,
+        p_client_id: client.client,
+        p_trainer_user_id: context.trainerA.userId,
+      },
+    );
+    expect(assignment.data).toMatchObject({ status: 'ok' });
+    const [clientIdentity] = await db`select auth_user_id
+      from public.clients where id=${client.client}`;
+
+    const clientDeletion = await context.po.client.rpc(
+      'request_account_deletion',
+      {
+        p_target_user_id: clientIdentity?.auth_user_id,
+        p_financial_confirmation: {
+          category: 'other',
+          acknowledgement: FINANCIAL_RESOLUTION_ACKNOWLEDGEMENT.en,
+        },
+      },
+    );
+    expect(clientDeletion.data).toMatchObject({ status: 'deletion_pending' });
+    const clientIntentId = (clientDeletion.data as { intent_id: string }).intent_id;
+    await db`update app_private.account_deletion_intents
+      set next_attempt_at=statement_timestamp()+interval '30 minutes'
+      where id=${clientIntentId}`;
+
+    const trainerDeletion = await context.po.client.rpc(
+      'request_account_deletion',
+      { p_target_user_id: context.trainerA.userId },
+    );
+    expect(trainerDeletion.data).toMatchObject({ status: 'deletion_pending' });
+    const trainerIntentId = (trainerDeletion.data as { intent_id: string }).intent_id;
+    await db`update app_private.account_deletion_intents
+      set next_attempt_at=statement_timestamp()+interval '30 minutes'
+      where state <> 'completed'`;
+    await db`update app_private.account_deletion_intents
+      set next_attempt_at=statement_timestamp() where id=${trainerIntentId}`;
+    await drainAccountDeletions(cronEnv, { limit: 1 });
+
+    const [ended] = await db`select count(*)::int as count
+      from public.client_trainer_assignments where workspace_id=${context.wsA.id}
+        and client_id=${client.client} and ended_at is not null and ended_by_system`;
+    expect(ended?.count).toBe(1);
+    const [active] = await db`select count(*)::int as count
+      from public.client_trainer_assignments where workspace_id=${context.wsA.id}
+        and client_id=${client.client} and ended_at is null`;
+    expect(active?.count).toBe(0);
+    const [skipped] = await db`select count(*)::int as count
+      from public.audit_events where action='account_deletion.reassignment_skipped'
+        and target_id=${client.client}
+        and details->>'intent_id'=${trainerIntentId}
+        and details->>'reason'='deletion_lifecycle'`;
+    expect(skipped?.count).toBe(1);
+    const unassigned = await context.po.client.rpc('unassigned_clients', {
+      p_workspace_id: context.wsA.id,
+    });
+    expect(unassigned.error).toBeNull();
+    expect(unassigned.data).not.toContain(client.client);
   });
 
   it('records terminal no-op outcomes for active automatic rows and manual overrides', async () => {
