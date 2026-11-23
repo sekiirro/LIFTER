@@ -4,6 +4,7 @@ import type { Actor } from '../../lib/auth/authorize';
 import {
   canReadDirectory,
   canUseAssignment,
+  directorySearchPlaceholderKey,
   directoryHref,
   directoryRpcArgs,
   parseDirectoryQuery,
@@ -91,6 +92,26 @@ describe('F22 directory query parsing (T030; FR-011)', () => {
     });
     expect(directoryHref(wsA, query, 3)).toBe(
       `/clients?workspace=${wsA}&q=%2B2010&page=3`,
+    );
+  });
+});
+
+describe('F22 directory search placeholder roles (T045; S70-PO-2)', () => {
+  it('shows code-search copy only to a Platform Owner or same-workspace Workspace Owner', () => {
+    expect(
+      directorySearchPlaceholderKey(actor('platform_owner', []), wsA),
+    ).toBe('staff.clientDirectory.searchPlaceholder');
+    expect(directorySearchPlaceholderKey(actor('workspace_owner'), wsA)).toBe(
+      'staff.clientDirectory.searchPlaceholder',
+    );
+    expect(
+      directorySearchPlaceholderKey(actor('workspace_owner', [wsB]), wsA),
+    ).toBe('staff.clientDirectory.searchPlaceholderStaff');
+    expect(directorySearchPlaceholderKey(actor('trainer'), wsA)).toBe(
+      'staff.clientDirectory.searchPlaceholderStaff',
+    );
+    expect(directorySearchPlaceholderKey(actor('sales'), wsA)).toBe(
+      'staff.clientDirectory.searchPlaceholderStaff',
     );
   });
 });

@@ -18,6 +18,7 @@ let p: PortalFixture;
 let assignedId: string;
 let unassignedId: string;
 let pendingId: string;
+let directoryUsername: string;
 
 async function directory(
   actor: { client: SupabaseClient },
@@ -49,6 +50,7 @@ beforeAll(async () => {
   assignedId = assigned.clientId;
   unassignedId = unassigned.clientId;
   pendingId = pending.clientId;
+  directoryUsername = `f22.${assignedId.replaceAll('-', '').slice(0, 8)}`;
   const done = await p.fixture.po.client.rpc(
     'assign_client_responsible_trainer',
     {
@@ -60,6 +62,11 @@ beforeAll(async () => {
   expect(done.data).toMatchObject({ status: 'ok' });
   await p.db.begin(async (tx) => {
     await tx`set local session_replication_role = replica`;
+    const username = await tx`
+      update public.clients set username_normalized=${directoryUsername}
+      where id=${assignedId} returning id
+    `;
+    expect(username).toHaveLength(1);
     await tx`update public.clients set approval_state='pending-approval' where id=${pendingId}`;
   });
 });
@@ -236,6 +243,11 @@ describe('F22 directory client-code search (T034)', () => {
           (found.clients as Array<{ client_code?: string }>)[0]!.client_code,
         ).toBe(code);
       }
+    for (const actor of [p.fixture.woA, p.fixture.po]) {
+      const found = await search(actor, directoryUsername.toUpperCase());
+      expect(ids(found)).toEqual([assignedId]);
+      expect(found.clients![0]!.client_code).toBe(code);
+    }
   });
 
   it('never matches a prefix, a fragment, a wrong code or another workspace code', async () => {
@@ -271,6 +283,13 @@ describe('F22 directory client-code search (T034)', () => {
     const named = await search(p.fixture.trainerA, p.run);
     expect(ids(named).length).toBeGreaterThan(0);
     for (const row of named.clients!) expect('client_code' in row).toBe(false);
+    const byUsername = await search(
+      p.fixture.trainerA,
+      directoryUsername.toUpperCase(),
+    );
+    expect(ids(byUsername)).toEqual([assignedId]);
+    for (const row of byUsername.clients!)
+      expect('client_code' in row).toBe(false);
   });
 
   it('mutation kill: opening the code wall to every caller lets a Trainer enumerate by code', async () => {
