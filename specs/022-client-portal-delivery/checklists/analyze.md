@@ -74,7 +74,7 @@ Scope: the F22 blockers delivered by the orchestrator PR (F13 overdue input, F19
 - FR-009: the F19 hook is the single delivery writer `ready_and_publish_plan_impl`; one notice per first-plan delivery, activation text on the activating delivery; exactly two notices per pair.
 - FR-011: the assignment filter and client code are behind the F11 owner-or-Platform-Owner wall and never widen `coaching_work`; Trainers get the parameter ignored and no assignment or code. Remaining partial: T035 and T034 UI (no approved copy), T036 new check-ins (no F23 definition), T037 other links (no routes).
 
-- Review follow-ups applied: workout content in `client_portal_plan` goes through the F17 allowlist; `record_nutrition_export_audit` and `record_workout_export_audit` apply the active-and-not-overdue client condition; the overdue default fails closed; migrations are forwarded to `20261223010000`-`20261223010300` after merge with `origin/main`.
+- Review follow-ups applied: workout content in `client_portal_plan` goes through the F17 allowlist; `record_nutrition_export_audit` and `record_workout_export_audit` apply the active-and-not-overdue client condition; the overdue default fails closed; migrations are forwarded to `20261223050000`-`20261223050300` after merge with `origin/main`.
 
 ## Round 7 re-audit for S70-PO-1 item 1 (2026-11-23)
 
