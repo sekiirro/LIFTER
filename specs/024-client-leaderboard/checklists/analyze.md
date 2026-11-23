@@ -1,7 +1,7 @@
 ﻿# Specification Analysis: F24 Client Leaderboard
 
-**Date**: 2026-11-18  
-**Run**: re-run after S66-PO-2 (overdue clients are not rankable or public and do not see the Top 5 or private rank), which changed FR-010, the leaderboard-surface contract and tasks (T041 added; stale T022 and T025 file references corrected). Earlier runs: 2026-11-15 after S57-PO-13.  
+**Date**: 2026-11-23  
+**Run**: re-run after S70-PO-1 item 7 / T030 (design-gate visual verification across 8-cell matrix and keyboard/state assertions). Earlier runs: 2026-11-18 after S66-PO-2; 2026-11-15 after S57-PO-13.  
 **Inputs**: `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/`, `research.md`, `traceability.md`, `copy-proposal.md`, `.specify/memory/constitution.md`  
 **Requirements**: 43 FRs, 10 SCs  
 **Tasks**: 41
@@ -51,10 +51,11 @@ No unresolved contradiction across the FRs, scenarios, success criteria, entity 
 
 ## Result
 
-PASS for Plan/Tasks/Analyze after the S57 decisions. Spec consistency passes. Traceability evidence is recorded from PR #110 CI (T033); rows mapping T030 stay PARTIAL.
+PASS for Plan/Tasks/Analyze after the S57 decisions. Spec consistency passes. Traceability evidence is recorded from PR #110 CI (T033) and PR #313 (T030); all tasks now completed or cancelled.
 
 ## History
 
+- 2026-11-23: T030 design-gate matrix visual verification and keyboard/state assertions completed in tests/e2e/leaderboard-screenshots.spec.ts (6 passed, 0 axe violations, 56 PNGs captured); FR-005, FR-022, FR-038 verified in traceability.md.
 - 2026-11-18: S66-PO-2 (overdue gating) applied to FR-010, `contracts/leaderboard-surface.md` and task T041; T022 and T025 now cite real files (`leaderboard-publication.test.ts`, `leaderboard-rls.test.ts`, `decide_leaderboard_candidate`). The six F24 migrations were renumbered to 20261203000000-20261203000500 (above the highest on every origin ref) and the overdue migration is 20261203000600. No open findings.
 - 2026-11-18: F22 client dashboard is on main; T011 and T015 implemented (once-only dashboard notice, `client_leaderboard_dashboard_notice`, approved copy reused) and ticked with CI evidence from PR #110 at 63aa443a; traceability updated. Only T030 stays open (design-gate captures). No FR/SC/plan text changed. No open findings.
 - 2026-11-17: T033 evidence recorded from PR #110 (CI green at 6c31a261); tasks.md checkboxes ticked with evidence for implemented tasks. T011, T015 (F22 T016 dashboard, PR #108 unmerged) and T030 (design-gate captures) stay unticked; T001 and T035 stay cancelled. No FR/SC/plan text changed. No open findings.
