@@ -472,9 +472,14 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
       'active_system',
       'active_manual',
       'ended_manual',
+      'ended_manual_role_change',
     ] as const) {
       const { context, clientId, approvalId } = await approvedClient();
-      if (source === 'active_manual' || source === 'ended_manual') {
+      if (
+        source === 'active_manual' ||
+        source === 'ended_manual' ||
+        source === 'ended_manual_role_change'
+      ) {
         const assigned = await context.po.client.rpc(
           'assign_client_responsible_trainer',
           {
@@ -489,6 +494,13 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
             set revoked_at=statement_timestamp(), revoked_by=${context.po.userId}
             where workspace_id=${context.wsA.id}
               and user_id=${context.trainerA.userId} and revoked_at is null`;
+        }
+        if (source === 'ended_manual_role_change') {
+          const roleChange = await admin()
+            .from('staff_profiles')
+            .update({ role: 'sales' })
+            .eq('user_id', context.trainerA.userId);
+          expect(roleChange.error).toBeNull();
         }
       } else {
         const [membership] =
@@ -518,7 +530,11 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
       const [rows] =
         await db`select count(*)::int as count from public.client_trainer_assignments
         where workspace_id=${context.wsA.id} and client_id=${clientId} and ended_at is null`;
-      expect(rows?.count).toBe(source === 'ended_manual' ? 0 : 1);
+      expect(rows?.count).toBe(
+        source === 'ended_manual' || source === 'ended_manual_role_change'
+          ? 0
+          : 1,
+      );
       await service.rpc('jobs_complete', {
         id: jobId,
         lease: lease.lease_token,
