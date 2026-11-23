@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -46,8 +47,10 @@ for (const variant of matrix) {
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
       .analyze();
     expect(violations.violations).toEqual([]);
+    const screenshotDir = process.env.SCREENSHOT_DIR || tmpdir();
+    mkdirSync(screenshotDir, { recursive: true });
     const file = join(
-      tmpdir(),
+      screenshotDir,
       `lifter-f15-${variant.locale}-${variant.theme}-${variant.width}.png`,
     );
     await page.screenshot({ path: file, fullPage: true });

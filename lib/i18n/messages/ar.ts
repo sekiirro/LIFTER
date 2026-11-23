@@ -989,6 +989,7 @@ export const ar = {
   'forms.historyEmpty': 'لا توجد إصدارات سابقة.',
   'forms.version': 'الإصدار {version}',
   'forms.correct': 'تصحيح الإجابات المُرسلة',
+  'forms.clearAnswer': 'امسح الإجابة',
   'forms.correctionUnavailable': 'التصحيحات غير متاحة لانتهاء علاقة العميل.',
   'forms.loading': 'جارٍ تحميل النموذج…',
   'forms.invalidForm': 'هذا النموذج غير متاح. تواصل مع مدربك.',

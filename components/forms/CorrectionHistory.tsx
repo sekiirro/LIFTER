@@ -1,6 +1,7 @@
 import { getMessages } from '../../lib/i18n';
 import type { Locale } from '../../lib/design/preferences';
 import { Bidi } from '../ui/Bidi';
+import { Button } from '../ui/Button';
 import { formatUiNumber, localizeUiDigits } from '../../lib/i18n/format-digits';
 import type { LabeledQuestion } from './QuestionFlow';
 import styles from './QuestionFlow.module.css';
@@ -17,15 +18,21 @@ export function CorrectionHistory({
   locale,
   entries,
   questions,
+  relationshipActive = true,
+  onClearAnswer,
 }: {
   locale: Locale;
   entries: readonly AnswerHistoryEntry[];
   questions: readonly LabeledQuestion[];
+  relationshipActive?: boolean;
+  onClearAnswer?: (questionId: string) => void | Promise<void>;
 }) {
   const messages = getMessages(locale);
   const questionById = new Map(
     questions.map((question) => [question.id, question]),
   );
+  const latestVersion =
+    entries.length > 0 ? Math.max(...entries.map((entry) => entry.version)) : 0;
 
   function answerLabel(questionId: string, value: unknown) {
     const question = questionById.get(questionId);
@@ -80,24 +87,46 @@ export function CorrectionHistory({
                 </time>
               )}
               <dl>
-                {Object.entries(entry.answers).map(([questionId, answer]) => (
-                  <div key={questionId}>
-                    <dt>
-                      {questionById.has(questionId) ? (
-                        questionById.get(questionId)?.title[locale]
-                      ) : (
-                        <Bidi dir="ltr">{questionId}</Bidi>
-                      )}
-                    </dt>
-                    <dd>
-                      {Array.isArray(answer)
-                        ? answer
-                            .map((value) => answerLabel(questionId, value))
-                            .join(', ')
-                        : answerLabel(questionId, answer)}
-                    </dd>
-                  </div>
-                ))}
+                {Object.entries(entry.answers).map(([questionId, answer]) => {
+                  const question = questionById.get(questionId);
+                  const isRequired = question?.required === true;
+                  const isLatest = entry.version === latestVersion;
+                  const questionTitle = question?.title[locale] ?? questionId;
+                  return (
+                    <div key={questionId} className={styles.historyRow}>
+                      <dt>
+                        {question ? (
+                          question.title[locale]
+                        ) : (
+                          <Bidi dir="ltr">{questionId}</Bidi>
+                        )}
+                      </dt>
+                      <dd>
+                        {Array.isArray(answer)
+                          ? answer
+                              .map((value) => answerLabel(questionId, value))
+                              .join(', ')
+                          : answerLabel(questionId, answer)}
+                        {isLatest && (
+                          <div className={styles.clearAction}>
+                            <Button
+                              variant="secondary"
+                              disabled={
+                                !relationshipActive ||
+                                isRequired ||
+                                !onClearAnswer
+                              }
+                              aria-label={`${messages['forms.clearAnswer']}: ${questionTitle}`}
+                              onClick={() => void onClearAnswer?.(questionId)}
+                            >
+                              {messages['forms.clearAnswer']}
+                            </Button>
+                          </div>
+                        )}
+                      </dd>
+                    </div>
+                  );
+                })}
               </dl>
             </li>
           ))}

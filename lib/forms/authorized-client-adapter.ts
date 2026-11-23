@@ -144,11 +144,12 @@ export function createAuthorizedFormsClientAdapter(): FormsClientAdapter {
         revision: savedRevision,
       };
     },
-    correct: async ({ assignmentId, expectedRevision, answers }) => {
+    correct: async ({ assignmentId, expectedRevision, answers, remove }) => {
       const result = await post(assignmentId, 'corrections', {
         expected_revision: expectedRevision,
         intent_key: crypto.randomUUID(),
         answer_values: answers,
+        remove: remove ?? [],
         correction_note: '',
       });
       if (result?.status === 'corrected')

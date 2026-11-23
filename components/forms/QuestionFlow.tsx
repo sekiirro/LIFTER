@@ -112,6 +112,7 @@ export type FormsClientAdapter = {
     assignmentId: string;
     expectedRevision: number;
     answers: FormAnswerSet;
+    remove?: string[];
   }) => Promise<{
     status: 'saved' | 'conflict' | 'error' | 'retryable';
     revision?: number;
@@ -216,17 +217,49 @@ export function QuestionFlow({
       null)
     : null;
   const index = current ? progression.stepQuestionIds.indexOf(current.id) : -1;
-  const applicableIds = new Set(progression.applicableQuestionIds);
-  const visibleHistory = history.map((entry) => ({
-    ...entry,
-    answers: Object.fromEntries(
-      Object.entries(entry.answers).filter(([questionId]) =>
-        applicableIds.has(questionId),
-      ),
-    ),
-  }));
+  const applicableIds = useMemo(
+    () => new Set(progression.applicableQuestionIds),
+    [progression.applicableQuestionIds],
+  );
+  const [localHistory, setLocalHistory] = useState<
+    readonly AnswerHistoryEntry[]
+  >([]);
+
+  const [removedQuestionIds, setRemovedQuestionIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const historyEntries = useMemo(
+    () => [...history, ...localHistory],
+    [history, localHistory],
+  );
+
+  const visibleHistory = useMemo(
+    () =>
+      historyEntries.map((entry) => ({
+        ...entry,
+        answers: Object.fromEntries(
+          Object.entries(entry.answers).filter(([questionId]) =>
+            applicableIds.has(questionId),
+          ),
+        ),
+      })),
+    [applicableIds, historyEntries],
+  );
 
   function updateAnswer(id: string, value: FormAnswer | undefined) {
+    if (value === undefined) {
+      if (hasSubmitted) {
+        setRemovedQuestionIds((prev) => new Set(prev).add(id));
+      }
+    } else {
+      setRemovedQuestionIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
     let next = setClientAnswer(
       applicableClientAnswers(runtimeQuestions, answers),
       id,
@@ -260,6 +293,43 @@ export function QuestionFlow({
       setQuestionId(id === 'N08.foods' ? 'N08' : id);
     }
     setState('ready');
+  }
+
+  async function handleClearAnswer(id: string) {
+    if (!relationshipActive || locked) return;
+    const question = runtimeQuestions.find((q) => q.id === id);
+    if (question?.required) return;
+    setState('submitting');
+    try {
+      const result = await adapter.correct({
+        assignmentId,
+        expectedRevision: revisionRef.current,
+        answers: {},
+        remove: [id],
+      });
+      if (result.status === 'saved') {
+        const nextRevision = result.revision ?? revisionRef.current + 1;
+        revisionRef.current = nextRevision;
+        setRevision(nextRevision);
+        const nextAnswers = { ...latestAnswers.current };
+        delete nextAnswers[id];
+        setAnswers(nextAnswers);
+        latestAnswers.current = nextAnswers;
+        setLocalHistory((prev) => [
+          ...prev,
+          {
+            version: nextRevision,
+            createdAt: new Date().toISOString(),
+            answers: nextAnswers,
+          },
+        ]);
+        setState('submitted');
+      } else {
+        setState(result.status === 'conflict' ? 'conflict' : 'submit-error');
+      }
+    } catch {
+      setState('submit-error');
+    }
   }
 
   async function persist(force = false) {
@@ -489,6 +559,7 @@ export function QuestionFlow({
             assignmentId,
             expectedRevision: revisionRef.current,
             answers: correctionAnswers,
+            remove: Array.from(removedQuestionIds),
           })
         : await adapter.submit({
             assignmentId,
@@ -496,6 +567,7 @@ export function QuestionFlow({
             answers: submissionAnswers,
           });
       if (result.status === 'submitted' || result.status === 'saved') {
+        setRemovedQuestionIds(new Set());
         if (
           hasSubmitted &&
           JSON.stringify(correctionAnswers) ===
@@ -506,10 +578,17 @@ export function QuestionFlow({
           dirtySince.current = undefined;
         }
         setHasSubmitted(true);
-        if ('revision' in result && result.revision) {
-          revisionRef.current = result.revision;
-          setRevision(result.revision);
-        }
+        const nextRev = result.revision ?? revisionRef.current + 1;
+        revisionRef.current = nextRev;
+        setRevision(nextRev);
+        setLocalHistory((prev) => [
+          ...prev,
+          {
+            version: nextRev,
+            createdAt: new Date().toISOString(),
+            answers: hasSubmitted ? correctionAnswers : submissionAnswers,
+          },
+        ]);
         setState('submitted');
       } else
         setState(result.status === 'conflict' ? 'conflict' : 'submit-error');
@@ -619,6 +698,20 @@ export function QuestionFlow({
                   onChange={(value) => updateAnswer('N08.foods', value)}
                 />
               )}
+            {!current.required &&
+              answers[current.id] !== undefined &&
+              answers[current.id] !== '' && (
+                <div className={styles.clearQuestionRow}>
+                  <Button
+                    variant="secondary"
+                    disabled={locked}
+                    aria-label={`${messages['forms.clearAnswer']}: ${current.title[locale]}`}
+                    onClick={() => updateAnswer(current.id, undefined)}
+                  >
+                    {messages['forms.clearAnswer']}
+                  </Button>
+                </div>
+              )}
           </section>
           <div className={styles.actions}>
             <Button
@@ -704,6 +797,8 @@ export function QuestionFlow({
           locale={locale}
           entries={visibleHistory}
           questions={questions}
+          relationshipActive={relationshipActive}
+          onClearAnswer={handleClearAnswer}
         />
       )}
     </main>

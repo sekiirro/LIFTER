@@ -1019,6 +1019,7 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.historyEmpty': 'No earlier versions.',
   'forms.version': 'Version {version}',
   'forms.correct': 'Correct submitted answers',
+  'forms.clearAnswer': 'Clear answer',
   'forms.correctionUnavailable':
     'Corrections are unavailable because this client relationship has ended.',
   'forms.loading': 'Loading intake…',
