@@ -2,7 +2,7 @@
 
 ## S70 documentation re-analysis — 2026-11-23 UTC
 
-Re-analyzed after the S70-PO-1 item 3 documentation-only change to `spec.md` and `plan.md` recording the decided 30-day client-data and audit retention value, subject to Egyptian legal requirements for financial/audit records, for RET-1..3 and the production-gate/decision-register text. No requirement behavior, FR/SC identifier, acceptance scenario, permission, copy, task status or plan design changed; T019/T020 remain unticked because the Egyptian legal confirmation and all-copies/backup proof are open pre-production gates (`docs/13-production-readiness.md` DP-07/BR-04). **0 open CRITICAL, 0 open HIGH.** No open product ambiguity for this documentation scope.
+Re-analyzed after the S70 retention documentation-only change to `spec.md` and `plan.md` recording the decided 30-day retention (client, audit, payment, refund, invoice data; S70-PO-3/4) with "PO states Egyptian legal advice was obtained" (S70-PO-3/4), for RET-1..3 and the production-gate/decision-register text. No requirement behavior, FR/SC identifier, acceptance scenario, permission, copy, task status or plan design changed; T019 stays unticked because the all-copies/backup 30-day proof is an open pre-production gate (`docs/13-production-readiness.md` BR-04), and T020 is not retention and stays unticked pending hosted evidence. **0 open CRITICAL, 0 open HIGH.** No open product ambiguity for this documentation scope.
 
 ## Historical analysis (retained)
 

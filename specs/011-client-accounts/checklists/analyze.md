@@ -2,7 +2,7 @@
 
 ## S70 documentation re-analysis — 2026-11-23 UTC
 
-Re-analyzed after the S70-PO-1 item 3 documentation-only change to `spec.md` recording the decided 30-day client-data and audit retention value, subject to Egyptian legal requirements for financial/audit records, across ND-F11-7/FR-010/SC-009 and the decision register. No requirement behavior, FR/SC identifier, acceptance scenario, permission, copy, task status or plan design changed; the legal confirmation and all-copy/backup proof are tracked as open pre-production gates in `docs/13-production-readiness.md` DP-07 and BR-04. **0 open CRITICAL, 0 open HIGH.** No open product ambiguity for this documentation scope.
+Re-analyzed after the S70 retention documentation-only change to `spec.md` recording the decided 30-day retention (client, audit, payment, refund, invoice data; S70-PO-3/4) with "PO states Egyptian legal advice was obtained" (S70-PO-3/4), across ND-F11-7/FR-010/SC-009 and the decision register. No requirement behavior, FR/SC identifier, acceptance scenario, permission, copy, task status or plan design changed; the all-copies/backup 30-day proof is tracked as an open pre-production gate in `docs/13-production-readiness.md` BR-04. **0 open CRITICAL, 0 open HIGH.** No open product ambiguity for this documentation scope.
 
 ## S69 date-only status revalidation — 2026-11-20 UTC
 
