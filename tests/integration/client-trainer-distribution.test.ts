@@ -188,7 +188,10 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
 
   it('never selects a Trainer with a committed deletion intent', async () => {
     const { context, clientId, approvalId } = await approvedClient();
-    const deletingTrainer = await createStaff('trainer', 'distribution-deleting');
+    const deletingTrainer = await createStaff(
+      'trainer',
+      'distribution-deleting',
+    );
     checked(
       await context.po.client.from('workspace_memberships').insert({
         workspace_id: context.wsA.id,
@@ -322,7 +325,10 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
 
   it('reassigns automatic and PO rows when their Trainer account is deleted', async () => {
     const context = await clientContext();
-    const trainerC = await createStaff('trainer', 'distribution-deletion-replacement');
+    const trainerC = await createStaff(
+      'trainer',
+      'distribution-deletion-replacement',
+    );
     checked(
       await context.po.client.from('workspace_memberships').insert({
         workspace_id: context.wsA.id,
@@ -381,7 +387,8 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
       expect(rows).toMatchObject({
         assignment_source: 'trainer_deletion',
         trainer_user_id: replacementTrainerId,
-        source_deletion_intent_id: (deletion.data as { intent_id: string }).intent_id,
+        source_deletion_intent_id: (deletion.data as { intent_id: string })
+          .intent_id,
         ended_at: null,
       });
     }
@@ -397,7 +404,10 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
 
   it('ends but does not reassign a client already in the F11 deletion lifecycle', async () => {
     const context = await clientContext();
-    const trainerC = await createStaff('trainer', 'distribution-overlap-replacement');
+    const trainerC = await createStaff(
+      'trainer',
+      'distribution-overlap-replacement',
+    );
     checked(
       await context.po.client.from('workspace_memberships').insert({
         workspace_id: context.wsA.id,
@@ -429,7 +439,8 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
       },
     );
     expect(clientDeletion.data).toMatchObject({ status: 'deletion_pending' });
-    const clientIntentId = (clientDeletion.data as { intent_id: string }).intent_id;
+    const clientIntentId = (clientDeletion.data as { intent_id: string })
+      .intent_id;
     await db`update app_private.account_deletion_intents
       set next_attempt_at=statement_timestamp()+interval '30 minutes'
       where id=${clientIntentId}`;
@@ -439,7 +450,8 @@ describe('F11 automatic responsible-Trainer distribution T058', () => {
       { p_target_user_id: context.trainerA.userId },
     );
     expect(trainerDeletion.data).toMatchObject({ status: 'deletion_pending' });
-    const trainerIntentId = (trainerDeletion.data as { intent_id: string }).intent_id;
+    const trainerIntentId = (trainerDeletion.data as { intent_id: string })
+      .intent_id;
     await db`update app_private.account_deletion_intents
       set next_attempt_at=statement_timestamp()+interval '30 minutes'
       where state <> 'completed'`;
