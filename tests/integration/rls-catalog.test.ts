@@ -75,6 +75,29 @@ const f23Private = [
   'f23_nutrition_item_path',
   'f23_reconcile_food_requests',
 ];
+// Spec 024 private helpers (all revoked from every API role).
+const f24Private = [
+  'f24_active_days',
+  'f24_cairo_today',
+  'f24_client_eligible',
+  'f24_client_rankable',
+  'f24_current_view',
+  'f24_eligibility_facts',
+  'f24_guard_current',
+  'f24_guard_entry',
+  'f24_guard_publication',
+  'f24_initial_subscription',
+  'f24_public_entries',
+  'f24_publication_entries',
+  'f24_username_issue',
+  'f24_visible_username',
+];
+// Spec 024 immutability/swap guards run with the caller's rights.
+const f24Invoker = [
+  'f24_guard_current',
+  'f24_guard_entry',
+  'f24_guard_publication',
+];
 // Spec 022 private helpers.
 const f22Private = [
   'f22_delivered_revisions',
@@ -126,12 +149,14 @@ const registrationPrivate = [
 const brandingPrivate = [
   'branding_actor_id',
   'branding_asset_attach',
+  'branding_asset_detach',
   'branding_credential_event_immutable',
   'branding_credential_register',
   'branding_credential_set_enabled',
   'branding_credential_allowed',
   'branding_current_read',
   'branding_draft_read',
+  'branding_draft_asset_read_allowed',
   'branding_draft_save',
   'branding_gc_claim',
   'branding_gc_finalize',
@@ -142,6 +167,7 @@ const brandingPrivate = [
   'branding_staging_upload_allowed',
   'branding_storage_read_allowed',
   'branding_upload_begin',
+  'branding_upload_terminalize',
   'branding_validation_prepare',
   'branding_validation_complete',
   'branding_validator_upload_binding_matches',
@@ -150,6 +176,9 @@ const brandingPrivate = [
 ];
 const brandingFunctionOwners: Record<string, string> = {
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
+  // S65-R42: terminalize deletes the staged storage row, which no role policy
+  // grants, so postgres owns it; authorization mirrors the upload RPCs.
+  branding_upload_terminalize: 'postgres',
 };
 const assignmentPrivate = [
   'allocate_client_code',
@@ -165,6 +194,18 @@ const assignmentPrivate = [
   'guard_client_trainer_assignment_truncate',
   'normalize_client_code',
   'write_client_trainer_distribution',
+];
+const deletionPrivate = [
+  'deletion_actor_is_denied',
+  'deletion_begin_step_c',
+  'deletion_claim_release_proof',
+  'deletion_execute_step_b',
+  'deletion_execute_step_d',
+  'deletion_financial_confirmation_valid',
+  'deletion_guard_intent_update',
+  'deletion_guard_membership_insert',
+  'deletion_mark_banned',
+  'deletion_transition_proof',
 ];
 afterAll(async () => {
   await db.end();
@@ -311,6 +352,7 @@ describe('tenancy security catalog (T007)', () => {
         ...new Set([
           ...registrationPrivate,
           ...assignmentPrivate,
+          ...deletionPrivate,
           ...approvalFunctions.map((signature) => signature.split('(')[0]!),
           'client_has_access',
           'client_note_trim_whitespace',
@@ -325,6 +367,7 @@ describe('tenancy security catalog (T007)', () => {
           ...signupPrivate,
           ...brandingPrivate,
           ...f23Private,
+          ...f24Private,
           ...f22Private,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
@@ -367,6 +410,7 @@ describe('tenancy security catalog (T007)', () => {
           'f13_project_entitlement',
           'f13_project_overdue',
           'f13_client_overdue_state',
+          'f13_award_sales_productivity_unit',
           // Created by 20261112175511_f13_review_integrity_corrections.sql.
           'f13_validate_productivity_point',
           'f3_guard_platform_owner_profile_change',
@@ -440,6 +484,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_valid_builder_definition',
           'f15_valid_slider_label',
           'forbid_delete',
+          'f13_guard_sales_productivity_unit',
           'guard_client_trainer_assignment',
           'guard_client_trainer_assignment_truncate',
           'guard_exercise_version_retired_fields',
@@ -456,6 +501,9 @@ describe('tenancy security catalog (T007)', () => {
           'guard_package_offer_update',
           'guard_package_offer_category',
           'guard_package_promotion_period',
+          'guard_package_reporting_fx_snapshot',
+          'guard_package_tier_name_override_update',
+          'guard_package_tier_name_update',
           'guard_package_version_insert',
           'guard_package_version_market',
           'guard_registration_link_promotion_period',
@@ -490,6 +538,7 @@ describe('tenancy security catalog (T007)', () => {
           'retire_workspace_form',
           'role_has_capability',
           'save_workspace_form_draft',
+          'seed_package_reporting_fx_pending',
           'set_catalog_operation_result',
           'set_default_onboarding_form',
           'signup_auth_identity_column',
@@ -530,6 +579,12 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'd1_erase_inapplicable_answers',
+          'f15_d1_erasure_run',
+          'f15_d1_erasure_run_batch',
+          'f15_d1_erasure_schedule_activate',
+          'f15_d1_erasure_schedule_deactivate',
+          'guard_form_d1_erasure_control',
           'f17_client_resolve_global_exercise',
           'f17_client_safe_reference',
           'f17_client_safe_set',
@@ -602,10 +657,18 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        // F15 T029: D1 erasure cron wrappers declare `security invoker` and enforce
+        // the postgres-owner check in the body; only d1_erase_inapplicable_answers
+        // is `security definer` (20261215030000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
+        'f15_d1_erasure_run',
+        'f15_d1_erasure_run_batch',
+        'f15_d1_erasure_schedule_activate',
+        'f15_d1_erasure_schedule_deactivate',
         // F23 US3: trigger guard and pure SQL/plpgsql helpers are invoker routines.
         'f23_derived_uuid_v4',
         'f23_guard_food_replacement_request',
         'f23_nutrition_item_path',
+        ...f24Invoker,
         'f17_client_safe_reference',
         'f17_client_safe_set',
         'f17_client_safe_item',
@@ -654,6 +717,8 @@ describe('tenancy security catalog (T007)', () => {
           'f18_guard_nutrition_selection',
           'audit_package_promotion_period',
           'guard_package_promotion_period',
+          'guard_package_reporting_fx_snapshot',
+          'seed_package_reporting_fx_pending',
           'package_promotion_period_active',
           'package_c5_preflight',
           'f18_selection_audit',
@@ -689,6 +754,13 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
+          'd1_erase_inapplicable_answers',
+          'f15_d1_erasure_run',
+          'f15_d1_erasure_run_batch',
+          'f15_d1_erasure_schedule_activate',
+          'f15_d1_erasure_schedule_deactivate',
+          'guard_form_d1_erasure_control',
+          ...deletionPrivate,
           'f17_client_resolve_global_exercise',
           'f17_client_safe_reference',
           'f17_client_safe_set',
@@ -708,6 +780,12 @@ describe('tenancy security catalog (T007)', () => {
       if (row.proname === 'staff_display_name_is_valid') {
         expect(row.service_role_execute, row.proname).toBe(true);
       }
+      if (row.proname.startsWith('f24_')) {
+        // Spec 024: helpers are reachable only through the public F24 RPCs.
+        expect(row.authenticated_execute, row.proname).toBe(false);
+        expect(row.service_role_execute, row.proname).toBe(false);
+        continue;
+      }
       if (row.proname.startsWith('f23_')) {
         // Spec 023: only the RLS visibility predicates are executable by authenticated.
         expect(row.authenticated_execute, row.proname).toBe(
@@ -720,12 +798,16 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.authenticated_execute, row.proname).toBe(
         [
           'branding_upload_begin',
+          'branding_upload_terminalize',
           'branding_draft_save',
           'branding_asset_attach',
+          'branding_asset_detach',
           'branding_publish',
           'branding_current_read',
           'branding_draft_read',
+          'branding_draft_asset_read_allowed',
           'branding_staging_upload_allowed',
+          'deletion_actor_is_denied',
           'staff_display_name_is_valid',
         ].includes(row.proname) ||
           (!row.proname.startsWith('f12_') &&
@@ -734,6 +816,7 @@ describe('tenancy security catalog (T007)', () => {
             !row.proname.startsWith('f17_') &&
             !registrationPrivate.includes(row.proname) &&
             !assignmentPrivate.includes(row.proname) &&
+            !deletionPrivate.includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
@@ -744,6 +827,8 @@ describe('tenancy security catalog (T007)', () => {
               'audit_package_promotion_period',
               'audit_row_change',
               'guard_package_promotion_period',
+              'guard_package_reporting_fx_snapshot',
+              'seed_package_reporting_fx_pending',
               'package_promotion_period_active',
               'catalog_assert_exercise_text_limits',
               'catalog_create_food_legacy',
@@ -859,6 +944,8 @@ describe('tenancy security catalog (T007)', () => {
               'guard_package_offer_category',
               'guard_package_version_insert',
               'guard_package_version_market',
+              'guard_package_tier_name_override_update',
+              'guard_package_tier_name_update',
               'jobs_updated_at',
               'lock_catalog_food_request',
               'normalize_catalog_food_identity_v1',
@@ -904,6 +991,12 @@ describe('tenancy security catalog (T007)', () => {
               'f19_guard_plan_revision_contributors',
               'f19_track_plan_draft_contributor',
               'f19_set_plan_revision_contributor_actions',
+              'd1_erase_inapplicable_answers',
+              'f15_d1_erasure_run',
+              'f15_d1_erasure_run_batch',
+              'f15_d1_erasure_schedule_activate',
+              'f15_d1_erasure_schedule_deactivate',
+              'guard_form_d1_erasure_control',
             ].includes(row.proname)),
       );
     }
@@ -931,6 +1024,45 @@ describe('tenancy security catalog (T007)', () => {
         tgenabled: 'O',
       },
     ]);
+  });
+
+  it('keeps the F15 T029 D1 erasure private tables forced-RLS, policy-free, and API-private', async () => {
+    const tables = [
+      'app_private.f15_d1_erasure_context',
+      'app_private.form_d1_erasure_controls',
+      'app_private.form_d1_erasure_hold_alerts',
+    ];
+    for (const rel of tables) {
+      const [row] = await db`select relrowsecurity, relforcerowsecurity
+        from pg_catalog.pg_class where oid = ${rel}::regclass`;
+      expect(row, rel).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies = await db`
+        select policyname from pg_catalog.pg_policies
+        where schemaname = 'app_private'
+          and tablename = ${rel.slice('app_private.'.length)}`;
+      expect(
+        policies.map((policy) => policy.policyname),
+        rel,
+      ).toEqual([]);
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const priv of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+          expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+        }
+      }
+    }
   });
 });
 
@@ -1117,6 +1249,34 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'client_leaderboard_notice_seen_immutable',
+        relname: 'client_leaderboard_notice_seen',
+        type: 27,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_notice_seen_no_truncate',
+        relname: 'client_leaderboard_notice_seen',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_opt_outs_immutable',
+        relname: 'client_leaderboard_opt_outs',
+        type: 27,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'client_leaderboard_opt_outs_no_truncate',
+        relname: 'client_leaderboard_opt_outs',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
         tgname: 'f12_no_update',
         relname: 'payment_events',
         type: 19,
@@ -1204,6 +1364,27 @@ describe('audit security catalog (T005)', () => {
         tgname: 'f13_no_update',
         relname: 'trainer_productivity_points',
         type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_current_no_truncate',
+        relname: 'leaderboard_current_publications',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_entries_no_truncate',
+        relname: 'leaderboard_entries',
+        type: 34,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'leaderboard_publications_no_truncate',
+        relname: 'leaderboard_publications',
+        type: 34,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
       },
@@ -1299,7 +1480,7 @@ describe('jobs security catalog (T006)', () => {
 
 describe('package security catalog', () => {
   it.each(['packages', 'package_offers', 'package_versions'])(
-    '%s forces RLS, scoped SELECT and no API writes',
+    '%s forces RLS, scoped SELECT and blocks direct-write bypasses',
     async (table) => {
       const relation = `public.${table}`;
       const [row] =
@@ -1428,10 +1609,39 @@ describe('package security catalog', () => {
     ])
       expect(fks.map((f) => f.definition)).toContain(definition);
   });
+  it('enforces non-empty package identity and hardens category initialization', async () => {
+    const [constraint] = await db`
+      select contype,convalidated,pg_get_constraintdef(oid) as definition
+      from pg_constraint where conrelid='public.packages'::regclass
+        and conname='packages_identity_not_empty'
+    `;
+    expect(constraint).toMatchObject({
+      contype: 'c',
+      convalidated: true,
+      definition: 'CHECK (((workspace_id IS NOT NULL) OR (code IS NOT NULL)))',
+    });
+    const [fn] = await db`
+      select prosecdef,proconfig,pg_get_userbyid(proowner) as owner
+      from pg_proc where oid='public.initialize_workspace_package_categories(uuid)'::regprocedure
+    `;
+    expect(fn).toMatchObject({
+      prosecdef: true,
+      proconfig: ['search_path=""'],
+      owner: 'postgres',
+    });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      const [grant] = await db`
+        select has_function_privilege(${role},
+          'public.initialize_workspace_package_categories(uuid)','EXECUTE') as allowed
+      `;
+      expect(grant?.allowed).toBe(role === 'authenticated');
+    }
+  });
   it('hardens package RPCs and private guards', async () => {
     for (const name of [
       'public.create_package(text)',
       'public.create_package_category(uuid,text,text)',
+      'public.initialize_workspace_package_categories(uuid)',
       'public.publish_package_version(uuid,uuid,smallint,integer,text,text,bigint,text,integer)',
       'public.publish_package_version(uuid,uuid,smallint,integer,smallint,text,text,bigint,text,integer)',
       'public.set_package_offer_available(uuid,uuid,boolean)',
@@ -1991,6 +2201,71 @@ describe('F19 T021 activation catalog', () => {
   });
 });
 
+describe('F13 T044a Sales productivity catalog', () => {
+  it('forces RLS, grants no direct access, and installs immutable-award guards', async () => {
+    const [table] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid='public.sales_productivity_units'::regclass`;
+    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    const policies = await db`select * from pg_policies
+      where schemaname='public' and tablename='sales_productivity_units'`;
+    expect(policies).toHaveLength(0);
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] = await db`select has_table_privilege(${role},
+          'public.sales_productivity_units', ${privilege}) as allowed`;
+        expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
+      }
+    const triggers = await db`select tgname, tgtype::int as type, p.proname
+      from pg_trigger t join pg_proc p on p.oid=t.tgfoid
+      where tgrelid='public.sales_productivity_units'::regclass and not tgisinternal order by tgname`;
+    expect(triggers).toEqual([
+      {
+        tgname: 'sales_productivity_units_immutable',
+        type: 31,
+        proname: 'f13_guard_sales_productivity_unit',
+      },
+      {
+        tgname: 'sales_productivity_units_no_truncate',
+        type: 34,
+        proname: 'f13_guard_sales_productivity_unit',
+      },
+    ]);
+    const issuerTriggers =
+      await db`select tgname, tgtype::int as type, p.proname
+      from pg_trigger t join pg_proc p on p.oid=t.tgfoid
+      where tgrelid='public.registration_links'::regclass and tgname='registration_links_insert_guard'`;
+    expect(issuerTriggers).toEqual([
+      {
+        tgname: 'registration_links_insert_guard',
+        type: 7,
+        proname: 'guard_registration_link_insert',
+      },
+    ]);
+    const [award] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='app_private.f13_award_sales_productivity_unit()'::regprocedure`;
+    expect(award).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(award?.proconfig).toContain('search_path=""');
+  });
+});
+
 describe('F11 responsible-Trainer assignment catalog', () => {
   it('forces RLS, exposes only scoped reads, and grants no table writes', async () => {
     const [table] = await db`select relrowsecurity, relforcerowsecurity
@@ -2272,5 +2547,183 @@ describe('F17 T031 / T047 workout operation keys and RPC catalog', () => {
       });
       expect(fn?.proconfig, sig).toContain('search_path=""');
     }
+  });
+});
+
+describe('F11 T048 account deletion catalog', () => {
+  it('locks app_private.account_deletion_intents and enforces narrow worker and PO RPC grants', async () => {
+    const rel = 'app_private.account_deletion_intents';
+    const [row] = await db`select relrowsecurity, relforcerowsecurity
+      from pg_class where oid = ${rel}::regclass`;
+    expect(row, rel).toEqual({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+    });
+    const policies = await db`select policyname from pg_policies
+      where schemaname = 'app_private' and tablename = 'account_deletion_intents'`;
+    expect(policies).toEqual([]);
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const priv of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+      ]) {
+        const [grant] =
+          await db`select has_table_privilege(${role}, ${rel}, ${priv}) as allowed`;
+        expect(grant!.allowed, `${role} ${priv} ${rel}`).toBe(false);
+      }
+    }
+
+    const [financialFk] = await db`
+      select c.conname, c.confdeltype, c.convalidated,
+        c.confrelid = 'public.audit_events'::regclass as references_audit_events,
+        pg_catalog.pg_get_constraintdef(c.oid) as definition
+      from pg_catalog.pg_constraint c
+      where c.conrelid = 'app_private.account_deletion_intents'::regclass
+        and c.conname = 'account_deletion_intents_financial_confirmation_audit_fk'
+    `;
+    expect(financialFk).toMatchObject({
+      conname: 'account_deletion_intents_financial_confirmation_audit_fk',
+      confdeltype: 'r',
+      convalidated: true,
+      references_audit_events: true,
+    });
+    expect(financialFk?.definition).toContain('REFERENCES audit_events(id)');
+
+    const poFns = [
+      'public.record_deletion_financial_confirmation(uuid,uuid,text,text)',
+      'public.request_account_deletion(uuid,jsonb,bigint)',
+    ];
+    for (const sig of poFns) {
+      const [fn] = await db`select p.prosecdef, p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
+
+    const workerFns = [
+      'public.claim_account_deletion_intents(integer)',
+      'public.advance_deletion_step_a(uuid,uuid)',
+      'public.execute_deletion_step_b(uuid,uuid)',
+      'public.begin_deletion_step_c(uuid,uuid)',
+      'public.execute_deletion_step_d(uuid,uuid)',
+      'public.retry_account_deletion_intent(uuid,uuid,integer,timestamptz,text)',
+    ];
+    for (const sig of workerFns) {
+      const [fn] = await db`select p.prosecdef, p.proconfig,
+          pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_catalog.pg_proc p
+        where p.oid = ${sig}::regprocedure`;
+      expect(fn, sig).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: false,
+        anon: false,
+        service_role: true,
+      });
+      expect(fn?.proconfig, sig).toContain('search_path=""');
+    }
+  });
+});
+
+// T078 (FR-035/SC-025): tier display-name tables are RPC-only, with no API
+// table grants, immutable identity columns and no authorized delete path.
+describe('package tier name security catalog (T078)', () => {
+  it.each(['package_tier_names', 'package_tier_name_overrides'])(
+    '%s forces RLS with no policies, no API grants and identity guards',
+    async (table) => {
+      const relation = `public.${table}`;
+      const [row] =
+        await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass`;
+      expect(row).toMatchObject({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies =
+        await db`select policyname from pg_policies where schemaname='public' and tablename=${table}`;
+      expect(policies).toEqual([]);
+      for (const role of ['anon', 'authenticated', 'service_role'])
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role},${relation},${privilege}) as allowed`;
+          expect(grant?.allowed).toBe(false);
+        }
+      const triggers =
+        await db`select tgname,tgtype::int as type,tgenabled from pg_trigger where tgrelid=${relation}::regclass and not tgisinternal order by tgname`;
+      expect(triggers).toEqual(
+        [
+          { tgname: `${table}_guard`, type: 19, tgenabled: 'O' },
+          { tgname: `${table}_no_delete`, type: 11, tgenabled: 'O' },
+          { tgname: `${table}_no_truncate`, type: 34, tgenabled: 'O' },
+        ].sort((a, b) => a.tgname.localeCompare(b.tgname)),
+      );
+    },
+  );
+  it('hardens the T078 tier-name RPCs and private guards', async () => {
+    for (const name of [
+      'public.set_package_tier_name(smallint,text,text)',
+      'public.set_package_tier_name_override(uuid,smallint,text,text)',
+      'public.get_package_tier_names(uuid)',
+      'app_private.guard_package_tier_name_update()',
+      'app_private.guard_package_tier_name_override_update()',
+    ]) {
+      const [fn] =
+        await db`select prosecdef,proconfig,provolatile,pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn?.proconfig).toContain('search_path=""');
+      expect(fn?.provolatile).toBe(
+        name.includes('get_package_tier_names') ? 's' : 'v',
+      );
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
+        expect(grant?.allowed).toBe(
+          role === 'authenticated' && name.startsWith('public.'),
+        );
+      }
+    }
+    expect(
+      (
+        await db`select column_name from information_schema.columns where table_schema='public' and table_name='package_tier_names' order by ordinal_position`
+      ).map((column) => column.column_name),
+    ).toEqual(['tier_rank', 'locale', 'name', 'updated_by', 'updated_at']);
+    expect(
+      (
+        await db`select column_name from information_schema.columns where table_schema='public' and table_name='package_tier_name_overrides' order by ordinal_position`
+      ).map((column) => column.column_name),
+    ).toEqual([
+      'workspace_id',
+      'tier_rank',
+      'locale',
+      'name',
+      'updated_by',
+      'updated_at',
+    ]);
   });
 });

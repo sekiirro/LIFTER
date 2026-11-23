@@ -46,15 +46,19 @@ describe('local Supabase profile parity', () => {
     expect(Object.fromEntries(root)).not.toEqual(Object.fromEntries(stack));
   });
 
-  it('keeps root CI and Stack B behavior aligned except for the Stack B-only hook', () => {
+  it('keeps Stack B aligned except for its token hook and the root send-email hook', () => {
     const root = parseProfile(readFileSync('supabase/config.toml', 'utf8'));
     const stackB = parseProfile(
       readFileSync('supabase-stack-b/supabase/config.toml', 'utf8'),
     );
     expect(root.get('auth.hook.custom_access_token.enabled')).toBe(true);
+    expect(root.get('auth.hook.send_email.enabled')).toBe(true);
     expect(stackB.get('auth.hook.custom_access_token.enabled')).toBe(false);
     root.delete('auth.hook.custom_access_token.enabled');
     stackB.delete('auth.hook.custom_access_token.enabled');
+    root.delete('auth.hook.send_email.enabled');
+    root.delete('auth.hook.send_email.uri');
+    root.delete('auth.hook.send_email.secrets');
     for (const key of identityKeys) {
       root.delete(key);
       stackB.delete(key);

@@ -19,6 +19,11 @@ minimum_password_length = 8
 enabled = true
 uri = "pg-functions://postgres/public/custom_access_token_hook"
 
+[auth.hook.send_email]
+enabled = true
+uri = "http://host.docker.internal:3104/api/internal/staff-reset-hook"
+secrets = "v1,whsec_c3RhZmYtcmVzZXQtaG9vay1sb2NhbC1zdGFjay1kLXN5bnRoZXRpYy1zZWNyZXQ="
+
 [auth.email]
 # PO ND-F4-3 (2026-10-29): local email OTPs and links, including recovery, expire after 60 minutes.
 otp_expiry = 3600

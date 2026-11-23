@@ -294,3 +294,7 @@ Scope: Greptile PR #98 round-2 blocking findings. Aligned the Analyze rule wordi
   No requirement text changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguities remain.
 - Verdict: PASS for this documentation-only correction.
+
+## S67 evidence-only refresh (2026-11-19; S67-R1)
+
+T022/T029/T030 ticked as delivered-historically and superseded; non-normative notes only beside FR-024, SC-013 and SC-019 in `spec.md`; no requirement wording change; 0 CRITICAL, 0 open HIGH; no open ambiguities remain. Date refresh only, not a re-Analyze.

@@ -32,13 +32,14 @@ export async function registered(
     | readonly { seq: number; amount_minor: string; due_offset_days: number }[]
     | null = null,
   expiresAt?: string,
+  linkIssuer: SupabaseClient = f.po.client,
 ) {
   const s = expiresAt ? await backdated(f, expiresAt) : secret();
   const link =
     'id' in s
       ? (s.id as string)
       : (checked(
-          await issue(f, f.po.client, {
+          await issue(f, linkIssuer, {
             token_hash: s.hash,
             installments: rows,
           }),
@@ -84,7 +85,7 @@ export async function registered(
     name: 'U3 synthetic client',
     email: `u3-${randomUUID()}@example.test`,
     date_of_birth: '1990-04-12',
-    username: `u3_${randomUUID().replaceAll('-', '').slice(0, 27)}`,
+    username: `u3_${randomUUID().replaceAll('-', '').slice(0, 17)}`,
     telegram_username: '',
     phone:
       '+201' +

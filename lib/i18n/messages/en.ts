@@ -1,6 +1,44 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  'reports.collections.empty': 'No collections in this period.',
+  'reports.collections.loadError':
+    'Unable to load collections. Please try again.',
+  'reports.collections.help':
+    'Shows actual collections only. Settlement records are separate.',
+  'reports.commissions.empty': 'No commissions in this period.',
+  'reports.commissions.loadError':
+    'Unable to load commissions. Please try again.',
+  'reports.commissions.help':
+    'Converted commission is visible to the Platform Owner and workspace owners only.',
+  'reports.installments.empty': 'No installments due.',
+  'reports.installments.loadError':
+    'Unable to load installments. Please try again.',
+  'reports.installments.help':
+    'Lists due dates with paid and remaining amounts.',
+  'reports.title': 'Reports',
+  'reports.month': 'Month',
+  'reports.previousMonth': 'Previous month',
+  'reports.nextMonth': 'Next month',
+  'reports.loading': 'Loading reports…',
+  'reports.denied': 'You cannot view reports.',
+  'reports.section.collections': 'Collections',
+  'reports.section.commissions': 'Commissions',
+  'reports.section.installments': 'Installments',
+  'reports.column.date': 'Date',
+  'reports.column.package': 'Package',
+  'reports.column.client': 'Client',
+  'reports.column.amount': 'Amount',
+  'reports.column.currency': 'Currency',
+  'reports.column.convertedEgp': 'Converted (EGP)',
+  'reports.column.commission': 'Commission',
+  'reports.column.pendingRates': 'Pending rates',
+  'reports.column.dueOn': 'Due date',
+  'reports.column.paid': 'Paid',
+  'reports.column.remaining': 'Remaining',
+  'reports.totalConvertedEgp': 'Converted total (EGP)',
+  'reports.statusPendingRate': 'Rate pending',
+  'reports.installmentClient': 'Installment client',
   // spec 023 client progress coaching (S55-PO-10 approved copy)
   'progress.title': 'Progress',
   'progress.measurements.title': 'Measurements',
@@ -78,6 +116,54 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.taxonomy.muscle.triceps': 'Triceps',
   'catalog.taxonomy.muscle.biceps': 'Biceps',
   'catalog.taxonomy.equipment.machine': 'Machine',
+  'leaderboard.title': 'Top 5',
+  'leaderboard.empty': 'No leaderboard is available right now.',
+  'leaderboard.fewerThanFive': '{count} clients qualify so far.',
+  'leaderboard.rankLabel': 'Rank {rank}',
+  'leaderboard.resultsMonthLabel': 'Results for {month} {year}',
+  'leaderboard.optOut.mayAppear': 'You may appear in the Top 5',
+  'leaderboard.optOut.mayAppearBody':
+    'Your username may appear in the Top 5. You can turn this off at any time in account settings.',
+  'leaderboard.optOut.turnOffParticipation': 'Turn off participation',
+  'leaderboard.optOut.success': 'You will no longer appear on the leaderboard.',
+  'leaderboard.optedOut': 'You turned off leaderboard participation.',
+  'leaderboard.publish.action': 'Approve monthly leaderboard',
+  'leaderboard.publish.approved': 'Monthly leaderboard approved.',
+  'leaderboard.publish.rejected': 'Monthly leaderboard rejected.',
+  'leaderboard.ineligible': 'You are not eligible for the leaderboard yet.',
+  'clientSignup.username.tooShort': 'Username must be at least 3 characters.',
+  'clientSignup.username.tooLong': 'Username must be at most 20 characters.',
+  'clientSignup.username.invalidChars':
+    'Username can contain only English letters, digits, underscores and dots.',
+  'accountSettings.username.tooShort':
+    'Username must be at least 3 characters.',
+  'accountSettings.username.tooLong': 'Username must be at most 20 characters.',
+  'accountSettings.username.invalidChars':
+    'Username can contain only English letters, digits, underscores and dots.',
+  'accountSettings.username.reserved': 'This username is reserved.',
+  'accountSettings.username.workspaceTaken':
+    'This username is already used in your workspace.',
+  'leaderboard.yourRank': 'Your rank',
+  'leaderboard.rankOfTotal': 'Rank {rank} of {total}',
+  'accountSettings.username.unavailable': 'Username unavailable',
+  'leaderboard.publish.rejectAction': 'Reject monthly leaderboard',
+  'leaderboard.publish.generateAction': 'Prepare monthly leaderboard',
+  'leaderboard.publish.generated':
+    'The monthly leaderboard is ready for review.',
+  'leaderboard.publish.pendingExists':
+    'A monthly leaderboard is already waiting for review.',
+  'leaderboard.publish.noEligible': 'No clients qualify yet.',
+  'accountSettings.title': 'Account settings',
+  'clientGoals.title': 'Goals',
+  'clientGoals.goalType': 'Goal Type',
+  'clientGoals.goalType.fatLoss': 'Fat Loss',
+  'clientGoals.goalType.muscleGain': 'Muscle Gain',
+  'clientGoals.goalType.maintenance': 'Maintenance',
+  'clientGoals.notSet': 'Not set',
+  'clientGoals.nearTermGoal': 'Near-term goal',
+  'clientGoals.nearTermGoalEmpty': 'No answer yet.',
+  'clientGoals.save': 'Save goal type',
+  'clientGoals.saved': 'Goal type saved.',
   'registration.title': 'Registration links',
   'registration.intro':
     'Issue a registration link using the approved package terms.',
@@ -158,15 +244,63 @@ export const en: Record<keyof typeof ar, string> = {
   'packages.pending': 'Saving…',
   'packages.loading': 'Loading packages…',
   'packages.empty': 'No offers in this workspace yet.',
-  'packages.emptyCatalog': 'Create a package code, then publish its terms.',
+  'packages.emptyCatalog': 'Create a package category, then publish its terms.',
   'packages.noWorkspace': 'No workspaces available.',
   'packages.saved': 'Saved.',
   'packages.denied': 'You cannot perform this action.',
   'packages.invalid_input': 'Check required fields and value formats.',
   'packages.unavailable': 'Unable to complete the request. Please try again.',
   'packages.retry': 'Retry',
+  'packages.initializeCategories': 'Set up four categories',
+  'packages.initializeCategoriesHelp':
+    'Creates the four empty Egypt / International × Year-round / Promotional categories for this workspace. No prices or offers are created.',
+  'packages.initializeCategoriesConfirmTitle': 'Set up four categories?',
+  'packages.initializeCategoriesConfirmBody':
+    'This creates the four empty categories once for this workspace. Existing offers and history do not change.',
+  'packages.initializeCategoriesSuccess': 'Four categories are ready.',
+  'packages.retireOffer': 'Retire offer',
+  'packages.reactivateOffer': 'Make available again',
+  'packages.retireConfirmTitle': 'Retire this offer?',
+  'packages.retireConfirmBody':
+    'New sales stop. Existing clients, links and history stay unchanged. You can make it available again later.',
+  'packages.reactivateConfirmTitle': 'Make this offer available again?',
+  'packages.reactivateConfirmBody':
+    'The offer returns to new sales. Existing history stays unchanged.',
+  'packages.retireSuccess': 'Offer retired.',
+  'packages.reactivateSuccess': 'Offer is available again.',
+  'packages.retiredBadge': 'Retired',
+  'workspaces.title': 'Workspaces',
+  'workspaces.new': 'New workspace',
+  'workspaces.createTitle': 'Create a new workspace',
+  'workspaces.createDescription':
+    'The new workspace starts empty. No members, clients, packages or branding are added automatically.',
+  'workspaces.nameLabel': 'Workspace name',
+  'workspaces.slugLabel': 'Workspace slug',
+  'workspaces.slugHint':
+    'Use lowercase letters, numbers and hyphens only. Up to 50 characters, not starting or ending with a hyphen.',
+  'workspaces.nameInvalid': 'Enter a workspace name of up to 120 characters.',
+  'workspaces.create': 'Create workspace',
+  'workspaces.created': 'Workspace created.',
+  'workspaces.error': 'Unable to complete the request. Please try again.',
   'auth.signInTitle': 'Sign in',
   'auth.email': 'Email',
+  'auth.staffResetEmailSubject': 'Reset your LIFTER password',
+  'auth.staffResetEmailBody':
+    'Use the link below to reset your LIFTER password. The link expires in 60 minutes and can be used once. If you didn’t request this email, you can ignore it.',
+  'auth.staffResetTitle': 'Reset your password',
+  'auth.staffResetHelp':
+    'Enter your staff account email address and we’ll send a reset link if the account is eligible.',
+  'auth.requestReset': 'Send reset link',
+  'auth.sendingReset': 'Sending…',
+  'auth.staffResetConfirm':
+    "If an account exists for this email address, you'll receive password reset instructions.",
+  'auth.staffResetLimited':
+    "If an account exists for this email address, you'll receive password reset instructions.",
+  'auth.staffResetUnavailable':
+    "If an account exists for this email address, you'll receive password reset instructions.",
+  'auth.staffInvalidLink':
+    'This password reset link is invalid or has expired. Request a new link to continue.',
+  'auth.invalidEmail': 'Enter a valid email address.',
   'auth.password': 'Password',
   'auth.signIn': 'Sign in',
   'auth.invalid_credentials': 'Invalid email or password.',
@@ -1307,6 +1441,38 @@ export const en: Record<keyof typeof ar, string> = {
     'Showcase only. Foods and plan values are mocked; nothing is saved.',
   'nutritionPlan.mealNotes': 'Notes for this meal',
   'nutritionPlan.foodNotes': 'Notes for this food',
+  // APPROVED (PO S20 F14b & S65-PO-4)
+  'branding.logoLabel': 'Workspace logo',
+  'branding.bannerLabel': 'Banner image',
+  'branding.bannerAltLegend': 'Banner image description (Arabic or English)',
+  'branding.bannerAltHint':
+    'Enter a description in at least one language; the available description will be used as fallback.',
+  'branding.bannerSizeHint':
+    'Recommended 1600×800 (2:1). Keep important content away from the edges and the lower part of the image.',
+  'branding.uploadFailed':
+    'Upload failed. Check the file type, size, and dimensions, then retry.',
+  'branding.chooseImage': 'Choose image',
+  'branding.replaceImage': 'Replace image',
+  'branding.removeImage': 'Remove image',
+  'branding.retryImage': 'Retry upload',
+  'branding.retryRemove': 'Retry remove',
+  'branding.reloadDraft': 'Reload draft',
+  'branding.workspaceUnavailable':
+    'Workspace access is unavailable, so branding controls are disabled.',
+  'branding.uploadInProgress':
+    'Another branding action is still in progress. Wait for it to finish before continuing.',
+  'branding.uploadingImage': 'Uploading image…',
+  'branding.removingImage': 'Removing image…',
+  'branding.imageAttached': 'Image attached to the draft.',
+  'branding.imageRemoved': 'Image removed from the draft.',
+  'branding.identityOnlyConfirm':
+    'I confirm this banner contains identity content only, without pricing, contact details, calls to action, or links.',
+  'branding.identityOnlyRequired':
+    'Confirm the banner content before uploading.',
+  'branding.logoUploadGuidance':
+    'PNG or WebP · 4 MiB max · 2048 × 2048 px max · 1,000,000 px max',
+  'branding.bannerUploadGuidance':
+    'PNG or WebP · 8 MiB max · 4096 × 2048 px max · 4,000,000 px max',
   'registration.upfrontAmount': 'Upfront amount',
   'registration.paymentCount': 'Number of payments',
   'registration.defaultSplit': 'Use default split',
@@ -1360,4 +1526,14 @@ export const en: Record<keyof typeof ar, string> = {
   'staff.clientDirectory.subscriptionStatus.frozen': 'Frozen',
   'staff.clientDirectory.subscriptionStatus.expired': 'Expired',
   'staff.clientDirectory.subscriptionStatus.refunded': 'Refunded',
+  'auth.choosePasswordTitle': 'Choose a new password',
+  'auth.savingPassword': 'Saving…',
+  'auth.resetSuccessLogin':
+    'Your password has been changed. Sign in with your new password.',
+  'auth.resetLoginNext':
+    'Your recovery session has ended. Continue to sign in.',
+  'auth.resetNotChanged':
+    'Your password wasn’t changed. Request a new reset link and try again.',
+  'auth.resetCheckLogin':
+    'We couldn’t confirm whether your password changed. Try signing in with your new password. If it doesn’t work, request a new reset link.',
 };

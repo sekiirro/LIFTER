@@ -8,7 +8,7 @@ import {
 } from '../../scripts/local-stack.mjs';
 
 describe('isolated local Supabase Stack D contract', () => {
-  it('keeps D auth and hook settings in parity with the branch root config', () => {
+  it('keeps D auth settings aligned with the root plus its port-specific redirect', () => {
     const rootConfig = readFileSync('supabase/config.toml', 'utf8');
     const stackDConfig = readFileSync(
       'supabase-stack-d/supabase/config.toml',
@@ -31,7 +31,19 @@ describe('isolated local Supabase Stack D contract', () => {
       return sections.join('\n');
     };
 
-    expect(authSections(stackDConfig)).toBe(authSections(rootConfig));
+    expect(stackDConfig).toContain('site_url = "http://localhost:3104"');
+    expect(stackDConfig).toContain(
+      'additional_redirect_urls = ["http://localhost:3104/**"]',
+    );
+    const dAuth = authSections(stackDConfig).replace(
+      /^\s*(?:site_url|additional_redirect_urls)\s*=.*\n?/gm,
+      '',
+    );
+    expect(dAuth.replace(/\n{2,}/g, '\n').trim()).toBe(
+      authSections(rootConfig)
+        .replace(/\n{2,}/g, '\n')
+        .trim(),
+    );
   });
 
   it('selects configured local stack identifiers and rejects unknown stacks', () => {

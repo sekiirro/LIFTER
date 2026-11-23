@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 import packageJson from './package.json';
 
 const nextConfig: NextConfig = {
+  // The upload action accepts an 8 MiB banner plus multipart overhead; role limits stay server enforced.
+  experimental: { serverActions: { bodySizeLimit: '9mb' } },
   env: {
     APP_VERSION: packageJson.version,
   },
@@ -11,6 +13,7 @@ const nextConfig: NextConfig = {
       { key: 'Cache-Control', value: 'private, no-store' },
     ];
     return [
+      { source: '/auth/recovery', headers },
       { source: '/register/:token', headers },
       { source: '/register/:token/:path*', headers },
     ];

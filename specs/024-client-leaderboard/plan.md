@@ -51,10 +51,11 @@ Deliver an optional monthly Top-5 leaderboard isolated per workspace. Derive eli
 ## Architecture and Data Flow
 
 1. A workspace-scoped server operation derives eligibility and current-month score inputs from F13, F15, F19 and spec 023.
-2. Ranking retains eligible past winners and compares them to new candidates using current-month values. An opted-out client is filtered before candidate construction.
-3. The server stores the proposed monthly result and exposes it only after the PO records approval. Until approval, clients continue to see the previous approved result. A later opt-out immediately filters the opted-out row from that result.
-4. Each workspace viewer reads only the display allow-list: rank and client username. No health metric, check-in answer, score, client code, note, plan detail, or scoring explanation crosses the client boundary.
-5. The client username is created/validated in F11's invitation-link signup transaction and edited through the existing account-settings area; both paths enforce workspace uniqueness and the S55-PO-9 Q14 format, case-insensitive uniqueness and reserved-name rules.
+2. Ranking orders ALL eligible clients (S57-PO-6). Eligible past winners (the current public Top 5) keep their Top 5 places unless a new candidate scores higher; everyone else follows in score order. An opted-out client is filtered before candidate construction. Goal type (S57-PO-1), monthly mean adherence (S57-PO-4), last scoring input (S57-PO-2) and registration order (S57-PO-3) feed the score and tie-breaks.
+3. The server stores the proposed full ranking and exposes it only after the PO records approval. Until approval, clients continue to see the previous approved ranking. A later opt-out immediately hides that client publicly and promotes the next eligible entry without reapproval.
+4. Each workspace viewer reads only the public Top 5 display allow-list: rank and client username. Each eligible client also reads their own private rank and the participant total (S57-PO-12). No health metric, check-in answer, score, client code, note, plan detail, or scoring explanation crosses the client boundary.
+5. The client sees the Top 5 and private rank inside the Progress page; the old client leaderboard route redirects there (S57-PO-12). Coaching staff set the goal type in a Goals section under Client Details (S57-PO-1).
+6. The client username is created/validated in F11's invitation-link signup transaction and edited through the existing account-settings area; both paths enforce workspace uniqueness and the S55-PO-9 Q14 format, case-insensitive uniqueness and reserved-name rules.
 
 ## Constitution Check (post-design)
 
@@ -68,8 +69,10 @@ Deliver an optional monthly Top-5 leaderboard isolated per workspace. Derive eli
 ## Project Structure
 
 ```text
-app/(app)/leaderboard/                 # PO result review/approval surface
-app/(client)/leaderboard/              # client leaderboard and settings opt-out
+app/(app)/workspace-leaderboard/       # staff Top 5 and PO full-ranking review/approval (avoids the client route)
+app/(client)/progress/                 # client Top 5 + private rank section (spec 023 page; one F24 component)
+app/(client)/leaderboard/              # redirect to the Progress Top 5 section (S57-PO-12)
+app/(app)/clients/[clientId]/          # Goals section (S57-PO-1; one F24 component in the F20 page)
 app/(client)/account/settings/         # reuse existing account-settings route if present
 app/register/[token]/                  # F11 signup field reuse/addition only
 lib/leaderboard/                       # eligibility, scoring, publication and DTO boundaries

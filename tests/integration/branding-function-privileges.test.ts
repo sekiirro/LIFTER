@@ -35,6 +35,9 @@ type TableRow = {
 const restrictedFunctionOwners: Record<string, string> = {
   'app_private.branding_validator_upload_binding_matches(text)':
     'branding_upload_check_definer',
+  // S65-R42: terminalize deletes the staged storage row, which no role
+  // policy grants, so postgres owns it; authorization mirrors the upload RPCs.
+  'app_private.branding_upload_terminalize(uuid)': 'postgres',
 };
 
 async function brandingFunctions() {
@@ -99,12 +102,17 @@ describe('F14 definer function privileges', () => {
       const expectedOwner =
         restrictedFunctionOwners[fn.signature] ?? 'branding_definer';
       expect(fn.owner, fn.signature).toBe(expectedOwner);
-      expect(fn.owner_login, fn.signature).toBe(false);
-      expect(fn.owner_superuser, fn.signature).toBe(false);
-      expect(fn.owner_bypassrls, fn.signature).toBe(false);
-      expect(fn.owner_inherit, fn.signature).toBe(false);
-      expect(fn.owner_createdb, fn.signature).toBe(false);
-      expect(fn.owner_createrole, fn.signature).toBe(false);
+      if (expectedOwner === 'postgres') {
+        // S65-R42 postgres-owned exception: only the terminalize RPC; the
+        // empty search path and least-privilege EXECUTE grants below still apply.
+      } else {
+        expect(fn.owner_login, fn.signature).toBe(false);
+        expect(fn.owner_superuser, fn.signature).toBe(false);
+        expect(fn.owner_bypassrls, fn.signature).toBe(false);
+        expect(fn.owner_inherit, fn.signature).toBe(false);
+        expect(fn.owner_createdb, fn.signature).toBe(false);
+        expect(fn.owner_createrole, fn.signature).toBe(false);
+      }
       expect(fn.search_path, fn.signature).toContain('search_path=""');
       expect(fn.definition, fn.signature).not.toMatch(
         /\b(?:FROM|JOIN|UPDATE)\s+(?:workspaces|workspace_memberships|registration_links|branding_[a-z_]+)\b/i,
@@ -135,6 +143,11 @@ describe('F14 definer function privileges', () => {
         fn.signature === 'app_private.branding_draft_read(uuid)' ||
         fn.signature === 'app_private.branding_current_read(uuid)' ||
         fn.signature === 'app_private.branding_asset_attach(uuid,bigint)' ||
+        fn.signature === 'app_private.branding_upload_terminalize(uuid)' ||
+        fn.signature ===
+          'app_private.branding_asset_detach(uuid,text,bigint)' ||
+        fn.signature ===
+          'app_private.branding_draft_asset_read_allowed(text,text)' ||
         fn.signature === 'app_private.branding_publish(uuid,bigint)'
       ) {
         expect(publicRoles, fn.signature).toEqual([false, false, true, false]);
@@ -194,6 +207,49 @@ describe('F14 definer function privileges', () => {
     expect(row?.has_usage).toBe(false);
   });
 
+  it('exposes invoker wrappers only to the upload owner or validator identity', async () => {
+    const wrappers = await db`
+      select p.proname,p.prosecdef,
+        has_function_privilege('public',p.oid,'EXECUTE') as public_execute,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_execute,
+        has_function_privilege('branding_validator',p.oid,'EXECUTE') as validator_execute
+      from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='public' and p.proname in (
+        'branding_validation_prepare','branding_validation_complete','branding_asset_detach')
+      order by p.proname`;
+    expect(wrappers).toEqual([
+      {
+        proname: 'branding_asset_detach',
+        prosecdef: false,
+        public_execute: false,
+        anon_execute: false,
+        authenticated_execute: true,
+        service_execute: false,
+        validator_execute: false,
+      },
+      {
+        proname: 'branding_validation_complete',
+        prosecdef: false,
+        public_execute: false,
+        anon_execute: false,
+        authenticated_execute: false,
+        service_execute: false,
+        validator_execute: true,
+      },
+      {
+        proname: 'branding_validation_prepare',
+        prosecdef: false,
+        public_execute: false,
+        anon_execute: false,
+        authenticated_execute: false,
+        service_execute: false,
+        validator_execute: true,
+      },
+    ]);
+  });
+
   it('limits service-role app_private call paths to the public GC and lockout-worker wrappers', async () => {
     const paths = await db<ServiceRoleAppPrivatePath[]>`
       select format('%I.%I(%s)', n.nspname, p.proname,
@@ -207,12 +263,15 @@ describe('F14 definer function privileges', () => {
       order by signature
     `;
     expect(paths).toEqual([
+      { signature: 'public.advance_deletion_step_a(uuid, uuid)' },
       {
         signature:
           'public.alert_expired_refund_auth_lockouts(integer, timestamp with time zone)',
       },
+      { signature: 'public.begin_deletion_step_c(uuid, uuid)' },
       { signature: 'public.branding_gc_claim(integer)' },
       { signature: 'public.branding_gc_finalize(uuid)' },
+      { signature: 'public.claim_account_deletion_intents(integer)' },
       { signature: 'public.claim_f15_form_alert_jobs(integer, integer)' },
       { signature: 'public.claim_f15_telegram_delivery(uuid)' },
       { signature: 'public.claim_refund_auth_lockout_jobs(integer)' },
@@ -221,12 +280,27 @@ describe('F14 definer function privileges', () => {
           'public.complete_refund_auth_lockout_job(uuid, timestamp with time zone)',
       },
       { signature: 'public.consume_f15_telegram_start(bigint, text, text)' },
+      { signature: 'public.execute_deletion_step_b(uuid, uuid)' },
+      { signature: 'public.execute_deletion_step_d(uuid, uuid)' },
       { signature: 'public.finish_f15_telegram_delivery(uuid, text)' },
       { signature: 'public.handle_client_trainer_distribution(uuid, uuid)' },
       { signature: 'public.prepare_f15_telegram_delivery(uuid, uuid)' },
       {
         signature:
+          'public.retry_account_deletion_intent(uuid, uuid, integer, timestamp with time zone, text)',
+      },
+      {
+        signature:
           'public.retry_refund_auth_lockout_job(uuid, integer, timestamp with time zone, text)',
+      },
+      {
+        signature:
+          'public.save_package_reporting_fx_snapshot(uuid, uuid, text, text, text, date)',
+      },
+      { signature: 'public.staff_password_reset_hook_audit(text)' },
+      {
+        signature:
+          'public.staff_password_reset_hook_claim(text, uuid, text, boolean, boolean)',
       },
     ]);
 

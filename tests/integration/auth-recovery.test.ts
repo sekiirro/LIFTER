@@ -1,13 +1,21 @@
-import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+/*
+ * Blocked controls use it.fails by default.
+ * Strict mode: set AUTH_RECOVERY_RED_STRICT=1 when running
+ * `npm run test:integration -- tests/integration/auth-recovery.test.ts`.
+ */
+import { createHash, randomUUID } from 'node:crypto';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { loadActorRows } from '../../lib/auth/actor';
+import { buildRecoveryUrl } from '../../lib/auth/recovery-link';
 import { isRecoverySession } from '../../lib/auth/recovery-session';
+import { buildStaffResetEmailLink } from '../../lib/auth/staff-reset-hook';
 import {
   admin,
   anonClient,
   checked,
   createStaff,
+  loadEnv,
   sql,
   twoWorkspaceFixture,
 } from './harness';
@@ -17,6 +25,20 @@ import {
 } from './client-accounts-fixture';
 
 const db = sql();
+let sessionClientOverride: (() => ReturnType<typeof anonClient>) | null = null;
+const LOCAL_HOOK_TESTS =
+  ['c', 'd'].includes(process.env.LIFTER_SUPABASE_STACK ?? '') &&
+  process.env.LOCAL_HOOK_TESTS === '1';
+
+vi.mock('server-only', () => ({}));
+vi.mock('../../lib/supabase/server', async () => ({
+  createSessionClient: async () =>
+    sessionClientOverride
+      ? sessionClientOverride()
+      : (await import('./harness')).anonClient(),
+}));
+
+const redIt = process.env.AUTH_RECOVERY_RED_STRICT ? it : it.fails;
 let f: Awaited<ReturnType<typeof twoWorkspaceFixture>>;
 let cA: Awaited<ReturnType<typeof createStaff>>;
 let cB: Awaited<ReturnType<typeof createStaff>>;
@@ -125,6 +147,468 @@ describe('actor', () => {
       activeWorkspaceIds: [],
     });
   });
+});
+
+describe('staff-reset-guard (T049a)', () => {
+  // T049a control B is blocked pre-production (tasks.md:183; S67-PO-9).
+  redIt(
+    'a staff password update without an intent is refused and leaves the password unchanged',
+    async () => {
+      const originalPassword = `Original-${randomUUID()}-Aa1!`;
+      const staff = await createStaff(
+        'trainer',
+        'reset-guard-no-intent',
+        originalPassword,
+      );
+      const userClient = anonClient();
+      const signedIn = await userClient.auth.signInWithPassword({
+        email: staff.email,
+        password: originalPassword,
+      });
+      if (signedIn.error) throw new Error('guard fixture sign-in failed');
+      const changedPassword = `NoIntent-${randomUUID()}-Aa1!`;
+      const result = await userClient.auth.updateUser({
+        password: changedPassword,
+      });
+      try {
+        expect(result.error).not.toBeNull();
+      } finally {
+        if (!result.error) {
+          const restored = await admin().auth.admin.updateUserById(
+            staff.userId,
+            {
+              password: originalPassword,
+            },
+          );
+          if (restored.error)
+            throw new Error('guard fixture password restore failed');
+        }
+      }
+      const oldPasswordWorks = await anonClient().auth.signInWithPassword({
+        email: staff.email,
+        password: originalPassword,
+      });
+      expect(oldPasswordWorks.error).toBeNull();
+    },
+  );
+
+  // T049a control B is blocked pre-production (tasks.md:183; S67-PO-9).
+  redIt(
+    'a second signed-in staff session cannot update the password without an intent',
+    async () => {
+      const originalPassword = `Original-${randomUUID()}-Aa1!`;
+      const staff = await createStaff(
+        'trainer',
+        'reset-guard-second-session',
+        originalPassword,
+      );
+      const secondSession = anonClient();
+      const signedIn = await secondSession.auth.signInWithPassword({
+        email: staff.email,
+        password: originalPassword,
+      });
+      expect(signedIn.error).toBeNull();
+
+      const result = await secondSession.auth.updateUser({
+        password: `NoIntent-${randomUUID()}-Aa1!`,
+      });
+      try {
+        expect(result.error).not.toBeNull();
+      } finally {
+        if (!result.error) {
+          const restored = await admin().auth.admin.updateUserById(
+            staff.userId,
+            {
+              password: originalPassword,
+            },
+          );
+          if (restored.error)
+            throw new Error(
+              'unexpectedly changed fixture password could not be restored',
+            );
+        }
+      }
+      expect(
+        (
+          await anonClient().auth.signInWithPassword({
+            email: staff.email,
+            password: originalPassword,
+          })
+        ).error,
+      ).toBeNull();
+    },
+  );
+
+  // T049a control B is blocked pre-production (tasks.md:183; S67-PO-9).
+  redIt(
+    'only the recovery session that opened the intent can change a staff password',
+    async () => {
+      const originalPassword = `Original-${randomUUID()}-Aa1!`;
+      const staff = await createStaff(
+        'trainer',
+        'reset-guard-session-bound',
+        originalPassword,
+      );
+      const recoverySession = anonClient();
+      const hash = await hashedToken(staff.email);
+      expect((await verify(recoverySession, hash)).error).toBeNull();
+      const claims = await recoverySession.auth.getClaims();
+      expect(claims.error).toBeNull();
+      const recoverySessionId = claims.data?.claims.session_id;
+      expect(typeof recoverySessionId).toBe('string');
+
+      const begin = await recoverySession.rpc('staff_password_reset_begin');
+      expect(begin.error).toBeNull();
+      const intentId = begin.data as string;
+      const competingSession = anonClient();
+      expect(
+        (
+          await competingSession.auth.signInWithPassword({
+            email: staff.email,
+            password: originalPassword,
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await competingSession.rpc('staff_password_reset_complete', {
+            p_intent_id: intentId,
+          })
+        ).error,
+      ).not.toBeNull();
+      expect(
+        (
+          await competingSession.auth.updateUser({
+            password: `Competing-${randomUUID()}-Aa1!`,
+          })
+        ).error,
+      ).not.toBeNull();
+
+      const newPassword = `Recovery-${randomUUID()}-Aa1!`;
+      expect(
+        (await recoverySession.auth.updateUser({ password: newPassword }))
+          .error,
+      ).toBeNull();
+      expect(
+        (
+          await recoverySession.auth.updateUser({
+            password: `SecondChange-${randomUUID()}-Aa1!`,
+          })
+        ).error,
+      ).not.toBeNull();
+      const [intent] = await db`
+      select auth_user_id, session_id, state, password_changed_at
+      from app_private.staff_password_reset_intents
+      where intent_id = ${intentId}
+    `;
+      expect(intent).toMatchObject({
+        auth_user_id: staff.userId,
+        session_id: recoverySessionId,
+        state: 'open',
+      });
+      expect(intent?.password_changed_at).not.toBeNull();
+    },
+  );
+
+  // T049a trusted request context is blocked pre-production (tasks.md:183; S67-PO-9).
+  redIt(
+    'GoTrue provides a trusted recovery session_id to the auth.users password trigger',
+    async () => {
+      const staff = await createStaff(
+        'trainer',
+        'reset-guard-context-probe',
+        `Context-${randomUUID()}-Aa1!`,
+      );
+      const recoverySession = anonClient();
+      expect(
+        (await verify(recoverySession, await hashedToken(staff.email))).error,
+      ).toBeNull();
+      const claims = await recoverySession.auth.getClaims();
+      const expectedSessionId = claims.data?.claims.session_id;
+      expect(typeof expectedSessionId).toBe('string');
+
+      await db`create table public.test_staff_reset_context_probe (
+      user_id uuid not null,
+      session_id text,
+      amr jsonb
+    )`;
+      await db.unsafe(`
+      create function public.test_capture_staff_reset_context()
+      returns trigger language plpgsql security definer set search_path = '' as $$
+      begin
+        insert into public.test_staff_reset_context_probe(user_id, session_id, amr)
+        values (new.id, auth.jwt()->>'session_id', auth.jwt()->'amr');
+        return new;
+      end
+      $$
+    `);
+      await db`create trigger a_test_capture_staff_reset_context
+      before update of encrypted_password on auth.users
+      for each row execute function public.test_capture_staff_reset_context()`;
+      try {
+        const changed = await recoverySession.auth.updateUser({
+          password: `ContextChanged-${randomUUID()}-Aa1!`,
+        });
+        expect(changed.error).toBeNull();
+        const [context] = await db`
+        select session_id, amr from public.test_staff_reset_context_probe
+        where user_id = ${staff.userId}
+      `;
+        expect(context?.session_id).toBe(expectedSessionId);
+        expect(context?.amr).toEqual(claims.data?.claims.amr);
+      } finally {
+        await db`drop trigger if exists a_test_capture_staff_reset_context on auth.users`;
+        await db`drop function if exists public.test_capture_staff_reset_context()`;
+        await db`drop table if exists public.test_staff_reset_context_probe`;
+      }
+    },
+  );
+
+  it('does not block a client manual recovery password change', async () => {
+    const oldPassword = `Original-${randomUUID()}-Aa1!`;
+    const client = await createStaff(
+      null,
+      'reset-guard-client-manual',
+      oldPassword,
+    );
+    const recoverySession = anonClient();
+    expect(
+      (await verify(recoverySession, await hashedToken(client.email))).error,
+    ).toBeNull();
+    expect(
+      (
+        await recoverySession.auth.updateUser({
+          password: `ClientRecovery-${randomUUID()}-Aa1!`,
+        })
+      ).error,
+    ).toBeNull();
+  });
+});
+
+describe('staff-reset-intent (T049d)', () => {
+  // T049d control B is blocked pre-production (tasks.md:186; S67-PO-9).
+  redIt(
+    'provides the idempotent begin, one-way complete/abort, and reconciliation RPCs',
+    async () => {
+      const [functions] = await db`
+      select
+        to_regprocedure('public.staff_password_reset_begin()') is not null as begin,
+        to_regprocedure('public.staff_password_reset_complete(uuid)') is not null as complete,
+        to_regprocedure('public.staff_password_reset_abort(uuid)') is not null as abort,
+        to_regprocedure('app_private.staff_password_reset_reconcile()') is not null as reconcile
+    `;
+      expect(functions).toEqual({
+        begin: true,
+        complete: true,
+        abort: true,
+        reconcile: true,
+      });
+    },
+  );
+
+  // T049d control B is blocked pre-production (tasks.md:186; S67-PO-9).
+  redIt(
+    'retries begin from one recovery session without duplicating its intent or start audit',
+    async () => {
+      const staff = await createStaff(
+        'trainer',
+        'reset-intent-idempotent',
+        `Intent-${randomUUID()}-Aa1!`,
+      );
+      const recoverySession = anonClient();
+      expect(
+        (await verify(recoverySession, await hashedToken(staff.email))).error,
+      ).toBeNull();
+
+      const first = await recoverySession.rpc('staff_password_reset_begin');
+      expect(first.error).toBeNull();
+      const retry = await recoverySession.rpc('staff_password_reset_begin');
+      expect(retry.error).toBeNull();
+      expect(retry.data).toBe(first.data);
+
+      const [intentCount] = await db`
+      select count(*)::int as count
+      from app_private.staff_password_reset_intents
+      where auth_user_id = ${staff.userId} and state = 'open'
+    `;
+      const [startCount] = await db`
+      select count(*)::int as count
+      from public.audit_events
+      where action = 'staff_password_reset.completion_started'
+        and details->>'intent_id' = ${first.data as string}
+    `;
+      expect(intentCount?.count).toBe(1);
+      expect(startCount?.count).toBe(1);
+    },
+  );
+
+  // T049d control B is blocked pre-production (tasks.md:186; S67-PO-9).
+  redIt(
+    'closes completed and aborted intents once and records one matching audit event',
+    async () => {
+      const completedPassword = `IntentComplete-${randomUUID()}-Aa1!`;
+      const completedStaff = await createStaff(
+        'trainer',
+        'reset-intent-completed',
+        completedPassword,
+      );
+      const completedSession = anonClient();
+      expect(
+        (
+          await verify(
+            completedSession,
+            await hashedToken(completedStaff.email),
+          )
+        ).error,
+      ).toBeNull();
+      const completedBegin = await completedSession.rpc(
+        'staff_password_reset_begin',
+      );
+      expect(completedBegin.error).toBeNull();
+      const completedId = completedBegin.data as string;
+      expect(
+        (
+          await completedSession.auth.updateUser({
+            password: `IntentNew-${randomUUID()}-Aa1!`,
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await completedSession.rpc('staff_password_reset_complete', {
+            p_intent_id: completedId,
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await completedSession.rpc('staff_password_reset_complete', {
+            p_intent_id: completedId,
+          })
+        ).error,
+      ).not.toBeNull();
+      expect(
+        (
+          await completedSession.rpc('staff_password_reset_abort', {
+            p_intent_id: completedId,
+          })
+        ).error,
+      ).not.toBeNull();
+
+      const abortedStaff = await createStaff(
+        'trainer',
+        'reset-intent-aborted',
+        `IntentAbort-${randomUUID()}-Aa1!`,
+      );
+      const abortedSession = anonClient();
+      expect(
+        (await verify(abortedSession, await hashedToken(abortedStaff.email)))
+          .error,
+      ).toBeNull();
+      const abortedBegin = await abortedSession.rpc(
+        'staff_password_reset_begin',
+      );
+      expect(abortedBegin.error).toBeNull();
+      const abortedId = abortedBegin.data as string;
+      expect(
+        (
+          await abortedSession.rpc('staff_password_reset_abort', {
+            p_intent_id: abortedId,
+          })
+        ).error,
+      ).toBeNull();
+      expect(
+        (
+          await abortedSession.rpc('staff_password_reset_abort', {
+            p_intent_id: abortedId,
+          })
+        ).error,
+      ).not.toBeNull();
+      expect(
+        (
+          await abortedSession.rpc('staff_password_reset_complete', {
+            p_intent_id: abortedId,
+          })
+        ).error,
+      ).not.toBeNull();
+
+      const [rows] = await db`
+      select
+        (select count(*)::int from app_private.staff_password_reset_intents
+         where intent_id = ${completedId} and state = 'completed') as completed,
+        (select count(*)::int from public.audit_events
+         where action = 'staff_password_reset.completed'
+           and details->>'intent_id' = ${completedId}) as completed_audit,
+        (select count(*)::int from app_private.staff_password_reset_intents
+         where intent_id = ${abortedId} and state = 'aborted') as aborted,
+        (select count(*)::int from public.audit_events
+         where action = 'staff_password_reset.completion_aborted'
+           and details->>'intent_id' = ${abortedId}) as aborted_audit
+    `;
+      expect(rows).toEqual({
+        completed: 1,
+        completed_audit: 1,
+        aborted: 1,
+        aborted_audit: 1,
+      });
+    },
+  );
+
+  // T049d control B is blocked pre-production (tasks.md:186; S67-PO-9).
+  redIt(
+    'reconciles only stale open intents once and preserves the password-changed fact',
+    async () => {
+      const staff = await createStaff(
+        'trainer',
+        'reset-intent-reconcile',
+        `IntentReconcile-${randomUUID()}-Aa1!`,
+      );
+      const recoverySession = anonClient();
+      expect(
+        (await verify(recoverySession, await hashedToken(staff.email))).error,
+      ).toBeNull();
+      const claims = await recoverySession.auth.getClaims();
+      const sessionId = claims.data?.claims.session_id;
+      expect(typeof sessionId).toBe('string');
+      const intentId = randomUUID();
+      await db`
+      insert into app_private.staff_password_reset_intents (
+        intent_id, auth_user_id, session_id, state, started_at,
+        recovery_verified_at, password_changed_at
+      ) values (
+        ${intentId}, ${staff.userId}, ${sessionId as string}, 'open',
+        now() - interval '901 seconds', now() - interval '901 seconds', null
+      )
+    `;
+
+      await db`select app_private.staff_password_reset_reconcile()`;
+      const [first] = await db`
+      select state, password_changed_at, closed_at
+      from app_private.staff_password_reset_intents where intent_id = ${intentId}
+    `;
+      const [event] = await db`
+      select details from public.audit_events
+      where action = 'staff_password_reset.completion_reconciled'
+        and details->>'intent_id' = ${intentId}
+    `;
+      await db`select app_private.staff_password_reset_reconcile()`;
+      const [count] = await db`
+      select count(*)::int as count from public.audit_events
+      where action = 'staff_password_reset.completion_reconciled'
+        and details->>'intent_id' = ${intentId}
+    `;
+      expect(first).toMatchObject({
+        state: 'reconciled',
+        password_changed_at: null,
+      });
+      expect(first?.closed_at).not.toBeNull();
+      expect(event?.details).toEqual({
+        intent_id: intentId,
+        password_changed: false,
+      });
+      expect(count?.count).toBe(1);
+    },
+  );
 });
 
 describe('recovery', () => {
@@ -549,6 +1033,124 @@ async function verify(client: SupabaseClient, token_hash: string) {
   return client.auth.verifyOtp({ type: 'recovery', token_hash });
 }
 
+function appOrigin() {
+  const origin = process.env.APP_ORIGIN;
+  if (!origin)
+    throw new Error('APP_ORIGIN must point at the running local app');
+  return new URL(origin).origin;
+}
+
+function mailpitUrl(pathname: string) {
+  const env = loadEnv();
+  const api = new URL(env.apiUrl);
+  api.port = String(Number(api.port) + 3);
+  api.pathname = pathname;
+  api.search = '';
+  return api;
+}
+
+async function capturedMessageCount() {
+  const response = await fetch(mailpitUrl('/api/v1/messages'));
+  if (!response.ok) throw new Error('Local message capture is unavailable');
+  const result = (await response.json()) as { messages_count?: number };
+  return result.messages_count ?? 0;
+}
+
+async function ensureApprovedResetStaff() {
+  const email = 'staff-reset@example.test';
+  const users = await admin().auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (users.error) throw new Error('Approved reset fixture lookup failed');
+  let user = users.data.users.find((row) => row.email?.toLowerCase() === email);
+  if (!user) {
+    const created = await admin().auth.admin.createUser({
+      email,
+      password: `Reset-${randomUUID()}-aA1!`,
+      email_confirm: true,
+    });
+    if (created.error)
+      throw new Error('Approved reset fixture creation failed');
+    user = created.data.user;
+  }
+  await db`
+    insert into public.staff_profiles (user_id, role, display_name)
+    values (${user.id}, 'trainer', 'Reset recipient test')
+    on conflict (user_id) do update
+    set role = excluded.role, display_name = excluded.display_name
+  `;
+  return { userId: user.id, email };
+}
+
+async function appReset(email: string) {
+  const { requestStaffReset } = await import('../../app/login/actions');
+  sessionClientOverride = () => anonClient();
+  try {
+    const form = new FormData();
+    form.set('email', email);
+    return await requestStaffReset(null, form);
+  } finally {
+    sessionClientOverride = null;
+  }
+}
+
+async function directAuthRecover(email: string) {
+  const env = loadEnv();
+  const url = new URL('/auth/v1/recover', env.apiUrl);
+  const redirect = new URL('/auth/recovery', appOrigin());
+  redirect.searchParams.set('flow', 'staff');
+  redirect.searchParams.set('locale', 'en');
+  url.searchParams.set('redirect_to', redirect.toString());
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { apikey: env.anonKey, 'content-type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return { status: response.status, body: await response.text() };
+}
+
+async function capturedMessages() {
+  const response = await fetch(mailpitUrl('/api/v1/messages'));
+  if (!response.ok) throw new Error('Local message capture is unavailable');
+  const result = (await response.json()) as {
+    messages?: { ID?: string; id?: string }[];
+  };
+  return result.messages ?? [];
+}
+
+async function capturedMessageBody(id: string) {
+  const response = await fetch(mailpitUrl(`/api/v1/message/${id}`));
+  if (!response.ok) throw new Error('Captured message lookup failed');
+  const message = (await response.json()) as { Text?: string; text?: string };
+  return message.Text ?? message.text ?? '';
+}
+
+function tokenHashFromMessage(body: string) {
+  const match = /[?&]token_hash=([^&\s]+)/.exec(body);
+  if (!match?.[1]) throw new Error('Captured recovery link has no token_hash');
+  return decodeURIComponent(match[1]);
+}
+
+async function resetHookRequests() {
+  await db`delete from app_private.staff_password_reset_hook_requests`;
+}
+
+async function claimHookRequest(
+  email: string,
+  userId: string,
+  eligible: boolean,
+  permitted: boolean,
+) {
+  const targetHash = createHash('sha256').update(email).digest('hex');
+  const { data, error } = await admin().rpc('staff_password_reset_hook_claim', {
+    p_hook_id: randomUUID(),
+    p_auth_user_id: userId,
+    p_target_hash_hex: targetHash,
+    p_eligible: eligible,
+    p_permitted: permitted,
+  });
+  if (error) throw new Error(error.message);
+  return data as string;
+}
+
 async function latestAmrMethod(client: SupabaseClient) {
   const claims = await client.auth.getClaims();
   if (claims.error || !claims.data?.claims.amr?.length)
@@ -561,6 +1163,295 @@ async function latestAmrMethod(client: SupabaseClient) {
   }
   return { method: latest?.method, amr: claims.data.claims.amr };
 }
+
+describe.skipIf(!LOCAL_HOOK_TESTS)('staff-reset-prefetch (T037a)', () => {
+  it('does not verify on GET/HEAD, verifies once on POST, and keeps client links distinct', async () => {
+    const user = await createStaff('trainer', 'reset-prefetch');
+    const hash = await hashedToken(user.email);
+    const client = anonClient();
+    const verifyOtp = vi.spyOn(client.auth, 'verifyOtp');
+    sessionClientOverride = () => client;
+    try {
+      const recoveryUrl = new URL('/auth/recovery', appOrigin());
+      recoveryUrl.searchParams.set('token_hash', hash);
+      recoveryUrl.searchParams.set('type', 'recovery');
+      recoveryUrl.searchParams.set('flow', 'staff');
+      for (const method of ['GET', 'HEAD'] as const) {
+        const response = await fetch(recoveryUrl, {
+          method,
+          redirect: 'manual',
+        });
+        expect(response.status).toBe(200);
+        expect(response.headers.get('set-cookie') ?? '').not.toMatch(
+          /access-token|refresh-token/i,
+        );
+      }
+      expect(verifyOtp).not.toHaveBeenCalled();
+      expect((await client.auth.getSession()).data.session).toBeNull();
+
+      const { verifyRecovery } =
+        await import('../../app/auth/recovery/actions');
+      const form = new FormData();
+      form.set('token_hash', hash);
+      expect(await verifyRecovery(null, form)).toEqual({ status: 'ok' });
+      expect(verifyOtp).toHaveBeenCalledTimes(1);
+      expect((await client.auth.getSession()).data.session).not.toBeNull();
+      expect(await verifyRecovery(null, form)).toEqual({
+        status: 'invalid_link',
+      });
+      expect(verifyOtp).toHaveBeenCalledTimes(2);
+
+      const staffUrl = new URL(
+        buildStaffResetEmailLink(hash, appOrigin(), 'en'),
+      );
+      expect(staffUrl.pathname).toBe('/auth/recovery');
+      expect(staffUrl.searchParams.get('token_hash')).toBe(hash);
+      expect(staffUrl.searchParams.get('type')).toBe('recovery');
+      expect(staffUrl.searchParams.get('flow')).toBe('staff');
+      const clientUrl = new URL(buildRecoveryUrl(appOrigin(), hash));
+      expect(clientUrl.pathname).toBe('/auth/recovery');
+      expect(clientUrl.searchParams.get('token_hash')).toBe(hash);
+      expect(clientUrl.searchParams.get('type')).toBe('recovery');
+      expect(clientUrl.searchParams.has('flow')).toBe(false);
+
+      const { getMessages } = await import('../../lib/i18n');
+      expect(getMessages('en')['auth.invalid_link']).toBe(
+        'This link is invalid or expired. Ask your coach or workspace for a new link.',
+      );
+    } finally {
+      sessionClientOverride = null;
+      verifyOtp.mockRestore();
+    }
+  });
+});
+
+describe.skipIf(!LOCAL_HOOK_TESTS)('staff-reset-rate (T038)', () => {
+  it('enforces account and global request limits, counts denied requests, and stays generic', async () => {
+    const approved = await ensureApprovedResetStaff();
+    await resetHookRequests();
+    const messagesBefore = await capturedMessageCount();
+    const unknownEmail = `unknown-${randomUUID()}@example.test`;
+    const unknown = await directAuthRecover(unknownEmail);
+    expect(unknown.status).toBe(200);
+    expect(JSON.parse(unknown.body)).toEqual({});
+    const unknownHash = createHash('sha256').update(unknownEmail).digest('hex');
+    const [unknownRows] = await db<{ count: number }[]>`
+      select count(*)::int as count
+      from app_private.staff_password_reset_hook_requests
+      where target_hash = decode(${unknownHash}, 'hex')
+    `;
+    expect(unknownRows?.count).toBe(0);
+    expect(await capturedMessageCount()).toBe(messagesBefore);
+    const accountOutcomes: string[] = [];
+    for (let index = 0; index < 6; index += 1)
+      accountOutcomes.push(
+        await claimHookRequest(approved.email, approved.userId, true, true),
+      );
+    expect(accountOutcomes).toEqual([
+      'accepted',
+      'accepted',
+      'delivery_limited',
+      'delivery_limited',
+      'delivery_limited',
+      'rate_limited',
+    ]);
+    const [accountRows] = await db<{ outcomes: string[] }[]>`
+      select array_agg(outcome order by occurred_at, hook_id) as outcomes
+      from app_private.staff_password_reset_hook_requests
+      where auth_user_id = ${approved.userId}
+    `;
+    expect(accountRows?.outcomes).toHaveLength(6);
+    expect(await appReset(`unknown-${randomUUID()}@example.test`)).toEqual({
+      status: 'ok',
+    });
+    expect(await capturedMessageCount()).toBe(messagesBefore);
+
+    await resetHookRequests();
+    const globalMessagesBefore = await capturedMessageCount();
+    const globalUsers = await Promise.all(
+      Array.from({ length: 11 }, (_, index) =>
+        createStaff('trainer', `reset-global-${index}`),
+      ),
+    );
+    const globalOutcomes: string[] = [];
+    for (let index = 0; index < 10; index += 1)
+      globalOutcomes.push(
+        await claimHookRequest(
+          globalUsers[index]!.email,
+          globalUsers[index]!.userId,
+          true,
+          false,
+        ),
+      );
+    globalOutcomes.push(
+      await claimHookRequest(approved.email, approved.userId, true, true),
+    );
+    expect(globalOutcomes).toEqual([
+      ...Array.from({ length: 10 }, () => 'denied'),
+      'rate_limited',
+    ]);
+    const [globalRows] = await db<{ outcomes: string[] }[]>`
+      select array_agg(outcome order by occurred_at, hook_id) as outcomes
+      from app_private.staff_password_reset_hook_requests
+    `;
+    expect(globalRows?.outcomes).toHaveLength(11);
+    expect(globalRows?.outcomes?.slice(0, 10)).toEqual(
+      Array.from({ length: 10 }, () => 'denied'),
+    );
+    expect(globalRows?.outcomes?.[10]).toBe('rate_limited');
+    expect(await appReset(`unknown-${randomUUID()}@example.test`)).toEqual({
+      status: 'ok',
+    });
+    expect(await capturedMessageCount()).toBe(globalMessagesBefore);
+  }, 120_000);
+});
+
+describe.skipIf(!LOCAL_HOOK_TESTS)('staff-reset-link (T040)', () => {
+  it('supersedes, consumes once, and expires emailed staff links', async () => {
+    const approved = await ensureApprovedResetStaff();
+    await resetHookRequests();
+    const initialMessages = await capturedMessages();
+    const initialIds = new Set(
+      initialMessages.map((item) => item.ID ?? item.id),
+    );
+    const initialCount = await capturedMessageCount();
+    expect(await appReset(approved.email)).toEqual({ status: 'ok' });
+    const firstMessage = (await capturedMessages()).find(
+      (item) => !initialIds.has(item.ID ?? item.id),
+    );
+    const firstId = firstMessage?.ID ?? firstMessage?.id;
+    if (!firstId) throw new Error('First staff reset email was not captured');
+    const firstHash = tokenHashFromMessage(await capturedMessageBody(firstId));
+
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    expect(await appReset(approved.email)).toEqual({ status: 'ok' });
+    const secondMessage = (await capturedMessages()).find(
+      (item) =>
+        !initialIds.has(item.ID ?? item.id) && (item.ID ?? item.id) !== firstId,
+    );
+    const secondId = secondMessage?.ID ?? secondMessage?.id;
+    if (!secondId) throw new Error('Second staff reset email was not captured');
+    const secondHash = tokenHashFromMessage(
+      await capturedMessageBody(secondId),
+    );
+    expect(await capturedMessageCount()).toBe(initialCount + 2);
+    expect((await verify(anonClient(), firstHash)).error).not.toBeNull();
+    const recoverySession = anonClient();
+    expect((await verify(recoverySession, secondHash)).error).toBeNull();
+    expect((await verify(anonClient(), secondHash)).error).not.toBeNull();
+
+    const expiredHash = await hashedToken(approved.email);
+    await db`update auth.users set recovery_sent_at = now() - interval '61 minutes' where id = ${approved.userId}`;
+    expect((await verify(anonClient(), expiredHash)).error).not.toBeNull();
+  }, 120_000);
+});
+
+describe.skipIf(!LOCAL_HOOK_TESTS)('staff-reset-delivery-cap (T038b)', () => {
+  it('returns generic confirmation on the third request without another delivery', async () => {
+    const approved = await ensureApprovedResetStaff();
+    const messagesBefore = await capturedMessageCount();
+    expect(messagesBefore).toBeGreaterThanOrEqual(2);
+    const thirdOutcome = await claimHookRequest(
+      approved.email,
+      approved.userId,
+      true,
+      true,
+    );
+    expect(thirdOutcome).toBe('delivery_limited');
+    expect(await appReset(approved.email)).toEqual({ status: 'ok' });
+    expect(await capturedMessageCount()).toBe(messagesBefore);
+  });
+});
+
+describe('staff-reset-sessions (T049e)', () => {
+  // Control C implementation is blocked by T050a/S67-PO-9; retain the exact
+  // expected local Auth/Data API revocation failure as RED coverage.
+  redIt(
+    'revokes prior sessions and rejects replay of a pre-reset Data API token',
+    async () => {
+      const originalPassword = `Sessions-${randomUUID()}-Aa1!`;
+      const staff = await createStaff(
+        'trainer',
+        'reset-session-revocation',
+        originalPassword,
+      );
+      const initiatingSession = anonClient();
+      expect(
+        (
+          await initiatingSession.auth.signInWithPassword({
+            email: staff.email,
+            password: originalPassword,
+          })
+        ).error,
+      ).toBeNull();
+      const otherSession = anonClient();
+      expect(
+        (
+          await otherSession.auth.signInWithPassword({
+            email: staff.email,
+            password: originalPassword,
+          })
+        ).error,
+      ).toBeNull();
+      const accessToken = (await initiatingSession.auth.getSession()).data
+        .session?.access_token;
+      expect(accessToken).toBeTruthy();
+      const before = await initiatingSession
+        .from('staff_profiles')
+        .select('user_id')
+        .eq('user_id', staff.userId)
+        .single();
+      expect(before.error).toBeNull();
+      expect(before.data?.user_id).toBe(staff.userId);
+
+      const recoverySession = anonClient();
+      expect(
+        (await verify(recoverySession, await hashedToken(staff.email))).error,
+      ).toBeNull();
+      expect(
+        (
+          await recoverySession.auth.updateUser({
+            password: `SessionsChanged-${randomUUID()}-Aa1!`,
+          })
+        ).error,
+      ).toBeNull();
+
+      const initiatingUser = await initiatingSession.auth.getUser();
+      const otherUser = await otherSession.auth.getUser();
+      const recoveryUser = await recoverySession.auth.getUser();
+      const env = loadEnv();
+      const replay = await fetch(
+        new URL('/rest/v1/staff_profiles?select=user_id', env.apiUrl),
+        {
+          headers: {
+            apikey: env.anonKey,
+            authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+      const replayPayload = (await replay.json()) as unknown;
+      const replayHasProtectedData =
+        Array.isArray(replayPayload) &&
+        replayPayload.some(
+          (row: { user_id?: string }) => row.user_id === staff.userId,
+        );
+      expect({
+        initiatingSessionRejected: initiatingUser.error !== null,
+        otherSessionRejected: otherUser.error !== null,
+        recoverySessionRejected: recoveryUser.error !== null,
+        replayRejected: replay.status >= 400,
+        replayHasProtectedData,
+      }).toEqual({
+        initiatingSessionRejected: true,
+        otherSessionRejected: true,
+        recoverySessionRejected: true,
+        replayRejected: true,
+        replayHasProtectedData: false,
+      });
+    },
+    120_000,
+  );
+});
 
 describe('provider lifecycle', () => {
   it('consumes once, sets a password and signs in with that password', async () => {

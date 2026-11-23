@@ -62,8 +62,11 @@ async function signIn(page: Page, credentials: Credentials) {
     .addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
   await page.goto('/login');
   const m = getMessages('en');
-  await page.getByLabel(m['auth.email']).fill(credentials.email);
-  await page.getByLabel(m['auth.password']).fill(credentials.password);
+  const signInForm = page.locator('form').filter({
+    has: page.getByLabel(m['auth.password']),
+  });
+  await signInForm.getByLabel(m['auth.email']).fill(credentials.email);
+  await signInForm.getByLabel(m['auth.password']).fill(credentials.password);
   await page.getByRole('button', { name: m['auth.signIn'] }).click();
   // Leave the login page; the home route may forward a client elsewhere.
   await expect(page).not.toHaveURL(/\/login(?:[?#]|$)/u);

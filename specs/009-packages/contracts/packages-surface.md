@@ -168,3 +168,7 @@ Historical FX reporting preserves source transaction/settlement currency and sep
 ## S43-PO-8 tier-offer and label contract
 
 Every package category exposes all three tier offers, each carrying its immutable rank. Tier display names are localized: PO changes apply globally per locale, while a Workspace Owner override is visible only in that workspace. Authorization must enforce the workspace boundary. A rename changes no rank or commercial term. **architect mapping (S43-R10).**
+
+## Reporting authorization and client-name projection (S69-PO-6 A2)
+
+`package_monthly_collections`, `package_commission_report`, and `package_installment_report` are PO/WO-only. Every RPC enforces its role and workspace guard; workspace owners are limited to their own workspace. The app data-access layer independently checks the server-derived actor and workspace before calling any RPC. Sales, Trainer, Client, anonymous, and foreign-workspace WO calls return no report data. Authorized collection, accounting-event, and installment objects expose `client_name` from `public.clients.name` as `string | null`. Migration: `20261218010000_f9_reporting_po_wo_client_names.sql`.

@@ -1,17 +1,18 @@
 import { createHash } from 'node:crypto';
 import { inflateSync } from 'node:zlib';
+import {
+  BRANDING_IMAGE_LIMITS,
+  type BrandingImageLimits,
+  type BrandingImageRole,
+  type BrandingMediaType,
+} from './image-limits';
 
-export type BrandingImageRole = 'logo' | 'banner';
-export type BrandingMediaType = 'image/png' | 'image/webp';
-
-export type BrandingImageLimits = {
-  maxIngressBytes: number;
-  maxOutputBytes: number;
-  maxWidth: number;
-  maxHeight: number;
-  maxPixels: number;
-  maxChunks: number;
-};
+export {
+  BRANDING_IMAGE_LIMITS,
+  type BrandingImageLimits,
+  type BrandingImageRole,
+  type BrandingMediaType,
+} from './image-limits';
 
 export type BrandingImageResult = {
   bytes: Uint8Array<ArrayBuffer>;
@@ -21,27 +22,12 @@ export type BrandingImageResult = {
   width: number;
 };
 
-export const BRANDING_IMAGE_LIMITS: Record<
-  BrandingImageRole,
-  BrandingImageLimits
-> = {
-  logo: {
-    maxIngressBytes: 4 * 1024 * 1024,
-    maxOutputBytes: 4 * 1024 * 1024,
-    maxWidth: 2048,
-    maxHeight: 2048,
-    maxPixels: 1_000_000,
-    maxChunks: 96,
-  },
-  banner: {
-    maxIngressBytes: 8 * 1024 * 1024,
-    maxOutputBytes: 8 * 1024 * 1024,
-    maxWidth: 4096,
-    maxHeight: 2048,
-    maxPixels: 4_000_000,
-    maxChunks: 192,
-  },
-};
+export class BrandingImageValidationError extends Error {
+  constructor(readonly code: 'invalid_type' | 'too_large' | 'bad_dimensions') {
+    super('Invalid branding image');
+    this.name = 'BrandingImageValidationError';
+  }
+}
 
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const RENDER_REQUIRED_PNG_ANCILLARY = new Set(['tRNS']);
@@ -54,8 +40,10 @@ for (let n = 0; n < 256; n += 1) {
   crcTable[n] = value >>> 0;
 }
 
-function fail(): never {
-  throw new Error('Invalid branding image');
+function fail(
+  code: BrandingImageValidationError['code'] = 'invalid_type',
+): never {
+  throw new BrandingImageValidationError(code);
 }
 
 function checkedLimits(limits: BrandingImageLimits): BrandingImageLimits {
@@ -81,7 +69,7 @@ function checkDimensions(
     height > limits.maxHeight ||
     width * height > limits.maxPixels
   )
-    fail();
+    fail('bad_dimensions');
 }
 
 function png(
@@ -385,7 +373,7 @@ function result(
   mediaType: BrandingMediaType,
 ): BrandingImageResult {
   const outputLength = chunks.reduce((total, chunk) => total + chunk.length, 0);
-  if (outputLength > maxOutputBytes) fail();
+  if (outputLength > maxOutputBytes) fail('too_large');
   const output = Buffer.concat(
     chunks.map((chunk) =>
       Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength),
@@ -409,12 +397,9 @@ export function validateBrandingImage(
   const limits = checkedLimits(
     options.limits ?? BRANDING_IMAGE_LIMITS[options.role],
   );
-  if (
-    !(input instanceof Uint8Array) ||
-    input.byteLength > limits.maxIngressBytes ||
-    input.byteLength < 12
-  )
-    fail();
+  if (!(input instanceof Uint8Array)) fail();
+  if (input.byteLength > limits.maxIngressBytes) fail('too_large');
+  if (input.byteLength < 12) fail();
   if (PNG_SIGNATURE.every((byte, index) => input[index] === byte))
     return png(input, limits);
   if (sameBytes(input.subarray(0, 4), WEBP_RIFF)) return webp(input, limits);

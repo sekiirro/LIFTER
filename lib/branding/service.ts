@@ -12,6 +12,15 @@ export type BrandingDraft = {
   workspaceId: string;
   revision: number;
   fields: NormalizedBrandingDraft;
+  assets?: Partial<Record<'logo' | 'banner', BrandingDraftAsset>>;
+};
+
+export type BrandingDraftAsset = {
+  thumbnailUrl: string;
+  bucket: 'branding-validated';
+  object: string;
+  contentType: 'image/png' | 'image/webp';
+  byteSize: number;
 };
 
 export type BrandingVersion = {

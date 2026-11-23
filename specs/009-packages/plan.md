@@ -250,10 +250,14 @@ PO wording is byte-exact in specs/009-packages/spec.md; interpretation is separa
 
 ### S43-PO-8 scope now specified
 
-The four market/type categories each contain Silver, Gold, and Platinum tier offers; rank belongs to the tier offer within its category. PO renames are global per locale, Workspace Owner overrides are workspace-local, and neither changes rank or terms. T077 and T078 are unblocked for implementation planning. **architect mapping (S43-R10).**
+The four market/type categories each contain Silver, Gold, and Platinum tier offers; rank belongs to the tier offer within its category. PO renames are global per locale and PO overrides may target any workspace; Workspace Owner overrides are limited to their own workspace. Both name forms use the publication-name rule (1–120 Unicode code points, nonblank). Renames and overrides emit no audit rows and do not change rank or terms. T077, T078, and T079 are covered by this design. **architect mapping (S43-R10); S67-PO-10.**
 
 ### S48-PO-10 migration and legacy cleanup
 
 **PO words (byte-exact):** “Choose B. Verify all existing offers are mock/test data, delete them safely, then apply T077 with mandatory immutable tier ranks. Preserve required audit/payment test records. No arbitrary Silver defaults.”
 
 **architect mapping (S48-R10):** T077 adds `tier_rank` with no default in a forward migration and raises before setting it NOT NULL if any legacy row remains unranked. The old workspace/package/duration unique key is replaced with workspace/category/duration/rank uniqueness; publication requires rank and serializes by that full identity. A separate reviewed cleanup script deletes only verified local test offers with no referencing payment, audit, subscription, registration-link, or restrictive version rows; no cascades are permitted and retained offers are reported. Inventory local Stacks A–D and CI's fresh database before applying migrations. Any hosted/non-local database halts migration work. All rank-bearing fixtures must pass an explicit rank.
+
+## S69-PO-6 reporting amendment
+
+Collections, Commissions, and Installments are restricted to `platform_owner` and `workspace_owner` in both the database RPC and the server-only app data-access layer. Workspace owners are constrained to their active own workspace. Unauthorized roles receive no rows or names; the app wall denies before invoking an RPC. Each authorized collection, accounting-event, and installment row projects `public.clients.name` as nullable `client_name`. The 32 approved `reports.*` keys are landed and tested for the deferred UI slice; UI tasks T069/T072/T073/T074 remain deferred. The forward migration is `20261218010000_f9_reporting_po_wo_client_names.sql`.

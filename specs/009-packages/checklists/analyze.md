@@ -1,6 +1,10 @@
 # Spec Kit Analyze — F9 S43-PO-8 tier offer identity amendment
 
+**Status-only refresh (2026-11-20 - S69 cumulative closeout T032/T051/T063/T071):** No FR/SC/requirement text changed. Current accepted SHA is `b39e3c4bd8aea5ffd43f3069d9a3b5d0e7e4973a`; T032/T051/T063/T071 are closed; only pre-production T059 remains unticked per S65-R7. Final Analyze records 0 CRITICAL, 0 HIGH, 0 open PO-DECISION-NEEDED, and all 14 F9 migrations verified across 330 remote refs. ND-F9-2/3/5, BLOCKED-COPY, and S68-PO-3 F-1 remain tracked.
 **Analyzed:** 2026-11-18 07:08 Africa/Cairo
+**Status-only refresh (2026-11-20 — S69 beam-r295 merge of origin/main):** No FR/SC/requirement text changed; merged #296 closeout ticks/evidence and #295 T055 UI verification into tasks.md/traceability.md. Analyze date refreshed to satisfy freshness gate. 0 open CRITICAL/HIGH findings remain.
+**Status-only refresh (2026-11-19 — S67 T078):** No FR/SC/requirement text changed; `T078` was ticked with implementation evidence and traceability was updated only. 0 open CRITICAL/HIGH findings remain.
+**Status-only refresh (2026-11-19 — S67 merge of origin/main into s65-009-t055):** No requirement text changed by this lane; origin/main updates to tasks.md (T037/T046 status ticks) were merged. Analyze date refreshed to satisfy freshness gate. 0 open CRITICAL/HIGH findings remain.
 **Status-only refresh (2026-11-18 — S65 US5 PR2):** No requirement text changed; task status (`T040`, `T041`, `T043`, `T045`) and traceability evidence were updated only. 0 open CRITICAL/HIGH findings remain.
 **Method:** Reconciled FR-002, S43-PO-8 acceptance scenarios, offer logical key and uniqueness, publication input, T077 tags, plan, data model, contract, traceability, and availability-independent tier reads; verified the forward-only migration boundary.
 
@@ -336,3 +340,66 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - PASS: no FR, SC, acceptance-scenario, plan or PO-decision text changed — only the T064b checkbox, its status note, traceability rows and this dated note. Per S54-R6 no full re-Analyze of requirements is triggered.
 - PASS: `tasks.md` T064b is ticked citing both reviews and the design; the earlier "leave unticked pending an architect ruling" continuation is closed by architect ruling S65-R8 (the T065 script is an unaccepted draft that did not shape the design). `traceability.md` FR-022/FR-028 rows and the T064b evidence line now reflect the PASS.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity introduced. T065 remains unticked pending its implementation/CI evidence and divergence reconciliation (D2/D3/D8/D9/D10/D11); T070 remains the post-implementation acceptance review; no teardown has run on any stack.
+
+## 2026-11-18 Analyze (T065 teardown conformance & verification; task-status/evidence only)
+
+**Analyzed:** 2026-11-18 (UTC). Reconciled T065 teardown script (`supabase/cleanup/20261121_t065_c5_mock_package_teardown.sql`), conformance matrix (`specs/009-packages/reviews/t065-conformance.md`), and integration/mutation tests (`tests/integration/packages-c5-teardown.test.ts`, `tests/integration/packages-verification.md`) with `specs/009-packages/reviews/t064b-teardown-design.md` (T064b round-2 PASS). No FR, SC, acceptance-scenario, or plan requirement text changed — only T065 status/evidence notes; T065 remains `[ ]` pending the separate four-category initialization forward migration (D10) and T070 post-implementation acceptance review.
+
+- PASS: 0 open CRITICAL, 0 open HIGH.
+
+## 2026-11-19 Analyze (S67-PO-10 FR-035 requirement delta)
+
+- Scope: compared FR-035 and its Given/When/Then scenarios in `spec.md`, tier-name design in `plan.md`, and T079 coverage in `tasks.md` against S67-PO-10; constitution 1.19.0 quality gates remain applicable.
+- PASS: all three PO decisions are explicit and consistent: 1–120 Unicode-code-point, nonblank publication-name validation; zero audit rows; PO may override any workspace while Workspace Owners remain own-workspace only and Sales/Trainer/anonymous are denied.
+- PASS: FR-035/SC-025 maps to T078 (existing behavior) and T079 (new constraints/authorization), with database, application, and test/evidence work identified. No conflicting requirement or plan assumption found.
+- Findings: 0 open CRITICAL, 0 open HIGH; no open ambiguity for this scope.
+
+## 2026-11-19 Analyze (S68 closeout T034/T062/T066/T076; task-status only)
+
+**Analyzed:** 2026-11-19 (UTC). Trigger: S68 documentation-only closeout — T034 reconciliation recorded verbatim (`specs/009-packages/reviews/t034-reconciliation.md`), the T062 independent FX security review copied to `specs/009-packages/reviews/t062-fx-security-review.md` with its two PO decisions (S68-PO-3 Q1/Q2) added to the spec PO decision register, T066/T076 ticked on merged PR #290/#288 CI evidence, the stale FR-001 test citation repaired, and PR #273-introduced mojibake repaired in `traceability.md`. No FR, SC, acceptance-scenario or plan requirement text changed.
+
+- PASS: T034/T062/T066/T076 evidence cites exact merged PR heads and verified CI runs (PR #288 head `16e51c76977e6bb4253d266b8bdfe94c0d00cc8c`, run `44458288230`; PR #290 head `5dc1f7596486f066104c205d98f257f925754ebf`, run `44465484474`; both `pull_request`, conclusion `success`, head SHAs verified against the PRs). No new product ambiguity: S68-PO-3 Q1/Q2 close the T062 review's two recorded decision items; provider terms-of-use stays a pre-production blocker (S65-R7).
+- PASS: the mojibake repair is byte-level only (→ ×6, –, — ×2, ›, ×, and the double-encoded U+FFFD restored to § from the referenced `packages-verification.md` heading); `tasks.md`, this file and `tests/integration/packages-verification.md` scanned clean; the mojibake-pattern grep gate on `traceability.md` is 0.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+
+## S69-PO-6 fresh full Analyze — 2026-11-20
+
+**Scope reviewed:** complete current `spec.md` (FR-001..FR-036, SC-001..SC-026 and acceptance scenarios), `plan.md`, all task statuses and FR tags in `tasks.md`, `contracts/packages-surface.md`, data model and API/read contracts, plus `traceability.md`. This pass supersedes earlier snapshots for current-state coherence and covers S69-PO-6 A1/A2/A3 (approval SHA-256 `9D53FB69C5A24E336505BED8608EB085E6603BF44104B8EE4F8E9278BACE26AD`).
+
+| Analyze area                                       | Result  | Evidence / reconciliation                                                                                                                                                                                                          |
+| -------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Numbered FRs, measurable SCs, acceptance scenarios | PASS    | FR-031/FR-032 and SC-016 now define exact role × workspace behavior, full nullable client-name projection, both server authorization walls, and zero-data denials; S69 amendment is cited. Existing FR/SC scope remains intact.    |
+| Spec ↔ plan ↔ contract                             | PASS    | Plan and surface contract agree on PO/WO-only access, active own-workspace scope for WO, server-side DB and app enforcement, and nullable `client_name` on authorized report rows.                                                 |
+| Spec ↔ tasks ↔ traceability                        | PASS    | T060 covers reporting data/authorization evidence; T061 covers landed copy. T035 is superseded/N-A by A3 and FR-021/SC-011 point to T038/T050/T066/T064a. UI tasks T069/T072/T073/T074 remain open and unticked.                   |
+| Approved copy and deferred UI boundary             | PASS    | Exactly 9 S65-PO-20 and 23 S69-PO-6 A1 keys (32 total) are byte-exact EN/AR and tested. No report UI component/page is in this slice; all remaining unapproved UI copy stays BLOCKED-COPY.                                         |
+| Security and data exposure                         | PASS    | All three RPCs require PO/WO and workspace access; app layer checks server-derived actor before RPC; anonymous/non-staff and unauthorized roles cannot receive rows or names. Commission RPC already had the required guard.       |
+| Migration and forward compatibility                | PASS    | New reporting-only migration is in reserved `20261218010000-20261218015959`; pushed migration history is preserved. All-ref origin migration maximum scan remains a required pre-push gate.                                        |
+| Deliberately open verification/production items    | TRACKED | T032 eight-mutant campaign and T051 cumulative review remain open; T059 provider terms remain pre-production; T063/T071 post-UI Analyze and T069/T072/T073/T074 UI remain open by scope. These are not requirement contradictions. |
+
+### Findings
+
+- Open CRITICAL: **0**.
+- Open HIGH: **0**.
+- Open requirement contradictions: **0**.
+- Open PO decisions introduced by this amendment: **0**.
+
+This is a document-consistency Analyze. Runtime, mutation, CI and all-ref migration gates are recorded separately in the lane report and must pass before push.
+
+## 2026-11-20 S69 dashboard UI closeout (status only)
+
+**Analyzed:** 2026-11-20 UTC. Reconciled T061/T069/T072/T073/T074 task status and traceability with the completed Reports dashboard, Stack B integration and Playwright runs, and the 8-cell screenshot/accessibility gate. No FR, SC, acceptance scenario, PO decision or plan text changed.
+
+- PASS: ReportsView unit tests 10/10; full unit suite 4,177/4,177; Stack B reporting integration 11/11; authenticated Playwright 7/7; all eight design-gate cells axe-clean and keyboard/focus verified.
+- PASS: lint, typecheck, check:secrets, and production webpack build. The default Turbopack build is incompatible with this checkout external node_modules/next junction; the supported webpack build completed successfully.
+- PASS: no new migration; reporting reuses 20261218010000. T032/T051/T059/T063/T071 remain unticked. Provider terms-of-use and separately recorded verification blockers remain unchanged.
+- Findings: 0 open CRITICAL, 0 open HIGH, 0 new product ambiguities.
+
+## S69 cumulative closeout Analyze - 2026-11-20 (T063 / T071)
+
+**Analyzed baseline:** `b39e3c4bd8aea5ffd43f3069d9a3b5d0e7e4973a`. This final status reconciliation supersedes the earlier open-task notes in the historical Analyze snapshots (including the prior notes near L18, L372, L376, and L393); no requirement text changed.
+
+- Findings: 0 CRITICAL, 0 HIGH, 0 open PO-DECISION-NEEDED.
+- All 14 F9 migrations (`20261029120000` through `20261218010000`) verified across 330 remote refs; zero version conflicts and zero migrations added.
+- T032, T051, T063, and T071 are closed on the accepted SHA. T032 evidence records 8/8 independent quickstart section 4 mutant kills and a clean Stack C rerun; T051 is ACCEPTED by independent read-only review `s69-luna-009rev`; T063/T071 reconcile immutable history, four-category invariants, role/security matrices, and full FR-001..FR-036 / SC-001..SC-026 traceability.
+- T059 is the only unticked task and remains a pre-production provider terms-of-use gate per S65-R7.
+- Retained gates: ND-F9-2/3/5, BLOCKED-COPY, and S68-PO-3 F-1 accepted SAMA provenance residual risk. The documented Windows OpenNext edge symlink host note remains.

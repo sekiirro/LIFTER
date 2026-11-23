@@ -1,5 +1,9 @@
 # Analyze — F11 client accounts
 
+## S69 date-only status revalidation — 2026-11-20 UTC
+
+T053 (FR-024 / SC-017) was verified on Stack E: `tests/integration/forms-alerts.test.ts::011 T053 / SC-017 (FR-024): passed client deadline emits zero Trainer alert rows or notifications, with and without an assigned Trainer` passed (14/14 in the file), asserting zero Trainer alert rows and zero Trainer notifications at a passed submission deadline with no accepted submission, both with and without an assigned Trainer. The `tasks.md` T053 tick and the traceability FR-024/SC-017 rows were updated with this evidence. FR/SC requirement text, the plan, decisions and approved copy are unchanged; no new requirement, PO decision or product behavior is inferred. Per S54-R6 no full Analyze rerun is needed for this status-only revalidation.
+
 ## S66 re-analysis (S66-PO-1 client code) — 2026-11-18 UTC
 
 Requirement text changed: new FR-029 (client code) and task T064; FR total is now 29 (FR-001 to FR-029). Static review against spec, tasks and traceability.
@@ -14,6 +18,10 @@ Requirement text changed: new FR-029 (client code) and task T064; FR total is no
 
 Gate verdict: CRITICAL 0, HIGH 0. T064 stays unticked until exact-head CI is green.
 
+## S64 T047/T048 date-only status — 2026-11-18 UTC
+
+Task completion status (`T047`, `T048`), S56-R12/S57-PO-1 dependency resolution notes, and Stack B execution/mutation evidence updated in `tasks.md` and `traceability.md`. FR/SC requirement text is unchanged; out-of-scope tasks (`T050`, `T054`, `T058`, `T059`, `T060`, `T062`, `T063`) remain unticked. No full Analyze rerun required.
+
 ## S64 date-only status (S64-R46) — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R46: the restricted-continuation half of A-S41-4 (P-S40-1, before T048) is APPROVED, so A-S41-4 is now CLOSED (entry-point half S64-R21, restricted-continuation half S64-R46). FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
@@ -21,6 +29,18 @@ Docs-only recording of architect ruling S64-R46: the restricted-continuation hal
 ## S64 date-only status — 2026-11-18 UTC
 
 Docs-only recording of architect ruling S64-R21: the entry-point half of A-S41-4 (P-S40-5, before T062) is APPROVED; the restricted-continuation half (P-S40-1, before T048) stays OPEN. FR/SC requirement text is unchanged and no task tick changed, so no full Analyze rerun was needed.
+
+## S64 Luna S11-2 date-only status — 2026-11-18 UTC
+
+Task notes and traceability evidence changed; FR/SC requirement text did not. Direct-route implementation and verification are recorded in the S64 run report. PO decisions S64-PO-6/7 and S65-PO-1/2 resolve navigation placement, ASCII/manual slug behavior, and 50-character default overflow. No new requirement text or PO decision is inferred; per Constitution/S54-R6, no full Analyze rerun is required for task-status-only updates.
+
+## S65 S11-2 date-only status — 2026-11-18 UTC
+
+T049/T051/T056 evidence and task statuses were updated; FR/SC and plan text did not change. PO decisions S65-PO-1/2 are recorded in the referenced verbatim files. Stack C integration and E2E evidence is recorded in the s65-luna-s112b report; no full Analyze rerun is needed for task-status-only changes. No open CRITICAL/HIGH findings for this slice.
+
+## S64 Luna S11-2 date-only status — 2026-11-17 UTC
+
+T049 implementation evidence and task status changed; FR/SC text did not. Stack C passed all three workspace-creation integration tests, including the Platform Owner, denial, no-auto-provisioning, audit and idempotent-retry cases. T051/T056 await the PO navigation decision required by DESIGN.md §11 (Platform Owner mobile navigation remains unresolved); no new requirement or design decision is inferred here.
 
 ## S63 date-only status — 2026-11-17 UTC
 
@@ -699,3 +719,29 @@ Scope: the exact-head CodeRabbit review `5875403722` (CHANGES_REQUESTED on `72db
 - CRITICAL open: 0. HIGH open: 0. MEDIUM open: 1 (A-S50-G4, the pre-existing S40 gate and working assumption). LOW open: 1 (A-S50-G2, pre-existing).
 - No PO product question is raised by this round and no option, default, copy string or test expectation was invented. Architect ruling S51-R10 verified the finding as a consistency correction inside already-decided scope.
 - This is a static document review. It makes no implementation-conformity claim, and the S40 implementation gate stays closed.
+
+## S66 status refresh — 2026-11-18
+
+Only task statuses and traceability evidence changed; requirement, acceptance, plan, and task text is unchanged. No full re-analysis is required under S54-R6. Existing verdict remains 0 open CRITICAL and 0 open HIGH.
+
+## S68 T064 closeout - 2026-11-19
+
+Status-only: T064 ticked and the FR-029 traceability row updated after exact-head CI verification. No requirement, acceptance, plan, or task text changed.
+
+### Entry check (Spec Kit gate section 1)
+
+| Item                                                                                        | Result | Evidence                                                                                  |
+| ------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
+| Numbered FRs, measurable SCs and Given/When/Then acceptance scenarios for touched scope     | PASS   | FR-029 and its acceptance scenarios are unchanged; only task/traceability status changed. |
+| Clarifications recorded, no open ambiguities stated                                         | PASS   | S66-PO-1 = A recorded; no new product decision made.                                      |
+| plan.md covers touched scope                                                                | PASS   | No plan change.                                                                           |
+| tasks.md has task ID tagged with FR IDs                                                     | PASS   | T064 [FR-029] ticked with Verified line.                                                  |
+| checklists/analyze.md exists, dated after last spec/plan/tasks change, 0 open CRITICAL/HIGH | PASS   | This entry dated 2026-11-19.                                                              |
+
+### Findings
+
+No new findings. CI evidence: PR #264, head f8fb5963e8b2ee3f8f8e95ad44077db8ad4eaa38, run 44276965546 (success); integration shards 1/3, 2/3, 3/3, storage and integration aggregate all success. Required test cases present by name in tests/integration/client-code.test.ts.
+
+### Gate verdict
+
+CRITICAL open: 0. HIGH open: 0.

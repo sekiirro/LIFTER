@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { ToastProvider, useToast } from '../../../../components/ui/Toast';
 import {
@@ -29,6 +30,8 @@ type ClientDetailsTabsProps = {
   notes: readonly ClientNote[];
   hasMore: boolean;
   status: ClientNotesStatus;
+  /** F24 Goals section (PO 2026-11-14), rendered above the tabs. */
+  goals?: ReactNode;
 };
 
 export function ClientDetailsTabs(props: ClientDetailsTabsProps) {
@@ -49,12 +52,14 @@ function ClientDetailsTabsContent({
   notes,
   hasMore,
   status,
+  goals,
 }: ClientDetailsTabsProps) {
   const router = useRouter();
   const toast = useToast();
 
   return (
     <main className={styles.page} dir={dirFor(locale)} lang={locale}>
+      {goals}
       <div
         className={styles.tabList}
         role="tablist"
