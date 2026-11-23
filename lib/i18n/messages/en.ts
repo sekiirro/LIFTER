@@ -1517,7 +1517,14 @@ export const en: Record<keyof typeof ar, string> = {
   'staff.clientDirectory.filters': 'Filters',
   'staff.clientDirectory.plansWaitingForDelivery': 'Plans waiting for delivery',
   'staff.clientDirectory.searchPlaceholder':
-    'Search by name, email, phone or client code',
+    'Search by name, email, phone, username or client code',
+  'staff.clientDirectory.searchPlaceholderStaff':
+    'Search by name, email, phone or username',
+  'staff.clientDirectory.assignment': 'Trainer',
+  'staff.clientDirectory.assignment.all': 'All clients',
+  'staff.clientDirectory.assignment.assigned': 'Assigned',
+  'staff.clientDirectory.assignment.unassigned': 'Unassigned',
+  'staff.clientDirectory.clientCode': 'Client code',
   'staff.clientDirectory.pendingFoodReplacements': 'Pending food replacements',
   'staff.clientDirectory.subscriptionStatus.awaitingActivation':
     'Awaiting Activation',

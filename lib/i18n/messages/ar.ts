@@ -1472,7 +1472,14 @@ export const ar = {
   'staff.clientDirectory.filters': 'فلترة',
   'staff.clientDirectory.plansWaitingForDelivery': 'خطط مستنية تتبعت',
   'staff.clientDirectory.searchPlaceholder':
-    'دوّر بالاسم أو الإيميل أو رقم التليفون أو كود العميل',
+    'دوّر بالاسم أو الإيميل أو رقم التليفون أو اسم المستخدم أو كود العميل',
+  'staff.clientDirectory.searchPlaceholderStaff':
+    'دوّر بالاسم أو الإيميل أو رقم التليفون أو اسم المستخدم',
+  'staff.clientDirectory.assignment': 'المدرب',
+  'staff.clientDirectory.assignment.all': 'كل العملاء',
+  'staff.clientDirectory.assignment.assigned': 'ليهم مدرب',
+  'staff.clientDirectory.assignment.unassigned': 'من غير مدرب',
+  'staff.clientDirectory.clientCode': 'كود العميل',
   'staff.clientDirectory.pendingFoodReplacements': 'طلبات تبديل أكل لسه مستنية',
   'staff.clientDirectory.subscriptionStatus.awaitingActivation':
     'مستني التفعيل',

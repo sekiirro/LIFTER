@@ -37,6 +37,7 @@ let p: PortalFixture;
 let activeClient: Credentials;
 let awaitingClient: Credentials;
 let trainer: Credentials;
+let directoryOwner: Credentials;
 let workoutPlan: string;
 
 async function authUser(label: string): Promise<Credentials & { id: string }> {
@@ -95,11 +96,12 @@ async function capture(
     const axe = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
       .analyze();
-    expect(
-      axe.violations.filter((violation) =>
-        ['critical', 'serious'].includes(violation.impact ?? ''),
-      ),
-    ).toEqual([]);
+    const violations = name.startsWith('directory')
+      ? axe.violations
+      : axe.violations.filter((violation) =>
+          ['critical', 'serious'].includes(violation.impact ?? ''),
+        );
+    expect(violations).toEqual([]);
     await page.screenshot({
       path: join(
         screenshotDir,
@@ -169,6 +171,24 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
       });
     if (membership.error) throw new Error('F22 e2e membership failed');
     trainer = staff;
+
+    const owner = await authUser('directory-owner');
+    const ownerProfile = await admin().from('staff_profiles').insert({
+      user_id: owner.id,
+      role: 'workspace_owner',
+      display_name: testStaffDisplayName(),
+    });
+    if (ownerProfile.error) throw new Error('F22 e2e owner profile failed');
+    const ownerMembership = await p.fixture.po.client
+      .from('workspace_memberships')
+      .insert({
+        workspace_id: p.fixture.wsA.id,
+        user_id: owner.id,
+        granted_by: p.fixture.po.userId,
+      });
+    if (ownerMembership.error)
+      throw new Error('F22 e2e owner membership failed');
+    directoryOwner = owner;
     await mkdir(screenshotDir, { recursive: true });
   });
 
@@ -250,6 +270,43 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
         await expect(
           page.getByLabel(m['client.portal.subscriptionStatus']),
         ).toBeVisible();
+        await expect(
+          page.getByLabel(m['staff.clientDirectory.search']),
+        ).toHaveAttribute(
+          'placeholder',
+          m['staff.clientDirectory.searchPlaceholderStaff'],
+        );
+        await expect(
+          page.getByLabel(m['staff.clientDirectory.assignment']),
+        ).toHaveCount(0);
+        await expect(page.getByTestId('directory-client-code')).toHaveCount(0);
+      },
+    );
+    await signIn(page, directoryOwner);
+    await capture(
+      page,
+      `/clients?workspace=${p.fixture.wsA.id}&q=${encodeURIComponent(p.run)}`,
+      'directory-owner',
+      async (m) => {
+        await expect(
+          page.getByRole('heading', { name: m['staff.clientDirectory.title'] }),
+        ).toBeVisible();
+        await expect(
+          page.getByLabel(m['staff.clientDirectory.search']),
+        ).toHaveAttribute(
+          'placeholder',
+          m['staff.clientDirectory.searchPlaceholder'],
+        );
+        const assignment = page.getByLabel(
+          m['staff.clientDirectory.assignment'],
+        );
+        await expect(assignment).toHaveValue('');
+        await expect(assignment.locator('option')).toHaveText([
+          m['staff.clientDirectory.assignment.all'],
+          m['staff.clientDirectory.assignment.assigned'],
+          m['staff.clientDirectory.assignment.unassigned'],
+        ]);
+        await expect(page.getByTestId('directory-client-code')).toHaveCount(2);
       },
     );
   });

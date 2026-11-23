@@ -1,8 +1,8 @@
 /**
  * F22 staff client directory query contract (FR-010, FR-011; SC-008).
  *
- * Search covers existing F11 identity fields (name, email, phone); filters
- * use existing F11 approval state and F13 projected subscription status. No
+ * Search covers existing F11 identity fields (name, email, phone, normalized
+ * username); filters use existing F11 approval state and F13 projected subscription status. No
  * status is introduced here. The assignment filter and assignment state reuse
  * F11's existing wall (FR-027, S40-PO-10 item 5: the Workspace Owner of the
  * workspace and the Platform Owner, the predicate of `unassigned_clients`) and
@@ -155,6 +155,18 @@ export function canUseAssignment(actor: Actor, workspaceId: unknown): boolean {
       (actor.role === 'workspace_owner' &&
         actor.activeWorkspaceIds.includes(workspaceId)))
   );
+}
+
+/** The code-search hint follows the same role/workspace wall as code output. */
+export function directorySearchPlaceholderKey(
+  actor: Actor,
+  workspaceId: unknown,
+):
+  | 'staff.clientDirectory.searchPlaceholder'
+  | 'staff.clientDirectory.searchPlaceholderStaff' {
+  return canUseAssignment(actor, workspaceId)
+    ? 'staff.clientDirectory.searchPlaceholder'
+    : 'staff.clientDirectory.searchPlaceholderStaff';
 }
 
 export function directoryRpcArgs(
