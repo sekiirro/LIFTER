@@ -1,7 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { formatMinorUnits } from '../../lib/packages/money';
 import { clientContext } from '../integration/registration-approval-fixture';
 import {
   activate,
@@ -17,7 +19,14 @@ import { ar } from '../../lib/i18n/messages/ar';
 import { en } from '../../lib/i18n/messages/en';
 
 const screenshotDir =
-  'C:/Users/NEW LAP/.lifter/runs/s69-luna-009rep-ui/screenshots';
+  process.env.LIFTER_SCREENSHOT_DIR ??
+  join(tmpdir(), 'lifter-reports-screenshots');
+const leakedMoneyPattern = new RegExp(
+  ['400', '800']
+    .map((minor) => formatMinorUnits(minor, 'USD', 'en'))
+    .map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|'),
+);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL!;
 const db = sql();
 let fixture: Awaited<ReturnType<typeof clientContext>>;
@@ -171,9 +180,9 @@ for (const role of ['salesA', 'trainerA', 'client', 'woB'] as const) {
     ).toBeVisible();
     const dom = await page.locator('body').innerText();
     expect(dom).not.toContain(clientName);
-    expect(dom).not.toMatch(/\b400\s+USD\b|\b800\s+USD\b/);
+    expect(dom).not.toMatch(leakedMoneyPattern);
     expect(rscPayloads.join('\n')).not.toContain(clientName);
-    expect(rscPayloads.join('\n')).not.toMatch(/\b400\s+USD\b|\b800\s+USD\b/);
+    expect(rscPayloads.join('\n')).not.toMatch(leakedMoneyPattern);
   });
 }
 

@@ -320,6 +320,41 @@ it('T056 approval enqueues one distribution job in the same transaction and keep
   expect(afterReplayJobs[0]?.id).toBe(jobs[0]?.id);
 });
 
+it('T063 concurrent identical approval retries emit exactly one durable job', async () => {
+  const t = await registered(f);
+  const req = request(f, t);
+  const [first, retry] = await Promise.all([
+    call(f.po.client, 'approve', req),
+    call(f.po.client, 'approve', req),
+  ]);
+  expect(first.status).toBe('ok');
+  expect(retry).toEqual(first);
+  expect(await state(db, t)).toMatchObject({
+    approval_state: 'approved',
+    subscriptions: 1,
+    decisions: 1,
+    receipts: 1,
+    facts: 1,
+  });
+  const jobs = await db`
+    select j.id,j.kind,j.payload,j.idempotency_key,j.status
+    from public.jobs j
+    where j.workspace_id=${f.wsA.id} and j.kind='client.distribution'
+      and j.payload->>'client_id'=${t.id}`;
+  expect(jobs).toHaveLength(1);
+  expect(jobs[0]).toMatchObject({
+    kind: 'client.distribution',
+    payload: {
+      client_id: t.id,
+      approval_id: expect.any(String),
+    },
+    idempotency_key: expect.stringMatching(
+      new RegExp(`^client\\.distribution:${t.id}:`),
+    ),
+    status: 'pending',
+  });
+});
+
 it('T056 rolled-back approval writes no job and retry writes exactly one', async () => {
   const t = await registered(f);
   const req = request(f, t);
