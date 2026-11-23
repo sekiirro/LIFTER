@@ -34,7 +34,7 @@ Supabase allows one `custom_access_token` hook per project; all future claim cus
 - **IV, approved scope**: pass; no gateway, new policy, client UI, P4 notices/enforcement or P5 check-in engine.
 - **V, versioned content**: pass; purchase snapshots and issued obligations are not rewritten.
 - **VI, human-governed decisions**: pass; no automatic compensation or discipline.
-- **VII, privacy**: pass; narrow audit fields, no PII/secrets/free text in logs; legal/technical retention is a pre-production blocker.
+- **VII, privacy**: pass; narrow audit fields, no PII/secrets/free text in logs; retention is DECIDED: 30 days (client, audit, payment, refund, invoice data; S70-PO-3/4) with "PO states Egyptian legal advice was obtained" (S70-PO-3/4). The all-copies/backup 30-day proof remains a pre-production blocker (`docs/13-production-readiness.md` BR-04); 013 T019 stays UNTICKED, and T020 is not retention and stays UNTICKED pending hosted evidence.
 - **VIII, bilingual accessible UI**: no rendered UI is planned. Any later UI unit must follow the repository's [Frontend Design Gate](../../docs/09-frontend-design-gate.md) and [DESIGN.md](../../DESIGN.md).
 - **IX, reliable operations**: pass subject to proving the PO-1 transaction boundary and F12 lock/replay contract before dependent implementation.
 
