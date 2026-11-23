@@ -148,6 +148,8 @@ Constitution IV (verbatim):
 
 **Compliance record:** PO approved window-lived mutable aggregate counters as operational enforcement state, separate from logs and append-only audit. No constitutional amendment is inferred. AD-F11-1 option (i) was separately PO-approved with binding C1–C4. HMAC IP keys remain pseudonymous data; access is restricted, counters expire automatically and SIGNUP_RATE_KEY rotates manually with the server environment and Vault together; this resets IP/link counters, with accepted risk of up to one extra window per key (at most 1 hour), and old-key counters expire naturally. Audit retention and B4 remain NEEDS SOURCE CONFIRMATION under ND-F5-1.
 
+S70-PO-5 (verbatim source `C:/Users/NEW LAP/.lifter/runs/s70-po/s70-po-5.verbatim.txt`, SHA-256 `FBE1F9186AD1B853890617EF4AAFCDE967C81C2518C466744EB1250C2697C957`) resolves S70-R3-MCQ-1/2: client, payment, refund and invoice data are kept while the account is active and deleted 30 days after closure/deletion; audit events are deleted 30 days after creation; deletion pauses for records tied to an open refund/dispute and the 30 days restart when it is resolved. The legal basis stays recorded only as "PO states Egyptian legal advice was obtained" (S70-PO-3/4). Text-only decision record: the signup-attempt 30-day rule is unchanged, no task is ticked, and backup gates BR-01/BR-02/BR-04 and FN-03 stay Open.
+
 ## Project Structure
 
 Documentation: `specs/011-client-accounts/{plan,research,data-model,quickstart}.md`, `contracts/client-signup-surface.md`; spec/checklist updated for PO decisions in U4. [tasks.md](tasks.md) supplies the phased test-first implementation handoff; execution requires later authorization and Analyze/review.
