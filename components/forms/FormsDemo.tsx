@@ -12,7 +12,7 @@ const questions = [
     id: 'training-goal',
     sectionId: 'intake',
     type: 'shortText',
-    required: true,
+    required: false,
     title: {
       en: getMessages('en')['forms.demoGoal'],
       ar: getMessages('ar')['forms.demoGoal'],
