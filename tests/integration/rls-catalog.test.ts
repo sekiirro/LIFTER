@@ -98,6 +98,7 @@ const f24Invoker = [
   'f24_guard_entry',
   'f24_guard_publication',
 ];
+const privateAuthenticated = ['f15_alert_trainer_assignment_visible'];
 // Spec 022 private helpers.
 const f22Private = [
   'f22_delivered_revisions',
@@ -368,6 +369,7 @@ describe('tenancy security catalog (T007)', () => {
           ...f23Private,
           ...f24Private,
           ...f22Private,
+          ...privateAuthenticated,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
           'audit_package_created',
@@ -796,6 +798,7 @@ describe('tenancy security catalog (T007)', () => {
       }
       expect(row.authenticated_execute, row.proname).toBe(
         [
+          ...privateAuthenticated,
           'branding_upload_begin',
           'branding_upload_terminalize',
           'branding_draft_save',
@@ -1897,6 +1900,7 @@ describe('registration security catalog', () => {
       'app_private.f15_client_alert_schedule_insert()',
       'app_private.write_f15_in_app_alert(uuid)',
       'app_private.f15_alert_inbox_after_occurrence()',
+      'app_private.f15_alert_trainer_assignment_visible(uuid,uuid,uuid)',
       'app_private.consume_f15_telegram_start(bigint,text,text)',
       'app_private.register_f15_trainer_alert_schedule(uuid,uuid,uuid,timestamptz)',
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
@@ -1922,24 +1926,36 @@ describe('registration security catalog', () => {
       for (const role of ['anon', 'authenticated', 'service_role']) {
         const [g] =
           await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
-        expect(g!.allowed, `${role} ${name}`).toBe(
-          name.startsWith('public.') &&
-            ((role === 'authenticated' &&
-              !name.includes('prepare_f15_telegram_delivery') &&
-              !name.includes('claim_f15_telegram_delivery') &&
-              !name.includes('claim_f15_form_alert_jobs') &&
-              !name.includes('consume_f15_telegram_start') &&
-              !name.includes('finish_f15_telegram_delivery')) ||
-              (role === 'anon' && name.includes('registration_link_open')) ||
-              (role === 'service_role' &&
-                (name.includes('prepare_f15_telegram_delivery') ||
-                  name.includes('claim_f15_telegram_delivery') ||
-                  name.includes('claim_f15_form_alert_jobs') ||
-                  name.includes('consume_f15_telegram_start') ||
-                  name.includes('finish_f15_telegram_delivery')))),
-        );
+        const expectedAllowed =
+          name ===
+          'app_private.f15_alert_trainer_assignment_visible(uuid,uuid,uuid)'
+            ? role === 'authenticated'
+            : name.startsWith('public.') &&
+              ((role === 'authenticated' &&
+                !name.includes('prepare_f15_telegram_delivery') &&
+                !name.includes('claim_f15_telegram_delivery') &&
+                !name.includes('claim_f15_form_alert_jobs') &&
+                !name.includes('consume_f15_telegram_start') &&
+                !name.includes('finish_f15_telegram_delivery')) ||
+                (role === 'anon' && name.includes('registration_link_open')) ||
+                (role === 'service_role' &&
+                  (name.includes('prepare_f15_telegram_delivery') ||
+                    name.includes('claim_f15_telegram_delivery') ||
+                    name.includes('claim_f15_form_alert_jobs') ||
+                    name.includes('consume_f15_telegram_start') ||
+                    name.includes('finish_f15_telegram_delivery'))));
+        expect(g!.allowed, `${role} ${name}`).toBe(expectedAllowed);
       }
     }
+    const [trainerDedupeIndex] = await db`
+      select i.indisunique as unique,
+        pg_catalog.pg_get_indexdef(i.indexrelid) as definition
+      from pg_catalog.pg_index i
+      where i.indexrelid='app_private.form_alert_occurrences_one_client_trainer_deadline'::regclass
+    `;
+    expect(trainerDedupeIndex?.unique).toBe(true);
+    expect(trainerDedupeIndex?.definition).toContain('WHERE (stage =');
+    expect(trainerDedupeIndex?.definition).toContain('client_trainer_24h');
     const [r] =
       await db`select n.nspname from pg_extension e join pg_namespace n on n.oid=e.extnamespace where extname='pgcrypto'`;
     expect(r!.nspname).toBe('extensions');

@@ -6,6 +6,7 @@ import {
   registered,
   sql,
 } from './registration-approval-operations-fixture';
+import { createStaff } from './harness';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
 import { cleanupAlertFixture } from './forms-alert-fixture-cleanup';
 
@@ -149,6 +150,96 @@ it('notifies the current responsible Trainer and PO/WO once at the client deadli
       throw rollback;
     }),
   ).rejects.toBe(rollback);
+});
+
+it('dedupes concurrent and retried evaluation to one Trainer alert per missed deadline', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  const deadline = '2026-11-20T10:00:00.000Z';
+  const assignment = await db.begin(async (tx) => {
+    const assignmentId = await formAssignment(
+      tx,
+      f.wsA.id,
+      client.id,
+      deadline,
+      f.po.userId,
+    );
+    await tx`insert into public.client_trainer_assignments(
+      workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+    ) select ${f.wsA.id},${client.id},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+      from public.workspace_memberships m
+      where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+    return assignmentId;
+  });
+  const firstConnection = sql();
+  const secondConnection = sql();
+  try {
+    const first = firstConnection.begin(async (tx) => {
+      const result = await core(tx, f.wsA.id, deadline);
+      await tx`select pg_sleep(0.2)`;
+      return result;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const second = secondConnection.begin((tx) => core(tx, f.wsA.id, deadline));
+    const results = await Promise.all([first, second]);
+    expect(results.map((result) => result.enqueued).sort()).toEqual([0, 3]);
+    expect(await db.begin((tx) => core(tx, f.wsA.id, deadline))).toEqual({
+      status: 'ok',
+      enqueued: 0,
+    });
+    const trainerOccurrences = await db`
+      select count(*)::int as count from app_private.form_alert_occurrences o
+      join app_private.form_alert_schedules s
+        on s.workspace_id=o.workspace_id and s.id=o.schedule_id
+      where s.workspace_id=${f.wsA.id} and s.source_assignment_id=${assignment}
+        and o.stage='client_trainer_24h'
+    `;
+    expect(trainerOccurrences[0]?.count).toBe(1);
+  } finally {
+    await db.begin((tx) => cleanupAlertFixture(tx, f.wsA.id, assignment));
+    await Promise.all([firstConnection.end(), secondConnection.end()]);
+  }
+});
+
+it('mutation: dropping the per-deadline Trainer dedupe key is caught', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await expectInvariantFailure(() =>
+    db.begin(async (tx) => {
+      const deadline = '2026-11-21T10:00:00.000Z';
+      const assignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        deadline,
+        f.po.userId,
+      );
+      await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+        select ${f.wsA.id},${f.trainerB.userId},${f.po.userId}
+        where not exists (select 1 from public.workspace_memberships
+          where workspace_id=${f.wsA.id} and user_id=${f.trainerB.userId} and revoked_at is null)`;
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+      ) select ${f.wsA.id},${client.id},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+        from public.workspace_memberships m
+        where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+      const [schedule] =
+        await tx`select id from app_private.form_alert_schedules
+        where workspace_id=${f.wsA.id} and source_assignment_id=${assignment}
+          and alert_kind='client_late'`;
+      await tx`drop index app_private.form_alert_occurrences_one_client_trainer_deadline`;
+      await tx`insert into app_private.form_alert_occurrences(
+        workspace_id,schedule_id,stage,recipient_user_id,job_id,enqueued_at
+      ) values
+        (${f.wsA.id},${schedule!.id},'client_trainer_24h',${f.trainerA.userId},null,${deadline}),
+        (${f.wsA.id},${schedule!.id},'client_trainer_24h',${f.trainerB.userId},null,${deadline})`;
+      const rows = await tx`select id from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and schedule_id=${schedule!.id}
+          and stage='client_trainer_24h'`;
+      expect(rows).toHaveLength(1);
+      throw rollback;
+    }),
+  );
 });
 
 it('keeps D-03 Trainer-late Q4 stages independent, supports seven-day catch-up, and suppresses on-time delivery', async () => {
@@ -833,6 +924,7 @@ it('mutation: removing legacy owner-stage suppression is caught', async () => {
 it('S70-PO-1 item 5 routes client-late alerts only to the current responsible Trainer', async () => {
   const f = await clientContext();
   const client = await registered(f);
+  const unassignedClient = await registered(f);
   await expect(
     db.begin(async (tx) => {
       const withTrainer = await formAssignment(
@@ -845,7 +937,7 @@ it('S70-PO-1 item 5 routes client-late alerts only to the current responsible Tr
       const withoutTrainer = await formAssignment(
         tx,
         f.wsA.id,
-        client.id,
+        unassignedClient.id,
         '2026-06-02T10:00:00.000Z',
         f.po.userId,
       );
@@ -924,6 +1016,57 @@ it('S70-PO-1 item 5 routes client-late alerts only to the current responsible Tr
         from app_private.form_alert_occurrences
         where workspace_id=${f.wsA.id} and recipient_user_id=${f.trainerB.userId}`;
       expect(otherTrainer?.n).toBe(0);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('does not route client-late Trainer alerts to Sales or across workspaces', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  const foreign = await clientContext();
+  const foreignClient = await registered(foreign);
+  const sales = await createStaff('sales', 'client-late-scope');
+  await expect(
+    db.begin(async (tx) => {
+      const deadline = '2026-11-22T10:00:00.000Z';
+      await formAssignment(tx, f.wsA.id, client.id, deadline, f.po.userId);
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+      ) select ${f.wsA.id},${client.id},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+        from public.workspace_memberships m
+        where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+      await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+        values(${f.wsA.id},${sales.userId},${f.po.userId})`;
+      const foreignAssignment = await formAssignment(
+        tx,
+        foreign.wsA.id,
+        foreignClient.id,
+        deadline,
+        foreign.po.userId,
+      );
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+      ) select ${foreign.wsA.id},${foreignClient.id},${foreign.trainerA.userId},'po_manual',${foreign.po.userId},m.id
+        from public.workspace_memberships m
+        where m.workspace_id=${foreign.wsA.id} and m.user_id=${foreign.trainerA.userId} and m.revoked_at is null`;
+
+      expect(await core(tx, f.wsA.id, deadline)).toEqual({
+        status: 'ok',
+        enqueued: 3,
+      });
+      const recipients =
+        await tx`select recipient_user_id from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and stage='client_trainer_24h'`;
+      expect(recipients.map((row) => row.recipient_user_id)).toEqual([
+        f.trainerA.userId,
+      ]);
+      const foreignRows =
+        await tx`select o.id from app_private.form_alert_occurrences o
+        join app_private.form_alert_schedules s
+          on s.workspace_id=o.workspace_id and s.id=o.schedule_id
+        where s.workspace_id=${foreign.wsA.id} and s.source_assignment_id=${foreignAssignment}`;
+      expect(foreignRows).toEqual([]);
       throw rollback;
     }),
   ).rejects.toBe(rollback);

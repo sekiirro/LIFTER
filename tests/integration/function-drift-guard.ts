@@ -107,8 +107,24 @@ export const guardedFunctions = [
   {
     identity:
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
-    migration: '20261112031500_f15_po12_decisions.sql',
+    migration: '20261223030000_t057_client_late_trainer_alert.sql',
     name: 'app_private.evaluate_forms_alerts_core',
+  },
+  {
+    identity:
+      'app_private.f15_alert_trainer_assignment_visible(uuid,uuid,uuid)',
+    migration: '20261223030000_t057_client_late_trainer_alert.sql',
+    name: 'app_private.f15_alert_trainer_assignment_visible',
+  },
+  {
+    identity: 'public.read_form_alert_inbox(integer,timestamptz)',
+    migration: '20261223030000_t057_client_late_trainer_alert.sql',
+    name: 'public.read_form_alert_inbox',
+  },
+  {
+    identity: 'public.mark_form_alert_read(uuid)',
+    migration: '20261223030000_t057_client_late_trainer_alert.sql',
+    name: 'public.mark_form_alert_read',
   },
   {
     identity: 'app_private.f15_client_alert_lifecycle_active(uuid,uuid)',

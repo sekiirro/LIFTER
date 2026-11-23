@@ -386,6 +386,8 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                           value.status === 'not_permitted') ||
                         (fn.proname === 'read_client_form_draft' &&
                           value.status === 'not_found') ||
+                        (fn.proname === 'mark_form_alert_read' &&
+                          value.status === 'not_found') ||
                         ([
                           'select_intake_form',
                           'submit_form_assignment',

@@ -94,6 +94,7 @@ async function fixture(tx: TransactionSql) {
       and recipient_user_id=${f.woA.userId} and stage='client_owners_immediate'`;
   return {
     f,
+    assignmentId,
     scheduleId: schedule!.id as string,
     occurrenceId: occurrence!.id as string,
   };
@@ -376,6 +377,57 @@ it('forces recipient-only inbox RLS and exposes only authenticated reader RPCs',
   }
 });
 
+it('RLS limits client-late Trainer inbox rows to the currently assigned Trainer', async () => {
+  await expect(
+    db.begin(async (tx) => {
+      const { f, assignmentId, scheduleId } = await fixture(tx);
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+      ) select ${f.wsA.id},
+          (select client_id from public.form_assignments where id=${assignmentId}),
+          ${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+        from public.workspace_memberships m
+        where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+      await tx`insert into app_private.form_alert_occurrences(
+        workspace_id,schedule_id,stage,recipient_user_id,job_id,enqueued_at
+      ) values(${f.wsA.id},${scheduleId},'client_trainer_24h',${f.trainerA.userId},null,clock_timestamp())`;
+      await tx`grant select on app_private.form_alert_inbox to authenticated`;
+
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({
+        sub: f.trainerA.userId,
+        role: 'authenticated',
+      })},true)`;
+      await tx`set local role authenticated`;
+      const assignedRows = await tx`select source_assignment_id,stage
+        from app_private.form_alert_inbox`;
+      expect(assignedRows).toEqual([
+        { source_assignment_id: assignmentId, stage: 'client_trainer_24h' },
+      ]);
+
+      await tx`reset role`;
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({
+        sub: f.trainerB.userId,
+        role: 'authenticated',
+      })},true)`;
+      await tx`set local role authenticated`;
+      expect(await tx`select id from app_private.form_alert_inbox`).toEqual([]);
+
+      await tx`reset role`;
+      await tx`update public.client_trainer_assignments set ended_at=clock_timestamp(),ended_by=${f.po.userId}
+        where workspace_id=${f.wsA.id}
+          and client_id=(select client_id from public.form_assignments where id=${assignmentId})
+          and ended_at is null`;
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({
+        sub: f.trainerA.userId,
+        role: 'authenticated',
+      })},true)`;
+      await tx`set local role authenticated`;
+      expect(await tx`select id from app_private.form_alert_inbox`).toEqual([]);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
 it('kills a cross-recipient inbox-read mutant', async () => {
   await expectMutation('recipient-only read', () =>
     db.begin(async (tx) => {
@@ -397,6 +449,41 @@ it('kills a cross-recipient inbox-read mutant', async () => {
       const rows =
         await tx`select * from public.read_form_alert_inbox(20,null)`;
       expectMutantInvariant('recipient-only read', () =>
+        expect(rows).toEqual([]),
+      );
+      throw rollback;
+    }),
+  );
+});
+
+it('kills a widened Trainer assignment-scope RLS mutant', async () => {
+  await expectMutation('assigned-Trainer RLS scope', () =>
+    db.begin(async (tx) => {
+      const { f, assignmentId, scheduleId } = await fixture(tx);
+      const clientId = (
+        await tx`select client_id from public.form_assignments where id=${assignmentId}`
+      )[0]!.client_id as string;
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+      ) select ${f.wsA.id},${clientId},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+        from public.workspace_memberships m
+        where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+      await tx`insert into app_private.form_alert_occurrences(
+        workspace_id,schedule_id,stage,recipient_user_id,job_id,enqueued_at
+      ) values(${f.wsA.id},${scheduleId},'client_trainer_24h',${f.trainerA.userId},null,clock_timestamp())`;
+      await tx`update public.client_trainer_assignments set ended_at=clock_timestamp(),ended_by=${f.po.userId}
+        where workspace_id=${f.wsA.id} and client_id=${clientId} and ended_at is null`;
+      await tx`drop policy form_alert_inbox_recipient_only on app_private.form_alert_inbox`;
+      await tx`create policy form_alert_inbox_recipient_only on app_private.form_alert_inbox
+        for select to authenticated using (recipient_user_id=(select auth.uid()))`;
+      await tx`grant select on app_private.form_alert_inbox to authenticated`;
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({
+        sub: f.trainerA.userId,
+        role: 'authenticated',
+      })},true)`;
+      await tx`set local role authenticated`;
+      const rows = await tx`select id from app_private.form_alert_inbox`;
+      expectMutantInvariant('assigned-Trainer RLS scope', () =>
         expect(rows).toEqual([]),
       );
       throw rollback;
