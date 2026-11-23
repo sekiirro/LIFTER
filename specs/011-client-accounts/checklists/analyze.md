@@ -1,5 +1,9 @@
 # Analyze — F11 client accounts
 
+## S70 documentation re-analysis — 2026-11-23 UTC
+
+Re-analyzed after the S70-PO-1 item 3 documentation-only change to `spec.md` recording the decided 30-day client-data and audit retention value, subject to Egyptian legal requirements for financial/audit records, across ND-F11-7/FR-010/SC-009 and the decision register. No requirement behavior, FR/SC identifier, acceptance scenario, permission, copy, task status or plan design changed; the legal confirmation and all-copy/backup proof are tracked as open pre-production gates in `docs/13-production-readiness.md` DP-07 and BR-04. **0 open CRITICAL, 0 open HIGH.** No open product ambiguity for this documentation scope.
+
 ## S69 date-only status revalidation — 2026-11-20 UTC
 
 T053 (FR-024 / SC-017) was verified on Stack E: `tests/integration/forms-alerts.test.ts::011 T053 / SC-017 (FR-024): passed client deadline emits zero Trainer alert rows or notifications, with and without an assigned Trainer` passed (14/14 in the file), asserting zero Trainer alert rows and zero Trainer notifications at a passed submission deadline with no accepted submission, both with and without an assigned Trainer. The `tasks.md` T053 tick and the traceability FR-024/SC-017 rows were updated with this evidence. FR/SC requirement text, the plan, decisions and approved copy are unchanged; no new requirement, PO decision or product behavior is inferred. Per S54-R6 no full Analyze rerun is needed for this status-only revalidation.
