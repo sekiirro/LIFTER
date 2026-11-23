@@ -52,16 +52,17 @@ async function enqueueRaw(
 }
 
 async function claim(jobId: string) {
-  const { data, error } = await service.rpc('jobs_claim', {
-    batch: 100,
-    lease_seconds: 300,
-  });
-  if (error) throw new Error('job claim failed: ' + error.code);
-  const job = (data as Array<{ id: string; lease_token: string }>).find(
-    (candidate) => candidate.id === jobId,
-  );
+  const [job] = await db`update public.jobs
+    set status='running', lease_token=gen_random_uuid(),
+      lease_expires_at=statement_timestamp()+interval '5 minutes',
+      attempts=attempts+1
+    where id=${jobId} and (
+      status='pending'
+      or (status='running' and lease_expires_at <= statement_timestamp())
+    )
+    returning id, lease_token`;
   if (!job) throw new Error('test distribution job not claimed');
-  return job;
+  return { id: job.id as string, lease_token: job.lease_token as string };
 }
 
 async function handle(job: { id: string; lease_token: string }) {
