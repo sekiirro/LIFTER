@@ -19,12 +19,14 @@ export function CorrectionHistory({
   entries,
   questions,
   relationshipActive = true,
+  disabled = false,
   onClearAnswer,
 }: {
   locale: Locale;
   entries: readonly AnswerHistoryEntry[];
   questions: readonly LabeledQuestion[];
   relationshipActive?: boolean;
+  disabled?: boolean;
   onClearAnswer?: (questionId: string) => void | Promise<void>;
 }) {
   const messages = getMessages(locale);
@@ -112,12 +114,27 @@ export function CorrectionHistory({
                             <Button
                               variant="secondary"
                               disabled={
+                                disabled ||
                                 !relationshipActive ||
                                 isRequired ||
                                 !onClearAnswer
                               }
                               aria-label={`${messages['forms.clearAnswer']}: ${questionTitle}`}
                               onClick={() => void onClearAnswer?.(questionId)}
+                              onKeyDown={(e) => {
+                                if (
+                                  disabled ||
+                                  !relationshipActive ||
+                                  isRequired ||
+                                  !onClearAnswer
+                                ) {
+                                  return;
+                                }
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  void onClearAnswer?.(questionId);
+                                }
+                              }}
                             >
                               {messages['forms.clearAnswer']}
                             </Button>

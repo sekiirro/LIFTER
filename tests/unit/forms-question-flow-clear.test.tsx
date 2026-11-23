@@ -138,11 +138,15 @@ describe('QuestionFlow Clear Answer component flows', () => {
     });
 
     // Check that a new version (Version 2) appears in history
-    const historySection = container?.querySelector('section[aria-labelledby="history-heading"]');
+    const historySection = container?.querySelector(
+      'section[aria-labelledby="history-heading"]',
+    );
     expect(historySection?.textContent).toContain('Version 2');
 
     // In Version 2, optional-notes is not present
-    const versionItems = container?.querySelectorAll('section[aria-labelledby="history-heading"] ol > li');
+    const versionItems = container?.querySelectorAll(
+      'section[aria-labelledby="history-heading"] ol > li',
+    );
     expect(versionItems?.length).toBe(2);
 
     const version2 = versionItems?.[1];
@@ -170,7 +174,11 @@ describe('QuestionFlow Clear Answer component flows', () => {
     const clearBtn = findClearButton('Additional notes');
     await act(async () => {
       clearBtn.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+        new KeyboardEvent('keydown', {
+          key: 'Enter',
+          bubbles: true,
+          cancelable: true,
+        }),
       );
     });
 
@@ -182,7 +190,9 @@ describe('QuestionFlow Clear Answer component flows', () => {
       remove: ['optional-notes'],
     });
 
-    const versionItems = container?.querySelectorAll('section[aria-labelledby="history-heading"] ol > li');
+    const versionItems = container?.querySelectorAll(
+      'section[aria-labelledby="history-heading"] ol > li',
+    );
     expect(versionItems?.length).toBe(2);
     expect(versionItems?.[1]?.textContent).toContain('Version 2');
     expect(versionItems?.[1]?.textContent).not.toContain('Additional notes');
@@ -205,7 +215,11 @@ describe('QuestionFlow Clear Answer component flows', () => {
     const clearBtn = findClearButton('Additional notes');
     await act(async () => {
       clearBtn.dispatchEvent(
-        new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }),
+        new KeyboardEvent('keydown', {
+          key: ' ',
+          bubbles: true,
+          cancelable: true,
+        }),
       );
     });
 
@@ -217,7 +231,9 @@ describe('QuestionFlow Clear Answer component flows', () => {
       remove: ['optional-notes'],
     });
 
-    const versionItems = container?.querySelectorAll('section[aria-labelledby="history-heading"] ol > li');
+    const versionItems = container?.querySelectorAll(
+      'section[aria-labelledby="history-heading"] ol > li',
+    );
     expect(versionItems?.length).toBe(2);
     expect(versionItems?.[1]?.textContent).toContain('Version 2');
     expect(versionItems?.[1]?.textContent).not.toContain('Additional notes');
@@ -240,7 +256,9 @@ describe('QuestionFlow Clear Answer component flows', () => {
 
     expect(conflictAdapter.correct).toHaveBeenCalledTimes(1);
     expect(container?.textContent).toContain(messages['forms.conflictTitle']);
-    const versionItems = container?.querySelectorAll('section[aria-labelledby="history-heading"] ol > li');
+    const versionItems = container?.querySelectorAll(
+      'section[aria-labelledby="history-heading"] ol > li',
+    );
     expect(versionItems?.length).toBe(1);
     expect(versionItems?.[0]?.textContent).toContain('Additional notes');
     expect(versionItems?.[0]?.textContent).toContain('No injuries');
@@ -263,7 +281,9 @@ describe('QuestionFlow Clear Answer component flows', () => {
 
     expect(failureAdapter.correct).toHaveBeenCalledTimes(1);
     expect(container?.textContent).toContain(messages['forms.submitFailed']);
-    const versionItems = container?.querySelectorAll('section[aria-labelledby="history-heading"] ol > li');
+    const versionItems = container?.querySelectorAll(
+      'section[aria-labelledby="history-heading"] ol > li',
+    );
     expect(versionItems?.length).toBe(1);
     expect(versionItems?.[0]?.textContent).toContain('Additional notes');
     expect(versionItems?.[0]?.textContent).toContain('No injuries');
@@ -271,9 +291,11 @@ describe('QuestionFlow Clear Answer component flows', () => {
 
   it('(d) double-click sends only one request', async () => {
     let resolveCorrect!: (val: { status: 'saved'; revision: number }) => void;
-    const pendingPromise = new Promise<{ status: 'saved'; revision: number }>((resolve) => {
-      resolveCorrect = resolve;
-    });
+    const pendingPromise = new Promise<{ status: 'saved'; revision: number }>(
+      (resolve) => {
+        resolveCorrect = resolve;
+      },
+    );
 
     const baseAdapter = createMockFormsClientAdapter();
     const slowAdapter: FormsClientAdapter = {

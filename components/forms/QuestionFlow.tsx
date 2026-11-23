@@ -180,6 +180,7 @@ export function QuestionFlow({
   );
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const clearingRef = useRef(false);
   const [dirty, setDirty] = useState(false);
   const dirtyRef = useRef(false);
   const [saving, setSaving] = useState(false);
@@ -296,9 +297,16 @@ export function QuestionFlow({
   }
 
   async function handleClearAnswer(id: string) {
-    if (!relationshipActive || locked) return;
+    if (
+      !relationshipActive ||
+      locked ||
+      clearingRef.current ||
+      submittingRef.current
+    )
+      return;
     const question = runtimeQuestions.find((q) => q.id === id);
     if (question?.required) return;
+    clearingRef.current = true;
     setState('submitting');
     try {
       const result = await adapter.correct({
@@ -311,7 +319,11 @@ export function QuestionFlow({
         const nextRevision = result.revision ?? revisionRef.current + 1;
         revisionRef.current = nextRevision;
         setRevision(nextRevision);
-        const nextAnswers = { ...latestAnswers.current };
+        const baseAnswers = {
+          ...(historyEntries[historyEntries.length - 1]?.answers ?? {}),
+          ...latestAnswers.current,
+        };
+        const nextAnswers = { ...baseAnswers };
         delete nextAnswers[id];
         setAnswers(nextAnswers);
         latestAnswers.current = nextAnswers;
@@ -329,6 +341,8 @@ export function QuestionFlow({
       }
     } catch {
       setState('submit-error');
+    } finally {
+      clearingRef.current = false;
     }
   }
 
@@ -798,6 +812,7 @@ export function QuestionFlow({
           entries={visibleHistory}
           questions={questions}
           relationshipActive={relationshipActive}
+          disabled={locked}
           onClearAnswer={handleClearAnswer}
         />
       )}
