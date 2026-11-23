@@ -1779,3 +1779,15 @@ Recorded in `specs/004-auth/spec.md` (User Story 5, FR-020, SC-011, S67-PO-9 dec
 > 3. **Retention:** Set client-data and audit retention to **30 days**. Reconcile F11/F13/F15 and production gates.
 
 S70-PO-1 item 3 set the 30-day client-data/audit retention value across F11 (`specs/011-client-accounts/spec.md`, ND-F11-7 other audit retention), F13 (`specs/013-freeze-renewal-refunds/spec.md` and `plan.md`, RET-1..3), and F15 (`specs/015-forms-intake/spec.md` and `plan.md`, RET-1..3/FR-012/FR-033), superseding the earlier "undecided / NEEDS SOURCE CONFIRMATION / no retention value inferred" positions. S70-PO-3 and S70-PO-4 (verbatim sources verified by SHA-256) decide 30 days for client, audit, payment, refund and invoice data and record the legal basis only as "PO states Egyptian legal advice was obtained". Consistent with D-20/B4 above, the legal part is satisfied; the all-copies/backup 30-day proof remains an open pre-production gate under BR-04 in `docs/13-production-readiness.md`; DP-01/DP-02 are updated as decided. 013 T019 and 015 T019/T025 remain UNTICKED because the all-copies/backup 30-day proof stays open (S70-PO-4 "Keep the backup gate open"); 013 T020 is not retention and stays UNTICKED pending hosted evidence. No traceability.md is changed by this record.
+
+### S70-PO-5 — resolves S70-R3-MCQ-1 and S70-R3-MCQ-2
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s70-po/s70-po-5.verbatim.txt`, SHA-256 `FBE1F9186AD1B853890617EF4AAFCDE967C81C2518C466744EB1250C2697C957`. S70-PO-5 answers the two retention questions that PR #310 recorded as open: S70-R3-MCQ-1 (when the 30-day clock starts) and S70-R3-MCQ-2 (records tied to an open refund/dispute). Both are closed by this record; no PO question on retention remains open.
+
+PO words (verbatim):
+
+> Q1: "30-day retention: when does the 30-day clock start?" A: "From account closure (Recommended)" = Client, payment, refund and invoice data are kept while the account is active and deleted 30 days after closure/deletion; audit events are deleted 30 days after creation.
+>
+> Q2: "If a refund or payment dispute is still open when a record reaches day 30, what happens?" A: "Hold until resolved (Recommended)" = Deletion pauses for records tied to an open refund/dispute; the 30 days restart when it is resolved.
+
+Architect mapping (not PO words, recorded as such in the PO source): S70-R3-MCQ-1 = A, refined so that the clock starts at account closure/deletion for client, payment, refund and invoice data and at creation for audit events; S70-R3-MCQ-2 = A, so deletion pauses for records tied to an open refund/dispute and the 30 days restart when it is resolved. The legal basis stays recorded only as "PO states Egyptian legal advice was obtained" (S70-PO-3/4). Applied as text only in `docs/13-production-readiness.md` (DP-01/DP-02/DP-06 and new gate DP-08) and in the 011/013/015 `spec.md` and `plan.md` retention text. No task is ticked; the backup gates BR-01/BR-02/BR-04 and FN-03 stay Open.
