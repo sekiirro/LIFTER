@@ -1,6 +1,6 @@
 # Traceability: F24 Client Leaderboard
 
-Evidence recorded from PR #110 (exact-head CI green at `6c31a261`) and T030 design-gate validation in `tests/e2e/leaderboard-screenshots.spec.ts`. `VERIFIED (CI)` means every mapped task is ticked in tasks.md with passing test evidence. T011 and T015 are verified now that the F22 client dashboard is on main (once-only notice on `app/(client)/plans/page.tsx`). T001 and T035 are cancelled (S56-PO-4).
+Evidence recorded from PR #110 (exact-head CI green at `6c31a261`) and T030 design-gate validation in `tests/e2e/leaderboard-screenshots.spec.ts` (8 tests, 72 captures across client Top 5 available/empty/error, client account settings, staff Top 5 / PO review available/empty/error, staff client goals; 0 axe WCAG 2.2 AA violations). `VERIFIED (CI)` means every mapped task is ticked in tasks.md with passing test evidence. T011 and T015 are verified now that the F22 client dashboard is on main (once-only notice on `app/(client)/plans/page.tsx`). T001 and T035 are cancelled (S56-PO-4).
 
 | Requirement   | Planned tasks                            | Evidence status |
 | ------------- | ---------------------------------------- | --------------- |

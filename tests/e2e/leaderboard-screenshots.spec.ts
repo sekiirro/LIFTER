@@ -19,6 +19,7 @@ import {
   type LeaderboardClient,
   type LeaderboardContext,
 } from '../integration/leaderboard-fixture';
+import { sql } from '../integration/harness';
 import {
   installLeaderboardSession,
   leaderboardOrigin as origin,
@@ -200,6 +201,49 @@ test.describe.serial('F24 leaderboard design-gate screenshots', () => {
     });
   });
 
+  test('client Top 5 error state', async ({ page }) => {
+    test.setTimeout(240_000);
+    const db = sql();
+    try {
+      await db`revoke execute on function public.client_leaderboard_read() from authenticated`;
+      await db`revoke execute on function public.client_leaderboard_my_rank() from authenticated`;
+      await forEachVariant(page, listed[0]!, async (variant) => {
+        const m = getMessages(variant.locale);
+        await page.goto('/leaderboard');
+        await expect(page).toHaveURL(/\/progress#leaderboard$/u);
+        const section = page.locator('#leaderboard');
+        await expect(
+          section.getByRole('heading', {
+            level: 2,
+            name: m['leaderboard.title'],
+          }),
+        ).toBeVisible();
+
+        // Approved error copy and role="alert" (components/leaderboard/ClientLeaderboardSection.tsx)
+        const alert = section.getByRole('alert');
+        await expect(alert).toBeVisible();
+        await expect(alert).toHaveText(m['states.error.description']);
+
+        // No leaked data
+        await expect(section).not.toContainText(/score|adherence|progress/iu);
+        await expect(
+          section.getByText(m['leaderboard.yourRank']),
+        ).not.toBeVisible();
+        for (const client of listed) {
+          await expect(
+            section.getByText(client.username, { exact: true }),
+          ).not.toBeVisible();
+        }
+
+        await capture(page, 'client-progress-error', variant);
+      });
+    } finally {
+      await db`grant execute on function public.client_leaderboard_read() to authenticated`;
+      await db`grant execute on function public.client_leaderboard_my_rank() to authenticated`;
+      await db.end();
+    }
+  });
+
   test('client account settings (username and participation)', async ({
     page,
   }) => {
@@ -312,6 +356,54 @@ test.describe.serial('F24 leaderboard design-gate screenshots', () => {
       await expect(generateBtn).toBeFocused();
       await capture(page, 'po-review-empty', variant);
     });
+  });
+
+  test('staff workspace leaderboard error state', async ({ page }) => {
+    test.setTimeout(300_000);
+    const db = sql();
+    const query = `?workspace=${encodeURIComponent(f.wsA.id)}`;
+    try {
+      await db`revoke execute on function public.workspace_leaderboard_read(uuid) from authenticated`;
+      await forEachVariant(page, f.po.client, async (variant) => {
+        const m = getMessages(variant.locale);
+        await page.goto(`/workspace-leaderboard${query}`);
+
+        // Error boundary (components/leaderboard/LeaderboardError.tsx using ErrorState)
+        const main = page.locator('main');
+        const alert = main.getByRole('alert');
+        await expect(alert).toBeVisible();
+        await expect(
+          alert.getByRole('heading', {
+            level: 3,
+            name: m['states.error.title'],
+          }),
+        ).toBeVisible();
+        await expect(
+          alert.getByText(m['states.error.description'], { exact: true }),
+        ).toBeVisible();
+
+        // Focus and keyboard reachability of retry control
+        const retryBtn = alert.getByRole('button', {
+          name: m['states.retry'],
+        });
+        await expect(retryBtn).toBeVisible();
+        await retryBtn.focus();
+        await expect(retryBtn).toBeFocused();
+
+        // No leaked data
+        await expect(main).not.toContainText(/score|adherence|progress/iu);
+        for (const client of listed) {
+          await expect(
+            page.getByText(client.username, { exact: true }),
+          ).not.toBeVisible();
+        }
+
+        await capture(page, 'staff-leaderboard-error', variant);
+      });
+    } finally {
+      await db`grant execute on function public.workspace_leaderboard_read(uuid) to authenticated`;
+      await db.end();
+    }
   });
 
   test('staff Client Details Goals section (PO 2026-11-14)', async ({
