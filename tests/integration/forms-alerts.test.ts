@@ -80,7 +80,7 @@ async function core(
   return row!.result as { status: string; enqueued?: number };
 }
 
-it('notifies only PO and WO at the client deadline, regardless of Trainer assignment', async () => {
+it('notifies the current responsible Trainer and PO/WO once at the client deadline', async () => {
   const f = await clientContext();
   const client = await registered(f);
   await expect(
@@ -93,7 +93,12 @@ it('notifies only PO and WO at the client deadline, regardless of Trainer assign
         deadline,
         f.po.userId,
       );
-      await tx`update app_private.form_alert_schedules set trainer_user_id=${f.trainerA.userId}
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+      ) select ${f.wsA.id},${client.id},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+        from public.workspace_memberships m
+        where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+      await tx`update app_private.form_alert_schedules set trainer_user_id=${f.trainerB.userId}
       where workspace_id=${f.wsA.id} and source_assignment_id=${assignment} and alert_kind='client_late'`;
       expect(await core(tx, f.wsA.id, '2026-02-01T09:59:59.999Z')).toEqual({
         status: 'ok',
@@ -101,20 +106,28 @@ it('notifies only PO and WO at the client deadline, regardless of Trainer assign
       });
       expect(await core(tx, f.wsA.id, deadline)).toEqual({
         status: 'ok',
-        enqueued: 2,
+        enqueued: 3,
+      });
+      expect(await core(tx, f.wsA.id, deadline)).toEqual({
+        status: 'ok',
+        enqueued: 0,
       });
       const rows = await tx`select o.stage,o.recipient_user_id,j.kind,j.payload
       from app_private.form_alert_occurrences o join public.jobs j on j.id=o.job_id
       where o.workspace_id=${f.wsA.id} order by o.recipient_user_id`;
-      expect(rows).toHaveLength(2);
+      expect(rows).toHaveLength(3);
       expect(rows.map((row) => row.recipient_user_id).sort()).toEqual(
-        [f.po.userId, f.woA.userId].sort(),
+        [f.po.userId, f.woA.userId, f.trainerA.userId].sort(),
       );
+      expect(
+        rows.find((row) => row.recipient_user_id === f.trainerA.userId)?.stage,
+      ).toBe('client_trainer_24h');
       expect(
         rows.every(
           (row) =>
-            row.stage === 'client_owners_immediate' &&
-            row.kind === 'forms.alert',
+            ['client_owners_immediate', 'client_trainer_24h'].includes(
+              row.stage,
+            ) && row.kind === 'forms.alert',
         ),
       ).toBe(true);
       expect(
@@ -815,11 +828,9 @@ it('mutation: removing legacy owner-stage suppression is caught', async () => {
   );
 });
 
-// 011 T053 / FR-024 / SC-017: the client-late Trainer alert is deferred. Release
-// code must emit zero Trainer alert rows and zero Trainer notifications when a
-// client submission deadline passes without an accepted submission, both when a
-// responsible Trainer is assigned to the client and when none is assigned.
-it('011 T053 / SC-017 (FR-024): passed client deadline emits zero Trainer alert rows or notifications, with and without an assigned Trainer', async () => {
+// S70-PO-1 item 5 unblocks T057/T104. Resolve the responsible Trainer from the
+// active F11 assignment at evaluation time; unassigned clients have no recipient.
+it('S70-PO-1 item 5 routes client-late alerts only to the current responsible Trainer', async () => {
   const f = await clientContext();
   const client = await registered(f);
   await expect(
@@ -838,9 +849,14 @@ it('011 T053 / SC-017 (FR-024): passed client deadline emits zero Trainer alert 
         '2026-06-02T10:00:00.000Z',
         f.po.userId,
       );
-      // Assigned-Trainer case: a responsible Trainer is set on the client-late
-      // schedule. Unassigned case: it is explicitly null.
-      await tx`update app_private.form_alert_schedules set trainer_user_id=${f.trainerA.userId}
+      // The legacy schedule field intentionally points elsewhere; only the
+      // current F11 assignment determines the Trainer recipient.
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+      ) select ${f.wsA.id},${client.id},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+        from public.workspace_memberships m
+        where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+      await tx`update app_private.form_alert_schedules set trainer_user_id=${f.trainerB.userId}
         where workspace_id=${f.wsA.id} and source_assignment_id=${withTrainer} and alert_kind='client_late'`;
       await tx`update app_private.form_alert_schedules set trainer_user_id=null
         where workspace_id=${f.wsA.id} and source_assignment_id=${withoutTrainer} and alert_kind='client_late'`;
@@ -852,11 +868,10 @@ it('011 T053 / SC-017 (FR-024): passed client deadline emits zero Trainer alert 
           and assignment_id in (${withTrainer}::uuid,${withoutTrainer}::uuid)`;
       expect(submissions?.n).toBe(0);
 
-      // Evaluate after both deadlines (and after a 24h Trainer stage would have
-      // fired had the deferred alert been enabled).
+      // Evaluate after both configured submission deadlines.
       expect(await core(tx, f.wsA.id, '2026-06-03T12:00:00.000Z')).toEqual({
         status: 'ok',
-        enqueued: 4,
+        enqueued: 5,
       });
 
       // Sanity: the only notices are the PO/WO client-owners-immediate stages.
@@ -867,7 +882,7 @@ it('011 T053 / SC-017 (FR-024): passed client deadline emits zero Trainer alert 
             select id from app_private.form_alert_schedules
             where workspace_id=${f.wsA.id}
               and source_assignment_id in (${withTrainer}::uuid,${withoutTrainer}::uuid)
-          )`;
+          ) and o.stage='client_owners_immediate'`;
       expect(ownerOccurrences).toHaveLength(4);
       expect(
         ownerOccurrences.every(
@@ -878,33 +893,37 @@ it('011 T053 / SC-017 (FR-024): passed client deadline emits zero Trainer alert 
         ownerOccurrences.map((row) => row.recipient_user_id).sort(),
       ).toEqual([f.po.userId, f.woA.userId, f.po.userId, f.woA.userId].sort());
 
-      // SC-017: zero Trainer alert rows and zero Trainer notifications, in both
-      // the assigned and the unassigned Trainer case.
+      // Exactly one Trainer row for the assigned client; none for the unassigned
+      // client or a different Trainer. Owner notices remain unchanged.
       const trainerIds = [f.trainerA.userId, f.trainerB.userId];
       const [trainerOccurrences] = await tx`select count(*)::int as n
         from app_private.form_alert_occurrences
         where workspace_id=${f.wsA.id}
           and recipient_user_id=any(${trainerIds}::uuid[])`;
-      expect(trainerOccurrences?.n).toBe(0);
+      expect(trainerOccurrences?.n).toBe(1);
       const [trainerStageRows] = await tx`select count(*)::int as n
         from app_private.form_alert_occurrences
         where workspace_id=${f.wsA.id} and stage='client_trainer_24h'`;
-      expect(trainerStageRows?.n).toBe(0);
+      expect(trainerStageRows?.n).toBe(1);
       const [trainerDeliveries] = await tx`select count(*)::int as n
         from app_private.form_alert_deliveries
         where workspace_id=${f.wsA.id}
           and recipient_user_id=any(${trainerIds}::uuid[])`;
-      expect(trainerDeliveries?.n).toBe(0);
+      expect(trainerDeliveries?.n).toBe(1);
       const [trainerInbox] = await tx`select count(*)::int as n
         from app_private.form_alert_inbox
         where workspace_id=${f.wsA.id}
           and recipient_user_id=any(${trainerIds}::uuid[])`;
-      expect(trainerInbox?.n).toBe(0);
+      expect(trainerInbox?.n).toBe(1);
       const [trainerJobs] = await tx`select count(*)::int as n
         from public.jobs
         where kind='forms.alert'
           and payload->>'recipient_id'=any(${trainerIds}::text[])`;
-      expect(trainerJobs?.n).toBe(0);
+      expect(trainerJobs?.n).toBe(1);
+      const [otherTrainer] = await tx`select count(*)::int as n
+        from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and recipient_user_id=${f.trainerB.userId}`;
+      expect(otherTrainer?.n).toBe(0);
       throw rollback;
     }),
   ).rejects.toBe(rollback);
