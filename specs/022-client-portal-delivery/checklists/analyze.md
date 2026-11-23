@@ -1,6 +1,6 @@
 # Analyze: Client Portal Delivery
 
-**Date**: 2026-11-17 (Round 5 re-check after the contract addition and tasks.md status edits below; the 2026-11-15 full Analyze of the S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12 and S57-PO-13 changes still holds)
+**Date**: 2026-11-23 (Round 8 re-check after S70-PO-2 changed FR-011, directory copy, contract and tasks; prior analyses remain historical)
 **Inputs**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, `copy-proposal.md`, PO S56-PO-4, S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12, S57-PO-13
 
 ## Changes analyzed
@@ -26,21 +26,21 @@ Resolved during this Analyze: the quickstart flag scenario and migration stateme
 
 ## Coverage Summary
 
-| Requirement Key | Has Task? | Task IDs                                               | Notes                                                                      |
-| --------------- | --------- | ------------------------------------------------------ | -------------------------------------------------------------------------- |
-| FR-001          | Yes       | T003, T006-T011                                        | Independent F19 delivery and idempotency                                   |
-| FR-002          | Yes       | T003, T006-T008, T011                                  | Exactly-once activation                                                    |
-| FR-003          | Yes       | T003, T006-T008, T011                                  | One new-client unit, normal or override (S57-PO-11)                        |
-| FR-004          | Yes       | T003, T012-T018                                        | Client plan projection and revision choice; F17/F18 views (S57-PO-9)       |
-| FR-005          | Yes       | T003, T012-T016, T035                                  | Status labels, full-refund rule and last covered day (S57-PO-5, S57-PO-12) |
-| FR-006          | Yes       | T003, T013-T015, T018, T023-T027                       | Entitlement for reads and exports                                          |
-| FR-007          | Yes       | T003, T013-T015, T018                                  | Fresh lifecycle authorization                                              |
-| FR-008          | Yes       | T003, T023-T029                                        | Selected-revision exports                                                  |
-| FR-009          | Yes       | T003, T019-T022                                        | F15 inbox client-recipient extension and F19 hook (S57-PO-10)              |
-| FR-010          | Yes       | T003-T004, T013-T014, T018, T023-T027, T032-T033, T038 | Identity, privacy and workspace boundaries                                 |
-| FR-011          | Yes       | T003-T004, T030-T038                                   | Approved directory fields, filters and indicators                          |
-| FR-012          | Yes       | T003, T023-T027, T042                                  | Client exports remain per-plan; comprehensive export remains PO-only       |
-| FR-013          | Yes       | T003, T042                                             | No YBS access, migration or synchronization                                |
+| Requirement Key | Has Task? | Task IDs                                               | Notes                                                                       |
+| --------------- | --------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| FR-001          | Yes       | T003, T006-T011                                        | Independent F19 delivery and idempotency                                    |
+| FR-002          | Yes       | T003, T006-T008, T011                                  | Exactly-once activation                                                     |
+| FR-003          | Yes       | T003, T006-T008, T011                                  | One new-client unit, normal or override (S57-PO-11)                         |
+| FR-004          | Yes       | T003, T012-T018                                        | Client plan projection and revision choice; F17/F18 views (S57-PO-9)        |
+| FR-005          | Yes       | T003, T012-T016, T035                                  | Status labels, full-refund rule and last covered day (S57-PO-5, S57-PO-12)  |
+| FR-006          | Yes       | T003, T013-T015, T018, T023-T027                       | Entitlement for reads and exports                                           |
+| FR-007          | Yes       | T003, T013-T015, T018                                  | Fresh lifecycle authorization                                               |
+| FR-008          | Yes       | T003, T023-T029                                        | Selected-revision exports                                                   |
+| FR-009          | Yes       | T003, T019-T022                                        | F15 inbox client-recipient extension and F19 hook (S57-PO-10)               |
+| FR-010          | Yes       | T003-T004, T013-T014, T018, T023-T027, T032-T033, T038 | Identity, privacy and workspace boundaries                                  |
+| FR-011          | Yes       | T003-T004, T030-T038, T044-T045                        | Approved directory fields, role visibility, username and client-code search |
+| FR-012          | Yes       | T003, T023-T027, T042                                  | Client exports remain per-plan; comprehensive export remains PO-only        |
+| FR-013          | Yes       | T003, T042                                             | No YBS access, migration or synchronization                                 |
 
 Success criteria SC-001 to SC-010 remain mapped through their FRs. SC-003 now matches FR-003, and SC-006 matches the FR-004/FR-005 restricted projection.
 
@@ -87,3 +87,9 @@ Scope: PO/WO-only assignment-state and client-code visibility; Trainer denial; m
 Server/database review: current `staff_client_directory` enforces its F11 Platform Owner/Workspace Owner predicate for both assignment and exact code matching/output; the existing Trainer tests assert ignored assignment filters, absent assignment/code keys, and no code match. Application service repeats the owner predicate and removes restricted row fields. The RLS catalog has no `staff_client_directory` entry and needs one. No finding in scope on data mutation or money math. Acceptance remains blocked on F22-S70-1; no UI copy is inferred.
 
 Critical 0, High 0.
+
+## Round 8 re-audit for S70-PO-2 (2026-11-23)
+
+S70-PO-2 (verbatim source SHA-256 `AC5DEE4F353FDE79B58B43DE2DD13B4343F6C36754969F995CD4748556D8AA0E`) resolves the Round 7 F22-S70-1 copy gap and clarifies that username search is available to every staff role within existing row visibility. `spec.md`, `copy-proposal.md`, the staff directory contract, plan, and tasks now record the same role boundary and exact strings. T044/T045 cover RED-first RPC tests, rendered owner-only filter/code, and the role-specific placeholder test.
+
+Re-analysis findings: no cross-artifact contradiction, new role/data rule, or missing task/test trace was found. The old F22-S70-1 HIGH finding is resolved by the recorded PO decision and updated artifacts; its code-search disclosure is addressed by the trainer/non-owner placeholder and the unchanged PO/WO database/application wall. Existing T036/T037 owner gaps are unchanged and remain separately tracked. No open CRITICAL or HIGH findings. No open ambiguities for this directory slice.
