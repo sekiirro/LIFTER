@@ -1,13 +1,13 @@
 # Spec Kit Analyze — F26 Retention Purge Entry Point (DP-08)
 
-**Analysis date**: 2026-11-24T02:54:10Z (re-run after the architect mapping S70-R47 requirement-text correction to the Q1 hold mapping; dated after spec.md, plan.md and tasks.md).
+**Analysis date**: 2026-11-24T08:59:30Z (re-run after architect mapping S70-R76 clarified the T012 non-audit apply design; dated after spec.md, plan.md and tasks.md).
 **Inputs**: `spec.md`, `plan.md`, `tasks.md`; authority addenda `S70-PO-10` (Q1–Q4 resolved) and architect mapping `S70-R47` (CHANGES REQUESTED — Q1 state mapping corrected).
 **Scope**: Spec-only. No code, SQL, migration, scheduler activation, hosted change, or task tick.
 **Authority**: S70-PO-1 item 3 (SHA-256 `D8E0EAF354F3923630BA38CD258EDD8E94DD63B86D9345405D40A520A790F20E`), S70-PO-3, S70-PO-4, S70-PO-5 (SHA-256 `FBE1F9186AD1B853890617EF4AAFCDE967C81C2518C466744EB1250C2697C957`), S70-PO-10 (`s70-po-10.verbatim.txt`, 2026-11-24T01:33:12Z), architect mapping S70-R47, docs/13 DP-01/02/06/08 and OP-01, BR-01/BR-02/BR-04, FN-03, docs/04 S70 entries and D-10.
 
 ## Verdict
 
-Within the decided scope: **0 open CRITICAL, 0 open HIGH**. The 30-day value, both clock starts, the open-refund/dispute hold and restart, the disabled scheduler, the open backup gate, D-10 authorization, RLS, idempotency, dry-run/evidence and mutation evidence are all encoded in numbered FRs, measurable SCs and Given/When/Then scenarios. The four implementation-facing questions are **resolved by S70-PO-10** (all recommended options). Architect mapping **S70-R47** corrects only the persisted-state mapping for Q1 (refund hold scoped to the Auth-lockout outbox); it makes no new PO decision and does not reopen any decided retention rule. The concrete refund OPEN/RESOLVED value, the Q4 invoice-data object tables, the Q2 anonymize-vs-delete treatment and the Q3 audited SECURITY DEFINER audit path are encoded with file:line citations in spec.md, plan.md and the tasks. No PO-decision placeholder marker remains. No question is guessed. No user-visible copy is added. The spec-only gate is satisfied; implementation requires its own later approval.
+Within the decided scope: **0 open CRITICAL, 0 open HIGH**. The 30-day value, both clock starts, the refund hold and restart, the disabled scheduler, the open backup gate, D-10 authorization, RLS, idempotency, dry-run/evidence and mutation evidence remain aligned across FRs, SCs and scenarios. S70-PO-10 Q1-Q4 and S70-R47 remain unchanged. Architect mapping **S70-R76** adds the T012 apply-mode design: four Q4 evidence tables remain pseudonymized, other client descendants are proposed for physical deletion, T012 leaves audit events unchanged, and T014 remains audit-only. The design preserves ledger amounts/currencies/dates, severs foreign keys to deleted non-evidence parents, and scopes trigger exemptions to one postgres-owned apply path. Two product questions are recorded as MCQ-026-3 and MCQ-026-4 in the lane report; the affected design choices are provisional. They block implementation until resolved but do not alter FR/SC wording. No answer is guessed and no user-visible copy is added.
 
 ## Re-Analyze trigger
 
@@ -20,6 +20,15 @@ Requirement text changed: architect ruling **S70-R61** resolves the FR-007 datab
 - T006 covers Platform Owner allow, non-PO and null-identity denial, wrapper function metadata/ACLs, and a guard-removal mutation. T013 supplies only the wrapper migration and catalog evidence.
 - Cross-reference review: FR-007/FR-010 ↔ SC-003 ↔ T006/T013/T016 remain aligned; T002/T003/T009/T010 are unchanged.
 - Findings: 0 open CRITICAL, 0 open HIGH; no ambiguity or additional PO decision.
+
+## S70-R76 design re-analysis
+
+- No FR, SC, acceptance scenario, task scope, or PO authority text changed. This pass checks the technical design detail in plan.md against S70-PO-10 Q2/Q4 and architect mapping S70-R76.
+- T012 owns non-audit apply mutations; T014 remains the only audit-event pseudonymization task. The table matrix covers the recursive Stack E FK closure, exact action class, direct `refund_operations.client_id = NULL` replacement, retained ledger columns, and FK edges to remove before parent deletion.
+- The FK ordering is child-first; retained financial evidence keeps its internal ledger references and amount/currency/date facts. The counts-only run record and stable-run replay omit client identifiers and row IDs.
+- Trigger handling uses no disabled trigger or global bypass. The plan scopes exceptions to the postgres-owned SECURITY DEFINER path and allowlisted operation/table/run context; `public.audit_events` remains outside T012.
+- MCQ-026-3 (whether opaque workspace/UUID links are sufficient anonymization) and MCQ-026-4 (whether active form legal holds survive or block purge) are recorded in the lane report. The plan marks the form-hold action provisional. These do not reopen S70-PO-10 decisions; implementation is blocked pending the answers/design approval.
+- Findings: 0 open CRITICAL, 0 open HIGH; 2 PO decisions remain open in the report. No behavior is implemented or task ticked.
 
 Requirement text changed: architect review **S70-R47 = CHANGES REQUESTED (1 BLOCKING, data-loss/spec correctness)** required removing `public.subscriptions.status` from the refund hold, scoping any `public.jobs` row strictly to the refund lockout, and recording that no persisted dispute object exists. FR-004, Story 2 scenario 1, SC-002, the Clarifications Q1 row, plan.md (`Design` and `Hold and restart` slice) and tasks T004/T011 were updated accordingly, all labelled as architect mapping S70-R47. Analyze was re-run per S54-R6 / Spec Kit gate core §2. This analysis supersedes the 2026-11-24T02:02:54Z record.
 
@@ -75,20 +84,20 @@ Requirement text changed: architect review **S70-R47 = CHANGES REQUESTED (1 BLOC
 
 ## Findings
 
-| Severity    | Open count | Findings                                                                                               |
-| ----------- | ---------- | ------------------------------------------------------------------------------------------------------ |
-| CRITICAL    | 0          | None. S70-R47 BLOCKING data-loss/spec-correctness finding resolved in this round.                      |
-| HIGH        | 0          | None.                                                                                                  |
-| MEDIUM      | 0          | None.                                                                                                  |
-| LOW         | 0          | None.                                                                                                  |
-| PO decision | 0          | Q1–Q4 all resolved by S70-PO-10; S70-R47 is an architect mapping; no marker remains; no guess encoded. |
+| Severity    | Open count | Findings                                                                                          |
+| ----------- | ---------- | ------------------------------------------------------------------------------------------------- |
+| CRITICAL    | 0          | None. S70-R47 BLOCKING data-loss/spec-correctness finding resolved in this round.                 |
+| HIGH        | 0          | None.                                                                                             |
+| MEDIUM      | 0          | None.                                                                                             |
+| LOW         | 0          | None.                                                                                             |
+| PO decision | 2          | MCQ-026-3 and MCQ-026-4 are recorded in the lane report; neither is answered by this design pass. |
 
 ## Metrics
 
 - Total requirements: 22 (12 FR + 10 SC). Total tasks: 16.
 - Coverage % (requirements with ≥1 task): 100%.
-- Ambiguity count: 0. Duplication count: 0. Critical issues count: 0.
+- Ambiguity count: 2 recorded PO decisions. Duplication count: 0. Critical issues count: 0.
 
 ## Next actions
 
-No CRITICAL/HIGH/MEDIUM/LOW findings. The S70-R47 blocking correction is encoded consistently across spec.md, plan.md, tasks.md and this record. This spec-only PR is ready for its format/secrets gates and exact-head CI; implementation remains a separate later lane with its own RED-first commits, mutation evidence and task ticks. No remediation edits required.
+No CRITICAL/HIGH/MEDIUM/LOW findings. The S70-R47 correction and S70-R76 design are recorded across the feature artifacts. PR review may approve the design while MCQ-026-3 and MCQ-026-4 remain explicitly open; implementation remains blocked until their answers/design approval, followed by RED-first commits, mutation evidence and task ticks.
