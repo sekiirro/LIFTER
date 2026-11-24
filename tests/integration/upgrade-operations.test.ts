@@ -2222,7 +2222,7 @@ it('T045 keeps the upgrade refund source guard and SECURITY DEFINER boundary int
     select count(*)::int as count from pg_constraint
     where conrelid='public.refund_allocation_events'::regclass
       and conname in ('f13_refund_allocation_source_xor','f13_refund_allocation_upgrade_source')`;
-  expect(sourceGuard).toEqual({ count: 2 });
+  expect(sourceGuard).toEqual({ count: 1 });
 });
 
 it('F13 forward replacements keep SECURITY DEFINER, search_path, and execute grants pinned', async () => {

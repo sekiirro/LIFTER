@@ -529,7 +529,9 @@ describe('tenancy security catalog (T007)', () => {
           'purge_ended_form_answers',
           'purge_ended_form_answers_at',
           'purge_f11_retained_data',
+          'purge_retention_apply',
           'purge_retention_candidates',
+          'retention_purge_context_allows',
           'purge_operation_keys',
           'reconcile_f15_form_assignment',
           'record_f15_retention_fact',
@@ -638,6 +640,7 @@ describe('tenancy security catalog (T007)', () => {
         'operation_key_fields_immutable',
         'purge_retention_candidates',
         'purge_f11_retained_data',
+        'purge_retention_apply',
         'purge_schedule_activate',
         'purge_schedule_deactivate',
         'recovery_link_limits',
@@ -691,7 +694,9 @@ describe('tenancy security catalog (T007)', () => {
             ? 'branding_definer'
             : 'postgres'),
       );
-      expect(row.anon_execute).toBe(false);
+      expect(row.anon_execute, row.proname).toBe(
+        row.proname === 'retention_purge_context_allows',
+      );
       if (
         [
           'signup_auth_identity_column',
@@ -807,6 +812,7 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.authenticated_execute, row.proname).toBe(
         [
           ...privateAuthenticated,
+          'retention_purge_context_allows',
           'branding_upload_begin',
           'branding_upload_terminalize',
           'branding_draft_save',
@@ -965,6 +971,7 @@ describe('tenancy security catalog (T007)', () => {
               'operation_key_retention_days',
               'purge_f11_retained_data',
               'purge_operation_keys',
+              'purge_retention_apply',
               'recovery_link_guard',
               'recovery_link_limits',
               'recovery_target_workspace',
@@ -1110,6 +1117,57 @@ describe('F26 retention eligibility security catalog', () => {
       authenticated_execute: false,
       service_role_execute: false,
     });
+  });
+
+  it('keeps apply evidence private and exposes one PO-only wrapper', async () => {
+    const [wrapper] = await db`
+      select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role_execute
+      from pg_catalog.pg_proc p
+      where p.oid='app_private.purge_retention_for_platform_owner(uuid,text)'::regprocedure
+    `;
+    expect(wrapper).toMatchObject({
+      prosecdef: true,
+      proconfig: ['search_path=""'],
+      owner: 'postgres',
+      authenticated_execute: true,
+      anon_execute: false,
+      service_role_execute: false,
+    });
+
+    const [internal] = await db`
+      select p.prosecdef,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role_execute
+      from pg_catalog.pg_proc p
+      where p.oid='app_private.purge_retention_apply(uuid,text)'::regprocedure
+    `;
+    expect(internal).toMatchObject({
+      prosecdef: false,
+      owner: 'postgres',
+      authenticated_execute: false,
+      service_role_execute: false,
+    });
+
+    for (const relation of [
+      'app_private.retention_purge_runs',
+      'app_private.retention_purge_allowlist',
+    ]) {
+      const [table] = await db`
+        select c.relrowsecurity,c.relforcerowsecurity,
+          has_table_privilege('authenticated',c.oid,'SELECT') as authenticated_select,
+          has_table_privilege('service_role',c.oid,'SELECT') as service_role_select
+        from pg_catalog.pg_class c where c.oid=${relation}::regclass
+      `;
+      expect(table).toMatchObject({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+        authenticated_select: false,
+        service_role_select: false,
+      });
+    }
   });
 });
 
@@ -2247,6 +2305,11 @@ describe('F19 T021 activation catalog', () => {
         proname: 'f19_guard_productivity_unit',
       },
     ]);
+    const productivityGuard = await db`select pg_get_functiondef(
+      'app_private.f19_guard_productivity_unit()'::regprocedure) as definition`;
+    expect(productivityGuard[0]!.definition).toContain(
+      'retention_purge_context_allows',
+    );
     const activationTriggers =
       await db`select tgname, tgtype::int as type, p.proname
       from pg_trigger t join pg_proc p on p.oid=t.tgfoid
@@ -2299,6 +2362,11 @@ describe('F13 T044a Sales productivity catalog', () => {
         proname: 'f13_guard_sales_productivity_unit',
       },
     ]);
+    const salesGuard = await db`select pg_get_functiondef(
+      'app_private.f13_guard_sales_productivity_unit()'::regprocedure) as definition`;
+    expect(salesGuard[0]!.definition).toContain(
+      'retention_purge_context_allows',
+    );
     const issuerTriggers =
       await db`select tgname, tgtype::int as type, p.proname
       from pg_trigger t join pg_proc p on p.oid=t.tgfoid

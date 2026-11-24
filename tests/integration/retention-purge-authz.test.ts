@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
 import type { TransactionSql } from 'postgres';
 import { clientContext, graph, sql } from './registration-approval-fixture';
@@ -16,8 +16,9 @@ async function callAs(actorId: string | null, role: ApiRole = 'authenticated') {
       const claims = actorId ? { sub: actorId, role } : { role };
       await tx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
       await tx.unsafe(`set local role ${role}`);
-      const [row] =
-        await tx`select app_private.purge_retention_for_platform_owner() as value`;
+      const [row] = await tx`
+        select app_private.purge_retention_for_platform_owner(${randomUUID()},'dry_run') as value
+      `;
       result = row!.value;
       throw rollback;
     });
@@ -75,7 +76,7 @@ it('T006 authorizes the Platform Owner at the database boundary only', async () 
       has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
       has_function_privilege('service_role',p.oid,'EXECUTE') as service_role_execute
     from pg_catalog.pg_proc p
-    where p.oid='app_private.purge_retention_for_platform_owner()'::regprocedure
+      where p.oid='app_private.purge_retention_for_platform_owner(uuid,text)'::regprocedure
   `;
   expect(catalog).toMatchObject({
     prosecdef: true,
@@ -86,7 +87,7 @@ it('T006 authorizes the Platform Owner at the database boundary only', async () 
     service_role_execute: false,
   });
 
-  expect(await callAs(f.po.userId)).toHaveProperty('eligible_by_class');
+  expect(await callAs(f.po.userId)).toMatchObject({ status: 'dry_run' });
   for (const actorId of [
     f.trainerA.userId,
     f.salesA.userId,
@@ -101,7 +102,7 @@ it('T006 authorizes the Platform Owner at the database boundary only', async () 
     code: '42501',
   });
 
-  const signature = 'app_private.purge_retention_for_platform_owner()';
+  const signature = 'app_private.purge_retention_for_platform_owner(uuid,text)';
   const control =
     'if auth.uid() is null or not app_private.is_platform_owner() then';
   const [beforeMutation] = await db`
@@ -116,12 +117,13 @@ it('T006 authorizes the Platform Owner at the database boundary only', async () 
     'if auth.uid() is null then',
     f.trainerA.userId,
     async (tx) => {
-      const [row] =
-        await tx`select app_private.purge_retention_for_platform_owner() as value`;
-      return row!.value as { eligible_by_class: Record<string, number> };
+      const [row] = await tx`
+        select app_private.purge_retention_for_platform_owner(${randomUUID()},'dry_run') as value
+      `;
+      return row!.value as { status: string };
     },
-  )) as { eligible_by_class: Record<string, number> };
-  expect(leaked).toHaveProperty('eligible_by_class');
+  )) as { status: string };
+  expect(leaked).toMatchObject({ status: 'dry_run' });
   const [afterMutation] = await db`
     select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition
   `;

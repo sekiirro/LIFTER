@@ -1466,8 +1466,8 @@ describe('T065 dependent-category refusals (nothing is written)', () => {
     ],
     [
       'a payment event',
-      'public.payment_events.obligation_id',
-      'payment',
+      'public.subscription_renewals.package_version_id',
+      'subscription',
       `insert into public.subscription_renewals(id,workspace_id,client_id,predecessor_subscription_id,subscription_id,package_offer_id,package_version_id,expected_revision,recording_date,service_start_date,service_end_exclusive,recorded_by)
          values ('${REN_ID}','@ws',gen_random_uuid(),'${SUB_ID}','${SUB_ID}','@offer','@ver',0,date '2026-01-01',date '2026-01-01',date '2026-03-01','@po');
        insert into public.subscription_installments(id,workspace_id,subscription_id,seq,amount_minor,currency,issued_day_offset,source_kind,due_on,renewal_id,renewal_commission_rate_bp)

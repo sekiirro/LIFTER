@@ -133,5 +133,5 @@ it('T008 composite tenant and same-parent foreign keys are installed', async () 
         r.child === 'payment_events' &&
         r.definition.includes('workspace_id, subscription_id, obligation_id'),
     ),
-  ).toHaveLength(4);
+  ).toHaveLength(2);
 });
