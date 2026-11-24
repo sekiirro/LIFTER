@@ -17,6 +17,27 @@ export function isEligibleStaffRole(role: unknown): boolean {
   );
 }
 
+function isLoopbackHttpUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'http:' &&
+      ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Staff recovery may contact Auth only in a local test environment. */
+export function isLocalStaffResetEnvironment(
+  supabaseUrl: string | undefined,
+  appOrigin: string | undefined,
+): boolean {
+  return isLoopbackHttpUrl(supabaseUrl) && isLoopbackHttpUrl(appOrigin);
+}
+
 export function buildStaffResetRedirectTo(
   appOrigin: string | undefined,
   untrusted?: { next?: unknown; query?: unknown; headers?: unknown },
