@@ -26,9 +26,11 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
   () => {
     it('uses closure for client and invoice records, creation for audit, and never selects an active account', async () => {
       const f = await clientContext();
+      const other = await clientContext();
       await expect(
         db.begin(async (tx) => {
           const ids = await graph(tx, f);
+          const otherIds = await graph(tx, other);
           const sampledAt = new Date();
           const days = 24 * 60 * 60 * 1000;
           const refundResult = await refund(tx, f.po.userId, {
@@ -59,6 +61,8 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
               ${f.po.userId},'2026-11-24'::date,${sampledAt}
             ) returning id
           `;
+          await tx`update public.clients set deactivated_at=${new Date(sampledAt.getTime() - 29 * days)},
+            deactivation_reason='closure' where workspace_id=${other.wsA.id} and id=${otherIds.client}`;
           await tx`
             insert into public.audit_events(
               actor_user_id,action,target_table,target_id,workspace_id,details,occurred_at
@@ -156,6 +160,13 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
               .filter((row) => row.data_class !== 'audit_event')
               .every((row) => row.client_id === ids.client),
           ).toBe(true);
+          expect(
+            eligible.some(
+              (row) =>
+                row.workspace_id === other.wsA.id ||
+                row.client_id === otherIds.client,
+            ),
+          ).toBe(false);
           const [entrypoint] = await tx`
             select app_private.purge_f11_retained_data() as value
           `;
