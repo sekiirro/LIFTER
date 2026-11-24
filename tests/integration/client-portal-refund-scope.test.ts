@@ -71,6 +71,7 @@ it('marks a partial refund partial and a full refund full, with no scope before 
     expect(await summary(tx, f, ids.client)).toEqual({
       status: 'refunded',
       effective_end_exclusive: null,
+      overdue: false,
       refund_scope: 'partial',
     });
     expect(await refundedFilter(tx, f)).not.toContain(ids.client);
@@ -79,6 +80,7 @@ it('marks a partial refund partial and a full refund full, with no scope before 
     expect(await summary(tx, f, ids.client)).toEqual({
       status: 'refunded',
       effective_end_exclusive: null,
+      overdue: false,
       refund_scope: 'full',
     });
     expect(await refundedFilter(tx, f)).toContain(ids.client);

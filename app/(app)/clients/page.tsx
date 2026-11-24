@@ -7,6 +7,8 @@ import { roleHasCapability } from '../../../lib/auth/capabilities';
 import {
   APPROVAL_STATES,
   canReadDirectory,
+  canUseAssignment,
+  directorySearchPlaceholderKey,
   directoryHref,
   parseDirectoryQuery,
   type ApprovalState,
@@ -35,11 +37,11 @@ const approvalLabel: Record<ApprovalState, MessageKey> = {
 type SearchValue = string | string[] | undefined;
 
 /**
- * F22 US5 staff client directory. Search: F11 name/email/phone. Filters:
+ * F22 US5 staff client directory. Search: F11 name/email/phone/username. Filters:
  * F11 approval state and F13 subscription status (S57-PO-12 labels; the
- * Refunded option matches full refunds only). Client
- * code search, responsible-trainer filter and the check-in / food
- * replacement indicators are BLOCKED on facts that do not exist on main.
+ * Refunded option matches full refunds only). Username search follows existing
+ * row visibility; code search/output and trainer assignment filtering/output
+ * remain behind the Platform Owner / same-workspace Workspace Owner wall.
  */
 export default async function ClientDirectoryPage({
   searchParams,
@@ -49,6 +51,7 @@ export default async function ClientDirectoryPage({
     q?: SearchValue;
     approval?: SearchValue;
     subscription?: SearchValue;
+    assignment?: SearchValue;
     page?: SearchValue;
   }>;
 }) {
@@ -140,6 +143,7 @@ export default async function ClientDirectoryPage({
               name="q"
               type="search"
               maxLength={100}
+              placeholder={m[directorySearchPlaceholderKey(actor, workspaceId)]}
               defaultValue={query.search ?? ''}
             />
           </div>
@@ -187,6 +191,28 @@ export default async function ClientDirectoryPage({
               })}
             </select>
           </div>
+          {canUseAssignment(actor, workspaceId) && (
+            <div className={styles.control}>
+              <label htmlFor="directory-assignment">
+                {m['staff.clientDirectory.assignment']}
+              </label>
+              <select
+                id="directory-assignment"
+                name="assignment"
+                defaultValue={query.assignment ?? ''}
+              >
+                <option value="">
+                  {m['staff.clientDirectory.assignment.all']}
+                </option>
+                <option value="assigned">
+                  {m['staff.clientDirectory.assignment.assigned']}
+                </option>
+                <option value="unassigned">
+                  {m['staff.clientDirectory.assignment.unassigned']}
+                </option>
+              </select>
+            </div>
+          )}
           <Button type="submit">{m['catalog.searchSubmit']}</Button>
         </fieldset>
       </form>
@@ -203,6 +229,12 @@ export default async function ClientDirectoryPage({
               <Link className={styles.link} href={`/clients/${row.clientId}`}>
                 <Bidi>{row.name}</Bidi>
               </Link>
+              {row.clientCode && (
+                <p className={styles.meta} data-testid="directory-client-code">
+                  {m['staff.clientDirectory.clientCode']}:{' '}
+                  <Bidi>{row.clientCode}</Bidi>
+                </p>
+              )}
               <p className={styles.meta}>
                 {m['registrationApproval.clientStatus']}:{' '}
                 {m[approvalLabel[row.approvalState]]}
@@ -231,6 +263,23 @@ export default async function ClientDirectoryPage({
                   <Bidi>
                     {formatCount(row.plansWaitingForDelivery, locale)}
                   </Bidi>
+                </p>
+              )}
+              {row.pendingFoodReplacements > 0 && (
+                <p
+                  className={styles.indicator}
+                  data-testid="indicator-pending-food-replacements"
+                >
+                  {/* T037: the staff progress timeline shows the client's replacement requests. */}
+                  <Link
+                    className={styles.link}
+                    href={`/clients/${row.clientId}/progress`}
+                  >
+                    {m['staff.clientDirectory.pendingFoodReplacements']}:{' '}
+                    <Bidi>
+                      {formatCount(row.pendingFoodReplacements, locale)}
+                    </Bidi>
+                  </Link>
                 </p>
               )}
             </li>

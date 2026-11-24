@@ -66,6 +66,7 @@ describe('F22 staff directory search (T031)', () => {
       subscription_status: 'active',
       refund_scope: null,
       plans_waiting_for_delivery: 0,
+      pending_food_replacements: 0,
     });
   });
 

@@ -92,6 +92,7 @@ describe('F22 client nutrition plan projection', () => {
         subscription: {
           status,
           effective_end_exclusive: null,
+          overdue: false,
           ...(status === 'refunded' ? { refund_scope: 'full' } : {}),
         },
       };
@@ -167,5 +168,28 @@ describe('F22 client nutrition plan projection', () => {
     await expect(
       loadClientNutritionPlan({ rpc: thrown }, PLAN_ID, null),
     ).resolves.toEqual({ status: 'denied' });
+  });
+});
+
+describe('F22 client nutrition plan overdue restriction (T018)', () => {
+  it('returns no content for an overdue active client, even if the transport says ok', () => {
+    const raw = {
+      ...rawOk(),
+      subscription: {
+        status: 'active',
+        effective_end_exclusive: '2027-01-01',
+        overdue: true,
+      },
+    };
+    const result = projectClientNutritionPlan(raw, requested);
+    expect(result).toEqual({
+      status: 'restricted',
+      subscription: {
+        status: 'active',
+        effectiveEndExclusive: '2027-01-01',
+        overdue: true,
+      },
+    });
+    expect(JSON.stringify(result)).not.toContain(PLAN_ID);
   });
 });

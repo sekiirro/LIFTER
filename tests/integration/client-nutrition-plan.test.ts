@@ -190,6 +190,7 @@ describe('F22 client nutrition plan authorization (T025/T027)', () => {
       subscription: {
         status: 'awaiting_activation',
         effective_end_exclusive: null,
+        overdue: false,
       },
     });
     expect(JSON.stringify(result)).not.toContain(awaitingPlan);

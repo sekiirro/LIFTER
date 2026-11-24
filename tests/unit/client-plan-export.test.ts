@@ -144,6 +144,7 @@ describe('F22 client plan export (nutrition)', () => {
         subscription: {
           status: 'expired',
           effective_end_exclusive: '2026-01-01',
+          overdue: false,
         },
       },
       { status: 'invalid' },
@@ -164,6 +165,7 @@ describe('F22 client plan export (nutrition)', () => {
       subscription: {
         status: 'expired',
         effective_end_exclusive: '2026-01-01',
+        overdue: false,
       },
     });
     await exportClientNutritionPlan(restricted as never, {
@@ -211,6 +213,7 @@ describe('F22 client plan export (nutrition)', () => {
           subscription: {
             status: 'expired',
             effective_end_exclusive: '2026-01-01',
+            overdue: false,
           },
         },
         { auditError: true },

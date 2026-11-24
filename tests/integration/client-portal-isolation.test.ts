@@ -127,7 +127,7 @@ describe('F22 definer and ACL contract (T004)', () => {
     'public.client_portal_overview()',
     'public.client_portal_plan(uuid,integer)',
     'public.client_portal_nutrition_plan(uuid,integer)',
-    'public.staff_client_directory(uuid,text,text,text,integer,integer)',
+    'public.staff_client_directory(uuid,text,text,text,integer,integer,text)',
   ];
   const privateFunctions = [
     'app_private.f22_portal_client()',
