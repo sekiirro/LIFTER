@@ -8,8 +8,9 @@ import {
   APPROVAL_STATES,
   canReadDirectory,
   canUseAssignment,
-  directorySearchPlaceholderKey,
   directoryHref,
+  directoryIndicatorHref,
+  directorySearchPlaceholderKey,
   parseDirectoryQuery,
   type ApprovalState,
 } from '../../../lib/client-directory/query';
@@ -259,10 +260,19 @@ export default async function ClientDirectoryPage({
                   className={styles.indicator}
                   data-testid="indicator-plans-waiting"
                 >
-                  {m['staff.clientDirectory.plansWaitingForDelivery']}:{' '}
-                  <Bidi>
-                    {formatCount(row.plansWaitingForDelivery, locale)}
-                  </Bidi>
+                  {/* T037: indicator links to owning F19 surface */}
+                  <Link
+                    className={styles.link}
+                    href={directoryIndicatorHref(
+                      'plansWaitingForDelivery',
+                      row.clientId,
+                    )}
+                  >
+                    {m['staff.clientDirectory.plansWaitingForDelivery']}:{' '}
+                    <Bidi>
+                      {formatCount(row.plansWaitingForDelivery, locale)}
+                    </Bidi>
+                  </Link>
                 </p>
               )}
               {row.pendingFoodReplacements > 0 && (
@@ -273,12 +283,30 @@ export default async function ClientDirectoryPage({
                   {/* T037: the staff progress timeline shows the client's replacement requests. */}
                   <Link
                     className={styles.link}
-                    href={`/clients/${row.clientId}/progress`}
+                    href={directoryIndicatorHref(
+                      'pendingFoodReplacements',
+                      row.clientId,
+                    )}
                   >
                     {m['staff.clientDirectory.pendingFoodReplacements']}:{' '}
                     <Bidi>
                       {formatCount(row.pendingFoodReplacements, locale)}
                     </Bidi>
+                  </Link>
+                </p>
+              )}
+              {row.newCheckIns !== undefined && row.newCheckIns > 0 && (
+                <p
+                  className={styles.indicator}
+                  data-testid="indicator-new-check-ins"
+                >
+                  {/* T036 & T037: new check-ins indicator links to F15 progress timeline */}
+                  <Link
+                    className={styles.link}
+                    href={directoryIndicatorHref('newCheckIns', row.clientId)}
+                  >
+                    {m['staff.clientDirectory.newCheckIns']}:{' '}
+                    <Bidi>{formatCount(row.newCheckIns, locale)}</Bidi>
                   </Link>
                 </p>
               )}

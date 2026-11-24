@@ -469,11 +469,19 @@ describe('F22 directory indicator links and owning surfaces (T036, T037; FR-011)
 });
 
 describe('F22 directory filters and staff labels (T035; FR-011, S57-PO-13)', () => {
-  it('maps approval state filter options', () => {
+  it('maps approval state filter options and subscription statuses', () => {
     expect(APPROVAL_STATES).toEqual([
       'pending-approval',
       'approved',
       'rejected',
+    ]);
+    expect(SUBSCRIPTION_STATUSES).toEqual([
+      'awaiting_activation',
+      'future',
+      'active',
+      'frozen',
+      'expired',
+      'refunded',
     ]);
   });
 

@@ -53,6 +53,8 @@ export type DirectoryRow = {
   plansWaitingForDelivery: number;
   /** F23 food replacement requests still open for this client (T036). */
   pendingFoodReplacements: number;
+  /** F15 new check-ins indicator for this client (T036). */
+  newCheckIns?: number;
   /**
    * F11 assignment state; present only for callers passing
    * {@link canUseAssignment}. Never carries the trainer identity.
@@ -169,6 +171,28 @@ export function directorySearchPlaceholderKey(
     : 'staff.clientDirectory.searchPlaceholderStaff';
 }
 
+export type DirectoryIndicatorKind =
+  'plansWaitingForDelivery' | 'pendingFoodReplacements' | 'newCheckIns';
+
+/**
+ * Links each indicator to its existing F15/F18/F19 owning surface (T037).
+ * - Plans waiting for delivery (F19) -> `/clients/${clientId}`
+ * - Food replacement requests (F18/F23) -> `/clients/${clientId}/progress`
+ * - New check-ins (F15/F23) -> `/clients/${clientId}/progress`
+ */
+export function directoryIndicatorHref(
+  kind: DirectoryIndicatorKind,
+  clientId: string,
+): string {
+  switch (kind) {
+    case 'plansWaitingForDelivery':
+      return `/clients/${clientId}`;
+    case 'pendingFoodReplacements':
+    case 'newCheckIns':
+      return `/clients/${clientId}/progress`;
+  }
+}
+
 export function directoryRpcArgs(
   workspaceId: string,
   query: DirectoryQuery,
@@ -202,9 +226,15 @@ function parseRow(value: unknown): DirectoryRow | null {
   } = value;
   const hasAssignment = 'assignment' in value;
   const hasCode = 'client_code' in value;
+  const hasNewCheckIns = 'new_check_ins' in value;
   if (
     Object.keys(value)
-      .filter((key) => key !== 'assignment' && key !== 'client_code')
+      .filter(
+        (key) =>
+          key !== 'assignment' &&
+          key !== 'client_code' &&
+          key !== 'new_check_ins',
+      )
       .sort()
       .join(',') !==
       'approval_state,client_id,name,pending_food_replacements,plans_waiting_for_delivery,refund_scope,subscription_status' ||
@@ -220,6 +250,12 @@ function parseRow(value: unknown): DirectoryRow | null {
       !(
         value.assignment === null ||
         (ASSIGNMENT_FILTERS as readonly unknown[]).includes(value.assignment)
+      )) ||
+    (hasNewCheckIns &&
+      !(
+        typeof value.new_check_ins === 'number' &&
+        Number.isSafeInteger(value.new_check_ins) &&
+        value.new_check_ins >= 0
       )) ||
     !isUuid(client_id) ||
     typeof name !== 'string' ||
@@ -246,6 +282,7 @@ function parseRow(value: unknown): DirectoryRow | null {
     refundScope: refund_scope as RefundScope | null,
     plansWaitingForDelivery: plans_waiting_for_delivery,
     pendingFoodReplacements: pending_food_replacements,
+    ...(hasNewCheckIns ? { newCheckIns: value.new_check_ins as number } : {}),
     ...(hasCode ? { clientCode: value.client_code as string } : {}),
     ...(hasAssignment
       ? { assignment: value.assignment as AssignmentFilter | null }

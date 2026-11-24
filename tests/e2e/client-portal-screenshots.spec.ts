@@ -38,6 +38,7 @@ let activeClient: Credentials;
 let awaitingClient: Credentials;
 let trainer: Credentials;
 let directoryOwner: Credentials;
+let directoryPO: Credentials;
 let workoutPlan: string;
 
 async function authUser(label: string): Promise<Credentials & { id: string }> {
@@ -189,6 +190,16 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
     if (ownerMembership.error)
       throw new Error('F22 e2e owner membership failed');
     directoryOwner = owner;
+
+    const po = await authUser('directory-po');
+    const poProfile = await admin().from('staff_profiles').insert({
+      user_id: po.id,
+      role: 'platform_owner',
+      display_name: testStaffDisplayName(),
+    });
+    if (poProfile.error) throw new Error('F22 e2e PO profile failed');
+    directoryPO = po;
+
     await mkdir(screenshotDir, { recursive: true });
   });
 
@@ -309,5 +320,66 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
         await expect(page.getByTestId('directory-client-code')).toHaveCount(2);
       },
     );
+    await signIn(page, directoryPO);
+    await capture(
+      page,
+      `/clients?workspace=${p.fixture.wsA.id}&q=${encodeURIComponent(p.run)}`,
+      'directory-po',
+      async (m) => {
+        await expect(
+          page.getByRole('heading', { name: m['staff.clientDirectory.title'] }),
+        ).toBeVisible();
+        await expect(
+          page.getByLabel(m['staff.clientDirectory.search']),
+        ).toHaveAttribute(
+          'placeholder',
+          m['staff.clientDirectory.searchPlaceholder'],
+        );
+        const assignment = page.getByLabel(
+          m['staff.clientDirectory.assignment'],
+        );
+        await expect(assignment).toHaveValue('');
+        await expect(assignment.locator('option')).toHaveText([
+          m['staff.clientDirectory.assignment.all'],
+          m['staff.clientDirectory.assignment.assigned'],
+          m['staff.clientDirectory.assignment.unassigned'],
+        ]);
+        await expect(page.getByTestId('directory-client-code')).toHaveCount(2);
+      },
+    );
+  });
+
+  test('staff client directory empty state and keyboard navigation', async ({
+    page,
+  }) => {
+    test.skip(!local, 'Requires the selected local Supabase stack.');
+    await signIn(page, trainer);
+    const m = getMessages('en');
+    await page.goto(
+      `/clients?workspace=${p.fixture.wsA.id}&q=never-matching-${encodeURIComponent(p.run)}`,
+    );
+    await expect(
+      page.getByRole('heading', { name: m['states.noResults.title'] }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(m['states.noResults.description']),
+    ).toBeVisible();
+
+    // Keyboard navigation: focus search field and tab through controls
+    const searchInput = page.getByLabel(m['staff.clientDirectory.search']);
+    await searchInput.focus();
+    await expect(searchInput).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByLabel(m['registrationApproval.clientStatus']),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByLabel(m['client.portal.subscriptionStatus']),
+    ).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByRole('button', { name: m['catalog.searchSubmit'] }),
+    ).toBeFocused();
   });
 });
