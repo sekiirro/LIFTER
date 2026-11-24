@@ -200,6 +200,65 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
     if (poProfile.error) throw new Error('F22 e2e PO profile failed');
     directoryPO = po;
 
+    // T036 e2e evidence: seed a weekly check-in submission in the last 7 days for the active client
+    // so the new-check-ins indicator renders on the staff directory rows.
+    const checkinPolicyId = randomUUID();
+    const checkinFormId = randomUUID();
+    const checkinAssignId = randomUUID();
+    const [existingTerms] = await p.db`
+      select version from app_private.terms_policy_versions where status = 'published' order by created_at desc limit 1
+    `;
+    const terms = existingTerms!.version as string;
+    await p.db`
+      insert into public.forms(id, workspace_id, name)
+      values(${checkinFormId}, ${p.fixture.wsA.id}, 'F23 weekly check-in')
+    `;
+    await p.db`
+      insert into public.form_versions(workspace_id, form_id, version_number, terms_policy_version, definition, status)
+      values(${p.fixture.wsA.id}, ${checkinFormId}, 1, ${terms}, '{"questions":[]}'::jsonb, 'published')
+    `;
+    await p.db`
+      insert into app_private.form_assignment_policies(
+        id, workspace_id, form_id, version_number, audience_kind, specific_client_ids,
+        trigger_kind, timing, stop_conditions, configured_by
+      ) values (
+        ${checkinPolicyId}, ${p.fixture.wsA.id}, ${checkinFormId}, 1, 'all_active_clients', '{}',
+        'weekly_checkin', '{"client_deadline_days":3}'::jsonb, '{}'::jsonb, ${staff.id}
+      )
+    `;
+    await p.db`
+      insert into app_private.form_assignment_occurrences(
+        workspace_id, policy_id, occurrence_key, snapshot_at,
+        audience_client_ids, version_number, trigger_kind, created_by
+      ) values (
+        ${p.fixture.wsA.id}, ${checkinPolicyId}, ${'weekly_checkin:' + checkinAssignId}, now(),
+        array[${active.clientId}::uuid], 1, 'weekly_checkin', ${staff.id}
+      )
+    `;
+    await p.db`
+      insert into public.form_assignments(
+        id, workspace_id, client_id, form_id, version_number, terms_policy_version,
+        policy_kind, version_snapshot, policy_id, client_deadline_at, configured_by, occurrence_key
+      ) values (
+        ${checkinAssignId}, ${p.fixture.wsA.id}, ${active.clientId}, ${checkinFormId}, 1, ${terms},
+        'terms', '{"questions":[]}'::jsonb, ${checkinPolicyId}, now() + interval '3 days', ${staff.id}, ${'weekly_checkin:' + checkinAssignId}
+      )
+    `;
+    await p.db`
+      insert into public.form_answer_revisions(
+        workspace_id, assignment_id, revision, answer_values
+      ) values (
+        ${p.fixture.wsA.id}, ${checkinAssignId}, 1, '{}'::jsonb
+      )
+    `;
+    await p.db`
+      insert into app_private.form_submissions(
+        workspace_id, assignment_id, revision, submitted_at
+      ) values (
+        ${p.fixture.wsA.id}, ${checkinAssignId}, 1, clock_timestamp()
+      )
+    `;
+
     await mkdir(screenshotDir, { recursive: true });
   });
 
@@ -291,6 +350,7 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
           page.getByLabel(m['staff.clientDirectory.assignment']),
         ).toHaveCount(0);
         await expect(page.getByTestId('directory-client-code')).toHaveCount(0);
+        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(1);
       },
     );
     await signIn(page, directoryOwner);
@@ -318,6 +378,7 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
           m['staff.clientDirectory.assignment.unassigned'],
         ]);
         await expect(page.getByTestId('directory-client-code')).toHaveCount(2);
+        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(1);
       },
     );
     await signIn(page, directoryPO);
@@ -345,6 +406,7 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
           m['staff.clientDirectory.assignment.unassigned'],
         ]);
         await expect(page.getByTestId('directory-client-code')).toHaveCount(2);
+        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(1);
       },
     );
   });
