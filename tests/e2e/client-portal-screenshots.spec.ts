@@ -350,7 +350,9 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
           page.getByLabel(m['staff.clientDirectory.assignment']),
         ).toHaveCount(0);
         await expect(page.getByTestId('directory-client-code')).toHaveCount(0);
-        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(1);
+        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(
+          1,
+        );
       },
     );
     await signIn(page, directoryOwner);
@@ -378,7 +380,9 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
           m['staff.clientDirectory.assignment.unassigned'],
         ]);
         await expect(page.getByTestId('directory-client-code')).toHaveCount(2);
-        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(1);
+        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(
+          1,
+        );
       },
     );
     await signIn(page, directoryPO);
@@ -406,7 +410,9 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
           m['staff.clientDirectory.assignment.unassigned'],
         ]);
         await expect(page.getByTestId('directory-client-code')).toHaveCount(2);
-        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(1);
+        await expect(page.getByTestId('indicator-new-check-ins')).toHaveCount(
+          1,
+        );
       },
     );
   });

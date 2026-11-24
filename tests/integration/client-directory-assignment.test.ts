@@ -488,7 +488,9 @@ describe('F22 directory new check-ins (T036)', () => {
         expect(byId[unassignedId]).toBe(1);
         expect(byId[pendingId]).toBe(0);
 
-        const trainerAssignedRow = rows.find((r) => r.client_id === assignedId)!;
+        const trainerAssignedRow = rows.find(
+          (r) => r.client_id === assignedId,
+        )!;
         expect('new_check_ins' in trainerAssignedRow).toBe(true);
         expect('assignment' in trainerAssignedRow).toBe(false);
         expect('client_code' in trainerAssignedRow).toBe(false);
@@ -544,12 +546,16 @@ describe('F22 directory new check-ins (T036)', () => {
       await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
         const [row] = await inner`select public.staff_client_directory(
           ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
-        const rows = (row!.v as { clients: Array<Record<string, unknown>> }).clients;
-        const byId = Object.fromEntries(rows.map((r) => [r.client_id, r.new_check_ins]));
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> })
+          .clients;
+        const byId = Object.fromEntries(
+          rows.map((r) => [r.client_id, r.new_check_ins]),
+        );
         expect(byId[assignedId]).toBe(0);
       });
 
-      const [d] = await tx`select pg_get_functiondef(${signature}::regprocedure) as def`;
+      const [d] =
+        await tx`select pg_get_functiondef(${signature}::regprocedure) as def`;
       const def = d!.def as string;
       expect(def.split(from).length - 1).toBe(1);
       await tx.unsafe(def.replace(from, ''));
@@ -557,8 +563,11 @@ describe('F22 directory new check-ins (T036)', () => {
       await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
         const [row] = await inner`select public.staff_client_directory(
           ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
-        const rows = (row!.v as { clients: Array<Record<string, unknown>> }).clients;
-        const byId = Object.fromEntries(rows.map((r) => [r.client_id, r.new_check_ins]));
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> })
+          .clients;
+        const byId = Object.fromEntries(
+          rows.map((r) => [r.client_id, r.new_check_ins]),
+        );
         expect(byId[assignedId]).toBe(1);
       });
     });
@@ -601,12 +610,16 @@ describe('F22 directory new check-ins (T036)', () => {
       await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
         const [row] = await inner`select public.staff_client_directory(
           ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
-        const rows = (row!.v as { clients: Array<Record<string, unknown>> }).clients;
-        const byId = Object.fromEntries(rows.map((r) => [r.client_id, r.new_check_ins]));
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> })
+          .clients;
+        const byId = Object.fromEntries(
+          rows.map((r) => [r.client_id, r.new_check_ins]),
+        );
         expect(byId[assignedId]).toBe(0);
       });
 
-      const [d] = await tx`select pg_get_functiondef(${signature}::regprocedure) as def`;
+      const [d] =
+        await tx`select pg_get_functiondef(${signature}::regprocedure) as def`;
       const def = d!.def as string;
       expect(def.split(from).length - 1).toBe(1);
       await tx.unsafe(def.replace(from, 'where true'));
@@ -614,8 +627,11 @@ describe('F22 directory new check-ins (T036)', () => {
       await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
         const [row] = await inner`select public.staff_client_directory(
           ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
-        const rows = (row!.v as { clients: Array<Record<string, unknown>> }).clients;
-        const byId = Object.fromEntries(rows.map((r) => [r.client_id, r.new_check_ins]));
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> })
+          .clients;
+        const byId = Object.fromEntries(
+          rows.map((r) => [r.client_id, r.new_check_ins]),
+        );
         expect(byId[assignedId]).toBe(1);
       });
     });
