@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import type { Actor } from '../../lib/auth/authorize';
+import { roleHasCapability } from '../../lib/auth/capabilities';
 import {
+  APPROVAL_STATES,
   canReadDirectory,
   canUseAssignment,
+  directoryIndicatorHref,
   directorySearchPlaceholderKey,
   directoryHref,
   directoryRpcArgs,
@@ -11,6 +14,10 @@ import {
   parseDirectoryResult,
 } from '../../lib/client-directory/query';
 import { loadClientDirectory } from '../../lib/client-directory/service';
+import {
+  SUBSCRIPTION_STATUSES,
+  staffSubscriptionStatusLabelKey,
+} from '../../lib/client-access/portal-projection';
 
 // Synthetic identifiers only.
 const wsA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -389,5 +396,115 @@ describe('F22 directory assignment filter behind the F11 wall (T035; FR-011, S40
         null,
       ),
     ).toMatchObject({ rows: [{ assignment: null }] });
+  });
+});
+
+describe('F22 directory indicator links and owning surfaces (T036, T037; FR-011)', () => {
+  it('links each indicator to its existing F15/F18/F19 surface', () => {
+    expect(directoryIndicatorHref('plansWaitingForDelivery', clientId)).toBe(
+      `/clients/${clientId}`,
+    );
+    expect(directoryIndicatorHref('pendingFoodReplacements', clientId)).toBe(
+      `/clients/${clientId}/progress`,
+    );
+    expect(directoryIndicatorHref('newCheckIns', clientId)).toBe(
+      `/clients/${clientId}/progress`,
+    );
+  });
+
+  it('verifies coaching staff roles are authorized for indicator destination routes', () => {
+    for (const role of [
+      'platform_owner',
+      'workspace_owner',
+      'trainer',
+    ] as const) {
+      expect(roleHasCapability(role, 'coaching_work')).toBe(true);
+    }
+    expect(roleHasCapability('sales', 'coaching_work')).toBe(false);
+  });
+
+  it('parses rows with the new_check_ins indicator', () => {
+    expect(
+      parseDirectoryResult(
+        {
+          status: 'ok',
+          clients: [{ ...row, new_check_ins: 3 }],
+          has_more: false,
+        },
+        null,
+      ),
+    ).toEqual({
+      status: 'ok',
+      hasMore: false,
+      rows: [
+        {
+          clientId,
+          name: 'Synthetic client',
+          approvalState: 'approved',
+          subscriptionStatus: 'active',
+          refundScope: null,
+          plansWaitingForDelivery: 2,
+          pendingFoodReplacements: 1,
+          newCheckIns: 3,
+        },
+      ],
+    });
+  });
+
+  it('rejects malformed new_check_ins counts', () => {
+    for (const patch of [
+      { new_check_ins: -1 },
+      { new_check_ins: 2.5 },
+      { new_check_ins: 'two' },
+    ]) {
+      expect(
+        parseDirectoryResult(
+          { status: 'ok', clients: [{ ...row, ...patch }], has_more: false },
+          null,
+        ),
+        JSON.stringify(patch),
+      ).toEqual({ status: 'unavailable' });
+    }
+  });
+});
+
+describe('F22 directory filters and staff labels (T035; FR-011, S57-PO-13)', () => {
+  it('maps approval state filter options', () => {
+    expect(APPROVAL_STATES).toEqual([
+      'pending-approval',
+      'approved',
+      'rejected',
+    ]);
+  });
+
+  it('uses staff subscription labels and enforces full refunds only', () => {
+    expect(staffSubscriptionStatusLabelKey({ status: 'active' })).toBe(
+      'staff.clientDirectory.subscriptionStatus.active',
+    );
+    expect(staffSubscriptionStatusLabelKey({ status: 'frozen' })).toBe(
+      'staff.clientDirectory.subscriptionStatus.frozen',
+    );
+    expect(staffSubscriptionStatusLabelKey({ status: 'expired' })).toBe(
+      'staff.clientDirectory.subscriptionStatus.expired',
+    );
+    expect(
+      staffSubscriptionStatusLabelKey({ status: 'awaiting_activation' }),
+    ).toBe('staff.clientDirectory.subscriptionStatus.awaitingActivation');
+    expect(staffSubscriptionStatusLabelKey({ status: 'future' })).toBe(
+      'staff.clientDirectory.subscriptionStatus.future',
+    );
+    expect(
+      staffSubscriptionStatusLabelKey({
+        status: 'refunded',
+        refundScope: 'full',
+      }),
+    ).toBe('staff.clientDirectory.subscriptionStatus.refunded');
+    expect(
+      staffSubscriptionStatusLabelKey({
+        status: 'refunded',
+        refundScope: 'partial',
+      }),
+    ).toBeNull();
+    expect(staffSubscriptionStatusLabelKey({ status: 'refunded' })).toBeNull();
   });
 });
