@@ -15,6 +15,7 @@ const signupPrivate = [
   'signup_attestation_timing',
   'signup_attempt_purge_proof',
   'purge_client_signup_attempts',
+  'purge_retention_candidates',
   'purge_schedule_activate',
   'purge_schedule_deactivate',
   'signup_auth_schema_compatible',
@@ -522,6 +523,7 @@ describe('tenancy security catalog (T007)', () => {
           'purge_ended_form_answers',
           'purge_ended_form_answers_at',
           'purge_f11_retained_data',
+          'purge_retention_candidates',
           'purge_operation_keys',
           'reconcile_f15_form_assignment',
           'record_f15_retention_fact',
@@ -628,6 +630,7 @@ describe('tenancy security catalog (T007)', () => {
         'normalize_catalog_food_identity_v1',
         'normalize_staff_display_name',
         'operation_key_fields_immutable',
+        'purge_retention_candidates',
         'purge_f11_retained_data',
         'purge_schedule_activate',
         'purge_schedule_deactivate',
@@ -1063,6 +1066,43 @@ describe('tenancy security catalog (T007)', () => {
         }
       }
     }
+  });
+});
+
+describe('F26 retention eligibility security catalog', () => {
+  it('keeps candidate evaluation postgres-only, invoker, and outside user/service grants', async () => {
+    const [candidate] = await db`
+      select p.prosecdef,p.provolatile,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role_execute
+      from pg_catalog.pg_proc p
+      where p.oid='app_private.purge_retention_candidates(timestamptz)'::regprocedure
+    `;
+    expect(candidate).toMatchObject({
+      prosecdef: false,
+      provolatile: 's',
+      owner: 'postgres',
+      anon_execute: false,
+      authenticated_execute: false,
+      service_role_execute: false,
+    });
+
+    const [entrypoint] = await db`
+      select p.prosecdef,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role_execute
+      from pg_catalog.pg_proc p
+      where p.oid='app_private.purge_f11_retained_data()'::regprocedure
+    `;
+    expect(entrypoint).toMatchObject({
+      prosecdef: false,
+      owner: 'postgres',
+      anon_execute: false,
+      authenticated_execute: false,
+      service_role_execute: false,
+    });
   });
 });
 
