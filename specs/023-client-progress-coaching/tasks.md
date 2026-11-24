@@ -156,7 +156,7 @@
 
 - [ ] T052 [HIGH-RISK: migration/RLS] CANCELLED (PO S56-PO-4): remove the `progress_coaching_enabled` feature flag and its conditional branches.
 - [x] T053 Re-run Analyze only when FR/SC/requirement text changes; code-only or test-only review rounds do not require re-dating. Record the date update in `specs/023-client-progress-coaching/checklists/analyze.md` (FR-001, FR-038). Evidence (CI green on bdefe1b8): specs/023-client-progress-coaching/checklists/analyze.md (re-dated 2026-11-17, 0 CRITICAL/HIGH).
-- [ ] T054 Run independent UI/security review, repository checks, format gates, and required PR gates on the implementation head; record mutation evidence with tested SHA and tool versions in `specs/023-client-progress-coaching/traceability.md`. Runs last (FR-001, FR-038). BLOCKED 2026-11-17: independent UI/security review and the traceability.md SHA record are run by the orchestrator on the final head.
+- [x] T054 Run independent UI/security review, repository checks, format gates, and required PR gates on the implementation head; record mutation evidence with tested SHA and tool versions in `specs/023-client-progress-coaching/traceability.md`. Runs last (FR-001, FR-038). Verified: zero BLOCKING findings; unblocked by S70-PO-8 (F23 progress-coaching remaining tasks are now our work). Evidence: specs/023-client-progress-coaching/traceability.md (tested SHA 788cf3a1e8d1decb661acda78f8ca8d08ecf9b62).
 
 ## Dependencies & Execution Order
 
