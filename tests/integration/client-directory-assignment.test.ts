@@ -359,3 +359,265 @@ describe('F22 directory pending food replacements (T036)', () => {
     ).toBe(true);
   });
 });
+
+describe('F22 directory new check-ins (T036)', () => {
+  it('counts check-in submissions in last 7 days only, excludes 8-day-old, non-check-in forms and other workspaces, and gives Trainer count without code/assignment', async () => {
+    await probe(async (tx: TransactionSql) => {
+      await tx`set local session_replication_role = replica`;
+
+      const checkinPolicyId = '11111111-2222-4333-8444-555555555551';
+      const checkinFormId = '11111111-2222-4333-8444-555555555552';
+      await tx`insert into app_private.form_assignment_policies(
+        id, workspace_id, form_id, version_number, audience_kind, specific_client_ids,
+        trigger_kind, timing, stop_conditions, configured_by
+      ) values (
+        ${checkinPolicyId}, ${p.fixture.wsA.id}, ${checkinFormId}, 1, 'all_active_clients', '{}',
+        'weekly_checkin', '{"client_deadline_days":3}'::jsonb, '{}'::jsonb, ${p.fixture.trainerA.userId}
+      )`;
+
+      const onboardingPolicyId = '11111111-2222-4333-8444-555555555553';
+      const onboardingFormId = '11111111-2222-4333-8444-555555555554';
+      await tx`insert into app_private.form_assignment_policies(
+        id, workspace_id, form_id, version_number, audience_kind, specific_client_ids,
+        trigger_kind, timing, stop_conditions, configured_by
+      ) values (
+        ${onboardingPolicyId}, ${p.fixture.wsA.id}, ${onboardingFormId}, 1, 'all_active_clients', '{}',
+        'onboarding', '{"client_deadline_days":3}'::jsonb, '{}'::jsonb, ${p.fixture.trainerA.userId}
+      )`;
+
+      const foreignPolicyId = '11111111-2222-4333-8444-555555555555';
+      const foreignFormId = '11111111-2222-4333-8444-555555555556';
+      await tx`insert into app_private.form_assignment_policies(
+        id, workspace_id, form_id, version_number, audience_kind, specific_client_ids,
+        trigger_kind, timing, stop_conditions, configured_by
+      ) values (
+        ${foreignPolicyId}, ${p.fixture.wsB.id}, ${foreignFormId}, 1, 'all_active_clients', '{}',
+        'weekly_checkin', '{"client_deadline_days":3}'::jsonb, '{}'::jsonb, ${p.fixture.trainerB.userId}
+      )`;
+
+      const addSubmission = async (
+        id: string,
+        workspaceId: string,
+        clientId: string,
+        policyId: string,
+        formId: string,
+        submittedAt: Date,
+      ) => {
+        await tx`insert into public.form_assignments(
+          id, workspace_id, client_id, form_id, version_number, terms_policy_version,
+          policy_kind, version_snapshot, policy_id, client_deadline_at, configured_by, occurrence_key
+        ) values (
+          ${id}, ${workspaceId}, ${clientId}, ${formId}, 1, 'terms-v1',
+          'terms', '{}'::jsonb, ${policyId}, now() + interval '3 days', ${p.fixture.trainerA.userId}, ${'weekly_checkin:' + id}
+        )`;
+        await tx`insert into public.form_answer_revisions(
+          workspace_id, assignment_id, revision, answer_values
+        ) values (
+          ${workspaceId}, ${id}, 1, '{"dietAdherence":8,"workoutAdherence":9}'::jsonb
+        )`;
+        await tx`insert into app_private.form_submissions(
+          workspace_id, assignment_id, revision, submitted_at
+        ) values (
+          ${workspaceId}, ${id}, 1, ${submittedAt.toISOString()}::timestamptz
+        )`;
+      };
+
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+
+      await addSubmission(
+        '22222222-1111-4000-8000-000000000001',
+        p.fixture.wsA.id,
+        assignedId,
+        checkinPolicyId,
+        checkinFormId,
+        new Date(now - 2 * dayMs),
+      );
+      await addSubmission(
+        '22222222-1111-4000-8000-000000000002',
+        p.fixture.wsA.id,
+        assignedId,
+        checkinPolicyId,
+        checkinFormId,
+        new Date(now - 5 * dayMs),
+      );
+      await addSubmission(
+        '22222222-1111-4000-8000-000000000003',
+        p.fixture.wsA.id,
+        assignedId,
+        checkinPolicyId,
+        checkinFormId,
+        new Date(now - 8 * dayMs),
+      );
+      await addSubmission(
+        '22222222-1111-4000-8000-000000000004',
+        p.fixture.wsA.id,
+        assignedId,
+        onboardingPolicyId,
+        onboardingFormId,
+        new Date(now - 1 * dayMs),
+      );
+
+      await addSubmission(
+        '22222222-1111-4000-8000-000000000005',
+        p.fixture.wsA.id,
+        unassignedId,
+        checkinPolicyId,
+        checkinFormId,
+        new Date(now - 1 * dayMs),
+      );
+
+      await addSubmission(
+        '22222222-1111-4000-8000-000000000006',
+        p.fixture.wsB.id,
+        assignedId,
+        foreignPolicyId,
+        foreignFormId,
+        new Date(now - 1 * dayMs),
+      );
+
+      await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
+        const [row] = await inner`select public.staff_client_directory(
+          ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> })
+          .clients;
+        const byId = Object.fromEntries(
+          rows.map((r) => [r.client_id, r.new_check_ins]),
+        );
+        expect(byId[assignedId]).toBe(2);
+        expect(byId[unassignedId]).toBe(1);
+        expect(byId[pendingId]).toBe(0);
+
+        const trainerAssignedRow = rows.find((r) => r.client_id === assignedId)!;
+        expect('new_check_ins' in trainerAssignedRow).toBe(true);
+        expect('assignment' in trainerAssignedRow).toBe(false);
+        expect('client_code' in trainerAssignedRow).toBe(false);
+      });
+
+      await asUser(tx, p.fixture.woA.userId, async (inner) => {
+        const [row] = await inner`select public.staff_client_directory(
+          ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> })
+          .clients;
+        const woAssignedRow = rows.find((r) => r.client_id === assignedId)!;
+        expect(woAssignedRow.new_check_ins).toBe(2);
+        expect(woAssignedRow.assignment).toBe('assigned');
+        expect(woAssignedRow.client_code).toBeTruthy();
+      });
+    });
+  });
+
+  it('mutation kill: dropping the 7-day predicate counts 8-day-old submissions and fails', async () => {
+    const signature =
+      'public.staff_client_directory(uuid,text,text,text,integer,integer,text)';
+    const from = "and s.submitted_at >= now() - interval '7 days'";
+    await probe(async (tx: TransactionSql) => {
+      await tx`set local session_replication_role = replica`;
+      const checkinPolicyId = '11111111-2222-4333-8444-555555555561';
+      const checkinFormId = '11111111-2222-4333-8444-555555555562';
+      await tx`insert into app_private.form_assignment_policies(
+        id, workspace_id, form_id, version_number, audience_kind, specific_client_ids,
+        trigger_kind, timing, stop_conditions, configured_by
+      ) values (
+        ${checkinPolicyId}, ${p.fixture.wsA.id}, ${checkinFormId}, 1, 'all_active_clients', '{}',
+        'weekly_checkin', '{"client_deadline_days":3}'::jsonb, '{}'::jsonb, ${p.fixture.trainerA.userId}
+      )`;
+      const assignId = '22222222-1111-4000-8000-000000000010';
+      await tx`insert into public.form_assignments(
+        id, workspace_id, client_id, form_id, version_number, terms_policy_version,
+        policy_kind, version_snapshot, policy_id, client_deadline_at, configured_by
+      ) values (
+        ${assignId}, ${p.fixture.wsA.id}, ${assignedId}, ${checkinFormId}, 1, 'terms-v1',
+        'terms', '{}'::jsonb, ${checkinPolicyId}, now() + interval '3 days', ${p.fixture.trainerA.userId}
+      )`;
+      await tx`insert into public.form_answer_revisions(
+        workspace_id, assignment_id, revision, answer_values
+      ) values (
+        ${p.fixture.wsA.id}, ${assignId}, 1, '{"dietAdherence":8,"workoutAdherence":9}'::jsonb
+      )`;
+      await tx`insert into app_private.form_submissions(
+        workspace_id, assignment_id, revision, submitted_at
+      ) values (
+        ${p.fixture.wsA.id}, ${assignId}, 1, (now() - interval '8 days')
+      )`;
+
+      await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
+        const [row] = await inner`select public.staff_client_directory(
+          ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> }).clients;
+        const byId = Object.fromEntries(rows.map((r) => [r.client_id, r.new_check_ins]));
+        expect(byId[assignedId]).toBe(0);
+      });
+
+      const [d] = await tx`select pg_get_functiondef(${signature}::regprocedure) as def`;
+      const def = d!.def as string;
+      expect(def.split(from).length - 1).toBe(1);
+      await tx.unsafe(def.replace(from, ''));
+
+      await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
+        const [row] = await inner`select public.staff_client_directory(
+          ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> }).clients;
+        const byId = Object.fromEntries(rows.map((r) => [r.client_id, r.new_check_ins]));
+        expect(byId[assignedId]).toBe(1);
+      });
+    });
+  });
+
+  it('mutation kill: dropping the workspace predicate leaks foreign submissions and fails isolation', async () => {
+    const signature =
+      'public.staff_client_directory(uuid,text,text,text,integer,integer,text)';
+    const from = 'where s.workspace_id = c.workspace_id';
+    await probe(async (tx: TransactionSql) => {
+      await tx`set local session_replication_role = replica`;
+      const foreignPolicyId = '11111111-2222-4333-8444-555555555571';
+      const foreignFormId = '11111111-2222-4333-8444-555555555572';
+      await tx`insert into app_private.form_assignment_policies(
+        id, workspace_id, form_id, version_number, audience_kind, specific_client_ids,
+        trigger_kind, timing, stop_conditions, configured_by
+      ) values (
+        ${foreignPolicyId}, ${p.fixture.wsB.id}, ${foreignFormId}, 1, 'all_active_clients', '{}',
+        'weekly_checkin', '{"client_deadline_days":3}'::jsonb, '{}'::jsonb, ${p.fixture.trainerB.userId}
+      )`;
+      const assignId = '22222222-1111-4000-8000-000000000020';
+      await tx`insert into public.form_assignments(
+        id, workspace_id, client_id, form_id, version_number, terms_policy_version,
+        policy_kind, version_snapshot, policy_id, client_deadline_at, configured_by
+      ) values (
+        ${assignId}, ${p.fixture.wsB.id}, ${assignedId}, ${foreignFormId}, 1, 'terms-v1',
+        'terms', '{}'::jsonb, ${foreignPolicyId}, now() + interval '3 days', ${p.fixture.trainerB.userId}
+      )`;
+      await tx`insert into public.form_answer_revisions(
+        workspace_id, assignment_id, revision, answer_values
+      ) values (
+        ${p.fixture.wsB.id}, ${assignId}, 1, '{"dietAdherence":8,"workoutAdherence":9}'::jsonb
+      )`;
+      await tx`insert into app_private.form_submissions(
+        workspace_id, assignment_id, revision, submitted_at
+      ) values (
+        ${p.fixture.wsB.id}, ${assignId}, 1, (now() - interval '1 day')
+      )`;
+
+      await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
+        const [row] = await inner`select public.staff_client_directory(
+          ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> }).clients;
+        const byId = Object.fromEntries(rows.map((r) => [r.client_id, r.new_check_ins]));
+        expect(byId[assignedId]).toBe(0);
+      });
+
+      const [d] = await tx`select pg_get_functiondef(${signature}::regprocedure) as def`;
+      const def = d!.def as string;
+      expect(def.split(from).length - 1).toBe(1);
+      await tx.unsafe(def.replace(from, 'where true'));
+
+      await asUser(tx, p.fixture.trainerA.userId, async (inner) => {
+        const [row] = await inner`select public.staff_client_directory(
+          ${p.fixture.wsA.id}::uuid, ${p.run}, null, null, 100, 0) as v`;
+        const rows = (row!.v as { clients: Array<Record<string, unknown>> }).clients;
+        const byId = Object.fromEntries(rows.map((r) => [r.client_id, r.new_check_ins]));
+        expect(byId[assignedId]).toBe(1);
+      });
+    });
+  });
+});
