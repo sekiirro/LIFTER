@@ -136,6 +136,7 @@ describe('F22 F13 entitlement and restricted projection (T013/T015)', () => {
       subscription: {
         status: 'awaiting_activation',
         effective_end_exclusive: null,
+        overdue: false,
       },
     });
     const plan = await clientRead(p.db, unactivated.authUserId, {

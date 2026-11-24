@@ -4,7 +4,7 @@
 
 ## Summary
 
-Deliver independent workout/nutrition plans through F19, expose the client's own delivered plans and authoritative subscription/entitlement state, reuse F15 notifications and F17/F18 exports, and add an authorized staff directory with defined existing-data search/filter fields. Implementation is a sequence of vertical slices; Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. The feature gets one AI review on the cumulative completed-feature diff.
+Deliver independent workout/nutrition plans through F19, expose the client's own delivered plans and authoritative subscription/entitlement state, reuse F15 notifications and F17/F18 exports, and add an authorized staff directory with defined existing-data search/filter fields. For the directory, normalized username search is available to every staff role within existing row visibility; client-code search/output and assignment filter/state are limited to Platform Owners and Workspace Owners of that workspace (S70-PO-1 item 1; S70-PO-2). Implementation is a sequence of vertical slices; Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work proceeds without a flag; flags are reconsidered before production. The feature gets one AI review on the cumulative completed-feature diff.
 
 ## Technical Context
 

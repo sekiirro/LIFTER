@@ -37,6 +37,7 @@ let p: PortalFixture;
 let activeClient: Credentials;
 let awaitingClient: Credentials;
 let trainer: Credentials;
+let directoryOwner: Credentials;
 let workoutPlan: string;
 
 async function authUser(label: string): Promise<Credentials & { id: string }> {
@@ -95,11 +96,12 @@ async function capture(
     const axe = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
       .analyze();
-    expect(
-      axe.violations.filter((violation) =>
-        ['critical', 'serious'].includes(violation.impact ?? ''),
-      ),
-    ).toEqual([]);
+    const violations = name.startsWith('directory')
+      ? axe.violations
+      : axe.violations.filter((violation) =>
+          ['critical', 'serious'].includes(violation.impact ?? ''),
+        );
+    expect(violations).toEqual([]);
     await page.screenshot({
       path: join(
         screenshotDir,
@@ -138,17 +140,15 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
       'F22 e2e n',
     );
     await p.publish(nutrition, 1, 0);
-    // Synthetic inbox rows through the F22 producer seam (the F19 delivery hook
-    // is not on main): one unread and one read notice for the captures.
-    const [unread] = await p.db`select app_private.f22_enqueue_client_notice(
-      ${p.fixture.wsA.id}::uuid, ${active.clientId}::uuid, 'workout_delivered',
-      gen_random_uuid()) as id`;
-    const [read] = await p.db`select app_private.f22_enqueue_client_notice(
-      ${p.fixture.wsA.id}::uuid, ${active.clientId}::uuid,
-      'nutrition_delivered_activated', gen_random_uuid()) as id`;
-    if (!unread?.id || !read?.id) throw new Error('F22 e2e notice seed failed');
-    await p.db`update app_private.client_inbox_notices
-      set read_at=clock_timestamp() where id=${read.id as string}`;
+    // The F19 delivery hook (T022) wrote one notice per first-plan delivery above
+    // (workout and nutrition, both delivered after the override activation). Mark the
+    // nutrition one read so the captures show one unread and one read notice.
+    const marked = await p.db`update app_private.client_inbox_notices
+      set read_at=clock_timestamp()
+      where workspace_id=${p.fixture.wsA.id} and client_id=${active.clientId}
+        and notice_kind='nutrition_delivered'
+      returning id`;
+    if (marked.length !== 1) throw new Error('F22 e2e hook notice missing');
     activeClient = activeUser;
     awaitingClient = awaitingUser;
 
@@ -171,6 +171,24 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
       });
     if (membership.error) throw new Error('F22 e2e membership failed');
     trainer = staff;
+
+    const owner = await authUser('directory-owner');
+    const ownerProfile = await admin().from('staff_profiles').insert({
+      user_id: owner.id,
+      role: 'workspace_owner',
+      display_name: testStaffDisplayName(),
+    });
+    if (ownerProfile.error) throw new Error('F22 e2e owner profile failed');
+    const ownerMembership = await p.fixture.po.client
+      .from('workspace_memberships')
+      .insert({
+        workspace_id: p.fixture.wsA.id,
+        user_id: owner.id,
+        granted_by: p.fixture.po.userId,
+      });
+    if (ownerMembership.error)
+      throw new Error('F22 e2e owner membership failed');
+    directoryOwner = owner;
     await mkdir(screenshotDir, { recursive: true });
   });
 
@@ -252,6 +270,43 @@ test.describe.serial('F22 client portal and directory design evidence', () => {
         await expect(
           page.getByLabel(m['client.portal.subscriptionStatus']),
         ).toBeVisible();
+        await expect(
+          page.getByLabel(m['staff.clientDirectory.search']),
+        ).toHaveAttribute(
+          'placeholder',
+          m['staff.clientDirectory.searchPlaceholderStaff'],
+        );
+        await expect(
+          page.getByLabel(m['staff.clientDirectory.assignment']),
+        ).toHaveCount(0);
+        await expect(page.getByTestId('directory-client-code')).toHaveCount(0);
+      },
+    );
+    await signIn(page, directoryOwner);
+    await capture(
+      page,
+      `/clients?workspace=${p.fixture.wsA.id}&q=${encodeURIComponent(p.run)}`,
+      'directory-owner',
+      async (m) => {
+        await expect(
+          page.getByRole('heading', { name: m['staff.clientDirectory.title'] }),
+        ).toBeVisible();
+        await expect(
+          page.getByLabel(m['staff.clientDirectory.search']),
+        ).toHaveAttribute(
+          'placeholder',
+          m['staff.clientDirectory.searchPlaceholder'],
+        );
+        const assignment = page.getByLabel(
+          m['staff.clientDirectory.assignment'],
+        );
+        await expect(assignment).toHaveValue('');
+        await expect(assignment.locator('option')).toHaveText([
+          m['staff.clientDirectory.assignment.all'],
+          m['staff.clientDirectory.assignment.assigned'],
+          m['staff.clientDirectory.assignment.unassigned'],
+        ]);
+        await expect(page.getByTestId('directory-client-code')).toHaveCount(2);
       },
     );
   });

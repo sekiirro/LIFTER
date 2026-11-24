@@ -106,6 +106,7 @@ const f22Private = [
   'f22_guard_client_notice',
   'f22_portal_client',
   'f22_refund_scope',
+  'f22_subscription_core',
   'f22_subscription_summary',
 ];
 const registrationPrivate = [
@@ -1886,6 +1887,7 @@ describe('registration security catalog', () => {
       'app_private.f18_selection_audit(uuid,uuid,uuid,uuid,text,text,text,text,integer,jsonb)',
       'public.client_plan_projection()',
       'public.client_overdue_status()',
+      'public.staff_client_directory(uuid,text,text,text,integer,integer,text)',
       'public.client_portal_workout_plan(uuid,integer)',
       'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',

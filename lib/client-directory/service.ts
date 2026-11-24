@@ -2,6 +2,7 @@ import 'server-only';
 import type { Actor } from '../auth/authorize';
 import {
   canReadDirectory,
+  canUseAssignment,
   directoryRpcArgs,
   parseDirectoryResult,
   type DirectoryQuery,
@@ -23,12 +24,25 @@ export async function loadClientDirectory(
   query: DirectoryQuery,
 ): Promise<DirectoryResult> {
   if (!canReadDirectory(actor, workspaceId)) return { status: 'not_permitted' };
+  // F11 wall: assignment is for the Workspace/Platform Owner only; for anyone
+  // else the filter is not sent and any assignment state is dropped.
+  const assignmentAllowed = canUseAssignment(actor, workspaceId);
   try {
     const { data, error } = await client.rpc(
       'staff_client_directory',
-      directoryRpcArgs(workspaceId, query),
+      directoryRpcArgs(workspaceId, query, assignmentAllowed),
     );
-    return parseDirectoryResult(data, error);
+    const result = parseDirectoryResult(data, error);
+    if (result.status !== 'ok' || assignmentAllowed) return result;
+    return {
+      ...result,
+      rows: result.rows.map((row) => {
+        const visible = { ...row };
+        delete visible.assignment;
+        delete visible.clientCode;
+        return visible;
+      }),
+    };
   } catch {
     return { status: 'unavailable' };
   }

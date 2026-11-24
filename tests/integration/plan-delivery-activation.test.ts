@@ -68,6 +68,7 @@ describe('F22 first-plan delivery and activation (T007)', () => {
       subscription: {
         status: 'awaiting_activation',
         effective_end_exclusive: null,
+        overdue: false,
       },
     });
 

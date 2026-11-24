@@ -16,7 +16,11 @@ import {
 // Synthetic identifiers only.
 const planA = '11111111-1111-4111-8111-111111111111';
 const planB = '22222222-2222-4222-8222-222222222222';
-const active = { status: 'active', effective_end_exclusive: '2026-12-14' };
+const active = {
+  status: 'active',
+  effective_end_exclusive: '2026-12-14',
+  overdue: false,
+};
 
 const deliveredPlan = (planId: string, kind: string, revision: number) => ({
   plan_id: planId,
@@ -37,7 +41,11 @@ describe('F22 delivered-plan projection (T012; FR-004/005, SC-004)', () => {
     });
     expect(result).toEqual({
       status: 'ok',
-      subscription: { status: 'active', effectiveEndExclusive: '2026-12-14' },
+      subscription: {
+        status: 'active',
+        effectiveEndExclusive: '2026-12-14',
+        overdue: false,
+      },
       plans: [
         {
           planId: planA,
@@ -91,14 +99,22 @@ describe('F22 delivered-plan projection (T012; FR-004/005, SC-004)', () => {
     expect(
       projectClientPortalOverview({
         status: 'ok',
-        subscription: { status: 'overdue', effective_end_exclusive: null },
+        subscription: {
+          status: 'overdue',
+          effective_end_exclusive: null,
+          overdue: false,
+        },
         plans: [],
       }),
     ).toEqual({ status: 'denied' });
     expect(
       projectClientPortalOverview({
         status: 'ok',
-        subscription: { status: 'active', effective_end_exclusive: 'soon' },
+        subscription: {
+          status: 'active',
+          effective_end_exclusive: 'soon',
+          overdue: false,
+        },
         plans: [],
       }),
     ).toEqual({ status: 'denied' });
@@ -112,12 +128,17 @@ describe('F22 restricted projection (T015/T018 control; FR-004/006/007, SC-006)'
       subscription: {
         status: 'expired',
         effective_end_exclusive: '2026-11-01',
+        overdue: false,
       },
       plans: [deliveredPlan(planA, 'workout', 1)],
     });
     expect(result).toEqual({
       status: 'restricted',
-      subscription: { status: 'expired', effectiveEndExclusive: '2026-11-01' },
+      subscription: {
+        status: 'expired',
+        effectiveEndExclusive: '2026-11-01',
+        overdue: false,
+      },
     });
     expect(JSON.stringify(result)).not.toContain(planA);
   });
@@ -132,7 +153,7 @@ describe('F22 restricted projection (T015/T018 control; FR-004/006/007, SC-006)'
     ]) {
       const result = projectClientPortalOverview({
         status: 'ok',
-        subscription: { status, effective_end_exclusive: null },
+        subscription: { status, effective_end_exclusive: null, overdue: false },
         plans: [deliveredPlan(planA, 'workout', 1)],
       });
       expect(result, status).toEqual({
@@ -140,8 +161,13 @@ describe('F22 restricted projection (T015/T018 control; FR-004/006/007, SC-006)'
         subscription:
           status === 'refunded'
             ? // No refund_scope from the transport fails closed to partial.
-              { status, effectiveEndExclusive: null, refundScope: 'partial' }
-            : { status, effectiveEndExclusive: null },
+              {
+                status,
+                effectiveEndExclusive: null,
+                overdue: false,
+                refundScope: 'partial',
+              }
+            : { status, effectiveEndExclusive: null, overdue: false },
       });
     }
   });
@@ -153,6 +179,7 @@ describe('F22 restricted projection (T015/T018 control; FR-004/006/007, SC-006)'
         subscription: {
           status: 'frozen',
           effective_end_exclusive: '2026-12-01',
+          overdue: false,
         },
         plan: { ...deliveredPlan(planA, 'workout', 1), content: { secret: 1 } },
         revisions: [
@@ -163,7 +190,11 @@ describe('F22 restricted projection (T015/T018 control; FR-004/006/007, SC-006)'
     );
     expect(result).toEqual({
       status: 'restricted',
-      subscription: { status: 'frozen', effectiveEndExclusive: '2026-12-01' },
+      subscription: {
+        status: 'frozen',
+        effectiveEndExclusive: '2026-12-01',
+        overdue: false,
+      },
     });
     expect(JSON.stringify(result)).not.toContain('secret');
   });
@@ -269,5 +300,69 @@ describe('F22 published-revision selection (T012; FR-004, SC-005)', () => {
       p_plan_id: planA,
       p_revision_number: 2,
     });
+  });
+});
+
+describe('F22 overdue restriction (T018; FR-006/007, F13 FR-028)', () => {
+  const overdueActive = {
+    status: 'active',
+    effective_end_exclusive: '2026-12-14',
+    overdue: true,
+  };
+  const content = { secret: 1 };
+
+  it('restricts an overdue active client even when the transport says ok, keeping status and end date', () => {
+    const expected = {
+      status: 'restricted',
+      subscription: {
+        status: 'active',
+        effectiveEndExclusive: '2026-12-14',
+        overdue: true,
+      },
+    };
+    const overview = projectClientPortalOverview({
+      status: 'ok',
+      subscription: overdueActive,
+      plans: [deliveredPlan(planA, 'workout', 1)],
+    });
+    expect(overview).toEqual(expected);
+    const plan = projectClientPortalPlan(
+      {
+        status: 'ok',
+        subscription: overdueActive,
+        plan: { ...deliveredPlan(planA, 'workout', 1), content },
+        revisions: [
+          { revision_number: 1, published_at: '2026-11-14T10:00:00Z' },
+        ],
+      },
+      { planId: planA, revisionNumber: null },
+    );
+    expect(plan).toEqual(expected);
+    expect(JSON.stringify([overview, plan])).not.toMatch(/secret|11111111/u);
+  });
+
+  it('still grants access to an active client that is not overdue', () => {
+    expect(
+      projectClientPortalOverview({
+        status: 'ok',
+        subscription: { ...overdueActive, overdue: false },
+        plans: [],
+      }),
+    ).toMatchObject({ status: 'ok' });
+  });
+
+  it('fails closed when the overdue fact is missing or not a boolean', () => {
+    for (const overdue of [undefined, null, 'false', 0]) {
+      const { overdue: _drop, ...rest } = overdueActive;
+      void _drop;
+      expect(
+        projectClientPortalOverview({
+          status: 'ok',
+          subscription: overdue === undefined ? rest : { ...rest, overdue },
+          plans: [],
+        }),
+        String(overdue),
+      ).toEqual({ status: 'denied' });
+    }
   });
 });

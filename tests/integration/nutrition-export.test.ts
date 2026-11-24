@@ -30,6 +30,10 @@ beforeAll(async () => {
   otherClientSeeded = await db.begin(async (tx) =>
     graph(tx, otherClientContext),
   );
+  // F22 FR-006: the client's success audit now requires F13 active (and not overdue), as the
+  // client read does. A synthetic activation without deliveries is a PO override (F19 guard).
+  await db`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id,activation_source)
+    values(${f.wsA.id},${seeded.subscription},clock_timestamp(),${randomUUID()},'po_override')`;
   auditPlanId = randomUUID();
   auditRevisionId = randomUUID();
   auditOtherPlanId = randomUUID();

@@ -145,7 +145,8 @@ describe('F17 client workout DB mutation kills (role and entitlement walls)', ()
   });
 
   it('K2 entitlement wall: removing the F13 active gate releases content to a restricted client', async () => {
-    const control = "if summary->>'status' is distinct from 'active' then";
+    const control =
+      "if summary->>'status' is distinct from 'active' or coalesce((summary->>'overdue')::boolean, true) then";
     const mutant = await underMutant(
       PLAN_SIGNATURE,
       [[control, 'if false then']],
