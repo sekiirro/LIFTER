@@ -1527,6 +1527,7 @@ export const en: Record<keyof typeof ar, string> = {
   'staff.clientDirectory.assignment.unassigned': 'Unassigned',
   'staff.clientDirectory.clientCode': 'Client code',
   'staff.clientDirectory.pendingFoodReplacements': 'Pending food replacements',
+  'staff.clientDirectory.newCheckIns': 'New check-ins',
   'staff.clientDirectory.subscriptionStatus.awaitingActivation':
     'Awaiting Activation',
   'staff.clientDirectory.subscriptionStatus.future': 'Future',
