@@ -81,7 +81,7 @@ async function core(
   return row!.result as { status: string; enqueued?: number };
 }
 
-it('notifies the current responsible Trainer and PO/WO once at the client deadline', async () => {
+it('notifies PO/WO at the client deadline and the responsible Trainer at deadline+24h', async () => {
   const f = await clientContext();
   const client = await registered(f);
   await expect(
@@ -105,11 +105,36 @@ it('notifies the current responsible Trainer and PO/WO once at the client deadli
         status: 'ok',
         enqueued: 0,
       });
+      // At deadline, PO and WO are alerted immediately; NO Trainer alert yet (S70-PO-9).
       expect(await core(tx, f.wsA.id, deadline)).toEqual({
         status: 'ok',
-        enqueued: 3,
+        enqueued: 2,
       });
       expect(await core(tx, f.wsA.id, deadline)).toEqual({
+        status: 'ok',
+        enqueued: 0,
+      });
+      // At deadline+23h59m, owners were alerted, still NO Trainer alert.
+      expect(await core(tx, f.wsA.id, '2026-02-02T09:59:00.000Z')).toEqual({
+        status: 'ok',
+        enqueued: 0,
+      });
+      const preTrainerRows = await tx`select o.stage,o.recipient_user_id
+      from app_private.form_alert_occurrences o
+      where o.workspace_id=${f.wsA.id} order by o.recipient_user_id`;
+      expect(preTrainerRows).toHaveLength(2);
+      expect(preTrainerRows.map((row) => row.recipient_user_id).sort()).toEqual(
+        [f.po.userId, f.woA.userId].sort(),
+      );
+      expect(preTrainerRows.every((row) => row.stage === 'client_owners_immediate')).toBe(true);
+
+      // At deadline+24h, exactly one Trainer alert fires.
+      expect(await core(tx, f.wsA.id, '2026-02-02T10:00:00.000Z')).toEqual({
+        status: 'ok',
+        enqueued: 1,
+      });
+      // Re-evaluation at deadline+24h yields no new alerts.
+      expect(await core(tx, f.wsA.id, '2026-02-02T10:00:00.000Z')).toEqual({
         status: 'ok',
         enqueued: 0,
       });
@@ -139,14 +164,60 @@ it('notifies the current responsible Trainer and PO/WO once at the client deadli
               .join(',') === 'alert_id,recipient_id,stage',
         ),
       ).toBe(true);
-      expect(await core(tx, f.wsA.id, '2026-02-02T10:00:00.000Z')).toEqual({
-        status: 'ok',
-        enqueued: 0,
-      });
       expect(await core(tx, f.wsA.id, '2026-02-03T10:00:00.000Z')).toEqual({
         status: 'ok',
         enqueued: 0,
       });
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('S70-PO-9 suppresses client-late Trainer alert when submission is accepted between deadline and +24h', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await expect(
+    db.begin(async (tx) => {
+      const deadline = '2026-07-01T10:00:00.000Z';
+      const assignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        deadline,
+        f.po.userId,
+      );
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+      ) select ${f.wsA.id},${client.id},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+        from public.workspace_memberships m
+        where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+
+      // At deadline, PO and WO receive immediate alerts.
+      expect(await core(tx, f.wsA.id, deadline)).toEqual({
+        status: 'ok',
+        enqueued: 2,
+      });
+
+      // Between deadline and +24h (e.g. deadline + 12h), client submits form.
+      await tx`insert into public.form_answer_revisions(
+        workspace_id,assignment_id,revision,answer_values
+      ) values(${f.wsA.id},${assignment},1,${tx.json({})})`;
+      await tx`insert into app_private.form_submissions(
+        workspace_id,assignment_id,revision,submitted_at
+      ) values(${f.wsA.id},${assignment},1,'2026-07-01T22:00:00.000Z')`;
+
+      // At deadline+24h, evaluation runs -> no Trainer alert because submission exists.
+      expect(await core(tx, f.wsA.id, '2026-07-02T10:00:00.000Z')).toEqual({
+        status: 'ok',
+        enqueued: 0,
+      });
+
+      // Verify no Trainer alert occurrence exists.
+      const trainerOccurrences = await tx`select count(*)::int as n
+        from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and stage='client_trainer_24h'`;
+      expect(trainerOccurrences[0]?.n).toBe(0);
+
       throw rollback;
     }),
   ).rejects.toBe(rollback);
@@ -171,19 +242,20 @@ it('dedupes concurrent and retried evaluation to one Trainer alert per missed de
       where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
     return assignmentId;
   });
+  const evalAt = '2026-11-21T10:00:00.000Z';
   const firstConnection = sql();
   const secondConnection = sql();
   try {
     const first = firstConnection.begin(async (tx) => {
-      const result = await core(tx, f.wsA.id, deadline);
+      const result = await core(tx, f.wsA.id, evalAt);
       await tx`select pg_sleep(0.2)`;
       return result;
     });
     await new Promise((resolve) => setTimeout(resolve, 25));
-    const second = secondConnection.begin((tx) => core(tx, f.wsA.id, deadline));
+    const second = secondConnection.begin((tx) => core(tx, f.wsA.id, evalAt));
     const results = await Promise.all([first, second]);
     expect(results.map((result) => result.enqueued).sort()).toEqual([0, 3]);
-    expect(await db.begin((tx) => core(tx, f.wsA.id, deadline))).toEqual({
+    expect(await db.begin((tx) => core(tx, f.wsA.id, evalAt))).toEqual({
       status: 'ok',
       enqueued: 0,
     });
@@ -1051,7 +1123,8 @@ it('does not route client-late Trainer alerts to Sales or across workspaces', as
         from public.workspace_memberships m
         where m.workspace_id=${foreign.wsA.id} and m.user_id=${foreign.trainerA.userId} and m.revoked_at is null`;
 
-      expect(await core(tx, f.wsA.id, deadline)).toEqual({
+      const evalAt = '2026-11-23T10:00:00.000Z';
+      expect(await core(tx, f.wsA.id, evalAt)).toEqual({
         status: 'ok',
         enqueued: 3,
       });
