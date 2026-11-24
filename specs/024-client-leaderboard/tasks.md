@@ -96,7 +96,7 @@ Feature flags are cancelled while LIFTER is not live (PO S56-PO-4); this work pr
 
 - [x] T028 [US4] [FR-022-FR-024, FR-027, FR-038, FR-040] Create server-side display DTO and explicit field allow-list in `lib/leaderboard/projection.ts`; include rank and username only. Evidence: PR #110 exact-head CI green at 6c31a261 (validate, integration shards 1-3, storage, docs-only).
 - [x] T029 [US4] [FR-022-FR-024, FR-027, FR-038, FR-042] Add the authorized client Top 5 section inside `app/(client)/progress/page.tsx` (one F24 component), redirect `app/(client)/leaderboard/page.tsx` to it, and add the shared workspace viewer surface in `app/(app)/workspace-leaderboard/`; preserve localized empty/unavailable states. Evidence: PR #110 exact-head CI green at 6c31a261 (validate, integration shards 1-3, storage, docs-only).
-- [ ] T030 [US4] [FR-005, FR-038] Validate AR-RTL/EN-LTR, mobile/desktop, light/dark, keyboard and error/empty states against `docs/09-frontend-design-gate.md`; use only exact proposal-table strings until separately approved.
+- [x] T030 [US4] [FR-005, FR-038] Validate AR-RTL/EN-LTR, mobile/desktop, light/dark, keyboard and error/empty states against `docs/09-frontend-design-gate.md`; use only exact proposal-table strings until separately approved. Evidence: `tests/e2e/leaderboard-screenshots.spec.ts` passed (8 tests, 72 matrix captures across client Top 5 available/empty/error, client account settings, staff Top 5 / PO review available/empty/error, staff client goals; 0 axe WCAG 2.2 AA violations per cell).
 
 ## Phase 7: User Story 5 - Workspace isolation (Priority P1)
 
