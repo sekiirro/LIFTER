@@ -17,6 +17,11 @@ const signupPrivate = [
   'purge_client_signup_attempts',
   'purge_retention_for_platform_owner',
   'purge_retention_candidates',
+  'purge_retention_apply',
+  'purge_retention_apply_non_audit',
+  'purge_retention_pseudonymize_audit',
+  'retention_purge_audit_context_allows',
+  'retention_purge_context_allows',
   'purge_schedule_activate',
   'purge_schedule_deactivate',
   'signup_auth_schema_compatible',
@@ -103,6 +108,7 @@ const f24Invoker = [
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
   'purge_retention_for_platform_owner',
+  'retention_purge_audit_context_allows',
 ];
 // Spec 022 private helpers.
 const f22Private = [
@@ -611,6 +617,7 @@ describe('tenancy security catalog (T007)', () => {
         'f23_weekly_checkin_schedule_activate',
         'f23_weekly_checkin_schedule_deactivate',
         'audit_events_immutable',
+        'retention_purge_audit_context_allows',
         'branding_actor_id',
         'catalog_assert_exercise_text_limits',
         'catalog_search_pre_cutover',
@@ -641,6 +648,7 @@ describe('tenancy security catalog (T007)', () => {
         'purge_retention_candidates',
         'purge_f11_retained_data',
         'purge_retention_apply',
+        'purge_retention_apply_non_audit',
         'purge_schedule_activate',
         'purge_schedule_deactivate',
         'recovery_link_limits',
@@ -695,7 +703,10 @@ describe('tenancy security catalog (T007)', () => {
             : 'postgres'),
       );
       expect(row.anon_execute, row.proname).toBe(
-        row.proname === 'retention_purge_context_allows',
+        [
+          'retention_purge_context_allows',
+          'retention_purge_audit_context_allows',
+        ].includes(row.proname),
       );
       if (
         [
@@ -765,6 +776,8 @@ describe('tenancy security catalog (T007)', () => {
           'f18_invalid_uuid_alias',
           'f3_guard_platform_owner_profile_change',
           'f3_lock_platform_owner_state',
+          'purge_retention_apply_non_audit',
+          'purge_retention_pseudonymize_audit',
           'f19_guard_plan_revision_contributors',
           'f19_track_plan_draft_contributor',
           'f19_set_plan_revision_contributor_actions',
