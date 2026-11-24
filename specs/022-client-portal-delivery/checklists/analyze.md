@@ -1,6 +1,6 @@
 # Analyze: Client Portal Delivery
 
-**Date**: 2026-11-23 (Round 8 re-check after S70-PO-2 changed FR-011, directory copy, contract and tasks; prior analyses remain historical)
+**Date**: 2026-11-24 (Round 8 re-check after S70-PO-2 changed FR-011, directory copy, contract and tasks; T035-T037 verification; prior analyses remain historical)
 **Inputs**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, `copy-proposal.md`, PO S56-PO-4, S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12, S57-PO-13
 
 ## Changes analyzed
