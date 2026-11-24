@@ -11,6 +11,16 @@ Within the decided scope: **0 open CRITICAL, 0 open HIGH**. The 30-day value, bo
 
 ## Re-Analyze trigger
 
+Requirement text changed: architect ruling **S70-R61** resolves the FR-007 database boundary. The spec and plan now require one authenticated-callable SECURITY DEFINER wrapper with `search_path=''`, a non-null `auth.uid()` plus `app_private.is_platform_owner()` check before calling the postgres-only internal purge, `42501` denial, and EXECUTE only for `authenticated` (revoked from PUBLIC, `anon`, and `service_role`). This is a narrow explicit PO check and does not widen tenant access. Re-Analyze was run on 2026-11-24 after this clarification. No new product behavior or PO decision was introduced.
+
+## S70-R61 re-analysis
+
+- FR-007, Story 3 authorization scenario, SC-003, plan entry-point design, T006 and T013 agree on the single wrapper and its exact identity/grant boundary.
+- The wrapper executes only the existing internal postgres-only purge after checking the authenticated caller; the service-role path remains denied and no tenant-scoped RLS policy is broadened.
+- T006 covers Platform Owner allow, non-PO and null-identity denial, wrapper function metadata/ACLs, and a guard-removal mutation. T013 supplies only the wrapper migration and catalog evidence.
+- Cross-reference review: FR-007/FR-010 ↔ SC-003 ↔ T006/T013/T016 remain aligned; T002/T003/T009/T010 are unchanged.
+- Findings: 0 open CRITICAL, 0 open HIGH; no ambiguity or additional PO decision.
+
 Requirement text changed: architect review **S70-R47 = CHANGES REQUESTED (1 BLOCKING, data-loss/spec correctness)** required removing `public.subscriptions.status` from the refund hold, scoping any `public.jobs` row strictly to the refund lockout, and recording that no persisted dispute object exists. FR-004, Story 2 scenario 1, SC-002, the Clarifications Q1 row, plan.md (`Design` and `Hold and restart` slice) and tasks T004/T011 were updated accordingly, all labelled as architect mapping S70-R47. Analyze was re-run per S54-R6 / Spec Kit gate core §2. This analysis supersedes the 2026-11-24T02:02:54Z record.
 
 ## S70-R47 correction — recorded facts (architect mapping, not PO words)
