@@ -15,7 +15,7 @@ The scope is coherent and holds together well. It describes a post-sale coaching
 
 | # | Where | Tension | Proposed handling |
 |---|---|---|---|
-| C1 | PRD-03 | Check-ins "recur every seven days from activation", but reminders "align to the assigned form's day". These differ when the form's weekday ≠ the activation weekday. | NEEDS SOURCE CONFIRMATION. The scheduler will support an anchor date plus an optional weekday override, so either answer works without a migration. |
+| C1 | PRD-03 | Check-ins "recur every seven days from activation", but reminders "align to the assigned form's day". These differ when the form's weekday ≠ the activation weekday. | **RESOLVED** (S54-PO-12 Q15): the first weekly check-in is 7 days after activation, then every 7 days (Fridays included), and freezes shift the cycle. Encoded as spec 023 FR-001; the anchor-date design needs no weekday override. |
 | C2 | BRD-04.9 vs PRD-07 | Early-renewal start | **RESOLVED** (D-04): new period starts after the current one ends |
 | C3 | BRD-04.4 vs PRD-01 vs BRD-02 | Who issues links, approves, records renewals and refunds | **RESOLVED** (D-09/D-10) |
 | C4 | PRD-09 vs DR-03 (legal) | Leaderboard with names/photos on an opt-out basis, while the product stores health data. Many privacy laws (e.g. Egypt PDPL 151/2020, KSA PDPL) treat health data as sensitive. | Not a product conflict as long as the leaderboard shows no health metrics. Legal check required. Mitigation: alias option, no body metrics, explicit notice. Feature is optional and post-MVP. |

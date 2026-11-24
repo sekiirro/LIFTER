@@ -62,7 +62,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 - **B4 (remaining):** client closure retention period and audit retention (ND-F5-1) — DECIDED: 30 days (client, audit, payment, refund, invoice data; S70-PO-3/4); "PO states Egyptian legal advice was obtained" (S70-PO-3/4). The all-copies/backup proof (BR-04 in `docs/13-production-readiness.md`) remains open and gates production with real client data only.
 - Outstanding production gates: [07-production-readiness.md](07-production-readiness.md). Per the PO (2026-10-27), these do not block local development or PR merges.
 - Remaining phase-gated decisions:
-  - check-in anchor (C1, P5)
+  - ~~check-in anchor (C1, P5)~~ Resolved by S54-PO-12 Q15 (first check-in 7 days after activation, then every 7 days including Fridays; freezes shift the cycle), encoded as spec 023 FR-001
   - form-builder permission matrix (P2)
   - ~~secondary-muscle credit (P3)~~ Resolved by S20 D17-1.
   - ~~catalog edit/merge rights (P3)~~ Resolved by S20 D16-1.
