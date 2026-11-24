@@ -1,10 +1,11 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { TransactionSql } from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
 import { clientContext, graph, sql } from './registration-approval-fixture';
 
 const db = sql();
 const rollback = new Error('rollback retention apply fixtures');
+const mutationRollback = new Error('rollback retention guard mutation');
 
 afterAll(() => db.end());
 
@@ -39,9 +40,75 @@ async function purgeAsOwner(
   }
 }
 
+async function underGuardMutant<T>(probe: (tx: TransactionSql) => Promise<T>) {
+  let observed: T | undefined;
+  await db
+    .begin(async (tx) => {
+      const signature = 'app_private.retention_purge_guard()';
+      const [row] = await tx`
+      select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition
+    `;
+      const definition = row!.definition as string;
+      const control = 'if not app_private.retention_purge_context_allows(';
+      const mutated = definition.replace(
+        control,
+        'if false and app_private.retention_purge_context_allows(',
+      );
+      expect(
+        mutated,
+        'the run-scoped table/operation allowlist exists',
+      ).not.toBe(definition);
+      await tx.unsafe(mutated);
+      observed = await probe(tx);
+      throw mutationRollback;
+    })
+    .catch((error) => {
+      if (error !== mutationRollback) throw error;
+    });
+  return observed;
+}
+
 describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
   'F26 dry-run and apply evidence (Stack E only)',
   () => {
+    it('denies a non-run ledger delete and kills removal of the allowlist check', async () => {
+      const f = await clientContext();
+      let eventId = '';
+      await db.begin(async (tx) => {
+        const ids = await graph(tx, f);
+        eventId = ids.event;
+      });
+
+      await expect(
+        db.begin(async (tx) => {
+          await tx`delete from public.payment_events where id=${eventId}`;
+        }),
+      ).rejects.toMatchObject({ code: '23514' });
+
+      const [before] = await db`
+        select pg_catalog.pg_get_functiondef('app_private.retention_purge_guard()'::regprocedure) as definition
+      `;
+      const beforeHash = createHash('sha256')
+        .update(before!.definition as string)
+        .digest('hex');
+      const leaked = await underGuardMutant(async (tx) => {
+        const rows = await tx`
+          delete from public.payment_events where id=${eventId} returning id
+        `;
+        return rows.length;
+      });
+      expect(leaked).toBe(1);
+      const [after] = await db`
+        select pg_catalog.pg_get_functiondef('app_private.retention_purge_guard()'::regprocedure) as definition
+      `;
+      expect(after!.definition).toBe(before!.definition);
+      expect(
+        createHash('sha256')
+          .update(after!.definition as string)
+          .digest('hex'),
+      ).toBe(beforeHash);
+    });
+
     it('keeps dry-run read-only, replays one apply, and preserves retained money facts and staff reads', async () => {
       const f = await clientContext();
       await expect(
