@@ -64,13 +64,11 @@ The Stack E catalog found guards that conflict with these intended mutations. Sh
 
 The apply ledger is keyed by stable `run_id` with a unique constraint and stores aggregate counts only: eligible clients, deleted rows by table, retained payment/refund/allocation/cancellation rows pseudonymized, held clients, and skipped-inside-window clients. It stores no client IDs, account identifiers, row IDs, email/phone/name, request payloads, or per-client reason. A matching completed run ID returns that aggregate row. A conflicting run ID bound to different immutable request parameters fails closed. The counts row is written in the same transaction as the mutations, so no partial evidence can claim a successful purge.
 
-#### Open product decision — MCQ-026-3
+#### S70-PO-14 decisions (MCQ-026-3 and MCQ-026-4)
 
-This design follows S70-PO-10 Q2/Q4 by retaining only the four named financial evidence tables. It assumes those rows cease to identify a client once their client/subscription/operation parents are removed and the direct `refund_operations.client_id` is NULL. Please confirm whether opaque workspace/UUID references plus retained financial amounts, currency and dates are acceptable as pseudonymized evidence after the listed FK edges are removed, or whether any additional subscription/installation/operation structure must be retained. The implementation PR stays blocked pending the architect's design review and this answer if required.
+S70-PO-14 resolves MCQ-026-3 as **“Delete structure, keep totals”** (option A). T012 retains only the four Q4 evidence tables named above; it physically deletes subscriptions, installments, registration operations and the other in-scope client descendants. The old per-package and per-trainer breakdowns for purged clients may change; that consequence is accepted. Retained evidence rows preserve their financial amounts, currencies and dates while removing every path back to the client.
 
-#### Open product decision — MCQ-026-4
-
-`app_private.form_legal_holds` is client-scoped and has a dedicated guard (`20261112020200_f15_s14_privacy.sql:42,141`). The matrix proposes DELETE, but that action is provisional pending this answer. The purge spec's resolved hold is specifically the refund lockout hold (S70-R47), while Q2 says other in-scope rows are deleted. Option A: delete the form legal-hold row with the rest of the client-scoped non-evidence data; this preserves the decided refund-only purge predicate. Option B: preserve an active form legal-hold row and block purge until its release; this adds another hold source and changes the decided eligibility predicate. Recommendation: A unless the PO says this form hold must survive account purge; implementation is blocked on that retention instruction if B is selected.
+S70-PO-14 resolves MCQ-026-4 as **“Delete anyway”** (option A). `app_private.form_legal_holds` is deleted at day 30 with the other in-scope client data. It is not an additional purge hold source; the refund-lockout hold remains the sole hold predicate under architect mapping S70-R47. The table and its guard are cited in the matrix above (`20261112020200_f15_s14_privacy.sql:42,141`).
 
 ### Clock and eligibility model
 
