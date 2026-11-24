@@ -110,6 +110,11 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
 
           await tx`update public.clients set deactivated_at=${new Date(sampledAt.getTime() - 30 * days)}
             where workspace_id=${f.wsA.id} and id=${ids.client}`;
+          await tx`
+            update app_private.refund_auth_lockouts
+            set status='succeeded',completed_at=${new Date(sampledAt.getTime() - 30 * days)}
+            where client_id=${ids.client}
+          `;
 
           const eligible = await tx`
             select data_class,workspace_id,record_id,client_id
