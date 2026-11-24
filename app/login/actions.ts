@@ -4,7 +4,10 @@ import { redirect } from 'next/navigation';
 import { createSessionClient } from '../../lib/supabase/server';
 import { readServerEnv } from '../../lib/supabase/env';
 import { normalizedEmail } from '../../lib/client-accounts/validation';
-import { buildStaffResetRedirectTo } from '../../lib/auth/staff-reset';
+import {
+  buildStaffResetRedirectTo,
+  isLocalStaffResetEnvironment,
+} from '../../lib/auth/staff-reset';
 import { safeReturnTo } from '../../lib/auth/redirect';
 import type { SignInResult } from '../../lib/auth/results';
 
@@ -60,7 +63,7 @@ export async function requestStaffReset(
   try {
     const env = readServerEnv();
     const client = await createSessionClient();
-    if (env && client) {
+    if (env && client && isLocalStaffResetEnvironment(env.url, env.appOrigin)) {
       await client.auth.resetPasswordForEmail(email, {
         redirectTo: buildStaffResetRedirectTo(env.appOrigin),
       });

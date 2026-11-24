@@ -8,10 +8,10 @@ vi.mock('../../lib/supabase/server', () => ({
 
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.stubEnv('SUPABASE_URL', 'https://supabase.example.test');
+  vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:54321');
   vi.stubEnv('SUPABASE_ANON_KEY', 'anon-test-key');
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'service-test-key');
-  vi.stubEnv('APP_ORIGIN', 'https://app.example.test');
+  vi.stubEnv('APP_ORIGIN', 'http://localhost:3000');
   mocks.client.mockResolvedValue({
     auth: { resetPasswordForEmail: mocks.reset },
   });
