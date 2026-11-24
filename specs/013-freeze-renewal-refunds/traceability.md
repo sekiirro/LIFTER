@@ -72,7 +72,7 @@ Columns: `Requirement` (FR/SC from `spec.md`) â†’ `Task(s)` (from `tasks.md
 ## Blocked tasks (not implemented in this lane)
 
 - **T019** (U07, retention legal/technical): BLOCKED â€” 30-day retention across all recoverable copies including backups requires legal/technical feasibility review; minimal legally required financial/audit evidence reconciliation pending. Owner: `quickstart.md` + approved retention register. Production deployment with real client data is blocked until T019 is resolved. Gates: FR-019, FR-029, FR-034, FR-035; SC-009, SC-010. No answer proposed here.
-- **T020** (U07 production readiness): VERIFIED � Hosted smoke on 2026-11-24 at `lifter-prod` per S70-PO-6/7 and S70-R39. Deactivated synthetic client password sign-in and refresh both failed with HTTP 403 and no access token; active synthetic client and staff sign-ins succeeded. CAT hook remained enabled. Cleanup removed all five lane-tagged users and fixtures; S70-PO-11 one-time bypass restored 11/11 protection triggers and asserted target counts zero before commit. Evidence: `docs/evidence/hosted-lifter-prod-baseline.md` � Smoke tests.
+- **T020** (U07 production readiness): VERIFIED - Hosted smoke on 2026-11-24 at `lifter-prod` per S70-PO-6/7 and S70-R39. Deactivated synthetic client password sign-in and refresh both failed with HTTP 403 and no access token; active synthetic client and staff sign-ins succeeded. CAT hook remained enabled. Cleanup removed all five lane-tagged users and fixtures; S70-PO-11 one-time bypass restored 11/11 protection triggers and asserted target counts zero before commit. Evidence: `docs/evidence/hosted-lifter-prod-baseline.md` - Smoke tests.
 
 ## Counts by status
 
