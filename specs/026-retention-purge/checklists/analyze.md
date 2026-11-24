@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F26 Retention Purge Entry Point (DP-08)
 
-**Analysis date**: 2026-11-24T09:39:29Z (re-run after S70-PO-14 resolved MCQ-026-3/-4 in the S70-R76 apply-mode design; dated after spec.md, plan.md and tasks.md).
+**Analysis date**: 2026-11-24T13:27:14Z (re-run after S70-R81 approved the T012 design and implementation preserved existing trigger behavior; dated after spec.md, plan.md and tasks.md).
 **Inputs**: `spec.md`, `plan.md`, `tasks.md`; authority addenda `S70-PO-10` (Q1–Q4 resolved) and architect mapping `S70-R47` (CHANGES REQUESTED — Q1 state mapping corrected).
 **Scope**: Spec-only. No code, SQL, migration, scheduler activation, hosted change, or task tick.
 **Authority**: S70-PO-1 item 3 (SHA-256 `D8E0EAF354F3923630BA38CD258EDD8E94DD63B86D9345405D40A520A790F20E`), S70-PO-3, S70-PO-4, S70-PO-5 (SHA-256 `FBE1F9186AD1B853890617EF4AAFCDE967C81C2518C466744EB1250C2697C957`), S70-PO-10 (`s70-po-10.verbatim.txt`, 2026-11-24T01:33:12Z), architect mapping S70-R47, docs/13 DP-01/02/06/08 and OP-01, BR-01/BR-02/BR-04, FN-03, docs/04 S70 entries and D-10.
@@ -102,3 +102,16 @@ Requirement text changed: architect review **S70-R47 = CHANGES REQUESTED (1 BLOC
 ## Next actions
 
 No CRITICAL/HIGH/MEDIUM/LOW findings or open PO decisions. The S70-R47 correction and S70-R76 design, including S70-PO-14 decisions, are recorded across the feature artifacts. Implementation may proceed under S70-R81 after design PR approval, with RED-first commits, mutation evidence and task ticks.
+
+## S70-R82 implementation closure re-analysis — 2026-11-24
+
+Stack E's current recursive foreign-key closure identified two client-linked descendants absent from the original matrix: `app_private.package_reporting_fx_snapshots` and `public.sales_productivity_units`. The plan now records both as DELETE, with migration source lines. This follows S70-R76's rule that only the four Q4 ledger tables are retained, plus S70-PO-14's acceptance that historical package/trainer breakdowns may change. The retained Q4 ledger rows still preserve amount, commission, currency, and dates. No new product requirement or PO choice was introduced.
+
+Re-analysis confirms T012's table scope and operation allowlist now cover the Stack E FK closure, including both added rows. The FX snapshot is removed with its linked payment event; sales productivity units are removed with their client/approval facts. `public.audit_events` remains unchanged by T012. Findings: 0 open CRITICAL, 0 open HIGH, 0 open PO decisions.
+
+## S70-R81 approved-design implementation check â€” 2026-11-24
+
+- Architect mapping S70-R81 approved the T012 table matrix and requires a run-scoped allowlist exception inside existing guards, with no global trigger disable or bypass setting.
+- The migration preserves existing triggers and their non-purge behavior; only the original guard functions gain an early return when an active locked run and table/operation allowlist both match. `public.audit_events` is excluded from T012.
+- T012 keeps the four Q4 evidence tables and amount/currency/date facts, removes only FK paths to structures deleted under S70-PO-14, and keeps counts-only run evidence and same-run replay.
+- No FR, SC, acceptance scenario, product behavior, or PO authority text changed. Findings: 0 open CRITICAL, 0 open HIGH, 0 open PO decisions.
