@@ -189,56 +189,46 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
       });
       const runId = randomUUID();
 
-      try {
-        await db.unsafe(
-          'alter table public.clients disable trigger f12_client_transition',
-        );
-        await db.unsafe(`create function app_private.test_bump_client_after_installment_delete()
+      await expect(
+        db.begin(async (tx) => {
+          await tx.unsafe(
+            'alter table public.clients disable trigger f12_client_transition',
+          );
+          await tx.unsafe(`create function app_private.test_bump_client_after_installment_delete()
           returns trigger language plpgsql set search_path='' as $$ begin
             update public.clients c set name=c.name
             from public.subscriptions s
             where s.id=old.subscription_id and c.id=s.client_id;
             return old;
           end $$`);
-        await db.unsafe(`create trigger z_test_retention_bump_client
+          await tx.unsafe(`create trigger z_test_retention_bump_client
           after delete on public.subscription_installments
           for each row execute function app_private.test_bump_client_after_installment_delete()`);
+          const result = await purgeAsOwner(tx, f.po.userId, runId, 'apply');
+          throw new Error(`purge unexpectedly returned ${result.status}`);
+        }),
+      ).rejects.toMatchObject({
+        code: 'P0001',
+        message: expect.stringContaining('public.clients'),
+      });
 
-        await expect(
-          db.begin(async (tx) => purgeAsOwner(tx, f.po.userId, runId, 'apply')),
-        ).rejects.toMatchObject({
-          code: 'P0001',
-          message: expect.stringContaining('public.clients'),
-        });
-
-        const [afterFailure] = await db`
-          select
-            (select count(*)::integer from public.clients where id=${ids.client}::uuid) as clients,
-            (select count(*)::integer from public.subscriptions where id=${ids.subscription}::uuid) as subscriptions,
-            (select count(*)::integer from public.subscription_installments where id=${ids.obligation}::uuid) as installments,
-            (select count(*)::integer from app_private.registration_operations where id=${ids.operation}::uuid) as operations,
-            (select count(*)::integer from public.payment_events where id=${ids.event}::uuid) as payments,
-            (select count(*)::integer from app_private.retention_purge_runs where run_id=${runId}::uuid) as run_rows
-        `;
-        expect(afterFailure).toEqual({
-          clients: 1,
-          subscriptions: 1,
-          installments: 1,
-          operations: 1,
-          payments: 1,
-          run_rows: 0,
-        });
-      } finally {
-        await db.unsafe(
-          'drop trigger if exists z_test_retention_bump_client on public.subscription_installments',
-        );
-        await db.unsafe(
-          'drop function if exists app_private.test_bump_client_after_installment_delete()',
-        );
-        await db.unsafe(
-          'alter table public.clients enable trigger f12_client_transition',
-        );
-      }
+      const [afterFailure] = await db`
+        select
+          (select count(*)::integer from public.clients where id=${ids.client}::uuid) as clients,
+          (select count(*)::integer from public.subscriptions where id=${ids.subscription}::uuid) as subscriptions,
+          (select count(*)::integer from public.subscription_installments where id=${ids.obligation}::uuid) as installments,
+          (select count(*)::integer from app_private.registration_operations where id=${ids.operation}::uuid) as operations,
+          (select count(*)::integer from public.payment_events where id=${ids.event}::uuid) as payments,
+          (select count(*)::integer from app_private.retention_purge_runs where run_id=${runId}::uuid) as run_rows
+      `;
+      expect(afterFailure).toEqual({
+        clients: 1,
+        subscriptions: 1,
+        installments: 1,
+        operations: 1,
+        payments: 1,
+        run_rows: 0,
+      });
     });
 
     it('keeps dry-run read-only, replays one apply, and preserves retained money facts and staff reads', async () => {
