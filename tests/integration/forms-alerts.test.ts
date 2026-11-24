@@ -979,13 +979,7 @@ it('mutation: changing client-late Trainer alert delay from 24h to 0 is caught b
       await expectInvariantFailure(async () =>
         db.begin(async (tx) => {
           const deadline = '2026-02-01T10:00:00.000Z';
-          await formAssignment(
-            tx,
-            f.wsA.id,
-            client.id,
-            deadline,
-            f.po.userId,
-          );
+          await formAssignment(tx, f.wsA.id, client.id, deadline, f.po.userId);
           await tx`insert into public.client_trainer_assignments(
             workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
           ) select ${f.wsA.id},${client.id},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
