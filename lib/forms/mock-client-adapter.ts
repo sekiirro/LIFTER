@@ -32,6 +32,7 @@ export function createMockFormsClientAdapter(
     expectedRevision: number,
     answers: FormAnswerSet,
     submitted: boolean,
+    remove?: string[],
   ) {
     const current = records.get(assignmentId) ?? {
       revision: expectedRevision,
@@ -41,7 +42,11 @@ export function createMockFormsClientAdapter(
     if (current.revision !== expectedRevision)
       return { status: 'conflict' as const };
     const revision = current.revision + 1;
-    records.set(assignmentId, { revision, answers: { ...answers }, submitted });
+    const nextAnswers = { ...current.answers, ...answers };
+    for (const id of remove ?? []) {
+      delete nextAnswers[id];
+    }
+    records.set(assignmentId, { revision, answers: nextAnswers, submitted });
     return { status: 'saved' as const, revision };
   }
   return {
@@ -49,8 +54,8 @@ export function createMockFormsClientAdapter(
     reloadSubmitted: async ({ assignmentId }) => read(assignmentId),
     saveDraft: async ({ assignmentId, expectedRevision, answers }) =>
       save(assignmentId, expectedRevision, answers, false),
-    correct: async ({ assignmentId, expectedRevision, answers }) =>
-      save(assignmentId, expectedRevision, answers, true),
+    correct: async ({ assignmentId, expectedRevision, answers, remove }) =>
+      save(assignmentId, expectedRevision, answers, true, remove),
     submit: async ({ assignmentId, expectedRevision, answers }) => {
       const result = save(assignmentId, expectedRevision, answers, true);
       return result.status === 'saved'

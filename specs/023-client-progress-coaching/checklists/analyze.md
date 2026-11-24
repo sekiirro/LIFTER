@@ -1,5 +1,9 @@
 # Analyze: 023 Client Progress Coaching (P5 Progress)
 
+## Date update 2026-11-24 (T051 docs half closed)
+
+Date: 2026-11-24 UTC. Scope: `specs/023-client-progress-coaching/`. The only spec-artifact change is the `tasks.md` T051 status/evidence text (task ticked `[x]` with Verified command, path and gate evidence); stale F23 references in `docs/` were also corrected. No FR, SC, acceptance-scenario or plan design text changed, so this is a date update rather than a new full Analyze (S54-R6; S29-PO-3 Q5). Result: 0 open CRITICAL, 0 open HIGH. T051 is closed on origin/main base `788cf3a1`; T052/T004 stay CANCELLED and T054 remains orchestrator-owned.
+
 ## Re-run 2026-11-18 (notifications on the F22 inbox seam, after PR #108)
 
 Date: 2026-11-18. Scope: `specs/023-client-progress-coaching/`. No FR, SC, acceptance or plan design text changed. Changed text in this pass:
