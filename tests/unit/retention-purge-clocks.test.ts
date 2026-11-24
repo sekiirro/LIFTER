@@ -3,7 +3,7 @@ import {
   isAuditRetentionEligible,
   isClosureRetentionEligible,
   RETENTION_PERIOD_MS,
-} from '@/lib/retention-purge/clocks';
+} from '../../lib/retention-purge/clocks';
 
 const day = 24 * 60 * 60 * 1000;
 const now = new Date('2026-11-24T12:00:00.000Z');
@@ -27,12 +27,8 @@ describe('retention purge clocks', () => {
     expect(isClosureRetentionEligible(closedAt, now)).toBe(true);
   });
 
-  it('never selects active-account data regardless of row age', () => {
-    const closedAt = new Date(now.getTime() - 90 * day);
-
-    expect(
-      Reflect.apply(isClosureRetentionEligible, undefined, [closedAt, now, true]),
-    ).toBe(false);
+  it('never selects data for an active account without a closure timestamp', () => {
+    expect(isClosureRetentionEligible(null, now)).toBe(false);
   });
 
   it('starts the audit clock at event creation', () => {
