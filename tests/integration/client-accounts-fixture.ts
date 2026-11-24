@@ -451,6 +451,7 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
+          result.data?.status === 'not_found' ||
           ([
             'record_refund',
             'record_renewal',

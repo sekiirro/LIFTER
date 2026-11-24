@@ -9,6 +9,14 @@ This addendum records the approved S31-PO-1 fixes only. Existing task checkboxes
 
 The authorized-route screenshot matrix and the shared client-recovery probe-batching adjustment remain partial integration/evidence work and do not complete T006/T009 or authorize marking those tasks complete.
 
+## S70-PO-1 item 5 client-late Trainer alerts
+
+<!-- prettier-ignore-start -->
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-017/018/024 — route client-late in-app alerts 24h after configured deadline to current active responsible Trainer; preserve immediate PO/WO alerts, dedupe retries/concurrency, scope inbox access by current assignment, and leave pg_cron disabled | T104 | Stack C: `tests/integration/forms-alerts.test.ts`, `forms-alert-inbox.test.ts`, `forms-alert-channels.test.ts`, `rls-catalog.test.ts`, and `client-accounts-catalog.test.ts` — 106/106 passed. Covers current recipient, 24h Trainer delay, pre-24h owner alerts, accepted-submission suppression, unassigned/Sales/foreign-workspace negatives, PO/WO preservation, concurrent/retried idempotency, Trainer RLS, scheduler disabled, and dedupe/RLS/delay mutation evidence. Under S70-PO-9. | `fa27deca` |
+<!-- prettier-ignore-end -->
+
 ## S32 h12 PO-8 traceability
 
 <!-- prettier-ignore-start -->

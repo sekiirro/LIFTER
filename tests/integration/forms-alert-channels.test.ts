@@ -17,6 +17,7 @@ const rollback = new Error('rollback T054 channel mutation');
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 
 const authenticatedFunctions = new Set([
+  'f15_alert_trainer_assignment_visible',
   'create_f15_telegram_link_token',
   'mark_form_alert_read',
   'read_form_alert_inbox',
@@ -56,6 +57,7 @@ async function assertAlertFunctionAcl(connection: Sql | TransactionSql = db) {
   );
   for (const name of [
     'app_private.evaluate_forms_alerts_core',
+    'app_private.f15_alert_trainer_assignment_visible',
     'app_private.write_f15_in_app_alert',
     'public.create_f15_telegram_link_token',
     'public.read_form_alert_inbox',
@@ -78,7 +80,9 @@ async function assertAlertFunctionAcl(connection: Sql | TransactionSql = db) {
       fn.authenticated_exec,
       `${fn.schema_name}.${fn.proname} authenticated`,
     ).toBe(
-      fn.schema_name === 'public' && authenticatedFunctions.has(fn.proname),
+      (fn.schema_name === 'public' && authenticatedFunctions.has(fn.proname)) ||
+        (fn.schema_name === 'app_private' &&
+          fn.proname === 'f15_alert_trainer_assignment_visible'),
     );
     expect(
       fn.service_exec,
