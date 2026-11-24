@@ -61,7 +61,8 @@ begin
               )
             )
             or (
-              exists (
+              s.deadline_at + interval '24 hours' <= p_evaluation_at
+              and exists (
                 select 1 from public.form_assignments a
                 where a.workspace_id=s.workspace_id and a.id=s.source_assignment_id
                   and app_private.current_assigned_trainer(a.workspace_id,a.client_id) is not null
@@ -152,7 +153,7 @@ begin
           schedule_row.deadline_at as stage_at
         where schedule_row.alert_kind='client_late'
         union all
-        select 'client_trainer_24h',schedule_row.deadline_at
+        select 'client_trainer_24h',schedule_row.deadline_at + interval '24 hours'
         where schedule_row.alert_kind='client_late'
           and trainer_id is not null
         union all

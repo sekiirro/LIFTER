@@ -958,6 +958,52 @@ it('mutation: removing the client-late catch-up bound is caught', async () => {
   );
 });
 
+it('mutation: changing client-late Trainer alert delay from 24h to 0 is caught by the +23h59m test', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await withCrashSafeFunctionMutant(
+    'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
+    (definition) =>
+      definition
+        .replace(
+          "s.deadline_at + interval '24 hours' <= p_evaluation_at",
+          "s.deadline_at + interval '0 hours' <= p_evaluation_at",
+        )
+        .replace(
+          "select 'client_trainer_24h',schedule_row.deadline_at + interval '24 hours'",
+          "select 'client_trainer_24h',schedule_row.deadline_at + interval '0 hours'",
+        ),
+    async () => {
+      await expectInvariantFailure(async () =>
+        db.begin(async (tx) => {
+          const deadline = '2026-02-01T10:00:00.000Z';
+          const assignment = await formAssignment(
+            tx,
+            f.wsA.id,
+            client.id,
+            deadline,
+            f.po.userId,
+          );
+          await tx`insert into public.client_trainer_assignments(
+            workspace_id,client_id,trainer_user_id,assignment_source,assigned_by,workspace_membership_id
+          ) select ${f.wsA.id},${client.id},${f.trainerA.userId},'po_manual',${f.po.userId},m.id
+            from public.workspace_memberships m
+            where m.workspace_id=${f.wsA.id} and m.user_id=${f.trainerA.userId} and m.revoked_at is null`;
+
+          await core(tx, f.wsA.id, deadline);
+          const eval23h59m = '2026-02-02T09:59:00.000Z';
+          await core(tx, f.wsA.id, eval23h59m);
+          const trainerRows = await tx`select id from app_private.form_alert_occurrences
+            where workspace_id=${f.wsA.id} and stage='client_trainer_24h'`;
+          // Invariant: at +23h59m, trainer rows must be 0.
+          expect(trainerRows).toHaveLength(0);
+          throw rollback;
+        }),
+      );
+    },
+  );
+});
+
 it('mutation: removing legacy owner-stage suppression is caught', async () => {
   const f = await clientContext();
   const client = await registered(f);
