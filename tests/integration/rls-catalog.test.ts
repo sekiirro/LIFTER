@@ -15,6 +15,7 @@ const signupPrivate = [
   'signup_attestation_timing',
   'signup_attempt_purge_proof',
   'purge_client_signup_attempts',
+  'purge_retention_for_platform_owner',
   'purge_retention_candidates',
   'purge_schedule_activate',
   'purge_schedule_deactivate',
@@ -800,6 +801,7 @@ describe('tenancy security catalog (T007)', () => {
       }
       expect(row.authenticated_execute, row.proname).toBe(
         [
+          'purge_retention_for_platform_owner',
           'branding_upload_begin',
           'branding_upload_terminalize',
           'branding_draft_save',

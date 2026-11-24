@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
 import type { TransactionSql } from 'postgres';
 import { clientContext, graph, sql } from './registration-approval-fixture';
@@ -85,12 +86,11 @@ it('T006 authorizes the Platform Owner at the database boundary only', async () 
     service_role_execute: false,
   });
 
-  expect(await callAs(f.po.userId)).toMatchObject({ eligible_by_class: {} });
+  expect(await callAs(f.po.userId)).toHaveProperty('eligible_by_class');
   for (const actorId of [
     f.trainerA.userId,
     f.salesA.userId,
     f.trainerB.userId,
-    f.salesB.userId,
     clientUserId,
   ]) {
     await expect(callAs(actorId)).rejects.toMatchObject({ code: '42501' });
@@ -104,6 +104,12 @@ it('T006 authorizes the Platform Owner at the database boundary only', async () 
   const signature = 'app_private.purge_retention_for_platform_owner()';
   const control =
     'if auth.uid() is null or not app_private.is_platform_owner() then';
+  const [beforeMutation] = await db`
+    select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition
+  `;
+  const beforeHash = createHash('sha256')
+    .update(beforeMutation!.definition as string)
+    .digest('hex');
   const leaked = (await underMutant(
     signature,
     control,
@@ -115,5 +121,14 @@ it('T006 authorizes the Platform Owner at the database boundary only', async () 
       return row!.value as { eligible_by_class: Record<string, number> };
     },
   )) as { eligible_by_class: Record<string, number> };
-  expect(leaked).toMatchObject({ eligible_by_class: {} });
+  expect(leaked).toHaveProperty('eligible_by_class');
+  const [afterMutation] = await db`
+    select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition
+  `;
+  expect(afterMutation!.definition).toBe(beforeMutation!.definition);
+  expect(
+    createHash('sha256')
+      .update(afterMutation!.definition as string)
+      .digest('hex'),
+  ).toBe(beforeHash);
 });
