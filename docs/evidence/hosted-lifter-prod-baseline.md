@@ -45,3 +45,30 @@ The PO supplied the Free plan. Supabase documents that Free projects do not incl
 ## Gate status from this evidence
 
 Only PI-01's approved hosting target/region is already marked Done in `docs/13-production-readiness.md`. This baseline adds evidence but does not close any open gate or mark the project Production Ready. The project's Free plan, open backup gates, unrestricted database CIDRs, disabled SSL enforcement, unverified SMTP/sender and pooler mode, and unapplied schema all remain pre-production blockers.
+
+## Smoke tests
+
+Observed: 2026-11-24 UTC. Target: hosted pre-production project `lifter-prod`, ref `aaxswvjjxdmwbhgcgjyo`. Authority: S70-PO-6 and S70-PO-7; S70-PO-1 items 2 and 6.
+
+### Custom Access Token hook
+
+The hosted Auth config now reports the Custom Access Token hook enabled with URI `pg-functions://postgres/public/custom_access_token_hook`, matching `supabase/config.toml`. The change was limited to the CAT enabled flag and URI. No sign-in or refresh token-issuance test was run.
+
+T020 remains open and unchecked. The negative test fixture requested for this lane is a deactivated staff user, while FR-019 specifies blocking deactivated clients and passing staff claims unchanged. The conflicting expectation is recorded as S70-HOSTEDSMOKE-MCQ-1 in the lane report. No staff-deactivation behavior was inferred. Active staff/client issuance controls were not run because the task's negative case is unresolved.
+
+### Hosted RLS smoke
+
+The remote migration inventory reported 349 applied migrations. Before and after the smoke, `auth.users` and every touched application table below had a count of zero.
+
+Two synthetic workspace-owner claim contexts were used, one per workspace. Fixtures covered clients, client-trainer assignments, packages and offers, forms and answer drafts/revisions, and audit events. The database query ran with transaction-local `authenticated` and `anon` roles and synthetic JWT claim settings. Fixture insert triggers/foreign-key triggers were disabled only inside the smoke transaction to permit direct RLS fixture setup. Temporary SELECT grants to authenticated and anon were also applied only in that transaction so those database roles could exercise row policies. The transaction was intentionally rolled back after assertions, removing fixtures and grants. This checks row visibility and does not validate application writers or GoTrue-issued JWTs.
+
+| Table/read path                           | Workspace A owner | Workspace B owner | Anon |
+| ----------------------------------------- | ----------------- | ----------------- | ---- |
+| `client_trainer_assignments`              | A: 1, B: 0        | B: 1, A: 0        | 0    |
+| `packages`                                | A: 1, B: 0        | B: 1, A: 0        | 0    |
+| `audit_events`                            | A: 1, B: 0        | B: 1, A: 0        | 0    |
+| `clients` direct table read               | A: 0, B: 0        | B: 0, A: 0        | 0    |
+| `form_answer_drafts` direct table read    | A: 0, B: 0        | B: 0, A: 0        | 0    |
+| `form_answer_revisions` direct table read | A: 0, B: 0        | B: 0, A: 0        | 0    |
+
+Direct reads of `clients` and answer tables returned no rows even for the owning workspace; these tables do not expose direct reads to authenticated callers. The synthetic claims and all fixture rows were transaction-scoped and rolled back. Post-smoke counts were zero for `auth.users`, `staff_profiles`, `workspaces`, `workspace_memberships`, `clients`, `client_trainer_assignments`, `packages`, `package_offers`, `package_versions`, `forms`, `form_versions`, `form_assignments`, `form_answer_drafts`, `form_answer_revisions`, and `audit_events`. No persistent fixture remains; the CAT hook is the only Auth setting changed.
