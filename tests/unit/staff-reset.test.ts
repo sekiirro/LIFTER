@@ -21,10 +21,10 @@ const generic = {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.stubEnv('SUPABASE_URL', 'https://supabase.example.test');
+  vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:54321');
   vi.stubEnv('SUPABASE_ANON_KEY', 'anon-test-key');
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'service-test-key');
-  vi.stubEnv('APP_ORIGIN', 'https://app.example.test');
+  vi.stubEnv('APP_ORIGIN', 'http://localhost:3000');
   mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
   mocks.client.mockResolvedValue({
     auth: { resetPasswordForEmail: mocks.resetPasswordForEmail },
@@ -58,6 +58,33 @@ describe('staff password reset request', () => {
     expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
   });
 
+  it('keeps valid recovery requests generic without contacting hosted Auth', async () => {
+    vi.stubEnv('SUPABASE_URL', 'https://supabase.example.test');
+    vi.stubEnv('APP_ORIGIN', 'https://app.example.test');
+    const { requestStaffReset } = await import('../../app/login/actions');
+    const form = new FormData();
+    form.set('email', 'person@example.test');
+    expect(await requestStaffReset(null, form)).toEqual({ status: 'ok' });
+    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
+  });
+
+  it('allows only HTTP loopback URLs for local staff recovery', async () => {
+    const { isLocalStaffResetEnvironment } =
+      await import('../../lib/auth/staff-reset');
+    expect(
+      isLocalStaffResetEnvironment(
+        'http://127.0.0.1:54321',
+        'http://localhost:3000',
+      ),
+    ).toBe(true);
+    expect(
+      isLocalStaffResetEnvironment(
+        'https://supabase.example.test',
+        'https://app.example.test',
+      ),
+    ).toBe(false);
+  });
+
   it.each([
     ['eligible', null],
     ['unknown', null],
@@ -85,7 +112,7 @@ describe('staff password reset request', () => {
       );
       expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith(
         'person@example.test',
-        { redirectTo: 'https://app.example.test/auth/recovery' },
+        { redirectTo: 'http://localhost:3000/auth/recovery' },
       );
       expect(mocks.resetPasswordForEmail).toHaveBeenCalledTimes(1);
     },

@@ -1482,6 +1482,7 @@ export const ar = {
   'staff.clientDirectory.assignment.unassigned': 'من غير مدرب',
   'staff.clientDirectory.clientCode': 'كود العميل',
   'staff.clientDirectory.pendingFoodReplacements': 'طلبات تبديل أكل لسه مستنية',
+  'staff.clientDirectory.newCheckIns': 'في استمارات متابعة جديدة',
   'staff.clientDirectory.subscriptionStatus.awaitingActivation':
     'مستني التفعيل',
   'staff.clientDirectory.subscriptionStatus.future': 'لسه ما بدأش',

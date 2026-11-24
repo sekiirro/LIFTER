@@ -1,7 +1,7 @@
 # Analyze: Client Portal Delivery
 
-**Date**: 2026-11-23 (Round 8 re-check after S70-PO-2 changed FR-011, directory copy, contract and tasks; prior analyses remain historical)
-**Inputs**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, `copy-proposal.md`, PO S56-PO-4, S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12, S57-PO-13
+**Date**: 2026-11-24 (Round 9 re-check after S70-PO-13 resolved "new check-ins" definition in FR-011 and tasks; prior analyses remain historical)
+**Inputs**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`, `tasks.md`, `copy-proposal.md`, PO S56-PO-4, S57-PO-5, S57-PO-9, S57-PO-10, S57-PO-11, S57-PO-12, S57-PO-13, S70-PO-1, S70-PO-2, S70-PO-13
 
 ## Changes analyzed
 
@@ -93,3 +93,11 @@ Critical 0, High 0.
 S70-PO-2 (verbatim source SHA-256 `AC5DEE4F353FDE79B58B43DE2DD13B4343F6C36754969F995CD4748556D8AA0E`) resolves the Round 7 F22-S70-1 copy gap and clarifies that username search is available to every staff role within existing row visibility. `spec.md`, `copy-proposal.md`, the staff directory contract, plan, and tasks now record the same role boundary and exact strings. T044/T045 cover RED-first RPC tests, rendered owner-only filter/code, and the role-specific placeholder test.
 
 Re-analysis findings: no cross-artifact contradiction, new role/data rule, or missing task/test trace was found. The old F22-S70-1 HIGH finding is resolved by the recorded PO decision and updated artifacts; its code-search disclosure is addressed by the trainer/non-owner placeholder and the unchanged PO/WO database/application wall. Existing T036/T037 owner gaps are unchanged and remain separately tracked. No open CRITICAL or HIGH findings. No open ambiguities for this directory slice.
+
+## Round 9 re-audit for S70-PO-13 (2026-11-24)
+
+S70-PO-13 (verbatim source `C:/Users/NEW LAP/.lifter/runs/s70-po/s70-po-13.verbatim.txt`) defines the "new check-ins" indicator: the client's F23 weekly check-in form submissions (`app_private.form_submissions` joined to the check-in assignment policy `app_private.form_assignment_policies` with `trigger_kind = 'weekly_checkin'`) submitted in the last 7 days (rolling, relative to `now()`). Uses existing data only; no new status or column.
+
+FR-011, `specs/022-client-portal-delivery/contracts/staff-client-directory.md`, and `tasks.md` (T036) now record this exact contract. T036 unblocks the indicator in `app/(app)/clients/page.tsx` and adds RED-first integration test coverage with 7-day predicate and workspace isolation mutations.
+
+Re-analysis findings: no cross-artifact contradictions, no invented status, no missing requirement or task coverage. Critical: 0, High: 0. Ambiguities: 0.

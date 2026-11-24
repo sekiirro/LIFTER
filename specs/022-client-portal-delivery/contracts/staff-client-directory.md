@@ -4,7 +4,7 @@
 
 - Searchable fields: existing client name, email, phone and normalized username for authorized directory readers; client code is PO/WO-only (Platform Owner or Workspace Owner of that workspace).
 - Filter dimensions: existing account/approval status and subscription status for authorized directory readers; responsible-trainer assignment state is PO/WO-only.
-- Indicators: new check-ins, pending food replacements and plans waiting for delivery.
+- Indicators: new check-ins (F23 weekly check-in form submissions in rolling last 7 days relative to now(), S70-PO-13), pending food replacements and plans waiting for delivery.
 - Subscription status uses the separate staff labels (S57-PO-13). Rows carry the F13 state plus `refund_scope` for `refunded`; the Refunded filter matches full refunds only, and a partially refunded row shows no status label.
 
 ## Authorization and behavior
