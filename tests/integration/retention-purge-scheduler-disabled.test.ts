@@ -18,7 +18,7 @@ it('T008 leaves pg_cron disabled and backup gates open', async () => {
   for (const migration of [
     'supabase/migrations/20261223070000_retention_purge_eligibility.sql',
     'supabase/migrations/20261223070001_retention_purge_authz.sql',
-    'supabase/migrations/20261223070002_retention_purge_refund_hold.sql',
+    'supabase/migrations/20261223100000_retention_purge_refund_hold.sql',
   ]) {
     expect(readFileSync(migration, 'utf8')).not.toMatch(
       /purge_schedule_activate\s*\(/i,
