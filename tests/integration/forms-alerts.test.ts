@@ -126,7 +126,9 @@ it('notifies PO/WO at the client deadline and the responsible Trainer at deadlin
       expect(preTrainerRows.map((row) => row.recipient_user_id).sort()).toEqual(
         [f.po.userId, f.woA.userId].sort(),
       );
-      expect(preTrainerRows.every((row) => row.stage === 'client_owners_immediate')).toBe(true);
+      expect(
+        preTrainerRows.every((row) => row.stage === 'client_owners_immediate'),
+      ).toBe(true);
 
       // At deadline+24h, exactly one Trainer alert fires.
       expect(await core(tx, f.wsA.id, '2026-02-02T10:00:00.000Z')).toEqual({
@@ -993,7 +995,8 @@ it('mutation: changing client-late Trainer alert delay from 24h to 0 is caught b
           await core(tx, f.wsA.id, deadline);
           const eval23h59m = '2026-02-02T09:59:00.000Z';
           await core(tx, f.wsA.id, eval23h59m);
-          const trainerRows = await tx`select id from app_private.form_alert_occurrences
+          const trainerRows =
+            await tx`select id from app_private.form_alert_occurrences
             where workspace_id=${f.wsA.id} and stage='client_trainer_24h'`;
           // Invariant: at +23h59m, trainer rows must be 0.
           expect(trainerRows).toHaveLength(0);

@@ -14,7 +14,7 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 <!-- prettier-ignore-start -->
 | Requirement | Task | Test/evidence | Commit |
 | --- | --- | --- | --- |
-| FR-017/018/024 — route client-late in-app alerts at the configured deadline to the current active responsible Trainer; preserve PO/WO alerts, dedupe retries/concurrency, scope inbox access by current assignment, and leave pg_cron disabled | T104 | Stack C: `tests/integration/forms-alerts.test.ts`, `forms-alert-inbox.test.ts`, `forms-alert-channels.test.ts`, `rls-catalog.test.ts`, and `client-accounts-catalog.test.ts` — 104/104 passed. Covers current recipient, unassigned/Sales/foreign-workspace negatives, PO/WO preservation, concurrent/retried idempotency, Trainer RLS, scheduler disabled, and dedupe/RLS mutation evidence. | `43be450e` |
+| FR-017/018/024 — route client-late in-app alerts 24h after configured deadline to current active responsible Trainer; preserve immediate PO/WO alerts, dedupe retries/concurrency, scope inbox access by current assignment, and leave pg_cron disabled | T104 | Stack C: `tests/integration/forms-alerts.test.ts`, `forms-alert-inbox.test.ts`, `forms-alert-channels.test.ts`, `rls-catalog.test.ts`, and `client-accounts-catalog.test.ts` — 106/106 passed. Covers current recipient, 24h Trainer delay, pre-24h owner alerts, accepted-submission suppression, unassigned/Sales/foreign-workspace negatives, PO/WO preservation, concurrent/retried idempotency, Trainer RLS, scheduler disabled, and dedupe/RLS/delay mutation evidence. Under S70-PO-9. | `fa27deca` |
 <!-- prettier-ignore-end -->
 
 ## S32 h12 PO-8 traceability
