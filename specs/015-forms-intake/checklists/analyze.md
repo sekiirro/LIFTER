@@ -384,3 +384,15 @@ After implementation commit `4ccce6f8`, reran the renewal occurrence/replay/iden
 - Scope: ticked T024 in specs/015-forms-intake/tasks.md and updated the T024 row in specs/015-forms-intake/traceability.md after verifying npm run build:edge + npm run size in Linux CI validate run 44467366443 (pull_request, head SHA ebd6e4acc80ba216842fbd72eda2cfcfec8e2ab3): steps "Run npm run build:edge" and "Run npm run size" both conclusion success. No requirement text changed.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for this evidence-only update; T024 acceptance reconciliation complete.
+
+## S70-gemini-f15t149 T149 Analyze refresh — 2026-11-23
+
+- Scope: ticked T149 in `specs/015-forms-intake/tasks.md` and updated T149 row in `specs/015-forms-intake/traceability.md` per S70-PO-1 item 4 and FR-013/SC-029. Added clear-answer control to All Answers UI with PO copy EN 'Clear answer' / AR 'امسح الإجابة'. Unit tests in `tests/unit/forms-correction-history.test.tsx`, `tests/unit/forms-client-ui.test.ts`, `tests/unit/forms-authorized-client-adapter.test.ts`; 8-cell Design Gate PNGs in `runs/s70-gemini-f15t149/screenshots/` with 0 axe violations. No requirement or schema text changed.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for T149 clear-answer UI implementation.
+
+## S70-gemini-f15t149b T149 Component & E2E verification refresh — 2026-11-23
+
+- Scope: verified T149 in `specs/015-forms-intake/tasks.md` and updated T149 row in `specs/015-forms-intake/traceability.md` per Architect Ruling S70-R19 and S70-PO-1 item 4. Added component tests for QuestionFlow clear-answer flow (`tests/unit/forms-question-flow-clear.test.tsx` 6/6), captured 8-cell enabled and post-clear matrix in `runs/s70-gemini-f15t149b/screenshots/` (16 PNGs, 0 axe violations each), and verified Stack E integration test `tests/integration/forms-r3-corrections.test.ts` (4/4). No requirement or schema text changed.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for T149 clear-answer UI verification.

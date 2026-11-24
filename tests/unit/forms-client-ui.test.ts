@@ -96,7 +96,28 @@ describe('QuestionFlow', () => {
     expect(html).toContain(
       '<dt>How many days a week would you like to train?</dt>',
     );
-    expect(html).toContain('<dd>2 days</dd>');
+    expect(html).toContain('2 days');
+    expect(html).toContain('>Clear answer<');
+    expect(html).toContain(
+      'aria-label="Clear answer: How many days a week would you like to train?"',
+    );
+  });
+
+  it('renders clear-answer control in Arabic in submitted history', () => {
+    const t03 = starterQuestions.find((question) => question.id === 'T03')!;
+    const html = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'ar',
+        questions: [t03],
+        adapter,
+        assignmentId: 'history-copy-ar',
+        initialAnswers: { T03: '2' },
+        initialState: 'submitted',
+        history: [{ version: 1, answers: { T03: '2' } }],
+      }),
+    );
+    expect(html).toContain('>امسح الإجابة<');
+    expect(html).toContain('aria-label="امسح الإجابة:');
   });
 
   it('keeps existing answers when applicability cannot be evaluated', () => {
