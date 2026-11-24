@@ -102,3 +102,9 @@ Requirement text changed: architect review **S70-R47 = CHANGES REQUESTED (1 BLOC
 ## Next actions
 
 No CRITICAL/HIGH/MEDIUM/LOW findings or open PO decisions. The S70-R47 correction and S70-R76 design, including S70-PO-14 decisions, are recorded across the feature artifacts. Implementation may proceed under S70-R81 after design PR approval, with RED-first commits, mutation evidence and task ticks.
+
+## S70-R82 implementation closure re-analysis — 2026-11-24
+
+Stack E's current recursive foreign-key closure identified two client-linked descendants absent from the original matrix: `app_private.package_reporting_fx_snapshots` and `public.sales_productivity_units`. The plan now records both as DELETE, with migration source lines. This follows S70-R76's rule that only the four Q4 ledger tables are retained, plus S70-PO-14's acceptance that historical package/trainer breakdowns may change. The retained Q4 ledger rows still preserve amount, commission, currency, and dates. No new product requirement or PO choice was introduced.
+
+Re-analysis confirms T012's table scope and operation allowlist now cover the Stack E FK closure, including both added rows. The FX snapshot is removed with its linked payment event; sales productivity units are removed with their client/approval facts. `public.audit_events` remains unchanged by T012. Findings: 0 open CRITICAL, 0 open HIGH, 0 open PO decisions.
