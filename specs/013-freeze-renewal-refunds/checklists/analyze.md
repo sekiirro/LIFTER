@@ -512,3 +512,16 @@ The S68-PO-5 register now includes the complete answer wording from the cited so
 ## S68 changed-Markdown formatting refresh (2026-11-19T12:28:13Z)
 
 Prettier formatted the touched Markdown after CI's changed-file gate flagged the edited docs. No requirements, decisions, tasks, or implementation scope changed. Rechecked the FR-041 / SC-019/026 / scenario 12 / plan T044 / tasks T044/T044a / traceability links: consistent; **0 CRITICAL, 0 HIGH; no open ambiguities**. Entry gate PASS.
+
+## S70 T020 hosted smoke re-analysis (2026-11-24 UTC)
+
+- **Scope:** Existing T020 only: FR-019/FR-035 and SC-009/SC-014 hosted hook evidence. No spec, plan, task, permission, retention or copy text changed.
+- **Entry check:** PASS for the authorized Auth setting and independent RLS evidence. The required feature artifacts exist and cover the scope; S70-PO-7 authorizes the hosted hook and synthetic smoke.
+- **Target and boundary:** Hosted lifter-prod (aaxswvjjxdmwbhgcgjyo), described by the baseline as pre-production. Only the CAT setting and synthetic fixture/test/cleanup work are authorized. No schema, signup, SSL, network, SMTP, Vault or other Auth settings are in scope.
+- **Finding:** The current lane instruction asks for a deactivated synthetic staff user and expects token denial, while FR-019 specifies denial for a deactivated client and unchanged staff claims. This is one unresolved HIGH product ambiguity for the negative token-issuance test; record S70-HOSTEDSMOKE-MCQ-1 in the lane report. T020 must remain open pending resolution. The independent RLS smoke can proceed.
+
+## S70 T020 execution revalidation (2026-11-24 UTC)
+
+This entry supersedes the preceding T020 analysis statement that there is no open product ambiguity. FR-019 blocks a **deactivated client** and passes staff/active-client claims unchanged; the current lane instruction asks for a deactivated synthetic staff user and expects denial. That expectation conflicts with the specified hook behavior. S70-PO-7 authorizes the hook setting and hosted synthetic smoke scope, but does not resolve staff deactivation semantics. Record S70-HOSTEDSMOKE-MCQ-1 in the lane report. **HIGH: 1 open for the negative token-issuance fixture; no token test or T020 checkmark until resolved.**
+
+The authorized hook setting was enabled, and the independent hosted RLS smoke ran using transaction-local authenticated/anon role contexts with synthetic workspace/staff/client rows. Its assertions passed; the transaction rolled back and all touched table counts returned to zero. This RLS evidence does not close T020 or prove GoTrue token issuance.
