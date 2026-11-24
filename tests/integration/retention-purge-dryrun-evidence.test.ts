@@ -176,17 +176,6 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
 
     it('fails closed and rolls back when a child delete changes a parent target tuple', async () => {
       const f = await clientContext();
-      const [ids] = await db.begin(async (tx) => {
-        const graphIds = await graph(tx, f);
-        await tx`set local session_replication_role = replica`;
-        await tx`
-          update public.clients set deactivated_at=clock_timestamp()-interval '31 days',
-            deactivation_reason='closure'
-          where workspace_id=${f.wsA.id} and id=${graphIds.client}::uuid
-        `;
-        await tx`set local session_replication_role = origin`;
-        return [graphIds];
-      });
       const runId = randomUUID();
 
       await expect(
@@ -204,31 +193,45 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
           await tx.unsafe(`create trigger z_test_retention_bump_client
           after delete on public.subscription_installments
           for each row execute function app_private.test_bump_client_after_installment_delete()`);
-          const result = await purgeAsOwner(tx, f.po.userId, runId, 'apply');
-          throw new Error(`purge unexpectedly returned ${result.status}`);
-        }),
-      ).rejects.toMatchObject({
-        code: 'P0001',
-        message: expect.stringContaining('public.clients'),
-      });
+          const ids = await graph(tx, f);
+          await tx`set local session_replication_role = replica`;
+          await tx`
+            update public.clients set deactivated_at=clock_timestamp()-interval '31 days',
+              deactivation_reason='closure'
+            where workspace_id=${f.wsA.id} and id=${ids.client}::uuid
+          `;
+          await tx`set local session_replication_role = origin`;
+          const applyError = await tx
+            .savepoint((sp) => purgeAsOwner(sp, f.po.userId, runId, 'apply'))
+            .then(
+              () => null,
+              (error) => error,
+            );
+          expect(applyError).toMatchObject({
+            code: 'P0001',
+            message: expect.stringContaining('public.clients'),
+          });
 
-      const [afterFailure] = await db`
-        select
-          (select count(*)::integer from public.clients where id=${ids.client}::uuid) as clients,
-          (select count(*)::integer from public.subscriptions where id=${ids.subscription}::uuid) as subscriptions,
-          (select count(*)::integer from public.subscription_installments where id=${ids.obligation}::uuid) as installments,
-          (select count(*)::integer from app_private.registration_operations where id=${ids.operation}::uuid) as operations,
-          (select count(*)::integer from public.payment_events where id=${ids.event}::uuid) as payments,
-          (select count(*)::integer from app_private.retention_purge_runs where run_id=${runId}::uuid) as run_rows
-      `;
-      expect(afterFailure).toEqual({
-        clients: 1,
-        subscriptions: 1,
-        installments: 1,
-        operations: 1,
-        payments: 1,
-        run_rows: 0,
-      });
+          const [afterFailure] = await tx`
+            select
+              (select count(*)::integer from public.clients where id=${ids.client}::uuid) as clients,
+              (select count(*)::integer from public.subscriptions where id=${ids.subscription}::uuid) as subscriptions,
+              (select count(*)::integer from public.subscription_installments where id=${ids.obligation}::uuid) as installments,
+              (select count(*)::integer from app_private.registration_operations where id=${ids.operation}::uuid) as operations,
+              (select count(*)::integer from public.payment_events where id=${ids.event}::uuid) as payments,
+              (select count(*)::integer from app_private.retention_purge_runs where run_id=${runId}::uuid) as run_rows
+          `;
+          expect(afterFailure).toEqual({
+            clients: 1,
+            subscriptions: 1,
+            installments: 1,
+            operations: 1,
+            payments: 1,
+            run_rows: 0,
+          });
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
     });
 
     it('keeps dry-run read-only, replays one apply, and preserves retained money facts and staff reads', async () => {

@@ -180,6 +180,7 @@ declare
   target_table record;
   join_clause text;
   added_rows integer;
+  expected_rows bigint;
   found_more boolean;
 begin
   if current_user <> 'postgres' then
@@ -334,6 +335,14 @@ begin
       target_table.relation_name
     ) using target_table.table_oid;
     get diagnostics added_rows = row_count;
+    select count(*) into expected_rows
+    from pg_temp.retention_purge_targets t
+    where t.table_oid = target_table.table_oid;
+    if added_rows::bigint <> expected_rows then
+      raise exception 'retention_purge_incomplete: table % expected % rows but deleted %',
+        target_table.evidence_key, expected_rows, added_rows
+        using errcode = 'P0001';
+    end if;
     deleted_counts := deleted_counts || jsonb_build_object(target_table.evidence_key, added_rows);
   end loop;
 
