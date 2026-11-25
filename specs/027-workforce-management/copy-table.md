@@ -1,0 +1,13 @@
+# P7 Copy Table - AR (Egyptian Colloquial) / EN
+
+**Authority**: S70-PO-18 answer #4 requires per-screen batches: draft that screen's AR/EN text and obtain PO approval before its UI slice. No Arabic or English UI copy is approved by the records currently supplied, so this inventory intentionally contains no invented strings. Backend work can proceed independently.
+
+| Batch    | Screen / UI slice                       | Copy inventory required for PO review                                                                              | AR (Egyptian colloquial)           | EN                                 | Approval state / task                   |
+| -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------- | ---------------------------------- | --------------------------------------- |
+| P7-CB-01 | Trainer Check-ins                       | Form/follow-up states, fields, action, empty/loading/error/permission states, late warning                         | Draft for PO approval before slice | Draft for PO approval before slice | Not approved; T005 before T006          |
+| P7-CB-02 | PO workforce report                     | Totals, ledger categories, corrections, dispute, strike review, empty/loading/error states                         | Draft for PO approval before slice | Draft for PO approval before slice | Not approved; T012 before T013          |
+| P7-CB-03 | Monthly quality and payroll             | Transformation/feedback entry, salary, monetary input, snapshot review, paid approval, own compensation and errors | Draft for PO approval before slice | Draft for PO approval before slice | Not approved; T018 before T019          |
+| P7-CB-04 | Sales monthly projection                | Own finalized total, post-month-end availability and permitted empty state only                                    | Draft for PO approval before slice | Draft for PO approval before slice | Not approved; T024 before T025          |
+| P7-CB-05 | Remaining month-close/workforce screens | Screen-specific labels, review states, errors and access-denied states                                             | Draft per screen for PO approval   | Draft per screen for PO approval   | Not approved; T034 before each UI slice |
+
+Scheduled, Awaiting Client, Client Overdue, Submitted, Pending, Followed Up, Late, Disputed and Approved are requirement/status identifiers, not approved localized UI copy. This table records the approval workflow only. Each approval applies to its screen batch and must not be inferred for another screen.
