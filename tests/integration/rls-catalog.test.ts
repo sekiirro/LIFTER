@@ -99,8 +99,8 @@ const f24Private = [
   'f24_username_issue',
   'f24_visible_username',
 ];
-// Spec 027 (P7) private helpers.
-const p7Private = [
+// Spec 027 (P7) monthly-quality private helpers.
+const p7QualityPrivate = [
   'guard_p7_quality_revisions_immutable',
   'enqueue_monthly_reminder',
   'p7_monthly_reminders_run',
@@ -397,7 +397,7 @@ describe('tenancy security catalog (T007)', () => {
           ...brandingPrivate,
           ...f23Private,
           ...f24Private,
-          ...p7Private,
+          ...p7QualityPrivate,
           ...f22Private,
           ...p7Private,
           ...privateAuthenticated,
@@ -889,6 +889,7 @@ describe('tenancy security catalog (T007)', () => {
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
             !f22Private.includes(row.proname) &&
             !p7Private.includes(row.proname) &&
+            !p7QualityPrivate.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
               'audit_events_immutable',
