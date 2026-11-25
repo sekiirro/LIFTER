@@ -1,15 +1,15 @@
 # Tasks: P7 Workforce Management
 
 **Input**: spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md
-**Lane**: documentation-only; no application code, migrations, stack work or tests in this spec round. All implementation tasks remain unchecked.
+**Lane**: Check-ins backend implementation (T001-T004). UI and later KPI/penalty slices remain deferred to their assigned tasks.
 **Authority**: S70-PO-16, S70-R95, S70-PO-18 and S70-PO-1 item 3. Product decisions in these records are closed; do not reopen them.
 
 ## Slice A - Contract and authorization foundation (target 250-400 changed lines)
 
-- [ ] **T001 [FR-001-FR-029]** Verify current F10/F11/F12/F13/F15/F19/F20/F23/F26 source schemas and authorization seams; implement approved behavior from spec and record actual sources. No product-policy decision remains open.
-- [ ] **T002 [FR-004, FR-012, FR-017, FR-020, FR-024, FR-025]** RED: add PO/WO/Trainer/Sales authorization fixtures, revocation races, direct audit reader inventory, Realtime/count/HEAD/export/cache/replay channel inventory, and non-disclosing denial tests.
-- [ ] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged.
-- [ ] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits.
+- [x] **T001 [FR-001-FR-029]** Verify current F10/F11/F12/F13/F15/F19/F20/F23/F26 source schemas and authorization seams; implement approved behavior from spec and record actual sources. No product-policy decision remains open. Verified: source inventory in the lane report; Stack B RLS catalog and check-in integration suite passed on 0ef9035c.
+- [x] **T002 [FR-004, FR-012, FR-017, FR-020, FR-024, FR-025]** RED: add PO/WO/Trainer/Sales authorization fixtures, revocation races, direct audit reader inventory, Realtime/count/HEAD/export/cache/replay channel inventory, and non-disclosing denial tests. Verified: workforce-checkins.test.ts role denials, audit/channel probes and two revocation-wait races; rls-catalog.test.ts P7 catalog probe; 74 focused integration tests passed on 0ef9035c.
+- [x] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged. Verified: workforce-checkins.test.ts same-workspace Trainer projection and client-directory-assignment.test.ts; 74 focused integration tests passed on 0ef9035c.
+- [x] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits. Verified: workforce-checkins.test.ts Late history, confirmation idempotency/concurrency, F26 purge-context deletion and both authorization-wait races; Stack B focused suite passed on 0ef9035c.
 - [ ] **T005 [FR-029]** Before the Check-ins UI slice, prepare its complete AR/EN screen-state copy batch and obtain PO approval; record approval identifiers in the copy table.
 - [ ] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts.
 
