@@ -13,9 +13,16 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
         to_regclass('public.p7_month_snapshots')::text as snapshots,
         to_regprocedure('app_private.p7_lock_period(uuid,date)')::text as period_lock,
         to_regprocedure('app_private.p7_month_for_trigger(timestamptz)')::text as month_for_trigger,
+        to_regprocedure('app_private.p7_route_closed_period()')::text as closed_period_route,
         to_regprocedure('public.p7_finalize_month(uuid,date)')::text as finalizer,
         exists(select 1 from information_schema.columns where table_schema='public'
-          and table_name='p7_earned_points' and column_name='client_id') as has_client_id`;
+          and table_name='p7_earned_points' and column_name='client_id') as has_client_id,
+        exists(select 1 from information_schema.columns where table_schema='public'
+          and table_name='p7_earned_points' and column_name='original_month') as has_original_month,
+        (select count(*)::int from pg_trigger where tgrelid in
+          ('public.p7_earned_points'::regclass,'public.p7_adjustment_entries'::regclass)
+          and tgname in ('p7_earned_points_route_before_insert','p7_adjustment_route_before_insert'))
+          as closed_period_route_triggers`;
     expect(catalog).toEqual({
       earned: 'p7_earned_points',
       adjustments: 'p7_adjustment_entries',
@@ -23,8 +30,11 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
       period_lock: 'app_private.p7_lock_period(uuid,date)',
       month_for_trigger:
         'app_private.p7_month_for_trigger(timestamp with time zone)',
+      closed_period_route: 'app_private.p7_route_closed_period()',
       finalizer: 'p7_finalize_month(uuid,date)',
       has_client_id: false,
+      has_original_month: true,
+      closed_period_route_triggers: 2,
     });
   });
 

@@ -21,6 +21,14 @@ revoke all on public.p7_adjustment_entries from public, anon, authenticated, ser
 create index p7_adjustment_entries_period_staff_idx
   on public.p7_adjustment_entries(workspace_id, effective_month, staff_user_id);
 
+-- Preserve the activation month independently from the month in which a late
+-- earned fact is recorded. Existing facts retain their original trigger month.
+alter table public.p7_earned_points add column original_month date;
+update public.p7_earned_points set original_month = effective_month;
+alter table public.p7_earned_points alter column original_month set not null;
+alter table public.p7_earned_points add constraint p7_earned_points_original_month_first_day
+  check (extract(day from original_month) = 1);
+
 create table public.p7_month_snapshots (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces(id) on delete restrict,
@@ -38,7 +46,7 @@ alter table public.p7_month_snapshots enable row level security;
 alter table public.p7_month_snapshots force row level security;
 revoke all on public.p7_month_snapshots from public, anon, authenticated, service_role;
 
-create function app_private.p7_route_adjustment()
+create function app_private.p7_route_closed_period()
 returns trigger language plpgsql set search_path = '' as $$
 declare current_month date;
 begin
@@ -48,7 +56,7 @@ begin
     select 1 from public.p7_month_snapshots s
     where s.workspace_id = new.workspace_id and s.effective_month = new.effective_month
   ) then
-    current_month := app_private.p7_month_for_trigger(statement_timestamp());
+    current_month := app_private.p7_month_for_trigger(clock_timestamp());
     perform app_private.p7_lock_period(new.workspace_id, current_month);
     new.effective_month := current_month;
   end if;
@@ -58,7 +66,10 @@ $$;
 
 create trigger p7_adjustment_route_before_insert
   before insert on public.p7_adjustment_entries
-  for each row execute function app_private.p7_route_adjustment();
+  for each row execute function app_private.p7_route_closed_period();
+create trigger p7_earned_points_route_before_insert
+  before insert on public.p7_earned_points
+  for each row execute function app_private.p7_route_closed_period();
 create trigger p7_adjustment_entries_immutable
   before update or delete on public.p7_adjustment_entries
   for each row execute function app_private.p7_reject_mutation();
@@ -127,9 +138,9 @@ begin
 end
 $$;
 
-alter function app_private.p7_route_adjustment() owner to postgres;
+alter function app_private.p7_route_closed_period() owner to postgres;
 alter function public.p7_finalize_month(uuid,date) owner to postgres;
-revoke all on function app_private.p7_route_adjustment() from public, anon, authenticated, service_role;
+revoke all on function app_private.p7_route_closed_period() from public, anon, authenticated, service_role;
 revoke all on function public.p7_finalize_month(uuid,date) from public, anon, service_role;
 grant execute on function public.p7_finalize_month(uuid,date) to authenticated;
 
