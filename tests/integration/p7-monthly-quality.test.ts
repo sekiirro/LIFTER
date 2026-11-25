@@ -589,72 +589,170 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       expect(anonErr).not.toBeNull();
     });
 
-    it('Trainer sees NONE of another Trainer entries (strict peer isolation)', async () => {
+    it('Q1: Trainer (own id or another id), WO and Sales get 42501 from all 3 read RPCs', async () => {
       const month = '2026-11';
-      // Record revision for Trainer 2
+      // First ensure some revisions and settings exist for trainer1 and trainer2
       await poStaff.client.rpc('record_monthly_quality', {
         p_workspace_id: wsId,
-        p_trainer_id: trainer2.userId,
+        p_trainer_id: trainer1.userId,
         p_month: month,
         p_category: 'transformation',
-        p_positive_count: 15,
+        p_positive_count: 5,
         p_negative_count: 0,
-        p_idempotency_key: `idem-tr2-iso-${randomUUID()}`,
+        p_idempotency_key: `idem-q1-init-${randomUUID()}`,
+      });
+      await poStaff.client.rpc('set_trainer_quality_settings', {
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_category: 'feedback',
+        p_positive_weight: 1.5,
+        p_negative_weight: -0.5,
       });
 
-      // Trainer 1 queries quality revisions targeting Trainer 2 -> returns empty or denied!
-      const { data: tr1ReadTr2 } = await trainer1.client.rpc(
-        'get_monthly_quality_revisions',
-        {
-          p_workspace_id: wsId,
-          p_month: month,
-          p_trainer_id: trainer2.userId,
-        },
+      // 1. Trainer 1 trying to read own id -> 42501
+      const { error: tr1OwnSettingsErr } = await trainer1.client.rpc(
+        'get_trainer_quality_settings',
+        { p_workspace_id: wsId, p_trainer_id: trainer1.userId },
       );
-      // Trainer 1 cannot see Trainer 2's data!
-      expect(tr1ReadTr2 ?? []).toEqual([]);
+      expect(tr1OwnSettingsErr).not.toBeNull();
+      expect(tr1OwnSettingsErr?.code).toBe('42501');
 
-      // Trainer 1 direct table SELECT on p7_monthly_quality_revisions with RLS
-      const { data: tableData } = await trainer1.client
-        .from('p7_monthly_quality_revisions')
-        .select('*')
-        .eq('trainer_id', trainer2.userId);
-      expect(tableData).toEqual([]);
+      const { error: tr1OwnRevErr } = await trainer1.client.rpc(
+        'get_monthly_quality_revisions',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer1.userId },
+      );
+      expect(tr1OwnRevErr).not.toBeNull();
+      expect(tr1OwnRevErr?.code).toBe('42501');
+
+      const { error: tr1OwnEffErr } = await trainer1.client.rpc(
+        'get_monthly_quality_effective',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer1.userId },
+      );
+      expect(tr1OwnEffErr).not.toBeNull();
+      expect(tr1OwnEffErr?.code).toBe('42501');
+
+      // 2. Trainer 1 trying to read another id (trainer2) -> 42501
+      const { error: tr1OtherSettingsErr } = await trainer1.client.rpc(
+        'get_trainer_quality_settings',
+        { p_workspace_id: wsId, p_trainer_id: trainer2.userId },
+      );
+      expect(tr1OtherSettingsErr).not.toBeNull();
+      expect(tr1OtherSettingsErr?.code).toBe('42501');
+
+      const { error: tr1OtherRevErr } = await trainer1.client.rpc(
+        'get_monthly_quality_revisions',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer2.userId },
+      );
+      expect(tr1OtherRevErr).not.toBeNull();
+      expect(tr1OtherRevErr?.code).toBe('42501');
+
+      const { error: tr1OtherEffErr } = await trainer1.client.rpc(
+        'get_monthly_quality_effective',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer2.userId },
+      );
+      expect(tr1OtherEffErr).not.toBeNull();
+      expect(tr1OtherEffErr?.code).toBe('42501');
+
+      // 3. WO trying to read -> 42501
+      const { error: woSettingsErr } = await woStaff.client.rpc(
+        'get_trainer_quality_settings',
+        { p_workspace_id: wsId, p_trainer_id: trainer1.userId },
+      );
+      expect(woSettingsErr).not.toBeNull();
+      expect(woSettingsErr?.code).toBe('42501');
+
+      const { error: woRevErr } = await woStaff.client.rpc(
+        'get_monthly_quality_revisions',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer1.userId },
+      );
+      expect(woRevErr).not.toBeNull();
+      expect(woRevErr?.code).toBe('42501');
+
+      const { error: woEffErr } = await woStaff.client.rpc(
+        'get_monthly_quality_effective',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer1.userId },
+      );
+      expect(woEffErr).not.toBeNull();
+      expect(woEffErr?.code).toBe('42501');
+
+      // 4. Sales trying to read -> 42501
+      const { error: salesSettingsErr } = await salesStaff.client.rpc(
+        'get_trainer_quality_settings',
+        { p_workspace_id: wsId, p_trainer_id: trainer1.userId },
+      );
+      expect(salesSettingsErr).not.toBeNull();
+      expect(salesSettingsErr?.code).toBe('42501');
+
+      const { error: salesRevErr } = await salesStaff.client.rpc(
+        'get_monthly_quality_revisions',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer1.userId },
+      );
+      expect(salesRevErr).not.toBeNull();
+      expect(salesRevErr?.code).toBe('42501');
+
+      const { error: salesEffErr } = await salesStaff.client.rpc(
+        'get_monthly_quality_effective',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer1.userId },
+      );
+      expect(salesEffErr).not.toBeNull();
+      expect(salesEffErr?.code).toBe('42501');
+
+      // 5. PO reads stay unchanged: all 3 succeed
+      const { error: poSettingsErr } = await poStaff.client.rpc(
+        'get_trainer_quality_settings',
+        { p_workspace_id: wsId, p_trainer_id: trainer1.userId },
+      );
+      expect(poSettingsErr).toBeNull();
+
+      const { error: poRevErr } = await poStaff.client.rpc(
+        'get_monthly_quality_revisions',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer1.userId },
+      );
+      expect(poRevErr).toBeNull();
+
+      const { error: poEffErr } = await poStaff.client.rpc(
+        'get_monthly_quality_effective',
+        { p_workspace_id: wsId, p_month: month, p_trainer_id: trainer1.userId },
+      );
+      expect(poEffErr).toBeNull();
     });
 
-    it('WO and Sales have NO access to P7 quality tables or RPCs', async () => {
-      const month = '2026-11';
-      // WO direct table SELECT -> empty (RLS denies all)
-      const { data: woData } = await woStaff.client
+    it('Q1: Trainer, WO and Sales see 0 rows from both tables and the view via direct select', async () => {
+      for (const client of [trainer1.client, trainer2.client, woStaff.client, salesStaff.client]) {
+        // Table 1: p7_monthly_quality_revisions
+        const { data: revData } = await client
+          .from('p7_monthly_quality_revisions')
+          .select('*');
+        expect(revData).toEqual([]);
+
+        // Table 2: p7_trainer_quality_settings
+        const { data: settsData } = await client
+          .from('p7_trainer_quality_settings')
+          .select('*');
+        expect(settsData).toEqual([]);
+
+        // View: p7_monthly_quality_effective
+        const { data: effData } = await client
+          .from('p7_monthly_quality_effective')
+          .select('*');
+        expect(effData).toEqual([]);
+      }
+
+      // PO sees data in all 3 relations
+      const { data: poRevData } = await poStaff.client
         .from('p7_monthly_quality_revisions')
         .select('*');
-      expect(woData).toEqual([]);
+      expect((poRevData?.length ?? 0)).toBeGreaterThan(0);
 
-      // Sales direct table SELECT -> empty (RLS denies all)
-      const { data: salesData } = await salesStaff.client
-        .from('p7_monthly_quality_revisions')
+      const { data: poSettsData } = await poStaff.client
+        .from('p7_trainer_quality_settings')
         .select('*');
-      expect(salesData).toEqual([]);
+      expect((poSettsData?.length ?? 0)).toBeGreaterThan(0);
 
-      // WO RPC call -> not permitted
-      const { error: woRpcErr } = await woStaff.client.rpc(
-        'get_monthly_quality_revisions',
-        {
-          p_workspace_id: wsId,
-          p_month: month,
-        },
-      );
-      expect(woRpcErr).not.toBeNull();
-
-      // Sales RPC call -> not permitted
-      const { error: salesRpcErr } = await salesStaff.client.rpc(
-        'get_monthly_quality_revisions',
-        {
-          p_workspace_id: wsId,
-          p_month: month,
-        },
-      );
-      expect(salesRpcErr).not.toBeNull();
+      const { data: poEffData } = await poStaff.client
+        .from('p7_monthly_quality_effective')
+        .select('*');
+      expect((poEffData?.length ?? 0)).toBeGreaterThan(0);
     });
 
     it('audit events for quality mutations carry opaque reference ONLY (FR-020, SOL-03)', async () => {
@@ -704,6 +802,237 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       `;
       expect(fn?.prosrc).toContain('is_platform_owner');
       expect(fn?.prosrc).toContain('not_permitted');
+    });
+  });
+
+  describe('Q2: Append-only settings revisions & immutability', () => {
+    it('2 successive setting changes keep both rows and current setting equals latest revision', async () => {
+      // Successive changes for trainer1 feedback
+      const { data: s1, error: e1 } = await poStaff.client.rpc(
+        'set_trainer_quality_settings',
+        {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer1.userId,
+          p_category: 'feedback',
+          p_positive_weight: 1.25,
+          p_negative_weight: -0.25,
+        },
+      );
+      expect(e1).toBeNull();
+      expect(s1.revision).toBe(1);
+
+      const { data: s2, error: e2 } = await poStaff.client.rpc(
+        'set_trainer_quality_settings',
+        {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer1.userId,
+          p_category: 'feedback',
+          p_positive_weight: 1.75,
+          p_negative_weight: -0.75,
+        },
+      );
+      expect(e2).toBeNull();
+      expect(s2.revision).toBe(2);
+
+      // Verify direct database query: both rows are kept!
+      const allRows = await db`
+        select * from public.p7_trainer_quality_settings
+        where workspace_id = ${wsId}::uuid
+          and trainer_id = ${trainer1.userId}::uuid
+          and category = 'feedback'
+        order by revision
+      `;
+      expect(allRows.length).toBe(2);
+      expect(allRows[0].revision).toBe(1);
+      expect(allRows[0].positive_weight).toBe('1.25');
+      expect(allRows[1].revision).toBe(2);
+      expect(allRows[1].positive_weight).toBe('1.75');
+
+      // Verify get_trainer_quality_settings returns the current setting = latest revision
+      const { data: currentSettings, error: getErr } = await poStaff.client.rpc(
+        'get_trainer_quality_settings',
+        {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer1.userId,
+        },
+      );
+      expect(getErr).toBeNull();
+      const fbSetting = currentSettings.find(
+        (s: { category: string }) => s.category === 'feedback',
+      );
+      expect(fbSetting).toBeDefined();
+      expect(fbSetting).toMatchObject({
+        revision: 2,
+        positive_weight: '1.75',
+        negative_weight: '-0.75',
+      });
+
+      // Verify record_monthly_quality resolves weights from the latest revision
+      const { data: recData, error: recErr } = await poStaff.client.rpc(
+        'record_monthly_quality',
+        {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer1.userId,
+          p_month: '2026-12',
+          p_category: 'feedback',
+          p_positive_count: 4,
+          p_negative_count: 2,
+          p_positive_weight: null,
+          p_negative_weight: null,
+          p_idempotency_key: `idem-q2-res-${randomUUID()}`,
+        },
+      );
+      expect(recErr).toBeNull();
+      // 4 * 1.75 + 2 * (-0.75) = 7.00 - 1.50 = 5.50
+      expect(recData).toMatchObject({
+        positive_weight: '1.75',
+        negative_weight: '-0.75',
+        net_points: '5.50',
+      });
+    });
+
+    it('update, delete, and truncate on p7_trainer_quality_settings are rejected by physical immutability triggers', async () => {
+      // 1. Attempt UPDATE
+      let updateFailed = false;
+      try {
+        await db`
+          update public.p7_trainer_quality_settings
+          set positive_weight = 9.99
+          where workspace_id = ${wsId}::uuid
+        `;
+      } catch (err: any) {
+        updateFailed = true;
+        expect(err.code || err.message).toMatch(/23514|immutable/i);
+      }
+      expect(updateFailed).toBe(true);
+
+      // 2. Attempt DELETE
+      let deleteFailed = false;
+      try {
+        await db`
+          delete from public.p7_trainer_quality_settings
+          where workspace_id = ${wsId}::uuid
+        `;
+      } catch (err: any) {
+        deleteFailed = true;
+        expect(err.code || err.message).toMatch(/23514|immutable/i);
+      }
+      expect(deleteFailed).toBe(true);
+
+      // 3. Attempt TRUNCATE
+      let truncateFailed = false;
+      try {
+        await db`truncate table public.p7_trainer_quality_settings`;
+      } catch (err: any) {
+        truncateFailed = true;
+        expect(err.code || err.message).toMatch(/23514|immutable/i);
+      }
+      expect(truncateFailed).toBe(true);
+    });
+
+    it('setting changes write an audit_events row with opaque details', async () => {
+      const { data, error } = await poStaff.client.rpc(
+        'set_trainer_quality_settings',
+        {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer2.userId,
+          p_category: 'transformation',
+          p_positive_weight: 2.5,
+          p_negative_weight: 0.0,
+        },
+      );
+      expect(error).toBeNull();
+
+      const [auditEvent] = await db`
+        select * from public.audit_events
+        where target_table = 'p7_trainer_quality_settings'
+          and target_id = ${data.id}::uuid
+      `;
+      expect(auditEvent).toBeDefined();
+      expect(auditEvent!.action).toBe('quality.settings_revision_recorded');
+      const details = auditEvent!.details as Record<string, unknown>;
+      // Opaque details only: NO weights, NO points, NO amounts!
+      expect(details).not.toHaveProperty('positive_weight');
+      expect(details).not.toHaveProperty('negative_weight');
+      expect(details).not.toHaveProperty('points');
+      expect(details.settings_id).toBe(data.id);
+      expect(details.trainer_id).toBe(trainer2.userId);
+      expect(details.category).toBe('transformation');
+      expect(details.revision).toBe(data.revision);
+    });
+
+    it('idempotency holds for set_trainer_quality_settings (replay returns identical row, divergence fails)', async () => {
+      const idemKey = `idem-sett-${randomUUID()}`;
+
+      // First call
+      const { data: first, error: err1 } = await poStaff.client.rpc(
+        'set_trainer_quality_settings',
+        {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer1.userId,
+          p_category: 'transformation',
+          p_positive_weight: 3.0,
+          p_negative_weight: 0.0,
+          p_idempotency_key: idemKey,
+        },
+      );
+      expect(err1).toBeNull();
+
+      // Replay with exact same parameters -> returns same row idempotently
+      const { data: replay, error: err2 } = await poStaff.client.rpc(
+        'set_trainer_quality_settings',
+        {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer1.userId,
+          p_category: 'transformation',
+          p_positive_weight: 3.0,
+          p_negative_weight: 0.0,
+          p_idempotency_key: idemKey,
+        },
+      );
+      expect(err2).toBeNull();
+      expect(replay.id).toBe(first.id);
+      expect(replay.revision).toBe(first.revision);
+
+      // Replay with diverged weights -> fails with idempotency conflict
+      const { error: errConflict } = await poStaff.client.rpc(
+        'set_trainer_quality_settings',
+        {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer1.userId,
+          p_category: 'transformation',
+          p_positive_weight: 4.0, // changed!
+          p_negative_weight: 0.0,
+          p_idempotency_key: idemKey,
+        },
+      );
+      expect(errConflict).not.toBeNull();
+      expect(errConflict?.message).toMatch(/idempotency/i);
+    });
+
+    it('concurrency holds for parallel setting changes without unique violation or corruption', async () => {
+      const [res1, res2] = await Promise.all([
+        poStaff.client.rpc('set_trainer_quality_settings', {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer2.userId,
+          p_category: 'feedback',
+          p_positive_weight: 1.1,
+          p_negative_weight: -0.1,
+        }),
+        poStaff.client.rpc('set_trainer_quality_settings', {
+          p_workspace_id: wsId,
+          p_trainer_id: trainer2.userId,
+          p_category: 'feedback',
+          p_positive_weight: 1.2,
+          p_negative_weight: -0.2,
+        }),
+      ]);
+
+      expect(res1.error).toBeNull();
+      expect(res2.error).toBeNull();
+      expect(res1.data.revision).not.toBe(res2.data.revision);
+      const revs = [res1.data.revision, res2.data.revision].sort((a, b) => a - b);
+      expect(revs[1]).toBe(revs[0] + 1);
     });
   });
 });
