@@ -50,8 +50,8 @@
 
 ## Slice F - Retention, audit and channel confidentiality (target 250-400 changed lines)
 
-- [ ] **T030 [FR-018, FR-020]** RED: test durable KPI totals before/after client purge, no client FK/PII in retained earned ledger, and complete F26 FK closure.
-- [ ] **T031 [FR-018, FR-020]** GREEN: add client-linked P7 follow-up/questionnaire relations to the narrow F26 purge allowlist and a tested unlink path; never purge staff ledger rows. Persist open follow-up disputes/full-refund reviews as tied-record holds; resolution restarts the 30-day clock.
+- [x] **T030 [FR-018, FR-020]** RED: test durable KPI totals before/after client purge, no client FK/PII in retained earned ledger, and complete F26 FK closure. Verified: `3546fb770cf9b02c36873ad8af45738b682fa1be`, `tests/integration/workforce-checkins.test.ts::T030/T031 purges linked P7 check-ins and preserves durable earned totals`; Stack C focused integration 67/67 passed.
+- [x] **T031 [FR-018, FR-020]** GREEN: add client-linked P7 follow-up/questionnaire relations to the narrow F26 purge allowlist and a tested unlink path; never purge staff ledger rows. Persist open follow-up disputes/full-refund reviews as tied-record holds; resolution restarts the 30-day clock. Verified for P7 objects on main: `3546fb770cf9b02c36873ad8af45738b682fa1be`, `tests/integration/workforce-checkins.test.ts::allows transition deletion only inside the F26 allowlisted purge context` and `tests/integration/retention-purge-hold-restart.test.ts::T031 leaves a tested P7 dispute-hold extension point without inventing a dispute model`; Stack C focused integration 67/67 passed.
 - [ ] **T032 [FR-024, FR-025, FR-012, FR-017]** RED/GREEN: audit-event details contain opaque reference only; preserve unrelated WO audit access. Test direct audit reads, Realtime/publications, broadcast, HEAD/count/existence, notifications, search, exports, caches, errors and role changes with real roles.
 
 ## Slice G - Strikes, departure and final UI / verification (target 250-400 changed lines per PR)
