@@ -25,9 +25,12 @@
 
 ## Slice C - Monthly quality, reminders and payroll money inputs (target 250-400 changed lines)
 
-- [ ] **T014 [FR-009, FR-020, FR-023]** RED: test transformation/feedback counts, per-Trainer +1/-1 defaults, two-decimal weights, zeroing, count/weight revisions and concurrent edits. Only latest effective revision per Trainer/month/category contributes.
-- [ ] **T015 [FR-009, FR-020, FR-023]** GREEN: implement append-only quality revisions and latest-effective projection; preserve superseded revisions without summing them.
-- [ ] **T016 [FR-009, FR-020]** RED/GREEN: add monthly PO reminder through existing notification/outbox, unique workspace+month dedup, behind existing scheduler activation gates; notification has no sensitive P7 details.
+- [x] **T014 [FR-009, FR-020, FR-023]** RED: test transformation/feedback counts, per-Trainer +1/-1 defaults, two-decimal weights, zeroing, count/weight revisions and concurrent edits. Only latest effective revision per Trainer/month/category contributes.
+      Verified: tests/unit/p7-quality-math.test.ts, tests/integration/p7-monthly-quality.test.ts
+- [x] **T015 [FR-009, FR-020, FR-023]** GREEN: implement append-only quality revisions and latest-effective projection; preserve superseded revisions without summing them.
+      Verified: tests/integration/p7-monthly-quality.test.ts, tests/integration/rls-catalog.test.ts
+- [x] **T016 [FR-009, FR-020]** RED/GREEN: add monthly PO reminder through existing notification/outbox, unique workspace+month dedup, behind existing scheduler activation gates; notification has no sensitive P7 details.
+      Verified: tests/integration/p7-monthly-quality.test.ts, tests/integration/rls-catalog.test.ts
 - [ ] **T017 [FR-028, FR-020]** RED/GREEN: add PO-only manual monetary incentive/deduction/correction inputs in exact minor units and currency with immutable lineage; points never populate money; no automatic salary deduction.
 - [ ] **T018 [FR-029]** Before monthly-quality/payroll UI slice, prepare and approve the AR/EN screen batch; track copy approvals screen by screen.
 - [ ] **T019 [FR-008, FR-028, FR-029]** Implement salary UI after T018: one monthly salary per person, market-allowed currency, platform-PO ownership, provisioning and own-compensation-only staff view; WO excluded.

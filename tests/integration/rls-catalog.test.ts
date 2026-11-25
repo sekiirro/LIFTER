@@ -99,6 +99,14 @@ const f24Private = [
   'f24_username_issue',
   'f24_visible_username',
 ];
+// Spec 027 (P7) private helpers.
+const p7Private = [
+  'guard_p7_quality_revisions_immutable',
+  'enqueue_monthly_reminder',
+  'p7_monthly_reminders_run',
+  'p7_monthly_reminder_schedule_activate',
+  'p7_monthly_reminder_schedule_deactivate',
+];
 // Spec 024 immutability/swap guards run with the caller's rights.
 const f24Invoker = [
   'f24_guard_current',
@@ -381,6 +389,7 @@ describe('tenancy security catalog (T007)', () => {
           ...f23Private,
           ...f24Private,
           ...f22Private,
+          ...p7Private,
           ...privateAuthenticated,
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
@@ -850,6 +859,7 @@ describe('tenancy security catalog (T007)', () => {
             !signupPrivate.includes(row.proname) &&
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
             !f22Private.includes(row.proname) &&
+            !p7Private.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
               'audit_events_immutable',
@@ -2867,5 +2877,72 @@ describe('package tier name security catalog (T078)', () => {
       'updated_by',
       'updated_at',
     ]);
+  });
+  it('hardens the P7 workforce monthly quality and reminder tables and RPCs', async () => {
+    for (const table of [
+      'p7_monthly_quality_revisions',
+      'p7_trainer_quality_settings',
+      'p7_monthly_reminder_outbox',
+    ]) {
+      const relation = `public.${table}`;
+      const [classRow] =
+        await db`select relrowsecurity, relforcerowsecurity from pg_class where oid = ${relation}::regclass`;
+      expect(classRow).toMatchObject({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'service_role']) {
+        for (const privilege of ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) {
+          const [grant] =
+            await db`select has_table_privilege(${role}, ${relation}, ${privilege}) as allowed`;
+          expect(grant?.allowed).toBe(false);
+        }
+      }
+    }
+
+    const triggers =
+      await db`select tgname, tgtype::int as type, tgenabled from pg_trigger where tgrelid = 'public.p7_monthly_quality_revisions'::regclass and not tgisinternal order by tgname`;
+    expect(triggers).toEqual(
+      [
+        {
+          tgname: 'p7_monthly_quality_revisions_no_delete',
+          type: 11,
+          tgenabled: 'O',
+        },
+        {
+          tgname: 'p7_monthly_quality_revisions_no_truncate',
+          type: 34,
+          tgenabled: 'O',
+        },
+        {
+          tgname: 'p7_monthly_quality_revisions_no_update',
+          type: 19,
+          tgenabled: 'O',
+        },
+      ].sort((a, b) => a.tgname.localeCompare(b.tgname)),
+    );
+
+    for (const name of [
+      'public.record_monthly_quality(uuid,uuid,text,text,integer,integer,numeric,numeric,text,integer)',
+      'public.set_trainer_quality_settings(uuid,uuid,text,numeric,numeric)',
+      'public.get_trainer_quality_settings(uuid,uuid)',
+      'public.get_monthly_quality_revisions(uuid,text,uuid,text)',
+      'public.get_monthly_quality_effective(uuid,text,uuid,text)',
+      'app_private.guard_p7_quality_revisions_immutable()',
+      'app_private.enqueue_monthly_reminder(uuid,text,timestamptz)',
+      'app_private.p7_monthly_reminders_run(text)',
+    ]) {
+      const [fn] =
+        await db`select prosecdef, proconfig, pg_get_userbyid(proowner) as owner from pg_proc where oid = ${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn?.proconfig).toContain('search_path=""');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role}, ${name}, 'EXECUTE') as allowed`;
+        expect(grant?.allowed).toBe(
+          role === 'authenticated' && name.startsWith('public.'),
+        );
+      }
+    }
   });
 });

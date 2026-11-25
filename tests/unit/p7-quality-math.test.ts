@@ -26,7 +26,10 @@ describe('P7 Workforce Quality Math (Unit)', () => {
   describe('validateQualityWeights', () => {
     it('accepts weights with at most two decimal places', () => {
       expect(() =>
-        validateQualityWeights({ positiveWeight: '1.00', negativeWeight: '-1.00' }),
+        validateQualityWeights({
+          positiveWeight: '1.00',
+          negativeWeight: '-1.00',
+        }),
       ).not.toThrow();
       expect(() =>
         validateQualityWeights({ positiveWeight: '2.5', negativeWeight: '0' }),
@@ -34,9 +37,9 @@ describe('P7 Workforce Quality Math (Unit)', () => {
     });
 
     it('rejects weights with more than two decimal places', () => {
-      expect(() =>
-        validateQualityWeights({ positiveWeight: '1.125' }),
-      ).toThrow(/at most two decimal places/);
+      expect(() => validateQualityWeights({ positiveWeight: '1.125' })).toThrow(
+        /at most two decimal places/,
+      );
       expect(() =>
         validateQualityWeights({ negativeWeight: '-0.333' }),
       ).toThrow(/at most two decimal places/);
