@@ -110,6 +110,7 @@ const p7Private = [
   'p7_lock_period',
   'p7_month_for_trigger',
   'p7_reject_mutation',
+  'record_due_workforce_strikes',
 ];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
@@ -637,6 +638,7 @@ describe('tenancy security catalog (T007)', () => {
         'f15_alert_schedule_deactivate',
         'f15_alert_schedule_immutable',
         'f15_alert_schedule_run',
+        'record_due_workforce_strikes',
         'f15_answer_is_present',
         'f15_answer_values_valid',
         'f15_forms_purge_run',
@@ -3028,5 +3030,71 @@ describe('P7 T017/T026/T027 payroll security catalog', () => {
       service_role: false,
     });
     expect(employeeGuard?.proconfig).toContain('search_path=""');
+  });
+});
+
+describe('P7 T033 strike security catalog', () => {
+  const tables = [
+    'public.workforce_strike_events',
+    'public.workforce_strike_corrections',
+  ];
+  const publicFunctions = [
+    'public.get_workforce_strikes(uuid,uuid)',
+    'public.correct_workforce_strike(uuid,uuid,text,uuid,text,uuid)',
+  ];
+
+  it('forces RLS, denies direct table access, and prevents strike-history mutation', async () => {
+    for (const relation of tables) {
+      const [table] = await db`
+        select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass
+      `;
+      expect(table, relation).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] = await db`
+            select has_table_privilege(${role},${relation},${privilege}) as allowed
+          `;
+          expect(grant?.allowed, `${role} ${privilege} ${relation}`).toBe(
+            false,
+          );
+        }
+      }
+      const [trigger] = await db`
+        select count(*)::int as count from pg_trigger
+        where tgrelid=${relation}::regclass and not tgisinternal and (tgtype & 28)<>0
+      `;
+      expect(trigger?.count, relation).toBeGreaterThan(0);
+    }
+  });
+
+  it('exposes only authenticated RPCs with SECURITY DEFINER and an empty search path', async () => {
+    for (const signature of publicFunctions) {
+      const [fn] = await db`
+        select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+          has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+          has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+        from pg_proc p where p.oid=${signature}::regprocedure
+      `;
+      expect(fn).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig).toContain('search_path=""');
+    }
   });
 });
