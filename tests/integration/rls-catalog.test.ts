@@ -370,8 +370,11 @@ describe('tenancy security catalog (T007)', () => {
           'client_note_trim_whitespace',
           'can_read_staff_display_name',
           'can_write_staff_display_name',
+          'capture_workforce_checkin_pending',
           'guard_client_note_update',
           'guard_staff_display_name',
+          'guard_workforce_checkin_transition',
+          'guard_workforce_checkin_transition_truncate',
           'normalize_staff_display_name',
           'require_client_note_create_key',
           'staff_display_name_is_valid',
@@ -611,6 +614,9 @@ describe('tenancy security catalog (T007)', () => {
           'f17_client_safe_set',
           'f17_client_safe_item',
           'f17_client_safe_workout_document',
+          'capture_workforce_checkin_pending',
+          'guard_workforce_checkin_transition',
+          'guard_workforce_checkin_transition_truncate',
         ]),
       ].sort(),
     );
@@ -855,6 +861,11 @@ describe('tenancy security catalog (T007)', () => {
             !registrationPrivate.includes(row.proname) &&
             !assignmentPrivate.includes(row.proname) &&
             !deletionPrivate.includes(row.proname) &&
+            ![
+              'capture_workforce_checkin_pending',
+              'guard_workforce_checkin_transition',
+              'guard_workforce_checkin_transition_truncate',
+            ].includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
