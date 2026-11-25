@@ -307,8 +307,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           throw new Error('Uncovered public RPC argument type');
         args.push(values[typeName]!);
       }
-      // F24 status-returning RPCs: a pending client is neither an approved
-      // client nor staff/PO, so each returns exactly { status: 'not_permitted' }.
+      // Guarded status-returning RPCs deny pending clients and non-PO callers.
       if (
         [
           'client_update_username',
@@ -324,6 +323,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           'set_client_goal_type',
           'client_goal_read',
           'client_leaderboard_my_rank',
+          'p7_finalize_month',
         ].includes(fn.proname)
       ) {
         await tx.savepoint(async (inner) => {
