@@ -190,6 +190,12 @@ const COMMIT_REQUIRED = [
     reason:
       'F23 Playwright fixture: the running Next server reads the committed check-in form and terms rows on separate connections; cannot be rolled back',
   },
+  {
+    file: 'tests/integration/workforce-checkins.test.ts',
+    signature: /P7 synthetic check-in/,
+    reason:
+      'P7 cross-connection confirmation and revocation races require the committed F15 form/terms fixture',
+  },
 ];
 
 type Site = { file: string; index: number; source: string };

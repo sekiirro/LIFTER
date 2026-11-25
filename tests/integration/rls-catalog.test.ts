@@ -389,6 +389,9 @@ describe('tenancy security catalog (T007)', () => {
           'audit_events_immutable',
           'audit_row_change',
           'cancel_f15_client_alerts',
+          'capture_workforce_checkin_pending',
+          'guard_workforce_checkin_transition',
+          'guard_workforce_checkin_transition_truncate',
           'catalog_assert_exercise_text_limits',
           'catalog_can_read_global',
           'catalog_create_food_legacy',
@@ -716,6 +719,8 @@ describe('tenancy security catalog (T007)', () => {
           'can_read_staff_display_name',
           'can_write_staff_display_name',
           'guard_staff_display_name',
+          'guard_workforce_checkin_transition',
+          'guard_workforce_checkin_transition_truncate',
           'normalize_staff_display_name',
           'staff_display_name_is_white_space',
           'f17_validate_workout_schema_version',
@@ -893,6 +898,9 @@ describe('tenancy security catalog (T007)', () => {
               'guard_form_retention_window',
               'guard_client_note_update',
               'guard_staff_display_name',
+              'capture_workforce_checkin_pending',
+              'guard_workforce_checkin_transition',
+              'guard_workforce_checkin_transition_truncate',
               'prevent_consent_receipt_mutation',
               'signup_reserved_usernames',
               'f15_current_terms_policy',
@@ -2866,6 +2874,55 @@ describe('package tier name security catalog (T078)', () => {
       'name',
       'updated_by',
       'updated_at',
+    ]);
+  });
+});
+
+describe('P7 T002/T004 check-in transition security catalog', () => {
+  it('forces private RLS, denies direct channels and keeps the F26 delete allowlist narrow', async () => {
+    const [table] = await db`
+      select c.relrowsecurity,c.relforcerowsecurity,
+        has_table_privilege('authenticated',c.oid,'SELECT') as authenticated_select,
+        has_table_privilege('service_role',c.oid,'SELECT') as service_role_select
+      from pg_catalog.pg_class c
+      where c.oid='app_private.workforce_checkin_transitions'::regclass
+    `;
+    expect(table).toEqual({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+      authenticated_select: false,
+      service_role_select: false,
+    });
+    const [allowlist] = await db`
+      select can_delete,can_update,traverse
+      from app_private.retention_purge_allowlist
+      where table_oid='app_private.workforce_checkin_transitions'::regclass
+    `;
+    expect(allowlist).toEqual({
+      can_delete: true,
+      can_update: false,
+      traverse: true,
+    });
+    const triggers = await db`
+      select t.tgname,p.proname,t.tgtype::int as tgtype,t.tgenabled
+      from pg_catalog.pg_trigger t
+      join pg_catalog.pg_proc p on p.oid=t.tgfoid
+      where t.tgrelid='app_private.workforce_checkin_transitions'::regclass
+        and not t.tgisinternal order by t.tgname
+    `;
+    expect(triggers).toEqual([
+      {
+        tgname: 'workforce_checkin_transitions_append_only',
+        proname: 'guard_workforce_checkin_transition',
+        tgtype: 27,
+        tgenabled: 'O',
+      },
+      {
+        tgname: 'workforce_checkin_transitions_no_truncate',
+        proname: 'guard_workforce_checkin_transition_truncate',
+        tgtype: 34,
+        tgenabled: 'O',
+      },
     ]);
   });
 });
