@@ -2363,12 +2363,19 @@ describe('P7 earned ledger catalog', () => {
       where schemaname='public' and tablename='p7_earned_points'`;
     expect(policies).toHaveLength(0);
     for (const role of ['anon', 'authenticated', 'service_role'])
-      for (const privilege of ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) {
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+      ]) {
         const [grant] = await db`select has_table_privilege(${role},
           'public.p7_earned_points', ${privilege}) as allowed`;
         expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
       }
-    const [clientId] = await db`select exists(select 1 from information_schema.columns
+    const [clientId] =
+      await db`select exists(select 1 from information_schema.columns
       where table_schema='public' and table_name='p7_earned_points' and column_name='client_id') as present`;
     expect(clientId!.present).toBe(false);
     const clientForeignKeys = await db`select c.conname from pg_constraint c

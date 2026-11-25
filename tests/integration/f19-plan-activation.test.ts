@@ -390,7 +390,7 @@ describe('F19 T021 automatic initial activation', () => {
     });
     expect(activation!.delivery_event_id).toBe(completingKey);
     const [earned] = await db`
-      select e.workspace_id, e.staff_user_id, e.points::text as points,
+      select e.id, e.workspace_id, e.staff_user_id, e.points::text as points,
         e.effective_month::text as effective_month, e.trigger_at,
         to_char(date_trunc('month', a.activated_at at time zone 'Africa/Cairo')::date, 'YYYY-MM-DD') as expected_month,
         e.rule_version, e.source_key
@@ -408,6 +408,13 @@ describe('F19 T021 automatic initial activation', () => {
       source_key: activation!.productivity_unit_id,
     });
     expect(earned!.trigger_at).toEqual(activation!.activated_at);
+    const [audit] = await db`
+      select details from public.audit_events
+      where action='workforce.earned_fact_recorded' and target_id=${earned!.id}
+        and workspace_id=${context.wsA.id}`;
+    expect(audit!.details).toEqual({
+      reference: activation!.productivity_unit_id,
+    });
     await expect(db`update public.p7_earned_points set points=2.00
       where workspace_id=${context.wsA.id} and source_key=${activation!.productivity_unit_id}`).rejects.toThrow(
       /p7_ledger_immutable/,
