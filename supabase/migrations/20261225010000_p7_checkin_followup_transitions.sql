@@ -143,9 +143,10 @@ begin
       (select t.occurred_at from app_private.workforce_checkin_transitions t
         where t.workspace_id=c.workspace_id and t.assignment_id=c.assignment_id and t.status='Followed Up'
         order by t.occurred_at desc, t.id desc limit 1) as followup_at,
-      coalesce((select jsonb_agg(jsonb_build_object('revision',r.revision,'answers',r.answer_values)
-        order by r.revision) from public.form_answer_revisions r
-        where r.workspace_id=c.workspace_id and r.assignment_id=c.assignment_id), '[]'::jsonb) as answer_history,
+      case when c.submitted_at is null then '[]'::jsonb
+        else jsonb_build_array(jsonb_build_object(
+          'answers', public.read_form_answer(c.workspace_id,c.assignment_id)))
+      end as answer_history,
       (select jsonb_agg(jsonb_build_object('status',h.status,'actor_user_id',h.actor_user_id,'occurred_at',h.occurred_at)
         order by h.occurred_at,h.id)
        from (
