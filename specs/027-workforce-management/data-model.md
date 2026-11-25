@@ -13,6 +13,7 @@ Logical model only; this is not an approved physical schema or migration. F10/F1
 7. Salary is one monthly entitlement per person, not per workspace. Platform PO owns it across that employee's workspace memberships. Market currency is PO-selected from existing allowed currencies. Point/KPI reports remain workspace-scoped.
 8. Payroll is an externally paid assertion, not a payout instruction. At most one approval per employee/month, uniquely bound to a reviewed immutable payroll snapshot version, exact amount and currency.
 9. Sensitive P7 financial/KPI detail is stored in PO-only P7 records. audit_events.details carries only an opaque reference for these actions; unrelated WO audit access is preserved.
+10. **S70-R101**: Every manual monetary input uses the employee's salary currency effective for that input month and rejects a mismatch. Inputs retain their captured currency after later salary changes. A monthly snapshot uses the salary record effective for that month and rejects the snapshot if its active salary and input rows mix currencies; no FX conversion is performed.
 
 ## Logical entities
 
