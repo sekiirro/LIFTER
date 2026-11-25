@@ -56,13 +56,13 @@
 
 ## Slice G - Strikes, departure and final UI / verification (target 250-400 changed lines per PR)
 
-- [ ] **T033 [FR-016, FR-026, FR-020]** RED/GREEN: verify existing strike source/path and 3/6/9 rolling-90-day thresholds; P7 point correction does not touch strikes; PO strike correction stays separate; departure/reassignment preserves history and revokes access immediately.
+- [ ] **T033 [FR-016, FR-026, FR-020]** RED/GREEN (S70-PO-20; S70-R109): test then implement one immutable strike per client when the initial workout/nutrition pair is first successfully delivered after the persisted F15 D-03 deadline, attributed to the Trainer responsible at the deadline. Test 3/6/9 rolling-90-day review thresholds (PO only; no discipline), append-only PO strike correction with opaque audit, point-correction independence, F26 client purge without client FK/PII, and departure/reassignment history with immediate access revocation. Kill-test PO authorization and concurrent/replayed delivery idempotency.
 - [ ] **T034 [FR-029]** Before each remaining workforce/month-close UI screen, prepare its AR/EN copy batch and obtain PO approval separately for that screen; no blanket approval inferred.
 - [ ] **T035 [FR-001-FR-029]** Run full acceptance/security/money/concurrency/retention suites and repository gates on implementation head; update traceability only with executed passing test evidence. No task is checked by this planning document.
 
 ## Dependency order
 
-T001-T004 establish schemas and authorization; T005 precedes T006 UI only. T007-T011 establish durable facts and trigger idempotency. T012 precedes T013 UI. T014-T017 are backend and can proceed independently of T018/T019 copy/UI. T020 precedes T021 backfill; T022 precedes T023 refund implementation; T024 precedes T025. T026 precedes T027 approval. T028 precedes T029 month close. T030 precedes T031 F26 extension. T032 tests audit and all confidentiality channels. T033 depends on the existing source/ledger. T034 precedes only remaining UI. T035 closes the implementation sequence. Telegram timeliness remains post-launch documentation only; there is no current implementation task.
+T001-T004 establish schemas and authorization; T005 precedes T006 UI only. T007-T011 establish durable facts and trigger idempotency. T012 precedes T013 UI. T014-T017 are backend and can proceed independently of T018/T019 copy/UI. T020 precedes T021 backfill; T022 precedes T023 refund implementation; T024 precedes T025. T026 precedes T027 approval. T028 precedes T029 month close. T030 precedes T031 F26 extension. T032 tests audit and all confidentiality channels. T033 reuses F15 D-03 persisted SLA, F19 initial pair deliveries, F11 assignment history, and F26 retention; it must not depend on or alter the P7 point ledger. T034 precedes only remaining UI. T035 closes the implementation sequence. Telegram timeliness remains post-launch documentation only; there is no current implementation task.
 
 ## Slice discipline
 

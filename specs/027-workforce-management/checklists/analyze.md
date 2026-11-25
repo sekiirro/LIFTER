@@ -1,7 +1,7 @@
 ﻿# Specification Analysis Report: P7 Workforce Management
 
-**Re-analyzed**: 2026-11-25 03:29 UTC, after final edits to all specification, planning, contract, task and checklist artifacts
-**Inputs reviewed**: spec.md, plan.md, tasks.md, research.md, data-model.md, both contracts, quickstart.md, traceability.md, copy-table.md, requirements.md, po-mcqs.md, critique.md, S70-R95 and PO-18
+**Re-analyzed**: 2026-11-25 13:56 UTC, after S70-PO-20/S70-R109 requirement changes, plan correction, and independent critique
+**Inputs reviewed**: spec.md, plan.md, tasks.md, research.md, data-model.md, both contracts, quickstart.md, traceability.md, copy-table.md, requirements.md, po-mcqs.md, critique.md, S70-R95, S70-PO-18, S70-PO-20 and S70-R109
 **Method**: cross-artifact Spec Kit analysis. Tasks are plans; no implementation or test completion is claimed.
 
 ## Findings and status
@@ -11,7 +11,12 @@
 | C1  | Constitution alignment - Principle IV | CRITICAL | Existing exclusion of automatic bonuses/deductions conflicts with PO-approved P7 plan/check-in penalties and acquisition point reversal. Post-launch Telegram timeliness rule also needs narrow permission when technically supported. | Resolved by pending separate Constitution 1.20.0 amendment PR, lane s70-gemini-const120. Updated proposal in plan.md. Constitution is unchanged here. |
 | C2  | Constitution alignment - Principle VI | CRITICAL | Existing Nothing-is-automatic rule conflicts with the explicitly approved P7 KPI triggers.                                                                                                                                             | Resolved by pending separate Constitution 1.20.0 amendment PR, lane s70-gemini-const120. Updated proposal in plan.md. Constitution is unchanged here. |
 
-No other CRITICAL or HIGH finding remains open. All 24 Sol findings are mapped to applied requirements/design/tasks in checklists/critique.md. The external Constitution amendment is a governance dependency, not a product ambiguity or blocker to this documentation update.
+All 24 Sol findings are mapped to applied requirements/design/tasks in checklists/critique.md. The external Constitution amendment is a governance dependency. Independent critique surfaced two new HIGH product-contract findings that block T033 implementation:
+
+| ID  | Category                   | Severity | Finding                                                                                             | Status / resolution                                          |
+| --- | -------------------------- | -------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| C3  | Strike correction contract | HIGH     | PO-20 permits separate PO corrections but does not define operations, count effect, or composition. | Open P7-MCQ-04; no correction implementation until answered. |
+| C4  | Rolling-window clock       | HIGH     | PO-20 does not specify which timestamp is counted or whether the exact 90-day cutoff is inclusive.  | Open P7-MCQ-05; no count implementation until answered.      |
 
 ## PO decision register
 
@@ -23,7 +28,7 @@ No other CRITICAL or HIGH finding remains open. All 24 Sol findings are mapped t
 | SOL-09    | ANSWERED, S70-PO-18 #2 and S70-R95 | One employee salary entitlement, platform PO, not multiplied by workspace.                            |
 | SOL-20    | ANSWERED, S70-PO-18 #4             | PO approves drafted AR/EN copy per screen batch before each UI slice.                                 |
 
-PENDING-PO FRs: 0. Open product MCQs: 0.
+PENDING-PO FRs: strike correction/count details in FR-026/FR-016. Open product MCQs: 2 (P7-MCQ-04/05).
 
 ## FR acceptance coverage
 
@@ -66,9 +71,34 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - Success criteria: retained and mapped to FR acceptance tasks; no unassigned criterion.
 - Sol critique findings resolved in artifacts: 24/24.
 - Constitution CRITICAL records: 2 (C1/C2, resolved by pending amendment PR). Other open CRITICAL: 0. Open HIGH: 0.
-- PENDING-PO: 0. Open MCQs: 0.
+- PENDING-PO: 2. Open MCQs: P7-MCQ-04/05.
 - Implementation tasks checked: 0; implementation tests executed in this docs lane: 0.
 
 ## Analyze result
 
-**Open CRITICAL: 0. Open HIGH: 0.** C1/C2 remain visible as CRITICAL governance records but are marked resolved by pending Constitution 1.20.0 amendment PR in lane s70-gemini-const120. No other CRITICAL/HIGH issue remains. This is a completed documentation Analyze, not implementation authorization; apply the separate Constitution amendment gate before implementation.
+**Superseded baseline**: the prior 03:29 analysis predates S70-PO-20/S70-R109 and is retained above as historical context. Its open-finding counts are not current; use the re-analysis below.
+
+## S70-PO-20 / S70-R109 re-analysis
+
+**Re-analyzed**: 2026-11-25 13:53 UTC after changes to `spec.md`, `data-model.md`, `contracts/workforce-rpc-api.md`, `contracts/authorization-and-projections.md`, `tasks.md`, and `checklists/po-mcqs.md`.
+**Requirement authority**: S70-PO-20 and S70-R109. The strike-source MCQ is recorded as P7-MCQ-03. Independent critique found unresolved product choices recorded as P7-MCQ-04 (correction semantics) and P7-MCQ-05 (count clock/cutoff).
+
+### Scope checks
+
+- FR-016 and FR-026 now define one immutable strike per client from the first successful initial workout/nutrition pair delivered after the persisted F15 D-03 deadline; attribution is the Trainer responsible at the deadline. The deadline is reused, never recomputed.
+- Acceptance scenarios cover late versus on-time delivery, one-per-client idempotency, rolling-90-day 3/6/9 review, PO-only visibility, point-correction independence, append-only PO strike correction, departure, revocation and preserved history. Count-time and correction effect assertions cannot be finalized until P7-MCQ-04/05 are answered.
+- The logical strike event and correction entities retain no client FK/PII and use an opaque source key. F26 purge preserves workforce strike history.
+- RPC and projection contracts explicitly deny strike reads/corrections to Trainer, WO and Sales; raw tables have no staff access. The only accepted reader/writer is PO-only.
+- T033 is tagged FR-016/FR-026/FR-020 and requires RED-first delivery/idempotency and PO-authorization kill tests. Its source dependencies are F15 persisted SLA, F19 initial-pair delivery, F11 assignment history and F26 purge. No P7 point-ledger tables are required or referenced for strike independence.
+- S70-PO-20 resolves the strike source and S70-R109 confirms the text change. No other product-policy decision is introduced.
+
+### Findings and result
+
+- No new open CRITICAL findings. C1/C2 remain external Constitution-governance dependencies tracked in their owning lane.
+- Two open HIGH product decisions: C3/P7-MCQ-04 and C4/P7-MCQ-05.
+- Two open PO decisions: correction operation/effect and rolling-window timestamp/cutoff. T033 implementation is blocked on these details; no behavior was assumed.
+- RLS catalog coverage, explicit SECURITY DEFINER checks, append-only enforcement, idempotency/concurrency, purge behavior, and kill tests remain implementation acceptance gates in T033; no implementation or test completion is claimed by this Analyze.
+
+**Independent critique**: `/root/p7_strike_critique`, GPT-6.1 Sol Medium (GPT-6.2 Sol Medium requested by S70-PO-16 §7 was unavailable in this runtime). No CRITICAL findings; HIGH findings were the two open contract choices recorded as P7-MCQ-04/05. Architect disposition of the model substitution remains pending.
+
+**Analyze result**: PASS for documenting the answered source/attribution/discipline requirements; implementation entry gate FAILS until C3/C4 are answered and architect disposition is recorded for the critique-model substitution.

@@ -32,8 +32,31 @@ All listed decisions are ANSWERED. S70-PO-16 decisions are not reopened. The ori
 
 **Applied to**: FR-029, copy inventory and every UI task dependency. No unapproved copy is treated as approved or shipped.
 
+## P7-MCQ-03 - Strike source and attribution - ANSWERED
+
+**Verbatim S70-PO-20**: "Late plan deliveries (Recommended)". Each client whose initial workout/nutrition plan is delivered after the persisted F15 D-03 deadline is one strike event for the Trainer responsible at that instant. Count strikes automatically over a rolling 90 days; show 3/6/9 to the PO for review only, never automatic discipline. Strike records remain separate from P7 point penalties; the PO corrects strikes separately.
+
+**S70-R109**: This answer changes FR-016, FR-026 and T033; reuse the persisted D-03 deadline and never recompute it.
+
+**Applied to**: FR-016/FR-026, the strike event and correction entities, PO-only RPC contract, and T033.
+
 ## Decision status
 
-- Open product MCQs: 0.
-- PENDING-PO requirements: none.
+- Open product MCQs: P7-MCQ-04 and P7-MCQ-05 (see below).
+
+## P7-MCQ-04 - PO strike correction semantics - OPEN
+
+S70-PO-20 authorizes PO strike corrections as separate append-only actions but does not define the permitted operation or its effect on the strike event/count. Which semantics are approved?
+
+1. Void or reinstate a strike only; counts use its active/void state.
+2. Reattribute a strike only; counts follow the corrected Trainer.
+3. Allow void/reinstate and reattribution; define how multiple corrections compose.
+
+Implications: option 1 avoids changing original attribution; option 2 preserves event existence but changes attribution; option 3 supports both but requires explicit ordering/concurrency rules. Recommendation: option 3 only if PO explicitly specifies composition; otherwise choose the narrowest required correction set. Blocked: correction RPC schema/behavior, append-only composition tests, and its authorization kill-test.
+
+## P7-MCQ-05 - Rolling 90-day count clock - OPEN
+
+S70-PO-20 says rolling 90 days and attributes the event at the persisted D-03 breach instant, but does not explicitly select the count timestamp or exact cutoff inclusion. Should the count use (1) breach/deadline instant, or (2) first successful pair-delivery instant, and is the cutoff inclusive or exclusive? Recommendation: count by the breach/deadline instant with an explicitly defined inclusive/exclusive 90-day cutoff, consistent with Trainer attribution at breach. Blocked: count query, exact 89/90/91-day expectations, and delayed delivery/ingestion tests.
+
+- PENDING-PO requirements: strike correction/count details in FR-026/FR-016 (P7-MCQ-04/05).
 - Remaining governance dependency: Constitution C1/C2 are resolved by the pending separate Constitution 1.20.0 amendment PR in lane s70-gemini-const120; this is not a product question.

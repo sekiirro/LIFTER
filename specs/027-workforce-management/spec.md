@@ -2,7 +2,7 @@
 
 **Feature Branch**: `s70-027-workforce`
 **Created**: 2026-11-25
-**Status**: Draft (documentation-only); S70-PO-18 decisions recorded; no open product MCQs
+**Status**: Draft (documentation-only); S70-PO-20 strike source recorded; strike correction/count-time MCQs remain open
 **Authority**: S70-PO-16, S70-R95 architect rulings, S70-PO-18 answers, and S70-PO-1 item 3 retention.
 
 ## User Scenarios & Testing
@@ -67,10 +67,14 @@ The PO reviews rolling 90-day strikes at thresholds 3/6/9, handles departure, im
 
 1. **Given** strike events, **When** the PO reviews a rolling 90-day window, **Then** counts and 3/6/9 thresholds are shown for human review and cause no automatic discipline.
 2. **Given** a departed Trainer, **When** access is revoked and clients reassigned, **Then** former attribution and history remain intact while the former Trainer cannot sign in or access workspace data.
+3. **Given** the persisted F15 D-03 deadline for a client's initial intake and the initial workout/nutrition plan pair, **When** the pair is first successfully delivered after that deadline, **Then** exactly one strike is appended for the client, attributed to the Trainer responsible at the deadline; on-time delivery, retries, and later plan deliveries add none.
+4. **Given** the PO reads a Trainer's strikes, **When** the rolling 90-day window is evaluated, **Then** only the PO sees the count and the 3/6/9 review threshold; no disciplinary action is triggered.
+5. **Given** a P7 point penalty is reversed or reattributed, **When** the PO reviews strikes, **Then** strike history and counts are unchanged; a strike correction is a separate append-only PO action with opaque audit evidence.
 
 ## Edge Cases
 
 - Exact 24-hour follow-up boundary; failed submission versus successful submission; deadline and action timestamps spanning Cairo midnight/month close.
+- Initial plan pair delivered exactly at versus just after the persisted F15 D-03 deadline; pair delivery retries/concurrency, later revisions, renewal pairs, reassignment around the breach, and F26 purge after strike creation.
 - Duplicate F19 delivery, retries, duplicate refund events, replayed idempotency key with changed arguments, and concurrent PO edits.
 - Plan delay and follow-up penalties coexist; ledger sum crosses below zero; reversal occurs in a later month.
 - Late, disputed and followed-up states must not erase earlier timestamps or the fact that a late deduction was posted.
@@ -97,7 +101,7 @@ The PO reviews rolling 90-day strikes at thresholds 3/6/9, handles departure, im
 - **FR-013**: Create immutable monthly snapshots/finalization with formula version, source watermark, PO detail and role-safe projections. Every point producer and month close takes the same workspace+month advisory fence after existing source locks in a documented fixed order. Closed months never change. Recheck authorization after lock waits. Closed-month late corrections go to current open month linked to original month.
 - **FR-014**: A correction/refund reversal belonging to a finalized month is booked in the current open month, linked to the original month; never restate/reopen the closed month or change its Sales total (S70-PO-18 answer #1).
 - **FR-015**: F13 owns all refund rules. Any completed refund reverses the acquisition point once. Full refund question, answer, and selected deductions use F13's existing transaction/lock boundary; deduplication is per acquisition, with questionnaire identity independent from the once-only point reversal. Repeated/concurrent refund processing cannot duplicate either effect.
-- **FR-016**: Preserve existing strike source/rules and rolling 90-day thresholds 3/6/9 for human review; no automatic discipline. P7 point penalties are not strikes. Reversal or reattribution of a point penalty does not change a strike; PO corrects a strike separately through the existing path. Departure immediately revokes access, permits PO reassignment, and preserves historical attribution.
+- **FR-016**: A strike is one immutable event per client when the client's initial workout/nutrition plan pair is first successfully delivered after that client's persisted F15 D-03 deadline (S70-PO-20; S70-R109). Reuse the stored F15 deadline; never recompute it. Attribute the strike to the Trainer responsible at the deadline instant. Count strikes in a rolling 90-day window and expose 3/6/9 thresholds to the PO for review only; strikes never trigger automatic discipline. Preserve source events without client FK or PII, using an opaque source key. Departure immediately revokes access, permits PO reassignment, and preserves historical attribution.
 - **FR-017**: Enforce workspace isolation, deny-by-default and both authorization walls. Every tenant record/projection is workspace-scoped; unauthorized/foreign workspace accesses fail without existence disclosure. Check-in history uses a narrow projection only; general assignment and directory policies remain unchanged.
 - **FR-018**: Client PII follows the approved 30 days post-closure; audit events are pseudonymized 30 days after creation. Retained P7 ledger has no FK to client-scoped rows and no client PII. Add client-linked follow-up/questionnaire records to F26's purge allowlist with a narrow tested path; never purge staff amounts/attribution. An open P7 follow-up dispute or full-refund staff-fault review pauses purge of tied client records like an open refund/dispute; resolution restarts the 30-day clock. Historical KPI attribution remains in P7 ledger/snapshots, never audit_events.
 - **FR-019**: Telegram Response Speed is post-launch only. Document configurable Trainer shifts and future monitoring; once implemented and technically supported, response >1 hour during the responsible shift incurs -0.5 Timeliness point. Current research finds inbound and bot-authored timestamps observable, but human Trainer reply time/identity unverified and ordinary bots cannot observe human-to-human messages. No current runtime behavior or implementation task.
@@ -107,7 +111,7 @@ The PO reviews rolling 90-day strikes at thresholds 3/6/9, handles departure, im
 - **FR-023**: Preserve all immutable monthly-quality revisions, but count only latest effective revision per Trainer/month/category. Revised count, weight, or zero value replaces effective contribution in the projection; never sum superseded full values.
 - **FR-024**: Inventory existing audit readers and protect P7 financial/KPI evidence. WO's existing unrelated audit rights remain; P7 sensitive event detail is not accessible via audit_events.
 - **FR-025**: Deny raw P7 events through Realtime/publications, broadcasts/subscriptions, HEAD/count/existence/search, notification payloads, exports and cache. No staff notification reveals event details or pre-finalization Sales activity. Test each channel with real roles.
-- **FR-026**: Keep existing strike source, PO decision and correction path. P7 point penalty correction/reversal never edits strike counts; manual strike correction remains separate and PO controlled.
+- **FR-026**: Strike events and corrections are separate from the P7 point ledger. Point penalty reversal or reattribution never inserts, updates, or removes a strike. Only the PO may append a strike correction through the separate strike correction path; the audit reference is opaque and contains no client PII. Cite S70-PO-20 and S70-R109 for the late initial-plan source.
 - **FR-027**: Provide a workspace-scoped idempotent check-in due evaluator and operator-run path. Use one stable occurrence key per check-in; evaluator, catch-up and confirmation converge on one -0.5 entry. Scheduler remains behind existing activation gates.
 - **FR-028**: PO-only manual monetary incentive/deduction/correction inputs use exact minor units and currency, immutable lineage, never automatic and never derived from points. One payroll approval per employee+month is unique and bound to reviewed immutable snapshot version and exact amount/currency. Reject stale versions; distinct idempotency keys cannot approve twice.
 - **FR-029**: Before each UI slice, draft AR/EN strings for that screen batch and obtain PO approval. Backend work may proceed independently; no unapproved string ships.
@@ -123,7 +127,7 @@ The PO reviews rolling 90-day strikes at thresholds 3/6/9, handles departure, im
 - **Compensation/payroll record**: PO-controlled Basic Salary, incentive/adjustment inputs, period snapshot, externally-paid approval and immutable history.
 - **Monthly quality record**: Trainer transformation counts/points and feedback counts/weights with month, author, revision history.
 - **Sales link attribution/acquisition**: F10 link issuer, approval and first-payment qualification, one-point ledger event and refund reversal.
-- **Strike event**: attributed event counted within the rolling 90-day review window.
+- **Strike event**: immutable, one-per-client event for the first successfully delivered initial workout/nutrition pair after the persisted F15 D-03 deadline; stores workspace, Trainer-at-deadline, deadline/effective time, pair delivery time, and an opaque source key only (no client FK or PII). PO corrections append separately with opaque audit evidence; 90-day counts and 3/6/9 review flags are PO-only.
 
 ## Success Criteria
 
@@ -143,7 +147,7 @@ The PO reviews rolling 90-day strikes at thresholds 3/6/9, handles departure, im
 - Africa/Cairo is the existing system timezone for dates and month boundaries (F10/F12/F13 conventions); this is a technical consistency choice, not new policy.
 - Reuse existing workspace membership, F10 link attribution, F12 approval/payment events, F13 refund lifecycle, F15/F23 forms/history and F19 immutable productivity facts. The source audit must verify exact integration points in implementation planning.
 - S70-PO-16 resolves the legacy P7 deferral and conflicting KPI decisions. Refer to each binding requirement as “S70-PO-16 §N”.
-- S70-PO-18 answers P7-MCQ-01/02 and SOL-08/09/20: closed-month corrections carry to the current month; salary is one monthly person-level entitlement owned by the platform PO; initial point month is trigger month in Cairo; copy approval is per screen batch. No open product MCQ remains.
+- S70-PO-18 answers P7-MCQ-01/02 and SOL-08/09/20: closed-month corrections carry to the current month; salary is one monthly person-level entitlement owned by the platform PO; initial point month is trigger month in Cairo; copy approval is per screen batch. S70-PO-20 and S70-R109 set the strike source to the first late initial plan pair after persisted F15 D-03 and require one client strike attributed at deadline; the strike correction remains PO-only, append-only, and separate from point corrections. P7-MCQ-04/05 remain open for correction mechanics and count timestamp/cutoff.
 
 ## Out of scope
 
@@ -151,10 +155,11 @@ The PO reviews rolling 90-day strikes at thresholds 3/6/9, handles departure, im
 
 ## Clarifications
 
-### Clarification session 2026-11-25 - S70-PO-16, S70-R95, S70-PO-18
+### Clarification session 2026-11-25 - S70-PO-16, S70-R95, S70-PO-18, S70-PO-20, S70-R109
 
 - P7 included in scope; the v1-scope P7 deferral and conflicting legacy KPI math are superseded. Reuse F15's existing D-03 five-working-day plan delivery clock and its Africa/Cairo/Friday/18:00 rules for determining plan lateness; this does not restore any conflicting legacy KPI calculation.
 - Net formula, penalty values/triggers, role boundaries, point rules, check-in statuses/visibility, refund handling, Basic Salary/payroll meaning, feedback defaults, strike thresholds, departure and Telegram post-launch boundary are answered by S70-PO-16 §1–6.
 - S70-PO-18 #1 carries closed-month corrections into current open month with an original-month link; #2 sets one monthly person-level salary in market currency with platform-PO ownership; #3 uses the Cairo trigger month; #4 requires per-screen-batch copy approval.
 - S70-R95 resolves SOL-01..24, including durable non-PII earned facts, any-refund reversal, protected audit details, latest-effective quality revisions, due evaluator, breach-time attribution, F10 unit reuse/backfill, monetary payroll inputs, snapshot approval, F26 purge/hold integration, shared period fence, funnel counts, decimal wire format, narrow check-in projection, channel inventory and strike separation.
-- No open product ambiguity remains. C1/C2 are resolved by the pending separate Constitution 1.20.0 amendment PR in lane `s70-gemini-const120`; this spec PR does not edit the Constitution.
+- S70-PO-20 selects late initial workout/nutrition plan-pair delivery after the persisted F15 D-03 deadline as the strike source; one strike per client, attributed to the Trainer responsible at the deadline. S70-R109 confirms this is a requirement change to FR-016, FR-026 and T033. Rolling 90-day counts and 3/6/9 thresholds are visible only to the PO for review; no automatic discipline. PO strike corrections are separate, append-only, and audited with an opaque reference.
+- Strike correction semantics and rolling-window event-time/boundary remain open as P7-MCQ-04/05; implementation is blocked on those choices. All other scoped product questions are answered. C1/C2 are resolved by the pending separate Constitution 1.20.0 amendment PR in lane `s70-gemini-const120`; this spec change does not edit the Constitution.
