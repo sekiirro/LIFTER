@@ -102,6 +102,8 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   post-launch, the Telegram timeliness penalty (-0.5). These entries never change compensation or
   trigger discipline. Payroll approval means already paid externally and is recorded as an
   immutable PO action. No other people decision is automatic.
+- Historical attribution and payroll MUST be preserved through access revocation and
+  reassignment.
 
 ### VII. Privacy & Health-Data Protection
 
@@ -406,6 +408,6 @@ MINOR (version 1.19.0 to 1.20.0): P7 Workforce Management approved by S70-PO-16,
 
 Changed: (1) Principle IV: adds P7 Workforce Management approval superseding v1 P7 deferral, allows only the automatic KPI entries named in S70-PO-16, qualifies PRD-12 "automatic bonuses/deductions" exclusion with the PO-approved P7 exception, and confirms no other automatic bonus, deduction, strike consequence or discipline is authorized. (2) Principle VI: revised to clarify that KPIs are decision support only; additional/manual incentives, deductions, corrections, reattribution, strikes and termination are explicit, audited PO decisions; PO-approved P7 rules may automatically append only the plan-delay penalty (-1), the check-in follow-up delay penalty (-0.5), the once-per-acquisition Sales-point reversal on refund, and, when implemented post-launch, the Telegram timeliness penalty (-0.5); these entries never change compensation or trigger discipline; payroll approval means already paid externally and is recorded as an immutable PO action; no other people decision is automatic.
 
-Unchanged: strict workspace isolation (Principle I); immutable financial truth (Principle II); PO governance and least privilege (Principle III); versioned content (Principle V); privacy and health-data protection (Principle VII); design system UI (Principle VIII); idempotent operations (Principle IX); all platform/delivery constraints; development workflow and quality gates (Spec Kit, mandatory independent critique, agent limits, one green CI attempt per exact head, standing merge approval); and no automated compensation changes, payouts, or disciplinary termination.
+Unchanged: strict workspace isolation (Principle I); immutable financial truth (Principle II); PO governance and least privilege (Principle III); versioned content (Principle V); historical attribution/payroll preservation (Principle VI last bullet); privacy and health-data protection (Principle VII); design system UI (Principle VIII); idempotent operations (Principle IX); all platform/delivery constraints; development workflow and quality gates (Spec Kit, mandatory independent critique, agent limits, one green CI attempt per exact head, standing merge approval); and no automated compensation changes, payouts, or disciplinary termination.
 
 Sync checklist: Dependent templates/docs: None. No `.specify/templates/*`, `.claude/skills/*`, or application documents require updates for this amendment; P7 implementation is tracked in its own feature branch and PRs.
