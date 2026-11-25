@@ -120,14 +120,38 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({
           assignment_id: assignmentId,
-          form_status: 'submitted',
-          followup_status: 'late',
+          form_status: 'Submitted',
+          followup_status: 'Late',
           answer_history: [
             { revision: 1, answers: { workoutAdherence: 6, dietAdherence: 4 } },
             { revision: 2, answers: { workoutAdherence: 8, dietAdherence: 5 } },
           ],
         });
       }
+      const confirmed = await asUser(
+        tx,
+        f.trainerA.userId,
+        (sp) =>
+          sp`select public.confirm_trainer_checkin_followup(${f.wsA.id},${assignmentId}) as result`,
+      );
+      expect(confirmed[0]?.result).toMatchObject({ status: 'ok' });
+      const followedUp = await asUser(
+        tx,
+        f.trainerB.userId,
+        (sp) =>
+          sp`select * from public.get_trainer_checkins(${f.wsA.id},${today}::date,${today}::date,100,0)`,
+      );
+      expect(followedUp[0]).toMatchObject({
+        followup_status: 'Followed Up',
+        followup_history: [
+          expect.objectContaining({ status: 'Pending' }),
+          expect.objectContaining({ status: 'Late' }),
+          expect.objectContaining({
+            status: 'Followed Up',
+            actor_user_id: f.trainerA.userId,
+          }),
+        ],
+      });
       for (const actor of [
         f.woA.userId,
         f.salesA.userId,
@@ -139,13 +163,53 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
           (sp) =>
             sp`select * from public.get_trainer_checkins(${f.wsA.id},${today}::date,${today}::date,100,0)`,
         );
+      for (const actor of [
+        f.woA.userId,
+        f.salesA.userId,
+        foreign.trainerA.userId,
+      ])
+        await denied(
+          tx,
+          actor,
+          (sp) =>
+            sp`select public.confirm_trainer_checkin_followup(${f.wsA.id},${assignmentId})`,
+        );
     });
   });
 
-  it('records one follow-up under parallel confirmation retries and preserves Late history', async () => {
+  it('forces private RLS and exposes only authenticated projection/confirmation RPCs', async () => {
     const [table] = await db`
-      select to_regclass('app_private.workforce_checkin_transitions') as relation
+      select c.relrowsecurity, c.relforcerowsecurity,
+        has_table_privilege('authenticated',c.oid,'SELECT') as authenticated_select,
+        has_table_privilege('service_role',c.oid,'SELECT') as service_role_select
+      from pg_catalog.pg_class c
+      where c.oid=to_regclass('app_private.workforce_checkin_transitions')
     `;
-    expect(table?.relation).toBe('app_private.workforce_checkin_transitions');
+    expect(table).toMatchObject({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+      authenticated_select: false,
+      service_role_select: false,
+    });
+    const routines = await db`
+      select p.prosecdef, p.proconfig,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role_execute
+      from pg_catalog.pg_proc p
+      where p.oid in (
+        to_regprocedure('public.get_trainer_checkins(uuid,date,date,integer,integer)'),
+        to_regprocedure('public.confirm_trainer_checkin_followup(uuid,uuid)')
+      )
+    `;
+    expect(routines).toHaveLength(2);
+    for (const routine of routines)
+      expect(routine).toMatchObject({
+        prosecdef: true,
+        proconfig: ['search_path=""'],
+        authenticated_execute: true,
+        anon_execute: false,
+        service_role_execute: false,
+      });
   });
 });
