@@ -111,6 +111,8 @@ const p7Private = [
   'p7_month_for_trigger',
   'p7_reject_mutation',
   'record_due_workforce_strikes',
+  'guard_workforce_strike_immutable',
+  'reject_workforce_strike_truncate',
 ];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
@@ -639,6 +641,8 @@ describe('tenancy security catalog (T007)', () => {
         'f15_alert_schedule_immutable',
         'f15_alert_schedule_run',
         'record_due_workforce_strikes',
+        'guard_workforce_strike_immutable',
+        'reject_workforce_strike_truncate',
         'f15_answer_is_present',
         'f15_answer_values_valid',
         'f15_forms_purge_run',

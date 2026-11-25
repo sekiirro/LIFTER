@@ -21,7 +21,7 @@ async function seedOverdueInitial() {
         workspace_id,assignment_id,rule_id,start_date,day_five_date,deadline_at
       ) values (
         ${context.wsA.id},${assignment},'cairo-d03-v1','2026-11-20','2026-11-26',
-        (clock_timestamp() + interval '2 seconds')::timestamptz
+        (clock_timestamp() + interval '5 seconds')::timestamptz
       )
     `;
     return assignment;
@@ -114,36 +114,104 @@ it('keeps a D-03 breach immutable when the first pair is completed late', async 
   );
 });
 
+it('preserves breach-time attribution and PO history after reassignment and departure', async () => {
+  const fixture = await seedOverdueInitial();
+  await new Promise((resolve) =>
+    setTimeout(
+      resolve,
+      Math.max(0, fixture.deadlineAt.getTime() + 10 - Date.now()),
+    ),
+  );
+  await recordDue(fixture.deadlineAt);
+  const [event] = await db`
+    select id,trainer_user_id from public.workforce_strike_events
+    where workspace_id=${fixture.context.wsA.id}
+  `;
+  const replacement = await createStaff('trainer', 'strike-reassignment');
+  const membership = await admin().from('workspace_memberships').insert({
+    workspace_id: fixture.context.wsA.id,
+    user_id: replacement.userId,
+    granted_by: fixture.context.po.userId,
+  });
+  if (membership.error) throw new Error(membership.error.message);
+  const reassignment = await fixture.context.po.client.rpc(
+    'assign_client_responsible_trainer',
+    {
+      p_workspace_id: fixture.context.wsA.id,
+      p_client_id: fixture.ids.client,
+      p_trainer_user_id: replacement.userId,
+    },
+  );
+  if (reassignment.error) throw new Error(reassignment.error.message);
+  const [originalMembership] = await db`
+    select workspace_membership_id from public.client_trainer_assignments
+    where workspace_id=${fixture.context.wsA.id} and client_id=${fixture.ids.client}
+      and trainer_user_id=${fixture.context.trainerA.userId}
+  `;
+  const departure = await admin()
+    .from('workspace_memberships')
+    .update({
+      revoked_at: new Date().toISOString(),
+      revoked_by: fixture.context.po.userId,
+    })
+    .eq('id', originalMembership!.workspace_membership_id);
+  if (departure.error) throw new Error(departure.error.message);
+
+  const [row] = await db.begin(async (tx) => {
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.context.po.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    return tx`
+      select public.get_workforce_strikes(
+        ${fixture.context.wsA.id},${fixture.context.trainerA.userId}
+      ) as result
+    `;
+  });
+  expect(row?.result).toMatchObject({ status: 'ok', count: 1 });
+  expect(event?.trainer_user_id).toBe(fixture.context.trainerA.userId);
+  const [stored] = await db`
+    select trainer_user_id from public.workforce_strike_events where id=${event!.id}
+  `;
+  expect(stored?.trainer_user_id).toBe(fixture.context.trainerA.userId);
+});
+
 it('uses the exact rolling window and only exposes 3/6/9 review flags to the PO', async () => {
   const context = await clientContext();
+  const sixStrikes = await createStaff('trainer', 'strike-threshold-six');
+  const nineStrikes = await createStaff('trainer', 'strike-threshold-nine');
   await db.begin(async (tx) => {
-    for (let index = 0; index < 9; index++) {
-      await tx`
-        insert into public.workforce_strike_events(
-          workspace_id,trainer_user_id,source_key,breach_at
-        ) values (
-          ${context.wsA.id},${context.trainerA.userId},${randomUUID()},
-          transaction_timestamp() - (${index}::text || ' hours')::interval
-        )
-      `;
-    }
+    for (const [trainerId, total] of [
+      [context.trainerA.userId, 3],
+      [sixStrikes.userId, 6],
+      [nineStrikes.userId, 9],
+    ] as const)
+      for (let index = 0; index < total; index++)
+        await tx`
+          insert into public.workforce_strike_events(
+            workspace_id,trainer_user_id,source_key,breach_at
+          ) values (
+            ${context.wsA.id},${trainerId},${randomUUID()},
+            transaction_timestamp() - (${index}::text || ' hours')::interval
+          )
+        `;
     await tx`
       insert into public.workforce_strike_events(
         workspace_id,trainer_user_id,source_key,breach_at
       ) values (
-        ${context.wsA.id},${context.trainerA.userId},${randomUUID()},
+        ${context.wsA.id},${nineStrikes.userId},${randomUUID()},
         transaction_timestamp() - interval '90 days'
       )
     `;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: context.po.userId, role: 'authenticated' })},true)`;
     await tx`set local role authenticated`;
-    const [result] = await tx`
-      select public.get_workforce_strikes(${context.wsA.id},${context.trainerA.userId}) as result
+    const counts = await tx`
+      select public.get_workforce_strikes(${context.wsA.id},${context.trainerA.userId}) as three,
+        public.get_workforce_strikes(${context.wsA.id},${sixStrikes.userId}) as six,
+        public.get_workforce_strikes(${context.wsA.id},${nineStrikes.userId}) as nine
     `;
-    expect(result?.result).toMatchObject({
-      status: 'ok',
-      count: 9,
-      review_threshold: 9,
+    expect(counts[0]).toMatchObject({
+      three: { status: 'ok', count: 3, review_threshold: 3 },
+      six: { status: 'ok', count: 6, review_threshold: 6 },
+      nine: { status: 'ok', count: 9, review_threshold: 9 },
     });
   });
 });
@@ -161,7 +229,7 @@ it('appends void, reinstate and breach-time reattribution without changing the s
       workspace_id: fixture.context.wsA.id,
       user_id: targetTrainer.userId,
       granted_by: fixture.context.po.userId,
-      created_at: new Date(fixture.deadlineAt.getTime() - 60_000).toISOString(),
+      granted_at: new Date(fixture.deadlineAt.getTime() - 60_000).toISOString(),
     });
   if (membership.error) throw new Error(membership.error.message);
 
@@ -206,6 +274,39 @@ it('appends void, reinstate and breach-time reattribution without changing the s
   ).toBe(true);
 });
 
+it('serializes concurrent retries of one PO correction idempotency key', async () => {
+  const fixture = await seedOverdueInitial();
+  await recordDue(fixture.deadlineAt);
+  const [event] = await db`
+    select id from public.workforce_strike_events where workspace_id=${fixture.context.wsA.id}
+  `;
+  const key = randomUUID();
+  const args = {
+    p_workspace_id: fixture.context.wsA.id,
+    p_strike_id: event!.id,
+    p_operation: 'void',
+    p_target_trainer_user_id: null,
+    p_reason: 'duplicate request replay',
+    p_idempotency_key: key,
+  };
+  const [first, second] = await Promise.all([
+    fixture.context.po.client.rpc('correct_workforce_strike', args),
+    fixture.context.po.client.rpc('correct_workforce_strike', args),
+  ]);
+  expect(first.data).toMatchObject({ status: 'ok' });
+  expect(second.data).toMatchObject({ status: 'ok' });
+  expect(first.data.correction_id).toBe(second.data.correction_id);
+  expect([first.data.replayed, second.data.replayed].sort()).toEqual([
+    false,
+    true,
+  ]);
+  const [count] = await db`
+    select count(*)::int as count from public.workforce_strike_corrections
+    where workspace_id=${fixture.context.wsA.id} and idempotency_key=${key}
+  `;
+  expect(count?.count).toBe(1);
+});
+
 it('denies Trainer, WO and Sales strike reads and corrections before resolving identifiers', async () => {
   const context = await clientContext();
   for (const userId of [
@@ -228,4 +329,105 @@ it('denies Trainer, WO and Sales strike reads and corrections before resolving i
       expect(write?.result).toMatchObject({ status: 'not_permitted' });
     });
   }
+});
+
+it('mutation: removing the PO guard exposes strike reads and corrections', async () => {
+  const fixture = await seedOverdueInitial();
+  await recordDue(fixture.deadlineAt);
+  const [event] = await db`
+    select id from public.workforce_strike_events where workspace_id=${fixture.context.wsA.id}
+  `;
+  await db.begin(async (tx) => {
+    const readGuard =
+      'if auth.uid() is null or not app_private.is_platform_owner() then';
+    await tx`savepoint strike_read_guard_mutation`;
+    const [readDefinition] = await tx`
+      select pg_get_functiondef('public.get_workforce_strikes(uuid,uuid)'::regprocedure) as definition
+    `;
+    const readMutant = (readDefinition!.definition as string).replace(
+      readGuard,
+      'if auth.uid() is null then',
+    );
+    expect(readMutant).not.toBe(readDefinition!.definition);
+    await tx.unsafe(readMutant);
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.context.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    const [mutatedRead] = await tx`
+      select public.get_workforce_strikes(${fixture.context.wsA.id},${fixture.context.trainerA.userId}) as result
+    `;
+    expect(mutatedRead?.result).toMatchObject({ status: 'ok' });
+    await tx`rollback to savepoint strike_read_guard_mutation`;
+
+    await tx`savepoint strike_correction_guard_mutation`;
+    const [correctionDefinition] = await tx`
+      select pg_get_functiondef('public.correct_workforce_strike(uuid,uuid,text,uuid,text,uuid)'::regprocedure) as definition
+    `;
+    const correctionMutant = (
+      correctionDefinition!.definition as string
+    ).replace(
+      'if actor is null or not app_private.is_platform_owner() then',
+      'if actor is null then',
+    );
+    expect(correctionMutant).not.toBe(correctionDefinition!.definition);
+    await tx.unsafe(correctionMutant);
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.context.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    const [mutatedCorrection] = await tx`
+      select public.correct_workforce_strike(
+        ${fixture.context.wsA.id},${event!.id},'void',null,'guard mutation',${randomUUID()}
+      ) as result
+    `;
+    expect(mutatedCorrection?.result).toMatchObject({ status: 'ok' });
+    await tx`rollback to savepoint strike_correction_guard_mutation`;
+  });
+});
+
+it('mutation: removing idempotency replay checks exposes duplicate correction writes', async () => {
+  const fixture = await seedOverdueInitial();
+  await recordDue(fixture.deadlineAt);
+  const [event] = await db`
+    select id from public.workforce_strike_events where workspace_id=${fixture.context.wsA.id}
+  `;
+  const rollback = new Error('rollback strike idempotency mutation');
+  let duplicateRejected = false;
+  let originalDefinition = '';
+  try {
+    await db.begin(async (tx) => {
+      const [definitionRow] = await tx`
+        select pg_get_functiondef('public.correct_workforce_strike(uuid,uuid,text,uuid,text,uuid)'::regprocedure) as definition
+      `;
+      originalDefinition = definitionRow!.definition as string;
+      const replayCheck =
+        /\n  if found then\n    if prior\.request_hash <> request_hash then\n      return jsonb_build_object\('status', 'idempotency_conflict'\);\n    end if;\n    return jsonb_build_object\([\s\S]*?\n    \);\n  end if;/g;
+      const mutant = originalDefinition.replace(replayCheck, '');
+      expect(mutant).not.toBe(originalDefinition);
+      expect(mutant.match(/idempotency_conflict/g)).toBeNull();
+      await tx.unsafe(mutant);
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.context.po.userId, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      const key = randomUUID();
+      const invoke = () => tx`
+        select public.correct_workforce_strike(
+          ${fixture.context.wsA.id},${event!.id},'void',null,'duplicate mutation',${key}
+        ) as result
+      `;
+      expect((await invoke())[0]?.result).toMatchObject({ status: 'ok' });
+      try {
+        await invoke();
+      } catch (error) {
+        duplicateRejected = String(error).includes(
+          'workforce_strike_corrections_workspace_id_idempotency_key_key',
+        );
+        throw rollback;
+      }
+      throw new Error('idempotency mutant did not expose duplicate write');
+    });
+  } catch (error) {
+    if (error !== rollback) throw error;
+  }
+  expect(duplicateRejected).toBe(true);
+  const [restored] = await db`
+    select pg_get_functiondef('public.correct_workforce_strike(uuid,uuid,text,uuid,text,uuid)'::regprocedure) as definition
+  `;
+  expect(restored?.definition).toBe(originalDefinition);
 });
