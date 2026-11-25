@@ -187,6 +187,19 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
             where workspace_id=${f.wsA.id} and assignment_id=${assignmentId}`,
         ),
       ).rejects.toMatchObject({ code: '23514' });
+      const cascadeRollback = new Error('privacy erasure cascade rollback');
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`delete from app_private.form_submissions
+            where workspace_id=${f.wsA.id} and assignment_id=${assignmentId}`;
+          const [remaining] = await sp`
+            select count(*)::int as count from app_private.workforce_checkin_transitions
+            where workspace_id=${f.wsA.id} and assignment_id=${assignmentId}
+          `;
+          expect(remaining!.count).toBe(0);
+          throw cascadeRollback;
+        }),
+      ).rejects.toBe(cascadeRollback);
       const [audit] = await tx`
         select action,target_table,target_id,details
         from public.audit_events where target_id=${transitionId}::uuid
