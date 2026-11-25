@@ -159,7 +159,8 @@ it('T004 holds closure data while open and restarts 30 days at resolution', asyn
         false,
       );
 
-      const signature = 'app_private.purge_retention_candidates(timestamptz)';
+      const signature =
+        'app_private.purge_retention_candidates_pre_p7_dispute_hold(timestamptz)';
       const control = "and (l.id is null or l.status = 'succeeded')";
       const [before] = await tx`
         select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition
@@ -221,7 +222,9 @@ it('T031 leaves a tested P7 dispute-hold extension point without inventing a dis
       .digest('hex');
     try {
       await tx.savepoint(async (inner) => {
-        await inner.unsafe(`create or replace function ${signature}
+        await inner.unsafe(`create or replace function app_private.p7_retention_has_open_dispute(
+          p_workspace_id uuid,p_client_id uuid
+        )
           returns boolean language sql stable security invoker set search_path = '' as $$
           select true
         $$`);
@@ -229,7 +232,9 @@ it('T031 leaves a tested P7 dispute-hold extension point without inventing a dis
           select client_id from app_private.purge_retention_candidates(${sampledAt})
           where data_class='client'
         `;
-        expect(rows.some((row) => row.client_id === candidate.clientId)).toBe(false);
+        expect(rows.some((row) => row.client_id === candidate.clientId)).toBe(
+          false,
+        );
         throw rollback;
       });
     } catch (error) {

@@ -526,13 +526,15 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
   });
 
   it('T030/T031 purges linked P7 check-ins and preserves durable earned totals', async () => {
-    await db.begin(async (tx) => {
-      const [fkClosure] = await tx`
+    const rollback = new Error('rollback F26 P7 purge fixture');
+    try {
+      await db.begin(async (tx) => {
+        const [fkClosure] = await tx`
         with recursive p7_tables(table_oid) as (
           select c.oid
           from pg_catalog.pg_class c
           join pg_catalog.pg_namespace n on n.oid=c.relnamespace
-          where (n.nspname='public' and c.relname like 'p7\_%' escape '\\')
+          where (n.nspname='public' and left(c.relname,3)='p7_')
              or (n.nspname='app_private' and c.relname='workforce_checkin_transitions')
         ), closure(table_oid,path) as (
           select table_oid,array[table_oid] from p7_tables
@@ -549,26 +551,51 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
         )) as edges
         from closure
         join pg_catalog.pg_constraint fk on fk.conrelid=closure.table_oid and fk.contype='f'
-        where fk.confrelid='public.clients'::regclass
-           or fk.confrelid::regclass::text like 'public.form%'
-           or fk.confrelid::regclass::text like 'app_private.form%'
+        join pg_catalog.pg_class parent on parent.oid=fk.confrelid
+        join pg_catalog.pg_namespace parent_ns on parent_ns.oid=parent.relnamespace
+        where (parent_ns.nspname='public' and (parent.relname='clients' or parent.relname like 'form%'))
+           or (parent_ns.nspname='app_private' and parent.relname like 'form%')
       `;
-      const edges = (fkClosure!.edges ?? []) as Array<{ child: string; parent: string }>;
-      expect(edges).toContainEqual(
-        expect.objectContaining({
-          child: 'app_private.workforce_checkin_transitions',
-          parent: 'app_private.form_submissions',
-        }),
-      );
-      expect(edges).toContainEqual(
-        expect.objectContaining({
-          child: 'form_assignments',
-          parent: 'clients',
-        }),
-      );
+        const edges = (fkClosure!.edges ?? []) as Array<{
+          child: string;
+          parent: string;
+        }>;
+        expect(
+          edges.map(({ child, parent }) => `${child}->${parent}`).sort(),
+        ).toEqual([
+          'app_private.form_assignment_occurrences->app_private.form_assignment_policies',
+          'app_private.form_assignment_policies->form_versions',
+          'app_private.form_submissions->form_answer_revisions',
+          'app_private.form_submissions->form_assignments',
+          'app_private.workforce_checkin_transitions->app_private.form_submissions',
+          'form_answer_revisions->form_assignments',
+          'form_assignments->app_private.form_assignment_occurrences',
+          'form_assignments->app_private.form_assignment_policies',
+          'form_assignments->clients',
+          'form_assignments->form_versions',
+          'form_versions->forms',
+        ]);
+        const [earnedColumns] = await tx`
+        select array_agg(a.attname order by a.attnum) as columns
+        from pg_catalog.pg_attribute a
+        where a.attrelid='public.p7_earned_points'::regclass
+          and a.attnum>0 and not a.attisdropped
+      `;
+        expect(earnedColumns!.columns).toEqual([
+          'id',
+          'workspace_id',
+          'staff_user_id',
+          'points',
+          'effective_month',
+          'trigger_at',
+          'recorded_at',
+          'rule_version',
+          'source_key',
+          'source_hash',
+        ]);
 
-      const sourceKey = randomUUID();
-      await tx`
+        const sourceKey = randomUUID();
+        await tx`
         insert into public.p7_earned_points(
           workspace_id,staff_user_id,points,effective_month,trigger_at,rule_version,source_key,source_hash
         ) values (
@@ -577,34 +604,41 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
           'p7-purge-retention-test',${sourceKey},repeat('a',64)
         )
       `;
-      const [before] = await tx`
+        const [before] = await tx`
         select count(*)::int as facts,coalesce(sum(points),0)::text as total
         from public.p7_earned_points where workspace_id=${doubleClick.workspaceId}
           and staff_user_id=${doubleClick.trainers[0]!}
       `;
-      await tx`set local session_replication_role = replica`;
-      await tx`update public.clients set deactivated_at=clock_timestamp()-interval '31 days',
+        await tx`set local session_replication_role = replica`;
+        await tx`update public.clients set deactivated_at=clock_timestamp()-interval '31 days',
         deactivation_reason='closure' where id=${doubleClick.clientId}`;
-      await tx`set local session_replication_role = origin`;
+        await tx`set local session_replication_role = origin`;
 
-      const runId = randomUUID();
-      const [purge] = await tx`
+        const runId = randomUUID();
+        const [purge] = await tx`
         select app_private.purge_retention_apply(${runId},'apply') as result
       `;
-      expect(purge!.result).toMatchObject({ status: 'applied', eligible_clients: 1 });
-      expect(
-        (purge!.result as { deleted_by_table: Record<string, number> }).deleted_by_table[
-          'app_private.workforce_checkin_transitions'
-        ],
-      ).toBeGreaterThan(0);
-      const [after] = await tx`
+        expect(purge!.result).toMatchObject({ status: 'applied' });
+        expect(
+          (purge!.result as { eligible_clients: number }).eligible_clients,
+        ).toBeGreaterThan(0);
+        expect(
+          (purge!.result as { deleted_by_table: Record<string, number> })
+            .deleted_by_table['app_private.workforce_checkin_transitions'],
+        ).toBeGreaterThan(0);
+        const [after] = await tx`
         select count(*)::int as facts,coalesce(sum(points),0)::text as total
         from public.p7_earned_points where workspace_id=${doubleClick.workspaceId}
           and staff_user_id=${doubleClick.trainers[0]!}
       `;
-      expect(after).toEqual(before);
-      const [client] = await tx`select id from public.clients where id=${doubleClick.clientId}`;
-      expect(client).toBeUndefined();
-    });
+        expect(after).toEqual(before);
+        const [client] =
+          await tx`select id from public.clients where id=${doubleClick.clientId}`;
+        expect(client).toBeUndefined();
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
   });
 });
