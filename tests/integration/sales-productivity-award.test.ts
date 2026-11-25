@@ -32,6 +32,17 @@ it('T044a awards an issuance-time Sales link after the issuer is promoted before
     select recipient_sales_user_id from public.sales_productivity_units
     where workspace_id=${f.wsA.id} and client_id=${target.id}`;
   expect(units).toEqual([{ recipient_sales_user_id: f.salesA.userId }]);
+  const facts = await db`
+    select staff_user_id, points::text as points, source_key
+    from public.p7_earned_points
+    where workspace_id=${f.wsA.id}`;
+  expect(facts).toEqual([
+    {
+      staff_user_id: f.salesA.userId,
+      points: '1.00',
+      source_key: expect.any(String),
+    },
+  ]);
 });
 
 it('T020/T021 maps one confirmed first-payment Sales unit to one durable P7 fact under concurrent retries', async () => {
@@ -64,6 +75,94 @@ it('T020/T021 maps one confirmed first-payment Sales unit to one durable P7 fact
   expect(facts[0]?.effective_month).toBeInstanceOf(Date);
   expect(facts[0]?.trigger_at).toBeInstanceOf(Date);
   expect(facts[0]?.source_hash).toMatch(/^[a-f0-9]{32}$/);
+});
+
+it('T020 awards one acquisition point after the confirmed first installment, independent of plan size', async () => {
+  const f = await clientContext();
+  const single = await registered(f, null, undefined, f.salesA.client);
+  const installments = await registered(
+    f,
+    [
+      { seq: 1, amount_minor: '400', due_offset_days: 0 },
+      { seq: 2, amount_minor: '400', due_offset_days: 30 },
+      { seq: 3, amount_minor: '400', due_offset_days: 60 },
+    ],
+    undefined,
+    f.salesA.client,
+  );
+
+  expect((await call(f.po.client, 'approve', request(f, single))).status).toBe(
+    'ok',
+  );
+  expect(
+    (await call(f.po.client, 'approve', request(f, installments))).status,
+  ).toBe('ok');
+  const [counts] = await db`
+    select count(*)::int as facts,
+      count(distinct staff_user_id)::int as staff
+    from public.p7_earned_points where workspace_id=${f.wsA.id}`;
+  expect(counts).toEqual({ facts: 2, staff: 1 });
+});
+
+it('T021 backfills a pre-P7 unit repeatedly without reattributing it after a role change', async () => {
+  const f = await clientContext();
+  const target = await registered(f, null, undefined, f.salesA.client);
+  const changed = await admin()
+    .from('staff_profiles')
+    .update({ role: 'workspace_owner' })
+    .eq('user_id', f.salesA.userId);
+  expect(changed.error).toBeNull();
+  expect((await call(f.po.client, 'approve', request(f, target))).status).toBe(
+    'ok',
+  );
+  const [source] = await db`
+    select id from public.sales_productivity_units
+    where workspace_id=${f.wsA.id} and client_id=${target.id}`;
+  expect(source?.id).toBeTruthy();
+
+  await db.begin(async (tx) => {
+    await tx`alter table public.p7_earned_points disable trigger p7_earned_points_immutable`;
+    await tx`delete from public.p7_earned_points
+      where workspace_id=${f.wsA.id} and source_key=${source!.id}`;
+    await tx`alter table public.p7_earned_points enable trigger p7_earned_points_immutable`;
+    await tx`select app_private.p7_backfill_sales_productivity_units()`;
+    await tx`select app_private.p7_backfill_sales_productivity_units()`;
+    const [counts] = await tx`
+      select count(*)::int as facts from public.p7_earned_points
+      where workspace_id=${f.wsA.id} and source_key=${source!.id}`;
+    expect(counts?.facts).toBe(1);
+  });
+
+  const [fact] = await db`
+    select staff_user_id from public.p7_earned_points
+    where workspace_id=${f.wsA.id} and source_key=${source!.id}`;
+  expect(fact?.staff_user_id).toBe(f.salesA.userId);
+});
+
+it('T021 does not award a non-Sales-issued unit even if inserted outside the F10 guard', async () => {
+  const f = await clientContext();
+  const target = await registered(f, null, undefined, f.woA.client);
+  expect((await call(f.po.client, 'approve', request(f, target))).status).toBe(
+    'ok',
+  );
+  const [approval] = await db`
+    select id from app_private.registration_approval_events
+    where workspace_id=${f.wsA.id} and client_id=${target.id}`;
+  expect(approval?.id).toBeTruthy();
+
+  await db.begin(async (tx) => {
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
+    await tx`alter table public.sales_productivity_units disable trigger sales_productivity_units_immutable`;
+    await tx`insert into public.sales_productivity_units(
+      workspace_id,client_id,registration_link_id,approval_event_id,recipient_sales_user_id
+    ) values (${f.wsA.id},${target.id},${target.link},${approval!.id},${f.woA.userId})`;
+    await tx`alter table public.sales_productivity_units enable trigger sales_productivity_units_immutable`;
+  });
+
+  const [facts] = await db`
+    select count(*)::int as count from public.p7_earned_points
+    where workspace_id=${f.wsA.id}`;
+  expect(facts?.count).toBe(0);
 });
 
 it('T044a awards no point when a Workspace-Owner-issued link is approved after demotion', async () => {
@@ -214,5 +313,7 @@ it('T044a denies direct reads and writes to anon and authenticated roles', async
       recipient_sales_user_id: f.salesA.userId,
     });
     expect(write.error).not.toBeNull();
+    const p7Read = await client.from('p7_earned_points').select('id').limit(1);
+    expect(p7Read.error).not.toBeNull();
   }
 });
