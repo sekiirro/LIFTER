@@ -133,8 +133,7 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
           form_status: 'Submitted',
           followup_status: 'Late',
           answer_history: [
-            { revision: 1, answers: { workoutAdherence: 6, dietAdherence: 4 } },
-            { revision: 2, answers: { workoutAdherence: 8, dietAdherence: 5 } },
+            { answers: { workoutAdherence: 8, dietAdherence: 5 } },
           ],
         });
       }
