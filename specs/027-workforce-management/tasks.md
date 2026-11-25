@@ -1,68 +1,69 @@
 # Tasks: P7 Workforce Management
 
-**Input**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
-**Current lane**: Documentation-only; no application code, migrations, stack or tests. Every implementation task below is unchecked.
-**Authority**: S70-PO-16. Do not reopen decisions it made. The only open policy items are P7-MCQ-01 and P7-MCQ-02 in `checklists/po-mcqs.md`.
+**Input**: spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md
+**Lane**: documentation-only; no application code, migrations, stack work or tests in this spec round. All implementation tasks remain unchecked.
+**Authority**: S70-PO-16, S70-R95, S70-PO-18 and S70-PO-1 item 3. Product decisions in these records are closed; do not reopen them.
 
-## Slice 0 — Authoritative spec and implementation seams (about 250–400 changed lines)
+## Slice A - Contract and authorization foundation (target 250-400 changed lines)
 
-- [ ] **T001 [FR-001–FR-021]** Review artifacts and answer P7-MCQ-01/02; update only affected requirements and re-run Analyze before implementation. Verify precise F19/F13/F15/F23/F10/F12/F26 schema/API seams against current main. No code before PENDING-PO entries are resolved for dependent behavior.
-- [ ] **T002 [FR-017, FR-020]** Add database role/scope test fixtures and role-matrix inventory for PO/WO/Trainer/Sales, including authenticated identity, revoked membership, cross-workspace data and safe error projections. This slice creates no feature table.
+- [ ] **T001 [FR-001-FR-029]** Verify current F10/F11/F12/F13/F15/F19/F20/F23/F26 source schemas and authorization seams; implement approved behavior from spec and record actual sources. No product-policy decision remains open.
+- [ ] **T002 [FR-004, FR-012, FR-017, FR-020, FR-024, FR-025]** RED: add PO/WO/Trainer/Sales authorization fixtures, revocation races, direct audit reader inventory, Realtime/count/HEAD/export/cache/replay channel inventory, and non-disclosing denial tests.
+- [ ] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged.
+- [ ] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits.
+- [ ] **T005 [FR-029]** Before the Check-ins UI slice, prepare its complete AR/EN screen-state copy batch and obtain PO approval; record approval identifiers in the copy table.
+- [ ] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts.
 
-## Slice 1 — Check-in history and follow-up (about 300–400 changed lines)
+## Slice B - Durable KPI facts, timing and Trainer penalties (target 250-400 changed lines)
 
-- [ ] **T003 [FR-004, FR-017, FR-020]** RED: add integration tests for every form/follow-up state, required page field, all-Trainer same-workspace weekly history, foreign-workspace denial, revocation race and no Forms duplication.
-- [ ] **T004 [FR-004, FR-005, FR-017]** GREEN: extend current F15/F23 projections/authorization for required page fields and all-Trainer history; append transitions; preserve Late after follow-up; no check-in follow-up points.
-- [ ] **T005 [FR-004, FR-017]** Validate Arabic RTL/English LTR check-in screen, empty/loading/error/permission states, keyboard and responsive states with PO-approved copy only; no new copy until approved.
+- [ ] **T007 [FR-001, FR-006, FR-017, FR-020]** RED: test F19 activation +1 once, zero for renewal/upgrade/revision, negative totals, exact numeric arithmetic, immutable source, unique mapping and Cairo trigger month.
+- [ ] **T008 [FR-001, FR-006, FR-018, FR-020]** GREEN: create P7-owned durable non-PII earned facts with workspace, staff, amount, effective month, rule version and opaque source key; totals never recompute from purgeable F19 rows.
+- [ ] **T009 [FR-002, FR-006, FR-020, FR-026]** RED/GREEN: reuse persisted F15 deadline and first successful initial plan pair; penalty is -1 at deadline, attributed to currently assigned Trainer at breach; record assignment and confirmer separately; PO reattribution appends; strike source remains separate.
+- [ ] **T010 [FR-003, FR-006, FR-020, FR-027]** RED: test exact 24h follow-up is on time/no penalty, >24h or absent follow-up yields one penalty effective at deadline, successful submission only, client-caused lateness, evaluator catch-up/retry/operator path, confirmer race and current assignee at breach.
+- [ ] **T011 [FR-003, FR-006, FR-020, FR-027]** GREEN: implement workspace-scoped idempotent due evaluator and operator-run path; scheduler remains behind current activation gate; confirmation and evaluator converge on one occurrence key and one -0.5 event.
+- [ ] **T012 [FR-006, FR-016, FR-020, FR-029]** Before PO workforce-report UI, draft and approve that screen's AR/EN copy batch; record approval ID.
+- [ ] **T013 [FR-006, FR-007, FR-016, FR-017, FR-020, FR-029]** Implement PO report UI after T012; add PO manual point inputs, correction and reattribution; keep point reversal distinct from strike correction. Verify negative totals and immutable lineage.
 
-## Slice 2 — Append-only points ledger and Trainer penalties (about 350–400 changed lines)
+## Slice C - Monthly quality, reminders and payroll money inputs (target 250-400 changed lines)
 
-- [ ] **T006 [FR-001, FR-006, FR-017, FR-020]** RED: test F19 new-client +1 once; zero for renewal/upgrade/revision; immutable F19 source; duplicate and concurrent award; exact decimal arithmetic; negative totals; role and workspace denials.
-- [ ] **T007 [FR-002, FR-006, FR-020]** RED: test initial plan-set late −1, on-time zero, responsible-Trainer attribution, disputed/corrected attribution by separate entries, and replay/concurrency idempotency.
-- [ ] **T008 [FR-003, FR-005, FR-006, FR-020]** RED: test successful-submission plus >24h follow-up → one −0.5; exact 24h no penalty; client lateness no penalty; late persists after confirmation; duplicate clicks and concurrent confirmation create one event.
-- [ ] **T009 [FR-001–FR-008, FR-017, FR-020]** GREEN: implement signed append-only KPI ledger and deterministic keys for F19/plan/check-in sources; retain audit attribution; never update/delete F19; permit negative totals; run mutation tests that kill dedup, sign, workspace and authorization predicates.
+- [ ] **T014 [FR-009, FR-020, FR-023]** RED: test transformation/feedback counts, per-Trainer +1/-1 defaults, two-decimal weights, zeroing, count/weight revisions and concurrent edits. Only latest effective revision per Trainer/month/category contributes.
+- [ ] **T015 [FR-009, FR-020, FR-023]** GREEN: implement append-only quality revisions and latest-effective projection; preserve superseded revisions without summing them.
+- [ ] **T016 [FR-009, FR-020]** RED/GREEN: add monthly PO reminder through existing notification/outbox, unique workspace+month dedup, behind existing scheduler activation gates; notification has no sensitive P7 details.
+- [ ] **T017 [FR-028, FR-020]** RED/GREEN: add PO-only manual monetary incentive/deduction/correction inputs in exact minor units and currency with immutable lineage; points never populate money; no automatic salary deduction.
+- [ ] **T018 [FR-029]** Before monthly-quality/payroll UI slice, prepare and approve the AR/EN screen batch; track copy approvals screen by screen.
+- [ ] **T019 [FR-008, FR-028, FR-029]** Implement salary UI after T018: one monthly salary per person, market-allowed currency, platform-PO ownership, provisioning and own-compensation-only staff view; WO excluded.
 
-## Slice 3 — PO workforce review and manual adjustments (about 300–400 changed lines)
+## Slice D - Sales acquisition, funnel and refund accounting (target 250-400 changed lines)
 
-- [ ] **T010 [FR-006, FR-007, FR-017, FR-020]** RED: test PO-only manual add/deduct/correct/reattribute, immutable originals, source/reason/actor attribution, PO dispute, stale revision and idempotency mismatch.
-- [ ] **T011 [FR-006, FR-007, FR-017]** GREEN: implement PO-only detail/report and separate adjustment/reversal entries; deny WO/Trainer/Sales and prevent UI/API/RPC/RLS/export bypass.
+- [ ] **T020 [FR-010, FR-012, FR-017, FR-020]** RED: test distinct link/registration/approval counts, unused/expired/rejected/retried facts, confirmed first payment, installments, issuer's issuance-time role and existing productivity units.
+- [ ] **T021 [FR-010, FR-020]** GREEN: map each existing F10 sales_productivity_unit to one P7 earned fact; idempotently backfill all pre-P7 units and verify no duplicate award, current-role changes or duplicate links can reattribute it.
+- [ ] **T022 [FR-010, FR-011, FR-015, FR-020]** RED: test any completed partial/full refund reverses the acquisition point once; F13 full refund classification uses all refundable collected funds for the purchase scope at that time; full-only staff-fault questionnaire once per acquisition; concurrent retries.
+- [ ] **T023 [FR-010, FR-011, FR-015]** GREEN: integrate with existing F13 refund lock/revision boundary. Reverse Sales point once for any completed refund; persist questionnaire separately and ask only on full refunds; PO-selected individual deductions are atomic and idempotent.
+- [ ] **T024 [FR-029]** Before Sales projection UI slice, prepare and approve its AR/EN copy batch; no unapproved label, prompt, explanation or error string.
+- [ ] **T025 [FR-012, FR-017, FR-020, FR-029]** Implement Sales UI after T024. PO sees detailed funnel; Sales sees only own finalized monthly total after month-end/finalization.
 
-## Slice 4 — Compensation, monthly quality and payroll (about 350–400 changed lines)
+## Slice E - Payroll snapshot and monthly close (target 250-400 changed lines)
 
-- [ ] **T012 [FR-008, FR-009, FR-017, FR-020]** RED: test PO-set Basic Salary during provisioning for Trainer/Sales; WO excluded; own-compensation-only read; no staff-to-staff reads; PO-only incentive/deduction edits; exact monetary snapshot/history. Salary period/currency tests wait for P7-MCQ-02.
-- [ ] **T013 [FR-008]** GREEN: add append-only compensation revision and PO-only externally-paid approval. No payout client/provider, salary deduction, or automatic link from points to pay. Implement only currency/period answered by PO.
-- [ ] **T014 [FR-009, FR-017, FR-020]** RED/GREEN: test monthly Trainer transformation count/points, feedback counts and per-Trainer +1/−1 default/custom weights, historical revision and concurrent PO edit; implement append-only monthly quality records.
+- [ ] **T026 [FR-008, FR-028, FR-020]** RED: test person+month salary entitlement, allowed currency, unique employee/month approval, exact reviewed snapshot/version and amount/currency binding, stale snapshot rejection and two-key concurrent duplicate approval.
+- [ ] **T027 [FR-008, FR-028]** GREEN: make payroll snapshot immutable and allow exactly one external-paid approval per employee/month entitlement. Require the reviewed immutable snapshot version; corrections use separate attributable inputs, not another approval.
+- [ ] **T028 [FR-013, FR-014, FR-021, FR-022, FR-020]** RED: test trigger-month assignment by category, Cairo boundaries, closed-month carry-forward, snapshot totals, empty-period first event, multiple staff, month-close/refund/reattribution races and lock order.
+- [ ] **T029 [FR-013, FR-014, FR-021, FR-022, FR-020]** GREEN: shared workspace+month advisory fence for every producer and finalizer, acquired after source locks in fixed documented order. Closed months stay immutable; late corrections go to current open month linked to original month.
 
-## Slice 5 — Sales acquisitions, refund reversals and privacy (about 350–400 changed lines)
+## Slice F - Retention, audit and channel confidentiality (target 250-400 changed lines)
 
-- [ ] **T015 [FR-010–FR-012, FR-015, FR-017, FR-020]** RED: test one Sales +1 only after approved new client + confirmed first payment; link issuer attribution; installments equal; duplicate/refund races; full refund asks PO only; partial refund asks none; PO-selected staff deduction.
-- [ ] **T016 [FR-010, FR-011, FR-015]** GREEN: attach once-only Sales acquisition and reversal to existing F10/F12/F13 facts; no changed refund math or duplicate refund engine; commit PO full-refund staff-fault answer and selected deductions atomically.
-- [ ] **T017 [FR-012, FR-017]** RED/GREEN: test Sales secrecy before month-end, before finalization, cross-user/workspace, raw table/RLS, app API, RPC, export, cache and replay receipt. Grant only own finalized month total after month-end; PO detail stays full. Include exact-head mutation evidence for each boundary.
+- [ ] **T030 [FR-018, FR-020]** RED: test durable KPI totals before/after client purge, no client FK/PII in retained earned ledger, and complete F26 FK closure.
+- [ ] **T031 [FR-018, FR-020]** GREEN: add client-linked P7 follow-up/questionnaire relations to the narrow F26 purge allowlist and a tested unlink path; never purge staff ledger rows. Persist open follow-up disputes/full-refund reviews as tied-record holds; resolution restarts the 30-day clock.
+- [ ] **T032 [FR-024, FR-025, FR-012, FR-017]** RED/GREEN: audit-event details contain opaque reference only; preserve unrelated WO audit access. Test direct audit reads, Realtime/publications, broadcast, HEAD/count/existence, notifications, search, exports, caches, errors and role changes with real roles.
 
-## Slice 6 — Monthly finalization, strikes, departure and retention (about 350–400 changed lines)
+## Slice G - Strikes, departure and final UI / verification (target 250-400 changed lines per PR)
 
-- [ ] **T018 [FR-013, FR-014, FR-020]** RED: test Cairo month-end boundary, snapshot recomputation, concurrent close, concurrent source writes and simultaneous PO edits. Post-close correction assertions require P7-MCQ-01.
-- [ ] **T019 [FR-013, FR-014, FR-021]** GREEN: implement immutable monthly snapshots and finalization and correction behavior exactly as PO answers P7-MCQ-01; keep earlier versions. No default before answer.
-- [ ] **T020 [FR-016, FR-017, FR-020]** RED/GREEN: test rolling 90-day boundary and thresholds 3/6/9, no automatic discipline, departure, immediate access revocation, client reassignment, preserved historical attribution and concurrency/revocation.
-- [ ] **T021 [FR-018, FR-020]** RED/GREEN: test F26 30-day closure and audit clocks, pseudonymized/client-unlinked KPI records, historical staff totals and no use of `audit_events` as KPI state. Preserve existing F26 behavior and gates.
-
-## Slice 7 — Post-launch Telegram feasibility note (documentation only; no implementation task)
-
-- [ ] **T022 [FR-019]** Preserve the official-source feasibility record in a post-launch documentation note: inbound timestamp support, human reply observability/attribution UNVERIFIED, ordinary bots cannot observe human-to-human chats, LIFTER-owned shift configuration, retention/ToS limits. Cite exact URLs/claims from the read-only research artifact; mark unsupported items unverified. Add no runtime, bot, webhook, worker, schema, or implementation task for response-speed monitoring.
-
-## Final verification slice (about 300–400 changed lines)
-
-- [ ] **T023 [FR-001–FR-021]** Validate PO report/payroll/quality, Trainer Check-ins and Sales total UIs against the Frontend Design Gate: Arabic RTL/English LTR × light/dark × mobile/desktop, required loading/empty/error/permission states, keyboard use and accessibility. Use only PO-approved strings. Execute full unit, touched integration/RLS/security/money/concurrency suites and current format, lint, typecheck, secret, migration-version and exact-head docs CI gates. Update traceability only with passing evidence; re-run Analyze after any spec/plan/task/contract requirement text change. Do not claim gates until executed.
+- [ ] **T033 [FR-016, FR-026, FR-020]** RED/GREEN: verify existing strike source/path and 3/6/9 rolling-90-day thresholds; P7 point correction does not touch strikes; PO strike correction stays separate; departure/reassignment preserves history and revokes access immediately.
+- [ ] **T034 [FR-029]** Before each remaining workforce/month-close UI screen, prepare its AR/EN copy batch and obtain PO approval separately for that screen; no blanket approval inferred.
+- [ ] **T035 [FR-001-FR-029]** Run full acceptance/security/money/concurrency/retention suites and repository gates on implementation head; update traceability only with executed passing test evidence. No task is checked by this planning document.
 
 ## Dependency order
 
-1. T001 and T002; resolve relevant PO decisions first. T001 blocks T012/T013 on salary fields and T018/T019 on post-close policy; other slices continue.
-2. T003 → T004 → T005 for check-in feature; T006/T007/T008 → T009 for KPI fact foundation.
-3. T009 → T010 → T011 for reports/manual adjustments; T009 → T012 → T013/T014 for payroll/quality.
-4. F10/F12/F13 integration begins after T009; T015 → T016 → T017 for Sales; T018 → T019 for monthly close; T020/T021 can proceed once tenant model and ledger exist.
-5. T022 is post-launch documentation only and may run independently; it is never an implementation dependency.
-6. T023 last, on final exact head. No task is ticked until executed test evidence is recorded in `traceability.md`.
+T001-T004 establish schemas and authorization; T005 precedes T006 UI only. T007-T011 establish durable facts and trigger idempotency. T012 precedes T013 UI. T014-T017 are backend and can proceed independently of T018/T019 copy/UI. T020 precedes T021 backfill; T022 precedes T023 refund implementation; T024 precedes T025. T026 precedes T027 approval. T028 precedes T029 month close. T030 precedes T031 F26 extension. T032 tests audit and all confidentiality channels. T033 depends on the existing source/ledger. T034 precedes only remaining UI. T035 closes the implementation sequence. Telegram timeliness remains post-launch documentation only; there is no current implementation task.
 
 ## Slice discipline
 
-Each implementation PR should stay near 400 changed lines and contain one independently testable vertical slice. Split further if a feature slice exceeds that target. Tests are RED-first for changed behavior, with role/RLS/money mutations where applicable. Keep all changes forward-only and merge order follows dependencies. Open product decisions block only dependent work.
+Each PR is a single independently testable group targeting about 250-400 changed lines; split further when needed. RED precedes GREEN for changed behavior. UI tasks explicitly depend on per-screen AR/EN copy preparation and PO approval. All tasks remain unchecked until implementation tests have executed and passed with evidence recorded in traceability.md.

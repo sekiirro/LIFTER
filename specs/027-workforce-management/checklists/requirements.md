@@ -1,38 +1,35 @@
 # Specification Quality Checklist: P7 Workforce Management
 
 **Purpose**: Review requirement quality and PO decision boundaries.
-**Created**: 2026-11-25
-**Feature**: [spec.md](../spec.md)
-
-**Review Ownership**: Requirement quality only; `[x]` does not indicate implementation completion.
+**Feature**: spec.md.
+**Review ownership**: Requirement quality only; checklist completion does not mean implementation completion.
 
 ## Requirement coverage and clarity
 
-- [x] All functional requirements have stable FR identifiers and testable outcomes.
-- [x] Success criteria have stable SC identifiers and measurable pass conditions.
-- [x] Each primary user journey has Given/When/Then acceptance scenarios.
-- [x] Edge cases cover duplicates, negative totals, refund replay, late-state history, retention, revocation and month-close concurrency.
-- [x] Reused system ownership is named for F10/F11/F12/F13/F15/F19/F20/F23/F26; duplicate Forms engine is excluded.
-- [x] Net formula, penalty values, refund reversal and month snapshot concepts are explicit.
+- [x] Numbered FRs, measurable SCs and Given/When/Then acceptance scenarios.
+- [x] All SOL-01..24 findings mapped in checklists/critique.md with ruling, authority and artifact paths.
+- [x] Trigger-month attribution, immutable closed months, current-month corrections and payroll ownership are explicit.
+- [x] Durable non-PII earned ledger, F10 source-unit map/backfill, unique refund reversal, F13 full-refund predicate and latest-effective quality revisions are explicit.
+- [x] Due evaluator, reminder/outbox, payroll snapshot approval, F26 purge/hold, distinct funnel counts and channel inventory are tasked.
+- [x] F15 persisted plan deadline and current-assignment-at-breach attribution are explicit.
+- [x] Strike correction is separate from point correction; Telegram penalty is post-launch only.
 
 ## Authorization, privacy and accounting
 
-- [x] PO/WO/Trainer/Sales permissions are defined in an explicit matrix with deny-by-default treatment for unlisted P7 capabilities.
-- [x] Sales confidentiality is explicit at UI/API/RPC/RLS/export/cache/replay boundaries.
-- [x] Staff compensation is self-only; payroll approval means externally paid; automated payouts/salary deductions are excluded.
-- [x] F19 immutability and separate append-only KPI ledger/reversal/correction history are specified.
-- [x] F26 retention interaction preserves non-PII staff attribution in the KPI ledger, not `audit_events`.
-- [x] Idempotency and serialization requirements cover double-clicks, retries, PO edits and month close.
+- [x] PO/WO/Trainer/Sales permission matrix covers UI/API/RPC/RLS/exports and audit paths.
+- [x] Sales sees only own finalized month total after month-end; no details via Realtime/counts/notifications/cache/replay.
+- [x] F19 source remains immutable; retained P7 facts have no client FK/PII; F26 tied-dispute hold is explicit.
+- [x] Person-level salary is monthly, currency is market-allowed, platform PO owns it, staff see own only.
+- [x] Manual monetary entries are separate from points; one payroll approval binds to reviewed immutable snapshot.
+- [x] Shared workspace+month fence and source-lock ordering are specified.
 
 ## PO decisions and copy
 
-- [x] Binding S70-PO-16 decisions are cited and not re-asked.
-- [x] Open product decisions are numbered MCQs with three options, recommendation and custom answer.
-- [x] FR-008 salary unit/currency is PENDING-PO only; decided payroll boundaries remain explicit.
-- [x] FR-014/FR-021 post-finalization correction policy is PENDING-PO.
-- [x] Arabic/English copy table introduces no unapproved user-facing strings; Egyptian Arabic is explicitly awaiting PO-approved copy.
-- [x] Telegram response speed is post-launch documentation only, with unverified capability claims marked as such.
+- [x] S70-PO-16, S70-R95 and S70-PO-18 decisions are recorded and not re-asked.
+- [x] P7-MCQ-01/02 and SOL-08/09/20 are answered; no PENDING-PO FR remains.
+- [x] UI copy approval is per screen batch; no Arabic or English UI copy has been invented or treated as approved.
+- [x] Telegram response speed remains post-launch documentation only in this lane.
 
 ## Status
 
-Review complete. Two Constitution conflicts remain CRITICAL in `checklists/analyze.md`; plan.md contains proposed amendment text only. This checklist does not authorize Constitution edits or implementation.
+Requirement review complete. Constitution C1/C2 are recorded as resolved by the separate pending Constitution 1.20.0 amendment PR; no other CRITICAL/HIGH Analyze finding remains. Constitution is unchanged in this PR.

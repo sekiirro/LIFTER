@@ -1,35 +1,39 @@
-# Product Owner MCQs — P7 Workforce Management
+# Product decision register - P7 Workforce Management
 
-Decisions already made in S70-PO-16 are not reopened here. These are the two product decisions found unresolved in the reviewed scope.
+All listed decisions are ANSWERED. S70-PO-16 decisions are not reopened. The original identifiers remain for traceability; no affected FR is PENDING-PO.
 
-## P7-MCQ-01 — Correction to a finalized monthly snapshot
+## P7-MCQ-01 - Closed-month correction rule - ANSWERED
 
-**Affected requirements**: FR-014 and FR-021 (PENDING-PO). A later correction can change the accounting total after month-end, including a Sales total that was previously finalized. S70-PO-16 requires monthly snapshots/finalization and PO corrections, but does not say whether a finalized month may be restated or how Sales sees that correction.
+**Verbatim S70-PO-18 answer #1**: "Carry to current month" - the closed month never changes; a correction/refund reversal belonging to a finalized month is booked in the current open month, linked back to the original month.
 
-**Question**: When a PO correction or late source reversal belongs to an already finalized month, what is the rule for that closed month and its Sales monthly total?
+**Applied to**: FR-014/FR-021, period fence and late source handling. Closed snapshots and Sales totals remain immutable. A late correction uses the current open month with an original-month link.
 
-| Option                                 | Policy                                                                                                                                                                                      | Implication                                                                                                                       |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| A — Restate in place **(Recommended)** | Append the correction, create a new immutable snapshot version for that same month, retain the prior snapshot, and expose the latest finalized total to Sales after the original month-end. | Correct month attribution remains accurate; prior disclosure remains auditable; Sales total can change after month-end.           |
-| B — Carry into current open month      | Keep the finalized snapshot and Sales total unchanged; book the correction into the current open month, linked to the original event/month.                                                 | Stable historical display; the correction changes the current period's points and attribution history identifies original period. |
-| C — PO-controlled reopen               | Keep the finalized snapshot until the PO explicitly reopens it; append a new snapshot and republish the Sales total after re-finalization.                                                  | Requires an extra reopen/finalize workflow and permits a temporarily unchanged displayed total.                                   |
+## P7-MCQ-02 - Basic Salary - ANSWERED
 
-**Custom answer**: PO may provide another rule.
+**Verbatim S70-PO-18 answer #2**: "1 monthly salary/person (Recommended)" - one monthly Basic Salary per employee, in a PO-picked currency from that market's currencies (Egypt: EGP; International: EGP/USD/SAR); points reports stay separate per workspace.
 
-**Recommendation rationale**: A preserves event-period accounting and immutable snapshots while allowing a prior version to remain reviewable. This is a recommendation only; do not encode it until PO answers.
+**Applied to**: FR-008/FR-028 and compensation/payroll model/API. S70-R95 specifies that the platform PO owns the person-level entitlement across the employee's workspaces and staff self-read is per person.
 
-## P7-MCQ-02 — Basic Salary currency and pay period
+## SOL-08 - Initial point month - ANSWERED
 
-**Affected requirement**: FR-008 (salary amount semantics only; PO ownership, WO exclusion, external-paid approval and own-compensation confidentiality are already decided).
+**Verbatim S70-PO-18 answer #3**: "Month it happened (Recommended)" - each item counts in the month (Africa/Cairo) its trigger happened: Sales +1 when approved and first payment confirmed; Trainer +1 when client activates; check-in penalty when the 24h deadline passes; plan penalty when the plan deadline passes.
 
-**Question**: What does the PO-entered Basic Salary amount represent, and which currency applies?
+**Applied to**: FR-001/002/003/010/022. Store trigger/effective time separately from recorded time.
 
-| Option                                                       | Policy                                                                                                                                                                 | Implication                                                                                                                    |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| A — Monthly, one currency per workspace                      | Store a monthly Basic Salary in one PO-selected currency for the workspace/market.                                                                                     | Simple monthly comparison; PO must choose the workspace-level currency if staff operate across supported currencies.           |
-| B — Monthly, per-employee allowed currency **(Recommended)** | Store a monthly amount and PO-selected currency per Trainer/Sales employee, restricted to existing market-allowed currencies (Egypt: EGP; International: EGP/USD/SAR). | Reuses the verified F9 market currency matrix, avoids exchange-rate assumptions, and supports distinct staff currency choices. |
-| C — PO-defined pay period and allowed currency               | PO selects the salary period and a market-allowed currency when setting each employee's salary.                                                                        | Most flexible; adds period configuration and comparisons to payroll review.                                                    |
+## SOL-09 - Salary ownership across workspaces - ANSWERED
 
-**Custom answer**: PO may define a different unit/cycle/currency rule.
+**Verbatim S70-PO-18 answer #2**: "1 monthly salary/person (Recommended)" - one monthly Basic Salary per employee, in a PO-picked currency from that market's currencies (Egypt: EGP; International: EGP/USD/SAR); points reports stay separate per workspace.
 
-**Recommendation rationale**: B follows the existing approved market currency matrix and monthly reporting model without inventing a workspace default or exchange-rate behavior. This is a recommendation only; do not implement salary-value semantics until PO answers.
+**S70-R95 detail**: the PO of the employee's workspaces is the platform PO role; own-compensation reads are per person, not per workspace; there is no duplicate workspace salary entitlement.
+
+## SOL-20 - Copy approval sequence - ANSWERED
+
+**Verbatim S70-PO-18 answer #4**: "Per screen batch (Recommended)" - before each UI slice, PO approves its drafted AR/EN texts; back-end work continues meanwhile.
+
+**Applied to**: FR-029, copy inventory and every UI task dependency. No unapproved copy is treated as approved or shipped.
+
+## Decision status
+
+- Open product MCQs: 0.
+- PENDING-PO requirements: none.
+- Remaining governance dependency: Constitution C1/C2 are resolved by the pending separate Constitution 1.20.0 amendment PR in lane s70-gemini-const120; this is not a product question.

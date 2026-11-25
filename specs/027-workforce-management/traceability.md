@@ -1,40 +1,39 @@
 # P7 Traceability
 
-No implementation task is marked complete by this documentation lane. A row becomes verified only after its named tests execute and pass on the current implementation head; add commit SHA and test file/name as evidence.
+No implementation task is marked complete by this documentation lane. A row becomes verified only after its named tests execute and pass on implementation HEAD; record commit SHA, test path/name, command/tool version and result.
 
-| FR     | Planned task(s)  | Acceptance evidence                                                                       | Status                      |
-| ------ | ---------------- | ----------------------------------------------------------------------------------------- | --------------------------- |
-| FR-001 | T006             | F19 exactly-once new-client point; no renewal/upgrade/revision point                      | Planned                     |
-| FR-002 | T007             | late initial plan −1, on-time zero, responsible Trainer, source immutable                 | Planned                     |
-| FR-003 | T008             | post-success >24h −0.5, client lateness excluded, dedup and Late preservation             | Planned                     |
-| FR-004 | T004, T005       | required fields/statuses and same-workspace all-Trainer history; foreign workspace denied | Planned                     |
-| FR-005 | T004, T008       | follow-up state/history persists; no point award for follow-up                            | Planned                     |
-| FR-006 | T006–T009        | signed ledger math, negative totals, F19 unchanged, separate adjustments/reversals        | Planned                     |
-| FR-007 | T009, T010, T013 | PO-only manual edits/refund-fault decision; only approved automatic trigger types         | Planned                     |
-| FR-008 | T011             | PO salary during provisioning, WO excluded, external paid approval, own compensation only | Pending P7-MCQ-02 semantics |
-| FR-009 | T012             | monthly transformation and per-Trainer feedback defaults/settings/history                 | Planned                     |
-| FR-010 | T013             | link issuer + approval + first payment +1 once; installment equality                      | Planned                     |
-| FR-011 | T014             | full refund only; PO fault questionnaire; selected individual deductions; no duplicate    | Planned                     |
-| FR-012 | T003, T015       | Sales denied at every surface before close; own total only after close/finalization       | Planned                     |
-| FR-013 | T015             | snapshots, period boundary, finalization, concurrent close                                | Planned                     |
-| FR-014 | T015             | post-close correction display/restatement rule                                            | Pending P7-MCQ-01           |
-| FR-015 | T014             | F13 policy unchanged, refund and point reversal atomic/idempotent                         | Planned                     |
-| FR-016 | T016             | 90-day 3/6/9 review, no discipline, departure/revocation/reassignment history             | Planned                     |
-| FR-017 | T003–T016        | app/database authorization and workspace-negative probes                                  | Planned                     |
-| FR-018 | T017             | F26 purge boundary, preserved non-PII attribution, no audit_events KPI dependency         | Planned                     |
-| FR-019 | T018             | official-source post-launch documentation only; no runtime feature task                   | Documentation only          |
-| FR-020 | T003–T017        | dedup/replay, audit rollback, stale-revision and concurrency evidence                     | Planned                     |
-| FR-021 | T015             | post-close Sales total after correction follows PO decision                               | Pending P7-MCQ-01           |
-
-| SC         | Acceptance evidence                                                             | Status  |
-| ---------- | ------------------------------------------------------------------------------- | ------- |
-| SC-001–003 | F19 and penalty tests; unique source keys; immutable originals; negative totals | Planned |
-| SC-004–005 | check-in field/history tests and exhaustive role × scope × surface matrix       | Planned |
-| SC-006     | full/partial refund cases, duplicate/concurrent processing                      | Planned |
-| SC-007     | snapshot recomputation after retention/pseudonymization                         | Planned |
-| SC-008–009 | payroll, compensation ownership, 3/6/9 strike and no-discipline checks          | Planned |
-| SC-010     | per-FR acceptance suite with executed evidence                                  | Planned |
+| FR     | Planned task(s)                            | Acceptance evidence                                                                                  | Status             |
+| ------ | ------------------------------------------ | ---------------------------------------------------------------------------------------------------- | ------------------ |
+| FR-001 | T007-T008, T020-T021                       | Durable activation +1, unique F10 unit map/backfill, no repeat source, trigger month, survives purge | Planned            |
+| FR-002 | T009                                       | F15 persisted deadline and initial pair; -1 trigger month; assigned-at-breach and PO reattribution   | Planned            |
+| FR-003 | T010-T011                                  | Successful submission +24h evaluator; assigned-at-breach, one -0.5; operator/catch-up/race           | Planned            |
+| FR-004 | T002-T006                                  | Fields/statuses/all-Trainer workspace history; directory/code wall unchanged                         | Planned            |
+| FR-005 | T003-T006                                  | Follow-up transitions; Late retained; no follow-up points                                            | Planned            |
+| FR-006 | T007-T013                                  | Signed exact ledger formula, negative totals, immutable source, durable non-PII facts                | Planned            |
+| FR-007 | T013, T017, T023, T027                     | PO-only point/money/payroll/refund decisions and separate lineage                                    | Planned            |
+| FR-008 | T017-T019, T026-T027                       | One monthly salary/person, allowed currency, platform-PO owner, WO excluded, self-read               | Planned            |
+| FR-009 | T014-T016, T018-T019                       | Quality defaults, latest effective revision, outbox reminder/dedup/scheduler gate                    | Planned            |
+| FR-010 | T020-T021, T022-T023                       | Funnel facts, F10 role snapshot, unique mapping/backfill, any-refund reversal                        | Planned            |
+| FR-011 | T022-T023                                  | F13 full-refund predicate, one questionnaire/acquisition, none for partial                           | Planned            |
+| FR-012 | T002, T024-T025, T032                      | Sales detail denied through all channels; own finalized total only                                   | Planned            |
+| FR-013 | T028-T029                                  | Immutable snapshots, shared period fence, lock order and race tests                                  | Planned            |
+| FR-014 | T028-T029                                  | Closed month immutable; current-open-month correction linked to original                             | Planned            |
+| FR-015 | T022-T023                                  | F13 locks, any-refund reversal, full-only fault question, atomic/idempotent effects                  | Planned            |
+| FR-016 | T033                                       | 90-day 3/6/9, departure/reassignment, immediate revocation and history                               | Planned            |
+| FR-017 | T002-T006, T013, T025, T032-T033           | Role/scope probes including narrow check-ins and protected audit reads                               | Planned            |
+| FR-018 | T030-T031                                  | F26 purge allowlist/hold; non-PII staff totals retained                                              | Planned            |
+| FR-019 | T001 and post-launch documentation only    | Future Telegram shift/timeliness evidence; no current runtime task                                   | Documentation only |
+| FR-020 | T002-T004, T007-T017, T022-T023, T026-T032 | Idempotency, audit rollback, stale revision, concurrency and role recheck                            | Planned            |
+| FR-021 | T028-T029                                  | Stable Sales total after close; late correction current month only                                   | Planned            |
+| FR-022 | T007-T010, T020-T023, T028-T029            | Category trigger month in Africa/Cairo                                                               | Planned            |
+| FR-023 | T014-T015                                  | Latest effective quality revision only; count/weight/zero/concurrency                                | Planned            |
+| FR-024 | T002, T032                                 | Opaque audit reference; no financial/KPI detail; unrelated WO audit unaffected                       | Planned            |
+| FR-025 | T002, T032                                 | Realtime, broadcast, HEAD/count, notifications, search, exports/cache/errors denied                  | Planned            |
+| FR-026 | T009, T033                                 | Point corrections separate from existing strike source/correction path                               | Planned            |
+| FR-027 | T010-T011                                  | Due evaluator, operator path, scheduler gate, shared occurrence key                                  | Planned            |
+| FR-028 | T017-T019, T026-T027                       | PO money entries; unique snapshot-bound payroll approval; no point-to-money path                     | Planned            |
+| FR-029 | T005, T012, T018, T024, T034               | Per-screen copy approval precedes each UI slice                                                      | Planned            |
 
 ## Evidence rule
 
-For each checked task, record: implementation commit SHA, test path and exact test name, command/tool version, and result. Do not tick a task on artifact review, mocks alone for an RLS claim, or tests that did not execute. This file has no test evidence yet.
+No task is checked by this document. No implementation tests have executed as part of this docs-only round. Add evidence only after tests pass on the current implementation head.

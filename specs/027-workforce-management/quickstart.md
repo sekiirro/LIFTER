@@ -1,36 +1,34 @@
-# Quickstart — P7 Workforce Management
+# Quickstart - P7 Workforce Management
 
-Planning-only walkthrough for the later implementation lane. No commands in this document authorize migration, stack startup, production changes or implementation in this documentation PR.
+Planning-only walkthrough for the later implementation lane. No commands here authorize migration, stack startup, production changes or implementation in this documentation PR.
 
 ## PO monthly review
 
 1. Open the workspace workforce report and choose a Cairo calendar month.
-2. Review F19 eligible-new-client events, plan-delay/check-in-delay penalties, Sales link acquisitions and full-refund reversals, quality entries, manual adjustments and rolling 90-day strikes.
-3. Resolve disputes/corrections by adding attributed ledger events; do not edit source history.
-4. Enter each Trainer's monthly transformation count/points and feedback counts. Confirm +1/−1 defaults or set that Trainer's weights; save a new history revision.
-5. After month-end, finalize the period. Verify that Sales sees only its own monthly total after finalization. Post-close correction behavior remains blocked by P7-MCQ-01 until answered.
-6. Set Trainer/Sales Basic Salary (currency/pay period pending P7-MCQ-02). Record payroll approval only after payment was made externally.
+2. Review durable Trainer activation facts, plan/check-in penalties, Sales funnel facts, acquisition/reversal entries, quality entries, manual point/money inputs and rolling 90-day strikes.
+3. Resolve point disputes with appended entries; never edit F19 or prior ledger history. A correction to a closed month is booked in current open month and linked to the original month; closed Sales totals do not change.
+4. Enter monthly transformation and feedback counts. Defaults are +1/-1 per Trainer; only the latest effective revision per Trainer/month/category contributes.
+5. Finalize after month-end. Sales receives only its own finalized total; no formula or detail.
+6. Set one monthly Basic Salary per person in a market-allowed currency. The platform PO owns it across workspaces. Record exactly one payroll approval only after external payment against the reviewed snapshot version.
 
 ## Trainer check-in review
 
-1. Open Trainer Check-ins for the authorized workspace.
-2. Filter by the form status: Scheduled, Awaiting Client, Client Overdue or Submitted.
-3. Review the client name, phone, platform/Telegram usernames, schedule, submission/deadline/follow-up timestamps and responsible Trainer.
-4. Open completed forms, review existing F15/F23 answers/history, follow up through Telegram, then record Followed Up.
-5. Confirm a follow-up after the 24-hour threshold records one −0.5 penalty while Late remains in history. Client lateness alone adds no Trainer penalty.
-6. Open any historical Weekly Check-in in the same workspace, including one handled by another Trainer.
+1. Open Trainer Check-ins for an authorized workspace.
+2. Filter form statuses Scheduled, Awaiting Client, Client Overdue or Submitted.
+3. Review client name, phone, platform/Telegram usernames, schedule, submission/deadline/follow-up timestamps and responsible Trainer.
+4. Review F15/F23 answers/history, follow up through Telegram, then record Followed Up. Authorized Trainers see all workspace Weekly Check-in history through the narrow check-in view.
+5. A follow-up at exactly 24h is on time. If follow-up is later than 24h or still absent after deadline, the due evaluator records one -0.5 effective at deadline for the Trainer assigned at breach. Later confirmation shares the same occurrence key. Late remains in history; client lateness itself has no penalty.
 
 ## Sales view boundary
 
-Before month-end and finalization, Sales receives no KPI total. After both conditions, Sales can read its own total only. Verify raw database query, server route, RPC, RLS, export and cached/replayed response; all detail remains PO-only.
+Before month-end and PO finalization, Sales receives no KPI total. After both conditions, Sales reads only its own finalized month total. Test UI, server/API, RPC, RLS, export, Realtime, count/HEAD, notification, cache and replay paths. PO details remain private.
 
-## Implementation acceptance checklist
+## Accounting and retention acceptance
 
-- Validate one F19 +1 and zero repeat points for renewal/upgrade/revision.
-- Validate −1 late plan and −0.5 post-submission follow-up delay; exact 24h boundary and idempotent retries.
-- Validate full-refund Sales reversal exactly once; partial refunds do not ask the PO.
-- Validate net formula with positive, negative and negative-result examples.
-- Validate role matrix and workspace boundary on app and DB paths.
-- Validate concurrent double-click, two PO edits and month-close race.
-- Validate F26 retention preserves staff totals and removes client linkage on schedule.
-- Run current repository gates on exact head and record evidence before marking tasks complete.
+- Any completed partial or full acquisition refund reverses its Sales point once. Full-refund staff-fault questionnaire is asked once per acquisition only when F13 refundable collected funds for the purchase scope are fully refunded.
+- Initial periods follow trigger month in Africa/Cairo: Trainer activation, Sales approval+first confirmed payment, check-in 24h deadline and F15 plan deadline.
+- Monthly quality revisions preserve history but replace the effective contribution.
+- F26 purge removes client-linked records through its allowlist; retained staff ledger has no client FK/PII. Open tied follow-up disputes/refund reviews pause purge until resolution, then restart the 30-day clock.
+- Use exact decimal arithmetic and negative totals; salary/money never derive from points.
+- Test concurrent close/refund/PO edits using the shared workspace+month fence and fixed lock order.
+- Update traceability only with executed passing test evidence.

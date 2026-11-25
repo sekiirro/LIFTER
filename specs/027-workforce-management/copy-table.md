@@ -1,20 +1,13 @@
-# P7 Copy Table — AR (Egyptian Colloquial) / EN
+# P7 Copy Table - AR (Egyptian Colloquial) / EN
 
-**Copy authority**: S70-PO-16 approves the described behavior and names the English status values below. It does not approve localized UI wording. Following the PO-approved-copy rule, this table records no invented Arabic strings. Do not ship the pending AR text until the PO supplies/approves it.
+**Authority**: S70-PO-18 answer #4 requires per-screen batches: draft that screen's AR/EN text and obtain PO approval before its UI slice. No Arabic or English UI copy is approved by the records currently supplied, so this inventory intentionally contains no invented strings. Backend work can proceed independently.
 
-| Copy ID | Context                      | EN source term (verbatim where specified) | AR Egyptian colloquial             | Status / source                                                          |
-| ------- | ---------------------------- | ----------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------ |
-| P7-C01  | Form status                  | `Scheduled`                               | PO-approved Arabic string required | English status named S70-PO-16 §3; AR not approved                       |
-| P7-C02  | Form status                  | `Awaiting Client`                         | PO-approved Arabic string required | English status named S70-PO-16 §3; AR not approved                       |
-| P7-C03  | Form status                  | `Client Overdue`                          | PO-approved Arabic string required | English status named S70-PO-16 §3; AR not approved                       |
-| P7-C04  | Form status                  | `Submitted`                               | PO-approved Arabic string required | English status named S70-PO-16 §3; AR not approved                       |
-| P7-C05  | Follow-up status             | `Pending`                                 | PO-approved Arabic string required | English status named S70-PO-16 §3; AR not approved                       |
-| P7-C06  | Follow-up status             | `Followed Up`                             | PO-approved Arabic string required | English status named S70-PO-16 §3; AR not approved                       |
-| P7-C07  | Follow-up status             | `Late`                                    | PO-approved Arabic string required | English status named S70-PO-16 §3; AR not approved                       |
-| P7-C08  | Follow-up status             | `Disputed`                                | PO-approved Arabic string required | English status named S70-PO-16 §3; AR not approved                       |
-| P7-C09  | Payroll status               | `Approved` (means paid externally)        | PO-approved Arabic string required | Meaning approved by S70-PO-16 §1; label translation not supplied         |
-| P7-C10  | Check-in confirmation action | `Followed Up`                             | PO-approved Arabic string required | Action named S70-PO-16 §2–3; localized button text not supplied          |
-| P7-C11  | Sales monthly projection     | No detailed label or explanation approved | PO-approved Arabic string required | Sales may see only its finalized monthly total; no copy wording supplied |
-| P7-C12  | Late follow-up warning       | No warning text approved                  | PO-approved Arabic string required | No copy wording supplied                                                 |
+| Batch    | Screen / UI slice                       | Copy inventory required for PO review                                                                              | AR (Egyptian colloquial)           | EN                                 | Approval state / task                   |
+| -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------- | ---------------------------------- | --------------------------------------- |
+| P7-CB-01 | Trainer Check-ins                       | Form/follow-up states, fields, action, empty/loading/error/permission states, late warning                         | Draft for PO approval before slice | Draft for PO approval before slice | Not approved; T005 before T006          |
+| P7-CB-02 | PO workforce report                     | Totals, ledger categories, corrections, dispute, strike review, empty/loading/error states                         | Draft for PO approval before slice | Draft for PO approval before slice | Not approved; T012 before T013          |
+| P7-CB-03 | Monthly quality and payroll             | Transformation/feedback entry, salary, monetary input, snapshot review, paid approval, own compensation and errors | Draft for PO approval before slice | Draft for PO approval before slice | Not approved; T018 before T019          |
+| P7-CB-04 | Sales monthly projection                | Own finalized total, post-month-end availability and permitted empty state only                                    | Draft for PO approval before slice | Draft for PO approval before slice | Not approved; T024 before T025          |
+| P7-CB-05 | Remaining month-close/workforce screens | Screen-specific labels, review states, errors and access-denied states                                             | Draft per screen for PO approval   | Draft per screen for PO approval   | Not approved; T034 before each UI slice |
 
-No formulas, penalty explanations, client-level reason strings, refund-fault prompts, salary labels or error messages are drafted here. They require PO-approved copy before UI implementation. The product rules can still be implemented behind existing approved generic state/error conventions where applicable.
+Scheduled, Awaiting Client, Client Overdue, Submitted, Pending, Followed Up, Late, Disputed and Approved are requirement/status identifiers, not approved localized UI copy. This table records the approval workflow only. Each approval applies to its screen batch and must not be inferred for another screen.

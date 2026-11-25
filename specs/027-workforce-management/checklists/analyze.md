@@ -1,88 +1,74 @@
-# Specification Analysis Report: P7 Workforce Management
+﻿# Specification Analysis Report: P7 Workforce Management
 
-**Analyzed**: 2026-11-25 (final rerun after all artifact edits)
-**After latest changes to**: spec.md, plan.md, tasks.md, research.md, data-model.md, contracts/, quickstart.md, copy-table.md, traceability.md, checklists/requirements.md, checklists/po-mcqs.md
-**Method**: Speckit analyze workflow; read-only cross-artifact review using repository skill and Constitution. Tasks are plans, not verified implementations.
+**Re-analyzed**: 2026-11-25 03:29 UTC, after final edits to all specification, planning, contract, task and checklist artifacts
+**Inputs reviewed**: spec.md, plan.md, tasks.md, research.md, data-model.md, both contracts, quickstart.md, traceability.md, copy-table.md, requirements.md, po-mcqs.md, critique.md, S70-R95 and PO-18
+**Method**: cross-artifact Spec Kit analysis. Tasks are plans; no implementation or test completion is claimed.
 
-## Findings
+## Findings and status
 
-| ID  | Category               | Severity | Location(s)                                                                               | Summary                                                                                                                                                                       | Recommendation                                                                                                                                                                     |
-| --- | ---------------------- | -------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C1  | Constitution alignment | CRITICAL | Constitution IV; plan.md Constitution Check / Proposed amendment; spec FR-002/003/010/015 | Constitution IV currently excludes “automatic bonuses/deductions”, while S70-PO-16 explicitly approves limited automatic plan/check-in penalties and a refund point reversal. | Keep only the narrow proposed amendment in plan.md. Complete the separate approved Constitution amendment workflow before implementation; do not edit the Constitution in this PR. |
-| C2  | Constitution alignment | CRITICAL | Constitution VI; plan.md Constitution Check / Proposed amendment; spec FR-002/003/010/015 | Constitution VI says deductions must be explicit PO decisions and “Nothing is automatic.” That conflicts with the exact automatic triggers approved by S70-PO-16.             | Keep manual edits, compensation changes and discipline PO-controlled; amend Constitution through its separate required approval path before implementation.                        |
+| ID  | Category                              | Severity | Finding                                                                                                                                                                                                                                | Status / resolution                                                                                                                                   |
+| --- | ------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | Constitution alignment - Principle IV | CRITICAL | Existing exclusion of automatic bonuses/deductions conflicts with PO-approved P7 plan/check-in penalties and acquisition point reversal. Post-launch Telegram timeliness rule also needs narrow permission when technically supported. | Resolved by pending separate Constitution 1.20.0 amendment PR, lane s70-gemini-const120. Updated proposal in plan.md. Constitution is unchanged here. |
+| C2  | Constitution alignment - Principle VI | CRITICAL | Existing Nothing-is-automatic rule conflicts with the explicitly approved P7 KPI triggers.                                                                                                                                             | Resolved by pending separate Constitution 1.20.0 amendment PR, lane s70-gemini-const120. Updated proposal in plan.md. Constitution is unchanged here. |
 
-## Product decisions (not Analyze defects)
+No other CRITICAL or HIGH finding remains open. All 24 Sol findings are mapped to applied requirements/design/tasks in checklists/critique.md. The external Constitution amendment is a governance dependency, not a product ambiguity or blocker to this documentation update.
 
-| ID        | Affected requirements       | State      | Containment                                                                                                                        |
-| --------- | --------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| P7-MCQ-01 | FR-014, FR-021              | PENDING-PO | No post-finalization correction display/accounting behavior is assumed. Other slices continue.                                     |
-| P7-MCQ-02 | FR-008 salary unit/currency | PENDING-PO | Salary value semantics are withheld; PO ownership, WO exclusion, external-paid approval and own-compensation access are specified. |
+## PO decision register
 
-## Coverage summary
+| Decision  | State                              | Applied behavior                                                                                      |
+| --------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| P7-MCQ-01 | ANSWERED, S70-PO-18 #1             | Closed month never changes; correction/refund reversal goes to current open month linked to original. |
+| P7-MCQ-02 | ANSWERED, S70-PO-18 #2             | One monthly person-level salary in market currency; platform PO owns; points remain per workspace.    |
+| SOL-08    | ANSWERED, S70-PO-18 #3             | Initial period is Cairo trigger month by category.                                                    |
+| SOL-09    | ANSWERED, S70-PO-18 #2 and S70-R95 | One employee salary entitlement, platform PO, not multiplied by workspace.                            |
+| SOL-20    | ANSWERED, S70-PO-18 #4             | PO approves drafted AR/EN copy per screen batch before each UI slice.                                 |
 
-| Requirement key | Has task? | Task IDs               | Notes                                            |
-| --------------- | --------- | ---------------------- | ------------------------------------------------ |
-| FR-001          | Yes       | T006, T009             | F19 award once / no repeat sources               |
-| FR-002          | Yes       | T007, T009             | F15 D-03 deadline; PO attribution                |
-| FR-003          | Yes       | T008, T009             | Successful submission + 24-hour follow-up        |
-| FR-004          | Yes       | T003–T005              | Check-in fields, states and Trainer history      |
-| FR-005          | Yes       | T004, T008             | Follow-up and retained Late history              |
-| FR-006          | Yes       | T006–T011              | Formula, ledger, negative totals                 |
-| FR-007          | Yes       | T010, T011, T015, T016 | PO-only manual/fault decisions                   |
-| FR-008          | Yes       | T012, T013             | Amount semantics held by MCQ-02                  |
-| FR-009          | Yes       | T014                   | Monthly transformations/feedback                 |
-| FR-010          | Yes       | T015, T016             | Sales acquisition +1                             |
-| FR-011          | Yes       | T015, T016             | Full-refund PO question and selected deductions  |
-| FR-012          | Yes       | T017                   | Sales confidentiality all surfaces               |
-| FR-013          | Yes       | T018, T019             | Snapshots and finalization                       |
-| FR-014          | Yes       | T018, T019             | Pending MCQ-01                                   |
-| FR-015          | Yes       | T015, T016             | F13 policy and idempotency                       |
-| FR-016          | Yes       | T020                   | 90-day 3/6/9, no automatic discipline, departure |
-| FR-017          | Yes       | T002–T021              | Workspace and role authorization                 |
-| FR-018          | Yes       | T021                   | F26 retention/KPI attribution                    |
-| FR-019          | Yes       | T022                   | Post-launch documentation only                   |
-| FR-020          | Yes       | T002–T021              | Idempotency, audit, concurrency                  |
-| FR-021          | Yes       | T018, T019             | Pending MCQ-01                                   |
+PENDING-PO FRs: 0. Open product MCQs: 0.
 
-| Success criterion | Has task? | Task IDs             |
-| ----------------- | --------- | -------------------- |
-| SC-001            | Yes       | T006, T009           |
-| SC-002            | Yes       | T007–T009            |
-| SC-003            | Yes       | T006–T009, T014–T019 |
-| SC-004            | Yes       | T003–T005            |
-| SC-005            | Yes       | T002, T017           |
-| SC-006            | Yes       | T015, T016           |
-| SC-007            | Yes       | T021                 |
-| SC-008            | Yes       | T012–T014            |
-| SC-009            | Yes       | T020                 |
-| SC-010            | Yes       | T023                 |
+## FR acceptance coverage
+
+| FR     | Acceptance/task coverage | FR     | Acceptance/task coverage                   |
+| ------ | ------------------------ | ------ | ------------------------------------------ |
+| FR-001 | T007-T008, T020-T021     | FR-016 | T033                                       |
+| FR-002 | T009                     | FR-017 | T002-T006, T013, T025, T032-T033           |
+| FR-003 | T010-T011                | FR-018 | T030-T031                                  |
+| FR-004 | T002-T006                | FR-019 | T001; post-launch documentation only       |
+| FR-005 | T003-T006                | FR-020 | T002-T004, T007-T017, T022-T023, T026-T032 |
+| FR-006 | T007-T013                | FR-021 | T028-T029                                  |
+| FR-007 | T013, T017, T023, T027   | FR-022 | T007-T010, T020-T023, T028-T029            |
+| FR-008 | T017-T019, T026-T027     | FR-023 | T014-T015                                  |
+| FR-009 | T014-T016, T018-T019     | FR-024 | T002, T032                                 |
+| FR-010 | T020-T023                | FR-025 | T002, T032                                 |
+| FR-011 | T022-T023                | FR-026 | T009, T033                                 |
+| FR-012 | T002, T024-T025, T032    | FR-027 | T010-T011                                  |
+| FR-013 | T028-T029                | FR-028 | T017-T019, T026-T027                       |
+| FR-014 | T028-T029                | FR-029 | T005, T012, T018, T024, T034               |
+| FR-015 | T022-T023                |        |                                            |
+
+Each mapped task includes acceptance evidence and remains unchecked until implementation tests execute and pass. Traceability was rebuilt for current task IDs; no test evidence is claimed in this docs lane.
 
 ## Cross-artifact checks
 
-- Constitution conflicts are surfaced rather than silently overridden; plan.md contains proposed wording only.
-- Net Points formula is consistent between spec and data model; ledger uses signed exact decimal points and permits negative totals.
-- F19 facts stay immutable; refunds, deductions and corrections use separate append-only records.
-- Sales's sole post-close projection is consistent across spec, role matrix, API contract, data model and tests.
-- Check-in form/follow-up statuses and Late history are consistent across spec, data model and API contract.
-- PENDING-PO status is consistent across spec, MCQ register, task dependencies and traceability.
-- Tasks are ordered into independently testable slices, near 400 changed lines each. No task is checked or represented as tested.
-- F26 retention is distinguished from `audit_events`; no new retention period is invented.
-- Telegram notes cover only post-launch feasibility and do not create an implementation requirement.
+- Durable P7 non-PII earned facts, F10 source-unit map/backfill, immutable F19 sources, signed append-only adjustments and negative totals agree across spec/model/API/tasks.
+- Any completed refund reverses Sales point once; only F13-classified full refund asks PO fault question once per acquisition.
+- Trigger-month allocation uses Cairo occurrence time; closed-month corrections use current open month and do not alter closed snapshot/Sales projection.
+- Person-level monthly salary and payroll approval are separate from workspace point reports; one approval binds reviewed snapshot version/amount/currency.
+- Due evaluator and confirmation share occurrence key; attribution is assigned Trainer at trigger, confirmer distinct, PO reattribution append-only.
+- Monthly quality revisions count latest effective contribution only; reminder uses outbox/dedup/scheduler gate.
+- F26 purge allowlist and tied-dispute holds preserve staff accounting without client PII or client FK; audit_events is not KPI truth.
+- Audit details, Realtime/counts/HEAD/notifications/export/cache/replay and narrow Check-ins authorization have explicit tests/tasks.
+- Copy approval is per screen batch; no unapproved AR/EN strings are presented as final copy.
+- Telegram timeliness remains post-launch documentation only; future penalty is narrowly reflected in the Constitution proposal.
 
 ## Metrics
 
-- Functional requirements: 21; all 21 map to tasks (100%).
-- Success criteria: 10; all 10 map to tasks (100%).
-- Planned tasks: 23; all tasks have FR tags. No execution evidence is claimed.
-- CRITICAL findings: 2 (Constitution IV and VI conflicts).
-- HIGH findings: 0.
-- PENDING-PO decisions: 2 (FR-008 partial; FR-014/FR-021).
-- Coverage/ambiguity/duplication: no untracked requirements; no duplicate requirement found; two product choices remain explicitly isolated.
-
-## Constitution alignment issues
-
-Implementation acceptance is blocked until the separate Constitution amendment required to reconcile C1/C2 is approved and completed under its governance gates. This specification lane follows the instruction to draft a proposed amendment in plan.md and does not modify `.specify/memory/constitution.md`.
+- Functional requirements: 29; task/acceptance mapping: 29/29.
+- Success criteria: retained and mapped to FR acceptance tasks; no unassigned criterion.
+- Sol critique findings resolved in artifacts: 24/24.
+- Constitution CRITICAL records: 2 (C1/C2, resolved by pending amendment PR). Other open CRITICAL: 0. Open HIGH: 0.
+- PENDING-PO: 0. Open MCQs: 0.
+- Implementation tasks checked: 0; implementation tests executed in this docs lane: 0.
 
 ## Analyze result
 
-**CRITICAL: 2. HIGH: 0.** Final rerun after the requirement, task ordering, technical arithmetic and Telegram research edits found no additional cross-artifact findings. The PO decisions are not reopened. P7-MCQ-01/02 remain open only for their affected behavior. This is a completed documentation Analyze; it is not an implementation authorization or a clean-to-implement gate.
+**Open CRITICAL: 0. Open HIGH: 0.** C1/C2 remain visible as CRITICAL governance records but are marked resolved by pending Constitution 1.20.0 amendment PR in lane s70-gemini-const120. No other CRITICAL/HIGH issue remains. This is a completed documentation Analyze, not implementation authorization; apply the separate Constitution amendment gate before implementation.
