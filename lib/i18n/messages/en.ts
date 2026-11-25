@@ -1545,4 +1545,47 @@ export const en: Record<keyof typeof ar, string> = {
     'Your password wasn’t changed. Request a new reset link and try again.',
   'auth.resetCheckLogin':
     'We couldn’t confirm whether your password changed. Try signing in with your new password. If it doesn’t work, request a new reset link.',
+  // spec 027 workforce payroll / salary (Batch P7-CB-03)
+  'workforce.salary.title': 'Basic salary',
+  'workforce.salary.market': 'Market',
+  'workforce.salary.currencyHint':
+    'Egypt: EGP. International: EGP, USD or SAR.',
+  'workforce.salary.saved': 'Basic salary saved.',
+  'workforce.payroll.input.title': 'Manual payroll input',
+  'workforce.payroll.input.category': 'Adjustment type',
+  'workforce.payroll.input.category.incentive': 'Incentive',
+  'workforce.payroll.input.category.deduction': 'Deduction',
+  'workforce.payroll.input.category.correction': 'Correction',
+  'workforce.payroll.input.currencyLocked': 'Currency (salary currency)',
+  'workforce.payroll.input.currencyMismatch':
+    "Use the employee's salary currency for this month: {currency}.",
+  'workforce.payroll.input.saved': 'Payroll input saved.',
+  'workforce.payroll.input.error':
+    'Could not save the payroll input. Try again.',
+  'workforce.payroll.review.title': 'Payroll snapshot',
+  'workforce.payroll.review.inputs': 'Manual inputs',
+  'workforce.payroll.review.total': 'Total for approval',
+  'workforce.payroll.review.snapshotVersion': 'Snapshot version',
+  'workforce.payroll.review.empty':
+    'No payroll snapshot is available for this month.',
+  'workforce.payroll.review.loading': 'Loading payroll snapshot…',
+  'workforce.payroll.review.error':
+    'Unable to load the payroll snapshot. Try again.',
+  'workforce.payroll.review.denied': 'You cannot view payroll.',
+  'workforce.payroll.approve.action': 'Approve as paid externally',
+  'workforce.payroll.approve.confirmTitle': 'Confirm external payment',
+  'workforce.payroll.approve.confirmBody':
+    'Confirm this amount was already paid outside LIFTER. LIFTER does not make any payment.',
+  'workforce.payroll.approve.success': 'Payroll approved as paid externally.',
+  'workforce.payroll.approve.alreadyApproved':
+    'Payroll is already approved for this month.',
+  'workforce.payroll.approve.stale':
+    'The snapshot changed. Reload it before approving.',
+  'workforce.payroll.approve.error':
+    'Could not record the approval. Try again.',
+  'workforce.compensation.own.title': 'My compensation',
+  'workforce.compensation.own.basicSalary': 'Basic salary',
+  'workforce.compensation.own.empty': 'No compensation record for this month.',
+  'workforce.compensation.own.denied':
+    'You can only view your own compensation.',
 };
