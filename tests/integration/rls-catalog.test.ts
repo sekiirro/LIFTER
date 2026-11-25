@@ -2922,9 +2922,31 @@ describe('package tier name security catalog (T078)', () => {
       ].sort((a, b) => a.tgname.localeCompare(b.tgname)),
     );
 
+    const settingsTriggers =
+      await db`select tgname, tgtype::int as type, tgenabled from pg_trigger where tgrelid = 'public.p7_trainer_quality_settings'::regclass and not tgisinternal order by tgname`;
+    expect(settingsTriggers).toEqual(
+      [
+        {
+          tgname: 'p7_trainer_quality_settings_no_delete',
+          type: 11,
+          tgenabled: 'O',
+        },
+        {
+          tgname: 'p7_trainer_quality_settings_no_truncate',
+          type: 34,
+          tgenabled: 'O',
+        },
+        {
+          tgname: 'p7_trainer_quality_settings_no_update',
+          type: 19,
+          tgenabled: 'O',
+        },
+      ].sort((a, b) => a.tgname.localeCompare(b.tgname)),
+    );
+
     for (const name of [
       'public.record_monthly_quality(uuid,uuid,text,text,integer,integer,numeric,numeric,text,integer)',
-      'public.set_trainer_quality_settings(uuid,uuid,text,numeric,numeric)',
+      'public.set_trainer_quality_settings(uuid,uuid,text,numeric,numeric,text)',
       'public.get_trainer_quality_settings(uuid,uuid)',
       'public.get_monthly_quality_revisions(uuid,text,uuid,text)',
       'public.get_monthly_quality_effective(uuid,text,uuid,text)',

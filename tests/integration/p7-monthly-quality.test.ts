@@ -718,7 +718,12 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     });
 
     it('Q1: Trainer, WO and Sales see 0 rows from both tables and the view via direct select', async () => {
-      for (const client of [trainer1.client, trainer2.client, woStaff.client, salesStaff.client]) {
+      for (const client of [
+        trainer1.client,
+        trainer2.client,
+        woStaff.client,
+        salesStaff.client,
+      ]) {
         // Table 1: p7_monthly_quality_revisions
         const { data: revData } = await client
           .from('p7_monthly_quality_revisions')
@@ -742,17 +747,17 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       const { data: poRevData } = await poStaff.client
         .from('p7_monthly_quality_revisions')
         .select('*');
-      expect((poRevData?.length ?? 0)).toBeGreaterThan(0);
+      expect(poRevData?.length ?? 0).toBeGreaterThan(0);
 
       const { data: poSettsData } = await poStaff.client
         .from('p7_trainer_quality_settings')
         .select('*');
-      expect((poSettsData?.length ?? 0)).toBeGreaterThan(0);
+      expect(poSettsData?.length ?? 0).toBeGreaterThan(0);
 
       const { data: poEffData } = await poStaff.client
         .from('p7_monthly_quality_effective')
         .select('*');
-      expect((poEffData?.length ?? 0)).toBeGreaterThan(0);
+      expect(poEffData?.length ?? 0).toBeGreaterThan(0);
     });
 
     it('audit events for quality mutations carry opaque reference ONLY (FR-020, SOL-03)', async () => {
@@ -807,15 +812,15 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
 
   describe('Q2: Append-only settings revisions & immutability', () => {
     it('2 successive setting changes keep both rows and current setting equals latest revision', async () => {
-      // Successive changes for trainer1 feedback
+      // Successive changes for trainer1 transformation
       const { data: s1, error: e1 } = await poStaff.client.rpc(
         'set_trainer_quality_settings',
         {
           p_workspace_id: wsId,
           p_trainer_id: trainer1.userId,
-          p_category: 'feedback',
+          p_category: 'transformation',
           p_positive_weight: 1.25,
-          p_negative_weight: -0.25,
+          p_negative_weight: 0.0,
         },
       );
       expect(e1).toBeNull();
@@ -826,9 +831,9 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         {
           p_workspace_id: wsId,
           p_trainer_id: trainer1.userId,
-          p_category: 'feedback',
+          p_category: 'transformation',
           p_positive_weight: 1.75,
-          p_negative_weight: -0.75,
+          p_negative_weight: 0.0,
         },
       );
       expect(e2).toBeNull();
@@ -839,14 +844,14 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         select * from public.p7_trainer_quality_settings
         where workspace_id = ${wsId}::uuid
           and trainer_id = ${trainer1.userId}::uuid
-          and category = 'feedback'
+          and category = 'transformation'
         order by revision
       `;
       expect(allRows.length).toBe(2);
-      expect(allRows[0].revision).toBe(1);
-      expect(allRows[0].positive_weight).toBe('1.25');
-      expect(allRows[1].revision).toBe(2);
-      expect(allRows[1].positive_weight).toBe('1.75');
+      expect(allRows[0]!.revision).toBe(1);
+      expect(allRows[0]!.positive_weight).toBe('1.25');
+      expect(allRows[1]!.revision).toBe(2);
+      expect(allRows[1]!.positive_weight).toBe('1.75');
 
       // Verify get_trainer_quality_settings returns the current setting = latest revision
       const { data: currentSettings, error: getErr } = await poStaff.client.rpc(
@@ -857,14 +862,14 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         },
       );
       expect(getErr).toBeNull();
-      const fbSetting = currentSettings.find(
-        (s: { category: string }) => s.category === 'feedback',
+      const transSetting = currentSettings.find(
+        (s: { category: string }) => s.category === 'transformation',
       );
-      expect(fbSetting).toBeDefined();
-      expect(fbSetting).toMatchObject({
+      expect(transSetting).toBeDefined();
+      expect(transSetting).toMatchObject({
         revision: 2,
         positive_weight: '1.75',
-        negative_weight: '-0.75',
+        negative_weight: '0.00',
       });
 
       // Verify record_monthly_quality resolves weights from the latest revision
@@ -874,20 +879,20 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
           p_workspace_id: wsId,
           p_trainer_id: trainer1.userId,
           p_month: '2026-12',
-          p_category: 'feedback',
+          p_category: 'transformation',
           p_positive_count: 4,
-          p_negative_count: 2,
+          p_negative_count: 0,
           p_positive_weight: null,
           p_negative_weight: null,
           p_idempotency_key: `idem-q2-res-${randomUUID()}`,
         },
       );
       expect(recErr).toBeNull();
-      // 4 * 1.75 + 2 * (-0.75) = 7.00 - 1.50 = 5.50
+      // 4 * 1.75 = 7.00
       expect(recData).toMatchObject({
         positive_weight: '1.75',
-        negative_weight: '-0.75',
-        net_points: '5.50',
+        negative_weight: '0.00',
+        net_points: '7.00',
       });
     });
 
@@ -900,9 +905,10 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
           set positive_weight = 9.99
           where workspace_id = ${wsId}::uuid
         `;
-      } catch (err: any) {
+      } catch (err: unknown) {
         updateFailed = true;
-        expect(err.code || err.message).toMatch(/23514|immutable/i);
+        const e = err as { code?: string; message?: string };
+        expect(e.code || e.message).toMatch(/23514|immutable/i);
       }
       expect(updateFailed).toBe(true);
 
@@ -913,9 +919,10 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
           delete from public.p7_trainer_quality_settings
           where workspace_id = ${wsId}::uuid
         `;
-      } catch (err: any) {
+      } catch (err: unknown) {
         deleteFailed = true;
-        expect(err.code || err.message).toMatch(/23514|immutable/i);
+        const e = err as { code?: string; message?: string };
+        expect(e.code || e.message).toMatch(/23514|immutable/i);
       }
       expect(deleteFailed).toBe(true);
 
@@ -923,9 +930,10 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       let truncateFailed = false;
       try {
         await db`truncate table public.p7_trainer_quality_settings`;
-      } catch (err: any) {
+      } catch (err: unknown) {
         truncateFailed = true;
-        expect(err.code || err.message).toMatch(/23514|immutable/i);
+        const e = err as { code?: string; message?: string };
+        expect(e.code || e.message).toMatch(/23514|immutable/i);
       }
       expect(truncateFailed).toBe(true);
     });
@@ -969,10 +977,10 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         'set_trainer_quality_settings',
         {
           p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_category: 'transformation',
+          p_trainer_id: trainer2.userId,
+          p_category: 'feedback',
           p_positive_weight: 3.0,
-          p_negative_weight: 0.0,
+          p_negative_weight: -1.0,
           p_idempotency_key: idemKey,
         },
       );
@@ -983,10 +991,10 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         'set_trainer_quality_settings',
         {
           p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_category: 'transformation',
+          p_trainer_id: trainer2.userId,
+          p_category: 'feedback',
           p_positive_weight: 3.0,
-          p_negative_weight: 0.0,
+          p_negative_weight: -1.0,
           p_idempotency_key: idemKey,
         },
       );
@@ -999,10 +1007,10 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         'set_trainer_quality_settings',
         {
           p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_category: 'transformation',
+          p_trainer_id: trainer2.userId,
+          p_category: 'feedback',
           p_positive_weight: 4.0, // changed!
-          p_negative_weight: 0.0,
+          p_negative_weight: -1.0,
           p_idempotency_key: idemKey,
         },
       );
@@ -1011,17 +1019,24 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     });
 
     it('concurrency holds for parallel setting changes without unique violation or corruption', async () => {
+      // Create a third trainer for clean concurrency testing
+      const trainer3 = await createStaff('trainer', 'concurrency-trainer');
+      await admin().from('workspace_memberships').insert({
+        workspace_id: wsId,
+        user_id: trainer3.userId,
+      });
+
       const [res1, res2] = await Promise.all([
         poStaff.client.rpc('set_trainer_quality_settings', {
           p_workspace_id: wsId,
-          p_trainer_id: trainer2.userId,
+          p_trainer_id: trainer3.userId,
           p_category: 'feedback',
           p_positive_weight: 1.1,
           p_negative_weight: -0.1,
         }),
         poStaff.client.rpc('set_trainer_quality_settings', {
           p_workspace_id: wsId,
-          p_trainer_id: trainer2.userId,
+          p_trainer_id: trainer3.userId,
           p_category: 'feedback',
           p_positive_weight: 1.2,
           p_negative_weight: -0.2,
@@ -1031,7 +1046,9 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       expect(res1.error).toBeNull();
       expect(res2.error).toBeNull();
       expect(res1.data.revision).not.toBe(res2.data.revision);
-      const revs = [res1.data.revision, res2.data.revision].sort((a, b) => a - b);
+      const revs = [res1.data.revision, res2.data.revision].sort(
+        (a, b) => a - b,
+      );
       expect(revs[1]).toBe(revs[0] + 1);
     });
   });

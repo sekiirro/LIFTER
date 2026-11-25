@@ -62,28 +62,37 @@ create policy p7_quality_revisions_select_po on public.p7_monthly_quality_revisi
     and app_private.has_workspace_access(workspace_id)
   );
 
--- RLS: Trainer reads only own revisions in authorized workspaces
-create policy p7_quality_revisions_select_trainer on public.p7_monthly_quality_revisions
-  for select to authenticated
-  using (
-    app_private.current_staff_role() = 'trainer'::public.staff_role
-    and trainer_id = auth.uid()
-    and app_private.has_workspace_access(workspace_id)
-  );
-
-
--- 2. Table: public.p7_trainer_quality_settings (Per-Trainer customizable defaults)
+-- 2. Table: public.p7_trainer_quality_settings (Per-Trainer customizable defaults, append-only revisions)
 create table public.p7_trainer_quality_settings (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces(id) on delete restrict,
   trainer_id uuid not null references public.staff_profiles(user_id) on delete restrict,
   category text not null constraint p7_settings_category_check check (category in ('transformation', 'feedback')),
+  revision integer not null default 1 constraint p7_settings_revision_positive check (revision >= 1),
   positive_weight numeric(10,2) not null constraint p7_settings_pos_weight_scale check (scale(positive_weight) <= 2),
   negative_weight numeric(10,2) not null constraint p7_settings_neg_weight_scale check (scale(negative_weight) <= 2),
-  updated_at timestamptz not null default clock_timestamp() check (isfinite(updated_at)),
-  updated_by uuid not null references auth.users(id) on delete restrict,
-  unique (workspace_id, trainer_id, category)
+  idempotency_key text not null,
+  created_at timestamptz not null default clock_timestamp() check (isfinite(created_at)),
+  created_by uuid not null references auth.users(id) on delete restrict,
+  unique (workspace_id, trainer_id, category, revision),
+  unique (workspace_id, idempotency_key)
 );
+
+create index p7_trainer_settings_lookup_idx
+  on public.p7_trainer_quality_settings (workspace_id, trainer_id, category, revision desc);
+
+-- Physical immutability triggers (strictly append-only)
+create trigger p7_trainer_quality_settings_no_update
+  before update on public.p7_trainer_quality_settings
+  for each row execute function app_private.guard_p7_quality_revisions_immutable();
+
+create trigger p7_trainer_quality_settings_no_delete
+  before delete on public.p7_trainer_quality_settings
+  for each row execute function app_private.guard_p7_quality_revisions_immutable();
+
+create trigger p7_trainer_quality_settings_no_truncate
+  before truncate on public.p7_trainer_quality_settings
+  for each statement execute function app_private.guard_p7_quality_revisions_immutable();
 
 alter table public.p7_trainer_quality_settings owner to postgres;
 alter table public.p7_trainer_quality_settings enable row level security;
@@ -91,18 +100,11 @@ alter table public.p7_trainer_quality_settings force row level security;
 revoke all on public.p7_trainer_quality_settings from public, anon, authenticated, service_role;
 grant select on public.p7_trainer_quality_settings to authenticated;
 
+-- RLS: PO reads all in authorized workspaces
 create policy p7_trainer_settings_select_po on public.p7_trainer_quality_settings
   for select to authenticated
   using (
     app_private.is_platform_owner()
-    and app_private.has_workspace_access(workspace_id)
-  );
-
-create policy p7_trainer_settings_select_trainer on public.p7_trainer_quality_settings
-  for select to authenticated
-  using (
-    app_private.current_staff_role() = 'trainer'::public.staff_role
-    and trainer_id = auth.uid()
     and app_private.has_workspace_access(workspace_id)
   );
 
@@ -234,7 +236,9 @@ begin
     else
       select positive_weight into v_pos_weight
       from public.p7_trainer_quality_settings
-      where workspace_id = p_workspace_id and trainer_id = p_trainer_id and category = 'transformation';
+      where workspace_id = p_workspace_id and trainer_id = p_trainer_id and category = 'transformation'
+      order by revision desc
+      limit 1;
       if v_pos_weight is null then
         v_pos_weight := 1.00;
       end if;
@@ -246,7 +250,9 @@ begin
     else
       select positive_weight into v_pos_weight
       from public.p7_trainer_quality_settings
-      where workspace_id = p_workspace_id and trainer_id = p_trainer_id and category = 'feedback';
+      where workspace_id = p_workspace_id and trainer_id = p_trainer_id and category = 'feedback'
+      order by revision desc
+      limit 1;
       if v_pos_weight is null then
         v_pos_weight := 1.00;
       end if;
@@ -257,7 +263,9 @@ begin
     else
       select negative_weight into v_neg_weight
       from public.p7_trainer_quality_settings
-      where workspace_id = p_workspace_id and trainer_id = p_trainer_id and category = 'feedback';
+      where workspace_id = p_workspace_id and trainer_id = p_trainer_id and category = 'feedback'
+      order by revision desc
+      limit 1;
       if v_neg_weight is null then
         v_neg_weight := -1.00;
       end if;
@@ -379,11 +387,18 @@ create or replace function public.set_trainer_quality_settings(
   p_trainer_id uuid,
   p_category text,
   p_positive_weight numeric,
-  p_negative_weight numeric
+  p_negative_weight numeric,
+  p_idempotency_key text default null
 ) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare
   actor uuid := auth.uid();
+  v_pos_weight numeric(10,2);
+  v_neg_weight numeric(10,2);
+  v_key text;
+  v_existing record;
+  v_current_rev integer;
+  v_next_rev integer;
   v_row record;
 begin
   if actor is null or not app_private.is_platform_owner() or not app_private.has_workspace_access(p_workspace_id) then
@@ -402,27 +417,94 @@ begin
     raise exception 'invalid_negative_weight' using errcode = '22023';
   end if;
 
+  if not exists (
+    select 1 from public.staff_profiles sp
+    where sp.user_id = p_trainer_id and sp.role = 'trainer'
+  ) then
+    raise exception 'trainer_not_found' using errcode = '22023';
+  end if;
+
+  v_pos_weight := round(p_positive_weight, 2);
+  v_neg_weight := round(p_negative_weight, 2);
+  v_key := coalesce(p_idempotency_key, gen_random_uuid()::text);
+
+  -- 1. Idempotency check
+  select * into v_existing
+  from public.p7_trainer_quality_settings
+  where workspace_id = p_workspace_id and idempotency_key = v_key;
+
+  if v_existing.id is not null then
+    if v_existing.trainer_id = p_trainer_id
+      and v_existing.category = p_category
+      and v_existing.positive_weight = v_pos_weight
+      and v_existing.negative_weight = v_neg_weight then
+      return jsonb_build_object(
+        'id', v_existing.id,
+        'workspace_id', v_existing.workspace_id,
+        'trainer_id', v_existing.trainer_id,
+        'category', v_existing.category,
+        'revision', v_existing.revision,
+        'positive_weight', to_char(v_existing.positive_weight, 'FM999999990.00'),
+        'negative_weight', to_char(v_existing.negative_weight, 'FM999999990.00'),
+        'idempotency_key', v_existing.idempotency_key,
+        'created_at', v_existing.created_at,
+        'created_by', v_existing.created_by
+      );
+    else
+      raise exception 'idempotency_conflict: arguments diverged for key %', v_key using errcode = '23505';
+    end if;
+  end if;
+
+  -- 2. Advisory transactional lock on (workspace, trainer, category)
+  perform pg_catalog.pg_advisory_xact_lock(
+    hashtext('p7_settings'),
+    hashtext(format('%s:%s:%s', p_workspace_id, p_trainer_id, p_category))
+  );
+
+  select coalesce(max(revision), 0) into v_current_rev
+  from public.p7_trainer_quality_settings
+  where workspace_id = p_workspace_id
+    and trainer_id = p_trainer_id
+    and category = p_category;
+
+  v_next_rev := v_current_rev + 1;
+
   insert into public.p7_trainer_quality_settings (
-    workspace_id, trainer_id, category, positive_weight, negative_weight, updated_at, updated_by
+    workspace_id, trainer_id, category, revision,
+    positive_weight, negative_weight, idempotency_key, created_by
   ) values (
-    p_workspace_id, p_trainer_id, p_category, round(p_positive_weight, 2), round(p_negative_weight, 2), clock_timestamp(), actor
-  )
-  on conflict (workspace_id, trainer_id, category) do update
-  set positive_weight = round(excluded.positive_weight, 2),
-      negative_weight = round(excluded.negative_weight, 2),
-      updated_at = clock_timestamp(),
-      updated_by = actor
-  returning * into v_row;
+    p_workspace_id, p_trainer_id, p_category, v_next_rev,
+    v_pos_weight, v_neg_weight, v_key, actor
+  ) returning * into v_row;
+
+  -- 3. Audit event with opaque details ONLY (FR-020, S70-R105)
+  insert into public.audit_events (
+    actor_user_id, action, target_table, target_id, workspace_id, details
+  ) values (
+    actor,
+    'quality.settings_revision_recorded',
+    'p7_trainer_quality_settings',
+    v_row.id,
+    p_workspace_id,
+    jsonb_build_object(
+      'settings_id', v_row.id,
+      'trainer_id', p_trainer_id,
+      'category', p_category,
+      'revision', v_next_rev
+    )
+  );
 
   return jsonb_build_object(
     'id', v_row.id,
     'workspace_id', v_row.workspace_id,
     'trainer_id', v_row.trainer_id,
     'category', v_row.category,
+    'revision', v_row.revision,
     'positive_weight', to_char(v_row.positive_weight, 'FM999999990.00'),
     'negative_weight', to_char(v_row.negative_weight, 'FM999999990.00'),
-    'updated_at', v_row.updated_at,
-    'updated_by', v_row.updated_by
+    'idempotency_key', v_row.idempotency_key,
+    'created_at', v_row.created_at,
+    'created_by', v_row.created_by
   );
 end $$;
 
@@ -436,44 +518,34 @@ create or replace function public.get_trainer_quality_settings(
   workspace_id uuid,
   trainer_id uuid,
   category text,
+  revision integer,
   positive_weight text,
   negative_weight text,
-  updated_at timestamptz,
-  updated_by uuid
+  created_at timestamptz,
+  created_by uuid
 ) language plpgsql stable security definer set search_path = '' as $$
 declare
   actor uuid := auth.uid();
-  role_val public.staff_role := app_private.current_staff_role();
 begin
-  if actor is null or not app_private.has_workspace_access(p_workspace_id) then
+  if actor is null or not app_private.is_platform_owner() or not app_private.has_workspace_access(p_workspace_id) then
     raise exception 'not_permitted' using errcode = '42501';
-  end if;
-
-  if role_val in ('workspace_owner', 'sales') then
-    raise exception 'not_permitted' using errcode = '42501';
-  end if;
-
-  if role_val = 'trainer' and (p_trainer_id is not null and p_trainer_id <> actor) then
-    return;
   end if;
 
   return query
-  select
+  select distinct on (s.trainer_id, s.category)
     s.id,
     s.workspace_id,
     s.trainer_id,
     s.category,
+    s.revision,
     to_char(s.positive_weight, 'FM999999990.00'),
     to_char(s.negative_weight, 'FM999999990.00'),
-    s.updated_at,
-    s.updated_by
+    s.created_at,
+    s.created_by
   from public.p7_trainer_quality_settings s
   where s.workspace_id = p_workspace_id
-    and (
-      (role_val = 'platform_owner' and (p_trainer_id is null or s.trainer_id = p_trainer_id))
-      or (role_val = 'trainer' and s.trainer_id = actor)
-    )
-  order by s.trainer_id, s.category;
+    and (p_trainer_id is null or s.trainer_id = p_trainer_id)
+  order by s.trainer_id, s.category, s.revision desc;
 end $$;
 
 
@@ -501,18 +573,9 @@ create or replace function public.get_monthly_quality_revisions(
 ) language plpgsql stable security definer set search_path = '' as $$
 declare
   actor uuid := auth.uid();
-  role_val public.staff_role := app_private.current_staff_role();
 begin
-  if actor is null or not app_private.has_workspace_access(p_workspace_id) then
+  if actor is null or not app_private.is_platform_owner() or not app_private.has_workspace_access(p_workspace_id) then
     raise exception 'not_permitted' using errcode = '42501';
-  end if;
-
-  if role_val in ('workspace_owner', 'sales') then
-    raise exception 'not_permitted' using errcode = '42501';
-  end if;
-
-  if role_val = 'trainer' and (p_trainer_id is not null and p_trainer_id <> actor) then
-    return;
   end if;
 
   return query
@@ -534,10 +597,7 @@ begin
   from public.p7_monthly_quality_revisions r
   where r.workspace_id = p_workspace_id
     and r.month = p_month
-    and (
-      (role_val = 'platform_owner' and (p_trainer_id is null or r.trainer_id = p_trainer_id))
-      or (role_val = 'trainer' and r.trainer_id = actor)
-    )
+    and (p_trainer_id is null or r.trainer_id = p_trainer_id)
     and (p_category is null or r.category = p_category)
   order by r.trainer_id, r.category, r.revision;
 end $$;
@@ -567,18 +627,9 @@ create or replace function public.get_monthly_quality_effective(
 ) language plpgsql stable security definer set search_path = '' as $$
 declare
   actor uuid := auth.uid();
-  role_val public.staff_role := app_private.current_staff_role();
 begin
-  if actor is null or not app_private.has_workspace_access(p_workspace_id) then
+  if actor is null or not app_private.is_platform_owner() or not app_private.has_workspace_access(p_workspace_id) then
     raise exception 'not_permitted' using errcode = '42501';
-  end if;
-
-  if role_val in ('workspace_owner', 'sales') then
-    raise exception 'not_permitted' using errcode = '42501';
-  end if;
-
-  if role_val = 'trainer' and (p_trainer_id is not null and p_trainer_id <> actor) then
-    return;
   end if;
 
   return query
@@ -600,10 +651,7 @@ begin
   from public.p7_monthly_quality_effective e
   where e.workspace_id = p_workspace_id
     and e.month = p_month
-    and (
-      (role_val = 'platform_owner' and (p_trainer_id is null or e.trainer_id = p_trainer_id))
-      or (role_val = 'trainer' and e.trainer_id = actor)
-    )
+    and (p_trainer_id is null or e.trainer_id = p_trainer_id)
     and (p_category is null or e.category = p_category)
   order by e.trainer_id, e.category;
 end $$;
@@ -743,7 +791,7 @@ end $$;
 -- Ownership and grants
 alter function app_private.guard_p7_quality_revisions_immutable() owner to postgres;
 alter function public.record_monthly_quality(uuid, uuid, text, text, integer, integer, numeric, numeric, text, integer) owner to postgres;
-alter function public.set_trainer_quality_settings(uuid, uuid, text, numeric, numeric) owner to postgres;
+alter function public.set_trainer_quality_settings(uuid, uuid, text, numeric, numeric, text) owner to postgres;
 alter function public.get_trainer_quality_settings(uuid, uuid) owner to postgres;
 alter function public.get_monthly_quality_revisions(uuid, text, uuid, text) owner to postgres;
 alter function public.get_monthly_quality_effective(uuid, text, uuid, text) owner to postgres;
@@ -759,13 +807,13 @@ revoke all on function app_private.p7_monthly_reminder_schedule_activate() from 
 revoke all on function app_private.p7_monthly_reminder_schedule_deactivate() from public, anon, authenticated, service_role;
 
 revoke all on function public.record_monthly_quality(uuid, uuid, text, text, integer, integer, numeric, numeric, text, integer) from public, anon, authenticated, service_role;
-revoke all on function public.set_trainer_quality_settings(uuid, uuid, text, numeric, numeric) from public, anon, authenticated, service_role;
+revoke all on function public.set_trainer_quality_settings(uuid, uuid, text, numeric, numeric, text) from public, anon, authenticated, service_role;
 revoke all on function public.get_trainer_quality_settings(uuid, uuid) from public, anon, authenticated, service_role;
 revoke all on function public.get_monthly_quality_revisions(uuid, text, uuid, text) from public, anon, authenticated, service_role;
 revoke all on function public.get_monthly_quality_effective(uuid, text, uuid, text) from public, anon, authenticated, service_role;
 
 grant execute on function public.record_monthly_quality(uuid, uuid, text, text, integer, integer, numeric, numeric, text, integer) to authenticated;
-grant execute on function public.set_trainer_quality_settings(uuid, uuid, text, numeric, numeric) to authenticated;
+grant execute on function public.set_trainer_quality_settings(uuid, uuid, text, numeric, numeric, text) to authenticated;
 grant execute on function public.get_trainer_quality_settings(uuid, uuid) to authenticated;
 grant execute on function public.get_monthly_quality_revisions(uuid, text, uuid, text) to authenticated;
 grant execute on function public.get_monthly_quality_effective(uuid, text, uuid, text) to authenticated;
