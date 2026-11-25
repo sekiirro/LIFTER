@@ -325,10 +325,12 @@ describe('F19 T021 automatic initial activation', () => {
         exists(select 1 from information_schema.columns where table_schema='public'
           and table_name='subscription_activations' and column_name='activation_source') as source,
         to_regclass('public.productivity_units') as units,
+        to_regclass('public.p7_earned_points') as p7_earned_points,
         to_regprocedure('app_private.current_assigned_trainer(uuid,uuid)')::text as assignment_resolver`;
     expect(catalog).toEqual({
       source: true,
       units: 'productivity_units',
+      p7_earned_points: 'p7_earned_points',
       assignment_resolver: 'app_private.current_assigned_trainer(uuid,uuid)',
     });
   });
@@ -369,7 +371,8 @@ describe('F19 T021 automatic initial activation', () => {
     const [activation] = await db`
       select a.activation_source, a.delivery_event_id, a.workout_delivery_id,
         a.nutrition_delivery_id, u.subscription_id, u.activation_id,
-        u.recipient_trainer_user_id, u.unit_count
+        u.id as productivity_unit_id, u.recipient_trainer_user_id, u.unit_count,
+        a.activated_at
       from public.subscription_activations a
       join public.productivity_units u on u.workspace_id=a.workspace_id and u.activation_id=a.id
       where a.workspace_id=${context.wsA.id} and a.subscription_id=${seeded.subscription}`;
@@ -386,6 +389,48 @@ describe('F19 T021 automatic initial activation', () => {
       unit_count: 1,
     });
     expect(activation!.delivery_event_id).toBe(completingKey);
+    const [earned] = await db`
+      select e.id, e.workspace_id, e.staff_user_id, e.points::text as points,
+        e.effective_month::text as effective_month, e.trigger_at,
+        to_char(date_trunc('month', a.activated_at at time zone 'Africa/Cairo')::date, 'YYYY-MM-DD') as expected_month,
+        e.rule_version, e.source_key
+      from public.p7_earned_points e
+      join public.subscription_activations a on a.workspace_id=e.workspace_id
+        and a.id=${activation!.activation_id}
+      where e.workspace_id=${context.wsA.id} and e.source_key=${activation!.productivity_unit_id}
+    `;
+    expect(earned).toMatchObject({
+      workspace_id: context.wsA.id,
+      staff_user_id: context.trainerA.userId,
+      points: '1.00',
+      effective_month: earned!.expected_month,
+      rule_version: 'p7-activation-v1',
+      source_key: activation!.productivity_unit_id,
+    });
+    expect(earned!.trigger_at).toEqual(activation!.activated_at);
+    const [audit] = await db`
+      select details from public.audit_events
+      where action='workforce.earned_fact_recorded' and target_id=${earned!.id}
+        and workspace_id=${context.wsA.id}`;
+    expect(audit!.details).toEqual({
+      reference: activation!.productivity_unit_id,
+    });
+    await expect(db`update public.p7_earned_points set points=2.00
+      where workspace_id=${context.wsA.id} and source_key=${activation!.productivity_unit_id}`).rejects.toThrow(
+      /p7_ledger_immutable/,
+    );
+    await expect(db`delete from public.p7_earned_points
+      where workspace_id=${context.wsA.id} and source_key=${activation!.productivity_unit_id}`).rejects.toThrow(
+      /p7_ledger_immutable/,
+    );
+    await expect(db`
+      insert into public.p7_earned_points(workspace_id, staff_user_id, points,
+        effective_month, trigger_at, rule_version, source_key, source_hash)
+      select workspace_id, staff_user_id, points, effective_month, trigger_at,
+        rule_version, source_key, source_hash from public.p7_earned_points
+      where workspace_id=${context.wsA.id} and source_key=${activation!.productivity_unit_id}`).rejects.toThrow(
+      /duplicate key|unique constraint/,
+    );
     await expect(db`update public.productivity_units set unit_count=2
       where workspace_id=${context.wsA.id} and client_id=${seeded.client}`).rejects.toThrow(
       /productivity_unit_immutable/,
@@ -440,6 +485,10 @@ describe('F19 T021 automatic initial activation', () => {
       activations: 1,
       units: 1,
     });
+    const [earned] = await db`
+      select count(*)::int as count from public.p7_earned_points
+      where workspace_id=${context.wsA.id}`;
+    expect(earned!.count).toBe(1);
   });
 
   it('replays the completing delivery exactly and does not reactivate on later publication', async () => {
@@ -490,6 +539,10 @@ describe('F19 T021 automatic initial activation', () => {
       activations: 1,
       units: 1,
     });
+    const [earned] = await db`
+      select count(*)::int as count from public.p7_earned_points
+      where workspace_id=${context.wsA.id}`;
+    expect(earned!.count).toBe(1);
   });
 
   it('activates returning clients without a unit and never duplicates a client unit', async () => {
@@ -637,7 +690,7 @@ describe('F19 T021 automatic initial activation', () => {
       context,
       seeded.client,
       'renewal',
-      false,
+      true,
     );
     const [before] =
       await db`select activation_source, activated_at, delivery_event_id
@@ -658,6 +711,10 @@ describe('F19 T021 automatic initial activation', () => {
       await db`select activation_source, activated_at, delivery_event_id
       from public.subscription_activations where workspace_id=${context.wsA.id} and id=${legacy.priorActivationId}`;
     expect(after).toEqual(before);
+    const [earned] = await db`
+      select count(*)::int as count from public.p7_earned_points
+      where workspace_id=${context.wsA.id}`;
+    expect(earned!.count).toBe(0);
   });
 
   it('authorizes before validating publish parameters', async () => {

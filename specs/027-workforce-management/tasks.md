@@ -1,22 +1,22 @@
-# Tasks: P7 Workforce Management
+﻿# Tasks: P7 Workforce Management
 
 **Input**: spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md
-**Lane**: documentation-only; no application code, migrations, stack work or tests in this spec round. All implementation tasks remain unchecked.
+**Lane**: Check-ins backend implementation (T001-T004). UI and later KPI/penalty slices remain deferred to their assigned tasks.
 **Authority**: S70-PO-16, S70-R95, S70-PO-18 and S70-PO-1 item 3. Product decisions in these records are closed; do not reopen them.
 
 ## Slice A - Contract and authorization foundation (target 250-400 changed lines)
 
-- [ ] **T001 [FR-001-FR-029]** Verify current F10/F11/F12/F13/F15/F19/F20/F23/F26 source schemas and authorization seams; implement approved behavior from spec and record actual sources. No product-policy decision remains open.
-- [ ] **T002 [FR-004, FR-012, FR-017, FR-020, FR-024, FR-025]** RED: add PO/WO/Trainer/Sales authorization fixtures, revocation races, direct audit reader inventory, Realtime/count/HEAD/export/cache/replay channel inventory, and non-disclosing denial tests.
-- [ ] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged.
-- [ ] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits.
+- [x] **T001 [FR-001-FR-029]** Verify current F10/F11/F12/F13/F15/F19/F20/F23/F26 source schemas and authorization seams; implement approved behavior from spec and record actual sources. No product-policy decision remains open. Verified: source inventory in the lane report; Stack B RLS catalog and check-in integration suite passed on 25c77dc8.
+- [x] **T002 [FR-004, FR-012, FR-017, FR-020, FR-024, FR-025]** RED: add PO/WO/Trainer/Sales authorization fixtures, revocation races, direct audit reader inventory, Realtime/count/HEAD/export/cache/replay channel inventory, and non-disclosing denial tests. Verified: workforce-checkins.test.ts role denials, audit/channel probes and two revocation-wait races; rls-catalog.test.ts P7 catalog probe; 76 focused integration tests passed on 25c77dc8.
+- [x] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged. Verified: workforce-checkins.test.ts same-workspace Trainer projection and client-directory-assignment.test.ts; 76 focused integration tests passed on 25c77dc8.
+- [x] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits. Verified: workforce-checkins.test.ts Late history, F15-audited latest answer snapshot, confirmation idempotency/concurrency, F26 purge-context deletion and both authorization-wait races; Stack B focused suite passed on 25c77dc8 (3 files / 76 tests).
 - [ ] **T005 [FR-029]** Before the Check-ins UI slice, prepare its complete AR/EN screen-state copy batch and obtain PO approval; record approval identifiers in the copy table.
 - [ ] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts.
 
 ## Slice B - Durable KPI facts, timing and Trainer penalties (target 250-400 changed lines)
 
 - [ ] **T007 [FR-001, FR-006, FR-017, FR-020]** RED: test F19 activation +1 once, zero for renewal/upgrade/revision, negative totals, exact numeric arithmetic, immutable source, unique mapping and Cairo trigger month.
-- [ ] **T008 [FR-001, FR-006, FR-018, FR-020]** GREEN: create P7-owned durable non-PII earned facts with workspace, staff, amount, effective month, rule version and opaque source key; totals never recompute from purgeable F19 rows.
+- [x] **T008 [FR-001, FR-006, FR-018, FR-020]** GREEN: create P7-owned durable non-PII earned facts with workspace, staff, amount, effective month, rule version and opaque source key; totals never recompute from purgeable F19 rows. Verified: `c7c0c7630bd1f63829f8f65dd2d907927ad37c42`, `tests/integration/f19-plan-activation.test.ts::keeps either first delivery order durable, then commits exactly one activation and unit atomically`; `tests/integration/rls-catalog.test.ts::forces RLS, withholds direct access, and keeps client identifiers out of facts` (Stack C, 67 passed).
 - [ ] **T009 [FR-002, FR-006, FR-020, FR-026]** RED/GREEN: reuse persisted F15 deadline and first successful initial plan pair; penalty is -1 at deadline, attributed to currently assigned Trainer at breach; record assignment and confirmer separately; PO reattribution appends; strike source remains separate.
 - [ ] **T010 [FR-003, FR-006, FR-020, FR-027]** RED: test exact 24h follow-up is on time/no penalty, >24h or absent follow-up yields one penalty effective at deadline, successful submission only, client-caused lateness, evaluator catch-up/retry/operator path, confirmer race and current assignee at breach.
 - [ ] **T011 [FR-003, FR-006, FR-020, FR-027]** GREEN: implement workspace-scoped idempotent due evaluator and operator-run path; scheduler remains behind current activation gate; confirmation and evaluator converge on one occurrence key and one -0.5 event.
@@ -31,7 +31,7 @@
       Verified: tests/integration/p7-monthly-quality.test.ts, tests/integration/rls-catalog.test.ts
 - [x] **T016 [FR-009, FR-020]** RED/GREEN: add monthly PO reminder through existing notification/outbox, unique workspace+month dedup, behind existing scheduler activation gates; notification has no sensitive P7 details.
       Verified: tests/integration/p7-monthly-quality.test.ts, tests/integration/rls-catalog.test.ts
-- [ ] **T017 [FR-028, FR-020]** RED/GREEN: add PO-only manual monetary incentive/deduction/correction inputs in exact minor units and currency with immutable lineage; points never populate money; no automatic salary deduction.
+- [x] **T017 [FR-028, FR-020]** RED/GREEN: add PO-only manual monetary incentive/deduction/correction inputs in exact minor units and currency with immutable lineage; points never populate money; no automatic salary deduction. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (exact minor units/lineage, idempotency, concurrency, staff authorization), 64/64 focused integration tests passed.
 - [ ] **T018 [FR-029]** Before monthly-quality/payroll UI slice, prepare and approve the AR/EN screen batch; track copy approvals screen by screen.
 - [ ] **T019 [FR-008, FR-028, FR-029]** Implement salary UI after T018: one monthly salary per person, market-allowed currency, platform-PO ownership, provisioning and own-compensation-only staff view; WO excluded.
 
@@ -46,8 +46,8 @@
 
 ## Slice E - Payroll snapshot and monthly close (target 250-400 changed lines)
 
-- [ ] **T026 [FR-008, FR-028, FR-020]** RED: test person+month salary entitlement, allowed currency, unique employee/month approval, exact reviewed snapshot/version and amount/currency binding, stale snapshot rejection and two-key concurrent duplicate approval.
-- [ ] **T027 [FR-008, FR-028]** GREEN: make payroll snapshot immutable and allow exactly one external-paid approval per employee/month entitlement. Require the reviewed immutable snapshot version; corrections use separate attributable inputs, not another approval.
+- [x] **T026 [FR-008, FR-028, FR-020]** RED: test person+month salary entitlement, allowed currency, unique employee/month approval, exact reviewed snapshot/version and amount/currency binding, stale snapshot rejection and two-key concurrent duplicate approval. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (salary entitlement, stale/mixed currency, snapshot binding, concurrency), 64/64 focused integration tests passed.
+- [x] **T027 [FR-008, FR-028]** GREEN: make payroll snapshot immutable and allow exactly one external-paid approval per employee/month entitlement. Require the reviewed immutable snapshot version; corrections use separate attributable inputs, not another approval. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (immutable snapshot and single concurrent approval), 64/64 focused integration tests passed.
 - [ ] **T028 [FR-013, FR-014, FR-021, FR-022, FR-020]** RED: test trigger-month assignment by category, Cairo boundaries, closed-month carry-forward, snapshot totals, empty-period first event, multiple staff, month-close/refund/reattribution races and lock order.
 - [ ] **T029 [FR-013, FR-014, FR-021, FR-022, FR-020]** GREEN: shared workspace+month advisory fence for every producer and finalizer, acquired after source locks in fixed documented order. Closed months stay immutable; late corrections go to current open month linked to original month.
 

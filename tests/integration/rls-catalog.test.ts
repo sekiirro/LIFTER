@@ -113,6 +113,12 @@ const f24Invoker = [
   'f24_guard_entry',
   'f24_guard_publication',
 ];
+const p7Private = [
+  'p7_earn_f19_activation',
+  'p7_lock_period',
+  'p7_month_for_trigger',
+  'p7_reject_mutation',
+];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
   'purge_retention_for_platform_owner',
@@ -378,8 +384,11 @@ describe('tenancy security catalog (T007)', () => {
           'client_note_trim_whitespace',
           'can_read_staff_display_name',
           'can_write_staff_display_name',
+          'capture_workforce_checkin_pending',
           'guard_client_note_update',
           'guard_staff_display_name',
+          'guard_workforce_checkin_transition',
+          'guard_workforce_checkin_transition_truncate',
           'normalize_staff_display_name',
           'require_client_note_create_key',
           'staff_display_name_is_valid',
@@ -388,9 +397,15 @@ describe('tenancy security catalog (T007)', () => {
           ...brandingPrivate,
           ...f23Private,
           ...f24Private,
+          ...p7Private,
           ...f22Private,
           ...p7Private,
           ...privateAuthenticated,
+          'p7_payroll_lineage',
+          'p7_payroll_lock',
+          'p7_reject_immutable_write',
+          'p7_require_payroll_employee',
+          'p7_require_platform_owner',
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
           'audit_package_created',
@@ -615,6 +630,9 @@ describe('tenancy security catalog (T007)', () => {
           'f17_client_safe_set',
           'f17_client_safe_item',
           'f17_client_safe_workout_document',
+          'capture_workforce_checkin_pending',
+          'guard_workforce_checkin_transition',
+          'guard_workforce_checkin_transition_truncate',
         ]),
       ].sort(),
     );
@@ -686,6 +704,7 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        ...p7Private,
         // F15 T029: D1 erasure cron wrappers declare `security invoker` and enforce
         // the postgres-owner check in the body; only d1_erase_inapplicable_answers
         // is `security definer` (20261215030000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
@@ -702,6 +721,10 @@ describe('tenancy security catalog (T007)', () => {
         'f17_client_safe_set',
         'f17_client_safe_item',
         'f17_client_safe_workout_document',
+        'p7_payroll_lineage',
+        'p7_payroll_lock',
+        'p7_reject_immutable_write',
+        'p7_require_payroll_employee',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -747,6 +770,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_client_unit_eligible',
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
+          ...p7Private,
           'f18_guard_plan_version_content',
           'f18_guard_nutrition_selection',
           'audit_package_promotion_period',
@@ -855,6 +879,11 @@ describe('tenancy security catalog (T007)', () => {
             !registrationPrivate.includes(row.proname) &&
             !assignmentPrivate.includes(row.proname) &&
             !deletionPrivate.includes(row.proname) &&
+            ![
+              'capture_workforce_checkin_pending',
+              'guard_workforce_checkin_transition',
+              'guard_workforce_checkin_transition_truncate',
+            ].includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
@@ -895,6 +924,11 @@ describe('tenancy security catalog (T007)', () => {
               'purge_ended_form_answers_at',
               'record_f15_retention_fact',
               'f15_onboarding_provisioning_marker_immutable',
+              'p7_payroll_lineage',
+              'p7_payroll_lock',
+              'p7_reject_immutable_write',
+              'p7_require_payroll_employee',
+              'p7_require_platform_owner',
               'guard_form_answer_revision_immutable',
               'guard_form_correction_immutable',
               'guard_form_draft_after_submission',
@@ -2318,6 +2352,11 @@ describe('F19 T021 activation catalog', () => {
       where tgrelid='public.productivity_units'::regclass and not tgisinternal order by tgname`;
     expect(triggers).toEqual([
       {
+        tgname: 'p7_earn_f19_activation_after_insert',
+        type: 5,
+        proname: 'p7_earn_f19_activation',
+      },
+      {
         tgname: 'productivity_units_immutable',
         type: 31,
         proname: 'f19_guard_productivity_unit',
@@ -2345,6 +2384,39 @@ describe('F19 T021 activation catalog', () => {
         proname: 'f19_guard_activation_source',
       },
     ]);
+  });
+});
+
+describe('P7 earned ledger catalog', () => {
+  it('forces RLS, withholds direct access, and keeps client identifiers out of facts', async () => {
+    const [table] = await db`
+      select relrowsecurity, relforcerowsecurity
+      from pg_class where oid='public.p7_earned_points'::regclass`;
+    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    const policies = await db`select * from pg_policies
+      where schemaname='public' and tablename='p7_earned_points'`;
+    expect(policies).toHaveLength(0);
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+      ]) {
+        const [grant] = await db`select has_table_privilege(${role},
+          'public.p7_earned_points', ${privilege}) as allowed`;
+        expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
+      }
+    const [clientId] =
+      await db`select exists(select 1 from information_schema.columns
+      where table_schema='public' and table_name='p7_earned_points' and column_name='client_id') as present`;
+    expect(clientId!.present).toBe(false);
+    const clientForeignKeys = await db`select c.conname from pg_constraint c
+      where c.conrelid='public.p7_earned_points'::regclass and c.contype='f'
+        and c.confrelid in ('public.clients'::regclass, 'public.subscriptions'::regclass,
+          'public.productivity_units'::regclass, 'public.subscription_activations'::regclass)`;
+    expect(clientForeignKeys).toHaveLength(0);
   });
 });
 
@@ -2966,5 +3038,153 @@ describe('package tier name security catalog (T078)', () => {
         );
       }
     }
+  });
+});
+
+describe('P7 T017/T026/T027 payroll security catalog', () => {
+  const tables = [
+    'public.p7_salary_revisions',
+    'public.p7_monetary_payroll_inputs',
+    'public.p7_payroll_snapshots',
+    'public.p7_payroll_approvals',
+  ];
+  const publicFunctions = [
+    'public.p7_set_basic_salary(uuid,date,text,bigint,text,integer,uuid)',
+    'public.p7_post_monetary_payroll_input(uuid,date,text,bigint,text,uuid,uuid,uuid)',
+    'public.p7_create_payroll_snapshot(uuid,date,uuid)',
+    'public.p7_approve_external_payroll(uuid,date,uuid,integer,bigint,text,uuid)',
+  ];
+
+  it('forces RLS, grants no direct table access, and has immutable write guards', async () => {
+    for (const relation of tables) {
+      const [table] = await db`
+        select relrowsecurity, relforcerowsecurity from pg_class where oid = ${relation}::regclass
+      `;
+      expect(table, relation).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+        ]) {
+          const [grant] = await db`
+            select has_table_privilege(${role}, ${relation}, ${privilege}) as allowed
+          `;
+          expect(grant?.allowed, `${role} ${privilege} ${relation}`).toBe(
+            false,
+          );
+        }
+      }
+      const [guards] = await db`
+        select count(*)::int as count from pg_trigger
+        where tgrelid = ${relation}::regclass and not tgisinternal
+          and (tgtype & 28) <> 0
+      `;
+      expect(guards?.count, relation).toBeGreaterThan(0);
+    }
+  });
+
+  it('grants authenticated PO RPCs only and keeps the shared role guard private', async () => {
+    for (const name of publicFunctions) {
+      const [fn] = await db`
+        select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+          has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+        from pg_proc p where p.oid = ${name}::regprocedure
+      `;
+      expect(fn).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig).toContain('search_path=""');
+    }
+    const [guard] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid = 'app_private.p7_require_platform_owner()'::regprocedure
+    `;
+    expect(guard).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(guard?.proconfig).toContain('search_path=""');
+    const [employeeGuard] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid = 'app_private.p7_require_payroll_employee(uuid)'::regprocedure
+    `;
+    expect(employeeGuard).toMatchObject({
+      prosecdef: false,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(employeeGuard?.proconfig).toContain('search_path=""');
+  });
+});
+
+describe('P7 T002/T004 check-in transition security catalog', () => {
+  it('forces private RLS, denies direct channels and keeps the F26 delete allowlist narrow', async () => {
+    const [table] = await db`
+      select c.relrowsecurity,c.relforcerowsecurity,
+        has_table_privilege('authenticated',c.oid,'SELECT') as authenticated_select,
+        has_table_privilege('service_role',c.oid,'SELECT') as service_role_select
+      from pg_catalog.pg_class c
+      where c.oid='app_private.workforce_checkin_transitions'::regclass
+    `;
+    expect(table).toEqual({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+      authenticated_select: false,
+      service_role_select: false,
+    });
+    const [allowlist] = await db`
+      select can_delete,can_update,traverse
+      from app_private.retention_purge_allowlist
+      where table_oid='app_private.workforce_checkin_transitions'::regclass
+    `;
+    expect(allowlist).toEqual({
+      can_delete: true,
+      can_update: false,
+      traverse: true,
+    });
+    const triggers = await db`
+      select t.tgname,p.proname,t.tgtype::int as tgtype,t.tgenabled
+      from pg_catalog.pg_trigger t
+      join pg_catalog.pg_proc p on p.oid=t.tgfoid
+      where t.tgrelid='app_private.workforce_checkin_transitions'::regclass
+        and not t.tgisinternal order by t.tgname
+    `;
+    expect(triggers).toEqual([
+      {
+        tgname: 'workforce_checkin_transitions_append_only',
+        proname: 'guard_workforce_checkin_transition',
+        tgtype: 27,
+        tgenabled: 'O',
+      },
+      {
+        tgname: 'workforce_checkin_transitions_no_truncate',
+        proname: 'guard_workforce_checkin_transition_truncate',
+        tgtype: 34,
+        tgenabled: 'O',
+      },
+    ]);
   });
 });
