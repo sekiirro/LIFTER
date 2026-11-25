@@ -108,9 +108,9 @@ const f24Invoker = [
 const p7Private = [
   'p7_earn_f19_activation',
   'p7_lock_period',
-    'p7_month_for_trigger',
-    'p7_reject_mutation',
-    'p7_route_closed_period',
+  'p7_month_for_trigger',
+  'p7_reject_mutation',
+  'p7_route_closed_period',
 ];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',

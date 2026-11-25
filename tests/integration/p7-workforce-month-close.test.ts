@@ -238,7 +238,10 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
     const [earned] = await db`
       select effective_month::text as effective_month, original_month::text as original_month
       from public.p7_earned_points where workspace_id=${context.wsA.id} and source_key=${unitId}`;
-    expect(earned).toEqual({ effective_month: openMonth, original_month: closedMonth });
+    expect(earned).toEqual({
+      effective_month: openMonth,
+      original_month: closedMonth,
+    });
     const [snapshotAfter] = await db`
       select totals from public.p7_month_snapshots
       where workspace_id=${context.wsA.id} and effective_month=${closedMonth}`;
@@ -301,7 +304,10 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
       expect(earned!.original_month).toBe(closedMonth);
       expect(snapshot!.totals).toEqual({ [context.trainerA.userId]: '1.00' });
     } else {
-      expect(earned).toEqual({ effective_month: openMonth, original_month: closedMonth });
+      expect(earned).toEqual({
+        effective_month: openMonth,
+        original_month: closedMonth,
+      });
       expect(snapshot!.totals).toEqual({});
     }
   });
