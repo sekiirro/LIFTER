@@ -28,7 +28,7 @@
 - [ ] **T014 [FR-009, FR-020, FR-023]** RED: test transformation/feedback counts, per-Trainer +1/-1 defaults, two-decimal weights, zeroing, count/weight revisions and concurrent edits. Only latest effective revision per Trainer/month/category contributes.
 - [ ] **T015 [FR-009, FR-020, FR-023]** GREEN: implement append-only quality revisions and latest-effective projection; preserve superseded revisions without summing them.
 - [ ] **T016 [FR-009, FR-020]** RED/GREEN: add monthly PO reminder through existing notification/outbox, unique workspace+month dedup, behind existing scheduler activation gates; notification has no sensitive P7 details.
-- [ ] **T017 [FR-028, FR-020]** RED/GREEN: add PO-only manual monetary incentive/deduction/correction inputs in exact minor units and currency with immutable lineage; points never populate money; no automatic salary deduction.
+- [x] **T017 [FR-028, FR-020]** RED/GREEN: add PO-only manual monetary incentive/deduction/correction inputs in exact minor units and currency with immutable lineage; points never populate money; no automatic salary deduction. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (exact minor units/lineage, idempotency, concurrency, staff authorization), 64/64 focused integration tests passed.
 - [ ] **T018 [FR-029]** Before monthly-quality/payroll UI slice, prepare and approve the AR/EN screen batch; track copy approvals screen by screen.
 - [ ] **T019 [FR-008, FR-028, FR-029]** Implement salary UI after T018: one monthly salary per person, market-allowed currency, platform-PO ownership, provisioning and own-compensation-only staff view; WO excluded.
 
@@ -43,8 +43,8 @@
 
 ## Slice E - Payroll snapshot and monthly close (target 250-400 changed lines)
 
-- [ ] **T026 [FR-008, FR-028, FR-020]** RED: test person+month salary entitlement, allowed currency, unique employee/month approval, exact reviewed snapshot/version and amount/currency binding, stale snapshot rejection and two-key concurrent duplicate approval.
-- [ ] **T027 [FR-008, FR-028]** GREEN: make payroll snapshot immutable and allow exactly one external-paid approval per employee/month entitlement. Require the reviewed immutable snapshot version; corrections use separate attributable inputs, not another approval.
+- [x] **T026 [FR-008, FR-028, FR-020]** RED: test person+month salary entitlement, allowed currency, unique employee/month approval, exact reviewed snapshot/version and amount/currency binding, stale snapshot rejection and two-key concurrent duplicate approval. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (salary entitlement, stale/mixed currency, snapshot binding, concurrency), 64/64 focused integration tests passed.
+- [x] **T027 [FR-008, FR-028]** GREEN: make payroll snapshot immutable and allow exactly one external-paid approval per employee/month entitlement. Require the reviewed immutable snapshot version; corrections use separate attributable inputs, not another approval. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (immutable snapshot and single concurrent approval), 64/64 focused integration tests passed.
 - [ ] **T028 [FR-013, FR-014, FR-021, FR-022, FR-020]** RED: test trigger-month assignment by category, Cairo boundaries, closed-month carry-forward, snapshot totals, empty-period first event, multiple staff, month-close/refund/reattribution races and lock order.
 - [ ] **T029 [FR-013, FR-014, FR-021, FR-022, FR-020]** GREEN: shared workspace+month advisory fence for every producer and finalizer, acquired after source locks in fixed documented order. Closed months stay immutable; late corrections go to current open month linked to original month.
 
