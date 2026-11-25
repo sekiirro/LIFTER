@@ -34,6 +34,38 @@ it('T044a awards an issuance-time Sales link after the issuer is promoted before
   expect(units).toEqual([{ recipient_sales_user_id: f.salesA.userId }]);
 });
 
+it('T020/T021 maps one confirmed first-payment Sales unit to one durable P7 fact under concurrent retries', async () => {
+  const f = await clientContext();
+  const target = await registered(f, null, undefined, f.salesA.client);
+  const approval = request(f, target);
+  const results = await Promise.all([
+    call(f.po.client, 'approve', approval),
+    call(f.po.client, 'approve', approval),
+  ]);
+  expect(results.map((result) => result.status)).toEqual(['ok', 'ok']);
+
+  const [source] = await db`
+    select id, recipient_sales_user_id, recorded_at
+    from public.sales_productivity_units
+    where workspace_id=${f.wsA.id} and client_id=${target.id}`;
+  expect(source?.recipient_sales_user_id).toBe(f.salesA.userId);
+  const facts = await db`
+    select staff_user_id, points::text as points, effective_month, trigger_at,
+      rule_version, source_key, source_hash
+    from public.p7_earned_points
+    where workspace_id=${f.wsA.id} and source_key=${source?.id}`;
+  expect(facts).toHaveLength(1);
+  expect(facts[0]).toMatchObject({
+    staff_user_id: f.salesA.userId,
+    points: '1.00',
+    rule_version: 'p7-sales-acquisition-v1',
+    source_key: source?.id,
+  });
+  expect(facts[0]?.effective_month).toBeInstanceOf(Date);
+  expect(facts[0]?.trigger_at).toBeInstanceOf(Date);
+  expect(facts[0]?.source_hash).toMatch(/^[a-f0-9]{32}$/);
+});
+
 it('T044a awards no point when a Workspace-Owner-issued link is approved after demotion', async () => {
   const f = await clientContext();
   const target = await registered(f, null, undefined, f.woA.client);
