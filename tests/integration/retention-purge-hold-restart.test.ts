@@ -199,3 +199,50 @@ it('T004 holds closure data while open and restarts 30 days at resolution', asyn
     if (error !== rollback) throw error;
   }
 });
+
+it('T031 leaves a tested P7 dispute-hold extension point without inventing a dispute model', async () => {
+  const f = await clientContext();
+  await db.begin(async (tx) => {
+    const candidate = await clientWithLockout(tx, f, 'succeeded', 60, 60);
+    const [models] = await tx`
+      select count(*)::int as count from pg_catalog.pg_class c
+      join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+      where c.relkind in ('r','p') and n.nspname in ('public','app_private')
+        and (c.relname ilike '%dispute%' or c.relname ilike '%refund%review%')
+    `;
+    expect(models!.count).toBe(0);
+
+    const signature = 'app_private.p7_retention_has_open_dispute(uuid,uuid)';
+    const [before] = await tx`
+      select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition
+    `;
+    const hashBefore = createHash('sha256')
+      .update(before!.definition as string)
+      .digest('hex');
+    try {
+      await tx.savepoint(async (inner) => {
+        await inner.unsafe(`create or replace function ${signature}
+          returns boolean language sql stable security invoker set search_path = '' as $$
+          select true
+        $$`);
+        const rows = await inner`
+          select client_id from app_private.purge_retention_candidates(${sampledAt})
+          where data_class='client'
+        `;
+        expect(rows.some((row) => row.client_id === candidate.clientId)).toBe(false);
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
+    const [after] = await tx`
+      select pg_catalog.pg_get_functiondef(${signature}::regprocedure) as definition
+    `;
+    expect(after!.definition).toBe(before!.definition);
+    expect(
+      createHash('sha256')
+        .update(after!.definition as string)
+        .digest('hex'),
+    ).toBe(hashBefore);
+  });
+});
