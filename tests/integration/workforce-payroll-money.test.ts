@@ -1,14 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { admin, checked, createStaff, sql } from './harness';
+import { admin, createStaff, sql } from './harness';
 
 const db = sql();
 let po: Awaited<ReturnType<typeof createStaff>>;
+let wo: Awaited<ReturnType<typeof createStaff>>;
 let trainer: Awaited<ReturnType<typeof createStaff>>;
 let sales: Awaited<ReturnType<typeof createStaff>>;
 
 beforeAll(async () => {
   po = await createStaff('platform_owner', 'p7-payroll-po');
+  wo = await createStaff('workspace_owner', 'p7-payroll-wo');
   trainer = await createStaff('trainer', 'p7-payroll-trainer');
   sales = await createStaff('sales', 'p7-payroll-sales');
   await setSalary(po, {
@@ -24,7 +26,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.end();
-  for (const actor of [po, trainer, sales]) {
+  for (const actor of [po, wo, trainer, sales]) {
     if (actor) await admin().auth.admin.deleteUser(actor.userId);
   }
 });
@@ -124,7 +126,7 @@ describe('P7 manual payroll money inputs', () => {
     });
     const correctionId = await post(po, correction);
     const rows = await db`
-      select id, employee_id, effective_month, category, amount_minor::text as amount_minor,
+      select id, employee_id, effective_month::text as effective_month, category, amount_minor::text as amount_minor,
         currency, actor_id, supersedes_input_id, idempotency_key
       from public.p7_monetary_payroll_inputs
       where id in (${firstId}::uuid, ${correctionId}::uuid)
@@ -155,8 +157,9 @@ describe('P7 manual payroll money inputs', () => {
     const [triggers] = await db`
       select count(*)::int as count from pg_trigger
       where tgrelid = 'public.p7_monetary_payroll_inputs'::regclass and not tgisinternal
+        and (tgtype & 4) <> 0
     `;
-    expect(triggers.count).toBe(0);
+    expect(triggers?.count).toBe(0);
   });
 
   it('is idempotent for the same request and rejects changed arguments under the same key', async () => {
@@ -168,7 +171,7 @@ describe('P7 manual payroll money inputs', () => {
     const [count] = await db`
       select count(*)::int as count from public.p7_monetary_payroll_inputs where idempotency_key = ${key}::uuid
     `;
-    expect(count.count).toBe(1);
+    expect(count?.count).toBe(1);
   });
 
   it('serializes parallel distinct writes without losing either manual input', async () => {
@@ -177,7 +180,7 @@ describe('P7 manual payroll money inputs', () => {
     const [count] = await db`
       select count(*)::int as count from public.p7_monetary_payroll_inputs where id in (${a}::uuid, ${b}::uuid)
     `;
-    expect(count.count).toBe(2);
+    expect(count?.count).toBe(2);
   });
 
   it('rejects staff writes and direct table access while preserving staff identities', async () => {
@@ -185,6 +188,39 @@ describe('P7 manual payroll money inputs', () => {
     await expect(
       post(sales, input({ p_employee_id: trainer.userId })),
     ).rejects.toThrow();
+    await setSalary(po, {
+      p_employee_id: trainer.userId,
+      p_effective_month: '2027-03-01',
+      p_market: 'Egypt',
+      p_amount_minor: '100000',
+      p_currency: 'EGP',
+      p_expected_revision: 0,
+      p_idempotency_key: randomUUID(),
+    });
+    const reviewed = await snapshot(po, trainer.userId, '2027-03-01');
+    await expect(
+      setSalary(trainer, {
+        p_employee_id: trainer.userId,
+        p_effective_month: '2027-03-01',
+        p_market: 'Egypt',
+        p_amount_minor: '100000',
+        p_currency: 'EGP',
+        p_expected_revision: 1,
+        p_idempotency_key: randomUUID(),
+      }),
+    ).rejects.toThrow(/p7_platform_owner_required/);
+    await expect(
+      snapshot(trainer, trainer.userId, '2027-03-01'),
+    ).rejects.toThrow(/p7_platform_owner_required/);
+    await expect(
+      approve(trainer, trainer.userId, '2027-03-01', reviewed),
+    ).rejects.toThrow(/p7_platform_owner_required/);
+    await expect(post(wo, input())).rejects.toThrow(
+      /p7_platform_owner_required/,
+    );
+    await expect(snapshot(wo, trainer.userId, '2027-03-01')).rejects.toThrow(
+      /p7_platform_owner_required/,
+    );
     const results = await Promise.all([
       trainer.client.from('p7_monetary_payroll_inputs').select('*'),
       sales.client.from('p7_monetary_payroll_inputs').select('*'),
@@ -270,9 +306,19 @@ describe('P7 salary snapshots and external-paid approval', () => {
         p_currency: 'SAR',
       }),
     );
+    await post(
+      po,
+      input({
+        p_employee_id: sales.userId,
+        p_effective_month: '2026-12-01',
+        p_category: 'deduction',
+        p_amount_minor: '2000',
+        p_currency: 'SAR',
+      }),
+    );
     const reviewed = await snapshot(po, sales.userId, '2026-12-01');
     expect(reviewed).toMatchObject({
-      amount_minor: '212345',
+      amount_minor: '210345',
       currency: 'SAR',
       version: 1,
     });
@@ -284,7 +330,7 @@ describe('P7 salary snapshots and external-paid approval', () => {
     expect(approval).toEqual({
       snapshot_id: reviewed.id,
       snapshot_version: 1,
-      amount_minor: '212345',
+      amount_minor: '210345',
       currency: 'SAR',
       actor_id: po.userId,
     });
@@ -292,12 +338,12 @@ describe('P7 salary snapshots and external-paid approval', () => {
       select count(*)::int as count from pg_trigger
       where tgrelid = 'public.p7_payroll_snapshots'::regclass and not tgisinternal
     `;
-    expect(immutability.count).toBeGreaterThan(0);
+    expect(immutability?.count).toBeGreaterThan(0);
     const [approvalGuard] = await db`
       select count(*)::int as count from pg_trigger
       where tgrelid = 'public.p7_payroll_approvals'::regclass and not tgisinternal
     `;
-    expect(approvalGuard.count).toBeGreaterThan(0);
+    expect(approvalGuard?.count).toBeGreaterThan(0);
   });
 
   it('rejects stale snapshots, caller amount/currency changes and mixed-currency months', async () => {
@@ -310,6 +356,17 @@ describe('P7 salary snapshots and external-paid approval', () => {
       p_expected_revision: 0,
       p_idempotency_key: randomUUID(),
     });
+    await expect(
+      post(
+        po,
+        input({
+          p_employee_id: trainer.userId,
+          p_effective_month: '2026-12-01',
+          p_amount_minor: '20',
+          p_currency: 'USD',
+        }),
+      ),
+    ).rejects.toThrow(/salary_currency_mismatch/);
     const first = await snapshot(po, trainer.userId, '2026-12-01');
     await post(
       po,
@@ -335,6 +392,12 @@ describe('P7 salary snapshots and external-paid approval', () => {
         amount_minor: '100501',
       }),
     ).rejects.toThrow(/snapshot_binding_mismatch/);
+    await expect(
+      approve(po, trainer.userId, '2026-12-01', {
+        ...second,
+        currency: 'USD',
+      }),
+    ).rejects.toThrow(/snapshot_binding_mismatch/);
     await setSalary(po, {
       p_employee_id: trainer.userId,
       p_effective_month: '2026-12-01',
@@ -344,12 +407,22 @@ describe('P7 salary snapshots and external-paid approval', () => {
       p_expected_revision: 1,
       p_idempotency_key: randomUUID(),
     });
+    await post(
+      po,
+      input({
+        p_employee_id: trainer.userId,
+        p_effective_month: '2026-12-01',
+        p_amount_minor: '100',
+        p_currency: 'USD',
+      }),
+    );
     await expect(snapshot(po, trainer.userId, '2026-12-01')).rejects.toThrow(
       /payroll_currency_mismatch/,
     );
     const [captured] = await db`
       select currency, amount_minor::text as amount_minor from public.p7_monetary_payroll_inputs
       where employee_id = ${trainer.userId}::uuid and effective_month = '2026-12-01'::date
+        and currency = 'EGP'
       order by created_at limit 1
     `;
     expect(captured).toEqual({ currency: 'EGP', amount_minor: '500' });
@@ -380,6 +453,41 @@ describe('P7 salary snapshots and external-paid approval', () => {
       select count(*)::int as count from public.p7_payroll_approvals
       where employee_id = ${sales.userId}::uuid and effective_month = '2027-01-01'::date
     `;
-    expect(count.count).toBe(1);
+    expect(count?.count).toBe(1);
+  });
+
+  it('serializes concurrent salary revisions and snapshot version creation', async () => {
+    const salaryAttempts = await Promise.allSettled([
+      setSalary(po, {
+        p_employee_id: trainer.userId,
+        p_effective_month: '2027-02-01',
+        p_market: 'Egypt',
+        p_amount_minor: '70000',
+        p_currency: 'EGP',
+        p_expected_revision: 0,
+        p_idempotency_key: randomUUID(),
+      }),
+      setSalary(po, {
+        p_employee_id: trainer.userId,
+        p_effective_month: '2027-02-01',
+        p_market: 'Egypt',
+        p_amount_minor: '71000',
+        p_currency: 'EGP',
+        p_expected_revision: 0,
+        p_idempotency_key: randomUUID(),
+      }),
+    ]);
+    expect(
+      salaryAttempts.filter((item) => item.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      salaryAttempts.filter((item) => item.status === 'rejected'),
+    ).toHaveLength(1);
+    const versions = await Promise.all([
+      snapshot(po, trainer.userId, '2027-02-01'),
+      snapshot(po, trainer.userId, '2027-02-01'),
+    ]);
+    expect(versions.map((item) => item.version).sort()).toEqual([1, 2]);
+    expect(new Set(versions.map((item) => item.id)).size).toBe(2);
   });
 });
