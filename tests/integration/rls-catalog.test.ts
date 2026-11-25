@@ -376,8 +376,11 @@ describe('tenancy security catalog (T007)', () => {
           'client_note_trim_whitespace',
           'can_read_staff_display_name',
           'can_write_staff_display_name',
+          'capture_workforce_checkin_pending',
           'guard_client_note_update',
           'guard_staff_display_name',
+          'guard_workforce_checkin_transition',
+          'guard_workforce_checkin_transition_truncate',
           'normalize_staff_display_name',
           'require_client_note_create_key',
           'staff_display_name_is_valid',
@@ -618,6 +621,9 @@ describe('tenancy security catalog (T007)', () => {
           'f17_client_safe_set',
           'f17_client_safe_item',
           'f17_client_safe_workout_document',
+          'capture_workforce_checkin_pending',
+          'guard_workforce_checkin_transition',
+          'guard_workforce_checkin_transition_truncate',
         ]),
       ].sort(),
     );
@@ -864,6 +870,11 @@ describe('tenancy security catalog (T007)', () => {
             !registrationPrivate.includes(row.proname) &&
             !assignmentPrivate.includes(row.proname) &&
             !deletionPrivate.includes(row.proname) &&
+            ![
+              'capture_workforce_checkin_pending',
+              'guard_workforce_checkin_transition',
+              'guard_workforce_checkin_transition_truncate',
+            ].includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
@@ -3028,5 +3039,54 @@ describe('P7 T017/T026/T027 payroll security catalog', () => {
       service_role: false,
     });
     expect(employeeGuard?.proconfig).toContain('search_path=""');
+  });
+});
+
+describe('P7 T002/T004 check-in transition security catalog', () => {
+  it('forces private RLS, denies direct channels and keeps the F26 delete allowlist narrow', async () => {
+    const [table] = await db`
+      select c.relrowsecurity,c.relforcerowsecurity,
+        has_table_privilege('authenticated',c.oid,'SELECT') as authenticated_select,
+        has_table_privilege('service_role',c.oid,'SELECT') as service_role_select
+      from pg_catalog.pg_class c
+      where c.oid='app_private.workforce_checkin_transitions'::regclass
+    `;
+    expect(table).toEqual({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+      authenticated_select: false,
+      service_role_select: false,
+    });
+    const [allowlist] = await db`
+      select can_delete,can_update,traverse
+      from app_private.retention_purge_allowlist
+      where table_oid='app_private.workforce_checkin_transitions'::regclass
+    `;
+    expect(allowlist).toEqual({
+      can_delete: true,
+      can_update: false,
+      traverse: true,
+    });
+    const triggers = await db`
+      select t.tgname,p.proname,t.tgtype::int as tgtype,t.tgenabled
+      from pg_catalog.pg_trigger t
+      join pg_catalog.pg_proc p on p.oid=t.tgfoid
+      where t.tgrelid='app_private.workforce_checkin_transitions'::regclass
+        and not t.tgisinternal order by t.tgname
+    `;
+    expect(triggers).toEqual([
+      {
+        tgname: 'workforce_checkin_transitions_append_only',
+        proname: 'guard_workforce_checkin_transition',
+        tgtype: 27,
+        tgenabled: 'O',
+      },
+      {
+        tgname: 'workforce_checkin_transitions_no_truncate',
+        proname: 'guard_workforce_checkin_transition_truncate',
+        tgtype: 34,
+        tgenabled: 'O',
+      },
+    ]);
   });
 });
