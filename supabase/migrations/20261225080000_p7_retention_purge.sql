@@ -22,6 +22,27 @@ revoke all on function app_private.p7_retention_has_open_dispute(uuid,uuid)
 comment on function app_private.p7_retention_has_open_dispute(uuid,uuid) is
   'F26 extension point: consult the persisted P7 follow-up dispute model when it exists; no dispute model exists on main.';
 
+-- F15 privacy erasure deletes submissions directly; their FK cascade must
+-- remove tied P7 history while standalone mutations remain blocked.
+create or replace function app_private.guard_workforce_checkin_transition() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if tg_op = 'DELETE' and (
+    app_private.retention_purge_context_allows(tg_relid, 'DELETE')
+    or not exists (
+      select 1 from app_private.form_submissions s
+      where s.workspace_id = old.workspace_id and s.assignment_id = old.assignment_id
+    )
+  ) then
+    return old;
+  end if;
+  raise exception 'workforce check-in transitions are append-only' using errcode = '23514';
+end
+$$;
+alter function app_private.guard_workforce_checkin_transition() owner to postgres;
+revoke all on function app_private.guard_workforce_checkin_transition()
+  from public, anon, authenticated, service_role;
+
 -- Preserve F26 eligibility and attach the P7 hold check to every client-tied
 -- candidate class. Audit candidates have no client id and remain independent.
 alter function app_private.purge_retention_candidates(timestamptz)
