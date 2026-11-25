@@ -29,7 +29,7 @@ Additive to D-09. Unlisted P7 capabilities are denied. Trusted server code and d
 - Trainer history is a purpose-built, narrow same-workspace Weekly Check-in projection. Do not widen F22 directory assignment filters, direct assignment table reads or client-code search; preserve S70-PO-1 item 1 wall.
 - Existing WO audit access remains for unrelated events. P7 financial/KPI audit rows use opaque references only; direct WO audit read cannot reveal P7 amounts, reasons, employee/salary detail or event metadata that discloses activity.
 - Test audit target/action/count disclosures as well as detail payload; expose sensitive P7 evidence only through PO-only tables/projections.
-- Strike records, rolling counts, review thresholds and corrections are PO-only. Trainer, WO and Sales are denied through RPC, direct table reads, Realtime/counts and audit surfaces; authorization is checked before resolving strike/source identifiers. Corrections append separately and expose only opaque audit references.
+- Strike records, rolling counts, review thresholds and corrections are PO-only. Trainer, WO and Sales are denied through RPC, direct table reads, Realtime/counts and audit surfaces; authorization is checked before resolving strike/source identifiers. Only the PO may append `void`, `reinstate` or same-workspace breach-time `reattribute` corrections with a required reason; latest correction determines effective state. Audits expose opaque references only. Strike history has no client FK/PII and is independent of point corrections.
 
 ## Required real-role probes
 

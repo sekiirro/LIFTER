@@ -103,7 +103,7 @@ Additional checklists: checklists/requirements.md and checklists/critique.md.
 5. Retain staff attribution and non-PII KPI facts independently of `audit_events`; F26 purge removes client-identifying linkage at its required clock while leaving minimal workforce history needed for totals.
 6. Use the existing F13 refund transaction boundary for one Sales acquisition reversal on any completed partial or full refund. Ask the PO about staff fault only for a full refund, classified against F13 refundable collected funds for that purchase scope; questionnaire decision is once per acquisition.
 7. No Telegram response monitor now. Document post-launch capability findings and the PO-approved future >1 hour / negative 0.5 Timeliness rule; human Trainer reply observability/identity remain unverified.
-8. S70-PO-20 authorizes immutable strike source facts for late initial workout/nutrition plan-pair delivery after persisted F15 D-03, one per client and attributed to the responsible Trainer at the deadline instant. This does not authorize automatic discipline. Correction mechanics and the timestamp/boundary used for rolling-90-day counts remain PO decisions; see P7-MCQ-04/05.
+8. S70-PO-20/R109 authorize immutable strike source facts from persisted F15 D-03; S70-R110 fixes the instant at deadline passage without a successful initial pair, even when no later delivery occurs. Count over exactly 90 x 24 hours with an exclusive lower bound and inclusive upper bound. PO corrections append `void`, `reinstate` latest void, or same-workspace breach-time `reattribute`; latest correction is effective, reason is required, and audit is opaque. These facts do not authorize automatic discipline.
 
 ## Complexity Tracking
 
