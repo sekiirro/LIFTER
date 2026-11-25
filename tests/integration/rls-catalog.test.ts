@@ -105,6 +105,12 @@ const f24Invoker = [
   'f24_guard_entry',
   'f24_guard_publication',
 ];
+const p7Private = [
+  'p7_earn_f19_activation',
+  'p7_lock_period',
+  'p7_month_for_trigger',
+  'p7_reject_mutation',
+];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
   'purge_retention_for_platform_owner',
@@ -383,6 +389,7 @@ describe('tenancy security catalog (T007)', () => {
           ...brandingPrivate,
           ...f23Private,
           ...f24Private,
+          ...p7Private,
           ...f22Private,
           ...privateAuthenticated,
           'p7_payroll_lineage',
@@ -688,6 +695,7 @@ describe('tenancy security catalog (T007)', () => {
         'f18_is_canonical_uuid_v4',
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
+        ...p7Private,
         // F15 T029: D1 erasure cron wrappers declare `security invoker` and enforce
         // the postgres-owner check in the body; only d1_erase_inapplicable_answers
         // is `security definer` (20261215030000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
@@ -753,6 +761,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_client_unit_eligible',
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
+          ...p7Private,
           'f18_guard_plan_version_content',
           'f18_guard_nutrition_selection',
           'audit_package_promotion_period',
@@ -870,6 +879,7 @@ describe('tenancy security catalog (T007)', () => {
             !signupPrivate.includes(row.proname) &&
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
             !f22Private.includes(row.proname) &&
+            !p7Private.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
               'audit_events_immutable',
@@ -2333,6 +2343,11 @@ describe('F19 T021 activation catalog', () => {
       where tgrelid='public.productivity_units'::regclass and not tgisinternal order by tgname`;
     expect(triggers).toEqual([
       {
+        tgname: 'p7_earn_f19_activation_after_insert',
+        type: 5,
+        proname: 'p7_earn_f19_activation',
+      },
+      {
         tgname: 'productivity_units_immutable',
         type: 31,
         proname: 'f19_guard_productivity_unit',
@@ -2360,6 +2375,39 @@ describe('F19 T021 activation catalog', () => {
         proname: 'f19_guard_activation_source',
       },
     ]);
+  });
+});
+
+describe('P7 earned ledger catalog', () => {
+  it('forces RLS, withholds direct access, and keeps client identifiers out of facts', async () => {
+    const [table] = await db`
+      select relrowsecurity, relforcerowsecurity
+      from pg_class where oid='public.p7_earned_points'::regclass`;
+    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    const policies = await db`select * from pg_policies
+      where schemaname='public' and tablename='p7_earned_points'`;
+    expect(policies).toHaveLength(0);
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+      ]) {
+        const [grant] = await db`select has_table_privilege(${role},
+          'public.p7_earned_points', ${privilege}) as allowed`;
+        expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
+      }
+    const [clientId] =
+      await db`select exists(select 1 from information_schema.columns
+      where table_schema='public' and table_name='p7_earned_points' and column_name='client_id') as present`;
+    expect(clientId!.present).toBe(false);
+    const clientForeignKeys = await db`select c.conname from pg_constraint c
+      where c.conrelid='public.p7_earned_points'::regclass and c.contype='f'
+        and c.confrelid in ('public.clients'::regclass, 'public.subscriptions'::regclass,
+          'public.productivity_units'::regclass, 'public.subscription_activations'::regclass)`;
+    expect(clientForeignKeys).toHaveLength(0);
   });
 });
 
