@@ -1,3 +1,14 @@
+<!--
+Sync Impact Report:
+- Version change: 1.19.0 -> 1.20.0 (MINOR)
+- Modified principles:
+  - Principle IV: Approved Scope Only (NON-NEGOTIABLE) — P7 Workforce Management approved by S70-PO-16, superseding earlier v1 P7 deferral; automatic KPI entries exception added to PRD-12 exclusions.
+  - Principle VI: Human-Governed People Decisions — revised to authorize specific PO-approved P7 automatic KPI entries (plan-delay penalty, check-in follow-up delay penalty, sales reversal on refund, post-launch Telegram timeliness penalty); no other people decision is automatic.
+- Added sections: None
+- Removed sections: None
+- Dependent templates/docs: None
+-->
+
 # LIFTER Constitution
 
 This Constitution holds LIFTER's non-negotiable principles. It does not replace the technical plan
@@ -62,10 +73,13 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   invented, and no behavior may be imported from YBS.
 - PRD-12 exclusions MUST NOT be built. Examples: public marketing pages, payment gateway,
   in-app chat/helpdesk/broadcasts, bulk client actions, web workout/meal logging, web progress
-  photos, Hevy, AI-generated alternatives, automatic bonuses/deductions/firing, mandatory 2FA, YBS sync.
+  photos, Hevy, AI-generated alternatives, automatic bonuses/deductions (except the PO-approved P7 automatic KPI entries)/firing, mandatory 2FA, YBS sync.
 - Nutrition templates may be global (PO-managed) or workspace-owned (managed by authorized staff).
   The PO may Make it Global only after private data and references are removed. This is the
   PO-approved D18-1 amendment; template copies and audit must preserve workspace isolation.
+- P7 Workforce Management is approved by S70-PO-16 and supersedes the earlier v1 P7 deferral. Only
+  the automatic KPI entries named in that decision are allowed; no other automatic bonus,
+  deduction, strike consequence or discipline is authorized.
 - Unknown values MUST be marked NEEDS SOURCE CONFIRMATION, never guessed.
 - The pilot MAY sequence features but MUST NOT remove Full Launch scope (D-07).
 
@@ -81,11 +95,13 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 ### VI. Human-Governed People Decisions
 
-- KPIs are decision support only. Incentives, deductions, strikes and termination MUST be
-  explicit, audited Platform Owner decisions. Nothing is automatic.
-- Payroll approval means paid. It is a single, immutable step.
-- Historical attribution and payroll MUST be preserved through access revocation and
-  reassignment.
+- KPIs are decision support only. Additional/manual incentives, deductions, corrections,
+  reattribution, strikes and termination are explicit, audited PO decisions. The PO-approved P7
+  rules may automatically append only: the plan-delay penalty (-1), the check-in follow-up delay
+  penalty (-0.5), the once-per-acquisition Sales-point reversal on refund, and, when implemented
+  post-launch, the Telegram timeliness penalty (-0.5). These entries never change compensation or
+  trigger discipline. Payroll approval means already paid externally and is recorded as an
+  immutable PO action. No other people decision is automatic.
 
 ### VII. Privacy & Health-Data Protection
 
@@ -188,7 +204,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.19.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-16 (S61-PO-1, S61-PO-2; S61-R12, S61-R14)
+**Version**: 1.20.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-25 (S70-PO-16; S70-R95)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
@@ -383,3 +399,13 @@ Changed: (1) Controlled Parallel Development: the concurrent delegated-agent cap
 Unchanged: one executed successful full CI attempt on the exact PR head; all required jobs and executed-steps checks; PR/head binding and run-ID recording; dispatch validity rules; code failure voids the head; infra rerun; flake rule; a new head needs a new attempt; the security scan (`check:secrets`); RLS/authorization/money mutation evidence; full unit and touched integration suites; format gates; architect exact-SHA review; the PO decision rule; the Absolute PO Decision Rule; agent limits (now ten); worktree isolation; and the Sol Medium per-invocation approval.
 
 Sync checklist: `docs/08-agent-workflow.md` and `docs/03-roadmap.md` mirror the changed concurrency cap and standing-approval rule; `docs/04-changes-and-questions.md` records PO S61-PO-1 (second sentence), PO S61-PO-2, and architect mappings S61-R12(2) and S61-R14. No application code, migrations, tests, or CI workflow files changed. Under S61-PO-2 this PR merges under standing approval after the independent architect accepts its exact head with all gates passed.
+
+### Sync impact report and amendment note - 2026-11-25 (S70-PO-16; S70-R95)
+
+MINOR (version 1.19.0 to 1.20.0): P7 Workforce Management approved by S70-PO-16, superseding the earlier v1 P7 deferral; limited automatic KPI entries authorized for plan delay, check-in follow-up delay, sales refund reversal, and post-launch Telegram timeliness. Authority: PO S70-PO-16 (`C:/Users/NEW LAP/.lifter/runs/s70-po/s70-po-16.verbatim.txt`), approving P7 Workforce Management; architect ruling S70-R95 (`C:/Users/NEW LAP/.lifter/runs/s70-p7-critique-rulings.md`, last bullet).
+
+Changed: (1) Principle IV: adds P7 Workforce Management approval superseding v1 P7 deferral, allows only the automatic KPI entries named in S70-PO-16, qualifies PRD-12 "automatic bonuses/deductions" exclusion with the PO-approved P7 exception, and confirms no other automatic bonus, deduction, strike consequence or discipline is authorized. (2) Principle VI: revised to clarify that KPIs are decision support only; additional/manual incentives, deductions, corrections, reattribution, strikes and termination are explicit, audited PO decisions; PO-approved P7 rules may automatically append only the plan-delay penalty (-1), the check-in follow-up delay penalty (-0.5), the once-per-acquisition Sales-point reversal on refund, and, when implemented post-launch, the Telegram timeliness penalty (-0.5); these entries never change compensation or trigger discipline; payroll approval means already paid externally and is recorded as an immutable PO action; no other people decision is automatic.
+
+Unchanged: strict workspace isolation (Principle I); immutable financial truth (Principle II); PO governance and least privilege (Principle III); versioned content (Principle V); privacy and health-data protection (Principle VII); design system UI (Principle VIII); idempotent operations (Principle IX); all platform/delivery constraints; development workflow and quality gates (Spec Kit, mandatory independent critique, agent limits, one green CI attempt per exact head, standing merge approval); and no automated compensation changes, payouts, or disciplinary termination.
+
+Sync checklist: Dependent templates/docs: None. No `.specify/templates/*`, `.claude/skills/*`, or application documents require updates for this amendment; P7 implementation is tracked in its own feature branch and PRs.
