@@ -30,7 +30,7 @@
 - [ ] **T016 [FR-009, FR-020]** RED/GREEN: add monthly PO reminder through existing notification/outbox, unique workspace+month dedup, behind existing scheduler activation gates; notification has no sensitive P7 details.
 - [x] **T017 [FR-028, FR-020]** RED/GREEN: add PO-only manual monetary incentive/deduction/correction inputs in exact minor units and currency with immutable lineage; points never populate money; no automatic salary deduction. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (exact minor units/lineage, idempotency, concurrency, staff authorization), 64/64 focused integration tests passed.
 - [ ] **T018 [FR-029]** Before monthly-quality/payroll UI slice, prepare and approve the AR/EN screen batch; track copy approvals screen by screen.
-- [ ] **T019 [FR-008, FR-028, FR-029]** Implement salary UI after T018: one monthly salary per person, market-allowed currency, platform-PO ownership, provisioning and own-compensation-only staff view; WO excluded.
+- [x] **T019 [FR-008, FR-028, FR-029]** Implement salary UI after T018: one monthly salary per person, market-allowed currency, platform-PO ownership, provisioning and own-compensation-only staff view; WO excluded. Verified: a4022345b9575cda0868d0e95013e06603bc4fe6, `tests/unit/payroll-actions.test.ts`, `tests/unit/payroll-money.test.ts`, `tests/unit/payroll-ui.test.tsx` (PO basic salary, manual adjustments, snapshot review & external approval, role denial, bilingual copy), 27/27 unit tests passed.
 
 ## Slice D - Sales acquisition, funnel and refund accounting (target 250-400 changed lines)
 
