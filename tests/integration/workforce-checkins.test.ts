@@ -613,6 +613,13 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
         await tx`update public.clients set deactivated_at=clock_timestamp()-interval '31 days',
         deactivation_reason='closure' where id=${doubleClick.clientId}`;
         await tx`set local session_replication_role = origin`;
+        // Keep concurrent integration fixtures isolated while exercising the real
+        // F26 apply path for this client inside the rollback-only transaction.
+        await tx.unsafe(`create or replace function app_private.p7_retention_has_open_dispute(
+        p_workspace_id uuid,p_client_id uuid
+      ) returns boolean language sql stable security invoker set search_path = '' as $$
+        select p_client_id <> '${doubleClick.clientId}'::uuid
+      $$`);
 
         const runId = randomUUID();
         const [purge] = await tx`
@@ -621,7 +628,7 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
         expect(purge!.result).toMatchObject({ status: 'applied' });
         expect(
           (purge!.result as { eligible_clients: number }).eligible_clients,
-        ).toBeGreaterThan(0);
+        ).toBe(1);
         expect(
           (purge!.result as { deleted_by_table: Record<string, number> })
             .deleted_by_table['app_private.workforce_checkin_transitions'],
