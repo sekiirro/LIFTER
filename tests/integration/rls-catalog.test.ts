@@ -17,6 +17,7 @@ const signupPrivate = [
   'purge_client_signup_attempts',
   'purge_retention_for_platform_owner',
   'purge_retention_candidates',
+  'purge_retention_candidates_pre_p7_dispute_hold',
   'purge_retention_apply',
   'purge_retention_apply_non_audit',
   'purge_retention_pseudonymize_audit',
@@ -118,6 +119,7 @@ const p7Private = [
   'p7_lock_period',
   'p7_month_for_trigger',
   'p7_reject_mutation',
+  'p7_retention_has_open_dispute',
 ];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
@@ -673,6 +675,7 @@ describe('tenancy security catalog (T007)', () => {
         'normalize_staff_display_name',
         'operation_key_fields_immutable',
         'purge_retention_candidates',
+        'purge_retention_candidates_pre_p7_dispute_hold',
         'purge_f11_retained_data',
         'purge_retention_apply',
         'purge_retention_apply_non_audit',
