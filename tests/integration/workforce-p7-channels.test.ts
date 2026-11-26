@@ -1,11 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  admin,
-  anonClient,
-  checked,
-  sql,
-} from './harness';
+import { admin, anonClient, checked, sql } from './harness';
 import { clientContext, graph } from './registration-approval-fixture';
 
 const db = sql();
