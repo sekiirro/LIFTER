@@ -1,10 +1,11 @@
-﻿# Specification Analysis Report: P7 Workforce Management
+# Specification Analysis Report: P7 Workforce Management
 
 **Re-analyzed**: 2026-11-25 14:07 UTC, after S70-R110 requirement clarification across spec, plan, model, contracts, task, and decision register
 **Re-analyzed**: 2026-11-25 03:29 UTC, after final edits to all specification, planning, contract, task and checklist artifacts
 **Re-analyzed after docs union**: 2026-11-26 UTC, after merging origin/main into the PR #339 docs branch (architect-approved S70-R121). tasks.md checkbox states and traceability.md evidence rows were revalidated as a union; no requirement text, scope or product decision changed. Open CRITICAL: 0. Open HIGH: 0.
 **Re-analyzed after docs union**: 2026-11-26 UTC, after merging origin/main into the PR #340 docs branch (architect-approved S70-R121). tasks.md checkbox states and traceability.md evidence rows were revalidated as a union; no requirement text, scope or product decision changed. Open CRITICAL: 0. Open HIGH: 0.
-**Inputs reviewed**: spec.md, plan.md, tasks.md, research.md, data-model.md, both contracts, quickstart.md, traceability.md, copy-table.md, requirements.md, po-mcqs.md, critique.md, S70-R95, S70-PO-18, S70-PO-20 and S70-R109
+**Re-analyzed after copy-fix union**: 2026-11-26 UTC, after merging origin/main into PR #345 and union-resolving tasks.md/traceability.md/analyze.md; T006 copy-fix evidence retained. No requirement text, scope or product decision changed. Open CRITICAL: 0. Open HIGH: 0.
+**Inputs reviewed**: spec.md, plan.md, tasks.md, research.md, data-model.md, both contracts, quickstart.md, traceability.md, copy-table.md, requirements.md, po-mcqs.md, critique.md, S70-R95, S70-PO-18, S70-PO-20, S70-R109, S70-PO-24 and S70-R122
 **Method**: cross-artifact Spec Kit analysis. Tasks are plans; no implementation or test completion is claimed.
 
 ## Findings and status
