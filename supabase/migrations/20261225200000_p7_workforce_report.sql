@@ -134,64 +134,77 @@ begin
     where a.workspace_id = p_workspace_id and a.effective_month = p_month
 
     order by recorded_at desc, id desc
+  ),
+  aggregated_totals as (
+    select
+      coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'staff_user_id', staff_user_id,
+            'role', role,
+            'display_name', display_name,
+            'points', points::numeric(10,2)::text,
+            'is_negative', points < 0
+          )
+        ), '[]'::jsonb
+      ) as all_totals,
+      coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'staff_user_id', staff_user_id,
+            'role', role,
+            'display_name', display_name,
+            'points', points::numeric(10,2)::text,
+            'is_negative', points < 0
+          )
+        ) filter (where role = 'trainer'), '[]'::jsonb
+      ) as trainer_totals,
+      coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'staff_user_id', staff_user_id,
+            'role', role,
+            'display_name', display_name,
+            'points', points::numeric(10,2)::text,
+            'is_negative', points < 0
+          )
+        ) filter (where role = 'sales'), '[]'::jsonb
+      ) as sales_totals
+    from staff_summary
+  ),
+  aggregated_ledger as (
+    select
+      coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'id', id,
+            'staff_user_id', staff_user_id,
+            'staff_role', staff_role,
+            'staff_name', staff_name,
+            'category', category,
+            'points', points,
+            'effective_month', effective_month,
+            'original_month', original_month,
+            'actor', actor,
+            'recorded_at', recorded_at,
+            'reason_code', reason_code
+          )
+        ), '[]'::jsonb
+      ) as ledger
+    from ledger_items
   )
   select
-    coalesce(
-      jsonb_agg(
-        jsonb_build_object(
-          'staff_user_id', staff_user_id,
-          'role', role,
-          'display_name', display_name,
-          'points', points::numeric(10,2)::text,
-          'is_negative', points < 0
-        )
-      ), '[]'::jsonb
-    ) into result_totals from staff_summary;
-
-  select
-    coalesce(
-      jsonb_agg(
-        jsonb_build_object(
-          'staff_user_id', staff_user_id,
-          'role', role,
-          'display_name', display_name,
-          'points', points::numeric(10,2)::text,
-          'is_negative', points < 0
-        )
-      ) filter (where role = 'trainer'), '[]'::jsonb
-    ) into result_trainers from staff_summary;
-
-  select
-    coalesce(
-      jsonb_agg(
-        jsonb_build_object(
-          'staff_user_id', staff_user_id,
-          'role', role,
-          'display_name', display_name,
-          'points', points::numeric(10,2)::text,
-          'is_negative', points < 0
-        )
-      ) filter (where role = 'sales'), '[]'::jsonb
-    ) into result_sales from staff_summary;
-
-  select
-    coalesce(
-      jsonb_agg(
-        jsonb_build_object(
-          'id', id,
-          'staff_user_id', staff_user_id,
-          'staff_role', staff_role,
-          'staff_name', staff_name,
-          'category', category,
-          'points', points,
-          'effective_month', effective_month,
-          'original_month', original_month,
-          'actor', actor,
-          'recorded_at', recorded_at,
-          'reason_code', reason_code
-        )
-      ), '[]'::jsonb
-    ) into result_ledger from ledger_items;
+    a.all_totals,
+    a.trainer_totals,
+    a.sales_totals,
+    l.ledger
+  into
+    result_totals,
+    result_trainers,
+    result_sales,
+    result_ledger
+  from aggregated_totals a
+  cross join aggregated_ledger l;
 
   return jsonb_build_object(
     'workspace_id', p_workspace_id,
