@@ -1545,4 +1545,14 @@ export const en: Record<keyof typeof ar, string> = {
     'Your password wasn’t changed. Request a new reset link and try again.',
   'auth.resetCheckLogin':
     'We couldn’t confirm whether your password changed. Try signing in with your new password. If it doesn’t work, request a new reset link.',
+  'workforce.salesProjection.title': 'My monthly total',
+  'workforce.salesProjection.total': 'Finalized total',
+  'workforce.salesProjection.notAvailable': 'Not available yet',
+  'workforce.salesProjection.notAvailableHint':
+    'This total appears after the month ends and the PO finalizes it.',
+  'workforce.salesProjection.empty': 'No finalized total for this month.',
+  'workforce.salesProjection.loading': 'Loading your monthly total…',
+  'workforce.salesProjection.loadError':
+    'Unable to load your monthly total. Try again.',
+  'workforce.salesProjection.denied': 'You cannot view this total.',
 };

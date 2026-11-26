@@ -1500,4 +1500,14 @@ export const ar = {
     'كلمة السر بتاعتك ما اتغيّرتش. اطلب لينك جديد وحاول تاني.',
   'auth.resetCheckLogin':
     'مقدرناش نتأكد لو كلمة السر بتاعتك اتغيّرت ولا لأ. جرّب تسجّل دخول بكلمة السر الجديدة. لو ما نفعش، اطلب لينك جديد لتغيير كلمة السر.',
+  'workforce.salesProjection.title': 'إجمالي نقاطي للشهر',
+  'workforce.salesProjection.total': 'الإجمالي المعتمد',
+  'workforce.salesProjection.notAvailable': 'مش متاح لسه',
+  'workforce.salesProjection.notAvailableHint':
+    'الإجمالي بيظهر بعد ما الشهر يخلص ومالك المنصة يعتمده.',
+  'workforce.salesProjection.empty': 'مفيش إجمالي معتمد للشهر ده.',
+  'workforce.salesProjection.loading': 'بنحمّل إجمالي الشهر…',
+  'workforce.salesProjection.loadError':
+    'مش عارفين نحمّل إجمالي الشهر. حاول تاني.',
+  'workforce.salesProjection.denied': 'مش مسموح لك تشوف الإجمالي ده.',
 } as const;

@@ -2441,6 +2441,23 @@ describe('P7 earned ledger and monthly close catalog', () => {
     });
     expect(finalizer!.proconfig).toContain('search_path=""');
   });
+
+  it('restricts Sales monthly projection RPC to authenticated callers with search_path=""', async () => {
+    const [proc] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='public.p7_get_sales_monthly_total(uuid,date,uuid)'::regprocedure`;
+    expect(proc).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(proc!.proconfig).toContain('search_path=""');
+  });
 });
 
 describe('F13 T044a Sales productivity catalog', () => {
