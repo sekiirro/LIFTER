@@ -38,6 +38,51 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
     });
   });
 
+  it('keeps the immutable earned-ledger triggers enabled after migration', async () => {
+    const [triggers] = await db`
+      select array_agg(tgenabled order by tgname) as states
+      from pg_trigger
+      where tgrelid='public.p7_earned_points'::regclass
+        and tgname in ('p7_earned_points_immutable','p7_earned_points_no_truncate')`;
+    expect(triggers!.states).toEqual(['O', 'O']);
+    const [lineage] = await db`
+      select count(*)::int as invalid
+      from public.p7_earned_points
+      where original_month is null
+        or original_month <> app_private.p7_month_for_trigger(trigger_at)`;
+    expect(lineage!.invalid).toBe(0);
+  });
+
+  it('rejects earned-ledger UPDATE, DELETE, and TRUNCATE mutations', async () => {
+    const context = await clientContext();
+    const [period] = await db`
+      select date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date::text as month`;
+    const sourceKey = randomUUID();
+    await db`
+      insert into public.p7_earned_points(workspace_id,staff_user_id,points,effective_month,
+        trigger_at,rule_version,source_key,source_hash)
+      values(${context.wsA.id},${context.trainerA.userId},1.00,${period!.month},
+        statement_timestamp(),'p7-test-v1',${sourceKey},'immutability-test')`;
+
+    await expect(db`
+      update public.p7_earned_points set points=2.00
+      where workspace_id=${context.wsA.id} and source_key=${sourceKey}`).rejects.toThrow(
+      'p7_ledger_immutable',
+    );
+    await expect(db`
+      delete from public.p7_earned_points
+      where workspace_id=${context.wsA.id} and source_key=${sourceKey}`).rejects.toThrow(
+      'p7_ledger_immutable',
+    );
+    await expect(db`truncate public.p7_earned_points`).rejects.toThrow(
+      'p7_ledger_immutable',
+    );
+    const [row] = await db`
+      select points::text as points from public.p7_earned_points
+      where workspace_id=${context.wsA.id} and source_key=${sourceKey}`;
+    expect(row!.points).toBe('1.00');
+  });
+
   it('assigns the Cairo trigger month across local midnight', async () => {
     const [boundary] = await db`
       with local_midnight as (
