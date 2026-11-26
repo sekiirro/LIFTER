@@ -37,7 +37,11 @@ async function salesAcquisition() {
   const f = await registrationFixture();
   const link = checked(await issue(f, f.salesA.client)) as string;
   const target = await db.begin(async (tx) => {
-    const client = await pending(tx, f, { registration_link_id: link });
+    const client = await pending(
+      tx,
+      { ...f, link },
+      { registration_link_id: link },
+    );
     return {
       id: client.id as string,
       userId: client.auth_user_id as string,
@@ -47,7 +51,11 @@ async function salesAcquisition() {
       password: 'Synthetic-only',
     };
   });
-  const approved = await call(f.po.client, 'approve', request(f, target));
+  const approved = await call(
+    f.po.client,
+    'approve',
+    request({ ...f, link }, target),
+  );
   return { f, target, approved };
 }
 

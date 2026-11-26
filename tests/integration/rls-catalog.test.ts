@@ -2455,7 +2455,7 @@ describe('P7 T022/T023 Sales refund security catalog', () => {
       });
       const policies =
         await db`select * from pg_policies where schemaname='public'
-        and tablename=${relation.split('.')[1]}`;
+        and tablename=${relation.slice('public.'.length)}`;
       expect(policies, relation).toHaveLength(0);
       for (const role of ['anon', 'authenticated', 'service_role'])
         for (const privilege of [
