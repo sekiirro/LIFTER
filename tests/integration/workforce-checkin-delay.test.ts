@@ -19,13 +19,20 @@ async function asUser<T>(tx: Tx, userId: string, run: (sp: Tx) => Promise<T>) {
   })) as T;
 }
 
-async function evaluator(workspaceId: string, jwtRole = 'service_role') {
+async function evaluator(
+  workspaceId: string,
+  jwtRole = 'service_role',
+  userId?: string,
+) {
   const connection = sql();
   try {
     return await connection.begin(async (tx) => {
-      await tx`select set_config('request.jwt.claims',${JSON.stringify({ role: jwtRole })},true)`;
+      await tx`select set_config(
+        'request.jwt.claims',
+        ${JSON.stringify({ role: jwtRole, ...(userId ? { sub: userId } : {}) })},true)`;
       await tx`set local role service_role`;
-      const [row] = await tx`select public.run_p7_checkin_delay_evaluator(${workspaceId}) as result`;
+      const [row] =
+        await tx`select public.run_p7_checkin_delay_evaluator(${workspaceId}) as result`;
       await tx`reset role`;
       return row!.result;
     });
@@ -34,13 +41,15 @@ async function evaluator(workspaceId: string, jwtRole = 'service_role') {
   }
 }
 
-async function checkinFixture(options: {
-  ageHours?: number;
-  ageDays?: number;
-  exactFollowup?: boolean;
-  submitted?: boolean;
-  reassignAfterBreach?: boolean;
-} = {}) {
+async function checkinFixture(
+  options: {
+    ageHours?: number;
+    ageDays?: number;
+    exactFollowup?: boolean;
+    submitted?: boolean;
+    reassignAfterBreach?: boolean;
+  } = {},
+) {
   const f = await clientContext();
   return db.begin(async (tx) => {
     const ids = await graph(tx, f);
@@ -81,10 +90,15 @@ async function checkinFixture(options: {
     await tx`insert into public.form_versions(
       workspace_id,form_id,version_number,terms_policy_version,definition,status
     ) values(${f.wsA.id},${formId},1,${terms},${tx.json(definition as JSONValue)},'published')`;
-    const config = await asUser(tx, f.trainerA.userId, (sp) =>
-      sp`select public.configure_weekly_checkin_form(${f.wsA.id},${formId},1)`,
+    const config = await asUser(
+      tx,
+      f.trainerA.userId,
+      (sp) =>
+        sp`select public.configure_weekly_checkin_form(${f.wsA.id},${formId},1)`,
     );
-    expect(config[0]?.configure_weekly_checkin_form).toMatchObject({ status: 'configured' });
+    expect(config[0]?.configure_weekly_checkin_form).toMatchObject({
+      status: 'configured',
+    });
     await tx`select app_private.f23_weekly_checkin_run(${today}::date)`;
     const [assignment] = await tx`
       select id from public.form_assignments
@@ -101,9 +115,10 @@ async function checkinFixture(options: {
           and user_id=${f.trainerA.userId}) as trainer_a_membership,
         (select id from public.workspace_memberships where workspace_id=${f.wsA.id}
           and user_id=${f.trainerB.userId}) as trainer_b_membership`;
-    const ageHours = options.ageDays === undefined
-      ? (options.ageHours ?? 26)
-      : options.ageDays * 24;
+    const ageHours =
+      options.ageDays === undefined
+        ? (options.ageHours ?? 26)
+        : options.ageDays * 24;
     await tx`insert into public.client_trainer_assignments(
       workspace_id,client_id,trainer_user_id,assigned_by,assigned_at,workspace_membership_id
     ) values(${f.wsA.id},${ids.client},${f.trainerA.userId},${f.po.userId},
@@ -111,13 +126,13 @@ async function checkinFixture(options: {
       ${memberships!.trainer_a_membership})`;
     if (options.reassignAfterBreach) {
       await tx`update public.client_trainer_assignments
-        set ended_at=clock_timestamp() - (${ageHours} * interval '1 hour') + interval '30 minutes',
+        set ended_at=clock_timestamp() - (${ageHours} * interval '1 hour') + interval '24 hours 30 minutes',
           ended_by=${f.po.userId}
         where workspace_id=${f.wsA.id} and client_id=${ids.client} and ended_at is null`;
       await tx`insert into public.client_trainer_assignments(
         workspace_id,client_id,trainer_user_id,assigned_by,assigned_at,workspace_membership_id
       ) values(${f.wsA.id},${ids.client},${f.trainerB.userId},${f.po.userId},
-        clock_timestamp() - (${ageHours} * interval '1 hour') + interval '30 minutes',
+        clock_timestamp() - (${ageHours} * interval '1 hour') + interval '24 hours 30 minutes',
         ${memberships!.trainer_b_membership})`;
     }
 
@@ -168,23 +183,45 @@ describe('P7 T010/T011 check-in delay occurrence', () => {
     const [month] = await db`
       select app_private.p7_month_for_trigger(${source!.due_at}::timestamptz)::text as month`;
     expect(rows[0]!.original_month).toBe(month!.month);
+    expect(rows[0]!.effective_month).toBe(month!.month);
+    const [audit] = await db`
+      select action,target_table,details from public.audit_events where target_id=${rows[0]!.id}::uuid`;
+    expect(audit).toEqual({
+      action: 'workforce.checkin_delay_penalty_recorded',
+      target_table: 'p7_adjustment_entries',
+      details: { reference: f.assignmentId },
+    });
+    await expect(
+      db`update public.p7_adjustment_entries set points=-1.00 where id=${rows[0]!.id}::uuid`,
+    ).rejects.toThrow('p7_ledger_immutable');
+    await expect(
+      db`delete from public.p7_adjustment_entries where id=${rows[0]!.id}::uuid`,
+    ).rejects.toThrow('p7_ledger_immutable');
   });
 
   it('does not penalize an exact 24-hour follow-up or client lateness without submission', async () => {
     const exact = await checkinFixture({ ageHours: 24, exactFollowup: true });
     const noSubmission = await checkinFixture({ submitted: false });
+    await evaluator(exact.f.wsB.id);
     await evaluator(exact.workspaceId);
     await evaluator(noSubmission.workspaceId);
-    expect(await penalty(exact.workspaceId, exact.assignmentId)).toHaveLength(0);
-    expect(await penalty(noSubmission.workspaceId, noSubmission.assignmentId)).toHaveLength(0);
+    expect(await penalty(exact.workspaceId, exact.assignmentId)).toHaveLength(
+      0,
+    );
+    expect(
+      await penalty(noSubmission.workspaceId, noSubmission.assignmentId),
+    ).toHaveLength(0);
   });
 
   it('converges a late confirmation and the evaluator on one occurrence', async () => {
     const f = await checkinFixture();
-    const confirmed = await f.f.trainerA.client.rpc('confirm_trainer_checkin_followup', {
-      p_workspace_id: f.workspaceId,
-      p_assignment_id: f.assignmentId,
-    });
+    const confirmed = await f.f.trainerA.client.rpc(
+      'confirm_trainer_checkin_followup',
+      {
+        p_workspace_id: f.workspaceId,
+        p_assignment_id: f.assignmentId,
+      },
+    );
     expect(confirmed.error).toBeNull();
     await evaluator(f.workspaceId);
     const rows = await penalty(f.workspaceId, f.assignmentId);
@@ -198,14 +235,23 @@ describe('P7 T010/T011 check-in delay occurrence', () => {
       select array_agg(status order by occurred_at,status) as statuses
       from app_private.workforce_checkin_transitions
       where workspace_id=${f.workspaceId} and assignment_id=${f.assignmentId}`;
-    expect(history!.statuses).toEqual(['Late', 'Followed Up']);
+    expect(history!.statuses).toEqual(['Pending', 'Late', 'Followed Up']);
   });
 
   it('serializes concurrent catch-up calls and rejects an authenticated Trainer operator call', async () => {
     const f = await checkinFixture();
-    await Promise.all([evaluator(f.workspaceId), evaluator(f.workspaceId)]);
+    const [confirmed] = await Promise.all([
+      f.f.trainerA.client.rpc('confirm_trainer_checkin_followup', {
+        p_workspace_id: f.workspaceId,
+        p_assignment_id: f.assignmentId,
+      }),
+      evaluator(f.workspaceId),
+    ]);
+    expect(confirmed.error).toBeNull();
     expect(await penalty(f.workspaceId, f.assignmentId)).toHaveLength(1);
-    await expect(evaluator(f.workspaceId, 'authenticated')).rejects.toMatchObject({ code: '42501' });
+    await expect(
+      evaluator(f.workspaceId, 'authenticated', f.f.trainerA.userId),
+    ).rejects.toMatchObject({ code: '42501' });
   });
 
   it('routes a catch-up penalty from a finalized month into the current open month', async () => {

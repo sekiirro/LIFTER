@@ -393,6 +393,8 @@ describe('tenancy security catalog (T007)', () => {
           ...f23Private,
           ...f24Private,
           ...p7Private,
+          'p7_checkin_late_penalty_after_insert',
+          'p7_record_checkin_delay_penalty',
           ...f22Private,
           ...privateAuthenticated,
           'p7_payroll_lineage',
@@ -882,6 +884,8 @@ describe('tenancy security catalog (T007)', () => {
               'capture_workforce_checkin_pending',
               'guard_workforce_checkin_transition',
               'guard_workforce_checkin_transition_truncate',
+              'p7_checkin_late_penalty_after_insert',
+              'p7_record_checkin_delay_penalty',
             ].includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
@@ -2460,7 +2464,25 @@ describe('P7 earned ledger and monthly close catalog', () => {
       service_role: true,
     });
     expect(evaluator!.proconfig).toContain('search_path=""');
-    expect(evaluator!.definition).toContain("auth.role() IS DISTINCT FROM 'service_role'");
+    expect(evaluator!.definition.toLowerCase()).toContain(
+      "auth.role() is distinct from 'service_role'",
+    );
+    const [penalty] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'app_private.p7_record_checkin_delay_penalty(uuid,uuid)'::regprocedure) as definition`;
+    const source = penalty!.definition.toLowerCase();
+    expect(source.indexOf('for update of s')).toBeGreaterThanOrEqual(0);
+    expect(source.indexOf('for update of s')).toBeLessThan(
+      source.indexOf('f11.responsible_trainer.workspace:'),
+    );
+    expect(source.indexOf('f11.responsible_trainer.workspace:')).toBeLessThan(
+      source.indexOf('app_private.p7_lock_period'),
+    );
+    const clientForeignKeys = await db`
+      select c.conname from pg_constraint c
+      where c.conrelid='public.p7_adjustment_entries'::regclass and c.contype='f'
+        and c.confrelid='public.clients'::regclass`;
+    expect(clientForeignKeys).toHaveLength(0);
   });
 });
 
@@ -3160,6 +3182,12 @@ describe('P7 T002/T004 check-in transition security catalog', () => {
         and not t.tgisinternal order by t.tgname
     `;
     expect(triggers).toEqual([
+      {
+        tgname: 'p7_checkin_late_penalty_after_insert',
+        proname: 'p7_checkin_late_penalty_after_insert',
+        tgtype: 5,
+        tgenabled: 'O',
+      },
       {
         tgname: 'workforce_checkin_transitions_append_only',
         proname: 'guard_workforce_checkin_transition',
