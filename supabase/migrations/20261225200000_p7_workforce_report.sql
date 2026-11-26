@@ -18,7 +18,8 @@ begin
   -- Deny without workspace existence disclosure.
   if actor is null
     or not coalesce(app_private.is_platform_owner(), false)
-    or not coalesce(app_private.has_workspace_access(p_workspace_id, null), false) then
+    or not coalesce(app_private.has_workspace_access(p_workspace_id, null), false)
+    or not exists (select 1 from public.workspaces w where w.id = p_workspace_id) then
     raise exception 'not_permitted' using errcode = '42501';
   end if;
 
@@ -60,9 +61,9 @@ begin
     where a.workspace_id = p_workspace_id and a.effective_month = p_month
     union
     -- Staff present in snapshot totals if month is closed
-    select key::uuid as staff_user_id, sp.role, sp.display_name
-    from jsonb_each_text(coalesce(snapshot_row.totals, '{}'::jsonb))
-    join public.staff_profiles sp on sp.user_id = key::uuid
+    select t.key::uuid as staff_user_id, sp.role, sp.display_name
+    from pg_catalog.jsonb_each_text(coalesce(snapshot_row.totals, '{}'::jsonb)) as t(key, value)
+    join public.staff_profiles sp on sp.user_id = t.key::uuid
   ),
   entries as (
     select e.staff_user_id, e.points
