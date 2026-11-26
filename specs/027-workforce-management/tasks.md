@@ -1,15 +1,15 @@
-# Tasks: P7 Workforce Management
+﻿# Tasks: P7 Workforce Management
 
 **Input**: spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md
-**Lane**: documentation-only; no application code, migrations, stack work or tests in this spec round. All implementation tasks remain unchecked.
+**Lane**: Check-ins backend implementation (T001-T004). UI and later KPI/penalty slices remain deferred to their assigned tasks.
 **Authority**: S70-PO-16, S70-R95, S70-PO-18 and S70-PO-1 item 3. Product decisions in these records are closed; do not reopen them.
 
 ## Slice A - Contract and authorization foundation (target 250-400 changed lines)
 
-- [ ] **T001 [FR-001-FR-029]** Verify current F10/F11/F12/F13/F15/F19/F20/F23/F26 source schemas and authorization seams; implement approved behavior from spec and record actual sources. No product-policy decision remains open.
-- [ ] **T002 [FR-004, FR-012, FR-017, FR-020, FR-024, FR-025]** RED: add PO/WO/Trainer/Sales authorization fixtures, revocation races, direct audit reader inventory, Realtime/count/HEAD/export/cache/replay channel inventory, and non-disclosing denial tests.
-- [ ] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged.
-- [ ] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits.
+- [x] **T001 [FR-001-FR-029]** Verify current F10/F11/F12/F13/F15/F19/F20/F23/F26 source schemas and authorization seams; implement approved behavior from spec and record actual sources. No product-policy decision remains open. Verified: source inventory in the lane report; Stack B RLS catalog and check-in integration suite passed on 25c77dc8.
+- [x] **T002 [FR-004, FR-012, FR-017, FR-020, FR-024, FR-025]** RED: add PO/WO/Trainer/Sales authorization fixtures, revocation races, direct audit reader inventory, Realtime/count/HEAD/export/cache/replay channel inventory, and non-disclosing denial tests. Verified: workforce-checkins.test.ts role denials, audit/channel probes and two revocation-wait races; rls-catalog.test.ts P7 catalog probe; 76 focused integration tests passed on 25c77dc8.
+- [x] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged. Verified: workforce-checkins.test.ts same-workspace Trainer projection and client-directory-assignment.test.ts; 76 focused integration tests passed on 25c77dc8.
+- [x] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits. Verified: workforce-checkins.test.ts Late history, F15-audited latest answer snapshot, confirmation idempotency/concurrency, F26 purge-context deletion and both authorization-wait races; Stack B focused suite passed on 25c77dc8 (3 files / 76 tests).
 - [ ] **T005 [FR-029]** Before the Check-ins UI slice, prepare its complete AR/EN screen-state copy batch and obtain PO approval; record approval identifiers in the copy table.
 - [ ] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts.
 
@@ -50,8 +50,8 @@
 
 ## Slice F - Retention, audit and channel confidentiality (target 250-400 changed lines)
 
-- [ ] **T030 [FR-018, FR-020]** RED: test durable KPI totals before/after client purge, no client FK/PII in retained earned ledger, and complete F26 FK closure.
-- [ ] **T031 [FR-018, FR-020]** GREEN: add client-linked P7 follow-up/questionnaire relations to the narrow F26 purge allowlist and a tested unlink path; never purge staff ledger rows. Persist open follow-up disputes/full-refund reviews as tied-record holds; resolution restarts the 30-day clock.
+- [x] **T030 [FR-018, FR-020]** RED: test durable KPI totals before/after client purge, no client FK/PII in retained earned ledger, and complete F26 FK closure. Verified: `066f54a6624e129d08bdd7999ecc2fffbbb56c85` (tests introduced in `ca56d2e1`), `tests/integration/workforce-checkins.test.ts::T030/T031 purges linked P7 check-ins and preserves durable earned totals`; Stack C focused integration passed, 8/8 check-in tests, 1/1 F15 cascade regression, and 59/59 hold/RLS tests.
+- [x] **T031 [FR-018, FR-020]** GREEN: add client-linked P7 follow-up/questionnaire relations to the narrow F26 purge allowlist and a tested unlink path; never purge staff ledger rows. Verified for P7 objects on main: `066f54a6624e129d08bdd7999ecc2fffbbb56c85`, `tests/integration/workforce-checkins.test.ts::allows transition deletion only inside the F26 allowlisted purge context`, `tests/integration/retention-purge-hold-restart.test.ts::T031 leaves a tested P7 dispute-hold extension point without inventing a dispute model`; Stack C focused integration passed, 8/8 check-in tests, 1/1 F15 cascade regression, and 59/59 hold/RLS tests. The dispute and full-refund review models do not exist on main; the extension point and TODOs are recorded in traceability.md.
 - [ ] **T032 [FR-024, FR-025, FR-012, FR-017]** RED/GREEN: audit-event details contain opaque reference only; preserve unrelated WO audit access. Test direct audit reads, Realtime/publications, broadcast, HEAD/count/existence, notifications, search, exports, caches, errors and role changes with real roles.
 
 ## Slice G - Strikes, departure and final UI / verification (target 250-400 changed lines per PR)
