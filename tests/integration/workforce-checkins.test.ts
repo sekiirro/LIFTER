@@ -605,6 +605,7 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
           'rule_version',
           'source_key',
           'source_hash',
+          'original_month',
         ]);
 
         const sourceKey = randomUUID();

@@ -1545,7 +1545,39 @@ export const en: Record<keyof typeof ar, string> = {
     'Your password wasn’t changed. Request a new reset link and try again.',
   'auth.resetCheckLogin':
     'We couldn’t confirm whether your password changed. Try signing in with your new password. If it doesn’t work, request a new reset link.',
-  // spec 027 workforce payroll / salary (Batch P7-CB-03)
+  'workforce.checkin.title': 'Weekly check-ins',
+  'workforce.checkin.column.actions': 'Actions',
+  'workforce.checkin.column.platform': 'Platform',
+  'workforce.checkin.column.formSchedule': 'Form schedule',
+  'workforce.checkin.column.submittedAt': 'Submitted at',
+  'workforce.checkin.column.deadline': 'Follow-up deadline',
+  'workforce.checkin.column.followedUpAt': 'Followed up at',
+  'workforce.checkin.formStatus.scheduled': 'Scheduled',
+  'workforce.checkin.formStatus.awaitingClient': 'Awaiting client',
+  'workforce.checkin.formStatus.clientOverdue': 'Client overdue',
+  'workforce.checkin.formStatus.submitted': 'Submitted',
+  'workforce.checkin.followStatus.pending': 'Pending',
+  'workforce.checkin.followStatus.followedUp': 'Followed up',
+  'workforce.checkin.followStatus.late': 'Late',
+  'workforce.checkin.followStatus.disputed': 'Disputed',
+  'workforce.checkin.followUp.action': 'Mark followed up',
+  'workforce.checkin.followUp.confirmTitle': 'Confirm follow-up?',
+  'workforce.checkin.followUp.confirmBody':
+    'This confirms you reviewed the check-in and followed up on Telegram.',
+  'workforce.checkin.followUp.success': 'Follow-up recorded.',
+  'workforce.checkin.followUp.error':
+    'Could not record the follow-up. Try again.',
+  'workforce.checkin.followUp.alreadyRecorded':
+    'Follow-up was already recorded. Refresh the list.',
+  'workforce.checkin.lateWarning':
+    'Past the 24-hour deadline. Late stays in history after follow-up.',
+  'workforce.checkin.empty': 'No check-ins for this period.',
+  'workforce.checkin.noResults': 'No check-ins match these filters.',
+  'workforce.checkin.loading': 'Loading check-ins…',
+  'workforce.checkin.loadError': 'Unable to load check-ins. Try again.',
+  'workforce.checkin.denied': 'You cannot view check-ins.',
+  'workforce.checkin.filter.formStatus': 'Form status',
+  'workforce.checkin.filter.followUpStatus': 'Follow-up status',
   'workforce.salary.title': 'Basic salary',
   'workforce.salary.market': 'Market',
   'workforce.salary.currencyHint':

@@ -19,6 +19,19 @@ let primaryFoodId: string;
 let altFood1Id: string;
 let altFood2Id: string;
 
+function containsJsonValueOrKey(value: unknown, forbidden: string): boolean {
+  if (Array.isArray(value)) {
+    return value.some((entry) => containsJsonValueOrKey(entry, forbidden));
+  }
+  if (typeof value === 'object' && value !== null) {
+    return Object.entries(value).some(
+      ([key, entry]) =>
+        key === forbidden || containsJsonValueOrKey(entry, forbidden),
+    );
+  }
+  return value === forbidden || value === Number(forbidden);
+}
+
 async function createAuthClientUser(): Promise<{
   client: SupabaseClient;
   authUserId: string;
@@ -219,6 +232,17 @@ beforeAll(async () => {
 afterAll(async () => db?.end());
 
 describe('F18 T010 select_nutrition_alternative', () => {
+  it('checks forbidden values and keys without matching identifier substrings', () => {
+    expect(
+      containsJsonValueOrKey(
+        { revision_id: 'f208d2ab-abc1-4a22-8222-222222222222' },
+        '208',
+      ),
+    ).toBe(false);
+    expect(containsJsonValueOrKey({ quantity: 208 }, '208')).toBe(true);
+    expect(containsJsonValueOrKey({ '208': 'private' }, '208')).toBe(true);
+  });
+
   it('rejects non-UUID item and alternative ids as invalid_selection', async () => {
     const { revisionId } = await publishNutritionPlan(
       seeded.client,
@@ -489,7 +513,7 @@ describe('F18 T010 select_nutrition_alternative', () => {
       const text = row.details_text as string;
       expect(text).not.toContain('Salmon');
       expect(text).not.toContain('Chicken');
-      expect(text).not.toContain('208');
+      expect(containsJsonValueOrKey(row.details, '208')).toBe(false);
       expect(text).not.toContain(select1Key);
       expect(row.details).toHaveProperty('plan_id', planId);
     }
