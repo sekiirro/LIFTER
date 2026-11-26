@@ -766,6 +766,7 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
       where schemaname = 'public' and tablename = 'audit_events' and policyname = 'audit_events_select_scoped'
     `;
     expect(policyBefore?.qual).toContain('workforce');
+    expect(policyBefore?.qual).toContain('opaque_reference');
 
     // Mutate the policy to remove the P7 exclusion predicate (simulate regression)
     await db.unsafe(`
@@ -788,8 +789,10 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
     const leaked = woBreached.filter(
       (r) =>
         r.action.startsWith('workforce.') ||
+        r.action === 'audit.opaque_reference' ||
         (r.target_table && r.target_table.startsWith('p7_')) ||
-        r.target_table === 'workforce_checkin_transitions',
+        r.target_table === 'workforce_checkin_transitions' ||
+        r.target_table === 'opaque_reference',
     );
     expect(
       leaked.length,
@@ -805,8 +808,8 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
             workspace_id is not null
             and app_private.current_staff_role() = 'workspace_owner'::public.staff_role
             and app_private.has_workspace_access(workspace_id, null)
-            and (action not like 'workforce.%')
-            and (target_table is null or (target_table not like 'p7_%' and target_table <> 'workforce_checkin_transitions'))
+            and (action not like 'workforce.%' and action <> 'audit.opaque_reference')
+            and (target_table is null or (target_table not like 'p7_%' and target_table not in ('workforce_checkin_transitions', 'opaque_reference')))
           )
         )
     `);
@@ -822,8 +825,10 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
     const protectedRows = woRestored.filter(
       (r) =>
         r.action.startsWith('workforce.') ||
+        r.action === 'audit.opaque_reference' ||
         (r.target_table && r.target_table.startsWith('p7_')) ||
-        r.target_table === 'workforce_checkin_transitions',
+        r.target_table === 'workforce_checkin_transitions' ||
+        r.target_table === 'opaque_reference',
     );
     expect(protectedRows).toHaveLength(0);
   });
