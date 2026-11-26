@@ -3075,6 +3075,38 @@ describe('P7 T017/T026/T027 payroll security catalog', () => {
     });
     expect(employeeGuard?.proconfig).toContain('search_path=""');
   });
+
+  it('derives staff scope from auth.uid and keeps the own-id guard non-disclosing', async () => {
+    const [fn] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'public.p7_get_own_compensation(uuid,date)'::regprocedure
+      ) as definition
+    `;
+    expect(fn?.definition).toMatch(
+      /p_employee_id\s+is distinct from\s+auth\.uid\(\)/i,
+    );
+    expect(fn?.definition).toMatch(
+      /raise exception 'not_permitted' using errcode = '42501'/i,
+    );
+    expect(fn?.definition).not.toMatch(
+      /p7_earned_points|p7_adjustment_entries|penalt/i,
+    );
+    const [privilege] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid = 'public.p7_get_own_compensation(uuid,date)'::regprocedure
+    `;
+    expect(privilege).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: true,
+      service_role: false,
+    });
+    expect(privilege?.proconfig).toContain('search_path=""');
+  });
 });
 
 describe('P7 T002/T004 check-in transition security catalog', () => {
