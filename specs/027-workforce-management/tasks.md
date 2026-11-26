@@ -1,4 +1,4 @@
-﻿# Tasks: P7 Workforce Management
+# Tasks: P7 Workforce Management
 
 **Input**: spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md
 **Lane**: Check-ins backend implementation (T001-T004). UI and later KPI/penalty slices remain deferred to their assigned tasks.
@@ -11,7 +11,7 @@
 - [x] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged. Verified: workforce-checkins.test.ts same-workspace Trainer projection and client-directory-assignment.test.ts; 76 focused integration tests passed on 25c77dc8.
 - [x] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits. Verified: workforce-checkins.test.ts Late history, F15-audited latest answer snapshot, confirmation idempotency/concurrency, F26 purge-context deletion and both authorization-wait races; Stack B focused suite passed on 25c77dc8 (3 files / 76 tests).
 - [x] **T005 [FR-029]** Before the Check-ins UI slice, prepare its complete AR/EN screen-state copy batch and obtain PO approval; record approval identifiers in the copy table. Evidence: S70-PO-19 (2026-11-25); approved strings: specs/027-workforce-management/copy-approved-cb01-cb03.md (CB-01 table).
-- [ ] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts.
+- [x] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts. Verified: `tests/unit/trainer-checkins-ui.test.tsx` (9 unit tests pass with TZ=Africa/Cairo; copy-fix assertions for Actions/loading in EN and AR) and `tests/e2e/workforce-checkins.spec.ts` (Trainer follow-up happy path, Sales role denial with zero disclosure, axe accessibility clean, screenshot matrix across {AR, EN} x {light, dark} x {390px, 1440px}).
 
 ## Slice B - Durable KPI facts, timing and Trainer penalties (target 250-400 changed lines)
 
