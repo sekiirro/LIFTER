@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { admin, anonClient, checked, sql, twoWorkspaceFixture } from './harness';
+import {
+  admin,
+  anonClient,
+  checked,
+  sql,
+  twoWorkspaceFixture,
+} from './harness';
 
 const db = sql();
 let fixture: Awaited<ReturnType<typeof twoWorkspaceFixture>>;
@@ -69,7 +75,9 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
         where oid = ${rel}::regclass
       `;
       expect(table?.relrowsecurity, `${rel} relrowsecurity`).toBe(true);
-      expect(table?.relforcerowsecurity, `${rel} relforcerowsecurity`).toBe(true);
+      expect(table?.relforcerowsecurity, `${rel} relforcerowsecurity`).toBe(
+        true,
+      );
     }
 
     const publicPolicies = await db`
@@ -170,9 +178,14 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
         expect(selectRes.status).toBeGreaterThanOrEqual(400);
 
         const headRes = await client.from(table).select('*', { head: true });
-        expect(headRes.error || headRes.status >= 400, `${role} HEAD on ${table}`).toBeTruthy();
+        expect(
+          headRes.error || headRes.status >= 400,
+          `${role} HEAD on ${table}`,
+        ).toBeTruthy();
 
-        const countRes = await client.from(table).select('id', { count: 'exact' });
+        const countRes = await client
+          .from(table)
+          .select('id', { count: 'exact' });
         expect(countRes.error, `${role} count on ${table}`).not.toBeNull();
         expect(countRes.status).toBeGreaterThanOrEqual(400);
         expect(countRes.count).toBeNull();
@@ -196,38 +209,50 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
     expect(checkinResWo.error?.code).toBe('42501');
     expect(checkinResWo.error?.message).toBe('not_permitted');
 
-    const checkinResForeign = await fixture.trainerA.client.rpc('get_trainer_checkins', {
-      p_workspace_id: foreignWs,
-      p_from: '2026-11-01',
-      p_to: '2026-11-30',
-      p_limit: 10,
-      p_offset: 0,
-    });
+    const checkinResForeign = await fixture.trainerA.client.rpc(
+      'get_trainer_checkins',
+      {
+        p_workspace_id: foreignWs,
+        p_from: '2026-11-01',
+        p_to: '2026-11-30',
+        p_limit: 10,
+        p_offset: 0,
+      },
+    );
     expect(checkinResForeign.error?.code).toBe('42501');
     expect(checkinResForeign.error?.message).toBe('not_permitted');
 
-    const checkinResMissing = await fixture.trainerA.client.rpc('get_trainer_checkins', {
-      p_workspace_id: randomId,
-      p_from: '2026-11-01',
-      p_to: '2026-11-30',
-      p_limit: 10,
-      p_offset: 0,
-    });
+    const checkinResMissing = await fixture.trainerA.client.rpc(
+      'get_trainer_checkins',
+      {
+        p_workspace_id: randomId,
+        p_from: '2026-11-01',
+        p_to: '2026-11-30',
+        p_limit: 10,
+        p_offset: 0,
+      },
+    );
     expect(checkinResMissing.error?.code).toBe('42501');
     expect(checkinResMissing.error?.message).toBe('not_permitted');
 
     // confirm_trainer_checkin_followup: missing vs foreign vs denied all yield 42501 not_permitted
-    const confirmResWo = await fixture.woA.client.rpc('confirm_trainer_checkin_followup', {
-      p_workspace_id: ownWs,
-      p_assignment_id: randomId,
-    });
+    const confirmResWo = await fixture.woA.client.rpc(
+      'confirm_trainer_checkin_followup',
+      {
+        p_workspace_id: ownWs,
+        p_assignment_id: randomId,
+      },
+    );
     expect(confirmResWo.error?.code).toBe('42501');
     expect(confirmResWo.error?.message).toBe('not_permitted');
 
-    const confirmResForeign = await fixture.trainerA.client.rpc('confirm_trainer_checkin_followup', {
-      p_workspace_id: foreignWs,
-      p_assignment_id: randomId,
-    });
+    const confirmResForeign = await fixture.trainerA.client.rpc(
+      'confirm_trainer_checkin_followup',
+      {
+        p_workspace_id: foreignWs,
+        p_assignment_id: randomId,
+      },
+    );
     expect(confirmResForeign.error?.code).toBe('42501');
     expect(confirmResForeign.error?.message).toBe('not_permitted');
 
@@ -283,7 +308,9 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
     for (const rpc of payrollRpcs) {
       for (const nonPo of [fixture.woA, fixture.trainerA, fixture.salesA]) {
         const res = await nonPo.client.rpc(rpc.name, rpc.args);
-        expect(res.error?.code, `${nonPo.userId} calling ${rpc.name}`).toBe('42501');
+        expect(res.error?.code, `${nonPo.userId} calling ${rpc.name}`).toBe(
+          '42501',
+        );
         expect(res.error?.message).toContain('p7_platform_owner_required');
       }
     }
@@ -305,22 +332,24 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
     `;
 
     // Platform Owner can read all of them
-    const poAudit = checked(
-      await fixture.po.client
-        .from('audit_events')
-        .select('action, target_table, details')
-        .eq('workspace_id', wsId)
-        .or(`action.like.workforce.%,action.eq.workspace.updated`),
-    );
+    const poAudit =
+      checked(
+        await fixture.po.client
+          .from('audit_events')
+          .select('action, target_table, details')
+          .eq('workspace_id', wsId)
+          .or(`action.like.workforce.%,action.eq.workspace.updated`),
+      ) ?? [];
     expect(poAudit.length).toBeGreaterThanOrEqual(4);
 
     // Workspace Owner must NOT be able to read any workforce.* or p7_* or workforce_checkin_transitions rows
-    const woAudit = checked(
-      await fixture.woA.client
-        .from('audit_events')
-        .select('action, target_table, details')
-        .eq('workspace_id', wsId),
-    );
+    const woAudit =
+      checked(
+        await fixture.woA.client
+          .from('audit_events')
+          .select('action, target_table, details')
+          .eq('workspace_id', wsId),
+      ) ?? [];
 
     const woP7Rows = woAudit.filter(
       (r) =>
@@ -331,18 +360,24 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
     expect(woP7Rows, 'WO must read zero P7 audit rows').toHaveLength(0);
 
     // Unrelated audit row IS read by WO
-    const woUnrelated = woAudit.filter((r) => r.action === 'workspace.updated' && r.details?.tag === testTag);
+    const woUnrelated = woAudit.filter(
+      (r) => r.action === 'workspace.updated' && r.details?.tag === testTag,
+    );
     expect(woUnrelated.length).toBeGreaterThanOrEqual(1);
 
     // Trainer, sales, and anon read zero rows from audit_events
-    const trainerAudit = checked(await fixture.trainerA.client.from('audit_events').select('*'));
+    const trainerAudit = checked(
+      await fixture.trainerA.client.from('audit_events').select('*'),
+    );
     expect(trainerAudit).toHaveLength(0);
 
-    const salesAudit = checked(await fixture.salesA.client.from('audit_events').select('*'));
+    const salesAudit = checked(
+      await fixture.salesA.client.from('audit_events').select('*'),
+    );
     expect(salesAudit).toHaveLength(0);
 
-    const anonAudit = checked(await anonClient().from('audit_events').select('*'));
-    expect(anonAudit).toHaveLength(0);
+    const anonRes = await anonClient().from('audit_events').select('*');
+    expect(anonRes.error?.code).toBe('42501');
   });
 
   it('8. unrelated-wo-audit-preserved: WO retains read rights for all non-P7 workspace audit events', async () => {
@@ -358,17 +393,22 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
       (${wsId}, ${fixture.woA.userId}, 'membership.granted', 'workspace_memberships', ${randomUUID()}, ${db.json({ tag })})
     `;
 
-    const woAudit = checked(
-      await fixture.woA.client
-        .from('audit_events')
-        .select('action, target_table, details')
-        .eq('workspace_id', wsId),
-    );
+    const woAudit =
+      checked(
+        await fixture.woA.client
+          .from('audit_events')
+          .select('action, target_table, details')
+          .eq('workspace_id', wsId),
+      ) ?? [];
 
     const preserved = woAudit.filter((r) => r.details?.tag === tag);
     expect(preserved).toHaveLength(3);
     const actions = preserved.map((r) => r.action).sort();
-    expect(actions).toEqual(['membership.granted', 'staff_role.changed', 'workspace.updated']);
+    expect(actions).toEqual([
+      'membership.granted',
+      'staff_role.changed',
+      'workspace.updated',
+    ]);
   });
 
   it('9. audit-details-earned-opaque: earned points audit details contains only opaque reference', async () => {
@@ -423,22 +463,24 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
   it('12. audit-count-disclosure: WO, trainer, and sales cannot discover P7 activity through count/aggregates', async () => {
     const wsId = fixture.wsA.id;
     // Querying count of workforce.* actions as WO returns 0
-    const woCount = checked(
-      await fixture.woA.client
-        .from('audit_events')
-        .select('id', { count: 'exact' })
-        .eq('workspace_id', wsId)
-        .like('action', 'workforce.%'),
-    );
+    const woCount =
+      checked(
+        await fixture.woA.client
+          .from('audit_events')
+          .select('id', { count: 'exact' })
+          .eq('workspace_id', wsId)
+          .like('action', 'workforce.%'),
+      ) ?? [];
     expect(woCount.length).toBe(0);
 
-    const woTargetCount = checked(
-      await fixture.woA.client
-        .from('audit_events')
-        .select('id', { count: 'exact' })
-        .eq('workspace_id', wsId)
-        .like('target_table', 'p7_%'),
-    );
+    const woTargetCount =
+      checked(
+        await fixture.woA.client
+          .from('audit_events')
+          .select('id', { count: 'exact' })
+          .eq('workspace_id', wsId)
+          .like('target_table', 'p7_%'),
+      ) ?? [];
     expect(woTargetCount.length).toBe(0);
   });
 
@@ -561,10 +603,12 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
         select pg_catalog.pg_get_functiondef(to_regproc(${name})) as def
       `;
       // Must contain p7_require_platform_owner after pg_advisory_xact_lock
-      const lockIndex = fn.def.indexOf('pg_advisory_xact_lock');
+      const lockIndex = fn!.def.indexOf('pg_advisory_xact_lock');
       expect(lockIndex, `${name} has advisory lock`).toBeGreaterThan(0);
-      const afterLock = fn.def.slice(lockIndex);
-      expect(afterLock, `${name} rechecks PO after lock`).toContain('p7_require_platform_owner()');
+      const afterLock = fn!.def.slice(lockIndex);
+      expect(afterLock, `${name} rechecks PO after lock`).toContain(
+        'p7_require_platform_owner()',
+      );
     }
   });
 
@@ -605,19 +649,23 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
     `);
 
     // Under mutated policy, WO can read P7 rows (the guard is breached!)
-    const woBreached = checked(
-      await fixture.woA.client
-        .from('audit_events')
-        .select('action, target_table')
-        .eq('workspace_id', fixture.wsA.id),
-    );
+    const woBreached =
+      checked(
+        await fixture.woA.client
+          .from('audit_events')
+          .select('action, target_table')
+          .eq('workspace_id', fixture.wsA.id),
+      ) ?? [];
     const leaked = woBreached.filter(
       (r) =>
         r.action.startsWith('workforce.') ||
         (r.target_table && r.target_table.startsWith('p7_')) ||
         r.target_table === 'workforce_checkin_transitions',
     );
-    expect(leaked.length, 'Mutated policy must leak P7 rows to WO').toBeGreaterThan(0);
+    expect(
+      leaked.length,
+      'Mutated policy must leak P7 rows to WO',
+    ).toBeGreaterThan(0);
 
     // Restore the policy with the exclusion predicate
     await db.unsafe(`
@@ -635,12 +683,13 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
     `);
 
     // Verify restored policy restores protection
-    const woRestored = checked(
-      await fixture.woA.client
-        .from('audit_events')
-        .select('action, target_table')
-        .eq('workspace_id', fixture.wsA.id),
-    );
+    const woRestored =
+      checked(
+        await fixture.woA.client
+          .from('audit_events')
+          .select('action, target_table')
+          .eq('workspace_id', fixture.wsA.id),
+      ) ?? [];
     const protectedRows = woRestored.filter(
       (r) =>
         r.action.startsWith('workforce.') ||
