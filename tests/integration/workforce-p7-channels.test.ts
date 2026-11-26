@@ -5,14 +5,14 @@ import {
   anonClient,
   checked,
   sql,
-  twoWorkspaceFixture,
 } from './harness';
+import { clientContext, graph } from './registration-approval-fixture';
 
 const db = sql();
-let fixture: Awaited<ReturnType<typeof twoWorkspaceFixture>>;
+let fixture: Awaited<ReturnType<typeof clientContext>>;
 
 beforeAll(async () => {
-  fixture = await twoWorkspaceFixture();
+  fixture = await clientContext();
 });
 
 afterAll(async () => {
@@ -378,6 +378,135 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
 
     const anonRes = await anonClient().from('audit_events').select('*');
     expect(anonRes.error?.code).toBe('42501');
+  });
+
+  it('7b. real-checkin-producers-audit-hidden: Trainer calls get_trainer_checkins and confirm_trainer_checkin_followup; WO sees 0 audit rows; PO sees them', async () => {
+    const wsId = fixture.wsA.id;
+    const [clock] = await db`
+      select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as today
+    `;
+    const today = clock!.today as string;
+    let assignmentId: string;
+
+    await db.begin(async (tx) => {
+      const ids = await graph(tx, fixture);
+      const [termsRow] = await tx`
+        select version from app_private.terms_policy_versions
+        where policy_kind = 'terms' and status = 'published'
+        order by created_at desc, version desc limit 1
+      `;
+      let terms = termsRow?.version as string;
+      if (!terms) {
+        terms = `terms-${randomUUID()}`;
+        await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+          values(${terms},'terms','published')`;
+      }
+      const formId = randomUUID();
+      await tx`insert into public.forms(id,workspace_id,name)
+        values(${formId},${wsId},'P7 synthetic check-in')`;
+      const definition = {
+        questions: [
+          { id: 'workoutAdherence', sectionId: 'checkin', type: 'number' },
+        ],
+      };
+      await tx`insert into public.form_versions(
+        workspace_id,form_id,version_number,terms_policy_version,definition,status,published_at
+      ) values(${wsId},${formId},1,${terms},${tx.json(definition)},'published',clock_timestamp())`;
+      const policyId = randomUUID();
+      await tx`insert into app_private.form_assignment_policies(
+        id,workspace_id,form_id,version_number,audience_kind,trigger_kind,configured_by
+      ) values(
+        ${policyId},${wsId},${formId},1,'all_active_clients','weekly_checkin',${fixture.po.userId}
+      )`;
+      await tx`insert into app_private.form_assignment_occurrences(
+        workspace_id,policy_id,occurrence_key,snapshot_at,audience_client_ids,version_number,trigger_kind,created_by
+      ) values(
+        ${wsId},${policyId},${'weekly_checkin:' + today},clock_timestamp(),${[ids.client]},1,'weekly_checkin',${fixture.po.userId}
+      )`;
+      const [assignment] = await tx`
+        insert into public.form_assignments(
+          workspace_id,client_id,form_id,version_number,terms_policy_version,
+          version_snapshot,occurrence_key,policy_id,configured_by,client_deadline_at
+        ) values(
+          ${wsId},${ids.client},${formId},1,${terms},
+          ${tx.json(definition)},${'weekly_checkin:' + today},${policyId},${fixture.po.userId},clock_timestamp() + interval '2 days'
+        ) returning id
+      `;
+      assignmentId = assignment!.id as string;
+      await tx`insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
+        values(${wsId},${assignmentId},1,${tx.json({ workoutAdherence: 8 })})`;
+      await tx`insert into app_private.form_submissions(
+        workspace_id,assignment_id,revision,submitted_at
+      ) values(
+        ${wsId},${assignmentId},1,clock_timestamp() - interval '26 hours'
+      )`;
+    });
+
+    // Real producer 1: Trainer calls get_trainer_checkins
+    const getRes = await fixture.trainerA.client.rpc('get_trainer_checkins', {
+      p_workspace_id: wsId,
+      p_from: today,
+      p_to: today,
+      p_limit: 10,
+      p_offset: 0,
+    });
+    expect(getRes.error).toBeNull();
+
+    // Real producer 2: Trainer calls confirm_trainer_checkin_followup
+    const confirmRes = await fixture.trainerA.client.rpc(
+      'confirm_trainer_checkin_followup',
+      {
+        p_workspace_id: wsId,
+        p_assignment_id: assignmentId!,
+      },
+    );
+    expect(confirmRes.error).toBeNull();
+    expect(confirmRes.data).toMatchObject({ status: 'ok' });
+
+    // Verify audit rows were actually written by real producers in the database
+    const producerAudit = await db`
+      select action, target_table, details
+      from public.audit_events
+      where workspace_id = ${wsId}
+        and (action = 'audit.opaque_reference' or target_table = 'opaque_reference')
+    `;
+    expect(producerAudit.length).toBeGreaterThanOrEqual(2);
+
+    // Workspace Owner must see 0 resulting audit rows from these checkin producers
+    const woAudit =
+      checked(
+        await fixture.woA.client
+          .from('audit_events')
+          .select('action, target_table, details')
+          .eq('workspace_id', wsId),
+      ) ?? [];
+    const woOpaqueRows = woAudit.filter(
+      (r) =>
+        r.action === 'audit.opaque_reference' ||
+        r.target_table === 'opaque_reference',
+    );
+    expect(
+      woOpaqueRows,
+      'WO of that workspace must see 0 resulting check-in audit rows',
+    ).toHaveLength(0);
+
+    // Platform Owner sees them
+    const poAudit =
+      checked(
+        await fixture.po.client
+          .from('audit_events')
+          .select('action, target_table, details')
+          .eq('workspace_id', wsId),
+      ) ?? [];
+    const poOpaqueRows = poAudit.filter(
+      (r) =>
+        r.action === 'audit.opaque_reference' ||
+        r.target_table === 'opaque_reference',
+    );
+    expect(
+      poOpaqueRows.length,
+      'PO must see the check-in audit rows',
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it('8. unrelated-wo-audit-preserved: WO retains read rights for all non-P7 workspace audit events', async () => {
