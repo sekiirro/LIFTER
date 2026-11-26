@@ -37,3 +37,14 @@ A task is marked complete only after its named tests execute and pass on the cor
 ## Evidence rule
 
 Tasks are checked only with implementation evidence recorded above. T030/T031 passed on code head `066f54a6624e129d08bdd7999ecc2fffbbb56c85`; future tasks remain unchecked until their tests execute and pass on the corresponding implementation head.
+
+## S70-R122 copy-fix evidence (T006)
+
+| FR     | Task | Test                                                                                                   | Evidence                                                                                                  |
+| ------ | ---- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| FR-004 | T006 | `tests/unit/trainer-checkins-ui.test.tsx::renders page title, fields, and action buttons in en`       | `5f07fac86fce84e888ad1ea4846882449a0256e2`; EN actions header uses approved `workforce.checkin.column.actions` |
+| FR-005 | T006 | `tests/unit/trainer-checkins-ui.test.tsx::renders the approved loading copy in en`                    | same commit; EN loading state uses approved `workforce.checkin.loading`                                 |
+| FR-017 | T006 | `tests/unit/trainer-checkins-ui.test.tsx::renders page title, fields, and action buttons in ar`       | same commit; AR actions header uses approved `workforce.checkin.column.actions`                          |
+| FR-029 | T006 | `tests/unit/trainer-checkins-ui.test.tsx::renders the approved loading copy in ar`                    | same commit; AR loading state uses approved `workforce.checkin.loading`                                 |
+
+Gates: `npm run lint`, `npm run typecheck`, `npx prettier --check` on changed files and `TZ=Africa/Cairo npx vitest run tests/unit` (361 files, 4151 tests) pass on the implementation head.
