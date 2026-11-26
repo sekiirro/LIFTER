@@ -1,4 +1,4 @@
--- Migration: 20261225040000_p7_monthly_quality_and_reminders.sql
+-- Migration: 20261225130000_p7_monthly_quality_and_reminders.sql
 -- Lane: s70-gemini-p7quality
 -- Tasks: T014, T015, T016 (FR-009, FR-020, FR-023)
 -- P7 Monthly Quality Revisions (Transformation & Feedback), Latest-Effective Projections,
