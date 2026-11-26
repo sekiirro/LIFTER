@@ -2444,6 +2444,24 @@ describe('P7 earned ledger and monthly close catalog', () => {
     });
     expect(finalizer!.proconfig).toContain('search_path=""');
   });
+
+  it('limits the check-in delay evaluator to the explicitly checked operator role', async () => {
+    const [evaluator] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role,
+        pg_catalog.pg_get_functiondef(p.oid) as definition
+      from pg_proc p
+      where p.oid='public.run_p7_checkin_delay_evaluator(uuid)'::regprocedure`;
+    expect(evaluator).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: false,
+      service_role: true,
+    });
+    expect(evaluator!.proconfig).toContain('search_path=""');
+    expect(evaluator!.definition).toContain("auth.role() IS DISTINCT FROM 'service_role'");
+  });
 });
 
 describe('F13 T044a Sales productivity catalog', () => {
