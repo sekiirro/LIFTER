@@ -10,6 +10,7 @@ import {
 import { ToastProvider } from '../../components/ui/Toast';
 import type { TrainerCheckinRow } from '../../lib/workforce/types';
 import TrainerCheckinsPage from '../../app/(app)/workforce/check-ins/page';
+import TrainerCheckinsLoading from '../../app/(app)/workforce/check-ins/loading';
 
 function renderView(props: TrainerCheckinsViewProps) {
   const messages = getMessages(props.locale);
@@ -119,11 +120,11 @@ const sampleCheckins: TrainerCheckinRow[] = [
 
 describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
   it.each([
-    ['en', 'Weekly check-ins', 'Mark followed up'],
-    ['ar', 'المتابعات الأسبوعية', 'سجّل إنك اتواصلت'],
+    ['en', 'Weekly check-ins', 'Mark followed up', 'Actions'],
+    ['ar', 'المتابعات الأسبوعية', 'سجّل إنك اتواصلت', 'الإجراءات'],
   ] as const)(
     'renders page title, fields, and action buttons in %s',
-    (locale, expectedTitle, expectedBtn) => {
+    (locale, expectedTitle, expectedBtn, expectedActions) => {
       const messages = getMessages(locale);
       const html = renderView({
         workspaceId: 'ws-1',
@@ -149,6 +150,8 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
       );
       expect(html).toContain(messages['workforce.checkin.column.followedUpAt']);
       expect(html).toContain(messages['staff.clientDirectory.assignment']);
+      expect(html).toContain(messages['workforce.checkin.column.actions']);
+      expect(html).toContain(expectedActions);
 
       // Client data rows
       expect(html).toContain('Ahmed Youssef');
@@ -227,6 +230,22 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
     expect(html).toContain(en['workforce.checkin.loadError']);
     expect(html).toContain(en['states.retry']);
   });
+
+  it.each([
+    ['en', 'Loading check-ins…'],
+    ['ar', 'بنحمّل المتابعات…'],
+  ] as const)(
+    'renders the approved loading copy in %s',
+    async (locale, expectedLoading) => {
+      mocks.cookies.mockResolvedValue({ get: () => ({ value: locale }) });
+      const messages = getMessages(locale);
+      const html = renderToStaticMarkup(await TrainerCheckinsLoading());
+
+      expect(html).toContain(expectedLoading);
+      expect(html).toContain(messages['workforce.checkin.loading']);
+      expect(html).toContain('data-testid="checkins-loading"');
+    },
+  );
 
   it('formats dates accurately in Africa/Cairo', () => {
     // 2026-11-20T08:00:00Z -> UTC+2 is 10:00

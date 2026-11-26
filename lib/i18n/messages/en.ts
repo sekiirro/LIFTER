@@ -1546,6 +1546,7 @@ export const en: Record<keyof typeof ar, string> = {
   'auth.resetCheckLogin':
     'We couldn’t confirm whether your password changed. Try signing in with your new password. If it doesn’t work, request a new reset link.',
   'workforce.checkin.title': 'Weekly check-ins',
+  'workforce.checkin.column.actions': 'Actions',
   'workforce.checkin.column.platform': 'Platform',
   'workforce.checkin.column.formSchedule': 'Form schedule',
   'workforce.checkin.column.submittedAt': 'Submitted at',

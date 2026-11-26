@@ -1501,6 +1501,7 @@ export const ar = {
   'auth.resetCheckLogin':
     'مقدرناش نتأكد لو كلمة السر بتاعتك اتغيّرت ولا لأ. جرّب تسجّل دخول بكلمة السر الجديدة. لو ما نفعش، اطلب لينك جديد لتغيير كلمة السر.',
   'workforce.checkin.title': 'المتابعات الأسبوعية',
+  'workforce.checkin.column.actions': 'الإجراءات',
   'workforce.checkin.column.platform': 'المنصة',
   'workforce.checkin.column.formSchedule': 'موعد الفورم',
   'workforce.checkin.column.submittedAt': 'وقت الإرسال',

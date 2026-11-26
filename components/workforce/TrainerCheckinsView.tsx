@@ -333,7 +333,9 @@ export function TrainerCheckinsView({
                   <th>{messages['workforce.checkin.column.followedUpAt']}</th>
                   <th>{messages['staff.clientDirectory.assignment']}</th>
                   <th>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">
+                      {messages['workforce.checkin.column.actions']}
+                    </span>
                   </th>
                 </tr>
               </thead>
