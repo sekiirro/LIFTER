@@ -1,4 +1,4 @@
-﻿# Tasks: P7 Workforce Management
+# Tasks: P7 Workforce Management
 
 **Input**: spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md
 **Lane**: Check-ins backend implementation (T001-T004). UI and later KPI/penalty slices remain deferred to their assigned tasks.
@@ -11,7 +11,7 @@
 - [x] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged. Verified: workforce-checkins.test.ts same-workspace Trainer projection and client-directory-assignment.test.ts; 76 focused integration tests passed on 25c77dc8.
 - [x] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits. Verified: workforce-checkins.test.ts Late history, F15-audited latest answer snapshot, confirmation idempotency/concurrency, F26 purge-context deletion and both authorization-wait races; Stack B focused suite passed on 25c77dc8 (3 files / 76 tests).
 - [x] **T005 [FR-029]** Before the Check-ins UI slice, prepare its complete AR/EN screen-state copy batch and obtain PO approval; record approval identifiers in the copy table. Evidence: S70-PO-19 (2026-11-25); approved strings: specs/027-workforce-management/copy-approved-cb01-cb03.md (CB-01 table).
-- [ ] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts.
+- [x] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts. Verified: `tests/unit/trainer-checkins-ui.test.tsx` (9 unit tests pass with TZ=Africa/Cairo; copy-fix assertions for Actions/loading in EN and AR) and `tests/e2e/workforce-checkins.spec.ts` (Trainer follow-up happy path, Sales role denial with zero disclosure, axe accessibility clean, screenshot matrix across {AR, EN} x {light, dark} x {390px, 1440px}).
 
 ## Slice B - Durable KPI facts, timing and Trainer penalties (target 250-400 changed lines)
 
@@ -20,8 +20,8 @@
 - [ ] **T009 [FR-002, FR-006, FR-020, FR-026]** RED/GREEN: reuse persisted F15 deadline and first successful initial plan pair; penalty is -1 at deadline, attributed to currently assigned Trainer at breach; record assignment and confirmer separately; PO reattribution appends; strike source remains separate.
 - [ ] **T010 [FR-003, FR-006, FR-020, FR-027]** RED: test exact 24h follow-up is on time/no penalty, >24h or absent follow-up yields one penalty effective at deadline, successful submission only, client-caused lateness, evaluator catch-up/retry/operator path, confirmer race and current assignee at breach.
 - [ ] **T011 [FR-003, FR-006, FR-020, FR-027]** GREEN: implement workspace-scoped idempotent due evaluator and operator-run path; scheduler remains behind current activation gate; confirmation and evaluator converge on one occurrence key and one -0.5 event.
-- [x] **T012 [FR-006, FR-016, FR-020, FR-029]** Before PO workforce-report UI, draft and approve that screen's AR/EN copy batch; record approval ID. Evidence: S70-PO-21 (2026-11-26); approved strings in copy-batches.reviewed.md (CB-02 table).
-- [ ] **T013 [FR-006, FR-007, FR-016, FR-017, FR-020, FR-029]** Implement PO report UI after T012; add PO manual point inputs, correction and reattribution; keep point reversal distinct from strike correction. Verify negative totals and immutable lineage. Verified (read-only slice): `tests/unit/workforce-report.test.tsx` (13/13), `20261225200000_p7_workforce_report.sql`, `tests/integration/p7-workforce-report.test.ts`. Manual edits, disputes, refund questionnaire and strikes remain deferred until backend schemas merge.
+- [ ] **T012 [FR-006, FR-016, FR-020, FR-029]** Before PO workforce-report UI, draft and approve that screen's AR/EN copy batch; record approval ID.
+- [ ] **T013 [FR-006, FR-007, FR-016, FR-017, FR-020, FR-029]** Implement PO report UI after T012; add PO manual point inputs, correction and reattribution; keep point reversal distinct from strike correction. Verify negative totals and immutable lineage.
 
 ## Slice C - Monthly quality, reminders and payroll money inputs (target 250-400 changed lines)
 
@@ -56,13 +56,13 @@
 
 ## Slice G - Strikes, departure and final UI / verification (target 250-400 changed lines per PR)
 
-- [ ] **T033 [FR-016, FR-026, FR-020]** RED/GREEN: verify existing strike source/path and 3/6/9 rolling-90-day thresholds; P7 point correction does not touch strikes; PO strike correction stays separate; departure/reassignment preserves history and revokes access immediately.
+- [ ] **T033 [FR-016, FR-026, FR-020]** RED/GREEN (S70-PO-20; S70-R109; S70-R110): test then implement one immutable strike per client+initial subscription when persisted F15 D-03 passes without the first successful initial workout/nutrition pair, even if never delivered; attribute to the Trainer responsible with access at breach and preserve `breach_at` as timestamptz. Count where `breach_at > now() - interval '90 days' AND breach_at <= now()`; expose 3/6/9 to PO for review only, never discipline. Add append-only PO-only `void`, `reinstate` (latest void), and same-workspace breach-time Trainer `reattribute` corrections; require reason, serialize by strike, make latest correction effective, audit opaque reference. Keep F26 purge free of client FK/PII, keep point corrections independent without referencing P7 ledger tables, and preserve departure/reassignment history with immediate access revocation. Kill-test PO authorization and concurrent/replayed strike idempotency and corrections.
 - [ ] **T034 [FR-029]** Before each remaining workforce/month-close UI screen, prepare its AR/EN copy batch and obtain PO approval separately for that screen; no blanket approval inferred.
 - [ ] **T035 [FR-001-FR-029]** Run full acceptance/security/money/concurrency/retention suites and repository gates on implementation head; update traceability only with executed passing test evidence. No task is checked by this planning document.
 
 ## Dependency order
 
-T001-T004 establish schemas and authorization; T005 precedes T006 UI only. T007-T011 establish durable facts and trigger idempotency. T012 precedes T013 UI. T014-T017 are backend and can proceed independently of T018/T019 copy/UI. T020 precedes T021 backfill; T022 precedes T023 refund implementation; T024 precedes T025. T026 precedes T027 approval. T028 precedes T029 month close. T030 precedes T031 F26 extension. T032 tests audit and all confidentiality channels. T033 depends on the existing source/ledger. T034 precedes only remaining UI. T035 closes the implementation sequence. Telegram timeliness remains post-launch documentation only; there is no current implementation task.
+T001-T004 establish schemas and authorization; T005 precedes T006 UI only. T007-T011 establish durable facts and trigger idempotency. T012 precedes T013 UI. T014-T017 are backend and can proceed independently of T018/T019 copy/UI. T020 precedes T021 backfill; T022 precedes T023 refund implementation; T024 precedes T025. T026 precedes T027 approval. T028 precedes T029 month close. T030 precedes T031 F26 extension. T032 tests audit and all confidentiality channels. T033 reuses F15 D-03 persisted SLA, F19 initial pair deliveries, F11 assignment history, and F26 retention; it must not depend on or alter the P7 point ledger. T034 precedes only remaining UI. T035 closes the implementation sequence. Telegram timeliness remains post-launch documentation only; there is no current implementation task.
 
 ## Slice discipline
 
