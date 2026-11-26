@@ -7,6 +7,7 @@ import { clientContext, graph } from './registration-approval-fixture';
 const db = sql();
 let doubleClick: {
   workspaceId: string;
+  clientId: string;
   assignmentId: string;
   trainers: string[];
 };
@@ -100,6 +101,7 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
       const assignmentId = assignment!.id as string;
       doubleClick = {
         workspaceId: f.wsA.id,
+        clientId: ids.client,
         assignmentId,
         trainers: [f.trainerA.userId, f.trainerB.userId],
       };
@@ -185,6 +187,19 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
             where workspace_id=${f.wsA.id} and assignment_id=${assignmentId}`,
         ),
       ).rejects.toMatchObject({ code: '23514' });
+      const cascadeRollback = new Error('privacy erasure cascade rollback');
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`delete from app_private.form_submissions
+            where workspace_id=${f.wsA.id} and assignment_id=${assignmentId}`;
+          const [remaining] = await sp`
+            select count(*)::int as count from app_private.workforce_checkin_transitions
+            where workspace_id=${f.wsA.id} and assignment_id=${assignmentId}
+          `;
+          expect(remaining!.count).toBe(0);
+          throw cascadeRollback;
+        }),
+      ).rejects.toBe(cascadeRollback);
       const [audit] = await tx`
         select action,target_table,target_id,details
         from public.audit_events where target_id=${transitionId}::uuid
@@ -361,6 +376,50 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
   it('allows transition deletion only inside the F26 allowlisted purge context', async () => {
     const runId = randomUUID();
     await db.begin(async (tx) => {
+      const mutationRollback = new Error('rollback F26 allowlist mutation');
+      const [guardBefore] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'app_private.retention_purge_context_allows(oid,text)'::regprocedure
+        ) as definition
+      `;
+      try {
+        await tx.savepoint(async (inner) => {
+          const mutationRunId = randomUUID();
+          await inner`insert into app_private.retention_purge_runs(run_id,request_fingerprint,status)
+            values(${mutationRunId},${'b'.repeat(64)},'running')`;
+          await inner`select set_config('app_private.retention_purge_run_id',${mutationRunId},true)`;
+          await inner`update app_private.retention_purge_allowlist set can_delete=false
+            where table_oid='app_private.workforce_checkin_transitions'::regclass`;
+          await expect(
+            inner.savepoint(
+              (sp) => sp`delete from app_private.workforce_checkin_transitions
+                where workspace_id=${doubleClick.workspaceId}
+                  and assignment_id=${doubleClick.assignmentId} and status='Pending'`,
+            ),
+          ).rejects.toMatchObject({ code: '23514' });
+          await inner.unsafe(`create or replace function app_private.retention_purge_context_allows(
+            p_table_oid oid,p_operation text
+          ) returns boolean language sql stable security definer set search_path = '' as $$
+            select true
+          $$`);
+          const removedGuard = await inner`
+            delete from app_private.workforce_checkin_transitions
+            where workspace_id=${doubleClick.workspaceId}
+              and assignment_id=${doubleClick.assignmentId} and status='Pending'
+            returning id
+          `;
+          expect(removedGuard).toHaveLength(1);
+          throw mutationRollback;
+        });
+      } catch (error) {
+        if (error !== mutationRollback) throw error;
+      }
+      const [guardAfter] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'app_private.retention_purge_context_allows(oid,text)'::regprocedure
+        ) as definition
+      `;
+      expect(guardAfter!.definition).toBe(guardBefore!.definition);
       await tx`insert into app_private.retention_purge_runs(run_id,request_fingerprint,status)
         values(${runId},${'a'.repeat(64)},'running')`;
       await expect(
@@ -477,5 +536,129 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
       where tgrelid='app_private.workforce_checkin_transitions'::regclass and not tgisinternal
     `;
     expect(triggers).toEqual({ row_guard: 1, truncate_guard: 1 });
+  });
+
+  it('T030/T031 purges linked P7 check-ins and preserves durable earned totals', async () => {
+    const rollback = new Error('rollback F26 P7 purge fixture');
+    try {
+      await db.begin(async (tx) => {
+        const [fkClosure] = await tx`
+        with recursive p7_tables(table_oid) as (
+          select c.oid
+          from pg_catalog.pg_class c
+          join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+          where (n.nspname='public' and left(c.relname,3)='p7_')
+             or (n.nspname='app_private' and c.relname='workforce_checkin_transitions')
+        ), closure(table_oid,path) as (
+          select table_oid,array[table_oid] from p7_tables
+          union all
+          select fk.confrelid,closure.path||fk.confrelid
+          from closure
+          join pg_catalog.pg_constraint fk on fk.conrelid=closure.table_oid and fk.contype='f'
+          where not fk.confrelid=any(closure.path)
+        )
+        select pg_catalog.jsonb_agg(distinct pg_catalog.jsonb_build_object(
+          'child',fk.conrelid::regclass::text,
+          'parent',fk.confrelid::regclass::text,
+          'constraint',fk.conname
+        )) as edges
+        from closure
+        join pg_catalog.pg_constraint fk on fk.conrelid=closure.table_oid and fk.contype='f'
+        join pg_catalog.pg_class parent on parent.oid=fk.confrelid
+        join pg_catalog.pg_namespace parent_ns on parent_ns.oid=parent.relnamespace
+        where (parent_ns.nspname='public' and (parent.relname='clients' or parent.relname like 'form%'))
+           or (parent_ns.nspname='app_private' and parent.relname like 'form%')
+      `;
+        const edges = (fkClosure!.edges ?? []) as Array<{
+          child: string;
+          parent: string;
+        }>;
+        expect(
+          edges.map(({ child, parent }) => `${child}->${parent}`).sort(),
+        ).toEqual([
+          'app_private.form_assignment_occurrences->app_private.form_assignment_policies',
+          'app_private.form_assignment_policies->form_versions',
+          'app_private.form_submissions->form_answer_revisions',
+          'app_private.form_submissions->form_assignments',
+          'app_private.workforce_checkin_transitions->app_private.form_submissions',
+          'form_answer_revisions->form_assignments',
+          'form_assignments->app_private.form_assignment_occurrences',
+          'form_assignments->app_private.form_assignment_policies',
+          'form_assignments->clients',
+          'form_assignments->form_versions',
+          'form_versions->forms',
+        ]);
+        const [earnedColumns] = await tx`
+        select array_agg(a.attname order by a.attnum) as columns
+        from pg_catalog.pg_attribute a
+        where a.attrelid='public.p7_earned_points'::regclass
+          and a.attnum>0 and not a.attisdropped
+      `;
+        expect(earnedColumns!.columns).toEqual([
+          'id',
+          'workspace_id',
+          'staff_user_id',
+          'points',
+          'effective_month',
+          'trigger_at',
+          'recorded_at',
+          'rule_version',
+          'source_key',
+          'source_hash',
+        ]);
+
+        const sourceKey = randomUUID();
+        await tx`
+        insert into public.p7_earned_points(
+          workspace_id,staff_user_id,points,effective_month,trigger_at,rule_version,source_key,source_hash
+        ) values (
+          ${doubleClick.workspaceId},${doubleClick.trainers[0]!},1.00,
+          date_trunc('month',clock_timestamp())::date,clock_timestamp(),
+          'p7-purge-retention-test',${sourceKey},repeat('a',64)
+        )
+      `;
+        const [before] = await tx`
+        select count(*)::int as facts,coalesce(sum(points),0)::text as total
+        from public.p7_earned_points where workspace_id=${doubleClick.workspaceId}
+          and staff_user_id=${doubleClick.trainers[0]!}
+      `;
+        await tx`set local session_replication_role = replica`;
+        await tx`update public.clients set deactivated_at=clock_timestamp()-interval '31 days',
+        deactivation_reason='closure' where id=${doubleClick.clientId}`;
+        await tx`set local session_replication_role = origin`;
+        // Keep concurrent integration fixtures isolated while exercising the real
+        // F26 apply path for this client inside the rollback-only transaction.
+        await tx.unsafe(`create or replace function app_private.p7_retention_has_open_dispute(
+        p_workspace_id uuid,p_client_id uuid
+      ) returns boolean language sql stable security invoker set search_path = '' as $$
+        select p_client_id <> '${doubleClick.clientId}'::uuid
+      $$`);
+
+        const runId = randomUUID();
+        const [purge] = await tx`
+        select app_private.purge_retention_apply(${runId},'apply') as result
+      `;
+        expect(purge!.result).toMatchObject({ status: 'applied' });
+        expect(
+          (purge!.result as { eligible_clients: number }).eligible_clients,
+        ).toBe(1);
+        expect(
+          (purge!.result as { deleted_by_table: Record<string, number> })
+            .deleted_by_table['app_private.workforce_checkin_transitions'],
+        ).toBeGreaterThan(0);
+        const [after] = await tx`
+        select count(*)::int as facts,coalesce(sum(points),0)::text as total
+        from public.p7_earned_points where workspace_id=${doubleClick.workspaceId}
+          and staff_user_id=${doubleClick.trainers[0]!}
+      `;
+        expect(after).toEqual(before);
+        const [client] =
+          await tx`select id from public.clients where id=${doubleClick.clientId}`;
+        expect(client).toBeUndefined();
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
   });
 });

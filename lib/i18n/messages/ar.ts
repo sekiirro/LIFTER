@@ -1535,4 +1535,10 @@ export const ar = {
   'workforce.compensation.own.basicSalary': 'المرتب الأساسي',
   'workforce.compensation.own.empty': 'مفيش سجل مرتب للشهر ده.',
   'workforce.compensation.own.denied': 'تقدر تشوف مرتبك أنت بس.',
+  'workforce.payroll.input.deductionNote':
+    'إدخال يدوي من مالك المنصة. LIFTER عمره ما بيخصم من المرتب تلقائي.',
+  'workforce.salary.market.egypt': 'مصر',
+  'workforce.salary.market.international': 'دولي',
+  'workforce.payroll.selectEmployeeFirst': 'اختار الموظف الأول.',
+  'workforce.payroll.employee': 'الموظف',
 } as const;

@@ -178,17 +178,16 @@ export async function setBasicSalary(
   }
 
   const client = await createSessionClient();
-  if (!client) return { status: 'error', message: 'Client unavailable' };
+  if (!client) return { status: 'error' };
 
   const effectiveMonth = normalizeEffectiveMonth(input.effectiveMonth);
   if (!effectiveMonth) {
-    return { status: 'invalid_input', message: 'Invalid effective month' };
+    return { status: 'invalid_input' };
   }
 
   if (!isAllowedCurrencyForMarket(input.market, input.currency)) {
     return {
       status: 'invalid_currency',
-      message: 'Invalid currency for market',
     };
   }
 
@@ -196,7 +195,6 @@ export async function setBasicSalary(
   if (minor === null || minor <= 0n) {
     return {
       status: 'invalid_input',
-      message: 'Amount must be greater than zero',
     };
   }
 
@@ -224,7 +222,7 @@ export async function setBasicSalary(
       return { status: 'idempotency_reused' };
     if (msg.includes('invalid_salary_input'))
       return { status: 'invalid_input' };
-    return { status: 'error', message: msg };
+    return { status: 'error' };
   }
 
   return {
@@ -247,42 +245,38 @@ export async function postMonetaryPayrollInput(
   }
 
   const client = await createSessionClient();
-  if (!client) return { status: 'error', message: 'Client unavailable' };
+  if (!client) return { status: 'error' };
 
   const effectiveMonth = normalizeEffectiveMonth(input.effectiveMonth);
   if (!effectiveMonth) {
-    return { status: 'invalid_input', message: 'Invalid effective month' };
+    return { status: 'invalid_input' };
   }
 
   const minor = decimalToMinorUnits(input.amount);
   if (minor === null) {
-    return { status: 'invalid_input', message: 'Invalid amount' };
+    return { status: 'invalid_input' };
   }
 
   if (input.category === 'correction') {
     if (minor === 0n) {
       return {
         status: 'invalid_input',
-        message: 'Correction amount cannot be zero',
       };
     }
     if (!input.supersedesInputId) {
       return {
         status: 'invalid_input',
-        message: 'Correction requires supersedesInputId',
       };
     }
   } else {
     if (minor <= 0n) {
       return {
         status: 'invalid_input',
-        message: 'Amount must be greater than zero',
       };
     }
     if (input.supersedesInputId) {
       return {
         status: 'invalid_input',
-        message: 'Only corrections can supersede inputs',
       };
     }
   }
@@ -315,7 +309,7 @@ export async function postMonetaryPayrollInput(
       return { status: 'idempotency_reused' };
     if (msg.includes('invalid_payroll_input'))
       return { status: 'invalid_input' };
-    return { status: 'error', message: msg };
+    return { status: 'error' };
   }
 
   return { status: 'ok', id: data as string };
@@ -330,11 +324,11 @@ export async function createPayrollSnapshot(
   }
 
   const client = await createSessionClient();
-  if (!client) return { status: 'error', message: 'Client unavailable' };
+  if (!client) return { status: 'error' };
 
   const effectiveMonth = normalizeEffectiveMonth(params.effectiveMonth);
   if (!effectiveMonth) {
-    return { status: 'invalid_input', message: 'Invalid effective month' };
+    return { status: 'invalid_input' };
   }
 
   const idempotencyKey = params.idempotencyKey || randomUUID();
@@ -357,7 +351,7 @@ export async function createPayrollSnapshot(
       return { status: 'not_eligible' };
     if (msg.includes('invalid_payroll_snapshot'))
       return { status: 'invalid_input' };
-    return { status: 'error', message: msg };
+    return { status: 'error' };
   }
 
   return {
@@ -380,11 +374,11 @@ export async function approveExternalPayroll(
   }
 
   const client = await createSessionClient();
-  if (!client) return { status: 'error', message: 'Client unavailable' };
+  if (!client) return { status: 'error' };
 
   const effectiveMonth = normalizeEffectiveMonth(params.effectiveMonth);
   if (!effectiveMonth) {
-    return { status: 'invalid_input', message: 'Invalid effective month' };
+    return { status: 'invalid_input' };
   }
 
   const idempotencyKey = params.idempotencyKey || randomUUID();
@@ -414,7 +408,7 @@ export async function approveExternalPayroll(
       return { status: 'not_eligible' };
     if (msg.includes('invalid_payroll_approval'))
       return { status: 'invalid_input' };
-    return { status: 'error', message: msg };
+    return { status: 'error' };
   }
 
   return { status: 'ok', id: data as string };

@@ -116,7 +116,7 @@ export function PayrollManager({
     setSalaryError(null);
 
     if (!selectedEmployeeId) {
-      setSalaryError('Please select an employee.');
+      setSalaryError(messages['workforce.payroll.selectEmployeeFirst']);
       return;
     }
 
@@ -136,15 +136,11 @@ export function PayrollManager({
         setExpectedRevision(result.data.revision);
         setSalaryAmount(minorUnitsToDecimal(result.data.amount_minor));
       } else if (result.status === 'stale') {
-        setSalaryError(
-          messages['workforce.payroll.approve.stale'] || 'Stale revision',
-        );
+        setSalaryError(messages['workforce.payroll.approve.stale']);
       } else if (result.status === 'denied') {
         setSalaryError(messages['workforce.payroll.review.denied']);
       } else {
-        setSalaryError(
-          result.message || messages['workforce.payroll.input.error'],
-        );
+        setSalaryError(messages['workforce.payroll.input.error']);
       }
     });
   };
@@ -155,7 +151,7 @@ export function PayrollManager({
     setInputError(null);
 
     if (!selectedEmployeeId) {
-      setInputError('Please select an employee.');
+      setInputError(messages['workforce.payroll.selectEmployeeFirst']);
       return;
     }
 
@@ -183,9 +179,7 @@ export function PayrollManager({
       } else if (result.status === 'denied') {
         setInputError(messages['workforce.payroll.review.denied']);
       } else {
-        setInputError(
-          result.message || messages['workforce.payroll.input.error'],
-        );
+        setInputError(messages['workforce.payroll.input.error']);
       }
     });
   };
@@ -221,9 +215,7 @@ export function PayrollManager({
           ),
         );
       } else {
-        setSnapshotError(
-          result.message || messages['workforce.payroll.review.error'],
-        );
+        setSnapshotError(messages['workforce.payroll.review.error']);
       }
     } catch {
       setSnapshotError(messages['workforce.payroll.review.error']);
@@ -259,9 +251,7 @@ export function PayrollManager({
       } else if (result.status === 'denied') {
         setApprovalError(messages['workforce.payroll.review.denied']);
       } else {
-        setApprovalError(
-          result.message || messages['workforce.payroll.approve.error'],
-        );
+        setApprovalError(messages['workforce.payroll.approve.error']);
       }
     });
   };
@@ -280,13 +270,16 @@ export function PayrollManager({
       </header>
 
       {/* Employee and Month Selection */}
-      <section className={styles.controlsBar} aria-label="Selection Filters">
+      <section
+        className={styles.controlsBar}
+        aria-label={messages['staff.clientDirectory.filters']}
+      >
         <div className={styles.fieldGroup}>
           <label
             htmlFor="payroll-employee-select"
             className={styles.fieldLabel}
           >
-            {messages['staff.clientDirectory.assignment']}
+            {messages['workforce.payroll.employee']}
           </label>
           <select
             id="payroll-employee-select"
@@ -300,8 +293,10 @@ export function PayrollManager({
           >
             {initialEmployees.map((emp) => (
               <option key={emp.userId} value={emp.userId}>
-                {emp.role === 'trainer' ? 'Trainer' : 'Sales'} (
-                {emp.userId.slice(0, 8)})
+                {emp.role === 'trainer'
+                  ? messages['staff.clientDirectory.assignment']
+                  : messages['forms.staffRole.sales']}{' '}
+                ({emp.userId.slice(0, 8)})
               </option>
             ))}
           </select>
@@ -364,8 +359,12 @@ export function PayrollManager({
                   handleMarketChange(e.target.value as PayrollMarket)
                 }
               >
-                <option value="Egypt">Egypt</option>
-                <option value="International">International</option>
+                <option value="Egypt">
+                  {messages['workforce.salary.market.egypt']}
+                </option>
+                <option value="International">
+                  {messages['workforce.salary.market.international']}
+                </option>
               </select>
             </div>
 
@@ -407,7 +406,6 @@ export function PayrollManager({
                 type="text"
                 inputMode="decimal"
                 className={styles.input}
-                placeholder="0.00"
                 value={salaryAmount}
                 onChange={(e) => setSalaryAmount(e.target.value)}
                 required
@@ -469,6 +467,9 @@ export function PayrollManager({
                     onChange={() => setCategory('deduction')}
                   />
                   {messages['workforce.payroll.input.category.deduction']}
+                  <p className={styles.hint}>
+                    {messages['workforce.payroll.input.deductionNote']}
+                  </p>
                 </label>
                 <label className={styles.radioLabel}>
                   <input
@@ -504,7 +505,6 @@ export function PayrollManager({
                 type="text"
                 inputMode="decimal"
                 className={styles.input}
-                placeholder="0.00"
                 value={inputAmount}
                 onChange={(e) => setInputAmount(e.target.value)}
                 required
@@ -517,17 +517,19 @@ export function PayrollManager({
                   htmlFor="payroll-supersedes-id"
                   className={styles.fieldLabel}
                 >
-                  Supersedes Input ID
+                  {messages['workforce.payroll.review.inputs']}
                 </label>
-                <input
+                <select
                   id="payroll-supersedes-id"
-                  type="text"
-                  className={styles.input}
-                  placeholder="UUID"
+                  className={styles.select}
                   value={supersedesInputId}
                   onChange={(e) => setSupersedesInputId(e.target.value)}
                   required
-                />
+                >
+                  <option value="" disabled>
+                    {messages['workforce.payroll.review.inputs']}
+                  </option>
+                </select>
               </div>
             )}
 

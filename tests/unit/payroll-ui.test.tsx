@@ -97,15 +97,23 @@ describe('Payroll UI: Page & Components', () => {
       expect(html).toContain('dir="ltr"');
       expect(html).toContain(en['workforce.salary.title']);
       expect(html).toContain(en['workforce.salary.market']);
+      expect(html).toContain(en['workforce.salary.market.egypt']);
+      expect(html).toContain(en['workforce.salary.market.international']);
       expect(html).toContain(en['workforce.salary.currencyHint']);
+      expect(html).toContain(en['workforce.payroll.employee']);
+      expect(html).toContain(en['staff.clientDirectory.filters']);
       expect(html).toContain(en['workforce.payroll.input.title']);
       expect(html).toContain(en['workforce.payroll.input.category']);
       expect(html).toContain(en['workforce.payroll.input.category.incentive']);
       expect(html).toContain(en['workforce.payroll.input.category.deduction']);
+      expect(html).toContain(en['workforce.payroll.input.deductionNote']);
       expect(html).toContain(en['workforce.payroll.input.category.correction']);
       expect(html).toContain(en['workforce.payroll.input.currencyLocked']);
       expect(html).toContain(en['workforce.payroll.review.title']);
       expect(html).toContain(en['workforce.payroll.review.empty']);
+      expect(html).not.toContain('Client unavailable');
+      expect(html).not.toContain('Invalid effective month');
+      expect(html).not.toContain('Please select an employee.');
     });
 
     it('renders all three PO sections in Arabic (RTL) with Egyptian colloquial copy', () => {
@@ -129,7 +137,11 @@ describe('Payroll UI: Page & Components', () => {
       expect(html).toContain('dir="rtl"');
       expect(html).toContain(ar['workforce.salary.title']); // المرتب الأساسي
       expect(html).toContain(ar['workforce.salary.market']); // السوق
+      expect(html).toContain(ar['workforce.salary.market.egypt']); // مصر
+      expect(html).toContain(ar['workforce.salary.market.international']); // دولي
       expect(html).toContain(ar['workforce.salary.currencyHint']); // مصر: EGP. دولي: EGP أو USD أو SAR.
+      expect(html).toContain(ar['workforce.payroll.employee']); // الموظف
+      expect(html).toContain(ar['staff.clientDirectory.filters']); // فلترة
       expect(html).toContain(ar['workforce.payroll.input.title']); // إضافة يدوية على المرتب
       expect(html).toContain(ar['workforce.payroll.input.category']); // نوع التعديل
       expect(html).toContain(ar['workforce.payroll.input.category.incentive']); // حافز

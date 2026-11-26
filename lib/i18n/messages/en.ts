@@ -1588,4 +1588,10 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.compensation.own.empty': 'No compensation record for this month.',
   'workforce.compensation.own.denied':
     'You can only view your own compensation.',
+  'workforce.payroll.input.deductionNote':
+    'Manual entry by the Platform Owner. LIFTER never deducts from salary automatically.',
+  'workforce.salary.market.egypt': 'Egypt',
+  'workforce.salary.market.international': 'International',
+  'workforce.payroll.selectEmployeeFirst': 'Select an employee first.',
+  'workforce.payroll.employee': 'Employee',
 };
