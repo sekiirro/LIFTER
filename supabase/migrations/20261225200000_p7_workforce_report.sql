@@ -5,7 +5,7 @@
 create function public.p7_workforce_report(p_workspace_id uuid, p_month date)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
-  actor uuid := auth.uid();
+  current_actor uuid := auth.uid();
   snapshot_row record;
   is_closed boolean := false;
   month_status text := 'current';
@@ -16,7 +16,7 @@ declare
 begin
   -- Platform PO only, authorized workspace only.
   -- Deny without workspace existence disclosure.
-  if actor is null
+  if current_actor is null
     or not coalesce(app_private.is_platform_owner(), false)
     or not coalesce(app_private.has_workspace_access(p_workspace_id, null), false)
     or not exists (select 1 from public.workspaces w where w.id = p_workspace_id) then
@@ -140,58 +140,58 @@ begin
       coalesce(
         jsonb_agg(
           jsonb_build_object(
-            'staff_user_id', staff_user_id,
-            'role', role,
-            'display_name', display_name,
-            'points', points::numeric(10,2)::text,
-            'is_negative', points < 0
+            'staff_user_id', ss.staff_user_id,
+            'role', ss.role,
+            'display_name', ss.display_name,
+            'points', ss.points::numeric(10,2)::text,
+            'is_negative', ss.points < 0
           )
         ), '[]'::jsonb
       ) as all_totals,
       coalesce(
         jsonb_agg(
           jsonb_build_object(
-            'staff_user_id', staff_user_id,
-            'role', role,
-            'display_name', display_name,
-            'points', points::numeric(10,2)::text,
-            'is_negative', points < 0
+            'staff_user_id', ss.staff_user_id,
+            'role', ss.role,
+            'display_name', ss.display_name,
+            'points', ss.points::numeric(10,2)::text,
+            'is_negative', ss.points < 0
           )
-        ) filter (where role = 'trainer'), '[]'::jsonb
+        ) filter (where ss.role = 'trainer'), '[]'::jsonb
       ) as trainer_totals,
       coalesce(
         jsonb_agg(
           jsonb_build_object(
-            'staff_user_id', staff_user_id,
-            'role', role,
-            'display_name', display_name,
-            'points', points::numeric(10,2)::text,
-            'is_negative', points < 0
+            'staff_user_id', ss.staff_user_id,
+            'role', ss.role,
+            'display_name', ss.display_name,
+            'points', ss.points::numeric(10,2)::text,
+            'is_negative', ss.points < 0
           )
-        ) filter (where role = 'sales'), '[]'::jsonb
+        ) filter (where ss.role = 'sales'), '[]'::jsonb
       ) as sales_totals
-    from staff_summary
+    from staff_summary ss
   ),
   aggregated_ledger as (
     select
       coalesce(
         jsonb_agg(
           jsonb_build_object(
-            'id', id,
-            'staff_user_id', staff_user_id,
-            'staff_role', staff_role,
-            'staff_name', staff_name,
-            'category', category,
-            'points', points,
-            'effective_month', effective_month,
-            'original_month', original_month,
-            'actor', actor,
-            'recorded_at', recorded_at,
-            'reason_code', reason_code
+            'id', li.id,
+            'staff_user_id', li.staff_user_id,
+            'staff_role', li.staff_role,
+            'staff_name', li.staff_name,
+            'category', li.category,
+            'points', li.points,
+            'effective_month', li.effective_month,
+            'original_month', li.original_month,
+            'actor', li.actor,
+            'recorded_at', li.recorded_at,
+            'reason_code', li.reason_code
           )
         ), '[]'::jsonb
       ) as ledger
-    from ledger_items
+    from ledger_items li
   )
   select
     a.all_totals,
