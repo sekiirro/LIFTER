@@ -16,26 +16,31 @@ afterAll(async () => {
 });
 
 describe('P7 immutable truncate guards (S70-R113)', () => {
-  it.each(immutableTables)('rejects privileged TRUNCATE of %s', async (table) => {
-    await expect(
-      db.begin(async (tx) => {
-        await tx`truncate table ${tx(table)} cascade`;
-        throw new Error('truncate unexpectedly succeeded');
-      }),
-    ).rejects.toMatchObject({
-      code: '23514',
-      message: expect.stringMatching(/immutable|append-only/i),
-    });
-  });
+  it.each(immutableTables)(
+    'rejects privileged TRUNCATE of %s',
+    async (table) => {
+      await expect(
+        db.begin(async (tx) => {
+          await tx`truncate table ${tx(table)} cascade`;
+          throw new Error('truncate unexpectedly succeeded');
+        }),
+      ).rejects.toMatchObject({
+        code: '23514',
+        message: expect.stringMatching(/immutable|append-only/i),
+      });
+    },
+  );
 
   it('kill test: removing the earned-points truncate trigger permits the mutation', async () => {
-    await db.begin(async (tx) => {
-      await tx`drop trigger p7_earned_points_no_truncate on public.p7_earned_points`;
-      await tx`truncate table public.p7_earned_points cascade`;
-      // The transaction rollback restores the trigger and all rows.
-      throw new Error('rollback mutation transaction');
-    }).catch((error: { message?: string }) => {
-      expect(error.message).toBe('rollback mutation transaction');
-    });
+    await db
+      .begin(async (tx) => {
+        await tx`drop trigger p7_earned_points_no_truncate on public.p7_earned_points`;
+        await tx`truncate table public.p7_earned_points cascade`;
+        // The transaction rollback restores the trigger and all rows.
+        throw new Error('rollback mutation transaction');
+      })
+      .catch((error: { message?: string }) => {
+        expect(error.message).toBe('rollback mutation transaction');
+      });
   });
 });

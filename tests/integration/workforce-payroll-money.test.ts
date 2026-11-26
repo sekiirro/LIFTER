@@ -236,15 +236,17 @@ describe('P7 own compensation read', () => {
       p_effective_month: '2026-11-01',
     });
     expect(own.error).toBeNull();
-    expect(own.data).toMatchObject({
-      basic_salary_amount_minor: '100000',
-      basic_salary_amount: '1000.00',
-      currency: 'EGP',
-      approved: false,
-      approved_snapshot_total_minor: null,
-      approved_snapshot_total: null,
-    });
-    expect(Object.keys(own.data as object).sort()).toEqual([
+    expect(own.data).toMatchObject([
+      {
+        basic_salary_amount_minor: '100000',
+        basic_salary_amount: '1000.00',
+        currency: 'EGP',
+        approved: false,
+        approved_snapshot_total_minor: null,
+        approved_snapshot_total: null,
+      },
+    ]);
+    expect(Object.keys((own.data as unknown[])[0] as object).sort()).toEqual([
       'approved',
       'approved_snapshot_total',
       'approved_snapshot_total_minor',
@@ -255,7 +257,7 @@ describe('P7 own compensation read', () => {
 
     const saleSalary = await setSalary(po, {
       p_employee_id: sales.userId,
-      p_effective_month: '2026-11-01',
+      p_effective_month: '2030-01-01',
       p_market: 'International',
       p_amount_minor: '250050',
       p_currency: 'USD',
@@ -263,26 +265,28 @@ describe('P7 own compensation read', () => {
       p_idempotency_key: randomUUID(),
     });
     expect(saleSalary.revision).toBe(1);
-    const reviewed = await snapshot(po, sales.userId, '2026-11-01');
-    const approvalId = await approve(po, sales.userId, '2026-11-01', reviewed);
+    const reviewed = await snapshot(po, sales.userId, '2030-01-01');
+    const approvalId = await approve(po, sales.userId, '2030-01-01', reviewed);
     expect(approvalId).toBeTruthy();
     const saleOwn = await sales.client.rpc('p7_get_own_compensation', {
       p_employee_id: sales.userId,
-      p_effective_month: '2026-11-01',
+      p_effective_month: '2030-01-01',
     });
     expect(saleOwn.error).toBeNull();
-    expect(saleOwn.data).toMatchObject({
-      basic_salary_amount_minor: '250050',
-      basic_salary_amount: '2500.50',
-      currency: 'USD',
-      approved: true,
-      approved_snapshot_total_minor: reviewed.amount_minor,
-      approved_snapshot_total: '2500.50',
-    });
+    expect(saleOwn.data).toMatchObject([
+      {
+        basic_salary_amount_minor: '250050',
+        basic_salary_amount: '2500.50',
+        currency: 'USD',
+        approved: true,
+        approved_snapshot_total_minor: reviewed.amount_minor,
+        approved_snapshot_total: '2500.50',
+      },
+    ]);
 
     const poRead = await po.client.rpc('p7_get_own_compensation', {
       p_employee_id: sales.userId,
-      p_effective_month: '2026-11-01',
+      p_effective_month: '2030-01-01',
     });
     expect(poRead.error).toBeNull();
     expect(poRead.data).toEqual(saleOwn.data);
@@ -314,9 +318,9 @@ describe('P7 own compensation read', () => {
         'public.p7_get_own_compensation(uuid,date)'::regprocedure
       ) as sql
     `;
-    const predicate = /and\s+p_employee_id\s+is distinct from\s+auth\.uid\(\)/i;
+    const predicate = /or\s+p_employee_id\s+is distinct from\s+auth\.uid\(\)/i;
     expect(definition!.sql).toMatch(predicate);
-    const mutant = definition!.sql.replace(predicate, 'and false');
+    const mutant = definition!.sql.replace(predicate, 'or false');
 
     await db
       .begin(async (tx) => {
@@ -325,7 +329,7 @@ describe('P7 own compensation read', () => {
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainer.userId, role: 'authenticated' })}, true)`;
         const rows = await tx`
           select basic_salary_amount_minor
-          from public.p7_get_own_compensation(${sales.userId}::uuid, '2026-11-01'::date)
+          from public.p7_get_own_compensation(${sales.userId}::uuid, '2030-01-01'::date)
         `;
         expect(rows).toEqual([{ basic_salary_amount_minor: '250050' }]);
         throw new Error('rollback own-id guard mutation');
