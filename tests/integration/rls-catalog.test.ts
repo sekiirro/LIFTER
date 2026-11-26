@@ -2958,6 +2958,7 @@ describe('P7 T017/T026/T027 payroll security catalog', () => {
     'public.p7_post_monetary_payroll_input(uuid,date,text,bigint,text,uuid,uuid,uuid)',
     'public.p7_create_payroll_snapshot(uuid,date,uuid)',
     'public.p7_approve_external_payroll(uuid,date,uuid,integer,bigint,text,uuid)',
+    'public.p7_get_own_compensation(uuid,date)',
   ];
 
   it('forces RLS, grants no direct table access, and has immutable write guards', async () => {

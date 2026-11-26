@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { admin, createStaff, sql } from './harness';
+import { admin, anonClient, createStaff, sql } from './harness';
 
 const db = sql();
 let po: Awaited<ReturnType<typeof createStaff>>;
@@ -226,6 +226,113 @@ describe('P7 manual payroll money inputs', () => {
       sales.client.from('p7_monetary_payroll_inputs').select('*'),
     ]);
     for (const result of results) expect(result.error).not.toBeNull();
+  });
+});
+
+describe('P7 own compensation read', () => {
+  it('returns only the requested caller-owned compensation and approved snapshot total', async () => {
+    const own = await trainer.client.rpc('p7_get_own_compensation', {
+      p_employee_id: trainer.userId,
+      p_effective_month: '2026-11-01',
+    });
+    expect(own.error).toBeNull();
+    expect(own.data).toMatchObject({
+      basic_salary_amount_minor: '100000',
+      basic_salary_amount: '1000.00',
+      currency: 'EGP',
+      approved: false,
+      approved_snapshot_total_minor: null,
+      approved_snapshot_total: null,
+    });
+    expect(Object.keys(own.data as object).sort()).toEqual([
+      'approved',
+      'approved_snapshot_total',
+      'approved_snapshot_total_minor',
+      'basic_salary_amount',
+      'basic_salary_amount_minor',
+      'currency',
+    ]);
+
+    const saleSalary = await setSalary(po, {
+      p_employee_id: sales.userId,
+      p_effective_month: '2026-11-01',
+      p_market: 'International',
+      p_amount_minor: '250050',
+      p_currency: 'USD',
+      p_expected_revision: 0,
+      p_idempotency_key: randomUUID(),
+    });
+    expect(saleSalary.revision).toBe(1);
+    const reviewed = await snapshot(po, sales.userId, '2026-11-01');
+    const approvalId = await approve(po, sales.userId, '2026-11-01', reviewed);
+    expect(approvalId).toBeTruthy();
+    const saleOwn = await sales.client.rpc('p7_get_own_compensation', {
+      p_employee_id: sales.userId,
+      p_effective_month: '2026-11-01',
+    });
+    expect(saleOwn.error).toBeNull();
+    expect(saleOwn.data).toMatchObject({
+      basic_salary_amount_minor: '250050',
+      basic_salary_amount: '2500.50',
+      currency: 'USD',
+      approved: true,
+      approved_snapshot_total_minor: reviewed.amount_minor,
+      approved_snapshot_total: '2500.50',
+    });
+
+    const poRead = await po.client.rpc('p7_get_own_compensation', {
+      p_employee_id: sales.userId,
+      p_effective_month: '2026-11-01',
+    });
+    expect(poRead.error).toBeNull();
+    expect(poRead.data).toEqual(saleOwn.data);
+  });
+
+  it('denies other staff, WO and anon with the same not_permitted error', async () => {
+    const otherStaff = await trainer.client.rpc('p7_get_own_compensation', {
+      p_employee_id: sales.userId,
+      p_effective_month: '2026-11-01',
+    });
+    const workspaceOwner = await wo.client.rpc('p7_get_own_compensation', {
+      p_employee_id: trainer.userId,
+      p_effective_month: '2026-11-01',
+    });
+    const anonymous = await anonClient().rpc('p7_get_own_compensation', {
+      p_employee_id: trainer.userId,
+      p_effective_month: '2026-11-01',
+    });
+    for (const result of [otherStaff, workspaceOwner, anonymous]) {
+      expect(result.data).toBeNull();
+      expect(result.error).toMatchObject({ code: '42501' });
+      expect(result.error?.message).toMatch(/not_permitted/);
+    }
+  });
+
+  it('T019 kill test: removing the own-id predicate exposes the other salary', async () => {
+    const [definition] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'public.p7_get_own_compensation(uuid,date)'::regprocedure
+      ) as sql
+    `;
+    const predicate = /and\s+p_employee_id\s+is distinct from\s+auth\.uid\(\)/i;
+    expect(definition!.sql).toMatch(predicate);
+    const mutant = definition!.sql.replace(predicate, 'and false');
+
+    await db
+      .begin(async (tx) => {
+        await tx.unsafe(mutant);
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainer.userId, role: 'authenticated' })}, true)`;
+        const rows = await tx`
+          select basic_salary_amount_minor
+          from public.p7_get_own_compensation(${sales.userId}::uuid, '2026-11-01'::date)
+        `;
+        expect(rows).toEqual([{ basic_salary_amount_minor: '250050' }]);
+        throw new Error('rollback own-id guard mutation');
+      })
+      .catch((error: { message?: string }) => {
+        expect(error.message).toBe('rollback own-id guard mutation');
+      });
   });
 });
 
