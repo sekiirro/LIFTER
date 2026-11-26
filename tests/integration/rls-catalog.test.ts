@@ -17,6 +17,7 @@ const signupPrivate = [
   'purge_client_signup_attempts',
   'purge_retention_for_platform_owner',
   'purge_retention_candidates',
+  'purge_retention_candidates_pre_p7_dispute_hold',
   'purge_retention_apply',
   'purge_retention_apply_non_audit',
   'purge_retention_pseudonymize_audit',
@@ -110,6 +111,10 @@ const p7Private = [
   'p7_lock_period',
   'p7_month_for_trigger',
   'p7_reject_mutation',
+  'p7_retention_has_open_dispute',
+];
+// T033 private strike helpers have a dedicated catalog list.
+const p7StrikePrivate = [
   'record_due_workforce_strikes',
   'guard_workforce_strike_immutable',
   'reject_workforce_strike_truncate',
@@ -393,6 +398,7 @@ describe('tenancy security catalog (T007)', () => {
           ...f23Private,
           ...f24Private,
           ...p7Private,
+          ...p7StrikePrivate,
           ...f22Private,
           ...privateAuthenticated,
           'p7_payroll_lineage',
@@ -646,9 +652,7 @@ describe('tenancy security catalog (T007)', () => {
         'f15_alert_schedule_deactivate',
         'f15_alert_schedule_immutable',
         'f15_alert_schedule_run',
-        'record_due_workforce_strikes',
-        'guard_workforce_strike_immutable',
-        'reject_workforce_strike_truncate',
+        ...p7StrikePrivate,
         'f15_answer_is_present',
         'f15_answer_values_valid',
         'f15_forms_purge_run',
@@ -670,6 +674,7 @@ describe('tenancy security catalog (T007)', () => {
         'normalize_staff_display_name',
         'operation_key_fields_immutable',
         'purge_retention_candidates',
+        'purge_retention_candidates_pre_p7_dispute_hold',
         'purge_f11_retained_data',
         'purge_retention_apply',
         'purge_retention_apply_non_audit',
@@ -702,6 +707,7 @@ describe('tenancy security catalog (T007)', () => {
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
         ...p7Private,
+        ...p7StrikePrivate,
         // F15 T029: D1 erasure cron wrappers declare `security invoker` and enforce
         // the postgres-owner check in the body; only d1_erase_inapplicable_answers
         // is `security definer` (20261215030000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
@@ -768,6 +774,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
           ...p7Private,
+          ...p7StrikePrivate,
           'f18_guard_plan_version_content',
           'f18_guard_nutrition_selection',
           'audit_package_promotion_period',
@@ -886,6 +893,7 @@ describe('tenancy security catalog (T007)', () => {
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
             !f22Private.includes(row.proname) &&
             !p7Private.includes(row.proname) &&
+            !p7StrikePrivate.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
               'audit_events_immutable',
