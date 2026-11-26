@@ -24,7 +24,9 @@ create index p7_adjustment_entries_period_staff_idx
 -- Preserve the activation month independently from the month in which a late
 -- earned fact is recorded. Existing facts retain their original trigger month.
 alter table public.p7_earned_points add column original_month date;
+alter table public.p7_earned_points disable trigger p7_earned_points_immutable;
 update public.p7_earned_points set original_month = effective_month;
+alter table public.p7_earned_points enable trigger p7_earned_points_immutable;
 alter table public.p7_earned_points alter column original_month set not null;
 alter table public.p7_earned_points add constraint p7_earned_points_original_month_first_day
   check (extract(day from original_month) = 1);
