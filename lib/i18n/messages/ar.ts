@@ -175,7 +175,8 @@ export const ar = {
   'registration.sumValid': 'الإجمالي يطابق السعر',
   'registration.invalid_input':
     'تحقق من المبالغ وترتيب الأيام. يجب أن يطابق الإجمالي السعر.',
-  'registration.stale_terms': 'تغيرت شروط هذه الباقة. حدّث الصفحة وحاول مجددًا.',
+  'registration.stale_terms':
+    'تغيرت شروط هذه الباقة. حدّث الصفحة وحاول مجددًا.',
   'registration.reload': 'تحديث الصفحة',
   'registration.not_permitted': 'غير مسموح بهذا الإجراء.',
   'registration.unavailable': 'تعذر إتمام الطلب. حاول مجددًا.',
@@ -612,7 +613,8 @@ export const ar = {
   'registrationApproval.rejected': 'مرفوض',
   'registrationApproval.registration_rejected': 'قرار الرفض العام',
   'registrationApproval.paymentTitle': 'تسجيل الدفعات',
-  'registrationApproval.paymentIntro': 'سجّل تأكيد الدفعات الخارجية للاشتراكات.',
+  'registrationApproval.paymentIntro':
+    'سجّل تأكيد الدفعات الخارجية للاشتراكات.',
   'registrationApproval.paymentEmpty': 'لا توجد دفعات بانتظار التسجيل.',
   'registrationApproval.notAvailable': 'غير متاح',
   'registrationApproval.history': 'سجل الدفعات',
