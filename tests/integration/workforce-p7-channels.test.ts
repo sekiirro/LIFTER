@@ -390,12 +390,7 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
         where policy_kind = 'terms' and status = 'published'
         order by created_at desc, version desc limit 1
       `;
-      let terms = termsRow?.version as string;
-      if (!terms) {
-        terms = `terms-${randomUUID()}`;
-        await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
-          values(${terms},'terms','published')`;
-      }
+      const terms = termsRow!.version as string;
       const formId = randomUUID();
       await tx`insert into public.forms(id,workspace_id,name)
         values(${formId},${wsId},'P7 synthetic check-in')`;
