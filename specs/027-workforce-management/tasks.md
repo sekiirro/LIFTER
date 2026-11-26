@@ -20,8 +20,8 @@
 - [ ] **T009 [FR-002, FR-006, FR-020, FR-026]** RED/GREEN: reuse persisted F15 deadline and first successful initial plan pair; penalty is -1 at deadline, attributed to currently assigned Trainer at breach; record assignment and confirmer separately; PO reattribution appends; strike source remains separate.
 - [ ] **T010 [FR-003, FR-006, FR-020, FR-027]** RED: test exact 24h follow-up is on time/no penalty, >24h or absent follow-up yields one penalty effective at deadline, successful submission only, client-caused lateness, evaluator catch-up/retry/operator path, confirmer race and current assignee at breach.
 - [ ] **T011 [FR-003, FR-006, FR-020, FR-027]** GREEN: implement workspace-scoped idempotent due evaluator and operator-run path; scheduler remains behind current activation gate; confirmation and evaluator converge on one occurrence key and one -0.5 event.
-- [ ] **T012 [FR-006, FR-016, FR-020, FR-029]** Before PO workforce-report UI, draft and approve that screen's AR/EN copy batch; record approval ID.
-- [ ] **T013 [FR-006, FR-007, FR-016, FR-017, FR-020, FR-029]** Implement PO report UI after T012; add PO manual point inputs, correction and reattribution; keep point reversal distinct from strike correction. Verify negative totals and immutable lineage.
+- [x] **T012 [FR-006, FR-016, FR-020, FR-029]** Before PO workforce-report UI, draft and approve that screen's AR/EN copy batch; record approval ID. Evidence: S70-PO-21 (2026-11-26); approved strings in copy-batches.reviewed.md (CB-02 table).
+- [ ] **T013 [FR-006, FR-007, FR-016, FR-017, FR-020, FR-029]** Implement PO report UI after T012; add PO manual point inputs, correction and reattribution; keep point reversal distinct from strike correction. Verify negative totals and immutable lineage. Verified (read-only slice): `tests/unit/workforce-report.test.tsx` (13/13), `20261225200000_p7_workforce_report.sql`, `tests/integration/p7-workforce-report.test.ts`. Manual edits, disputes, refund questionnaire and strikes remain deferred until backend schemas merge.
 
 ## Slice C - Monthly quality, reminders and payroll money inputs (target 250-400 changed lines)
 

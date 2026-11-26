@@ -1545,4 +1545,37 @@ export const en: Record<keyof typeof ar, string> = {
     'Your password wasn’t changed. Request a new reset link and try again.',
   'auth.resetCheckLogin':
     'We couldn’t confirm whether your password changed. Try signing in with your new password. If it doesn’t work, request a new reset link.',
+  'workforce.report.title': 'Workforce report',
+  'workforce.report.closedMonth': 'Closed',
+  'workforce.report.currentMonth': 'Current month',
+  'workforce.report.section.trainers': 'Trainer totals',
+  'workforce.report.section.sales': 'Sales totals',
+  'workforce.report.column.netPoints': 'Net points',
+  'workforce.report.netPointsFormula':
+    'Net points = earned + transformation/feedback − penalties + PO adjustments.',
+  'workforce.report.netPointsHint':
+    'Refund reversals appear as entries in the ledger.',
+  'workforce.report.pointsNotSalary': 'Points are separate from salary.',
+  'workforce.report.negativeTotal': 'Negative total',
+  'workforce.report.negativeHint':
+    'Negative totals are valid. They do not change salary.',
+  'workforce.report.ledger.title': 'Ledger',
+  'workforce.report.ledger.category.earned': 'Earned',
+  'workforce.report.ledger.category.transformationFeedback':
+    'Transformation / feedback',
+  'workforce.report.ledger.category.planDelay': 'Plan delay (−1)',
+  'workforce.report.ledger.category.checkinDelay': 'Check-in delay (−0.5)',
+  'workforce.report.ledger.category.poAdjustment': 'PO adjustment',
+  'workforce.report.ledger.category.refundReversal': 'Refund reversal',
+  'workforce.report.ledger.column.points': 'Points',
+  'workforce.report.ledger.column.reason': 'Reason',
+  'workforce.report.ledger.column.actor': 'Recorded by',
+  'workforce.report.ledger.column.effectiveMonth': 'Effective month',
+  'workforce.report.ledger.originalMonth': 'Original month: {month}',
+  'workforce.report.empty': 'No workforce data for this month.',
+  'workforce.report.noResults': 'No entries match these filters.',
+  'workforce.report.loading': 'Loading workforce report…',
+  'workforce.report.loadError':
+    'Unable to load the workforce report. Try again.',
+  'workforce.report.denied': 'You cannot view the workforce report.',
 };

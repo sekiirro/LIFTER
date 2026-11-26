@@ -2443,6 +2443,21 @@ describe('P7 earned ledger and monthly close catalog', () => {
       service_role: false,
     });
     expect(finalizer!.proconfig).toContain('search_path=""');
+
+    const [reporter] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='public.p7_workforce_report(uuid,date)'::regprocedure`;
+    expect(reporter).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(reporter!.proconfig).toContain('search_path=""');
   });
 });
 
