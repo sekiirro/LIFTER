@@ -480,6 +480,7 @@ export async function pendingHttpAccess(
             'client_goal_read',
             'client_leaderboard_my_rank',
             'find_client_by_code',
+            'p7_finalize_month',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&

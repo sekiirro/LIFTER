@@ -111,6 +111,7 @@ const p7Private = [
   'p7_lock_period',
   'p7_month_for_trigger',
   'p7_reject_mutation',
+  'p7_route_closed_period',
   'p7_retention_has_open_dispute',
 ];
 const privateAuthenticated = [
@@ -823,6 +824,10 @@ describe('tenancy security catalog (T007)', () => {
         ].includes(row.proname)
       ) {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
+        expect(row.service_role_execute, row.proname).toBe(false);
+      }
+      if (p7Private.includes(row.proname)) {
+        expect(row.authenticated_execute, row.proname).toBe(false);
         expect(row.service_role_execute, row.proname).toBe(false);
       }
       if (row.proname === 'archive_f15_selection_update') {
@@ -2381,36 +2386,63 @@ describe('F19 T021 activation catalog', () => {
   });
 });
 
-describe('P7 earned ledger catalog', () => {
-  it('forces RLS, withholds direct access, and keeps client identifiers out of facts', async () => {
-    const [table] = await db`
-      select relrowsecurity, relforcerowsecurity
-      from pg_class where oid='public.p7_earned_points'::regclass`;
-    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
-    const policies = await db`select * from pg_policies
-      where schemaname='public' and tablename='p7_earned_points'`;
-    expect(policies).toHaveLength(0);
-    for (const role of ['anon', 'authenticated', 'service_role'])
-      for (const privilege of [
-        'SELECT',
-        'INSERT',
-        'UPDATE',
-        'DELETE',
-        'TRUNCATE',
-      ]) {
-        const [grant] = await db`select has_table_privilege(${role},
-          'public.p7_earned_points', ${privilege}) as allowed`;
-        expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
-      }
-    const [clientId] =
-      await db`select exists(select 1 from information_schema.columns
-      where table_schema='public' and table_name='p7_earned_points' and column_name='client_id') as present`;
+describe('P7 earned ledger and monthly close catalog', () => {
+  it('forces RLS and withholds direct access to all P7 accounting tables', async () => {
+    for (const table of [
+      'p7_earned_points',
+      'p7_adjustment_entries',
+      'p7_month_snapshots',
+    ]) {
+      const [security] = await db`
+        select relrowsecurity, relforcerowsecurity
+        from pg_class where oid=${`public.${table}`}::regclass`;
+      expect(security, table).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies = await db`
+        select * from pg_policies where schemaname='public' and tablename=${table}`;
+      expect(policies, table).toHaveLength(0);
+      for (const role of ['anon', 'authenticated', 'service_role'])
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+        ]) {
+          const [grant] = await db`
+            select has_table_privilege(${role}, ${`public.${table}`}, ${privilege}) as allowed`;
+          expect(grant!.allowed, `${role} ${privilege} ${table}`).toBe(false);
+        }
+    }
+    const [clientId] = await db`
+      select exists(select 1 from information_schema.columns where table_schema='public'
+        and table_name='p7_earned_points' and column_name='client_id') as present`;
     expect(clientId!.present).toBe(false);
-    const clientForeignKeys = await db`select c.conname from pg_constraint c
+    const clientForeignKeys = await db`
+      select c.conname from pg_constraint c
       where c.conrelid='public.p7_earned_points'::regclass and c.contype='f'
         and c.confrelid in ('public.clients'::regclass, 'public.subscriptions'::regclass,
           'public.productivity_units'::regclass, 'public.subscription_activations'::regclass)`;
     expect(clientForeignKeys).toHaveLength(0);
+  });
+
+  it('locks the period helper and restricts finalization to authenticated callers', async () => {
+    const [finalizer] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='public.p7_finalize_month(uuid,date)'::regprocedure`;
+    expect(finalizer).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(finalizer!.proconfig).toContain('search_path=""');
   });
 });
 
