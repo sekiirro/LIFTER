@@ -20,9 +20,9 @@
   justify-content: flex-end;
 }
 
-.rail {
+.rail.rail {
   display: none;
-  position: fixed;
+  position: fixed !important;
   inset-inline-start: max(
     var(--space-4),
     calc((100vw - min(100vw, 64rem)) / 2 - var(--rail-width) - var(--space-4))
@@ -47,7 +47,7 @@
 /* S31-PO-7 Q5: the vertical inline-start sidebar shows from 64rem (1024px);
    the labeled bottom bar shows below 64rem. FR-021 / FR-027 / SC-010. */
 @media (min-width: 64rem) {
-  .rail {
+  .rail.rail {
     display: flex;
   }
   .bottom {
@@ -69,7 +69,7 @@
   }
 }
 @media print {
-  .rail,
+  .rail.rail,
   .bottom {
     display: none;
   }
