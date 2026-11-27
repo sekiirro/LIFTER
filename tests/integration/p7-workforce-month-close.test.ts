@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
+import { createStaff } from './harness';
 import { clientContext, graph, sql } from './registration-approval-fixture';
 
 const db = sql();
@@ -394,6 +395,7 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
 
   it('rolls back an F19 PO override when its actor is demoted while waiting on the period fence', async () => {
     const context = await clientContext();
+    await createStaff('platform_owner', 'p7-demoter');
     const seeded = await db.begin((tx) => graph(tx, context));
     const [period] = await db`
       select date_trunc('month',statement_timestamp() at time zone 'Africa/Cairo')::date::text as month`;
@@ -411,12 +413,20 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
 
     await locked;
     const operationKey = randomUUID();
-    const producer = context.po.client.rpc('override_activate_subscription', {
-      p_workspace_id: context.wsA.id,
-      p_subscription_id: seeded.subscription,
-      p_recipient_trainer_user_id: context.trainerA.userId,
-      p_operation_key: operationKey,
-    });
+    let producerResult = 'pending';
+    const producer = context.po.client
+      .rpc('override_activate_subscription', {
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: context.trainerA.userId,
+        p_operation_key: operationKey,
+      })
+      .then((result) => {
+        producerResult = result.error
+          ? `error:${result.error.code ?? 'unknown'}`
+          : `status:${result.data?.status ?? 'empty'}`;
+        return result;
+      });
     try {
       const deadline = Date.now() + 10_000;
       let waiting = false;
@@ -424,7 +434,8 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
         const [activity] = await db`
           select exists(
             select 1 from pg_stat_activity
-            where wait_event_type='Lock' and query ilike '%override_activate_subscription%'
+            where wait_event_type='Lock' and wait_event='advisory'
+              and cardinality(pg_blocking_pids(pid)) > 0
           ) as waiting`;
         if (activity?.waiting) {
           waiting = true;
@@ -432,7 +443,7 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
         }
         await new Promise((resolve) => setTimeout(resolve, 25));
       }
-      expect(waiting).toBe(true);
+      expect(waiting, producerResult).toBe(true);
       await db`update public.staff_profiles set role='workspace_owner'
         where user_id=${context.po.userId}`;
     } finally {
@@ -450,11 +461,17 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
         (select count(*)::int from public.productivity_units
           where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as units,
         (select count(*)::int from public.audit_events
-          where workspace_id=${context.wsA.id} and target_id in
-            (select id from public.subscription_activations
-             where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription})) as audits,
+          where workspace_id=${context.wsA.id}
+            and action in ('subscription.activation_committed','workforce.earned_fact_recorded')
+            and (details->>'subscription_id'=${seeded.subscription}
+              or target_table in ('subscription_activations','p7_earned_points'))) as audits,
         (select count(*)::int from app_private.f19_override_operations
           where workspace_id=${context.wsA.id} and operation_key=${operationKey}) as operations`;
-    expect(counts).toEqual({ activations: 0, units: 0, audits: 0, operations: 0 });
+    expect(counts).toEqual({
+      activations: 0,
+      units: 0,
+      audits: 0,
+      operations: 0,
+    });
   });
 });

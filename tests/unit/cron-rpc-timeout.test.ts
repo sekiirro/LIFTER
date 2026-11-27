@@ -27,7 +27,7 @@ describe('cron RPC timeout', () => {
       },
       fetcher as typeof fetch,
       timeoutSignal,
-    )('jobs_claim', { batch: 1 });
+    )('jobs_claim', { batch: 1, allowed_kinds: ['system.noop'] });
     controller.abort(new Error('sensitive token and database detail'));
 
     await expect(rpcPromise).rejects.toThrow('rpc_timeout');

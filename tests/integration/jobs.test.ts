@@ -63,6 +63,7 @@ async function claim(leaseSeconds = 300): Promise<Job[]> {
     await service.rpc('jobs_claim', {
       batch: 100,
       lease_seconds: leaseSeconds,
+      allowed_kinds: [kind],
     }),
   ) as Job[];
 }
@@ -152,7 +153,9 @@ describe('jobs outbox (T005)', () => {
     const ids = await Promise.all(Array.from({ length: 20 }, () => enqueue()));
     const clients = [admin(), admin()];
     const results = await Promise.all(
-      clients.map((client) => client.rpc('jobs_claim', { batch: 10 })),
+      clients.map((client) =>
+        client.rpc('jobs_claim', { batch: 10, allowed_kinds: [kind] }),
+      ),
     );
     const sets = results.map((result) =>
       (checked(result) as Job[])
@@ -269,12 +272,15 @@ describe('jobs outbox (T005)', () => {
         recipient_id: randomUUID(),
       },
     });
-    const claimed = await claimOwn(id);
+    const [claimed] = await db`
+      select * from public.claim_f15_form_alert_jobs(25, 300)
+      where id = ${id}`;
+    expect(claimed).toBeDefined();
     expect(
       checked(
         await service.rpc('jobs_fail', {
           id,
-          lease: claimed.lease_token,
+          lease: claimed!.lease_token,
           error_code: canary,
         }),
       ),

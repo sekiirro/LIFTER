@@ -15,7 +15,10 @@ export type Handler = (job: {
 }) => Promise<void>;
 
 type RpcMethods = {
-  jobs_claim: { args: { batch: number }; result: Job[] };
+  jobs_claim: {
+    args: { batch: number; allowed_kinds: string[] };
+    result: Job[];
+  };
   jobs_complete: { args: { id: string; lease: string }; result: boolean };
   jobs_fail: {
     args: { id: string; lease: string; error_code: string; permanent: boolean };
@@ -135,9 +138,15 @@ export async function drain({
   budgetMs?: number;
   batch?: number;
 }): Promise<void> {
+  const allowedKinds = Object.keys(handlers).sort();
+  if (allowedKinds.length === 0) return;
+
   const startedAt = now();
   while (now() - startedAt < budgetMs) {
-    const jobs = await rpc('jobs_claim', { batch });
+    const jobs = await rpc('jobs_claim', {
+      batch,
+      allowed_kinds: allowedKinds,
+    });
     if (jobs.length === 0) return;
     for (const job of jobs) {
       // Claimed but unstarted jobs recover through their database lease.

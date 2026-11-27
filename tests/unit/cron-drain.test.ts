@@ -84,10 +84,10 @@ describe('cron drain (T004)', () => {
       ]),
     );
     expect(rpc.mock.calls).toEqual([
-      ['jobs_claim', { batch: 25 }],
+      ['jobs_claim', { batch: 25, allowed_kinds: ['system.noop'] }],
       ['jobs_complete', { id: 'a', lease: 'lease-a' }],
       ['jobs_complete', { id: 'b', lease: 'lease-b' }],
-      ['jobs_claim', { batch: 25 }],
+      ['jobs_claim', { batch: 25, allowed_kinds: ['system.noop'] }],
     ]);
   });
 
@@ -145,7 +145,7 @@ describe('cron drain (T004)', () => {
     'fails unknown kind %s permanently',
     async (kind) => {
       const rpc = fakeRpc([[job('a', kind)], []]);
-      await drain({ rpc, handlers: {} });
+      await drain({ rpc, handlers: { 'system.noop': async () => {} } });
       expect(rpc).toHaveBeenCalledWith('jobs_fail', {
         id: 'a',
         lease: 'lease-a',
@@ -170,7 +170,7 @@ describe('cron drain (T004)', () => {
       },
     });
     expect(rpc.mock.calls).toEqual([
-      ['jobs_claim', { batch: 1 }],
+      ['jobs_claim', { batch: 1, allowed_kinds: ['system.noop'] }],
       ['jobs_complete', { id: 'a', lease: 'lease-a' }],
     ]);
   });
@@ -194,7 +194,7 @@ describe('cron drain (T004)', () => {
   it('stops immediately on an empty claim', async () => {
     const rpc = fakeRpc([[]]);
     await drain({ rpc, handlers: {} });
-    expect(rpc.mock.calls).toEqual([['jobs_claim', { batch: 25 }]]);
+    expect(rpc.mock.calls).toEqual([]);
   });
 
   it('sanitizes invalid deliberate codes', () => {
@@ -311,7 +311,12 @@ describe('cron edge wiring', () => {
         SUPABASE_URL: 'https://example.test/',
         SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
       });
-      expect(await rpc('jobs_claim', { batch: 3 })).toEqual([]);
+      expect(
+        await rpc('jobs_claim', {
+          batch: 3,
+          allowed_kinds: ['system.noop'],
+        }),
+      ).toEqual([]);
       expect(fetchMock).toHaveBeenCalledWith(
         'https://example.test/rest/v1/rpc/jobs_claim',
         {
@@ -322,16 +327,19 @@ describe('cron edge wiring', () => {
             Authorization: 'Bearer test-runtime-key',
             'Content-Type': 'application/json',
           },
-          body: '{"batch":3}',
+          body: '{"batch":3,"allowed_kinds":["system.noop"]}',
           signal: expect.any(AbortSignal),
         },
       );
       fetchMock.mockResolvedValueOnce(
         new Response('private response', { status: 403 }),
       );
-      await expect(rpc('jobs_claim', { batch: 3 })).rejects.toThrow(
-        /^rpc_http_403$/,
-      );
+      await expect(
+        rpc('jobs_claim', {
+          batch: 3,
+          allowed_kinds: ['system.noop'],
+        }),
+      ).rejects.toThrow(/^rpc_http_403$/);
     } finally {
       vi.unstubAllGlobals();
     }
@@ -350,9 +358,12 @@ describe('cron edge wiring', () => {
         SUPABASE_URL: 'https://example.test/',
         SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
       });
-      await expect(rpc('jobs_claim', { batch: 3 })).rejects.toThrow(
-        /^rpc_http_302$/,
-      );
+      await expect(
+        rpc('jobs_claim', {
+          batch: 3,
+          allowed_kinds: ['system.noop'],
+        }),
+      ).rejects.toThrow(/^rpc_http_302$/);
       expect(fetchMock).toHaveBeenCalledOnce();
     } finally {
       vi.unstubAllGlobals();
@@ -639,7 +650,7 @@ describe('cron edge wiring', () => {
       ]);
       expect(rpcCalls).toContainEqual([
         'https://example.test/rest/v1/rpc/jobs_claim',
-        '{"batch":25}',
+        '{"batch":25,"allowed_kinds":["client.distribution","quality.monthly_reminder","system.noop"]}',
       ]);
     } finally {
       vi.unstubAllGlobals();
