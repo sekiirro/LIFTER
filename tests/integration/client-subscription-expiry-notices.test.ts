@@ -19,12 +19,12 @@ beforeAll(async () => {
 });
 afterAll(async () => p?.close());
 
-async function moveExpiryToTwoDays(subject: PortalClient) {
+async function moveExpiryToDays(subject: PortalClient, remainingDays: number) {
   await p.db.begin(async (tx) => {
     await tx`set local session_replication_role = replica`;
     await tx`update public.subscription_activations a
       set activated_at = app_private.f23_cairo_date_start(
-        (clock_timestamp() at time zone 'Africa/Cairo')::date + 2 - s.duration_days)
+        (clock_timestamp() at time zone 'Africa/Cairo')::date + ${remainingDays}::integer - s.duration_days)
       from public.subscriptions s
       where a.workspace_id = s.workspace_id and a.subscription_id = s.id
         and s.workspace_id = ${p.fixture.wsA.id}::uuid
@@ -32,6 +32,8 @@ async function moveExpiryToTwoDays(subject: PortalClient) {
     await tx`set local session_replication_role = origin`;
   });
 }
+
+const moveExpiryToTwoDays = (subject: PortalClient) => moveExpiryToDays(subject, 2);
 
 async function expiryAt(subject: PortalClient): Promise<Date> {
   const [core] = await p.db`
@@ -116,6 +118,26 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(Number(row!.n)).toBe(1);
   });
 
+  it('creates one new stage identity when F13 changes the effective-expiry revision', async () => {
+    const revised = await p.makeClient({ activate: true, label: 'expiry revision' });
+    await moveExpiryToDays(revised, 2);
+    const originalExpiry = await expiryAt(revised);
+    await evaluate(new Date(originalExpiry.getTime() - 72 * 60 * 60 * 1000));
+
+    await moveExpiryToDays(revised, 5);
+    const changedExpiry = await expiryAt(revised);
+    await evaluate(new Date(changedExpiry.getTime() - 72 * 60 * 60 * 1000));
+
+    const [rows] = await p.db`
+      select count(*)::integer as n, count(distinct source_revision)::integer as revisions
+      from app_private.client_inbox_notices
+      where workspace_id = ${p.fixture.wsA.id}::uuid
+        and client_id = ${revised.clientId}::uuid
+        and source_key = ${revised.subscriptionId}::uuid and source_stage = 't3'`;
+    expect(Number(rows!.n)).toBe(2);
+    expect(Number(rows!.revisions)).toBe(2);
+  });
+
   it('catches up T-3 once when first eligible under 72 hours and sends T-1 only at its instant', async () => {
     const late = await p.makeClient({ activate: true, label: 'expiry short lead' });
     await moveExpiryToTwoDays(late);
@@ -159,7 +181,7 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(renewal.data).toMatchObject({ status: 'ok' });
     await evaluate(new Date(renewalExpiry.getTime() - 24 * 60 * 60 * 1000));
     const [renewalRows] = await p.db`
-      select count(*)::integer as t1,
+      select count(*) filter (where notice_kind = 'subscription_expiring_t1')::integer as t1,
         count(*) filter (where notice_kind in (
           'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'))::integer as t3
       from app_private.client_inbox_notices
@@ -193,7 +215,7 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(freeze.data).toMatchObject({ status: 'applied', revision: 1 });
     await evaluate(new Date(freezeExpiry.getTime() - 24 * 60 * 60 * 1000));
     const [freezeRows] = await p.db`
-      select count(*)::integer as t1,
+      select count(*) filter (where notice_kind = 'subscription_expiring_t1')::integer as t1,
         count(*) filter (where notice_kind in (
           'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'))::integer as t3
       from app_private.client_inbox_notices
@@ -223,7 +245,7 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(refund.data).toMatchObject({ status: 'ok' });
     await evaluate(new Date(refundExpiry.getTime() - 24 * 60 * 60 * 1000));
     const [refundRows] = await p.db`
-      select count(*)::integer as t1,
+      select count(*) filter (where notice_kind = 'subscription_expiring_t1')::integer as t1,
         count(*) filter (where notice_kind in (
           'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'))::integer as t3
       from app_private.client_inbox_notices
@@ -271,12 +293,19 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
       );
       expect(mutant).not.toBe(original);
       await tx.unsafe(mutant);
-      await asUser(tx, other.authUserId, async (inner) => {
-        const [row] = await inner`select public.read_client_notices(100, null) as value`;
-        expect(kinds(row!.value as Record<string, unknown>)).toContain(
-          'subscription_activated',
-        );
-      });
+      let killed = false;
+      try {
+        await asUser(tx, other.authUserId, async (inner) => {
+          const [row] = await inner`select public.read_client_notices(100, null) as value`;
+          expect(kinds(row!.value as Record<string, unknown>)).not.toContain(
+            'subscription_activated',
+          );
+        });
+      } catch {
+        killed = true;
+      }
+      await tx.unsafe(original);
+      expect(killed, 'Removing the F22 client scope must be detected').toBe(true);
     });
   });
 });
