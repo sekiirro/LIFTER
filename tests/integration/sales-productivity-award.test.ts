@@ -557,3 +557,91 @@ it('343-B4 kill-test: both producers hash a UTC-canonical timestamp, not the ses
     expect(row!.prosrc as string).toContain("at time zone 'UTC'");
   }
 });
+
+// ---- S71-R17: Workspace Owners hold approve_registration too ----
+
+it('343-R17 a Workspace Owner approves a Sales-issued registration with exactly one P7 fact and one audit row', async () => {
+  const f = await clientContext();
+  const target = await registered(f, null, undefined, f.salesA.client);
+  const [issued] = await db`
+    select created_by_role_snapshot::text as role
+    from public.registration_links where id=${target.link}`;
+  expect(issued?.role).toBe('sales');
+
+  expect(await call(f.woA.client, 'approve', request(f, target))).toMatchObject(
+    {
+      status: 'ok',
+    },
+  );
+
+  const [unit] = await db`
+    select id from public.sales_productivity_units
+    where workspace_id=${f.wsA.id} and client_id=${target.id}`;
+  expect(unit?.id).toBeTruthy();
+  const facts = await db`
+    select id, staff_user_id, points::text as points, source_key
+    from public.p7_earned_points
+    where workspace_id=${f.wsA.id} and source_key=${unit!.id}`;
+  expect(facts).toHaveLength(1);
+  expect(facts[0]).toMatchObject({
+    staff_user_id: f.salesA.userId,
+    points: '1.00',
+  });
+  const audits = await db`
+    select id, actor_user_id from public.audit_events
+    where workspace_id=${f.wsA.id}
+      and action='workforce.earned_fact_recorded'
+      and target_table='p7_earned_points'
+      and target_id=${facts[0]!.id}`;
+  expect(audits).toHaveLength(1);
+  expect(audits[0]?.actor_user_id).toBe(f.woA.userId);
+});
+
+it('343-R17 the Platform Owner approval path still records exactly one P7 fact and one audit row', async () => {
+  const f = await clientContext();
+  const target = await registered(f, null, undefined, f.salesA.client);
+  expect(await call(f.po.client, 'approve', request(f, target))).toMatchObject({
+    status: 'ok',
+  });
+  const [unit] = await db`
+    select id from public.sales_productivity_units
+    where workspace_id=${f.wsA.id} and client_id=${target.id}`;
+  expect(unit?.id).toBeTruthy();
+  const facts = await db`
+    select id from public.p7_earned_points
+    where workspace_id=${f.wsA.id} and source_key=${unit!.id}`;
+  expect(facts).toHaveLength(1);
+  const audits = await db`
+    select actor_user_id from public.audit_events
+    where workspace_id=${f.wsA.id}
+      and action='workforce.earned_fact_recorded'
+      and target_table='p7_earned_points'
+      and target_id=${facts[0]!.id}`;
+  expect(audits).toHaveLength(1);
+  expect(audits[0]?.actor_user_id).toBe(f.po.userId);
+});
+
+it('343-R17 kill-test: restoring the PO-only post-wait guard breaks Workspace Owner approvals', async () => {
+  const [row] = await db`
+    select pg_get_functiondef('app_private.p7_earn_sales_productivity_unit()'::regprocedure) as definition`;
+  const definition = row!.definition as string;
+  const serviceRoleGuard = "auth.role() = 'service_role'";
+  const workspaceGuard =
+    "app_private.has_workspace_access(new.workspace_id, 'approve_registration')";
+  expect(definition).toContain(serviceRoleGuard);
+  expect(definition).toContain(workspaceGuard);
+
+  const mutant = definition
+    .replaceAll(serviceRoleGuard, 'app_private.is_platform_owner()')
+    .replaceAll(workspaceGuard, 'false');
+  await db.unsafe(mutant);
+  try {
+    const f = await clientContext();
+    const target = await registered(f, null, undefined, f.salesA.client);
+    // Under the PO-only mutant this WO approval is rolled back with 42501.
+    const result = await call(f.woA.client, 'approve', request(f, target));
+    expect(result).toMatchObject({ status: 'ok' });
+  } finally {
+    await db.unsafe(definition);
+  }
+});
