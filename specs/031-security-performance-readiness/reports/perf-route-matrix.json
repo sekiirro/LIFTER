@@ -1,0 +1,17 @@
+{
+  "_note": "PI-03 route list recorded before the 2026-11-27 baseline run (T006). Reuses spec 008 scripts/free-tier/http-probe.mjs. Anonymous/loopback only: authenticated data paths at pilot volumes remain pending PI-05 test-account approval. No secrets or client data.",
+  "base_url": "http://127.0.0.1:3000",
+  "n": 20,
+  "concurrency": 2,
+  "routes": [
+    { "path": "/api/health", "surface": "mobile-web/health", "kind": "public" },
+    { "path": "/login", "surface": "mobile-web/auth", "kind": "public" },
+    { "path": "/auth/recovery", "surface": "mobile-web/auth", "kind": "public" },
+    { "path": "/clients", "surface": "client directory", "kind": "authenticated-shell" },
+    { "path": "/clients?page=1&pageSize=50", "surface": "client directory/pagination", "kind": "authenticated-shell" },
+    { "path": "/clients?query=Pilot", "surface": "client directory/filtering", "kind": "authenticated-shell" },
+    { "path": "/workspaces", "surface": "workspace/staff directory", "kind": "authenticated-shell" },
+    { "path": "/reports", "surface": "reports", "kind": "authenticated-shell" },
+    { "path": "/welcome", "surface": "client portal mobile web", "kind": "authenticated-shell" }
+  ]
+}
