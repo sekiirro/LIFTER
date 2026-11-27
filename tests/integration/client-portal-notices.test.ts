@@ -126,6 +126,8 @@ describe('F22 client notice reads and mark-read (T020)', () => {
     for (const notice of read.notices as Array<Record<string, unknown>>)
       expect(Object.keys(notice).sort()).toEqual([
         'created_at',
+        'dismissed_at',
+        'expiry_date',
         'notice_id',
         'notice_kind',
         'read_at',

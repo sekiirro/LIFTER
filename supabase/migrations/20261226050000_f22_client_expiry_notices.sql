@@ -34,18 +34,9 @@ alter table app_private.staff_inbox_notices
 insert into app_private.retention_purge_allowlist(table_oid, can_delete, can_update, traverse)
 values ('app_private.staff_inbox_notices'::regclass, true, false, true)
 on conflict (table_oid) do update set can_delete = true, traverse = true;
-do $$
-declare old_constraint text;
-begin
-  select c.conname into old_constraint
-  from pg_catalog.pg_constraint c
-  where c.conrelid = 'app_private.staff_inbox_notices'::regclass
-    and c.contype = 'u'
-    and pg_catalog.pg_get_constraintdef(c.oid) =
-      'UNIQUE (workspace_id, recipient_user_id, notice_kind, source_key, source_revision)';
-  if old_constraint is null then raise exception 'staff_notice_dedup_constraint_missing'; end if;
-  execute pg_catalog.format('alter table app_private.staff_inbox_notices drop constraint %I', old_constraint);
-end $$;
+-- Keep the legacy key so existing F23/P7 inbox producers can continue using
+-- their established ON CONFLICT targets. The stage key adds cross-kind T-3
+-- deduplication without invalidating those writers.
 alter table app_private.staff_inbox_notices
   add constraint staff_inbox_notices_revision_stage_dedup
   unique (workspace_id, recipient_user_id, source_key, source_revision, source_stage);
