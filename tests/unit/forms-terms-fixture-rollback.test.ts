@@ -202,6 +202,12 @@ const COMMIT_REQUIRED = [
     reason:
       'P7 delay evaluator and confirmer race assertions use separate connections and require the committed synthetic check-in terms fixture',
   },
+  {
+    file: 'tests/integration/workforce-p7-channels.test.ts',
+    signature: /workforce-p7-channels-\$\{randomUUID\(\)\}/,
+    reason:
+      'T032 7b trainer and PO RPC assertions use separate PostgREST connections and require the committed synthetic terms policy',
+  },
 ];
 
 type Site = { file: string; index: number; source: string };

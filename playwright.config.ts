@@ -131,6 +131,7 @@ export default defineConfig({
         ? 'npm run build && node tests/e2e/start-server-capture.mjs'
         : 'npm run build && node scripts/branding/start-playwright-server.mjs',
     url: new URL('/api/health', baseURL).toString(),
+    timeout: 120_000,
     env: {
       ...process.env,
       PORT:
