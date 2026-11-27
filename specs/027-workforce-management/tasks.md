@@ -1,4 +1,4 @@
-﻿# Tasks: P7 Workforce Management
+# Tasks: P7 Workforce Management
 
 **Input**: spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md
 **Lane**: Check-ins backend implementation (T001-T004). UI and later KPI/penalty slices remain deferred to their assigned tasks.
@@ -10,8 +10,8 @@
 - [x] **T002 [FR-004, FR-012, FR-017, FR-020, FR-024, FR-025]** RED: add PO/WO/Trainer/Sales authorization fixtures, revocation races, direct audit reader inventory, Realtime/count/HEAD/export/cache/replay channel inventory, and non-disclosing denial tests. Verified: workforce-checkins.test.ts role denials, audit/channel probes and two revocation-wait races; rls-catalog.test.ts P7 catalog probe; 76 focused integration tests passed on 25c77dc8.
 - [x] **T003 [FR-004, FR-017, FR-020]** RED: test narrow all-Trainer same-workspace Check-ins projection and ensure F22 directory assignment filters/client-code wall (S70-PO-1 item 1) remain unchanged. Verified: workforce-checkins.test.ts same-workspace Trainer projection and client-directory-assignment.test.ts; 76 focused integration tests passed on 25c77dc8.
 - [x] **T004 [FR-004, FR-005, FR-017]** GREEN: reuse F15/F23 form, answer and transition history; add only narrow check-in visibility/follow-up projection. Preserve Late history and recheck authorization after waits. Verified: workforce-checkins.test.ts Late history, F15-audited latest answer snapshot, confirmation idempotency/concurrency, F26 purge-context deletion and both authorization-wait races; Stack B focused suite passed on 25c77dc8 (3 files / 76 tests).
-- [ ] **T005 [FR-029]** Before the Check-ins UI slice, prepare its complete AR/EN screen-state copy batch and obtain PO approval; record approval identifiers in the copy table.
-- [ ] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts.
+- [x] **T005 [FR-029]** Before the Check-ins UI slice, prepare its complete AR/EN screen-state copy batch and obtain PO approval; record approval identifiers in the copy table. Evidence: S70-PO-19 (2026-11-25); approved strings: specs/027-workforce-management/copy-approved-cb01-cb03.md (CB-01 table).
+- [x] **T006 [FR-004, FR-005, FR-017, FR-029]** Implement Check-ins UI only after T005 approval; verify fields, statuses, loading/empty/error/permission states, RTL/LTR, keyboard and responsive layouts. Verified: `tests/unit/trainer-checkins-ui.test.tsx` (9 unit tests pass with TZ=Africa/Cairo; copy-fix assertions for Actions/loading in EN and AR) and `tests/e2e/workforce-checkins.spec.ts` (Trainer follow-up happy path, Sales role denial with zero disclosure, axe accessibility clean, screenshot matrix across {AR, EN} x {light, dark} x {390px, 1440px}).
 
 ## Slice B - Durable KPI facts, timing and Trainer penalties (target 250-400 changed lines)
 
@@ -25,11 +25,14 @@
 
 ## Slice C - Monthly quality, reminders and payroll money inputs (target 250-400 changed lines)
 
-- [ ] **T014 [FR-009, FR-020, FR-023]** RED: test transformation/feedback counts, per-Trainer +1/-1 defaults, two-decimal weights, zeroing, count/weight revisions and concurrent edits. Only latest effective revision per Trainer/month/category contributes.
-- [ ] **T015 [FR-009, FR-020, FR-023]** GREEN: implement append-only quality revisions and latest-effective projection; preserve superseded revisions without summing them.
-- [ ] **T016 [FR-009, FR-020]** RED/GREEN: add monthly PO reminder through existing notification/outbox, unique workspace+month dedup, behind existing scheduler activation gates; notification has no sensitive P7 details.
+- [x] **T014 [FR-009, FR-020, FR-023]** RED: test transformation/feedback counts, per-Trainer +1/-1 defaults, two-decimal weights, zeroing, count/weight revisions and concurrent edits. Only latest effective revision per Trainer/month/category contributes.
+      Verified: tests/unit/p7-quality-math.test.ts, tests/integration/p7-monthly-quality.test.ts
+- [x] **T015 [FR-009, FR-020, FR-023]** GREEN: implement append-only quality revisions and latest-effective projection; preserve superseded revisions without summing them.
+      Verified: tests/integration/p7-monthly-quality.test.ts, tests/integration/rls-catalog.test.ts
+- [x] **T016 [FR-009, FR-020]** RED/GREEN: add monthly PO reminder through existing notification/outbox, unique workspace+month dedup, behind existing scheduler activation gates; notification has no sensitive P7 details.
+      Verified: tests/integration/p7-monthly-quality.test.ts, tests/integration/rls-catalog.test.ts
 - [x] **T017 [FR-028, FR-020]** RED/GREEN: add PO-only manual monetary incentive/deduction/correction inputs in exact minor units and currency with immutable lineage; points never populate money; no automatic salary deduction. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (exact minor units/lineage, idempotency, concurrency, staff authorization), 64/64 focused integration tests passed.
-- [ ] **T018 [FR-029]** Before monthly-quality/payroll UI slice, prepare and approve the AR/EN screen batch; track copy approvals screen by screen.
+- [x] **T018 [FR-029]** Before monthly-quality/payroll UI slice, prepare and approve the AR/EN screen batch; track copy approvals screen by screen. Evidence: S70-PO-19 (2026-11-25); approved strings: specs/027-workforce-management/copy-approved-cb01-cb03.md (CB-03 table).
 - [ ] **T019 [FR-008, FR-028, FR-029]** Implement salary UI after T018: one monthly salary per person, market-allowed currency, platform-PO ownership, provisioning and own-compensation-only staff view; WO excluded.
 
 ## Slice D - Sales acquisition, funnel and refund accounting (target 250-400 changed lines)
@@ -45,8 +48,8 @@
 
 - [x] **T026 [FR-008, FR-028, FR-020]** RED: test person+month salary entitlement, allowed currency, unique employee/month approval, exact reviewed snapshot/version and amount/currency binding, stale snapshot rejection and two-key concurrent duplicate approval. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (salary entitlement, stale/mixed currency, snapshot binding, concurrency), 64/64 focused integration tests passed.
 - [x] **T027 [FR-008, FR-028]** GREEN: make payroll snapshot immutable and allow exactly one external-paid approval per employee/month entitlement. Require the reviewed immutable snapshot version; corrections use separate attributable inputs, not another approval. Verified: e80ffaa82e53e448f4b1d268a0215550b17b63ab, `tests/integration/workforce-payroll-money.test.ts` (immutable snapshot and single concurrent approval), 64/64 focused integration tests passed.
-- [ ] **T028 [FR-013, FR-014, FR-021, FR-022, FR-020]** RED: test trigger-month assignment by category, Cairo boundaries, closed-month carry-forward, snapshot totals, empty-period first event, multiple staff, month-close/refund/reattribution races and lock order.
-- [ ] **T029 [FR-013, FR-014, FR-021, FR-022, FR-020]** GREEN: shared workspace+month advisory fence for every producer and finalizer, acquired after source locks in fixed documented order. Closed months stay immutable; late corrections go to current open month linked to original month.
+- [x] **T028 [FR-013, FR-014, FR-021, FR-022, FR-020]** RED: test trigger-month assignment by category, Cairo boundaries, closed-month carry-forward, snapshot totals, empty-period first event, multiple staff, month-close/refund/reattribution races and lock order. Verified: `ba1a4d94` RED failed on the pre-migration Stack C schema; `70ea611b`, `tests/integration/p7-workforce-month-close.test.ts` (7/7 passed on Stack A, including Cairo boundary, immutable snapshot, late F19 routing and finalization race).
+- [x] **T029 [FR-013, FR-014, FR-021, FR-022, FR-020]** GREEN: shared workspace+month advisory fence for every producer and finalizer, acquired after source locks in fixed documented order. Closed months stay immutable; late corrections go to current open month linked to original month. Verified: RED `3cadb7f5` failed on missing `original_month`; GREEN `70ea611b`, `tests/integration/p7-workforce-month-close.test.ts::routes a late F19 activation out of a finalized month and keeps its snapshot unchanged`, `::serializes finalization against a late F19 activation producer`, and `::serializes month close against an adjustment producer on the same period fence` (Stack A, suite 7/7 passed; routing kill-test failed as expected with late fact still in October rather than November; S70-R118 GREEN `0ec92d9b` upgrade-check suite 9/9 after six pre-existing F19 facts, all lineage complete and immutable guard enabled; restored migration SHA-256 `6A9465E84B6DFB3FF573EDD9E9AD8F2B5A99F58B9D82654EBB1C8D392B4E9D4C`; S70-R123 moved the unmerged migration to `20261225120000_p7_month_close_and_period_fence.sql`).
 
 ## Slice F - Retention, audit and channel confidentiality (target 250-400 changed lines)
 
@@ -62,7 +65,7 @@
 
 ## Dependency order
 
-T001-T004 establish schemas and authorization; T005 precedes T006 UI only. T007-T011 establish durable facts and trigger idempotency. T012 precedes T013 UI. T014-T017 are backend and can proceed independently of T018/T019 copy/UI. T020 precedes T021 backfill; T022 precedes T023 refund implementation; T024 precedes T025. T026 precedes T027 approval. T028 precedes T029 month close. T030 precedes T031 F26 extension. T032 tests audit and all confidentiality channels. T033 depends on the existing source/ledger. T034 precedes only remaining UI. T035 closes the implementation sequence. Telegram timeliness remains post-launch documentation only; there is no current implementation task.
+T001-T004 establish schemas and authorization; T005 precedes T006 UI only. T007-T011 establish durable facts and trigger idempotency. T012 precedes T013 UI. T014-T017 are backend and can proceed independently of T018/T019 copy/UI. T020 precedes T021 backfill; T022 precedes T023 refund implementation; T024 precedes T025. T026 precedes T027 approval. T028 precedes T029 month close. T030 precedes T031 F26 extension. T032 tests audit and all confidentiality channels. T033 reuses F15 D-03 persisted SLA, F19 initial pair deliveries, F11 assignment history, and F26 retention; it must not depend on or alter the P7 point ledger. T034 precedes only remaining UI. T035 closes the implementation sequence. Telegram timeliness remains post-launch documentation only; there is no current implementation task.
 
 ## Slice discipline
 

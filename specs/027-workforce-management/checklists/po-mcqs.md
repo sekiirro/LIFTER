@@ -32,8 +32,25 @@ All listed decisions are ANSWERED. S70-PO-16 decisions are not reopened. The ori
 
 **Applied to**: FR-029, copy inventory and every UI task dependency. No unapproved copy is treated as approved or shipped.
 
+## P7-MCQ-03 - Strike source and attribution - ANSWERED
+
+**Verbatim S70-PO-20**: "Late plan deliveries (Recommended)". Each client whose initial workout/nutrition plan is delivered after the persisted F15 D-03 deadline is one strike event for the Trainer responsible at that instant. Count strikes automatically over a rolling 90 days; show 3/6/9 to the PO for review only, never automatic discipline. Strike records remain separate from P7 point penalties; the PO corrects strikes separately.
+
+**S70-R109**: This answer changes FR-016, FR-026 and T033; reuse the persisted D-03 deadline and never recompute it.
+
+**Applied to**: FR-016/FR-026, the strike event and correction entities, PO-only RPC contract, and T033.
+
 ## Decision status
 
 - Open product MCQs: 0.
+
+## P7-MCQ-04 - PO strike correction semantics - RESOLVED BY S70-R110
+
+S70-R110 rules that PO-only append-only corrections may void a strike, reinstate the latest void, or reattribute it to a Trainer in the same workspace who held access at breach time. The latest correction determines effective state; reason is required and audit contains an opaque reference only.
+
+## P7-MCQ-05 - Rolling 90-day count clock - RESOLVED BY S70-R110
+
+The strike instant is when the persisted F15 D-03 deadline passes without a successful initial plan pair, even if no later delivery occurs. A later delivery does not move the strike instant or create another strike. Count `breach_at > now() - interval '90 days' AND breach_at <= now()` using `timestamptz`; Cairo is display-only.
+
 - PENDING-PO requirements: none.
 - Remaining governance dependency: Constitution C1/C2 are resolved by the pending separate Constitution 1.20.0 amendment PR in lane s70-gemini-const120; this is not a product question.
