@@ -422,10 +422,13 @@ it('343-B2 kill-test: the post-wait 42501 guard follows both the fence wait and 
   const definition = row!.prosrc as string;
   const fence = definition.indexOf('p7_lock_period');
   const insert = definition.indexOf('insert into public.p7_earned_points');
-  const guard = definition.indexOf("errcode = '42501'");
+  const firstGuard = definition.indexOf("errcode = '42501'");
+  const secondGuard = definition.indexOf("errcode = '42501'", firstGuard + 1);
   expect(fence).toBeGreaterThanOrEqual(0);
   expect(insert).toBeGreaterThan(fence);
-  expect(guard).toBeGreaterThan(insert);
+  expect(firstGuard).toBeGreaterThan(fence);
+  expect(firstGuard).toBeLessThan(insert);
+  expect(secondGuard).toBeGreaterThan(insert);
 });
 
 it('343-B3 writes one opaque audit reference per newly backfilled P7 fact and is idempotent on rerun', async () => {
