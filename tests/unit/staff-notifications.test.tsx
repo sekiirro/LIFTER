@@ -161,6 +161,46 @@ describe('StaffNotifications exact stored kinds & copy (B8, B13, CB-P8-01)', () 
     const text = getNotificationText(unknownNotice, en, 'en');
     expect(text).toBeNull();
   });
+
+  it('never renders unapproved fallback literal "Food replacement request" (F-01)', () => {
+    const notice: UnifiedStaffNotification = {
+      type: 'staff_notice',
+      id: '11111111-1111-4111-8111-111111111111',
+      kind: 'food_replacement_open',
+      workspaceId: '22222222-2222-4222-8222-222222222222',
+      sourceKey: '33333333-3333-4333-8333-333333333333',
+      createdAt: '2026-11-27T10:00:00Z',
+      readAt: null,
+    };
+
+    // When dictionary key is absent, unapproved hardcoded literal must never be returned
+    const sparseMessages = { ...en };
+    delete (sparseMessages as Record<string, string>)[
+      'foodReplacement.notification.open'
+    ];
+
+    const textWithoutKey = getNotificationText(notice, sparseMessages);
+    expect(textWithoutKey).not.toBe('Food replacement request');
+
+    // And in normal rendering across all locales, it uses the approved key and never the literal
+    for (const locale of ['en', 'ar'] as const) {
+      const messages = getMessages(locale);
+      const text = getNotificationText(notice, messages, locale);
+      expect(text).toBe(messages['foodReplacement.notification.open']);
+      expect(text).not.toBe('Food replacement request');
+
+      const html = renderToStaticMarkup(
+        <StaffNotifications
+          messages={messages}
+          locale={locale}
+          initialOpen={true}
+          initialNotifications={[notice]}
+        />,
+      );
+      expect(html).toContain(messages['foodReplacement.notification.open']);
+      expect(html).not.toContain('Food replacement request');
+    }
+  });
 });
 
 describe('StaffNotifications date-only Cairo formatting and clientName requirement (B9)', () => {

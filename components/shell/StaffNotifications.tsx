@@ -107,10 +107,7 @@ export function getNotificationText(
 
   // staff_notice
   if (item.kind === 'food_replacement_open') {
-    return (
-      messages['foodReplacement.notification.open'] ??
-      'Food replacement request'
-    );
+    return messages['foodReplacement.notification.open'];
   }
 
   if (item.kind === 'monthly_quality_reminder') {
