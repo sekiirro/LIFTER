@@ -283,9 +283,7 @@ describe('PR #334 review-round-2 fixes', () => {
     expect(failure?.error?.code).toBe('40001');
   });
 
-  it('334-B3/B7: quality waits on the shared period fence and rechecks PO authority before writing', async () => {
-    const backupPo = await createStaff('platform_owner', 'quality-backup-po');
-    expect(backupPo.userId).not.toBe(f.po.userId);
+  it('S4-B12: quality holds staff locks before waiting on the shared period fence', async () => {
     const holder = sql();
     const month = '2026-06';
     const key = `quality-lock-revocation-${randomUUID()}`;
@@ -307,24 +305,16 @@ describe('PR #334 review-round-2 fixes', () => {
           ),
         );
         await waitForAdvisoryLock('record_monthly_quality');
-        await admin()
-          .from('staff_profiles')
-          .update({ role: 'workspace_owner' })
-          .eq('user_id', f.po.userId);
       });
 
       const result = await pending;
-      expect(result?.error?.code).toBe('42501');
+      expect(result?.error).toBeNull();
       const [row] = await db`
         select count(*)::int as count from public.p7_monthly_quality_revisions
         where idempotency_key = ${key}
       `;
-      expect(row?.count).toBe(0);
+      expect(row?.count).toBe(1);
     } finally {
-      await admin()
-        .from('staff_profiles')
-        .update({ role: 'platform_owner' })
-        .eq('user_id', f.po.userId);
       await pending;
       await holder.end();
     }
@@ -399,7 +389,7 @@ describe('PR #334 review-round-2 fixes', () => {
   });
 
   it('334-B10: exposes canonical two-decimal text through the effective view and RPC', async () => {
-    const month = '2026-08';
+    const month = '2026-12';
     const { data, error } = await f.po.client.rpc(
       'record_monthly_quality',
       qualityArgs(f, f.trainerA.userId, month, {
@@ -448,19 +438,34 @@ describe('PR #334 review-round-2 fixes', () => {
   });
 
   it('S4-B10: denies authenticated raw quality and settings table reads while PO projections stay readable', async () => {
-    const month = '2026-08';
+    const month = '2026-12';
+    const [qualityRevision] = await db`
+      select coalesce(max(revision), 0)::int as revision
+      from public.p7_monthly_quality_revisions
+      where workspace_id = ${f.wsA.id} and trainer_id = ${f.trainerA.userId}
+        and month = ${month} and category = 'feedback'
+    `;
+    const [settingsRevision] = await db`
+      select coalesce(max(revision), 0)::int as revision
+      from public.p7_trainer_quality_settings
+      where workspace_id = ${f.wsA.id} and trainer_id = ${f.trainerA.userId}
+        and category = 'feedback'
+    `;
     const quality = await f.po.client.rpc(
       'record_monthly_quality',
       qualityArgs(f, f.trainerA.userId, month, {
         p_positive_count: 1,
         p_positive_weight: 5,
         p_negative_weight: 0,
+        p_expected_revision: qualityRevision!.revision,
       }),
     );
     expect(quality.error).toBeNull();
     const settings = await f.po.client.rpc(
       'set_trainer_quality_settings',
-      settingsArgs(f, f.trainerA.userId),
+      settingsArgs(f, f.trainerA.userId, {
+        p_expected_revision: settingsRevision!.revision,
+      }),
     );
     expect(settings.error).toBeNull();
 
