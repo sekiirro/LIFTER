@@ -25,6 +25,39 @@ type RpcMethods = {
     args: { p_job_id: string; p_lease_token: string };
     result: boolean;
   };
+  po_export_snapshot: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: {
+      rows: Array<{ row: Record<string, string | null> }>;
+      row_count: number;
+      exceeded_limit: boolean;
+    };
+  };
+  po_export_attempt: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: string | null;
+  };
+  po_export_finalize: {
+    args: {
+      p_job_id: string;
+      p_lease_token: string;
+      p_object_path: string;
+      p_row_count: number;
+    };
+    result: boolean;
+  };
+  po_export_failed: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: boolean;
+  };
+  po_export_expired_artifacts: {
+    args: { p_limit: number };
+    result: Array<{ job_id: string; object_path: string }>;
+  };
+  po_export_expired_mark: {
+    args: { p_job_id: string; p_object_path: string };
+    result: boolean;
+  };
   handle_quality_monthly_reminder: {
     args: { p_job_id: string; p_lease_token: string };
     result: boolean;

@@ -416,6 +416,8 @@ describe('tenancy security catalog (T007)', () => {
           ...p7QualityPrivate,
           ...f22Private,
           ...p7Private,
+          'p7_checkin_late_penalty_after_insert',
+          'p7_record_checkin_delay_penalty',
           ...p7StrikePrivate,
           ...privateAuthenticated,
           'p7_payroll_lineage',
@@ -423,6 +425,7 @@ describe('tenancy security catalog (T007)', () => {
           'p7_reject_immutable_write',
           'p7_require_payroll_employee',
           'p7_require_platform_owner',
+          'po_export_audit',
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
           'audit_package_created',
@@ -648,6 +651,7 @@ describe('tenancy security catalog (T007)', () => {
           'f17_client_safe_set',
           'f17_client_safe_item',
           'f17_client_safe_workout_document',
+          'po_export_audit',
           'capture_workforce_checkin_pending',
           'guard_workforce_checkin_transition',
           'guard_workforce_checkin_transition_truncate',
@@ -911,6 +915,8 @@ describe('tenancy security catalog (T007)', () => {
               'capture_workforce_checkin_pending',
               'guard_workforce_checkin_transition',
               'guard_workforce_checkin_transition_truncate',
+              'p7_checkin_late_penalty_after_insert',
+              'p7_record_checkin_delay_penalty',
             ].includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
@@ -928,6 +934,7 @@ describe('tenancy security catalog (T007)', () => {
               'guard_package_reporting_fx_snapshot',
               'seed_package_reporting_fx_pending',
               'package_promotion_period_active',
+              'po_export_audit',
               'catalog_assert_exercise_text_limits',
               'catalog_create_food_legacy',
               'catalog_food_duplicate_exists',
@@ -2497,6 +2504,59 @@ describe('P7 earned ledger and monthly close catalog', () => {
     });
     expect(reporter!.proconfig).toContain('search_path=""');
   });
+
+  it('limits the check-in delay evaluator to the explicitly checked operator role', async () => {
+    const [evaluator] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role,
+        pg_catalog.pg_get_functiondef(p.oid) as definition
+      from pg_proc p
+      where p.oid='public.run_p7_checkin_delay_evaluator(uuid)'::regprocedure`;
+    expect(evaluator).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: false,
+      service_role: true,
+    });
+    expect(evaluator!.proconfig).toContain('search_path=""');
+    expect(evaluator!.definition.toLowerCase()).toContain(
+      "auth.role() is distinct from 'service_role'",
+    );
+    const [penalty] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'app_private.p7_record_checkin_delay_penalty(uuid,uuid)'::regprocedure) as definition`;
+    const source = penalty!.definition.toLowerCase();
+    expect(source.indexOf('for update of s')).toBeGreaterThanOrEqual(0);
+    expect(source.indexOf('for update of s')).toBeLessThan(
+      source.indexOf('f11.responsible_trainer.workspace:'),
+    );
+    expect(source.indexOf('f11.responsible_trainer.workspace:')).toBeLessThan(
+      source.indexOf('app_private.p7_lock_period'),
+    );
+    const clientForeignKeys = await db`
+      select c.conname from pg_constraint c
+      where c.conrelid='public.p7_adjustment_entries'::regclass and c.contype='f'
+        and c.confrelid='public.clients'::regclass`;
+    expect(clientForeignKeys).toHaveLength(0);
+  });
+
+  it('restricts Sales monthly projection RPC to authenticated callers with search_path=""', async () => {
+    const [proc] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='public.p7_get_sales_monthly_total(uuid,date,uuid)'::regprocedure`;
+    expect(proc).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(proc!.proconfig).toContain('search_path=""');
+  });
 });
 
 describe('F13 T044a Sales productivity catalog', () => {
@@ -3406,6 +3466,12 @@ describe('P7 T002/T004 check-in transition security catalog', () => {
         and not t.tgisinternal order by t.tgname
     `;
     expect(triggers).toEqual([
+      {
+        tgname: 'p7_checkin_late_penalty_after_insert',
+        proname: 'p7_checkin_late_penalty_after_insert',
+        tgtype: 5,
+        tgenabled: 'O',
+      },
       {
         tgname: 'workforce_checkin_transitions_append_only',
         proname: 'guard_workforce_checkin_transition',
