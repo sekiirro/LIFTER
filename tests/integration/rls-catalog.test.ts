@@ -3094,10 +3094,18 @@ describe('P7 T033 strike security catalog', () => {
         }
       }
       const [trigger] = await db`
-        select count(*)::int as count from pg_trigger
-        where tgrelid=${relation}::regclass and not tgisinternal and (tgtype & 28)<>0
+        select
+          count(*) filter (where (tgtype & 16)<>0)::int as update_guards,
+          count(*) filter (where (tgtype & 8)<>0)::int as delete_guards,
+          count(*) filter (where (tgtype & 32)<>0)::int as truncate_guards
+        from pg_trigger
+        where tgrelid=${relation}::regclass and not tgisinternal
       `;
-      expect(trigger?.count, relation).toBeGreaterThan(0);
+      expect(trigger, relation).toEqual({
+        update_guards: 1,
+        delete_guards: 1,
+        truncate_guards: 1,
+      });
     }
   });
 
