@@ -53,6 +53,7 @@ export default async function ClientDirectoryPage({
     approval?: SearchValue;
     subscription?: SearchValue;
     assignment?: SearchValue;
+    expiry?: SearchValue;
     page?: SearchValue;
   }>;
 }) {
@@ -61,29 +62,40 @@ export default async function ClientDirectoryPage({
     notFound();
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
-  const failure = (
+  const renderFailure = (isExpiring = false) => (
     <main className={styles.main}>
       <h1>{m['staff.clientDirectory.title']}</h1>
-      <Alert tone="error" title={m['states.error.title']}>
-        <p>{m['states.error.description']}</p>
+      <Alert
+        tone="error"
+        title={
+          isExpiring
+            ? m['staff.clientDirectory.expiring.loadError']
+            : m['states.error.title']
+        }
+      >
+        <p>
+          {isExpiring
+            ? m['staff.clientDirectory.expiring.loadError']
+            : m['states.error.description']}
+        </p>
       </Alert>
     </main>
   );
 
   const client = await createSessionClient();
-  if (!client) return failure;
+  if (!client) return renderFailure();
   let workspaces: { id: string; name: string }[];
   try {
     const listed = await client
       .from('workspaces')
       .select('id,name')
       .order('name');
-    if (listed.error || !listed.data) return failure;
+    if (listed.error || !listed.data) return renderFailure();
     workspaces = listed.data.filter((w) =>
       authorize(actor, 'coaching_work', w.id),
     );
   } catch {
-    return failure;
+    return renderFailure();
   }
   if (!workspaces.length)
     return (
@@ -105,10 +117,16 @@ export default async function ClientDirectoryPage({
   )
     notFound();
 
+  const isExpiringFilter =
+    query.subscriptionStatus === 'expiring' ||
+    query.subscriptionStatus === 'expired' ||
+    query.expiry === 'expiring' ||
+    query.expiry === 'expired';
+
   const result = await loadClientDirectory(client, actor, workspaceId, query);
   if (result.status === 'not_permitted' || result.status === 'invalid_input')
     notFound();
-  if (result.status !== 'ok') return failure;
+  if (result.status !== 'ok') return renderFailure(isExpiringFilter);
 
   return (
     <main className={styles.main}>
@@ -175,9 +193,16 @@ export default async function ClientDirectoryPage({
             <select
               id="directory-subscription"
               name="subscription"
-              defaultValue={query.subscriptionStatus ?? ''}
+              defaultValue={
+                query.subscriptionStatus === 'expiring'
+                  ? 'expiring'
+                  : (query.expiry ?? query.subscriptionStatus ?? '')
+              }
             >
               <option value="">{m['client.portal.subscriptionStatus']}</option>
+              <option value="expiring">
+                {m['staff.clientDirectory.expiring']}
+              </option>
               {SUBSCRIPTION_STATUSES.map((status) => {
                 // The Refunded filter matches full refunds only (S57-PO-12).
                 const key = staffSubscriptionStatusLabelKey({
@@ -220,8 +245,14 @@ export default async function ClientDirectoryPage({
 
       {result.rows.length === 0 ? (
         <NoResults
-          title={m['states.noResults.title']}
-          description={m['states.noResults.description']}
+          title={
+            isExpiringFilter
+              ? m['staff.clientDirectory.expiring.empty']
+              : m['states.noResults.title']
+          }
+          description={
+            isExpiringFilter ? undefined : m['states.noResults.description']
+          }
         />
       ) : (
         <ul className={styles.list} data-testid="client-directory-results">
@@ -240,10 +271,22 @@ export default async function ClientDirectoryPage({
                 {m['registrationApproval.clientStatus']}:{' '}
                 {m[approvalLabel[row.approvalState]]}
               </p>
+              {row.expiryBucket === 'expiring' && (
+                <p
+                  className={styles.meta}
+                  data-testid="directory-expiring-badge"
+                >
+                  <span>{m['staff.clientDirectory.expiring']}</span>
+                </p>
+              )}
               {row.subscriptionStatus &&
+                row.subscriptionStatus !== 'expiring' &&
                 (() => {
                   const key = staffSubscriptionStatusLabelKey({
-                    status: row.subscriptionStatus,
+                    status: row.subscriptionStatus as Exclude<
+                      typeof row.subscriptionStatus,
+                      'expiring'
+                    >,
                     refundScope: row.refundScope ?? undefined,
                   });
                   return key ? (

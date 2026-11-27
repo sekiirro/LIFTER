@@ -1663,6 +1663,25 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.salary.market.international': 'International',
   'workforce.payroll.selectEmployeeFirst': 'Select an employee first.',
   'workforce.payroll.employee': 'Employee',
+  'staff.notifications.title': 'Notifications',
+  'staff.notifications.bellLabel': 'Open notifications',
+  'staff.notifications.loading': 'Loading',
+  'staff.notifications.empty': 'You are all caught up.',
+  'staff.notifications.error': 'Unable to load data',
+  'staff.notifications.errorDescription':
+    'Something went wrong. Please try again.',
+  'staff.notifications.retry': 'Retry',
+  'staff.notifications.markRead': 'Mark as read',
+  'staff.notices.expiryT3':
+    "{clientName}'s subscription expires in 3 days ({expiryDate})",
+  'staff.notices.expiryT3ShortLead':
+    "{clientName}'s subscription expires soon ({expiryDate})",
+  'staff.notices.expired':
+    "{clientName}'s subscription expired on {expiryDate}",
+  'staff.clientDirectory.expiring': 'Expiring',
+  'staff.clientDirectory.expiring.empty': 'No clients match this filter',
+  'staff.clientDirectory.expiring.loadError':
+    "We couldn't load this list. Try again.",
   'workforce.finalize.title': 'Finalize month',
   'workforce.finalize.selectMonth':
     'Select a month that has ended (Cairo time)',

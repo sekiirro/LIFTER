@@ -9,6 +9,7 @@ import {
 import type { GlassFallback } from '../ui/glass/GlassSurface';
 import type { Messages } from '../../lib/i18n';
 import { ShellNavigation } from './ShellNavigation';
+import { StaffNotifications } from './StaffNotifications';
 import styles from './AppShell.module.css';
 
 const PlatformOwnerHeader = dynamic(
@@ -37,6 +38,7 @@ export type AppShellProps = Omit<
   children: ReactNode;
   contentAs?: 'main' | 'div';
   workspaceId?: string;
+  notifications?: boolean;
 };
 
 export function AppShell({
@@ -47,8 +49,15 @@ export function AppShell({
   contentAs: Content = 'main',
   workspaceId,
   fallback,
+  notifications = true,
 }: AppShellProps) {
   const navigation = getNavigation(role);
+  const isStaff =
+    (role === 'platform_owner' ||
+      role === 'workspace_owner' ||
+      role === 'trainer') &&
+    notifications;
+
   if (role === 'platform_owner')
     return (
       <div className={styles.shell} data-shell="">
@@ -57,7 +66,16 @@ export function AppShell({
       </div>
     );
   if (navigation.status === 'needs-decision')
-    return <Content>{children}</Content>;
+    return (
+      <div className={styles.shell} data-shell="">
+        <Content>{children}</Content>
+        {isStaff && (
+          <div className={styles.staffHeader}>
+            <StaffNotifications messages={messages} />
+          </div>
+        )}
+      </div>
+    );
   return (
     <div className={styles.shell} data-shell="">
       <ShellNavigation
@@ -71,6 +89,11 @@ export function AppShell({
         bottomClassName={styles.bottom}
       />
       <Content className={styles.content}>{children}</Content>
+      {isStaff && (
+        <div className={styles.staffHeader}>
+          <StaffNotifications messages={messages} />
+        </div>
+      )}
     </div>
   );
 }

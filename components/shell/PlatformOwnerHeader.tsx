@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Messages } from '../../lib/i18n';
 import { Button } from '../ui/Button';
+import { StaffNotifications } from './StaffNotifications';
 import styles from './PlatformOwnerHeader.module.css';
 
 export function PlatformOwnerHeader({ messages }: { messages: Messages }) {
@@ -35,26 +36,29 @@ export function PlatformOwnerHeader({ messages }: { messages: Messages }) {
         }
       }}
     >
-      <nav aria-label={messages['nav.label']}>
-        <Button
-          ref={triggerRef}
-          variant="secondary"
-          aria-expanded={open}
-          aria-controls={open ? 'platform-owner-more-menu' : undefined}
-          onClick={() => setOpen((value) => !value)}
-        >
-          {messages['nav.more']}
-        </Button>
-        {open && (
-          <ul id="platform-owner-more-menu" className={styles.menu}>
-            <li>
-              <Link href="/workspaces" onClick={() => setOpen(false)}>
-                {messages['workspaces.title']}
-              </Link>
-            </li>
-          </ul>
-        )}
-      </nav>
+      <div className={styles.actions}>
+        <StaffNotifications messages={messages} />
+        <nav aria-label={messages['nav.label']}>
+          <Button
+            ref={triggerRef}
+            variant="secondary"
+            aria-expanded={open}
+            aria-controls={open ? 'platform-owner-more-menu' : undefined}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {messages['nav.more']}
+          </Button>
+          {open && (
+            <ul id="platform-owner-more-menu" className={styles.menu}>
+              <li>
+                <Link href="/workspaces" onClick={() => setOpen(false)}>
+                  {messages['workspaces.title']}
+                </Link>
+              </li>
+            </ul>
+          )}
+        </nav>
+      </div>
     </header>
   );
 }

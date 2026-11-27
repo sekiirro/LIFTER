@@ -1,6 +1,7 @@
 import 'server-only';
 import { createSessionClient } from '../../supabase/server';
 import {
+  dismissStaffNoticeResult,
   markStaffNoticeResult,
   parseStaffNotices,
   type StaffNoticesResult,
@@ -35,4 +36,17 @@ export async function markStaffNoticeRead(
   if (result.error)
     return result.error.code === '42501' ? 'denied' : 'unavailable';
   return markStaffNoticeResult(result.data);
+}
+
+export async function dismissStaffNotice(
+  noticeId: string,
+): Promise<'dismissed' | 'not_found' | 'denied' | 'unavailable'> {
+  const session = await createSessionClient();
+  if (!session) return 'unavailable';
+  const result = await session.rpc('dismiss_staff_notice', {
+    p_notice_id: noticeId,
+  });
+  if (result.error)
+    return result.error.code === '42501' ? 'denied' : 'unavailable';
+  return dismissStaffNoticeResult(result.data);
 }
