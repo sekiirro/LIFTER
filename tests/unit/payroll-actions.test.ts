@@ -344,6 +344,8 @@ describe('Payroll Service & RPC Action Handlers', () => {
         category: 'incentive',
         amount: '250.50',
         currency: 'EGP',
+        reasonRef: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: '33333333-3333-4333-8333-333333333333',
       });
 
       expect(mocks.rpc).toHaveBeenCalledWith(
@@ -354,6 +356,8 @@ describe('Payroll Service & RPC Action Handlers', () => {
           p_category: 'incentive',
           p_amount_minor: '25050',
           p_currency: 'EGP',
+          p_reason_ref: '22222222-2222-4222-8222-222222222222',
+          p_idempotency_key: '33333333-3333-4333-8333-333333333333',
           p_supersedes_input_id: null,
         }),
       );
@@ -396,6 +400,8 @@ describe('Payroll Service & RPC Action Handlers', () => {
         category: 'deduction',
         amount: '100.00',
         currency: 'USD',
+        reasonRef: '44444444-4444-4444-8444-444444444444',
+        idempotencyKey: '55555555-5555-4555-8555-555555555555',
       });
 
       expect(result.status).toBe('currency_mismatch');

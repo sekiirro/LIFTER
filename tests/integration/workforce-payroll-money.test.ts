@@ -369,6 +369,65 @@ describe('P7 own compensation read', () => {
     ]);
   });
 
+  it('B7 kill test: using the latest salary breaks the approved currency pairing', async () => {
+    const month = '2031-05-01';
+    await setSalary(po, {
+      p_employee_id: sales.userId,
+      p_effective_month: month,
+      p_market: 'International',
+      p_amount_minor: '100000',
+      p_currency: 'USD',
+      p_expected_revision: 0,
+      p_idempotency_key: randomUUID(),
+    });
+    const reviewed = await snapshot(po, sales.userId, month);
+    await approve(po, sales.userId, month, reviewed);
+    await setSalary(po, {
+      p_employee_id: sales.userId,
+      p_effective_month: month,
+      p_market: 'International',
+      p_amount_minor: '200000',
+      p_currency: 'SAR',
+      p_expected_revision: 1,
+      p_idempotency_key: randomUUID(),
+    });
+
+    const [definition] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'public.p7_get_own_compensation(uuid,date)'::regprocedure
+      ) as sql
+    `;
+    const approvedSalary =
+      /coalesce\(approved_salary\.amount_minor,\s*s\.amount_minor\)/i;
+    const approvedCurrency =
+      /coalesce\(approved_salary\.currency,\s*s\.currency\)/i;
+    expect(definition!.sql).toMatch(approvedSalary);
+    expect(definition!.sql).toMatch(approvedCurrency);
+    const mutant = definition!.sql
+      .replace(approvedSalary, 's.amount_minor')
+      .replace(approvedCurrency, 's.currency');
+
+    await db
+      .begin(async (tx) => {
+        await tx.unsafe(mutant);
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: sales.userId, role: 'authenticated' })}, true)`;
+        const rows = await tx`
+          select basic_salary_amount_minor, currency
+          from public.p7_get_own_compensation(${sales.userId}::uuid, ${month}::date)
+        `;
+        expect(rows).toEqual([
+          { basic_salary_amount_minor: '200000', currency: 'SAR' },
+        ]);
+        throw new Error('rollback approved salary currency mutation');
+      })
+      .catch((error: { message?: string }) => {
+        expect(error.message).toBe(
+          'rollback approved salary currency mutation',
+        );
+      });
+  });
+
   it('denies other staff, WO and anon with the same not_permitted error', async () => {
     const otherStaff = await trainer.client.rpc('p7_get_own_compensation', {
       p_employee_id: sales.userId,
@@ -677,5 +736,90 @@ describe('P7 salary snapshots and external-paid approval', () => {
     ]);
     expect(versions.map((item) => item.version).sort()).toEqual([1, 2]);
     expect(new Set(versions.map((item) => item.id)).size).toBe(2);
+  });
+});
+
+describe('P7 PO payroll-month hydration projection', () => {
+  it('returns salary revision, saved inputs, latest snapshot and approval only to PO', async () => {
+    const month = '2031-04-01';
+    await setSalary(po, {
+      p_employee_id: trainer.userId,
+      p_effective_month: month,
+      p_market: 'International',
+      p_amount_minor: '125000',
+      p_currency: 'USD',
+      p_expected_revision: 0,
+      p_idempotency_key: randomUUID(),
+    });
+    const inputId = await post(
+      po,
+      input({
+        p_employee_id: trainer.userId,
+        p_effective_month: month,
+        p_amount_minor: '2500',
+        p_currency: 'USD',
+      }),
+    );
+    const reviewed = await snapshot(po, trainer.userId, month);
+    const approvalId = await approve(po, trainer.userId, month, reviewed);
+
+    const result = await po.client.rpc('p7_get_payroll_month', {
+      p_employee_id: trainer.userId,
+      p_effective_month: month,
+    });
+    expect(result.error).toBeNull();
+    const [definition] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'public.p7_get_payroll_month(uuid,date)'::regprocedure
+      ) as sql
+    `;
+    expect(definition!.sql).toMatch(
+      /app_private\.p7_payroll_lock\(p_employee_id,\s*p_effective_month\)/i,
+    );
+    expect(result.data).toMatchObject({
+      salary: {
+        revision: 1,
+        amount_minor: '125000',
+        currency: 'USD',
+        market: 'International',
+      },
+      inputs: [
+        {
+          id: inputId,
+          category: 'incentive',
+          amount_minor: '2500',
+          currency: 'USD',
+        },
+      ],
+      snapshot: {
+        id: reviewed.id,
+        version: 1,
+        amount_minor: '127500',
+        currency: 'USD',
+      },
+      approval: {
+        id: approvalId,
+        snapshot_id: reviewed.id,
+        snapshot_version: 1,
+        amount_minor: '127500',
+        currency: 'USD',
+      },
+    });
+
+    for (const actor of [trainer, wo]) {
+      const denied = await actor.client.rpc('p7_get_payroll_month', {
+        p_employee_id: trainer.userId,
+        p_effective_month: month,
+      });
+      expect(denied.data).toBeNull();
+      expect(denied.error).toMatchObject({ code: '42501' });
+      expect(denied.error?.message).toMatch(/p7_platform_owner_required/);
+    }
+    const anonymous = await anonClient().rpc('p7_get_payroll_month', {
+      p_employee_id: trainer.userId,
+      p_effective_month: month,
+    });
+    expect(anonymous.data).toBeNull();
+    expect(anonymous.error).toMatchObject({ code: '42501' });
   });
 });

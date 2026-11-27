@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   actor: vi.fn(),
   cookies: vi.fn(),
   getEligible: vi.fn(),
+  getPayrollMonth: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -21,6 +22,7 @@ vi.mock('../../lib/workforce/payroll', async (importOriginal) => {
   return {
     ...actual,
     getEligibleEmployees: mocks.getEligible,
+    getPayrollMonth: mocks.getPayrollMonth,
   };
 });
 
@@ -29,6 +31,10 @@ describe('Payroll UI: Page & Components', () => {
     vi.clearAllMocks();
     mocks.cookies.mockResolvedValue({
       get: vi.fn().mockReturnValue({ value: 'en' }),
+    });
+    mocks.getPayrollMonth.mockResolvedValue({
+      status: 'ok',
+      data: { salary: null, inputs: [], snapshot: null, approval: null },
     });
   });
 
@@ -48,6 +54,7 @@ describe('Payroll UI: Page & Components', () => {
         expect(html).toContain(en['workforce.payroll.review.denied']);
         expect(html).toContain('data-testid="payroll-denied"');
         expect(mocks.getEligible).not.toHaveBeenCalled();
+        expect(mocks.getPayrollMonth).not.toHaveBeenCalled();
       },
     );
 
@@ -72,6 +79,10 @@ describe('Payroll UI: Page & Components', () => {
       expect(html).toContain(en['workforce.salary.title']);
       expect(html).toContain(en['workforce.payroll.input.title']);
       expect(html).toContain(en['workforce.payroll.review.title']);
+      expect(mocks.getPayrollMonth).toHaveBeenCalledWith({
+        employeeId: '00000000-0000-0000-0000-000000000001',
+        effectiveMonth: expect.stringMatching(/^\d{4}-\d{2}$/),
+      });
     });
   });
 

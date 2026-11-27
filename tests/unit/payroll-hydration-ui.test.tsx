@@ -1,10 +1,11 @@
 /** @vitest-environment happy-dom */
-import { act, createElement } from 'react';
+import { act, createElement, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PayrollManager } from '../../components/payroll/PayrollManager';
 import { ToastProvider } from '../../components/ui/Toast';
 import { en } from '../../lib/i18n/messages/en';
+import type { PayrollMonthState } from '../../lib/workforce/payroll';
 
 const actions = vi.hoisted(() => ({
   loadMonth: vi.fn(),
@@ -26,7 +27,7 @@ const employeeA = '00000000-0000-0000-0000-000000000001';
 const employeeB = '00000000-0000-0000-0000-000000000002';
 const employeeC = '00000000-0000-0000-0000-000000000003';
 
-const hydratedMonth = {
+const hydratedMonth: PayrollMonthState = {
   salary: {
     id: 'salary-1',
     revision: 1,
@@ -57,7 +58,7 @@ const hydratedMonth = {
   },
 };
 
-const emptyMonth = {
+const emptyMonth: PayrollMonthState = {
   salary: null,
   inputs: [],
   snapshot: null,
@@ -95,7 +96,10 @@ async function renderManager(initialPayrollMonth = hydratedMonth) {
   await act(async () => {
     root.render(
       createElement(
-        ToastProvider,
+        ToastProvider as unknown as (props: {
+          dismissLabel: string;
+          children?: unknown;
+        }) => ReactElement,
         { dismissLabel: en['dialog.cancel'] },
         createElement(PayrollManager, {
           locale: 'en',
@@ -123,8 +127,14 @@ async function changeValue(selector: string, value: string) {
     selector,
   );
   if (!element) throw new Error(`Missing ${selector}`);
+  const prototype =
+    element instanceof HTMLSelectElement
+      ? HTMLSelectElement.prototype
+      : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
   await act(async () => {
-    element.value = value;
+    setter?.call(element, value);
+    element.dispatchEvent(new Event('input', { bubbles: true }));
     element.dispatchEvent(new Event('change', { bubbles: true }));
   });
 }
@@ -153,6 +163,11 @@ describe('Payroll month hydration and scope reset', () => {
         '[data-testid="approve-payroll-btn"]',
       )?.disabled,
     ).toBe(true);
+    expect(
+      host.querySelector<HTMLButtonElement>(
+        '[data-testid="generate-snapshot-btn"]',
+      )?.disabled,
+    ).toBe(true);
 
     const correction = host.querySelector<HTMLInputElement>(
       'input[name="payroll-category"][value="correction"]',
@@ -173,16 +188,31 @@ describe('Payroll month hydration and scope reset', () => {
         amount: '1000.00',
       }),
     );
+    expect(host.querySelector('[data-testid="snapshot-details"]')).toBeTruthy();
+    expect(
+      host.querySelector<HTMLButtonElement>(
+        '[data-testid="approve-payroll-btn"]',
+      )?.disabled,
+    ).toBe(true);
   });
 
   it('clears stale scope state immediately and ignores an older loader response', async () => {
     let resolveB!: (value: unknown) => void;
     actions.loadMonth.mockImplementation(
-      ({ employeeId }: { employeeId: string }) => {
+      ({
+        employeeId,
+        effectiveMonth,
+      }: {
+        employeeId: string;
+        effectiveMonth: string;
+      }) => {
         if (employeeId === employeeB) {
           return new Promise((resolve) => {
             resolveB = resolve;
           });
+        }
+        if (effectiveMonth === '2026-12-01') {
+          return Promise.resolve({ status: 'ok', data: emptyMonth });
         }
         return Promise.resolve({
           status: 'ok',
@@ -217,5 +247,41 @@ describe('Payroll month hydration and scope reset', () => {
     });
     expect(inputValue('#salary-currency-select')).toBe('SAR');
     expect(inputValue('#salary-amount-input')).toBe('4000.00');
+
+    await changeValue('#payroll-month-select', '2026-12');
+    expect(inputValue('#salary-currency-select')).toBe('EGP');
+    expect(inputValue('#salary-amount-input')).toBe('');
+    expect(actions.loadMonth).toHaveBeenLastCalledWith({
+      employeeId: employeeC,
+      effectiveMonth: '2026-12-01',
+    });
+  });
+
+  it('ignores a salary response from the previously selected scope', async () => {
+    let resolveSalary!: (value: unknown) => void;
+    actions.setSalary.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSalary = resolve;
+        }),
+    );
+    await renderManager();
+    await submitSalary();
+    await changeValue('#payroll-employee-select', employeeB);
+    expect(inputValue('#salary-currency-select')).toBe('EGP');
+
+    await act(async () => {
+      resolveSalary({
+        status: 'ok',
+        data: {
+          id: 'salary-old-scope',
+          revision: 2,
+          amount_minor: '999900',
+          currency: 'USD',
+        },
+      });
+    });
+    expect(inputValue('#salary-currency-select')).toBe('EGP');
+    expect(inputValue('#salary-amount-input')).toBe('');
   });
 });

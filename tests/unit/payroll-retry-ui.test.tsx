@@ -1,5 +1,5 @@
 /** @vitest-environment happy-dom */
-import { act, createElement } from 'react';
+import { act, createElement, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PayrollManager } from '../../components/payroll/PayrollManager';
@@ -42,7 +42,10 @@ async function renderManager() {
   await act(async () => {
     root.render(
       createElement(
-        ToastProvider,
+        ToastProvider as unknown as (props: {
+          dismissLabel: string;
+          children?: unknown;
+        }) => ReactElement,
         { dismissLabel: en['dialog.cancel'] },
         createElement(PayrollManager, {
           locale: 'en',
@@ -86,7 +89,7 @@ async function submitManualInput() {
 describe('Payroll manual-input retry identity', () => {
   it('reuses one intent token across a lost-response retry and rotates it after success', async () => {
     actions.postInput
-      .mockResolvedValueOnce({ status: 'error' })
+      .mockRejectedValueOnce(new Error('lost response'))
       .mockResolvedValueOnce({ status: 'ok', id: 'input-1' })
       .mockResolvedValueOnce({ status: 'ok', id: 'input-2' });
     await renderManager();
@@ -110,10 +113,25 @@ describe('Payroll manual-input retry identity', () => {
     expect(retry.reasonRef).toBe(first.reasonRef);
     expect(retry.idempotencyKey).toBe(first.idempotencyKey);
 
-    await setInputAmount('75.00');
+    await setInputAmount('25.50');
     await submitManualInput();
     const nextIntent = actions.postInput.mock.calls[2]?.[0];
     expect(nextIntent.idempotencyKey).not.toBe(first.idempotencyKey);
     expect(nextIntent.reasonRef).not.toBe(first.reasonRef);
+
+    const correction = host.querySelector<HTMLInputElement>(
+      'input[name="payroll-category"][value="correction"]',
+    );
+    await act(async () => correction?.click());
+    expect(
+      host.querySelector<HTMLSelectElement>('#payroll-supersedes-id')?.value,
+    ).toBe('');
+    expect(
+      [
+        ...host.querySelectorAll<HTMLOptionElement>(
+          '#payroll-supersedes-id option',
+        ),
+      ].some((option) => option.value === 'input-2'),
+    ).toBe(true);
   });
 });
