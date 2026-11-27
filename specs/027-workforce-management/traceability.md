@@ -48,10 +48,3 @@ Tasks are checked only with implementation evidence recorded above. T030/T031 pa
 | FR-029 | T006 | `tests/unit/trainer-checkins-ui.test.tsx::renders the approved loading copy in ar`              | same commit; AR loading state uses approved `workforce.checkin.loading`                                        |
 
 Gates: `npm run lint`, `npm run typecheck`, `npx prettier --check` on changed files and `TZ=Africa/Cairo npx vitest run tests/unit` (361 files, 4151 tests) pass on the implementation head.
-
-## S71-PR343 T021 evidence (preserved from the PR branch during the origin/main merge)
-
-Merge-conflict resolution preserves both sides: the table above is `origin/main`'s version; the branch's T021 evidence is retained here verbatim.
-
-- FR-010 (T020-T021): T021 verified on `5140bffc2adec678793e265ce3ada7658073bd1e`: `tests/integration/sales-productivity-award.test.ts` (confirmed first payment, installments, issuance-time role, unique mapping, retry concurrency, idempotent backfill); T020, T022-T023 pending.
-- FR-020 (T021): `5140bffc2adec678793e265ce3ada7658073bd1e`, concurrent retries, unique mapping, immutable P7 facts and idempotent backfill in `sales-productivity-award.test.ts`, role-guard mutation in lane report; T021 verified on that head.

@@ -78,7 +78,7 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - Sol critique findings resolved in artifacts: 24/24.
 - Constitution CRITICAL records: 2 (C1/C2, resolved by pending amendment PR). Other open CRITICAL: 0. Open HIGH: 0.
 - PENDING-PO: 0. Open MCQs: 0.
-- Implementation tasks checked: T005, T018, T021, T030, T031 (evidence in traceability.md); sync-lane focused integration: Sales award + RLS catalog, 70/70 passed.
+- Implementation tasks checked: 0; implementation tests executed in this docs lane: 0.
 
 ## Analyze result
 
@@ -107,7 +107,3 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - RLS catalog coverage, explicit SECURITY DEFINER checks, append-only enforcement, idempotency/concurrency, purge behavior, and kill tests remain implementation acceptance gates in T033; no implementation or test completion is claimed by this Analyze.
 
 **Analyze result**: PASS for updated strike requirements. No new open CRITICAL/HIGH findings; strike implementation may proceed under T033 and S70-R110.
-
-## PR #343 sync validation
-
-**Validated**: 2026-11-26 after merging latest origin/main `d018e78b`. The latest main Analyze for S70-R110 is retained; this sync changed no additional FR, SC, acceptance behavior, or requirement text. T021 evidence is unioned with main T005/T018/T030/T031 evidence. Open CRITICAL/HIGH findings: 0; open MCQs: 0.
