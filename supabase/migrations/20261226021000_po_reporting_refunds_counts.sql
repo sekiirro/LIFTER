@@ -45,9 +45,14 @@ begin
       case when a.currency='EGP' then a.commission_minor::numeric when fx.status='ready' then a.commission_minor::numeric*fx.rate else null end converted_commission_exact
     from public.refund_allocation_events a
     join public.subscriptions s on s.workspace_id=a.workspace_id and s.id=a.subscription_id
-    join public.package_versions v on v.workspace_id=s.workspace_id and v.id=s.package_version_id
+    left join public.payment_events source_event
+      on source_event.workspace_id=a.workspace_id and source_event.id=a.source_collection_event_id
+    left join public.subscription_upgrades source_upgrade
+      on source_upgrade.workspace_id=a.workspace_id and source_upgrade.subscription_id=a.subscription_id
+      and source_upgrade.id=a.source_upgrade_id
+    join public.package_versions v on v.workspace_id=s.workspace_id
+      and v.id=coalesce(source_upgrade.package_version_id,s.package_version_id)
     join public.package_offers o on o.workspace_id=v.workspace_id and o.id=v.offer_id
-    join public.payment_events source_event on source_event.workspace_id=a.workspace_id and source_event.id=a.source_collection_event_id
     left join app_private.package_reporting_fx_snapshots fx on fx.workspace_id=source_event.workspace_id and fx.payment_event_id=source_event.id
     where (p_workspace_id is null or a.workspace_id=p_workspace_id)
       and (p_month_start is null or (a.effective_on>=p_month_start and a.effective_on<(p_month_start+interval '1 month')))
@@ -241,9 +246,14 @@ begin
     from public.refund_allocation_events a
     join public.subscriptions s on s.workspace_id=a.workspace_id and s.id=a.subscription_id
     join public.clients c on c.workspace_id=s.workspace_id and c.id=s.client_id
-    join public.package_versions v on v.workspace_id=s.workspace_id and v.id=s.package_version_id
+    left join public.payment_events source_event
+      on source_event.workspace_id=a.workspace_id and source_event.id=a.source_collection_event_id
+    left join public.subscription_upgrades source_upgrade
+      on source_upgrade.workspace_id=a.workspace_id and source_upgrade.subscription_id=a.subscription_id
+      and source_upgrade.id=a.source_upgrade_id
+    join public.package_versions v on v.workspace_id=s.workspace_id
+      and v.id=coalesce(source_upgrade.package_version_id,s.package_version_id)
     join public.package_offers o on o.workspace_id=v.workspace_id and o.id=v.offer_id
-    join public.payment_events source_event on source_event.workspace_id=a.workspace_id and source_event.id=a.source_collection_event_id
     left join app_private.package_reporting_fx_snapshots fx on fx.workspace_id=source_event.workspace_id and fx.payment_event_id=source_event.id
     where a.workspace_id=p_workspace_id
       and (p_month_start is null or (a.effective_on>=p_month_start and a.effective_on<(p_month_start+interval '1 month')))

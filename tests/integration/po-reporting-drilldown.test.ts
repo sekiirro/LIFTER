@@ -592,3 +592,151 @@ it('T006 rejects invalid period, package, cursor, and page bounds before reading
     service_rows: false,
   });
 });
+it('T008 reports partial and full upgrade-backed refunds once with source currency and FX state', async () => {
+  const ids = {
+    partialOperation: randomUUID(),
+    fullOperation: randomUUID(),
+    partialUpgrade: randomUUID(),
+    fullUpgrade: randomUUID(),
+    partialRefund: randomUUID(),
+    fullRefund: randomUUID(),
+  };
+  await db.begin(async (tx) => {
+    await tx`set local session_replication_role = replica`;
+    await tx`insert into app_private.subscription_upgrade_operations(
+      id,workspace_id,client_id,subscription_id,actor_user_id,request_key,expected_revision,
+      canonical_args_hash,result_receipt,recorded_at,transaction_id)
+      values(${ids.partialOperation},${f.wsA.id},${clientId},${subscriptionId},${f.po.userId},${randomUUID()},1,
+        extensions.digest(convert_to('reporting partial upgrade fixture','UTF8'),'sha256'),'{}'::jsonb,
+        clock_timestamp(),pg_current_xact_id()),
+        (${ids.fullOperation},${f.wsA.id},${clientId},${subscriptionId},${f.po.userId},${randomUUID()},2,
+        extensions.digest(convert_to('reporting full upgrade fixture','UTF8'),'sha256'),'{}'::jsonb,
+        clock_timestamp(),pg_current_xact_id())`;
+    await tx`insert into public.subscription_upgrades(
+      id,workspace_id,client_id,subscription_id,operation_id,package_offer_id,package_version_id,tier_rank,
+      package_price_minor,currency,commission_rate_bp,duration_days,credit_minor,additional_payment_minor,
+      commission_minor,expected_revision,recorded_by,recorded_at)
+      values(${ids.partialUpgrade},${f.wsA.id},${clientId},${subscriptionId},${ids.partialOperation},${f.p.offer.id},${f.p.versionId},1,
+        500,'USD',1000,30,0,500,50,1,${f.po.userId},clock_timestamp()),
+        (${ids.fullUpgrade},${f.wsA.id},${clientId},${subscriptionId},${ids.fullOperation},${f.p.offer.id},${f.p.versionId},1,
+        500,'USD',1000,30,0,500,50,2,${f.po.userId},clock_timestamp())`;
+    await tx`insert into public.refund_operations(id,workspace_id,client_id,subscription_id,operation_id,
+      actor_user_id,amount_minor,currency,effective_on,expected_revision,recorded_at)
+      values(${ids.partialRefund},${f.wsA.id},${clientId},${subscriptionId},${randomUUID()},${f.po.userId},125,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,0,clock_timestamp()),
+        (${ids.fullRefund},${f.wsA.id},${clientId},${subscriptionId},${randomUUID()},${f.po.userId},500,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,0,clock_timestamp())`;
+    await tx`insert into public.refund_allocation_events(workspace_id,subscription_id,refund_operation_id,
+      source_upgrade_id,amount_minor,commission_minor,currency,effective_on,recorded_by)
+      values(${f.wsA.id},${subscriptionId},${ids.partialRefund},${ids.partialUpgrade},-125,-13,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,${f.po.userId}),
+        (${f.wsA.id},${subscriptionId},${ids.fullRefund},${ids.fullUpgrade},-500,-50,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,${f.po.userId})`;
+  });
+  const [partialAllocation] = await db`
+    select id from public.refund_allocation_events where refund_operation_id=${ids.partialRefund}`;
+  const [fullAllocation] = await db`
+    select id from public.refund_allocation_events where refund_operation_id=${ids.fullRefund}`;
+  await db`update app_private.package_reporting_fx_snapshots
+    set status='ready',provider_key='CBE',rate=30.5,publication_date='2026-11-27',exact_egp_minor=12200
+    where workspace_id=${f.wsA.id} and payment_event_id=${refundSourceEventId}`;
+
+  const aggregateResult = await f.po.client.rpc('po_reporting_aggregate', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+  });
+  expect(aggregateResult.error).toBeNull();
+  const usd = aggregateResult.data.currency_totals.find(
+    (row: { currency: string }) => row.currency === 'USD',
+  );
+  expect(usd).toMatchObject({
+    collection_minor: '800',
+    reversal_minor: '-400',
+    refund_minor: '-1025',
+    converted_egp_exact: '0.0',
+    pending_fx_count: 4,
+  });
+  for (const partition of [
+    aggregateResult.data.workspaces,
+    aggregateResult.data.months,
+    aggregateResult.data.packages,
+  ]) {
+    expect(
+      partition
+        .filter((row: { currency: string }) => row.currency === 'USD')
+        .reduce(
+          (sum: bigint, row: { refund_minor: string }) =>
+            sum + BigInt(row.refund_minor),
+          0n,
+        ),
+    ).toBe(-1025n);
+  }
+
+  const sourceResult = await f.po.client.rpc('po_reporting_source_rows', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+    p_page_size: 100,
+    p_cursor_recorded_at: null,
+    p_cursor_event_id: null,
+  });
+  expect(sourceResult.error).toBeNull();
+  const refunds = sourceResult.data.rows.filter(
+    (row: { kind: string }) => row.kind === 'refund',
+  );
+  expect(refunds).toHaveLength(4);
+  expect(
+    refunds.reduce(
+      (sum: bigint, row: { amount_minor: string }) =>
+        sum + BigInt(row.amount_minor),
+      0n,
+    ),
+  ).toBe(-1025n);
+  const collectionBacked = refunds.filter(
+    (row: { converted_egp_exact: string | null }) =>
+      row.converted_egp_exact !== null,
+  );
+  expect(collectionBacked).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        amount_minor: '-100',
+        converted_egp_exact: '-3050.0',
+        currency: 'USD',
+        fx: {
+          status: 'ready',
+          provider: 'CBE',
+          rate: '30.5',
+          publication_date: '2026-11-27',
+        },
+      }),
+      expect.objectContaining({
+        amount_minor: '-300',
+        converted_egp_exact: '-9150.0',
+        currency: 'USD',
+        fx: {
+          status: 'ready',
+          provider: 'CBE',
+          rate: '30.5',
+          publication_date: '2026-11-27',
+        },
+      }),
+    ]),
+  );
+  for (const [eventId, amount] of [
+    [partialAllocation!.id, '-125'],
+    [fullAllocation!.id, '-500'],
+  ]) {
+    const matched = refunds.filter(
+      (row: { event_id: string }) => row.event_id === eventId,
+    );
+    expect(matched).toHaveLength(1);
+    expect(matched[0]).toMatchObject({
+      amount_minor: amount,
+      commission_minor: amount === '-125' ? '-13' : '-50',
+      currency: 'USD',
+      converted_egp_exact: null,
+      fx: { status: 'pending' },
+    });
+  }
+});
