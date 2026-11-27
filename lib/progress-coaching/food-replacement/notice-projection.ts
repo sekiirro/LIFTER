@@ -9,6 +9,7 @@ export const STAFF_NOTICE_MESSAGE = {
   subscription_expiry_t3: 'staff.notices.expiryT3',
   subscription_expiry_t3_short_lead: 'staff.notices.expiryT3ShortLead',
   subscription_expired: 'staff.notices.expired',
+  monthly_quality_reminder: 'workforce.reminder.body',
 } as const satisfies Record<string, MessageKey>;
 
 export type StaffNoticeKind = keyof typeof STAFF_NOTICE_MESSAGE;
