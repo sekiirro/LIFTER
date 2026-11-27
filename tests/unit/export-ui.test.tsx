@@ -1,6 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createElement } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createElement, act } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { JSDOM } from 'jsdom';
+import type { Root } from 'react-dom/client';
 
 vi.mock('server-only', () => ({}));
 vi.mock('../../app/(app)/reports/actions', () => ({
@@ -13,7 +15,11 @@ import {
   ExportStatusPanel,
 } from '../../app/(app)/reports/ExportSection';
 import {
-  buildExportScopeArgs,
+  getClientExportStatus,
+  requestClientExport,
+} from '../../app/(app)/reports/actions';
+import {
+  buildExportArgs,
   exportDownloadHref,
   isTerminalExportStatus,
   mapServerExportState,
@@ -112,7 +118,7 @@ describe('spec 030 export status rendering', () => {
     const ready = panel('ready');
     expect(ready).toContain('Ready');
     expect(ready).toContain('Download export');
-    expect(ready).toContain('href="/api/exports/job-1/download"');
+    expect(ready).toContain('href="/api/reports/po-export/job-1"');
     expect(ready).toContain('Download links expire shortly after generation');
     expect(ready).not.toContain('http');
     expect(ready).not.toContain('token');
@@ -152,18 +158,25 @@ describe('spec 030 export status rendering', () => {
 
 describe('spec 030 export request scope and role gate', () => {
   it('sends scope only and never a field list or health notes', () => {
-    expect(buildExportScopeArgs({ kind: 'all' })).toEqual({
-      p_scope: 'all',
+    const dummyKey = 'test-idempotency-key-12345';
+    expect(buildExportArgs({ kind: 'all' }, dummyKey)).toEqual({
       p_workspace_id: null,
+      p_idempotency_key: dummyKey,
     });
     expect(
-      buildExportScopeArgs({
-        kind: 'workspace',
-        workspaceId: workspaces[0]!.id,
-      }),
-    ).toEqual({ p_scope: 'workspace', p_workspace_id: workspaces[0]!.id });
+      buildExportArgs(
+        {
+          kind: 'workspace',
+          workspaceId: workspaces[0]!.id,
+        },
+        dummyKey,
+      ),
+    ).toEqual({
+      p_workspace_id: workspaces[0]!.id,
+      p_idempotency_key: dummyKey,
+    });
     const payload = JSON.stringify(
-      buildExportScopeArgs({ kind: 'all' }),
+      buildExportArgs({ kind: 'all' }, dummyKey),
     ).toLowerCase();
     expect(payload).not.toContain('health');
     expect(payload).not.toContain('field');
@@ -172,7 +185,7 @@ describe('spec 030 export request scope and role gate', () => {
 
   it('builds a same-origin authenticated download path only', () => {
     const href = exportDownloadHref('job/1?x=2');
-    expect(href).toBe('/api/exports/job%2F1%3Fx%3D2/download');
+    expect(href).toBe('/api/reports/po-export/job%2F1%3Fx%3D2');
     expect(href.startsWith('/')).toBe(true);
     expect(href).not.toContain('http');
   });
@@ -229,5 +242,327 @@ describe('spec 030 export request scope and role gate', () => {
         expect(html).not.toContain('fitness_goals');
       }
     }
+  });
+});
+
+describe('spec 030 interactive ExportSection behavior', () => {
+  let dom: JSDOM;
+  let container: HTMLElement;
+  let root: Root;
+  let globals: Map<string, PropertyDescriptor | undefined> | undefined;
+
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    dom = new JSDOM(
+      '<!doctype html><html><body><div id="root"></div></body></html>',
+      { url: 'http://localhost/' },
+    );
+    const currentGlobals: Record<string, unknown> = {
+      window: dom.window,
+      document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement,
+      HTMLInputElement: dom.window.HTMLInputElement,
+      HTMLSelectElement: dom.window.HTMLSelectElement,
+      HTMLButtonElement: dom.window.HTMLButtonElement,
+      HTMLAnchorElement: dom.window.HTMLAnchorElement,
+      Event: dom.window.Event,
+      MouseEvent: dom.window.MouseEvent,
+      IS_REACT_ACT_ENVIRONMENT: true,
+    };
+    globals = new Map(
+      Object.keys(currentGlobals).map((key) => [
+        key,
+        Object.getOwnPropertyDescriptor(globalThis, key),
+      ]),
+    );
+    for (const [key, value] of Object.entries(currentGlobals)) {
+      Object.defineProperty(globalThis, key, { configurable: true, value });
+    }
+    const { createRoot } = await import('react-dom/client');
+    container = dom.window.document.getElementById('root') as HTMLElement;
+    root = createRoot(container);
+  });
+
+  afterEach(async () => {
+    await act(async () => {
+      root.unmount();
+    });
+    dom.window.close();
+    for (const [key, descriptor] of globals ?? []) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else Reflect.deleteProperty(globalThis, key);
+    }
+    vi.useRealTimers();
+  });
+
+  async function renderInteractive(
+    locale: 'ar' | 'en' = 'en',
+    canExport = true,
+    initialScope: 'all' | 'workspace' = 'all',
+  ) {
+    await act(async () => {
+      root.render(
+        createElement(ExportSection, {
+          canExport,
+          locale,
+          workspaces,
+          initialScope,
+          messages: getMessages(locale),
+        }),
+      );
+    });
+  }
+
+  it('triggers export request on submit with valid idempotency key and displays queued status', async () => {
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-001',
+    });
+
+    await renderInteractive('en');
+
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+    expect(submitBtn).not.toBeNull();
+
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(1);
+    const firstCall = vi.mocked(requestClientExport).mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const [scope, key] = firstCall!;
+    expect(scope).toEqual({ kind: 'all' });
+    expect(typeof key).toBe('string');
+    expect(key).toMatch(/^[A-Za-z0-9_-]{16,96}$/);
+
+    expect(container.textContent).toContain('Queued');
+  });
+
+  it('polls job status periodically and transitions from queued to running', async () => {
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-001',
+    });
+    vi.mocked(getClientExportStatus).mockResolvedValueOnce({
+      status: 'running',
+    });
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    // Advance 2000ms for first poll
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    expect(getClientExportStatus).toHaveBeenCalledWith('job-001');
+    expect(container.textContent).toContain('Preparing your export');
+    const busyPanel = container.querySelector('[aria-busy="true"]');
+    expect(busyPanel).not.toBeNull();
+  });
+
+  it('transitions to ready, clears polling, and displays authenticated download link', async () => {
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-002',
+    });
+    vi.mocked(getClientExportStatus).mockResolvedValueOnce({
+      status: 'ready',
+    });
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    expect(container.textContent).toContain('Ready');
+    const downloadLink = container.querySelector(
+      '[data-testid="export-download"]',
+    ) as HTMLAnchorElement;
+    expect(downloadLink).not.toBeNull();
+    expect(downloadLink.getAttribute('href')).toBe(
+      '/api/reports/po-export/job-002',
+    );
+    expect(downloadLink.textContent).toBe('Download export');
+
+    // Verify polling stopped: advancing timer further does not call getClientExportStatus again
+    vi.mocked(getClientExportStatus).mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+    expect(getClientExportStatus).not.toHaveBeenCalled();
+  });
+
+  it('shows error on failure and reuses the exact same idempotency key on retry', async () => {
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-003',
+    });
+    vi.mocked(getClientExportStatus).mockResolvedValueOnce({
+      status: 'failed',
+    });
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    expect(container.textContent).toContain(
+      'Export couldn’t be prepared. Try again.',
+    );
+    const retryBtn = container.querySelector(
+      '[data-testid="retry-button"]',
+    ) as HTMLButtonElement;
+    expect(retryBtn).not.toBeNull();
+
+    // Mock the second request (the retry)
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-003-retry',
+    });
+
+    await act(async () => {
+      retryBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(2);
+    const firstCall = vi.mocked(requestClientExport).mock.calls[0];
+    const secondCall = vi.mocked(requestClientExport).mock.calls[1];
+    expect(firstCall).toBeDefined();
+    expect(secondCall).toBeDefined();
+    const firstCallKey = firstCall?.[1];
+    const secondCallKey = secondCall?.[1];
+
+    expect(firstCallKey).toBeDefined();
+    expect(secondCallKey).toBeDefined();
+    expect(secondCallKey).toBe(firstCallKey);
+  });
+
+  it('protects against duplicate in-flight requests on rapid double-click', async () => {
+    let resolveFirst: ((val: unknown) => void) | undefined;
+    const pendingPromise = new Promise((resolve) => {
+      resolveFirst = resolve;
+    });
+    vi.mocked(requestClientExport).mockReturnValueOnce(
+      pendingPromise as ReturnType<typeof requestClientExport>,
+    );
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+
+    await act(async () => {
+      submitBtn.click();
+      submitBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveFirst?.({ status: 'queued', jobId: 'job-dc' });
+    });
+  });
+
+  it('generates a new idempotency key after ready state', async () => {
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'ready',
+      jobId: 'job-004',
+    });
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(1);
+    const call1 = vi.mocked(requestClientExport).mock.calls[0];
+    expect(call1).toBeDefined();
+    const key1 = call1?.[1];
+
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-005',
+    });
+
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(2);
+    const call2 = vi.mocked(requestClientExport).mock.calls[1];
+    expect(call2).toBeDefined();
+    const key2 = call2?.[1];
+
+    expect(key2).not.toBe(key1);
+  });
+
+  it('generates a new idempotency key when export scope changes', async () => {
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-006',
+    });
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    const call1 = vi.mocked(requestClientExport).mock.calls[0];
+    expect(call1).toBeDefined();
+    const key1 = call1?.[1];
+
+    // Change scope to workspace
+    const workspaceRadio = container.querySelector(
+      'input[value="workspace"]',
+    ) as HTMLInputElement;
+    await act(async () => {
+      workspaceRadio.click();
+    });
+
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-007',
+    });
+
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(2);
+    const call2 = vi.mocked(requestClientExport).mock.calls[1];
+    expect(call2).toBeDefined();
+    const key2 = call2?.[1];
+    expect(key2).not.toBe(key1);
   });
 });

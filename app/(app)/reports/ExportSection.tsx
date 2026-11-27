@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Alert } from '../../../components/ui/Alert';
 import { Button } from '../../../components/ui/Button';
 import { Bidi } from '../../../components/ui/Bidi';
@@ -8,6 +8,8 @@ import { EmptyState, Skeleton } from '../../../components/ui/States';
 import type { Messages } from '../../../lib/i18n';
 import {
   exportDownloadHref,
+  generateExportIdempotencyKey,
+  type ExportScope,
   type ExportStatus,
   type ExportViewState,
 } from '../../../lib/exports/contract';
@@ -149,26 +151,60 @@ function ExportSectionBody({
   const [status, setStatus] = useState<ExportViewState>('idle');
   const [jobId, setJobId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const inFlightRef = useRef(false);
+  const idempotencyKeyRef = useRef<string | null>(null);
+
+  const onScopeKindChange = (kind: 'all' | 'workspace') => {
+    if (kind !== scopeKind) {
+      setScopeKind(kind);
+      idempotencyKeyRef.current = null;
+      setStatus('idle');
+      setJobId(null);
+    }
+  };
+
+  const onWorkspaceChange = (id: string) => {
+    if (id !== workspaceId) {
+      setWorkspaceId(id);
+      idempotencyKeyRef.current = null;
+      setStatus('idle');
+      setJobId(null);
+    }
+  };
 
   const submit = useCallback(async () => {
+    if (inFlightRef.current || pending) return;
+    inFlightRef.current = true;
     setPending(true);
-    setStatus('idle');
-    setJobId(null);
+
+    // Generate ONE idempotency key per user intent, reuse on retry/double click,
+    // new key only for a new request (e.g. after ready) or changed scope.
+    const shouldReuseKey =
+      idempotencyKeyRef.current !== null &&
+      status !== 'ready' &&
+      status !== 'empty';
+    const key = shouldReuseKey
+      ? idempotencyKeyRef.current!
+      : generateExportIdempotencyKey();
+
+    idempotencyKeyRef.current = key;
+
+    const scope: ExportScope =
+      scopeKind === 'all'
+        ? { kind: 'all' }
+        : { kind: 'workspace', workspaceId };
+
     try {
-      const result = await requestClientExport(
-        scopeKind === 'all'
-          ? { kind: 'all' }
-          : { kind: 'workspace', workspaceId },
-      );
+      const result = await requestClientExport(scope, key);
       setStatus(result.status);
       setJobId(result.jobId);
     } catch {
       setStatus('error');
-      setJobId(null);
     } finally {
+      inFlightRef.current = false;
       setPending(false);
     }
-  }, [scopeKind, workspaceId]);
+  }, [pending, status, scopeKind, workspaceId]);
 
   const polling = status === 'queued' || status === 'running';
   useEffect(() => {
@@ -222,7 +258,7 @@ function ExportSectionBody({
             name="export-scope"
             value="all"
             checked={scopeKind === 'all'}
-            onChange={() => setScopeKind('all')}
+            onChange={() => onScopeKindChange('all')}
           />
           <span>{m['reports.export.scope.all']}</span>
         </label>
@@ -232,7 +268,7 @@ function ExportSectionBody({
             name="export-scope"
             value="workspace"
             checked={scopeKind === 'workspace'}
-            onChange={() => setScopeKind('workspace')}
+            onChange={() => onScopeKindChange('workspace')}
           />
           <span>{m['reports.export.scope.workspace']}</span>
         </label>
@@ -241,7 +277,7 @@ function ExportSectionBody({
             <span>{m['packages.workspace']}</span>
             <select
               value={workspaceId}
-              onChange={(event) => setWorkspaceId(event.currentTarget.value)}
+              onChange={(event) => onWorkspaceChange(event.currentTarget.value)}
               disabled={workspaces.length === 0}
             >
               {workspaces.map((workspace) => (

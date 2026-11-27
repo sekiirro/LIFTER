@@ -3,8 +3,9 @@
 import { requireActor } from '../../../lib/auth/actor';
 import { createSessionClient } from '../../../lib/supabase/server';
 import {
-  buildExportScopeArgs,
+  buildExportArgs,
   EXPORT_RPC,
+  isValidExportIdempotencyKey,
   mapServerExportState,
   type ExportScope,
   type ExportStatus,
@@ -16,35 +17,58 @@ export type ExportRequestResult =
 
 export type ExportStatusResult = { status: ExportStatus | 'error' };
 
+export type RequestClientExportInput =
+  { scope: ExportScope; idempotencyKey: string } | ExportScope;
+
 async function isPlatformOwner(): Promise<boolean> {
-  const actor = await requireActor();
-  return actor.role === 'platform_owner';
+  try {
+    const actor = await requireActor();
+    return actor.role === 'platform_owner';
+  } catch {
+    return false;
+  }
 }
 
-/** Request an asynchronous CSV export. Scope only; fields are server-defined. */
+/** Request an asynchronous CSV export. Scope and idempotency key only; fields are server-defined. */
 export async function requestClientExport(
-  scope: ExportScope,
+  scopeOrInput: RequestClientExportInput,
+  idempotencyKeyArg?: string,
 ): Promise<ExportRequestResult> {
+  const scope: ExportScope =
+    'kind' in scopeOrInput ? scopeOrInput : scopeOrInput.scope;
+  const idempotencyKey: string | undefined =
+    'idempotencyKey' in scopeOrInput
+      ? scopeOrInput.idempotencyKey
+      : idempotencyKeyArg;
+
   if (!(await isPlatformOwner())) return { status: 'error', jobId: null };
+  if (!isValidExportIdempotencyKey(idempotencyKey))
+    return { status: 'error', jobId: null };
+  if (
+    scope.kind === 'workspace' &&
+    (!scope.workspaceId || typeof scope.workspaceId !== 'string')
+  )
+    return { status: 'error', jobId: null };
+
   const client = await createSessionClient();
   if (!client) return { status: 'error', jobId: null };
 
   const { data, error } = await client.rpc(
     EXPORT_RPC.request,
-    buildExportScopeArgs(scope),
+    buildExportArgs(scope, idempotencyKey),
   );
-  if (error || !data || typeof data !== 'object' || Array.isArray(data))
+  if (error || !data) return { status: 'error', jobId: null };
+
+  const jobId =
+    typeof data === 'string'
+      ? data
+      : typeof data === 'object' && data !== null && 'job_id' in data
+        ? (data as { job_id: unknown }).job_id
+        : null;
+  if (typeof jobId !== 'string' || !jobId)
     return { status: 'error', jobId: null };
 
-  const row = data as { status?: unknown; state?: unknown; job_id?: unknown };
-  if (row.status === 'empty' || row.state === 'empty')
-    return { status: 'empty', jobId: null };
-
-  const status = mapServerExportState(row.status ?? row.state);
-  const jobId =
-    typeof row.job_id === 'string' && row.job_id ? row.job_id : null;
-  if (!status || !jobId) return { status: 'error', jobId: null };
-  return { status, jobId };
+  return { status: 'queued', jobId };
 }
 
 /** Poll a safe job status. Unknown / inaccessible jobs fail closed. */
@@ -59,11 +83,15 @@ export async function getClientExportStatus(
   const { data, error } = await client.rpc(EXPORT_RPC.status, {
     p_job_id: jobId,
   });
-  if (error || !data || typeof data !== 'object' || Array.isArray(data))
-    return { status: 'error' };
-  const status = mapServerExportState(
-    (data as { status?: unknown; state?: unknown }).status ??
-      (data as { state?: unknown }).state,
-  );
+  if (error || !data) return { status: 'error' };
+
+  const rawState =
+    typeof data === 'string'
+      ? data
+      : typeof data === 'object' && data !== null && 'status' in data
+        ? (data as { status: unknown }).status
+        : null;
+
+  const status = mapServerExportState(rawState);
   return status ? { status } : { status: 'error' };
 }
