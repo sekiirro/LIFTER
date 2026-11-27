@@ -7,6 +7,8 @@ import {
   getPackageCommissionReport,
   getPackageInstallmentReport,
   getPackageMonthlyCollections,
+  getPlatformAggregateReport,
+  getWorkspaceDrilldownRows,
 } from '../../../lib/packages/reporting';
 import { formatMinorUnits } from '../../../lib/packages/money';
 import { Alert } from '../../../components/ui/Alert';
@@ -15,10 +17,17 @@ import {
   ReportsView,
   type ReportPackage,
   type ReportsData,
+  type PlatformData,
+  type DrilldownData,
 } from './ReportsView';
 import styles from './reports.module.css';
 
-type Search = { workspace?: string | string[]; month?: string | string[] };
+type Search = {
+  workspace?: string | string[];
+  month?: string | string[];
+  breakdown?: string | string[];
+  drilldown?: string | string[];
+};
 
 function cairoMonth() {
   const parts = new Intl.DateTimeFormat('en', {
@@ -87,18 +96,25 @@ export default async function ReportsPage({
     return denied(locale, m['reports.denied']);
 
   const params = await searchParams;
+  const isPlatformOwner = actor.role === 'platform_owner';
   const target = params.workspace;
+
+  // WO cannot request all workspaces or drilldown into foreign workspace
   if (
-    (actor.role === 'workspace_owner' &&
-      (actor.activeWorkspaceIds.length === 0 ||
-        (target !== undefined &&
-          (typeof target !== 'string' ||
-            !actor.activeWorkspaceIds.includes(target))))) ||
-    (actor.role === 'platform_owner' &&
-      target !== undefined &&
-      typeof target !== 'string')
-  )
+    !isPlatformOwner &&
+    (target === 'all' ||
+      params.drilldown !== undefined ||
+      actor.activeWorkspaceIds.length === 0 ||
+      (target !== undefined &&
+        (typeof target !== 'string' ||
+          !actor.activeWorkspaceIds.includes(target))))
+  ) {
     return denied(locale, m['reports.denied']);
+  }
+
+  if (isPlatformOwner && target !== undefined && typeof target !== 'string') {
+    return denied(locale, m['reports.denied']);
+  }
 
   const month = validMonth(params.month) ? params.month : cairoMonth();
   const client = await createSessionClient();
@@ -132,95 +148,207 @@ export default async function ReportsPage({
       </main>
     );
 
-  const workspaceId = typeof target === 'string' ? target : workspaces[0]!.id;
+  const isAll = isPlatformOwner && target === 'all';
+  const workspaceId = isAll
+    ? 'all'
+    : typeof target === 'string'
+      ? target
+      : workspaces[0]!.id;
+
   if (
-    !workspaces.some((workspace) => workspace.id === workspaceId) ||
+    (!isAll && !workspaces.some((workspace) => workspace.id === workspaceId)) ||
     (actor.role === 'workspace_owner' &&
       !actor.activeWorkspaceIds.includes(workspaceId))
   )
     return denied(locale, m['reports.denied']);
 
-  const [
-    collectionsResult,
-    commissionResult,
-    installmentResult,
-    packagesResult,
-  ] = await Promise.all([
-    getPackageMonthlyCollections(workspaceId, `${month}-01`),
-    getPackageCommissionReport(workspaceId, `${month}-01`),
-    getPackageInstallmentReport(workspaceId),
-    client
-      .from('packages')
-      .select('id,market,type')
-      .eq('workspace_id', workspaceId),
-  ]);
-  if (packagesResult.error)
-    return loadFailure(
-      locale,
-      m['reports.collections.loadError'],
-      m['packages.retry'],
-    );
+  // PO Platform Aggregate Report
+  const breakdown: 'month' | 'package' =
+    params.breakdown === 'package' ? 'package' : 'month';
+  let platformData: PlatformData | null = null;
 
-  const packages: ReportPackage[] = (packagesResult.data ?? []).map((row) => ({
-    id: row.id,
-    market: row.market,
-    type: row.type,
-  }));
-  const packageById = new Map(packages.map((item) => [item.id, item]));
-  const data: ReportsData = {
-    collections:
-      collectionsResult?.status === 'ok'
-        ? {
-            status: 'ok',
-            rows: collectionsResult.collections.map((row) => ({
-              id: row.event_id,
-              package: packageById.get(row.package_id) ?? null,
-              clientName: row.client_name,
-              recordedAt: row.recorded_at,
-              amountMinor: row.amount_minor,
-              currency: row.currency,
-              convertedEgpExact: row.converted_egp_exact,
-            })),
-            totalConvertedEgpMinor: collectionsResult.converted_egp_minor,
-            pendingEventIds: collectionsResult.pending_event_ids,
-          }
-        : { status: 'error' },
-    commissions:
-      commissionResult?.status === 'ok'
-        ? {
-            status: 'ok',
-            rows: commissionResult.commissions.map((row) => ({
-              package: packageById.get(row.package_id) ?? null,
-              byCurrency: row.original_commission_by_currency,
-              convertedEgpExact: row.converted_egp_exact,
-              pendingRateCount: row.pending_event_count,
-            })),
-          }
-        : { status: 'error' },
-    installments:
-      installmentResult?.status === 'ok'
-        ? {
-            status: 'ok',
-            rows: installmentResult.installments.map((row) => ({
-              id: row.installment_id,
-              package: packageById.get(row.package_id) ?? null,
-              clientName: row.client_name,
-              dueOn: row.due_on,
-              amountMinor: row.amount_minor,
-              paidMinor: row.paid_minor,
-              remainingMinor: row.remaining_minor,
-              currency: row.currency,
-              isInstallmentClient: row.is_installment_client,
-            })),
-          }
-        : { status: 'error' },
+  if (isPlatformOwner) {
+    const platformResult = await getPlatformAggregateReport({
+      monthStart: `${month}-01`,
+      breakdown,
+      workspaceId: workspaceId === 'all' ? undefined : workspaceId,
+    });
+    if (platformResult.status === 'ok') {
+      platformData = {
+        status:
+          platformResult.workspaceAggregates.length === 0 ? 'empty' : 'ok',
+        period: platformResult.period,
+        breakdown: platformResult.breakdown,
+        totals: platformResult.totals,
+        workspaceAggregates: platformResult.workspaceAggregates,
+        breakdowns: platformResult.breakdowns.map((b) => ({
+          ...b,
+          package: b.package
+            ? {
+                id: b.package.id,
+                market: b.package.market,
+                type: b.package.type,
+              }
+            : null,
+        })),
+      };
+    } else if (platformResult.status === 'unavailable') {
+      platformData = {
+        status: 'error',
+        period: month,
+        breakdown,
+        totals: {
+          revenueConvertedEgpMinor: '0',
+          subscriptionCount: 0,
+          clientCount: 0,
+        },
+        workspaceAggregates: [],
+        breakdowns: [],
+      };
+    }
+  }
+
+  // PO Drilldown Source Rows
+  let drilldownData: DrilldownData | null = null;
+  if (
+    isPlatformOwner &&
+    typeof params.drilldown === 'string' &&
+    params.drilldown.length > 0
+  ) {
+    const drilldownId = params.drilldown;
+    if (!workspaces.some((w) => w.id === drilldownId)) {
+      return denied(locale, m['reports.denied']);
+    }
+    const drillResult = await getWorkspaceDrilldownRows({
+      workspaceId: drilldownId,
+      monthStart: `${month}-01`,
+    });
+    if (drillResult.status === 'ok') {
+      drilldownData = {
+        status: drillResult.rows.length === 0 ? 'empty' : 'ok',
+        workspaceId: drillResult.workspaceId,
+        workspaceName: drillResult.workspaceName,
+        rows: drillResult.rows,
+        totals: drillResult.totals,
+      };
+    } else if (drillResult.status === 'unavailable') {
+      drilldownData = {
+        status: 'error',
+        workspaceId: drilldownId,
+        workspaceName:
+          workspaces.find((w) => w.id === drilldownId)?.name ?? drilldownId,
+        rows: [],
+        totals: {
+          revenueConvertedEgpMinor: '0',
+          subscriptionCount: 0,
+          clientCount: 0,
+        },
+      };
+    }
+  }
+
+  // Workspace-specific reports (collections, commissions, installments)
+  const targetWorkspaceForDetails =
+    workspaceId === 'all' ? (workspaces[0]?.id ?? '') : workspaceId;
+
+  let data: ReportsData = {
+    collections: {
+      status: 'ok',
+      rows: [],
+      totalConvertedEgpMinor: '0',
+      pendingEventIds: [],
+    },
+    commissions: { status: 'ok', rows: [] },
+    installments: { status: 'ok', rows: [] },
   };
 
-  // Preserve exact integer reporting amounts; helper accepts minor-unit strings.
-  const totalConvertedEgp =
-    data.collections.status === 'ok'
-      ? formatConvertedTotal(data.collections.totalConvertedEgpMinor, locale)
-      : null;
+  let totalConvertedEgp: string | null = null;
+
+  if (targetWorkspaceForDetails && !isAll) {
+    const [
+      collectionsResult,
+      commissionResult,
+      installmentResult,
+      packagesResult,
+    ] = await Promise.all([
+      getPackageMonthlyCollections(targetWorkspaceForDetails, `${month}-01`),
+      getPackageCommissionReport(targetWorkspaceForDetails, `${month}-01`),
+      getPackageInstallmentReport(targetWorkspaceForDetails),
+      client
+        .from('packages')
+        .select('id,market,type')
+        .eq('workspace_id', targetWorkspaceForDetails),
+    ]);
+    if (packagesResult.error)
+      return loadFailure(
+        locale,
+        m['reports.collections.loadError'],
+        m['packages.retry'],
+      );
+
+    const packages: ReportPackage[] = (packagesResult.data ?? []).map(
+      (row) => ({
+        id: row.id,
+        market: row.market,
+        type: row.type,
+      }),
+    );
+    const packageById = new Map(packages.map((item) => [item.id, item]));
+
+    data = {
+      collections:
+        collectionsResult?.status === 'ok'
+          ? {
+              status: 'ok',
+              rows: collectionsResult.collections.map((row) => ({
+                id: row.event_id,
+                package: packageById.get(row.package_id) ?? null,
+                clientName: row.client_name,
+                recordedAt: row.recorded_at,
+                amountMinor: row.amount_minor,
+                currency: row.currency,
+                convertedEgpExact: row.converted_egp_exact,
+              })),
+              totalConvertedEgpMinor: collectionsResult.converted_egp_minor,
+              pendingEventIds: collectionsResult.pending_event_ids,
+            }
+          : { status: 'error' },
+      commissions:
+        commissionResult?.status === 'ok'
+          ? {
+              status: 'ok',
+              rows: commissionResult.commissions.map((row) => ({
+                package: packageById.get(row.package_id) ?? null,
+                byCurrency: row.original_commission_by_currency,
+                convertedEgpExact: row.converted_egp_exact,
+                pendingRateCount: row.pending_event_count,
+              })),
+            }
+          : { status: 'error' },
+      installments:
+        installmentResult?.status === 'ok'
+          ? {
+              status: 'ok',
+              rows: installmentResult.installments.map((row) => ({
+                id: row.installment_id,
+                package: packageById.get(row.package_id) ?? null,
+                clientName: row.client_name,
+                dueOn: row.due_on,
+                amountMinor: row.amount_minor,
+                paidMinor: row.paid_minor,
+                remainingMinor: row.remaining_minor,
+                currency: row.currency,
+                isInstallmentClient: row.is_installment_client,
+              })),
+            }
+          : { status: 'error' },
+    };
+
+    totalConvertedEgp =
+      data.collections.status === 'ok'
+        ? formatConvertedTotal(data.collections.totalConvertedEgpMinor, locale)
+        : null;
+  }
 
   return (
     <ReportsView
@@ -231,6 +359,10 @@ export default async function ReportsPage({
       data={data}
       totalConvertedEgp={totalConvertedEgp}
       messages={m}
+      role={actor.role}
+      breakdown={breakdown}
+      platformData={platformData}
+      drilldownData={drilldownData}
     />
   );
 }
