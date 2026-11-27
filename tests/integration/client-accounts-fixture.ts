@@ -437,6 +437,7 @@ export async function pendingHttpAccess(
           date: '2050-01-01',
           'timestamp with time zone': new Date().toISOString(),
           'uuid[]': [],
+          'text[]': [],
         };
         if (!(type in values))
           throw new Error(
