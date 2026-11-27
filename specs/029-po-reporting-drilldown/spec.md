@@ -2,7 +2,7 @@
 
 **Feature Branch**: `s71-029-po-drilldown`
 **Created**: 2026-11-27
-**Status**: Draft; additional depth dimensions are PENDING-PO in `checklists/po-mcqs.md`.
+**Status**: Draft; S71-PO-6 specifies the PO-approved month and package breakdowns in `checklists/po-mcqs.md`.
 **Authority**: S71-PO-1 approves the P8 PO aggregate drill-down item.
 
 ## Constitution check
@@ -13,11 +13,11 @@ No conflict identified. Enforce workspace isolation, PO-only platform views, min
 
 ### User Story 1 - PO drills from platform aggregate to permitted workspace detail (Priority: P1)
 
-As PO, I can move from existing platform aggregate reporting into authorized workspace-scoped reporting to investigate the aggregate, with consistent filters and no cross-workspace comparison dashboard unless approved.
+As PO, I can move from platform totals for revenue, clients, and subscriptions into authorized workspace-scoped reporting, then examine month and package breakdowns with consistent filters and no comparison dashboard.
 
 **Why this priority**: P8 explicitly includes PO aggregate drill-down depth; BRD-06 requires platform aggregate and workspace drill-down.
 
-**Independent Test**: Seed synthetic workspaces with collections, refunds, commissions, active/expiring subscriptions and delivered plans; compare platform aggregate and selected-workspace results through the existing report route and readers.
+**Independent Test**: Seed synthetic source facts for existing collection, refund, commission, client-count, and subscription-count measures across workspaces; compare platform totals, selected-workspace results, month/package breakdowns, and source rows through the existing report route.
 
 **Acceptance Scenarios**:
 
@@ -27,7 +27,7 @@ As PO, I can move from existing platform aggregate reporting into authorized wor
 
 ### User Story 2 - PO reviews approved aggregate dimensions with bounded interaction (Priority: P2)
 
-As PO, I can use agreed drill-down dimensions through the current report UI without a duplicate dashboard.
+As PO, I can drill approved finance dimensions by month and package through the current report UI without a duplicate dashboard.
 
 **Independent Test**: Exercise each PO-selected dimension and filter against synthetic records; verify pagination, sums, currency, timezone and empty/error states.
 
@@ -38,14 +38,14 @@ As PO, I can use agreed drill-down dimensions through the current report UI with
 
 ## Clarifications
 
-S71-PO-1 approves aggregate drill-down. Additional breakdown dimensions beyond BRD/PRD are not specified; MCQ 029-01 is PENDING-PO. No additional dimensions or cross-workspace comparisons are presumed. No other open ambiguity is assumed.
+S71-PO-1 approves platform totals for revenue, clients, and subscriptions with workspace drill-down. S71-PO-6 resolves MCQ 029-01 as month and package breakdowns for those established measures. Do not add delivered-plan, Trainer, check-in, client-history, or comparison-dashboard dimensions. No open PO ambiguity remains; proposed copy is still subject to per-screen approval.
 
 ## Requirements
 
 - **FR-001**: Extend the existing `/reports` route and reporting readers; no new report page or parallel report store.
 - **FR-002**: Support platform aggregate to workspace drill-down for PO only, consistent with BRD-06 and PRD-11.
 - **FR-003**: Keep WO views within its own workspace; Trainer, Sales, and Client receive only specifically authorized report scope, otherwise denied.
-- **FR-004**: Include only PO-approved dimensions from MCQ 029-01 (**PENDING-PO**); preserve existing finance/accounting definitions and integer minor-unit calculations.
+- **FR-004**: Include month and package breakdowns for existing PO aggregate measures (revenue, clients, subscriptions) and established finance measures; preserve source definitions, currency partitions, and integer minor-unit calculations.
 - **FR-005**: Enforce filters, period boundaries, pagination, and counts in authorized server-side readers; UI filtering is not a security boundary.
 - **FR-006**: Reconcile each detail subtotal with its parent aggregate using the same source, currency, timezone and filters.
 - **FR-007**: Exclude leaderboard (spec 024), full dataset export (spec 030), and audit-event browsing.
@@ -53,24 +53,25 @@ S71-PO-1 approves aggregate drill-down. Additional breakdown dimensions beyond B
 
 ### FR Acceptance Matrix
 
-| FR     | Given / When / Then acceptance test                                                                                                                                                                               |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-001 | **Given** the current Reports route, **When** PO drills down, **Then** the same route and report readers serve the detail.                                                                                        |
-| FR-002 | **Given** PO has selected a platform aggregate, **When** it opens a workspace, **Then** detail is available only under PO authorization.                                                                          |
-| FR-003 | **Given** WO, Trainer, Sales or Client supplies a platform/foreign workspace ID, **When** the reader is called directly, **Then** the role matrix denies or returns only current approved scope.                  |
-| FR-004 | **Given** MCQ 029-01 is resolved, **When** PO selects a chosen dimension, **Then** only those rows are returned; until then the new dimensions remain PENDING-PO.                                                 |
-| FR-005 | **Given** filters and cursors are supplied, **When** a report query runs, **Then** server-side validation, workspace authorization and page bounds apply before rows/counts return.                               |
-| FR-006 | **Given** one parent aggregate and its detail rows, **When** totals are compared for the same period/currency, **Then** integer minor-unit sums reconcile exactly.                                                |
-| FR-007 | **Given** a report request, **When** it is evaluated, **Then** no leaderboard, full-export or audit-browsing capability is added.                                                                                 |
-| FR-008 | **Given** loading, empty, error and populated states, **When** the existing Reports view renders, **Then** approved design/accessibility requirements are met and proposed copy remains unshipped until approval. |
+| FR     | Given / When / Then acceptance test                                                                                                                                                                                                                                                  |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FR-001 | **Given** the current Reports route, **When** PO drills down, **Then** the same route and report readers serve the detail.                                                                                                                                                           |
+| FR-002 | **Given** PO has selected a platform aggregate, **When** it opens a workspace, **Then** detail is available only under PO authorization.                                                                                                                                             |
+| FR-003 | **Given** WO, Trainer, Sales or Client supplies a platform/foreign workspace ID, **When** the reader is called directly, **Then** the role matrix denies or returns only current approved scope.                                                                                     |
+| FR-004 | **Given** PO selects a month or package breakdown, **When** the PO platform aggregate reader runs, **Then** revenue/client/subscription totals and established finance measures use their existing source definitions, preserve currency partitions, and reconcile to parent totals. |
+| FR-005 | **Given** filters and cursors are supplied, **When** a report query runs, **Then** server-side validation, workspace authorization and page bounds apply before rows/counts return.                                                                                                  |
+| FR-006 | **Given** one parent aggregate and its detail rows, **When** totals are compared for the same period/currency, **Then** integer minor-unit sums reconcile exactly.                                                                                                                   |
+| FR-007 | **Given** a report request, **When** it is evaluated, **Then** no leaderboard, full-export or audit-browsing capability is added.                                                                                                                                                    |
+| FR-008 | **Given** loading, empty, error and populated states, **When** the existing Reports view renders, **Then** approved design/accessibility requirements are met and proposed copy remains unshipped until approval.                                                                    |
 
 ### Success Criteria
 
 - **SC-001**: Every returned detail row belongs to the selected authorized workspace and every parent total reconciles exactly to children for the same query.
 - **SC-002**: Non-PO cross-workspace detail probes return denied/empty with no existence/count leakage.
 - **SC-003**: No drill-down duplicates, alters or bypasses existing report source facts or finance math.
+- **SC-004**: Month and package subtotals reconcile exactly to their parent totals using the same source, currency, timezone, and filters.
 
 ### Assumptions
 
-- Existing PO/WO reporting APIs and route are the source surface; `lib/packages/reporting.ts` and package-report RPCs are reused where applicable.
-- Dimensions not already specified by BRD/PRD remain PENDING-PO.
+- Existing `/reports` route and PO/WO workspace readers are the presentation/source surface; because no platform aggregate reader exists, implementation adds one PO-only aggregate reader/RPC over current source facts. `lib/packages/reporting.ts` and package-report RPCs are reused for aligned workspace finance measures.
+- Month and package are the only newly approved breakdown dimensions; no other report dimensions are added.

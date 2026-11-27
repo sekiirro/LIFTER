@@ -4,7 +4,7 @@
 
 ## Summary
 
-Extend the existing `/reports` route and currently authorized reporting readers to provide the PO-approved additional level of platform aggregate drill-down. Maintain existing finance truth, workspace boundaries, and pagination. The extra dimension set is PENDING-PO (MCQ 029-01); no new comparisons or report page are implied.
+Extend the existing `/reports` route and currently authorized reporting readers to provide PO-approved month and package breakdowns within platform aggregate drill-down. Maintain existing finance truth, workspace boundaries, and pagination; no comparison dashboard or new report page is implied.
 
 ## Technical Context
 
@@ -27,17 +27,17 @@ PASS: Principles I, II, III, VII, VIII. Any report rows remain server-authorized
 - Reuse `app/(app)/reports/page.tsx` and `ReportsView.tsx`; no second report dashboard.
 - Reuse `lib/packages/reporting.ts` and existing package commission/installment report RPCs where metrics align; do not reconstruct ledger math in UI.
 - Reuse existing source readers, but do not treat the shared `/reports` UI/service as PO-only: it currently supports both PO and WO. Add an export/drill-down-specific capability check and server-side PO role check for platform aggregate scope; preserve existing WO workspace reports. Verify permission rules against `docs/02-architecture.md:35-49` and source readers before implementation.
-- The current `reports/page.tsx` selects a workspace and `lib/packages/reporting.ts` exposes workspace-specific package metrics; neither implements the proposed platform aggregate. FR-002/FR-004 therefore include identifying and extending the actual existing aggregate reader/source within `/reports`, with only established BRD/PRD measures. Any extra dimensions remain pending MCQ 029-01.
+- The current `reports/page.tsx` selects a workspace and `lib/packages/reporting.ts` exposes workspace-specific package metrics; no platform aggregate reader/RPC exists. Add a new PO-only platform aggregate reader/RPC over the existing source facts, and integrate it into `/reports`; apply month and package breakdowns to the established revenue, client, subscription, and finance measures.
 - Keep leaderboard excluded (spec 024), full client export in spec 030, and raw audit browsing out of reports.
 
 ## Clarifications / PO decisions
 
-MCQ 029-01 is PENDING-PO for the exact additional breakdown dimensions. Existing aggregate and workspace drill-down behavior is settled by BRD-06/PRD-11. Do not invent more report categories while the choice is pending.
+S71-PO-6 resolves MCQ 029-01 as month and package breakdowns. Existing aggregate and workspace drill-down behavior is settled by BRD-06/PRD-11. No other dimensions are included.
 
 ## Proposed implementation slices
 
-1. RED authz/reconciliation tests through app and direct RPC for PO, WO, Trainer, Sales, Client, foreign workspace and malformed filters. Include a fixture proving platform total → workspace subtotal → source rows; define measures from existing source data before selected MCQ dimensions.
-2. Identify and extend the aggregate reader within `/reports`; use only existing BRD/PRD measures until MCQ dimensions are approved. Keep a distinct PO platform-scope gate while retaining WO's existing workspace report access.
+1. RED authz/reconciliation tests through app and direct RPC for PO, WO, Trainer, Sales, Client, foreign workspace and malformed filters. Include a fixture proving platform total → workspace subtotal → month/package breakdown → source rows for established revenue/client/subscription/finance measures.
+2. Add a PO-only platform aggregate reader/RPC over existing source facts and integrate it with `/reports`; add month and package breakdowns. Keep a distinct PO platform-scope gate while retaining WO's existing workspace report access.
 3. Extend existing report view and its loading/empty/error, AR/EN, mobile/accessibility tests. Explicitly test intended breakdowns, role outcomes, and exclusions.
 4. Verify finance totals, security probe coverage and exact-head evidence.
 

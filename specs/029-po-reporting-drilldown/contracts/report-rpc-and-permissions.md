@@ -2,7 +2,7 @@
 
 ## API/RPC contract
 
-Extend the existing `/reports` service and an identified aggregate reader; the current reader is workspace-specific and does not supply platform aggregate totals. Exact new dimensions are blocked on MCQ 029-01. Every request includes only validated period/filter/cursor fields; server derives actor and authorized workspaces from current session. Responses include safe aggregate/detail rows, currency, period and next cursor; no hidden foreign count or client audit detail. Invalid, unauthorized, foreign, and unknown IDs share safe denial behavior. Preserve existing WO report access while requiring a distinct PO check for platform scope.
+The `/reports` service and current readers are workspace-specific; no platform aggregate reader/RPC exists. Add a new PO-only platform aggregate RPC over existing source facts and integrate it into the existing report route. It returns revenue, client, subscription, and established finance measures with month/package breakdowns. Requests include only validated period/filter/cursor fields; the server derives actor and authorized workspaces from the current session. Responses include safe aggregate/detail rows, currency, period, package identity and next cursor; no hidden foreign count or client audit detail. Invalid, unauthorized, foreign, and unknown IDs share safe denial behavior. Preserve existing WO report access while requiring a distinct PO check for platform scope.
 
 ## Role matrix
 

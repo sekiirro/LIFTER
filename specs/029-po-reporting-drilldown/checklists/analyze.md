@@ -16,8 +16,8 @@
 
 - [x] FR-001..FR-008 have Given/When/Then acceptance; SCs are measurable.
 - [x] PO/WO/Trainer/Sales/Client/anonymous/revoked role outcomes are explicit in contract.
-- [x] RED authorization, currency/period/reconciliation and exclusion checks precede readers and UI; MCQ dimensions gate only dependent changes.
-- [x] Multi-workspace platform total → workspace subtotal → source-row acceptance is explicit.
+- [x] RED authorization, currency/period/reconciliation and exclusion checks precede readers and UI; month and package breakdowns are PO-decided.
+- [x] Multi-workspace platform total → workspace subtotal → month/package breakdown → source-row acceptance is explicit.
 - [x] Existing source/currency/event semantics are preserved; no new money math is inferred.
 - [x] Traceability and proposed bilingual copy map to FRs; per-screen copy approval is required.
 
@@ -26,7 +26,11 @@
 - CRITICAL: 0 open.
 - HIGH: 0 open; 2 critique findings addressed.
 - MEDIUM: 0 open; 5 critique findings addressed or verified not present.
-- PENDING-PO: MCQ 029-01 only; selected additional dimensions remain gated.
+- PO decisions: none remain open; MCQ 029-01 is DECIDED by S71-PO-6.
 - Constitution conflicts: none. No amendment proposed.
 
 No other open ambiguities are assumed.
+
+## S71 final re-Analyze status
+
+The final `/speckit-analyze` output did not provide an Analyze report or CRITICAL/HIGH counts; it returned a remediation brief. Because the requirement text changed, current CRITICAL/HIGH counts are unverified. Do not treat this checklist as final acceptance until Speckit Analyze completes on the changed requirement text.

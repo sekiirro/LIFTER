@@ -15,4 +15,4 @@
 
 Use existing report route, readers, source facts, permission checks, money math and display components. Add only PO-selected drill-down fields to the existing reader. Authorization remains in database/service layer; filters must be applied before aggregation/detail return. Keep row bounds and stable pagination. Compare exact sums in integer minor units and do not convert currencies unless existing report rules already define it.
 
-No other report dimensions, timing defaults, or new SLA are inferred. MCQ 029-01 is the only open product choice. No product/privacy claim from the parallel audit was relied upon.
+S71-PO-6 resolves the only report-dimension question as month and package breakdowns. No other dimensions or new SLA are inferred. Proposed copy remains subject to per-screen approval.

@@ -1,13 +1,9 @@
-﻿# PO MCQs: Platform Owner aggregate reporting drill-down
+# PO decisions: Platform Owner aggregate reporting drill-down
 
-**Authority already applied**: S71-PO-1 approves the P8 PO aggregate drill-down item. No question below reopens it.
+## MCQ 029-01 — Additional reporting breakdowns
 
-## MCQ 029-01 — Which additional breakdowns are included in “depth”?
+**Decision — DECIDED (S71-PO-6, Q3):** “* Q3: B — Drill-down by month and package.”
 
-**Where**: FR-004; roadmap P8 says “PO aggregate drill-down depth” but does not identify new dimensions beyond BRD/PRD workspace drill-down.
+**Applied meaning:** Add month and package breakdowns to the existing approved finance dimensions. Preserve current source facts, currency partitions, integer minor-unit calculations, and PO-only platform scope. Do not add operational/Trainer/check-in/client-history dimensions.
 
-A. Keep existing finance dimensions and add one level from workspace aggregate to permitted source rows (collections/refunds/commissions and subscription status), with no new comparisons. **(Recommended)** Implements useful depth while minimizing exposure and scope.
-B. Add date/month and package breakdowns to those metrics. More decision value, with more filter/query validation.
-C. Add operational dimensions including Trainer, delivery, check-ins and client history. Broad privacy and authorization expansion.
-
-**PO choice**: PENDING-PO. Affects FR-004 and US2; current rollups, readers, scoping and reconciliation can be designed independently.
+**Source:** `C:/Users/NEW LAP/.lifter/runs/s71-po/s71-po-6.verbatim.txt` (SHA-256 `DAA3A26C19CD1536486BCD508377FAF0EE33163B51A7C1C0E396FB7EC091F1B5`).

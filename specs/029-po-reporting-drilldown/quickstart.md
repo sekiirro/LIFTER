@@ -2,7 +2,7 @@
 
 Future implementation validation; no tests or code ran in this docs-only lane.
 
-1. Resolve MCQ 029-01 before exposing new dimensions.
+1. Implement only the month and package breakdowns approved by S71-PO-6; obtain per-screen copy approval before shipping copy.
 2. Seed synthetic multi-workspace finance facts and calculate expected sums from source ledger records.
 3. RED-test PO, own/foreign WO, Trainer, Sales, Client, revoked and anonymous via route and direct RPC, including counts and cursors.
 4. Verify parent aggregate equals child totals for the same periods/currency and all monetary values are integer minor units.
