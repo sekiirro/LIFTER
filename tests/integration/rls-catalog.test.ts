@@ -119,6 +119,7 @@ const p7StrikePrivate = [
   'guard_workforce_strike_immutable',
   'reject_workforce_strike_truncate',
 ];
+const p7PlanDelayPrivate = ['guard_workforce_plan_delay_immutable'];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
   'purge_retention_for_platform_owner',
@@ -3119,6 +3120,61 @@ describe('P7 T033 strike security catalog', () => {
       });
       expect(fn?.proconfig).toContain('search_path=""');
     }
+  });
+});
+
+describe('P7 T009 plan-delay security catalog', () => {
+  const tables = ['public.workforce_plan_delay_events'];
+
+  it('forces RLS, withholds direct table access, and protects immutable history', async () => {
+    for (const relation of tables) {
+      const [table] = await db`
+        select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass
+      `;
+      expect(table, relation).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] = await db`
+            select has_table_privilege(${role},${relation},${privilege}) as allowed
+          `;
+          expect(grant?.allowed, `${role} ${privilege} ${relation}`).toBe(
+            false,
+          );
+        }
+      }
+      const [trigger] = await db`
+        select count(*)::int as count from pg_trigger
+        where tgrelid=${relation}::regclass and not tgisinternal and (tgtype & 28)<>0
+      `;
+      expect(trigger?.count, relation).toBeGreaterThan(0);
+    }
+
+    const [helper] = await db`
+      select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+      from pg_proc p where p.proname = any(${p7PlanDelayPrivate})
+    `;
+    expect(helper).toMatchObject({
+      prosecdef: false,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(helper?.proconfig).toContain('search_path=""');
   });
 });
 
