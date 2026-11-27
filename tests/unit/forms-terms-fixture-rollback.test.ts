@@ -196,6 +196,12 @@ const COMMIT_REQUIRED = [
     reason:
       'P7 cross-connection confirmation and revocation races require the committed F15 form/terms fixture',
   },
+  {
+    file: 'tests/integration/workforce-checkin-delay.test.ts',
+    signature: /p7-delay-/,
+    reason:
+      'P7 delay evaluator and confirmer race assertions use separate connections and require the committed synthetic check-in terms fixture',
+  },
 ];
 
 type Site = { file: string; index: number; source: string };

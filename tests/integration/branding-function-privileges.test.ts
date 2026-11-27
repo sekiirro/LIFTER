@@ -294,6 +294,7 @@ describe('F14 definer function privileges', () => {
         signature:
           'public.retry_refund_auth_lockout_job(uuid, integer, timestamp with time zone, text)',
       },
+      { signature: 'public.run_p7_checkin_delay_evaluator(uuid)' },
       {
         signature:
           'public.save_package_reporting_fx_snapshot(uuid, uuid, text, text, text, date)',
