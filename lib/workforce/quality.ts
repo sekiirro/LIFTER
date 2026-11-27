@@ -3,21 +3,34 @@
  * Scale 2 exact decimal canonical representation, non-negative counts, per-Trainer defaults.
  */
 
+import { decimalToMinorUnits, minorUnitsToDecimal } from './payroll-money';
+
+const DECIMAL_REGEX = /^-?\d+(\.\d+)?$/;
+const MAX_COUNT = 2_147_483_647;
+const MAX_MINOR_UNITS = 9_999_999_999n;
+const MIN_MINOR_UNITS = -MAX_MINOR_UNITS;
+
+function parseQualityDecimal(value: string | number, label: string): bigint {
+  const text = String(value).trim();
+  if (!DECIMAL_REGEX.test(text)) {
+    throw new Error(`Invalid decimal format: ${text}`);
+  }
+  const fraction = text.split('.')[1];
+  if (fraction && fraction.length > 2) {
+    throw new Error(`${label} has at most two decimal places allowed`);
+  }
+  const minor = decimalToMinorUnits(text);
+  if (minor === null) {
+    throw new Error(`Invalid decimal format: ${text}`);
+  }
+  if (minor < MIN_MINOR_UNITS || minor > MAX_MINOR_UNITS) {
+    throw new Error(`${label} is outside the numeric(10,2) range`);
+  }
+  return minor;
+}
+
 export function formatExactDecimal(val: number | string): string {
-  const str = String(val).trim();
-  if (!/^-?\d+(\.\d+)?$/.test(str)) {
-    throw new Error(`Invalid decimal format: ${str}`);
-  }
-  const parts = str.split('.');
-  if (parts[1] && parts[1].length > 2) {
-    throw new Error(`Value ${str} has more than two decimal places`);
-  }
-  const num = Number(str);
-  if (!Number.isFinite(num)) {
-    throw new Error(`Invalid numeric value: ${str}`);
-  }
-  const normalized = num === 0 ? 0 : num;
-  return normalized.toFixed(2);
+  return minorUnitsToDecimal(parseQualityDecimal(val, 'Value'));
 }
 
 export function validateQualityWeights(weights: {
@@ -25,22 +38,10 @@ export function validateQualityWeights(weights: {
   negativeWeight?: string | number | null;
 }): void {
   if (weights.positiveWeight !== undefined && weights.positiveWeight !== null) {
-    const s = String(weights.positiveWeight).trim();
-    const parts = s.split('.');
-    if (parts[1] && parts[1].length > 2) {
-      throw new Error(
-        `Positive weight ${s} has at most two decimal places allowed`,
-      );
-    }
+    parseQualityDecimal(weights.positiveWeight, 'Positive weight');
   }
   if (weights.negativeWeight !== undefined && weights.negativeWeight !== null) {
-    const s = String(weights.negativeWeight).trim();
-    const parts = s.split('.');
-    if (parts[1] && parts[1].length > 2) {
-      throw new Error(
-        `Negative weight ${s} has at most two decimal places allowed`,
-      );
-    }
+    parseQualityDecimal(weights.negativeWeight, 'Negative weight');
   }
 }
 
@@ -70,17 +71,27 @@ export function calculateQualityPoints(
 ): QualityPointsResult {
   const { category, positiveCount, negativeCount = 0 } = params;
 
-  if (!Number.isInteger(positiveCount) || positiveCount < 0) {
+  if (
+    !Number.isSafeInteger(positiveCount) ||
+    positiveCount < 0 ||
+    positiveCount > MAX_COUNT
+  ) {
     throw new Error(
-      `positiveCount must be a non-negative integer: ${positiveCount}`,
+      `positiveCount must be a non-negative integer within PostgreSQL integer range: ${positiveCount}`,
     );
   }
-  if (!Number.isInteger(negativeCount) || negativeCount < 0) {
+  if (
+    !Number.isSafeInteger(negativeCount) ||
+    negativeCount < 0 ||
+    negativeCount > MAX_COUNT
+  ) {
     throw new Error(
-      `negativeCount must be a non-negative integer: ${negativeCount}`,
+      `negativeCount must be a non-negative integer within PostgreSQL integer range: ${negativeCount}`,
     );
   }
-
+  if (category !== 'transformation' && category !== 'feedback') {
+    throw new Error(`Invalid quality category: ${String(category)}`);
+  }
   if (category === 'transformation' && negativeCount > 0) {
     throw new Error('transformation does not support negative count');
   }
@@ -90,37 +101,29 @@ export function calculateQualityPoints(
     negativeWeight: params.negativeWeight,
   });
 
-  let posWeight: number;
-  let negWeight: number;
+  const positiveWeightMinor =
+    params.positiveWeight !== undefined && params.positiveWeight !== null
+      ? parseQualityDecimal(params.positiveWeight, 'Positive weight')
+      : 100n;
+  const negativeWeightMinor =
+    category === 'transformation'
+      ? 0n
+      : params.negativeWeight !== undefined && params.negativeWeight !== null
+        ? parseQualityDecimal(params.negativeWeight, 'Negative weight')
+        : -100n;
 
-  if (category === 'transformation') {
-    posWeight =
-      params.positiveWeight !== undefined && params.positiveWeight !== null
-        ? Number(params.positiveWeight)
-        : 1.0;
-    negWeight = 0.0;
-  } else {
-    posWeight =
-      params.positiveWeight !== undefined && params.positiveWeight !== null
-        ? Number(params.positiveWeight)
-        : 1.0;
-    negWeight =
-      params.negativeWeight !== undefined && params.negativeWeight !== null
-        ? Number(params.negativeWeight)
-        : -1.0;
+  const totalMinor =
+    BigInt(positiveCount) * positiveWeightMinor +
+    BigInt(negativeCount) * negativeWeightMinor;
+  if (totalMinor < MIN_MINOR_UNITS || totalMinor > MAX_MINOR_UNITS) {
+    throw new Error('Net points are outside the numeric(10,2) range');
   }
-
-  const posCents = Math.round(posWeight * 100);
-  const negCents = Math.round(negWeight * 100);
-  const totalCents = positiveCount * posCents + negativeCount * negCents;
-  const netNumeric = totalCents / 100;
-  const netPoints = (netNumeric === 0 ? 0 : netNumeric).toFixed(2);
 
   return {
     positiveCount,
     negativeCount,
-    positiveWeight: formatExactDecimal(posWeight),
-    negativeWeight: formatExactDecimal(negWeight),
-    netPoints,
+    positiveWeight: minorUnitsToDecimal(positiveWeightMinor),
+    negativeWeight: minorUnitsToDecimal(negativeWeightMinor),
+    netPoints: minorUnitsToDecimal(totalMinor),
   };
 }
