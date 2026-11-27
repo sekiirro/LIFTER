@@ -3603,6 +3603,54 @@ describe('P7 T009 plan-delay security catalog', () => {
     });
     expect(helper?.proconfig).toContain('search_path=""');
   });
+
+  it('stores only one of the fixed reason codes and exposes the renamed RPC argument', async () => {
+    const columns = await db`
+      select column_name,data_type
+      from information_schema.columns
+      where table_schema='public' and table_name='workforce_plan_delay_corrections'
+    `;
+    expect(
+      columns.find((column) => column.column_name === 'reason'),
+    ).toBeUndefined();
+    expect(
+      columns.find((column) => column.column_name === 'reason_code'),
+    ).toEqual({ column_name: 'reason_code', data_type: 'text' });
+
+    const [check] = await db`
+      select pg_catalog.pg_get_constraintdef(oid) as definition
+      from pg_constraint
+      where conrelid='public.workforce_plan_delay_corrections'::regclass
+        and contype='c'
+        and conname='workforce_plan_delay_corrections_reason_code_check'
+    `;
+    expect(check?.definition).toBeDefined();
+    expect(
+      Array.from(
+        String(check?.definition).matchAll(/'([^']+)'/g),
+        (match) => match[1],
+      ).sort(),
+    ).toEqual([
+      'client_caused_delay',
+      'duplicate',
+      'po_exception',
+      'system_issue',
+      'wrong_trainer',
+    ]);
+
+    const [rpc] = await db`
+      select p.proargnames
+      from pg_proc p
+      where p.oid='public.reattribute_workforce_plan_delay(uuid,uuid,uuid,text,uuid)'::regprocedure
+    `;
+    expect(rpc?.proargnames).toEqual([
+      'p_workspace_id',
+      'p_event_id',
+      'p_target_trainer_user_id',
+      'p_reason_code',
+      'p_idempotency_key',
+    ]);
+  });
 });
 
 describe('P7 T002/T004 check-in transition security catalog', () => {

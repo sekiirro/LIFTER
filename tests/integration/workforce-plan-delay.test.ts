@@ -246,11 +246,18 @@ it('keeps plan-delay evidence immutable and appends PO reattribution effects', a
   if (membership.error) throw new Error(membership.error.message);
 
   const idempotencyKey = randomUUID();
+  const reasonCodes = [
+    'client_caused_delay',
+    'system_issue',
+    'wrong_trainer',
+    'duplicate',
+    'po_exception',
+  ] as const;
   const args = {
     p_workspace_id: fixture.context.wsA.id,
     p_event_id: event!.id,
     p_target_trainer_user_id: target.userId,
-    p_reason: 'T009 correction',
+    p_reason_code: reasonCodes[0],
     p_idempotency_key: idempotencyKey,
   };
   const results = await Promise.all([
@@ -265,6 +272,27 @@ it('keeps plan-delay evidence immutable and appends PO reattribution effects', a
     false,
     true,
   ]);
+  for (const reasonCode of reasonCodes.slice(1)) {
+    const result = await fixture.context.po.client.rpc(
+      'reattribute_workforce_plan_delay',
+      { ...args, p_reason_code: reasonCode, p_idempotency_key: randomUUID() },
+    );
+    if (result.error) throw new Error(result.error.message);
+    expect(result.data).toMatchObject({ status: 'ok', replayed: false });
+  }
+  const conflict = await fixture.context.po.client.rpc(
+    'reattribute_workforce_plan_delay',
+    { ...args, p_reason_code: 'system_issue' },
+  );
+  expect(conflict.data).toMatchObject({ status: 'idempotency_conflict' });
+  const corrections = await db`
+    select reason_code from public.workforce_plan_delay_corrections
+    where workspace_id=${fixture.context.wsA.id} and event_id=${event!.id}
+    order by reason_code
+  `;
+  expect(corrections.map((row) => row.reason_code).sort()).toEqual(
+    [...reasonCodes].sort(),
+  );
   const rows = await db`
     select points,staff_user_id,reason_code from public.p7_adjustment_entries
     where workspace_id=${fixture.context.wsA.id}
@@ -272,17 +300,61 @@ it('keeps plan-delay evidence immutable and appends PO reattribution effects', a
       when 'plan_delay' then 1
       else 3 end
   `;
-  expect(rows).toHaveLength(3);
-  expect(rows.map((row) => row.points)).toEqual(['-1.00', '1.00', '-1.00']);
-  expect(rows.map((row) => row.reason_code)).toEqual([
-    'plan_delay',
-    'plan_delay',
-    'plan_delay',
-  ]);
+  expect(rows).toHaveLength(11);
+  expect(rows.map((row) => row.reason_code)).toEqual(
+    Array.from({ length: 11 }, () => 'plan_delay'),
+  );
   const [original] = await db`
     select trainer_user_id from public.workforce_plan_delay_events where id=${event!.id}
   `;
   expect(original?.trainer_user_id).toBe(fixture.context.trainerA.userId);
+});
+
+it('rejects free text, blank, and unknown plan-delay reason codes without writing rows', async () => {
+  const fixture = await seedPlanDeadline();
+  await new Promise((resolve) =>
+    setTimeout(
+      resolve,
+      Math.max(0, fixture.deadlineAt.getTime() + 25 - Date.now()),
+    ),
+  );
+  await deliverPlanPair(fixture);
+  await evaluate(fixture.deadlineAt);
+  const [event] = await db`
+    select id from public.workforce_plan_delay_events where workspace_id=${fixture.context.wsA.id}
+  `;
+  const target = await createStaff('trainer', 'plan-delay-invalid-target');
+  const membership = await admin().from('workspace_memberships').insert({
+    workspace_id: fixture.context.wsA.id,
+    user_id: target.userId,
+    granted_by: fixture.context.po.userId,
+  });
+  if (membership.error) throw new Error(membership.error.message);
+
+  for (const reasonCode of [
+    'free text reason',
+    '',
+    '   ',
+    'not_a_reason_code',
+  ]) {
+    const result = await fixture.context.po.client.rpc(
+      'reattribute_workforce_plan_delay',
+      {
+        p_workspace_id: fixture.context.wsA.id,
+        p_event_id: event!.id,
+        p_target_trainer_user_id: target.userId,
+        p_reason_code: reasonCode,
+        p_idempotency_key: randomUUID(),
+      },
+    );
+    expect(result.error?.code).toBe('22023');
+    expect(result.error?.message).toContain('invalid_reason_code');
+  }
+  const [count] = await db`
+    select count(*)::int as count from public.workforce_plan_delay_corrections
+    where workspace_id=${fixture.context.wsA.id} and event_id=${event!.id}
+  `;
+  expect(count?.count).toBe(0);
 });
 
 it('denies non-PO reattribution and proves the PO guard with a mutation test', async () => {
@@ -316,7 +388,7 @@ it('denies non-PO reattribution and proves the PO guard with a mutation test', a
     p_workspace_id: fixture.context.wsA.id,
     p_event_id: event!.id,
     p_target_trainer_user_id: target.userId,
-    p_reason: 'T009 guard test',
+    p_reason_code: 'wrong_trainer',
     p_idempotency_key: randomUUID(),
   };
   const denied = await fixture.context.trainerA.client.rpc(
@@ -343,7 +415,7 @@ it('denies non-PO reattribution and proves the PO guard with a mutation test', a
     await tx`set local role authenticated`;
     const [mutatedResult] = await tx`
       select public.reattribute_workforce_plan_delay(
-        ${fixture.context.wsA.id},${event!.id},${target.userId},'guard mutation',${randomUUID()}
+        ${fixture.context.wsA.id},${event!.id},${target.userId},'wrong_trainer',${randomUUID()}
       ) as result
     `;
     expect(mutatedResult?.result).toMatchObject({ status: 'ok' });

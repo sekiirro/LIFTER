@@ -7,7 +7,7 @@ create table public.workforce_plan_delay_corrections (
   prior_trainer_user_id uuid not null references public.staff_profiles(user_id) on delete restrict,
   target_trainer_user_id uuid not null references public.staff_profiles(user_id) on delete restrict,
   actor_user_id uuid not null references auth.users(id) on delete restrict,
-  reason text not null check (length(btrim(reason)) between 1 and 500),
+  reason_code text not null,
   idempotency_key uuid not null,
   request_hash text not null check (request_hash ~ '^[0-9a-f]{64}$'),
   audit_ref uuid not null default gen_random_uuid(),
@@ -16,7 +16,15 @@ create table public.workforce_plan_delay_corrections (
   unique (workspace_id, idempotency_key),
   unique (workspace_id, audit_ref),
   foreign key (workspace_id, event_id)
-    references public.workforce_plan_delay_events(workspace_id, id) on delete restrict
+    references public.workforce_plan_delay_events(workspace_id, id) on delete restrict,
+  constraint workforce_plan_delay_corrections_reason_code_check
+    check (reason_code in (
+      'client_caused_delay',
+      'system_issue',
+      'wrong_trainer',
+      'duplicate',
+      'po_exception'
+    ))
 );
 alter table public.workforce_plan_delay_corrections owner to postgres;
 alter table public.workforce_plan_delay_corrections enable row level security;
@@ -34,7 +42,7 @@ create function public.reattribute_workforce_plan_delay(
   p_workspace_id uuid,
   p_event_id uuid,
   p_target_trainer_user_id uuid,
-  p_reason text,
+  p_reason_code text,
   p_idempotency_key uuid
 ) returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
@@ -46,6 +54,7 @@ declare
   prior public.workforce_plan_delay_corrections%rowtype;
   audit_reference uuid;
   request_hash text;
+  violation_constraint text;
   effect_hex text;
   reverse_key uuid;
   target_key uuid;
@@ -54,7 +63,7 @@ begin
     return jsonb_build_object('status', 'not_permitted');
   end if;
   if p_workspace_id is null or p_event_id is null or p_target_trainer_user_id is null
-    or p_idempotency_key is null or p_reason is null or length(btrim(p_reason)) not between 1 and 500
+    or p_idempotency_key is null
     or not exists (
       select 1 from public.workspace_memberships m
       join public.staff_profiles sp on sp.user_id=m.user_id
@@ -63,13 +72,16 @@ begin
     ) then
     return jsonb_build_object('status', 'invalid_input');
   end if;
+  if p_reason_code is null or pg_catalog.btrim(p_reason_code) = '' then
+    raise exception 'invalid_reason_code' using errcode = '22023';
+  end if;
 
   request_hash := pg_catalog.encode(extensions.digest(pg_catalog.convert_to(
-    p_workspace_id::text||':'||p_event_id::text||':'||p_target_trainer_user_id::text||':'||p_reason,'UTF8'),'sha256'),'hex');
+    p_workspace_id::text||':'||p_event_id::text||':'||p_target_trainer_user_id::text||':'||p_reason_code,'UTF8'),'sha256'),'hex');
   select * into prior from public.workforce_plan_delay_corrections
     where workspace_id=p_workspace_id and idempotency_key=p_idempotency_key;
   if found then
-    if prior.request_hash <> request_hash then return jsonb_build_object('status','invalid_replay'); end if;
+    if prior.request_hash <> request_hash then return jsonb_build_object('status','idempotency_conflict'); end if;
     return jsonb_build_object('status','ok','correction_id',prior.id,'audit_ref',prior.audit_ref,'replayed',true);
   end if;
 
@@ -100,7 +112,7 @@ begin
   select * into prior from public.workforce_plan_delay_corrections
     where workspace_id=p_workspace_id and idempotency_key=p_idempotency_key;
   if found then
-    if prior.request_hash <> request_hash then return jsonb_build_object('status','invalid_replay'); end if;
+    if prior.request_hash <> request_hash then return jsonb_build_object('status','idempotency_conflict'); end if;
     return jsonb_build_object('status','ok','correction_id',prior.id,'audit_ref',prior.audit_ref,'replayed',true);
   end if;
 
@@ -114,10 +126,10 @@ begin
 
   insert into public.workforce_plan_delay_corrections(
     workspace_id,event_id,correction_no,prior_trainer_user_id,target_trainer_user_id,
-    actor_user_id,reason,idempotency_key,request_hash
+    actor_user_id,reason_code,idempotency_key,request_hash
   ) values (
     p_workspace_id,p_event_id,correction_no,prior_target,p_target_trainer_user_id,
-    actor,p_reason,p_idempotency_key,request_hash
+    actor,p_reason_code,p_idempotency_key,request_hash
   ) returning id,audit_ref into correction_id,audit_reference;
 
   effect_hex := pg_catalog.encode(extensions.digest(
@@ -143,6 +155,13 @@ begin
   values(actor,'workforce.plan_delay_reattributed','workforce_plan_delay_corrections',correction_id,p_workspace_id,
     pg_catalog.jsonb_build_object('reference',audit_reference));
   return jsonb_build_object('status','ok','correction_id',correction_id,'audit_ref',audit_reference,'replayed',false);
+exception
+  when check_violation then
+    get stacked diagnostics violation_constraint = constraint_name;
+    if violation_constraint = 'workforce_plan_delay_corrections_reason_code_check' then
+      raise exception 'invalid_reason_code' using errcode = '22023';
+    end if;
+    raise;
 end
 $$;
 alter function public.reattribute_workforce_plan_delay(uuid,uuid,uuid,text,uuid) owner to postgres;
