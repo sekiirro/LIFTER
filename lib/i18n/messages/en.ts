@@ -1545,4 +1545,139 @@ export const en: Record<keyof typeof ar, string> = {
     'Your password wasn’t changed. Request a new reset link and try again.',
   'auth.resetCheckLogin':
     'We couldn’t confirm whether your password changed. Try signing in with your new password. If it doesn’t work, request a new reset link.',
+  'workforce.report.title': 'Workforce report',
+  'workforce.report.closedMonth': 'Closed',
+  'workforce.report.currentMonth': 'Current month',
+  'workforce.report.section.trainers': 'Trainer totals',
+  'workforce.report.section.sales': 'Sales totals',
+  'workforce.report.column.netPoints': 'Net points',
+  'workforce.report.netPointsFormula':
+    'Net points = earned + transformation/feedback − penalties + PO adjustments.',
+  'workforce.report.netPointsHint':
+    'Refund reversals appear as entries in the ledger.',
+  'workforce.report.pointsNotSalary': 'Points are separate from salary.',
+  'workforce.report.negativeTotal': 'Negative total',
+  'workforce.report.negativeHint':
+    'Negative totals are valid. They do not change salary.',
+  'workforce.report.ledger.title': 'Ledger',
+  'workforce.report.ledger.category.earned': 'Earned',
+  'workforce.report.ledger.category.transformationFeedback':
+    'Transformation / feedback',
+  'workforce.report.ledger.category.planDelay': 'Plan delay (−1)',
+  'workforce.report.ledger.category.checkinDelay': 'Check-in delay (−0.5)',
+  'workforce.report.ledger.category.poAdjustment': 'PO adjustment',
+  'workforce.report.ledger.category.refundReversal': 'Refund reversal',
+  'workforce.report.ledger.column.points': 'Points',
+  'workforce.report.ledger.column.reason': 'Reason',
+  'workforce.report.ledger.column.actor': 'Recorded by',
+  'workforce.report.ledger.column.effectiveMonth': 'Effective month',
+  'workforce.report.ledger.originalMonth': 'Original month: {month}',
+  'workforce.report.empty': 'No workforce data for this month.',
+  'workforce.report.noResults': 'No entries match these filters.',
+  'workforce.report.loading': 'Loading workforce report…',
+  'workforce.report.loadError':
+    'Unable to load the workforce report. Try again.',
+  'workforce.report.denied': 'You cannot view the workforce report.',
+  'workforce.checkin.title': 'Weekly check-ins',
+  'workforce.checkin.column.actions': 'Actions',
+  'workforce.checkin.column.platform': 'Platform',
+  'workforce.checkin.column.formSchedule': 'Form schedule',
+  'workforce.checkin.column.submittedAt': 'Submitted at',
+  'workforce.checkin.column.deadline': 'Follow-up deadline',
+  'workforce.checkin.column.followedUpAt': 'Followed up at',
+  'workforce.checkin.formStatus.scheduled': 'Scheduled',
+  'workforce.checkin.formStatus.awaitingClient': 'Awaiting client',
+  'workforce.checkin.formStatus.clientOverdue': 'Client overdue',
+  'workforce.checkin.formStatus.submitted': 'Submitted',
+  'workforce.checkin.followStatus.pending': 'Pending',
+  'workforce.checkin.followStatus.followedUp': 'Followed up',
+  'workforce.checkin.followStatus.late': 'Late',
+  'workforce.checkin.followStatus.disputed': 'Disputed',
+  'workforce.checkin.followUp.action': 'Mark followed up',
+  'workforce.checkin.followUp.confirmTitle': 'Confirm follow-up?',
+  'workforce.checkin.followUp.confirmBody':
+    'This confirms you reviewed the check-in and followed up on Telegram.',
+  'workforce.checkin.followUp.success': 'Follow-up recorded.',
+  'workforce.checkin.followUp.error':
+    'Could not record the follow-up. Try again.',
+  'workforce.checkin.followUp.alreadyRecorded':
+    'Follow-up was already recorded. Refresh the list.',
+  'workforce.checkin.lateWarning':
+    'Past the 24-hour deadline. Late stays in history after follow-up.',
+  'workforce.checkin.empty': 'No check-ins for this period.',
+  'workforce.checkin.noResults': 'No check-ins match these filters.',
+  'workforce.checkin.loading': 'Loading check-ins…',
+  'workforce.checkin.loadError': 'Unable to load check-ins. Try again.',
+  'workforce.checkin.denied': 'You cannot view check-ins.',
+  'workforce.checkin.filter.formStatus': 'Form status',
+  'workforce.checkin.filter.followUpStatus': 'Follow-up status',
+  'workforce.reminder.title': 'Monthly quality review',
+  'workforce.reminder.body':
+    "It is time to enter this month's service quality. Open LIFTER to record it.",
+  'workforce.reminder.cta': 'Open review',
+  'workforce.salary.title': 'Basic salary',
+  'workforce.salary.market': 'Market',
+  'workforce.salary.currencyHint':
+    'Egypt: EGP. International: EGP, USD or SAR.',
+  'workforce.salary.saved': 'Basic salary saved.',
+  'workforce.payroll.input.title': 'Manual payroll input',
+  'workforce.payroll.input.category': 'Adjustment type',
+  'workforce.payroll.input.category.incentive': 'Incentive',
+  'workforce.payroll.input.category.deduction': 'Deduction',
+  'workforce.payroll.input.category.correction': 'Correction',
+  'workforce.payroll.input.currencyLocked': 'Currency (salary currency)',
+  'workforce.payroll.input.currencyMismatch':
+    "Use the employee's salary currency for this month: {currency}.",
+  'workforce.payroll.input.saved': 'Payroll input saved.',
+  'workforce.payroll.input.error':
+    'Could not save the payroll input. Try again.',
+  'workforce.payroll.review.title': 'Payroll snapshot',
+  'workforce.payroll.review.inputs': 'Manual inputs',
+  'workforce.payroll.review.total': 'Total for approval',
+  'workforce.payroll.review.snapshotVersion': 'Snapshot version',
+  'workforce.payroll.review.empty':
+    'No payroll snapshot is available for this month.',
+  'workforce.payroll.review.loading': 'Loading payroll snapshot…',
+  'workforce.payroll.review.error':
+    'Unable to load the payroll snapshot. Try again.',
+  'workforce.payroll.review.denied': 'You cannot view payroll.',
+  'workforce.payroll.approve.action': 'Approve as paid externally',
+  'workforce.payroll.approve.confirmTitle': 'Confirm external payment',
+  'workforce.payroll.approve.confirmBody':
+    'Confirm this amount was already paid outside LIFTER. LIFTER does not make any payment.',
+  'workforce.payroll.approve.success': 'Payroll approved as paid externally.',
+  'workforce.payroll.approve.alreadyApproved':
+    'Payroll is already approved for this month.',
+  'workforce.payroll.approve.stale':
+    'The snapshot changed. Reload it before approving.',
+  'workforce.payroll.approve.error':
+    'Could not record the approval. Try again.',
+  'workforce.compensation.own.title': 'My compensation',
+  'workforce.compensation.own.basicSalary': 'Basic salary',
+  'workforce.compensation.own.empty': 'No compensation record for this month.',
+  'workforce.compensation.own.denied':
+    'You can only view your own compensation.',
+  'workforce.payroll.input.deductionNote':
+    'Manual entry by the Platform Owner. LIFTER never deducts from salary automatically.',
+  'workforce.salary.market.egypt': 'Egypt',
+  'workforce.salary.market.international': 'International',
+  'workforce.payroll.selectEmployeeFirst': 'Select an employee first.',
+  'workforce.payroll.employee': 'Employee',
+  'workforce.finalize.title': 'Finalize month',
+  'workforce.finalize.selectMonth':
+    'Select a month that has ended (Cairo time)',
+  'workforce.finalize.closedHint':
+    'Only a month that has ended can be finalized.',
+  'workforce.finalize.action': 'Finalize month',
+  'workforce.finalize.confirmTitle': 'Finalize this month?',
+  'workforce.finalize.confirmBody':
+    'This finalization is recorded by the Platform Owner and is permanent. Later corrections go to the current open month and link to this month.',
+  'workforce.finalize.finalized': 'Finalized',
+  'workforce.finalize.alreadyFinalized': 'This month is already finalized.',
+  'workforce.finalize.currentMonthError':
+    'The current month cannot be finalized.',
+  'workforce.finalize.success': 'Month finalized.',
+  'workforce.finalize.error': 'Could not finalize the month. Try again.',
+  'workforce.finalize.stale': 'The month changed. Reload before finalizing.',
+  'workforce.finalize.denied': 'Only the Platform Owner can finalize months.',
 };

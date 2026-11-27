@@ -103,9 +103,16 @@ begin
     select distinct on (s.workspace_id, s.id)
       s.workspace_id, s.id as subscription_id, s.client_id, sla.deadline_at as breach_at
     from public.subscriptions s
+    join app_private.form_assignment_consumptions consumed
+      on consumed.workspace_id = s.workspace_id
+      and consumed.subscription_id = s.id
+      and consumed.client_id = s.client_id
     join public.form_assignments fa
-      on fa.workspace_id = s.workspace_id and fa.client_id = s.client_id
-      and fa.occurrence_key = 'initial'
+      on fa.workspace_id = consumed.workspace_id
+      and fa.id = consumed.assignment_id
+      and fa.client_id = consumed.client_id
+      and fa.form_id = consumed.form_id
+      and fa.occurrence_key = 'initial:' || s.client_id::text
     left join app_private.form_assignment_policies fp
       on fp.workspace_id = fa.workspace_id and fp.id = fa.policy_id
     join app_private.form_submissions fs
@@ -129,9 +136,21 @@ begin
     for update;
     if not found then continue; end if;
     if exists (
-      select 1 from public.subscription_activations a
+      select 1
+      from public.subscription_activations a
+      join public.plan_deliveries workout
+        on workout.workspace_id = a.workspace_id
+        and workout.id = a.workout_delivery_id
+        and workout.subscription_id = a.subscription_id
+        and workout.plan_kind = 'workout'
+      join public.plan_deliveries nutrition
+        on nutrition.workspace_id = a.workspace_id
+        and nutrition.id = a.nutrition_delivery_id
+        and nutrition.subscription_id = a.subscription_id
+        and nutrition.plan_kind = 'nutrition'
       where a.workspace_id = source_row.workspace_id
         and a.subscription_id = source_row.subscription_id
+        and a.activation_source = 'plan_deliveries'
         and a.activated_at <= source_row.breach_at
     ) then
       continue;
@@ -187,7 +206,7 @@ begin
     raise exception 'f15_alert_owner_required' using errcode = '42501';
   end if;
   perform app_private.record_due_workforce_strikes(evaluation_at);
-  return app_private.evaluate_forms_alerts_core(evaluation_at, 250);
+  return app_private.evaluate_forms_alerts_core(evaluation_at, null, 250);
 end
 $$;
 alter function app_private.f15_alert_schedule_run() owner to postgres;
@@ -201,14 +220,17 @@ declare
   history jsonb;
 begin
   if auth.uid() is null or not app_private.is_platform_owner() then
-    return jsonb_build_object('status', 'not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
-  if p_workspace_id is null or p_trainer_user_id is null
+  if p_workspace_id is null
     or not exists (select 1 from public.workspaces w where w.id = p_workspace_id) then
     return jsonb_build_object('status', 'not_permitted');
   end if;
 
   perform app_private.record_due_workforce_strikes(pg_catalog.clock_timestamp());
+  if auth.uid() is null or not app_private.is_platform_owner() then
+    raise exception 'not_permitted' using errcode = '42501';
+  end if;
   with state_rows as (
     select e.id, e.breach_at, e.trainer_user_id,
       coalesce((
@@ -231,13 +253,14 @@ begin
       and e.breach_at > pg_catalog.now() - interval '90 days'
       and e.breach_at <= pg_catalog.now()
   )
-  select count(*) filter (where not is_void and effective_trainer_user_id = p_trainer_user_id)::integer,
+  select count(*) filter (where not is_void)::integer,
     coalesce(jsonb_agg(jsonb_build_object(
       'strike_id', id, 'breach_at', breach_at,
       'trainer_user_id', effective_trainer_user_id, 'voided', is_void
     ) order by breach_at desc, id), '[]'::jsonb)
     into active_count, history
-  from state_rows;
+  from state_rows
+  where p_trainer_user_id is null or effective_trainer_user_id = p_trainer_user_id;
   threshold := case when active_count >= 9 then 9 when active_count >= 6 then 6
     when active_count >= 3 then 3 else 0 end;
   return jsonb_build_object(
@@ -270,7 +293,7 @@ declare
   correction_id uuid;
 begin
   if actor is null or not app_private.is_platform_owner() then
-    return jsonb_build_object('status', 'not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   if p_workspace_id is null or p_strike_id is null or p_idempotency_key is null
     or p_operation not in ('void', 'reinstate', 'reattribute')
@@ -298,6 +321,9 @@ begin
 
   select * into event_row from public.workforce_strike_events e
   where e.workspace_id = p_workspace_id and e.id = p_strike_id for update;
+  if auth.uid() is null or not app_private.is_platform_owner() then
+    raise exception 'not_permitted' using errcode = '42501';
+  end if;
   if not found then return jsonb_build_object('status', 'not_permitted'); end if;
 
   -- Recheck replay after acquiring the strike serialization row.
