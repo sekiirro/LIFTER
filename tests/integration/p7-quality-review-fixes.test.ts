@@ -21,14 +21,21 @@ async function waitForAdvisoryLock(functionName: string): Promise<void> {
       select exists (
         select 1 from pg_catalog.pg_stat_activity
         where wait_event = 'advisory'
-          and query ilike ${`%${functionName}%`}
           and pid <> pg_catalog.pg_backend_pid()
       ) as waiting
     `;
     if (row?.waiting) return;
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
-  throw new Error(`Timed out waiting for ${functionName} advisory lock`);
+  const activity = await db`
+    select pid, state, wait_event_type, wait_event, left(query, 120) as query
+    from pg_catalog.pg_stat_activity
+    where datname = current_database()
+    order by pid
+  `;
+  throw new Error(
+    `Timed out waiting for ${functionName} advisory lock: ${JSON.stringify(activity)}`,
+  );
 }
 
 function qualityArgs(
@@ -133,6 +140,7 @@ describe('PR #334 review-round-2 fixes', () => {
         .select('id')
         .single(),
     );
+    if (!membership) throw new Error('Historical membership fixture missing');
     await admin()
       .from('workspace_memberships')
       .update({ revoked_at: new Date().toISOString(), revoked_by: f.po.userId })
@@ -196,9 +204,17 @@ describe('PR #334 review-round-2 fixes', () => {
   });
 
   it('334-B2: replays raw default arguments after settings change and binds expected revision to the hash', async () => {
-    const month = '2026-04';
+    const trainer = await createStaff('trainer', 'quality-replay-settings');
+    checked(
+      await admin().from('workspace_memberships').insert({
+        workspace_id: f.wsA.id,
+        user_id: trainer.userId,
+        granted_by: f.po.userId,
+      }),
+    );
+    const month = '2026-02';
     const key = `changed-settings-replay-${randomUUID()}`;
-    const args = qualityArgs(f, f.trainerA.userId, month, {
+    const args = qualityArgs(f, trainer.userId, month, {
       p_idempotency_key: key,
     });
     const first = await f.po.client.rpc('record_monthly_quality', args);
@@ -206,7 +222,7 @@ describe('PR #334 review-round-2 fixes', () => {
 
     const settings = await f.po.client.rpc(
       'set_trainer_quality_settings',
-      settingsArgs(f, f.trainerA.userId, {
+      settingsArgs(f, trainer.userId, {
         p_positive_weight: 2.5,
         p_negative_weight: -0.25,
       }),
@@ -273,7 +289,8 @@ describe('PR #334 review-round-2 fixes', () => {
     const holder = sql();
     const month = '2026-06';
     const key = `quality-lock-revocation-${randomUUID()}`;
-    let pending: ReturnType<typeof f.po.client.rpc> | undefined;
+    let pending:
+      Promise<{ data: unknown; error: { code?: string } | null }> | undefined;
     try {
       await holder.begin(async (tx) => {
         await tx`
@@ -281,11 +298,13 @@ describe('PR #334 review-round-2 fixes', () => {
             pg_catalog.hashtextextended(${`${f.wsA.id}:${month}-01`}, 0)
           )
         `;
-        pending = f.po.client.rpc(
-          'record_monthly_quality',
-          qualityArgs(f, f.trainerA.userId, month, {
-            p_idempotency_key: key,
-          }),
+        pending = Promise.resolve(
+          f.po.client.rpc(
+            'record_monthly_quality',
+            qualityArgs(f, f.trainerA.userId, month, {
+              p_idempotency_key: key,
+            }),
+          ),
         );
         await waitForAdvisoryLock('record_monthly_quality');
         await admin()
@@ -315,7 +334,8 @@ describe('PR #334 review-round-2 fixes', () => {
     await createStaff('platform_owner', 'settings-backup-po');
     const holder = sql();
     const key = `settings-lock-revocation-${randomUUID()}`;
-    let pending: ReturnType<typeof f.po.client.rpc> | undefined;
+    let pending:
+      Promise<{ data: unknown; error: { code?: string } | null }> | undefined;
     try {
       await holder.begin(async (tx) => {
         await tx`
@@ -324,9 +344,11 @@ describe('PR #334 review-round-2 fixes', () => {
             pg_catalog.hashtext(${`${f.wsA.id}:${f.trainerA.userId}:feedback`})
           )
         `;
-        pending = f.po.client.rpc(
-          'set_trainer_quality_settings',
-          settingsArgs(f, f.trainerA.userId, { p_idempotency_key: key }),
+        pending = Promise.resolve(
+          f.po.client.rpc(
+            'set_trainer_quality_settings',
+            settingsArgs(f, f.trainerA.userId, { p_idempotency_key: key }),
+          ),
         );
         await waitForAdvisoryLock('set_trainer_quality_settings');
         await admin()
@@ -366,7 +388,10 @@ describe('PR #334 review-round-2 fixes', () => {
     const { data, error } = await f.po.client.rpc(
       'record_monthly_quality',
       qualityArgs(f, f.trainerA.userId, '2026-07', {
-        ...params,
+        p_positive_count: params.positiveCount,
+        p_negative_count: params.negativeCount,
+        p_positive_weight: params.positiveWeight,
+        p_negative_weight: params.negativeWeight,
       }),
     );
     expect(error).toBeNull();
@@ -528,6 +553,7 @@ describe('PR #334 review-round-2 fixes', () => {
       where workspace_id = ${f.wsA.id}::uuid and month = ${month}
     `;
     expect(reminder).toBeDefined();
+    if (!reminder) throw new Error('Monthly reminder fixture missing');
 
     const invalid = await f.po.client.rpc('handle_quality_monthly_reminder', {
       p_job_id: reminder.job_id,

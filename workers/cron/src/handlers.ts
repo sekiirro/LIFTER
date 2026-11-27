@@ -11,5 +11,15 @@ export function createHandlers(rpc: Rpc): Readonly<Record<string, Handler>> {
       if (!handled)
         throw new JobError('distribution_lease_invalid', { permanent: true });
     },
+    'quality.monthly_reminder': async ({ jobId, leaseToken }) => {
+      const handled = await rpc('handle_quality_monthly_reminder', {
+        p_job_id: jobId,
+        p_lease_token: leaseToken,
+      });
+      if (!handled)
+        throw new JobError('quality_reminder_lease_invalid', {
+          permanent: true,
+        });
+    },
   };
 }
