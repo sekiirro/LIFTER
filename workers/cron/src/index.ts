@@ -1,5 +1,5 @@
 import { drain } from './drain';
-import { createHandlers } from './handlers';
+import { createHandlers, createSubscriptionExpiryHandler } from './handlers';
 import { createRpc, type Env } from './rpc';
 import { drainRefundAuthLockouts } from './refund-auth-lockout';
 import { drainAccountDeletions } from './account-deletion';
@@ -38,6 +38,13 @@ const worker = {
           run: async () => {
             const rpc = createRpc(env);
             await drain({ rpc, handlers: createHandlers(rpc) });
+          },
+        },
+        {
+          name: 'subscription_expiry_notices',
+          run: async () => {
+            const rpc = createRpc(env);
+            await createSubscriptionExpiryHandler(rpc)();
           },
         },
         {

@@ -29,6 +29,10 @@ type RpcMethods = {
     args: { p_job_id: string; p_lease_token: string };
     result: boolean;
   };
+  run_subscription_expiry_notices: {
+    args: Record<string, never>;
+    result: number;
+  };
   alert_expired_refund_auth_lockouts: {
     args: { p_limit: number; p_checked_at: string };
     result: number;
