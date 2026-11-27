@@ -638,9 +638,10 @@ it('343-R17 kill-test: restoring the PO-only post-wait guard breaks Workspace Ow
   try {
     const f = await clientContext();
     const target = await registered(f, null, undefined, f.salesA.client);
-    // Under the PO-only mutant this WO approval is rolled back with 42501.
+    // Under the PO-only mutant this WO approval is rolled back with 42501
+    // and surfaces as `unavailable`; the canonical guard is what lets it pass.
     const result = await call(f.woA.client, 'approve', request(f, target));
-    expect(result).toMatchObject({ status: 'ok' });
+    expect(result).toMatchObject({ status: 'unavailable' });
   } finally {
     await db.unsafe(definition);
   }
