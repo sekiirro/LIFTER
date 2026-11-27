@@ -329,4 +329,120 @@ describe('Spec 028 F23 expiry evaluator', () => {
         and notice_kind = 'subscription_expiring_t3'`;
     expect(after!.revisions).toEqual([before!.source_revision]);
   });
+
+  it('applies exact expiring bounds and the F13 expired filter to authorized readers only', async () => {
+    // Anchor the projection to a Cairo midnight so the sampled instant and its
+    // +72h bound coincide exactly with F13 boundaries. The mutant below pins
+    // the directory RPC to that same instant; nothing here depends on wall time.
+    const [days] = await p.db`
+      with sampled as (
+        select (clock_timestamp() at time zone 'Africa/Cairo')::date as day)
+      select (day + 4)::text as at_now,
+        (day + 7)::text as at_plus_72h,
+        (day - 40)::text as expired from sampled`;
+    const setEndDay = async (subscriptionId: string, endDay: string) => {
+      await p.db.begin(async (tx) => {
+        await tx`set local session_replication_role = replica`;
+        await tx`update public.subscription_activations a
+          set activated_at = app_private.f23_cairo_date_start(
+            ${endDay}::date - s.duration_days)
+          from public.subscriptions s
+          where a.workspace_id = s.workspace_id and a.subscription_id = s.id
+            and s.workspace_id = ${p.fixture.wsA.id}::uuid
+            and s.id = ${subscriptionId}::uuid`;
+        await tx`set local session_replication_role = origin`;
+      });
+    };
+    const atNow = await p.makeClient({ activate: true, label: 'bounds-now' });
+    const atPlus72h = await p.makeClient({
+      activate: true,
+      label: 'bounds-plus-72h',
+    });
+    const expiredClient = await p.makeClient({
+      activate: true,
+      label: 'bounds-expired',
+    });
+    await setEndDay(atNow.subscriptionId, days!.at_now as string);
+    await setEndDay(atPlus72h.subscriptionId, days!.at_plus_72h as string);
+    await setEndDay(expiredClient.subscriptionId, days!.expired as string);
+
+    const projections = await p.db`
+      select c.id,
+        app_private.f22_subscription_core(c.workspace_id, c.id)->>'status' as status,
+        app_private.f22_subscription_core(c.workspace_id, c.id)->>'effective_end_exclusive' as end_day
+      from public.clients c
+      where c.id in (${atNow.clientId}::uuid, ${atPlus72h.clientId}::uuid,
+        ${expiredClient.clientId}::uuid)`;
+    const byId = new Map(
+      projections.map((row) => [
+        row.id as string,
+        { status: row.status as string, end_day: row.end_day as string },
+      ]),
+    );
+    expect(byId.size).toBe(3);
+    expect(byId.get(atNow.clientId)).toEqual({
+      status: expect.stringMatching(/^(future|active|frozen)$/),
+      end_day: days!.at_now,
+    });
+    expect(byId.get(atPlus72h.clientId)).toEqual({
+      status: expect.stringMatching(/^(future|active|frozen)$/),
+      end_day: days!.at_plus_72h,
+    });
+    expect(byId.get(expiredClient.clientId)).toEqual({
+      status: 'expired',
+      end_day: days!.expired,
+    });
+
+    const search = `${p.run} bounds-`;
+    await inRolledBackTx(async (tx) => {
+      const identity =
+        'public.staff_client_directory(uuid, text, text, text, integer, integer, text)';
+      const original = await definition(tx, identity);
+      const [boundary] = await tx`
+        select app_private.f23_cairo_date_start(${days!.at_now}::date)::text as value`;
+      const mutant = original.replace(
+        'statement_timestamp()',
+        `'${boundary!.value}'::timestamptz`,
+      );
+      expect(mutant).not.toBe(original);
+      await tx.unsafe(mutant);
+      await tx`select set_config('request.jwt.claims', ${JSON.stringify({
+        sub: p.fixture.trainerA.userId,
+        role: 'authenticated',
+      })}, true)`;
+      await tx`set local role authenticated`;
+      const [expiring] = await tx`
+        select public.staff_client_directory(${p.fixture.wsA.id}::uuid,
+          ${search}, null, 'expiring', 100, 0, null) as value`;
+      const [expired] = await tx`
+        select public.staff_client_directory(${p.fixture.wsA.id}::uuid,
+          ${search}, null, 'expired', 100, 0, null) as value`;
+      await tx`reset role`;
+      const ids = (result: unknown) =>
+        (result as { clients: Array<{ client_id: string }> }).clients.map(
+          (row) => row.client_id,
+        );
+      // Inclusive at `now`, exclusive at `now + 72h`; the F13-expired client
+      // appears only under `expired`.
+      expect(ids(expiring!.value)).toEqual([atNow.clientId]);
+      expect(ids(expired!.value)).toEqual([expiredClient.clientId]);
+    });
+
+    for (const status of ['expiring', 'expired'] as const) {
+      const foreign = await p.fixture.trainerB.client.rpc(
+        'staff_client_directory',
+        {
+          p_workspace_id: p.fixture.wsA.id,
+          p_search: search,
+          p_approval_state: null,
+          p_subscription_status: status,
+          p_limit: 100,
+          p_offset: 0,
+          p_assignment: null,
+        },
+      );
+      expect(foreign.error?.code).toBe('42501');
+      expect(foreign.data).toBeNull();
+    }
+  });
 });
