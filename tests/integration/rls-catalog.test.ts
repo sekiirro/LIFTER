@@ -3256,6 +3256,13 @@ describe('P7 T033 strike security catalog', () => {
     'public.get_workforce_strikes(uuid,uuid)',
     'public.correct_workforce_strike(uuid,uuid,text,uuid,text,uuid)',
   ];
+  const reasonCodes = [
+    'client_caused_delay',
+    'system_issue',
+    'wrong_trainer',
+    'duplicate',
+    'po_exception',
+  ];
 
   it('forces RLS, denies direct table access, and prevents strike-history mutation', async () => {
     for (const relation of tables) {
@@ -3318,6 +3325,46 @@ describe('P7 T033 strike security catalog', () => {
       });
       expect(fn?.proconfig).toContain('search_path=""');
     }
+  });
+
+  it('keeps strike correction reasons as exact checked codes with no free-text column', async () => {
+    const columns = await db`
+      select column_name,data_type
+      from information_schema.columns
+      where table_schema='public' and table_name='workforce_strike_corrections'
+      order by ordinal_position
+    `;
+    expect(
+      columns.find((column) => column.column_name === 'reason'),
+    ).toBeUndefined();
+    expect(
+      columns.find((column) => column.column_name === 'reason_code'),
+    ).toEqual({
+      column_name: 'reason_code',
+      data_type: 'text',
+    });
+    expect(
+      columns
+        .filter((column) =>
+          ['text', 'character varying', 'character'].includes(
+            String(column.data_type),
+          ),
+        )
+        .map((column) => column.column_name),
+    ).toEqual(['correction_kind', 'reason_code']);
+    const [check] = await db`
+      select pg_catalog.pg_get_constraintdef(oid) as definition
+      from pg_constraint
+      where conrelid='public.workforce_strike_corrections'::regclass
+        and contype='c'
+        and conname='workforce_strike_corrections_reason_code_check'
+    `;
+    expect(check?.definition).toBeDefined();
+    const checkedCodes = Array.from(
+      String(check?.definition).matchAll(/'([^']+)'/g),
+      (match) => match[1],
+    ).sort();
+    expect(checkedCodes).toEqual([...reasonCodes].sort());
   });
 });
 
