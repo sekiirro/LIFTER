@@ -1,5 +1,7 @@
 # Specification Analysis Report: P7 Workforce Management
 
+**Re-analyzed**: 2026-11-27 UTC, after merging origin/main (train sync) into PR #334
+**Re-analyzed**: 2026-11-26 03:50 UTC, after merging origin/main and renaming the quality migration
 **Re-analyzed**: 2026-11-25 14:07 UTC, after S70-R110 requirement clarification across spec, plan, model, contracts, task, and decision register
 **Re-analyzed**: 2026-11-25 03:29 UTC, after final edits to all specification, planning, contract, task and checklist artifacts
 **Re-analyzed after docs union**: 2026-11-26 UTC, after merging origin/main into the PR #339 docs branch (architect-approved S70-R121). tasks.md checkbox states and traceability.md evidence rows were revalidated as a union; no requirement text, scope or product decision changed. Open CRITICAL: 0. Open HIGH: 0.
