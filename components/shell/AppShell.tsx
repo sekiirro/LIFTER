@@ -9,6 +9,7 @@ import {
 import type { GlassFallback } from '../ui/glass/GlassSurface';
 import type { Messages } from '../../lib/i18n';
 import { ShellNavigation } from './ShellNavigation';
+import { StaffNotifications } from './StaffNotifications';
 import styles from './AppShell.module.css';
 
 const PlatformOwnerHeader = dynamic(
@@ -49,6 +50,11 @@ export function AppShell({
   fallback,
 }: AppShellProps) {
   const navigation = getNavigation(role);
+  const isStaff =
+    role === 'platform_owner' ||
+    role === 'workspace_owner' ||
+    role === 'trainer';
+
   if (role === 'platform_owner')
     return (
       <div className={styles.shell} data-shell="">
@@ -57,9 +63,23 @@ export function AppShell({
       </div>
     );
   if (navigation.status === 'needs-decision')
-    return <Content>{children}</Content>;
+    return (
+      <div className={styles.shell} data-shell="">
+        {isStaff && (
+          <div className={styles.staffHeader}>
+            <StaffNotifications messages={messages} />
+          </div>
+        )}
+        <Content>{children}</Content>
+      </div>
+    );
   return (
     <div className={styles.shell} data-shell="">
+      {isStaff && (
+        <div className={styles.staffHeader}>
+          <StaffNotifications messages={messages} />
+        </div>
+      )}
       <ShellNavigation
         role={role}
         items={navigation.items}

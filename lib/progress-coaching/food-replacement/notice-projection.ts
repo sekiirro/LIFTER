@@ -1,8 +1,14 @@
 import type { MessageKey } from '../../i18n';
 
-/** Approved copy per staff notice kind (S55-PO-10, specs/023 copy-proposal.md). */
+/** Approved copy per staff notice kind (S55-PO-10, S71-PO-9, specs/028 copy status). */
 export const STAFF_NOTICE_MESSAGE = {
   food_replacement_open: 'foodReplacement.notification.open',
+  expiry_t3: 'staff.notices.expiryT3',
+  expiry_t3_short_lead: 'staff.notices.expiryT3ShortLead',
+  expired: 'staff.notices.expired',
+  subscription_expiry_t3: 'staff.notices.expiryT3',
+  subscription_expiry_t3_short_lead: 'staff.notices.expiryT3ShortLead',
+  subscription_expired: 'staff.notices.expired',
 } as const satisfies Record<string, MessageKey>;
 
 export type StaffNoticeKind = keyof typeof STAFF_NOTICE_MESSAGE;
@@ -11,10 +17,12 @@ export type StaffNotice = {
   noticeId: string;
   workspaceId: string;
   kind: StaffNoticeKind;
-  /** The food replacement request the notice is about. */
+  /** The food replacement request or subscription the notice is about. */
   requestId: string;
   createdAt: string;
   readAt: string | null;
+  clientName?: string;
+  expiryDate?: string;
 };
 
 export type StaffNoticesResult =
@@ -55,6 +63,12 @@ function parseNotice(value: unknown): StaffNotice | null {
     requestId: source_key,
     createdAt: created_at,
     readAt: read_at,
+    ...(typeof value.client_name === 'string'
+      ? { clientName: value.client_name }
+      : {}),
+    ...(typeof value.expiry_date === 'string'
+      ? { expiryDate: value.expiry_date }
+      : {}),
   };
 }
 

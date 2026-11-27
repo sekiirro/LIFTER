@@ -1572,4 +1572,21 @@ export const ar = {
   'workforce.salary.market.international': 'دولي',
   'workforce.payroll.selectEmployeeFirst': 'اختار الموظف الأول.',
   'workforce.payroll.employee': 'الموظف',
+  'staff.notifications.title': 'الإشعارات',
+  'staff.notifications.bellLabel': 'افتح الإشعارات',
+  'staff.notifications.loading': 'جارٍ التحميل',
+  'staff.notifications.empty': 'مفيش إشعارات جديدة.',
+  'staff.notifications.error': 'تعذّر تحميل البيانات',
+  'staff.notifications.errorDescription': 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+  'staff.notifications.retry': 'إعادة المحاولة',
+  'staff.notifications.markRead': 'اعتبره مقروء',
+  'staff.notices.expiryT3':
+    'اشتراك {clientName} هينتهي كمان ٣ أيام ({expiryDate})',
+  'staff.notices.expiryT3ShortLead':
+    'اشتراك {clientName} قرب ينتهي ({expiryDate})',
+  'staff.notices.expired': 'اشتراك {clientName} انتهى يوم {expiryDate}',
+  'staff.clientDirectory.expiring': 'قرب ينتهي',
+  'staff.clientDirectory.expiring.empty': 'مفيش عملاء مطابقين للفلتر ده',
+  'staff.clientDirectory.expiring.loadError':
+    'مقدرناش نحمل القائمة. حاول تاني.',
 } as const;

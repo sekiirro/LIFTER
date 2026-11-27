@@ -1,0 +1,14 @@
+.main {
+  max-inline-size: 48rem;
+  margin-inline: auto;
+  padding: var(--space-4);
+  min-block-size: 100dvb;
+}
+
+.standaloneSurface {
+  position: relative;
+  inset: auto;
+  inline-size: 100%;
+  max-block-size: none;
+  box-shadow: var(--shadow-sm);
+}
