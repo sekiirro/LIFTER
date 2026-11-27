@@ -1,0 +1,235 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  inline-size: 100%;
+  max-inline-size: 80rem;
+  margin-inline: auto;
+  padding: var(--space-4);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.titleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-text);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.badgeClosed {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.badgeCurrent {
+  color: var(--color-info-fg);
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+}
+
+.negativeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-error-fg);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  margin-inline-start: var(--space-2);
+}
+
+.negativeHint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-block-start: var(--space-1);
+}
+
+.navBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.monthLabel {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.monthNavActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.formulaCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  font-size: 0.875rem;
+}
+
+.formulaFormula {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.formulaHint {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.standingNote {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filterLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-inline-end: var(--space-2);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.tableWrapper {
+  inline-size: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: start;
+}
+
+.table th {
+  padding: var(--space-3) var(--space-4);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  border-block-end: 1px solid var(--color-border-strong);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  border-block-end: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-block-end: none;
+}
+
+.table tbody tr:hover {
+  background: var(--color-bg);
+}
+
+.numericCell {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.negativePoints {
+  color: var(--color-error-fg);
+}
+
+.metaText {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.originalMonthBadge {
+  display: inline-block;
+  margin-block-start: var(--space-1);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.totalsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 48rem) {
+  .container {
+    padding: var(--space-5);
+  }
+
+  .totalsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
