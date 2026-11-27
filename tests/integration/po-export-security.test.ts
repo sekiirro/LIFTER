@@ -205,6 +205,120 @@ describe('PO export authorization RED (T001-T003)', () => {
     );
   });
 
+  it('a client idempotency key cannot be replayed with a different export scope', async () => {
+    const key = randomUUID();
+    const first = await f.po.client.rpc('request_po_client_export', {
+      p_workspace_id: f.wsA.id,
+      p_idempotency_key: key,
+    });
+    expect(first.error).toBeNull();
+    for (const scope of [f.wsB.id, null]) {
+      const replay = await f.po.client.rpc('request_po_client_export', {
+        p_workspace_id: scope,
+        p_idempotency_key: key,
+      });
+      expect(replay.data).toBeNull();
+      expect(replay.error?.code).toBe('22023');
+    }
+    const [count] = await db`
+      select count(*)::int as n from public.jobs
+      where idempotency_key=${`po-export:${f.po.userId}:${key}`}
+    `;
+    expect(count?.n).toBe(1);
+
+    const concurrentKey = randomUUID();
+    const concurrent = await Promise.all([
+      f.po.client.rpc('request_po_client_export', {
+        p_workspace_id: f.wsA.id,
+        p_idempotency_key: concurrentKey,
+      }),
+      f.po.client.rpc('request_po_client_export', {
+        p_workspace_id: f.wsB.id,
+        p_idempotency_key: concurrentKey,
+      }),
+    ]);
+    expect(concurrent.filter((result) => result.error === null)).toHaveLength(
+      1,
+    );
+    expect(concurrent.filter((result) => result.error !== null)).toHaveLength(
+      1,
+    );
+  });
+
+  it('hides PO-export audit and dead-letter metadata from every non-PO role', async () => {
+    const requested = await f.po.client.rpc('request_po_client_export', {
+      p_workspace_id: f.wsA.id,
+      p_idempotency_key: randomUUID(),
+    });
+    expect(requested.error).toBeNull();
+    const deadId = randomUUID();
+    await db`
+      insert into public.jobs(id,kind,workspace_id,payload,idempotency_key,status,attempts,last_error,max_attempts)
+      values(${deadId},'po.export',${f.wsA.id},${db.json({ kind: 'po.export' })},${`po-export-dead-${deadId}`},'pending',1,'worker_failed',1)
+    `;
+    await db`update public.jobs set status='dead',finished_at=now() where id=${deadId}`;
+    const targetIds = [requested.data!, deadId];
+    const portal = await portalFixture();
+    const email = `po-export-audit-${randomUUID()}@example.test`;
+    const password = `S71-${randomUUID()}-aA1!`;
+    const created = await svc.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (created.error || !created.data.user)
+      throw new Error('Unable to create audit test client');
+    try {
+      await portal.makeClient({
+        activate: false,
+        label: 'po-export-audit',
+        authUserId: created.data.user.id,
+      });
+      const clientAccount = anonClient();
+      const signedIn = await clientAccount.auth.signInWithPassword({
+        email,
+        password,
+      });
+      expect(signedIn.error).toBeNull();
+      const nonPoClients = [
+        f.woA.client,
+        f.trainerA.client,
+        f.salesA.client,
+        clientAccount,
+        anonClient(),
+      ];
+      for (const client of nonPoClients) {
+        const visible = await client
+          .from('audit_events')
+          .select('action,details')
+          .in('target_id', targetIds);
+        expect(visible.data ?? []).toEqual([]);
+      }
+      const poEvents = await f.po.client
+        .from('audit_events')
+        .select('action,details')
+        .in('target_id', targetIds);
+      expect(poEvents.error).toBeNull();
+      expect(poEvents.data?.map((event) => event.action)).toEqual(
+        expect.arrayContaining(['po_export.requested', 'job.dead_lettered']),
+      );
+      const ordinary = await f.woA.client
+        .from('audit_events')
+        .select('action')
+        .eq('workspace_id', f.wsA.id);
+      expect(
+        ordinary.data?.some(
+          (event) =>
+            event.action !== 'po_export.requested' &&
+            event.action !== 'job.dead_lettered',
+        ),
+      ).toBe(true);
+    } finally {
+      await portal.close();
+      await svc.auth.admin.deleteUser(created.data.user.id);
+    }
+  });
+
   it('leases the bounded source snapshot to the service worker only (T006)', async () => {
     const requested = await f.po.client.rpc('request_po_client_export', {
       p_workspace_id: f.wsA.id,
