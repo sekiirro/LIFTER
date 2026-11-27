@@ -83,6 +83,47 @@ async function readJob(id: string) {
 }
 
 describe('jobs outbox (T005)', () => {
+  it('scopes generic claims to registered kinds and leaves forms.alert to its dedicated claimant', async () => {
+    const distributionId = await enqueue({ jobKind: 'client.distribution' });
+    const reminderId = await enqueue({ jobKind: 'quality.monthly_reminder' });
+    const formAlertId = await enqueue({ jobKind: 'forms.alert' });
+
+    try {
+      const claimed = checked(
+        await service.rpc('jobs_claim', {
+          batch: 100,
+          lease_seconds: 300,
+          allowed_kinds: ['client.distribution', 'quality.monthly_reminder'],
+        }),
+      ) as Job[];
+      const own = claimed.filter((job) =>
+        [distributionId, reminderId, formAlertId].includes(job.id),
+      );
+      expect(own.map((job) => job.id).sort()).toEqual(
+        [distributionId, reminderId].sort(),
+      );
+      for (const job of own) {
+        expect(
+          checked(
+            await service.rpc('jobs_complete', {
+              id: job.id,
+              lease: job.lease_token,
+            }),
+          ),
+        ).toBe(true);
+      }
+      expect((await readJob(formAlertId)).status).toBe('pending');
+
+      const dedicated = await db`
+        select id from public.claim_f15_form_alert_jobs(10, 300)
+        where id = ${formAlertId}`;
+      expect(dedicated).toHaveLength(1);
+    } finally {
+      await db`delete from public.jobs
+        where id in (${distributionId}, ${reminderId}, ${formAlertId})`;
+    }
+  });
+
   it('(a) enqueues idempotently, including ten separate concurrent connections', async () => {
     const key = randomUUID();
     const first = await enqueue({ key });

@@ -33,6 +33,40 @@ function fakeRpc(batches: Job[][]) {
 }
 
 describe('cron drain (T004)', () => {
+  it('claims only registered generic handlers and completes both generic worker kinds', async () => {
+    const jobs = [
+      job('distribution', 'client.distribution'),
+      job('quality', 'quality.monthly_reminder'),
+    ];
+    const rpc = fakeRpc([jobs, []]);
+    await drain({
+      rpc,
+      handlers: {
+        'client.distribution': async () => {},
+        'quality.monthly_reminder': async () => {},
+      },
+    });
+
+    expect(rpc.mock.calls).toEqual([
+      [
+        'jobs_claim',
+        {
+          batch: 25,
+          allowed_kinds: ['client.distribution', 'quality.monthly_reminder'],
+        },
+      ],
+      ['jobs_complete', { id: 'distribution', lease: 'lease-distribution' }],
+      ['jobs_complete', { id: 'quality', lease: 'lease-quality' }],
+      [
+        'jobs_claim',
+        {
+          batch: 25,
+          allowed_kinds: ['client.distribution', 'quality.monthly_reminder'],
+        },
+      ],
+    ]);
+  });
+
   it('dispatches each job once with explicit workspace and completes its lease', async () => {
     const jobs = [job('a'), { ...job('b'), workspace_id: null }];
     const rpc = fakeRpc([jobs, []]);
