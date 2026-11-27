@@ -8,6 +8,7 @@ declare
   fact_id uuid;
   actor uuid;
 begin
+  actor := auth.uid();
   if not exists (
     select 1 from public.registration_links l
     where l.workspace_id = new.workspace_id
@@ -18,14 +19,14 @@ begin
     return new;
   end if;
 
-  actor := auth.uid();
   trigger_month := app_private.p7_month_for_trigger(new.recorded_at);
   perform app_private.p7_lock_period(new.workspace_id, trigger_month);
-  -- FR-013/contracts/authorization-and-projections.md: recheck after every
-  -- period-fence wait, at the last trusted point before the insert/audit.
-  if actor is null or actor is distinct from auth.uid()
-    or not app_private.is_platform_owner()
-    or not app_private.has_workspace_access(new.workspace_id, null) then
+  -- S71-R17: recheck after every period-fence wait at the last trusted point
+  -- before the insert/audit. Workspace Owners also hold approve_registration,
+  -- so do not restrict this to platform owners (P0 approval rollback).
+  if auth.uid() is distinct from actor
+    or not (auth.role() = 'service_role'
+      or app_private.has_workspace_access(new.workspace_id, 'approve_registration')) then
     raise exception 'not_permitted' using errcode = '42501';
   end if;
   insert into public.p7_earned_points(workspace_id, staff_user_id, points,
@@ -40,9 +41,9 @@ begin
 
   -- The BEFORE INSERT route trigger may take a second fence wait for closed
   -- periods; recheck again after that wait and before the audit write.
-  if actor is distinct from auth.uid()
-    or not app_private.is_platform_owner()
-    or not app_private.has_workspace_access(new.workspace_id, null) then
+  if auth.uid() is distinct from actor
+    or not (auth.role() = 'service_role'
+      or app_private.has_workspace_access(new.workspace_id, 'approve_registration')) then
     raise exception 'not_permitted' using errcode = '42501';
   end if;
 
