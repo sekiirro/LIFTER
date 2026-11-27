@@ -105,5 +105,15 @@ export function createHandlers(
         );
       }
     },
+    'quality.monthly_reminder': async ({ jobId, leaseToken }) => {
+      const handled = await rpc('handle_quality_monthly_reminder', {
+        p_job_id: jobId,
+        p_lease_token: leaseToken,
+      });
+      if (!handled)
+        throw new JobError('quality_reminder_lease_invalid', {
+          permanent: true,
+        });
+    },
   };
 }

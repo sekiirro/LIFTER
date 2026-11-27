@@ -1578,6 +1578,10 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.checkin.denied': 'You cannot view check-ins.',
   'workforce.checkin.filter.formStatus': 'Form status',
   'workforce.checkin.filter.followUpStatus': 'Follow-up status',
+  'workforce.reminder.title': 'Monthly quality review',
+  'workforce.reminder.body':
+    "It is time to enter this month's service quality. Open LIFTER to record it.",
+  'workforce.reminder.cta': 'Open review',
   'workforce.salary.title': 'Basic salary',
   'workforce.salary.market': 'Market',
   'workforce.salary.currencyHint':
