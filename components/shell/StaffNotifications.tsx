@@ -114,7 +114,7 @@ export function getNotificationText(
     return messages['workforce.reminder.body'];
   }
 
-  if (item.kind === 'subscription_expiring_t3' || item.kind === 'expiry_t3') {
+  if (item.kind === 'subscription_expiring_t3') {
     if (!item.clientName || !item.expiryDate) {
       console.warn(
         `[StaffNotifications] Omitting ${item.kind} missing clientName or expiryDate`,
@@ -128,10 +128,7 @@ export function getNotificationText(
       .replace('{expiryDate}', expiryDate);
   }
 
-  if (
-    item.kind === 'subscription_expiring_t3_short_lead' ||
-    item.kind === 'expiry_t3_short_lead'
-  ) {
+  if (item.kind === 'subscription_expiring_t3_short_lead') {
     if (!item.clientName || !item.expiryDate) {
       console.warn(
         `[StaffNotifications] Omitting ${item.kind} missing clientName or expiryDate`,
@@ -145,7 +142,7 @@ export function getNotificationText(
       .replace('{expiryDate}', expiryDate);
   }
 
-  if (item.kind === 'subscription_expired' || item.kind === 'expired') {
+  if (item.kind === 'subscription_expired') {
     if (!item.clientName || !item.expiryDate) {
       console.warn(
         `[StaffNotifications] Omitting ${item.kind} missing clientName or expiryDate`,
