@@ -7,12 +7,14 @@ import {
   readTrainerCheckins,
 } from '../../../../lib/workforce/checkins';
 
-export async function loadMoreTrainerCheckinsAction(input: {
-  workspaceId: string;
-  from: string;
-  to: string;
-  offset: number;
-}) {
+export async function loadMoreTrainerCheckinsAction(
+  input: {
+    workspaceId: string;
+    from: string;
+    to: string;
+  },
+  offset: number,
+) {
   const actor = await requireActor();
   if (
     !actor.role ||
@@ -28,7 +30,7 @@ export async function loadMoreTrainerCheckinsAction(input: {
     from: input.from,
     to: input.to,
     limit: 100,
-    offset: input.offset,
+    offset,
   });
   if (result.status !== 'ok') return result;
   return { status: 'ok' as const, checkins: result.checkins };

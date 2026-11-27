@@ -354,12 +354,14 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
       checkins: [sampleCheckins[2]!],
     });
 
-    const result = await loadMoreTrainerCheckinsAction({
-      workspaceId: 'ws-1',
-      from: '2026-01-01',
-      to: '2026-12-31',
-      offset: 100,
-    });
+    const result = await loadMoreTrainerCheckinsAction(
+      {
+        workspaceId: 'ws-1',
+        from: '2026-01-01',
+        to: '2026-12-31',
+      },
+      100,
+    );
 
     expect(mocks.readTrainerCheckins).toHaveBeenCalledWith({
       workspaceId: 'ws-1',

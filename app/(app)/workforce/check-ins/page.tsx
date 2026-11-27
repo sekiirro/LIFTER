@@ -188,14 +188,11 @@ export default async function TrainerCheckinsPage({
         locale={locale}
         checkins={result.checkins}
         hasMore={result.checkins.length === 100}
-        onLoadMore={(offset) =>
-          loadMoreTrainerCheckinsAction({
-            workspaceId: activeWorkspace.id,
-            from: fromDate,
-            to: toDate,
-            offset,
-          })
-        }
+        onLoadMore={loadMoreTrainerCheckinsAction.bind(null, {
+          workspaceId: activeWorkspace.id,
+          from: fromDate,
+          to: toDate,
+        })}
         confirmFollowup={confirmTrainerFollowupAction}
       />
     </ToastProvider>
