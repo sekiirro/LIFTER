@@ -59,10 +59,17 @@ export type DrilldownSourceRow = {
   recordedAt: string;
   package: ReportPackage | null;
   clientName: string | null;
-  kind: 'collection' | 'correction_reversal' | 'commission' | 'installment';
+  kind:
+    | 'collection'
+    | 'correction_reversal'
+    | 'refund'
+    | 'client_count'
+    | 'subscription_count'
+    | 'commission'
+    | 'installment';
   status: string;
-  amountMinor: string;
-  currency: string;
+  amountMinor?: string | null;
+  currency?: string | null;
   convertedEgpExact: string | null;
   commissionMinor?: string | null;
   dueOn?: string | null;
@@ -132,6 +139,23 @@ function cairoDate(value: string, locale: 'ar' | 'en') {
   }).format(new Date(value));
 }
 
+export function kindLabel(kind: string, m: Messages): string {
+  switch (kind) {
+    case 'collection':
+      return m['reports.section.collections'];
+    case 'correction_reversal':
+      return m['workforce.payroll.input.category.correction'];
+    case 'refund':
+      return m['staff.clientDirectory.subscriptionStatus.refunded'];
+    case 'client_count':
+      return m['reports.metric.clients'];
+    case 'subscription_count':
+      return m['reports.metric.subscriptions'];
+    default:
+      return '—';
+  }
+}
+
 function exactAmount(value: string, currency: string, locale: 'ar' | 'en') {
   if (value === '0') {
     const numberLocale = locale === 'ar' ? 'ar-EG' : 'en';
@@ -151,7 +175,15 @@ function exactAmount(value: string, currency: string, locale: 'ar' | 'en') {
     const amount = `${integer}${places ? `${separator}${zeros}` : ''} ${currency}`;
     return locale === 'ar' ? `\u2068${amount}\u2069` : amount;
   }
-  return formatMinorUnits(value, currency, locale);
+  const isNegative = value.startsWith('-');
+  const absValue = isNegative ? value.slice(1) : value;
+  const formatted = formatMinorUnits(absValue, currency, locale);
+  if (isNegative) {
+    return locale === 'ar'
+      ? `\u2068−${formatted.replace(/^[\u2068\u2069]/g, '')}\u2069`
+      : `−${formatted}`;
+  }
+  return formatted;
 }
 
 function exactConvertedAmount(value: string, locale: 'ar' | 'en') {
@@ -376,26 +408,39 @@ export function ReportsView({
                       <dt>{columns.client}</dt>
                       <dd>{row.clientName ?? '—'}</dd>
                       <dt>{columns.kind}</dt>
-                      <dd>{row.kind}</dd>
+                      <dd>{kindLabel(row.kind, m)}</dd>
                       <dt>{columns.status}</dt>
                       <dd>{row.status}</dd>
-                      <dt>{columns.amount}</dt>
-                      <dd>
-                        {exactAmount(row.amountMinor, row.currency, locale)}
-                      </dd>
-                      <dt>{columns.currency}</dt>
-                      <dd>{row.currency}</dd>
-                      <dt>{columns.converted}</dt>
-                      <dd>
-                        {row.convertedEgpExact === null ? (
-                          <span className={styles.pending}>
-                            {m['reports.statusPendingRate']}
-                          </span>
-                        ) : (
-                          exactConvertedAmount(row.convertedEgpExact, locale)
+                      {row.amountMinor !== null &&
+                        row.amountMinor !== undefined &&
+                        row.currency && (
+                          <>
+                            <dt>{columns.amount}</dt>
+                            <dd>
+                              {exactAmount(
+                                row.amountMinor,
+                                row.currency,
+                                locale,
+                              )}
+                            </dd>
+                            <dt>{columns.currency}</dt>
+                            <dd>{row.currency}</dd>
+                            <dt>{columns.converted}</dt>
+                            <dd>
+                              {row.convertedEgpExact === null ? (
+                                <span className={styles.pending}>
+                                  {m['reports.statusPendingRate']}
+                                </span>
+                              ) : (
+                                exactConvertedAmount(
+                                  row.convertedEgpExact,
+                                  locale,
+                                )
+                              )}
+                            </dd>
+                          </>
                         )}
-                      </dd>
-                      {row.commissionMinor && (
+                      {row.commissionMinor && row.currency && (
                         <>
                           <dt>{columns.commission}</dt>
                           <dd>
@@ -413,7 +458,7 @@ export function ReportsView({
                           <dd>{row.dueOn}</dd>
                         </>
                       )}
-                      {row.paidMinor && (
+                      {row.paidMinor && row.currency && (
                         <>
                           <dt>{columns.paid}</dt>
                           <dd>
@@ -421,7 +466,7 @@ export function ReportsView({
                           </dd>
                         </>
                       )}
-                      {row.remainingMinor && (
+                      {row.remainingMinor && row.currency && (
                         <>
                           <dt>{columns.remaining}</dt>
                           <dd>

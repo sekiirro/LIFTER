@@ -175,10 +175,17 @@ export type DrilldownSourceRow = {
   recordedAt: string;
   package: { id: string; market: string | null; type: string | null } | null;
   clientName: string | null;
-  kind: 'collection' | 'correction_reversal' | 'commission' | 'installment';
+  kind:
+    | 'collection'
+    | 'correction_reversal'
+    | 'refund'
+    | 'client_count'
+    | 'subscription_count'
+    | 'commission'
+    | 'installment';
   status: string;
-  amountMinor: string;
-  currency: string;
+  amountMinor: string | null;
+  currency: string | null;
   convertedEgpExact: string | null;
   commissionMinor?: string | null;
   dueOn?: string | null;
@@ -197,6 +204,98 @@ export type WorkspaceDrilldownResult =
     }
   | ReportDenied
   | ReportUnavailable;
+
+export type BackendAggregateCurrencyTotal = {
+  currency: string;
+  collection_minor: string;
+  reversal_minor: string;
+  refund_minor?: string;
+  commission_minor: string;
+  converted_egp_exact: string | null;
+  converted_commission_egp_exact: string | null;
+  converted_egp_minor: string | null;
+  converted_commission_egp_minor: string | null;
+  pending_fx_count: number;
+};
+
+export type BackendAggregateWorkspaceTotal = BackendAggregateCurrencyTotal & {
+  workspace_id: string;
+};
+
+export type BackendAggregateMonthTotal = BackendAggregateCurrencyTotal & {
+  month: string;
+};
+
+export type BackendAggregatePackageTotal = BackendAggregateCurrencyTotal & {
+  package_id: string;
+};
+
+export type BackendAggregateResponse = {
+  status: string;
+  workspace_id: string | null;
+  month: string | null;
+  counts?: {
+    distinct_clients: number;
+    distinct_subscriptions: number;
+  };
+  workspace_counts?: {
+    workspace_id: string;
+    distinct_clients: number;
+    distinct_subscriptions: number;
+  }[];
+  month_counts?: {
+    month: string;
+    distinct_clients: number;
+    distinct_subscriptions: number;
+  }[];
+  package_counts?: {
+    package_id: string;
+    distinct_clients: number;
+    distinct_subscriptions: number;
+  }[];
+  currency_totals: BackendAggregateCurrencyTotal[];
+  workspaces: BackendAggregateWorkspaceTotal[];
+  months: BackendAggregateMonthTotal[];
+  packages: BackendAggregatePackageTotal[];
+};
+
+export type BackendSourceRow = {
+  event_id: string;
+  workspace_id: string;
+  subscription_id: string | null;
+  client_id: string | null;
+  client_name: string | null;
+  package_id: string | null;
+  kind:
+    | 'collection'
+    | 'correction_reversal'
+    | 'refund'
+    | 'client_count'
+    | 'subscription_count';
+  amount_minor: string | null;
+  commission_minor: string | null;
+  currency: string | null;
+  recorded_at: string;
+  fx: {
+    status: 'ready' | 'pending';
+    provider?: string | null;
+    rate?: string | null;
+    publication_date?: string | null;
+  };
+  converted_egp_exact: string | null;
+  converted_commission_egp_exact: string | null;
+};
+
+export type BackendSourceRowsResponse = {
+  status: string;
+  workspace_id: string;
+  rows: BackendSourceRow[];
+  has_more: boolean;
+  next_cursor: {
+    recorded_at: string;
+    event_id: string;
+  } | null;
+};
 
 async function platformOwnerClient() {
   const actor = await getActor();
@@ -217,25 +316,42 @@ export async function getPlatformAggregateReport(params: {
   const access = await platformOwnerClient();
   if (access.status !== 'ok') return access;
 
-  try {
-    const rpcResult = await access.client.rpc('platform_aggregate_report', {
-      period: params.monthStart,
-      breakdown_dimension: params.breakdown,
-      filter_workspace_id:
-        params.workspaceId && params.workspaceId !== 'all'
-          ? params.workspaceId
-          : null,
-    });
-    if (
-      !rpcResult.error &&
-      rpcResult.data &&
-      (rpcResult.data as { status?: string }).status === 'ok'
-    ) {
-      return rpcResult.data as PlatformAggregateReportResult;
-    }
-  } catch {
-    // fall through to contract-compliant query
+  const normalizedMonthStart =
+    params.monthStart.length === 7
+      ? `${params.monthStart}-01`
+      : params.monthStart;
+
+  const rpcResult = await access.client.rpc('po_reporting_aggregate', {
+    p_workspace_id:
+      params.workspaceId && params.workspaceId !== 'all'
+        ? params.workspaceId
+        : null,
+    p_month_start: normalizedMonthStart,
+    p_package_id: null,
+  });
+
+  if (rpcResult.error) {
+    if (rpcResult.error.code === '42501') return { status: 'not_permitted' };
+    return { status: 'unavailable' };
   }
+  const payload = rpcResult.data as BackendAggregateResponse | null;
+  if (!payload || payload.status !== 'ok') {
+    if (payload?.status === 'not_permitted') return { status: 'not_permitted' };
+    return { status: 'unavailable' };
+  }
+
+  let totalRevenueMinor = 0n;
+  for (const ct of payload.currency_totals ?? []) {
+    if (ct.converted_egp_minor) {
+      totalRevenueMinor += BigInt(ct.converted_egp_minor);
+    }
+  }
+
+  const totals: PlatformMetricTotals = {
+    revenueConvertedEgpMinor: totalRevenueMinor.toString(),
+    subscriptionCount: Number(payload.counts?.distinct_subscriptions ?? 0),
+    clientCount: Number(payload.counts?.distinct_clients ?? 0),
+  };
 
   let wsQuery = access.client
     .from('workspaces')
@@ -245,69 +361,106 @@ export async function getPlatformAggregateReport(params: {
     wsQuery = wsQuery.eq('id', params.workspaceId);
   }
   const wsResult = await wsQuery;
-  if (wsResult.error || !wsResult.data) return { status: 'unavailable' };
-  const workspaces = wsResult.data;
+  const workspaces = wsResult.data ?? [];
 
-  let totalRevenueMinor = 0n;
-  let totalSubs = 0;
-  let totalClients = 0;
-  const workspaceAggregates: WorkspaceAggregateRow[] = [];
-
-  for (const ws of workspaces) {
-    const [colResult, subsResult, clientsResult] = await Promise.all([
-      getPackageMonthlyCollections(ws.id, params.monthStart),
-      access.client
-        .from('subscriptions')
-        .select('id', { count: 'exact', head: true })
-        .eq('workspace_id', ws.id),
-      access.client
-        .from('clients')
-        .select('id', { count: 'exact', head: true })
-        .eq('workspace_id', ws.id),
-    ]);
-
-    const revMinorStr =
-      colResult && colResult.status === 'ok'
-        ? colResult.converted_egp_minor
-        : '0';
-    const revMinor = BigInt(revMinorStr);
-    totalRevenueMinor += revMinor;
-    const subCount = subsResult.count ?? 0;
-    const clientCount = clientsResult.count ?? 0;
-    totalSubs += subCount;
-    totalClients += clientCount;
-
-    workspaceAggregates.push({
-      workspaceId: ws.id,
-      workspaceName: ws.name,
-      revenueConvertedEgpMinor: revMinorStr,
-      subscriptionCount: subCount,
-      clientCount,
+  const wsRevenueMap = new Map<string, bigint>();
+  for (const w of payload.workspaces ?? []) {
+    wsRevenueMap.set(
+      w.workspace_id,
+      (wsRevenueMap.get(w.workspace_id) ?? 0n) +
+        BigInt(w.converted_egp_minor || '0'),
+    );
+  }
+  const wsCountsMap = new Map<string, { clients: number; subs: number }>();
+  for (const wc of payload.workspace_counts ?? []) {
+    wsCountsMap.set(wc.workspace_id, {
+      clients: Number(wc.distinct_clients ?? 0),
+      subs: Number(wc.distinct_subscriptions ?? 0),
     });
   }
 
+  const workspaceAggregates: WorkspaceAggregateRow[] = workspaces.map((ws) => {
+    const counts = wsCountsMap.get(ws.id);
+    return {
+      workspaceId: ws.id,
+      workspaceName: ws.name,
+      revenueConvertedEgpMinor: (wsRevenueMap.get(ws.id) ?? 0n).toString(),
+      subscriptionCount: counts?.subs ?? 0,
+      clientCount: counts?.clients ?? 0,
+    };
+  });
+
   const breakdowns: PlatformBreakdownRow[] = [];
   if (params.breakdown === 'month') {
-    breakdowns.push({
-      key: params.monthStart.slice(0, 7),
-      label: params.monthStart.slice(0, 7),
-      revenueConvertedEgpMinor: totalRevenueMinor.toString(),
-      subscriptionCount: totalSubs,
-      clientCount: totalClients,
-    });
+    const monthRevenueMap = new Map<string, bigint>();
+    for (const m of payload.months ?? []) {
+      monthRevenueMap.set(
+        m.month,
+        (monthRevenueMap.get(m.month) ?? 0n) +
+          BigInt(m.converted_egp_minor || '0'),
+      );
+    }
+    const monthCountsMap = new Map<string, { clients: number; subs: number }>();
+    for (const mc of payload.month_counts ?? []) {
+      monthCountsMap.set(mc.month, {
+        clients: Number(mc.distinct_clients ?? 0),
+        subs: Number(mc.distinct_subscriptions ?? 0),
+      });
+    }
+    const monthKeys = new Set([
+      ...monthRevenueMap.keys(),
+      ...monthCountsMap.keys(),
+    ]);
+    if (monthKeys.size === 0 && params.monthStart) {
+      monthKeys.add(params.monthStart.slice(0, 7));
+    }
+    const sortedMonths = Array.from(monthKeys).sort();
+    for (const mKey of sortedMonths) {
+      breakdowns.push({
+        key: mKey,
+        label: mKey,
+        revenueConvertedEgpMinor: (monthRevenueMap.get(mKey) ?? 0n).toString(),
+        subscriptionCount: monthCountsMap.get(mKey)?.subs ?? 0,
+        clientCount: monthCountsMap.get(mKey)?.clients ?? 0,
+      });
+    }
   } else {
     const pkgsResult = await access.client
       .from('packages')
       .select('id, market, type');
     const packages = pkgsResult.data ?? [];
-    for (const pkg of packages) {
+    const packageById = new Map(packages.map((p) => [p.id, p]));
+
+    const pkgRevenueMap = new Map<string, bigint>();
+    for (const p of payload.packages ?? []) {
+      pkgRevenueMap.set(
+        p.package_id,
+        (pkgRevenueMap.get(p.package_id) ?? 0n) +
+          BigInt(p.converted_egp_minor || '0'),
+      );
+    }
+    const pkgCountsMap = new Map<string, { clients: number; subs: number }>();
+    for (const pc of payload.package_counts ?? []) {
+      pkgCountsMap.set(pc.package_id, {
+        clients: Number(pc.distinct_clients ?? 0),
+        subs: Number(pc.distinct_subscriptions ?? 0),
+      });
+    }
+
+    const pkgKeys = new Set([
+      ...packages.map((p) => p.id),
+      ...pkgRevenueMap.keys(),
+      ...pkgCountsMap.keys(),
+    ]);
+    for (const pkgId of pkgKeys) {
+      const pkg = packageById.get(pkgId) ?? null;
       breakdowns.push({
-        key: pkg.id,
-        label: `${pkg.market ?? '—'} · ${pkg.type ?? '—'}`,
+        key: pkgId,
+        label: pkg ? `${pkg.market ?? '—'} · ${pkg.type ?? '—'}` : '—',
         package: pkg,
-        revenueConvertedEgpMinor: '0',
-        subscriptionCount: 0,
-        clientCount: 0,
+        revenueConvertedEgpMinor: (pkgRevenueMap.get(pkgId) ?? 0n).toString(),
+        subscriptionCount: pkgCountsMap.get(pkgId)?.subs ?? 0,
+        clientCount: pkgCountsMap.get(pkgId)?.clients ?? 0,
       });
     }
   }
@@ -316,11 +469,7 @@ export async function getPlatformAggregateReport(params: {
     status: 'ok',
     period: params.monthStart.slice(0, 7),
     breakdown: params.breakdown,
-    totals: {
-      revenueConvertedEgpMinor: totalRevenueMinor.toString(),
-      subscriptionCount: totalSubs,
-      clientCount: totalClients,
-    },
+    totals,
     workspaceAggregates,
     breakdowns,
   };
@@ -333,113 +482,101 @@ export async function getWorkspaceDrilldownRows(params: {
   const access = await platformOwnerClient();
   if (access.status !== 'ok') return access;
 
-  try {
-    const rpcResult = await access.client.rpc('workspace_drilldown_rows', {
-      workspace_id: params.workspaceId,
-      month_start: params.monthStart,
-    });
-    if (
-      !rpcResult.error &&
-      rpcResult.data &&
-      (rpcResult.data as { status?: string }).status === 'ok'
-    ) {
-      return rpcResult.data as WorkspaceDrilldownResult;
-    }
-  } catch {
-    // fall through
+  const normalizedMonthStart =
+    params.monthStart.length === 7
+      ? `${params.monthStart}-01`
+      : params.monthStart;
+
+  const [rpcResult, aggResult] = await Promise.all([
+    access.client.rpc('po_reporting_source_rows', {
+      p_workspace_id: params.workspaceId,
+      p_month_start: normalizedMonthStart,
+      p_package_id: null,
+      p_page_size: 50,
+      p_cursor_recorded_at: null,
+      p_cursor_event_id: null,
+    }),
+    access.client.rpc('po_reporting_aggregate', {
+      p_workspace_id: params.workspaceId,
+      p_month_start: normalizedMonthStart,
+      p_package_id: null,
+    }),
+  ]);
+
+  if (rpcResult.error) {
+    if (rpcResult.error.code === '42501') return { status: 'not_permitted' };
+    return { status: 'unavailable' };
+  }
+  const payload = rpcResult.data as BackendSourceRowsResponse | null;
+  if (!payload || payload.status !== 'ok') {
+    if (payload?.status === 'not_permitted') return { status: 'not_permitted' };
+    return { status: 'unavailable' };
   }
 
-  const wsResult = await access.client
-    .from('workspaces')
-    .select('name')
-    .eq('id', params.workspaceId)
-    .single();
-  const workspaceName = wsResult.data?.name ?? params.workspaceId;
-
-  const [colResult, comResult, insResult, pkgsResult] = await Promise.all([
-    getPackageMonthlyCollections(params.workspaceId, params.monthStart),
-    getPackageCommissionReport(params.workspaceId, params.monthStart),
-    getPackageInstallmentReport(params.workspaceId),
+  const [wsResult, pkgsResult] = await Promise.all([
+    access.client
+      .from('workspaces')
+      .select('name')
+      .eq('id', params.workspaceId)
+      .single(),
     access.client
       .from('packages')
       .select('id, market, type')
       .eq('workspace_id', params.workspaceId),
   ]);
 
+  const workspaceName =
+    (Array.isArray(wsResult.data)
+      ? wsResult.data[0]?.name
+      : wsResult.data?.name) ?? params.workspaceId;
   const packageById = new Map((pkgsResult.data ?? []).map((p) => [p.id, p]));
 
-  const rows: DrilldownSourceRow[] = [];
+  const rows: DrilldownSourceRow[] = (payload.rows ?? []).map((row) => ({
+    id: row.event_id,
+    recordedAt: row.recorded_at,
+    package: row.package_id ? (packageById.get(row.package_id) ?? null) : null,
+    clientName: row.client_name ?? null,
+    kind: row.kind,
+    status: 'completed',
+    amountMinor: row.amount_minor ?? null,
+    currency: row.currency ?? null,
+    convertedEgpExact: row.converted_egp_exact ?? null,
+    commissionMinor: row.commission_minor ?? null,
+  }));
 
-  if (colResult && colResult.status === 'ok') {
-    for (const col of colResult.collections) {
-      rows.push({
-        id: col.event_id,
-        recordedAt: col.recorded_at,
-        package: packageById.get(col.package_id) ?? null,
-        clientName: col.client_name,
-        kind: 'collection',
-        status: 'completed',
-        amountMinor: col.amount_minor,
-        currency: col.currency,
-        convertedEgpExact: col.converted_egp_exact,
-      });
+  let revenueConvertedEgpMinor = '0';
+  let subscriptionCount = 0;
+  let clientCount = 0;
+
+  if (
+    aggResult.data &&
+    (aggResult.data as BackendAggregateResponse).status === 'ok'
+  ) {
+    const agg = aggResult.data as BackendAggregateResponse;
+    let sum = 0n;
+    for (const ct of agg.currency_totals ?? []) {
+      if (ct.converted_egp_minor) {
+        sum += BigInt(ct.converted_egp_minor);
+      }
     }
-    for (const ev of colResult.accounting_events) {
-      rows.push({
-        id: ev.event_id,
-        recordedAt: ev.recorded_at,
-        package: packageById.get(ev.package_id) ?? null,
-        clientName: ev.client_name,
-        kind: 'correction_reversal',
-        status: 'completed',
-        amountMinor: ev.amount_minor,
-        currency: ev.currency,
-        convertedEgpExact: null,
-      });
+    revenueConvertedEgpMinor = sum.toString();
+    subscriptionCount = Number(agg.counts?.distinct_subscriptions ?? 0);
+    clientCount = Number(agg.counts?.distinct_clients ?? 0);
+  } else {
+    let sum = 0n;
+    for (const r of rows) {
+      if (r.convertedEgpExact) {
+        sum += BigInt(Math.floor(Number(r.convertedEgpExact) + 0.5));
+      }
     }
+    revenueConvertedEgpMinor = sum.toString();
+    subscriptionCount = new Set(
+      (payload.rows ?? []).map((r) => r.subscription_id).filter(Boolean),
+    ).size;
+    clientCount = new Set(
+      (payload.rows ?? []).map((r) => r.client_id).filter(Boolean),
+    ).size;
   }
-
-  if (comResult && comResult.status === 'ok') {
-    for (const com of comResult.commissions) {
-      rows.push({
-        id: `commission-${com.package_id}`,
-        recordedAt: params.monthStart,
-        package: packageById.get(com.package_id) ?? null,
-        clientName: null,
-        kind: 'commission',
-        status: 'completed',
-        amountMinor: com.converted_egp_minor ?? '0',
-        currency: 'EGP',
-        convertedEgpExact: com.converted_egp_exact,
-        commissionMinor: com.converted_egp_minor,
-        pendingRates: com.pending_event_count,
-      });
-    }
-  }
-
-  if (insResult && insResult.status === 'ok') {
-    for (const ins of insResult.installments) {
-      rows.push({
-        id: ins.installment_id,
-        recordedAt: ins.due_on ?? params.monthStart,
-        package: packageById.get(ins.package_id) ?? null,
-        clientName: ins.client_name,
-        kind: 'installment',
-        status: ins.remaining_minor === '0' ? 'completed' : 'due',
-        amountMinor: ins.amount_minor,
-        currency: ins.currency,
-        convertedEgpExact: null,
-        dueOn: ins.due_on,
-        paidMinor: ins.paid_minor,
-        remainingMinor: ins.remaining_minor,
-      });
-    }
-  }
-
-  const revMinorStr =
-    colResult && colResult.status === 'ok'
-      ? colResult.converted_egp_minor
-      : '0';
 
   return {
     status: 'ok',
@@ -447,9 +584,9 @@ export async function getWorkspaceDrilldownRows(params: {
     workspaceName,
     rows,
     totals: {
-      revenueConvertedEgpMinor: revMinorStr,
-      subscriptionCount: rows.length,
-      clientCount: new Set(rows.map((r) => r.clientName).filter(Boolean)).size,
+      revenueConvertedEgpMinor,
+      subscriptionCount,
+      clientCount,
     },
   };
 }
