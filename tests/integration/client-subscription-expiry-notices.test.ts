@@ -33,7 +33,8 @@ async function moveExpiryToDays(subject: PortalClient, remainingDays: number) {
   });
 }
 
-const moveExpiryToTwoDays = (subject: PortalClient) => moveExpiryToDays(subject, 2);
+const moveExpiryToTwoDays = (subject: PortalClient) =>
+  moveExpiryToDays(subject, 2);
 
 async function expiryAt(subject: PortalClient): Promise<Date> {
   const [core] = await p.db`
@@ -54,7 +55,8 @@ async function evaluate(at: Date) {
 async function readAs(subject: PortalClient): Promise<Record<string, unknown>> {
   return p.db.begin((tx) =>
     asUser(tx, subject.authUserId, async (inner) => {
-      const [row] = await inner`select public.read_client_notices(100, null) as value`;
+      const [row] =
+        await inner`select public.read_client_notices(100, null) as value`;
       return row!.value as Record<string, unknown>;
     }),
   );
@@ -80,7 +82,9 @@ async function readDefinition(tx: TransactionSql) {
 }
 
 const kinds = (value: Record<string, unknown>) =>
-  (value.notices as Array<{ notice_kind: string }>).map((row) => row.notice_kind);
+  (value.notices as Array<{ notice_kind: string }>).map(
+    (row) => row.notice_kind,
+  );
 
 describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox', () => {
   it('delivers only to the client account, with staff and another client unable to read it', async () => {
@@ -92,7 +96,9 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     const own = await readAs(client);
     expect(own.status).toBe('ok');
     expect(kinds(own)).toContain('subscription_expiring_t3');
-    expect(kinds(await readAs(other))).not.toContain('subscription_expiring_t3');
+    expect(kinds(await readAs(other))).not.toContain(
+      'subscription_expiring_t3',
+    );
     for (const actor of [p.fixture.trainerA, p.fixture.woA, p.fixture.po]) {
       const result = await actor.client.rpc('read_client_notices', {
         p_limit: 100,
@@ -119,7 +125,10 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
   });
 
   it('creates one new stage identity when F13 changes the effective-expiry revision', async () => {
-    const revised = await p.makeClient({ activate: true, label: 'expiry revision' });
+    const revised = await p.makeClient({
+      activate: true,
+      label: 'expiry revision',
+    });
     await moveExpiryToDays(revised, 2);
     const originalExpiry = await expiryAt(revised);
     await evaluate(new Date(originalExpiry.getTime() - 72 * 60 * 60 * 1000));
@@ -139,12 +148,17 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
   });
 
   it('catches up T-3 once when first eligible under 72 hours and sends T-1 only at its instant', async () => {
-    const late = await p.makeClient({ activate: true, label: 'expiry short lead' });
+    const late = await p.makeClient({
+      activate: true,
+      label: 'expiry short lead',
+    });
     await moveExpiryToTwoDays(late);
     const expiry = await expiryAt(late);
 
     await evaluate(new Date(expiry.getTime() - 48 * 60 * 60 * 1000));
-    expect(kinds(await readAs(late))).toContain('subscription_expiring_t3_short_lead');
+    expect(kinds(await readAs(late))).toContain(
+      'subscription_expiring_t3_short_lead',
+    );
     expect(kinds(await readAs(late))).not.toContain('subscription_expiring_t1');
 
     await evaluate(new Date(expiry.getTime() - 24 * 60 * 60 * 1000 - 1));
@@ -154,7 +168,10 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
   });
 
   it('suppresses obsolete client stages after renewal, freeze, or full refund', async () => {
-    const renewed = await p.makeClient({ activate: true, label: 'expiry renewal' });
+    const renewed = await p.makeClient({
+      activate: true,
+      label: 'expiry renewal',
+    });
     await moveExpiryToTwoDays(renewed);
     const renewalExpiry = await expiryAt(renewed);
     await evaluate(new Date(renewalExpiry.getTime() - 48 * 60 * 60 * 1000));
@@ -193,7 +210,10 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(Number(renewalRows!.t1)).toBe(0);
     expect(Number(renewalRows!.t3)).toBe(1);
 
-    const frozen = await p.makeClient({ activate: true, label: 'expiry freeze' });
+    const frozen = await p.makeClient({
+      activate: true,
+      label: 'expiry freeze',
+    });
     await moveExpiryToTwoDays(frozen);
     const freezeExpiry = await expiryAt(frozen);
     await evaluate(new Date(freezeExpiry.getTime() - 48 * 60 * 60 * 1000));
@@ -227,7 +247,10 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(Number(freezeRows!.t1)).toBe(0);
     expect(Number(freezeRows!.t3)).toBe(1);
 
-    const refunded = await p.makeClient({ activate: true, label: 'expiry refund' });
+    const refunded = await p.makeClient({
+      activate: true,
+      label: 'expiry refund',
+    });
     await moveExpiryToTwoDays(refunded);
     const refundExpiry = await expiryAt(refunded);
     await evaluate(new Date(refundExpiry.getTime() - 48 * 60 * 60 * 1000));
@@ -296,7 +319,8 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
       let killed = false;
       try {
         await asUser(tx, other.authUserId, async (inner) => {
-          const [row] = await inner`select public.read_client_notices(100, null) as value`;
+          const [row] =
+            await inner`select public.read_client_notices(100, null) as value`;
           expect(kinds(row!.value as Record<string, unknown>)).not.toContain(
             'subscription_activated',
           );
@@ -305,7 +329,9 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
         killed = true;
       }
       await tx.unsafe(original);
-      expect(killed, 'Removing the F22 client scope must be detected').toBe(true);
+      expect(killed, 'Removing the F22 client scope must be detected').toBe(
+        true,
+      );
     });
   });
 });
