@@ -429,6 +429,8 @@ describe('cron edge wiring', () => {
           await refundDrainGate;
           return Response.json([]);
         }
+        if (url.includes('/rpc/po_export_expired_artifacts'))
+          return Response.json([]);
         return Response.json(true);
       });
     const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -650,7 +652,7 @@ describe('cron edge wiring', () => {
       ]);
       expect(rpcCalls).toContainEqual([
         'https://example.test/rest/v1/rpc/jobs_claim',
-        '{"batch":25,"allowed_kinds":["client.distribution","quality.monthly_reminder","system.noop"]}',
+        '{"batch":25,"allowed_kinds":["client.distribution","po.export","quality.monthly_reminder","system.noop"]}',
       ]);
     } finally {
       vi.unstubAllGlobals();
