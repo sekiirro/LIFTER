@@ -9,6 +9,10 @@ const immutableTables = [
   'public.p7_payroll_snapshots',
   'public.p7_payroll_approvals',
   'app_private.workforce_checkin_transitions',
+  'public.p7_adjustment_entries',
+  'public.p7_month_snapshots',
+  'public.p7_monthly_quality_revisions',
+  'public.p7_trainer_quality_settings',
 ];
 
 afterAll(async () => {
