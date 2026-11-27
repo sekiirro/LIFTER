@@ -78,6 +78,12 @@ function recordDue(deadlineAt: Date) {
   return recordDueAt(new Date(deadlineAt.getTime() + 10));
 }
 
+async function waitUntilBreach(deadlineAt: Date) {
+  await new Promise((resolve) =>
+    setTimeout(resolve, Math.max(0, deadlineAt.getTime() + 20 - Date.now())),
+  );
+}
+
 async function readStrikes(
   context: StrikeContext,
   trainerUserId: string | null,
@@ -531,6 +537,7 @@ it('uses the exact rolling window and only exposes 3/6/9 review flags to the PO'
 it('appends void, reinstate and breach-time reattribution without changing the strike row', async () => {
   const fixture = await seedOverdueInitial();
   await recordDue(fixture.deadlineAt);
+  await waitUntilBreach(fixture.deadlineAt);
   const [event] = await db`
     select id from public.workforce_strike_events where workspace_id=${fixture.context.wsA.id}
   `;
@@ -636,7 +643,7 @@ it('appends void, reinstate and breach-time reattribution without changing the s
     select action,target_table,details from public.audit_events
     where workspace_id=${fixture.context.wsA.id}
       and action='workforce.strike_corrected'
-    order by recorded_at
+    order by occurred_at
   `;
   expect(audit).toHaveLength(3);
   expect(
@@ -655,6 +662,7 @@ it('appends void, reinstate and breach-time reattribution without changing the s
 it('rejects invalid corrections and changed replay arguments without mutating history', async () => {
   const fixture = await seedOverdueInitial();
   await recordDue(fixture.deadlineAt);
+  await waitUntilBreach(fixture.deadlineAt);
   const [event] = await db`
     select id from public.workforce_strike_events where workspace_id=${fixture.context.wsA.id}
   `;
@@ -840,9 +848,9 @@ it('rejects direct UPDATE, DELETE and TRUNCATE attempts on retained strike histo
   await expect(
     db`delete from public.workforce_strike_events where id=${event!.id}`,
   ).rejects.toThrow(/workforce_strike_immutable/);
-  await expect(db`truncate public.workforce_strike_events`).rejects.toThrow(
-    /workforce_strike_immutable/,
-  );
+  await expect(
+    db`truncate public.workforce_strike_events cascade`,
+  ).rejects.toThrow(/workforce_strike_immutable/);
   await expect(
     db`update public.workforce_strike_corrections set reason=reason where strike_id=${event!.id}`,
   ).rejects.toThrow(/workforce_strike_immutable/);
