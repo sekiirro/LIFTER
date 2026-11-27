@@ -8,6 +8,7 @@ let f: Context;
 let monthStart: string;
 let eventId: string;
 let reversalEventId: string;
+let refundIds: string[];
 let clientId: string;
 let clientActor: ReturnType<typeof anonClient>;
 
@@ -29,6 +30,8 @@ beforeAll(async () => {
     installment: randomUUID(),
     event: randomUUID(),
     reversal: randomUUID(),
+    refundPartial: randomUUID(),
+    refundFull: randomUUID(),
   };
   const phoneDigits = BigInt(`0x${ids.client.replaceAll('-', '')}`)
     .toString()
@@ -36,6 +39,7 @@ beforeAll(async () => {
     .slice(-11);
   eventId = ids.event;
   reversalEventId = ids.reversal;
+  refundIds = [ids.refundPartial, ids.refundFull];
   clientId = ids.client;
   await db.begin(async (tx) => {
     await tx`set local session_replication_role = replica`;
@@ -61,6 +65,18 @@ beforeAll(async () => {
         ${ids.event},-400,'USD',-40,null,(clock_timestamp() at time zone 'Africa/Cairo')::date,${f.po.userId},${randomUUID()})`;
     await tx`insert into app_private.package_reporting_fx_snapshots(workspace_id,payment_event_id,status,source_currency,provider_key,transaction_at)
       select ${f.wsA.id},${ids.reversal},'pending','USD','CBE',recorded_at from public.payment_events where id=${ids.reversal}`;
+    await tx`insert into public.refund_operations(id,workspace_id,client_id,subscription_id,operation_id,
+      actor_user_id,amount_minor,currency,effective_on,expected_revision,recorded_at)
+      values(${ids.refundPartial},${f.wsA.id},${ids.client},${ids.subscription},${randomUUID()},${f.po.userId},
+        100,'USD',(clock_timestamp() at time zone 'Africa/Cairo')::date,0,clock_timestamp()),
+        (${ids.refundFull},${f.wsA.id},${ids.client},${ids.subscription},${randomUUID()},${f.po.userId},
+        300,'USD',(clock_timestamp() at time zone 'Africa/Cairo')::date + 40,0,clock_timestamp())`;
+    await tx`insert into public.refund_allocation_events(workspace_id,subscription_id,obligation_id,
+      refund_operation_id,source_collection_event_id,amount_minor,commission_minor,currency,effective_on,recorded_by)
+      values(${f.wsA.id},${ids.subscription},${ids.installment},${ids.refundPartial},${ids.event},-100,-10,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,${f.po.userId}),
+        (${f.wsA.id},${ids.subscription},${ids.installment},${ids.refundFull},${ids.event},-300,-30,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date + 40,${f.po.userId})`;
   });
   const clientLogin = await clientActor.auth.signInWithPassword({
     email: clientEmail,
@@ -72,6 +88,42 @@ beforeAll(async () => {
     await db`select to_char(recorded_at at time zone 'Africa/Cairo','YYYY-MM-01') month_start
     from public.payment_events where id=${eventId}`;
   monthStart = month!.month_start as string;
+});
+
+it('T005 reconciles partial and full refunds by effective Cairo month and package to allocation source rows', async () => {
+  const result = await f.po.client.rpc('po_reporting_aggregate', {
+    p_workspace_id: f.wsA.id, p_month_start: null, p_package_id: f.p.offer.package_id,
+  });
+  expect(result.error).toBeNull();
+  const usd = result.data.currency_totals.find((row: { currency: string }) => row.currency === 'USD');
+  expect(usd.refund_minor).toBe('-400');
+  expect(result.data.months).toEqual(expect.arrayContaining([
+    expect.objectContaining({ month: monthStart.slice(0, 7), currency: 'USD', refund_minor: '-100' }),
+  ]));
+  expect(result.data.packages).toEqual(expect.arrayContaining([
+    expect.objectContaining({ package_id: f.p.offer.package_id, currency: 'USD', refund_minor: '-400' }),
+  ]));
+  const rows = await f.po.client.rpc('po_reporting_source_rows', {
+    p_workspace_id: f.wsA.id, p_month_start: null, p_package_id: f.p.offer.package_id,
+    p_page_size: 100, p_cursor_recorded_at: null, p_cursor_event_id: null,
+  });
+  const refunds = rows.data.rows.filter((row: { kind: string }) => row.kind === 'refund');
+  expect(refunds).toHaveLength(2);
+  expect(refunds.reduce((sum: bigint, row: { amount_minor: string }) => sum + BigInt(row.amount_minor), 0n)).toBe(-400n);
+});
+
+it('T006 counts distinct clients and subscriptions with separate semantics across package and month breakdowns', async () => {
+  const result = await f.po.client.rpc('po_reporting_aggregate', {
+    p_workspace_id: f.wsA.id, p_month_start: null, p_package_id: f.p.offer.package_id,
+  });
+  expect(result.error).toBeNull();
+  expect(result.data.counts).toEqual({ distinct_clients: 1, distinct_subscriptions: 1 });
+  expect(result.data.months).toEqual(expect.arrayContaining([
+    expect.objectContaining({ month: monthStart.slice(0, 7), distinct_clients: 1, distinct_subscriptions: 1 }),
+  ]));
+  expect(result.data.packages).toEqual(expect.arrayContaining([
+    expect.objectContaining({ package_id: f.p.offer.package_id, distinct_clients: 1, distinct_subscriptions: 1 }),
+  ]));
 });
 
 afterAll(async () => {
