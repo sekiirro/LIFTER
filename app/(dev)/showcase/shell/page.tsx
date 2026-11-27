@@ -25,7 +25,13 @@ export default async function ShellPage({
   // Dev-only verification hook for FR-028 explicit-solid fallback coverage.
   const fallback = params.glass === 'solid' ? 'solid' : 'auto';
   return (
-    <AppShell role={role} activeKey="home" messages={m} fallback={fallback}>
+    <AppShell
+      role={role}
+      activeKey="home"
+      messages={m}
+      fallback={fallback}
+      notifications={false}
+    >
       <div className={styles.demoContent}>
         <h1>{m['showcase.shell']}</h1>
         <RoleSelector role={role} messages={m} />

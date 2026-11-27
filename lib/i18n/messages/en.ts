@@ -1672,6 +1672,25 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.salary.market.international': 'International',
   'workforce.payroll.selectEmployeeFirst': 'Select an employee first.',
   'workforce.payroll.employee': 'Employee',
+  'staff.notifications.title': 'Notifications',
+  'staff.notifications.bellLabel': 'Open notifications',
+  'staff.notifications.loading': 'Loading',
+  'staff.notifications.empty': 'You are all caught up.',
+  'staff.notifications.error': 'Unable to load data',
+  'staff.notifications.errorDescription':
+    'Something went wrong. Please try again.',
+  'staff.notifications.retry': 'Retry',
+  'staff.notifications.markRead': 'Mark as read',
+  'staff.notices.expiryT3':
+    "{clientName}'s subscription expires in 3 days ({expiryDate})",
+  'staff.notices.expiryT3ShortLead':
+    "{clientName}'s subscription expires soon ({expiryDate})",
+  'staff.notices.expired':
+    "{clientName}'s subscription expired on {expiryDate}",
+  'staff.clientDirectory.expiring': 'Expiring',
+  'staff.clientDirectory.expiring.empty': 'No clients match this filter',
+  'staff.clientDirectory.expiring.loadError':
+    "We couldn't load this list. Try again.",
   'workforce.finalize.title': 'Finalize month',
   'workforce.finalize.selectMonth':
     'Select a month that has ended (Cairo time)',
@@ -1689,6 +1708,24 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.finalize.error': 'Could not finalize the month. Try again.',
   'workforce.finalize.stale': 'The month changed. Reload before finalizing.',
   'workforce.finalize.denied': 'Only the Platform Owner can finalize months.',
+  // CB-P8-03 (S71-PO-12) — spec 030 PO full export, screen 1.
+  'reports.export.title': 'Export client data',
+  'reports.export.description':
+    'Download a complete UTF-8 CSV archive of client records.',
+  'reports.export.scope.label': 'Export scope',
+  'reports.export.confirmScope': 'Review export scope',
+  'reports.export.scope.all': 'All workspaces',
+  'reports.export.scope.workspace': 'Selected workspace',
+  'reports.export.action': 'Export client data',
+  'reports.export.status.queued': 'Queued',
+  'reports.export.status.running': 'Preparing your export',
+  'reports.export.status.ready': 'Ready',
+  'reports.export.status.failed': 'Failed',
+  'reports.export.download': 'Download export',
+  'reports.export.expiryNotice':
+    'Download links expire shortly after generation and require active Platform Owner sign-in.',
+  'reports.export.empty': 'No client data matches this scope',
+  'reports.export.error': 'Export couldn’t be prepared. Try again.',
   'workforce.salesProjection.title': 'My monthly total',
   'workforce.salesProjection.total': 'Finalized total',
   'workforce.salesProjection.notAvailable': 'Not available yet',

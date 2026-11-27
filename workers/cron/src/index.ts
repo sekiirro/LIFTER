@@ -3,6 +3,7 @@ import { createHandlers, createSubscriptionExpiryHandler } from './handlers';
 import { createRpc, type Env } from './rpc';
 import { drainRefundAuthLockouts } from './refund-auth-lockout';
 import { drainAccountDeletions } from './account-deletion';
+import { purgeExpiredPoExports } from './po-export-expiry';
 import { createBrandingGc, runBrandingGc } from './branding-gc';
 import type { ExecutionContext, ScheduledController } from './types';
 
@@ -37,7 +38,7 @@ const worker = {
           name: 'jobs',
           run: async () => {
             const rpc = createRpc(env);
-            await drain({ rpc, handlers: createHandlers(rpc) });
+            await drain({ rpc, handlers: createHandlers(rpc, env) });
           },
         },
         {
@@ -61,6 +62,10 @@ const worker = {
         {
           name: 'account_deletions',
           run: () => drainAccountDeletions(env),
+        },
+        {
+          name: 'po_export_expiry',
+          run: () => purgeExpiredPoExports(env),
         },
       ]),
     );

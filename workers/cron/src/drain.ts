@@ -15,7 +15,10 @@ export type Handler = (job: {
 }) => Promise<void>;
 
 type RpcMethods = {
-  jobs_claim: { args: { batch: number }; result: Job[] };
+  jobs_claim: {
+    args: { batch: number; allowed_kinds: string[] };
+    result: Job[];
+  };
   jobs_complete: { args: { id: string; lease: string }; result: boolean };
   jobs_fail: {
     args: { id: string; lease: string; error_code: string; permanent: boolean };
@@ -23,6 +26,39 @@ type RpcMethods = {
   };
   handle_client_trainer_distribution: {
     args: { p_job_id: string; p_lease_token: string };
+    result: boolean;
+  };
+  po_export_snapshot: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: {
+      rows: Array<{ row: Record<string, string | null> }>;
+      row_count: number;
+      exceeded_limit: boolean;
+    };
+  };
+  po_export_attempt: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: string | null;
+  };
+  po_export_finalize: {
+    args: {
+      p_job_id: string;
+      p_lease_token: string;
+      p_object_path: string;
+      p_row_count: number;
+    };
+    result: boolean;
+  };
+  po_export_failed: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: boolean;
+  };
+  po_export_expired_artifacts: {
+    args: { p_limit: number };
+    result: Array<{ job_id: string; object_path: string }>;
+  };
+  po_export_expired_mark: {
+    args: { p_job_id: string; p_object_path: string };
     result: boolean;
   };
   handle_quality_monthly_reminder: {
@@ -139,9 +175,15 @@ export async function drain({
   budgetMs?: number;
   batch?: number;
 }): Promise<void> {
+  const allowedKinds = Object.keys(handlers).sort();
+  if (allowedKinds.length === 0) return;
+
   const startedAt = now();
   while (now() - startedAt < budgetMs) {
-    const jobs = await rpc('jobs_claim', { batch });
+    const jobs = await rpc('jobs_claim', {
+      batch,
+      allowed_kinds: allowedKinds,
+    });
     if (jobs.length === 0) return;
     for (const job of jobs) {
       // Claimed but unstarted jobs recover through their database lease.

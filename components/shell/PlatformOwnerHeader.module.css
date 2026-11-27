@@ -8,6 +8,12 @@
   padding: var(--space-4);
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .header nav {
   position: relative;
 }

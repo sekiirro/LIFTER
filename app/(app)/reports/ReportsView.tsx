@@ -7,6 +7,7 @@ import { EmptyState } from '../../../components/ui/States';
 import { Button } from '../../../components/ui/Button';
 import { formatMinorUnits } from '../../../lib/packages/money';
 import type { Messages } from '../../../lib/i18n';
+import { ExportSection } from './ExportSection';
 import styles from './reports.module.css';
 
 export type ReportPackage = {
@@ -141,6 +142,7 @@ export function ReportsView({
   workspaces,
   data,
   totalConvertedEgp,
+  role,
   messages: m,
 }: {
   locale: 'ar' | 'en';
@@ -149,6 +151,7 @@ export function ReportsView({
   workspaces: { id: string; name: string }[];
   data: ReportsData;
   totalConvertedEgp: string | null;
+  role?: string | null;
   messages: Messages;
 }) {
   const router = useRouter();
@@ -372,6 +375,15 @@ export function ReportsView({
           </div>
         )}
       </section>
+
+      {role === 'platform_owner' && (
+        <ExportSection
+          canExport
+          locale={locale}
+          workspaces={workspaces}
+          messages={m}
+        />
+      )}
     </main>
   );
 }
