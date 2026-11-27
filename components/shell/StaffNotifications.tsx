@@ -35,6 +35,19 @@ async function defaultMarkRead(
   }
 }
 
+async function defaultDismiss(
+  type: 'form_alert' | 'staff_notice',
+  id: string,
+): Promise<{ status: string }> {
+  try {
+    const { dismissStaffNotificationAction } =
+      await import('../../app/(app)/notifications/actions');
+    return await dismissStaffNotificationAction(type, id);
+  } catch {
+    return { status: 'error' };
+  }
+}
+
 export type StaffNotificationsProps = {
   messages: Messages;
   locale?: Locale;
@@ -48,15 +61,17 @@ export type StaffNotificationsProps = {
     type: 'form_alert' | 'staff_notice',
     id: string,
   ) => Promise<{ status: string }>;
+  onDismiss?: (
+    type: 'form_alert' | 'staff_notice',
+    id: string,
+  ) => Promise<{ status: string }>;
   className?: string;
-  isStandalone?: boolean;
 };
 
 export function formatCairoDate(value: string, locale: Locale = 'en'): string {
   try {
     return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
       dateStyle: 'medium',
-      timeStyle: 'short',
       timeZone: 'Africa/Cairo',
     }).format(new Date(value));
   } catch {
@@ -68,7 +83,7 @@ export function getNotificationText(
   item: UnifiedStaffNotification,
   messages: Messages,
   locale: Locale = 'en',
-): string {
+): string | null {
   if (item.type === 'form_alert') {
     if (
       item.stage === 'client_owners_immediate' ||
@@ -84,7 +99,10 @@ export function getNotificationText(
     ) {
       return messages['forms.staffStatus.trainerLate'];
     }
-    return messages['forms.staffStatus.resolved'];
+    if (item.stage === 'resolved') {
+      return messages['forms.staffStatus.resolved'];
+    }
+    return null;
   }
 
   // staff_notice
@@ -95,43 +113,59 @@ export function getNotificationText(
     );
   }
 
-  if (item.kind === 'expiry_t3' || item.kind === 'subscription_expiry_t3') {
+  if (item.kind === 'monthly_quality_reminder') {
+    return messages['workforce.reminder.body'];
+  }
+
+  if (item.kind === 'subscription_expiring_t3' || item.kind === 'expiry_t3') {
+    if (!item.clientName || !item.expiryDate) {
+      console.warn(
+        `[StaffNotifications] Omitting ${item.kind} missing clientName or expiryDate`,
+      );
+      return null;
+    }
     const template = messages['staff.notices.expiryT3'];
-    const clientName = item.clientName ?? item.sourceKey;
-    const expiryDate = item.expiryDate
-      ? formatCairoDate(item.expiryDate, locale)
-      : '';
+    const expiryDate = formatCairoDate(item.expiryDate, locale);
     return template
-      .replace('{clientName}', clientName)
+      .replace('{clientName}', item.clientName)
       .replace('{expiryDate}', expiryDate);
   }
 
   if (
-    item.kind === 'expiry_t3_short_lead' ||
-    item.kind === 'subscription_expiry_t3_short_lead'
+    item.kind === 'subscription_expiring_t3_short_lead' ||
+    item.kind === 'expiry_t3_short_lead'
   ) {
+    if (!item.clientName || !item.expiryDate) {
+      console.warn(
+        `[StaffNotifications] Omitting ${item.kind} missing clientName or expiryDate`,
+      );
+      return null;
+    }
     const template = messages['staff.notices.expiryT3ShortLead'];
-    const clientName = item.clientName ?? item.sourceKey;
-    const expiryDate = item.expiryDate
-      ? formatCairoDate(item.expiryDate, locale)
-      : '';
+    const expiryDate = formatCairoDate(item.expiryDate, locale);
     return template
-      .replace('{clientName}', clientName)
+      .replace('{clientName}', item.clientName)
       .replace('{expiryDate}', expiryDate);
   }
 
-  if (item.kind === 'expired' || item.kind === 'subscription_expired') {
+  if (item.kind === 'subscription_expired' || item.kind === 'expired') {
+    if (!item.clientName || !item.expiryDate) {
+      console.warn(
+        `[StaffNotifications] Omitting ${item.kind} missing clientName or expiryDate`,
+      );
+      return null;
+    }
     const template = messages['staff.notices.expired'];
-    const clientName = item.clientName ?? item.sourceKey;
-    const expiryDate = item.expiryDate
-      ? formatCairoDate(item.expiryDate, locale)
-      : '';
+    const expiryDate = formatCairoDate(item.expiryDate, locale);
     return template
-      .replace('{clientName}', clientName)
+      .replace('{clientName}', item.clientName)
       .replace('{expiryDate}', expiryDate);
   }
 
-  return item.kind;
+  console.warn(
+    `[StaffNotifications] Unknown staff notice kind omitted: ${item.kind}`,
+  );
+  return null;
 }
 
 export function StaffNotifications({
@@ -141,8 +175,8 @@ export function StaffNotifications({
   initialNotifications,
   onFetch,
   onMarkRead,
+  onDismiss,
   className,
-  isStandalone = false,
 }: StaffNotificationsProps) {
   const [open, setOpen] = useState(initialOpen);
   const [loading, setLoading] = useState(false);
@@ -155,6 +189,7 @@ export function StaffNotifications({
 
   const fetchHandler = onFetch ?? defaultFetch;
   const markReadHandler = onMarkRead ?? defaultMarkRead;
+  const dismissHandler = onDismiss ?? defaultDismiss;
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -173,9 +208,9 @@ export function StaffNotifications({
     }
   }, [fetchHandler]);
 
-  // Fetch on open or standalone mount
+  // Fetch on open
   useEffect(() => {
-    if (!open && !isStandalone) return;
+    if (!open) return;
     let active = true;
     fetchHandler()
       .then((res) => {
@@ -195,11 +230,11 @@ export function StaffNotifications({
     return () => {
       active = false;
     };
-  }, [open, isStandalone, fetchHandler]);
+  }, [open, fetchHandler]);
 
   // Click outside and Esc key dismissal
   useEffect(() => {
-    if (!open || isStandalone) return;
+    if (!open) return;
     const handleClickOutside = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
@@ -217,15 +252,22 @@ export function StaffNotifications({
       document.removeEventListener('pointerdown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, isStandalone]);
+  }, [open]);
 
   const handleMarkRead = async (item: UnifiedStaffNotification) => {
     try {
       await markReadHandler(item.type, item.id);
-      // Refresh after an action
       await loadNotifications();
     } catch {
-      // If action fails, still refresh to reconcile state
+      await loadNotifications();
+    }
+  };
+
+  const handleDismiss = async (item: UnifiedStaffNotification) => {
+    try {
+      await dismissHandler(item.type, item.id);
+      await loadNotifications();
+    } catch {
       await loadNotifications();
     }
   };
@@ -270,7 +312,17 @@ export function StaffNotifications({
       );
     }
 
-    if (notifications.length === 0) {
+    const visibleItems = notifications
+      .map((item) => ({
+        item,
+        text: getNotificationText(item, messages, locale),
+      }))
+      .filter(
+        (entry): entry is { item: UnifiedStaffNotification; text: string } =>
+          entry.text !== null,
+      );
+
+    if (visibleItems.length === 0) {
       return (
         <div
           className={styles.stateBox}
@@ -287,9 +339,8 @@ export function StaffNotifications({
         data-testid="staff-notifications-list"
         role="list"
       >
-        {notifications.map((item) => {
+        {visibleItems.map(({ item, text }) => {
           const isUnread = item.readAt === null;
-          const text = getNotificationText(item, messages, locale);
           return (
             <li
               key={`${item.type}-${item.id}`}
@@ -304,17 +355,30 @@ export function StaffNotifications({
                 <span>
                   <Bidi>{formatCairoDate(item.createdAt, locale)}</Bidi>
                 </span>
-                {isUnread && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className={styles.markReadButton}
-                    onClick={() => handleMarkRead(item)}
-                    data-testid={`mark-read-${item.id}`}
-                  >
-                    {messages['staff.notifications.markRead']}
-                  </Button>
-                )}
+                <div className={styles.itemActions}>
+                  {isUnread && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className={styles.markReadButton}
+                      onClick={() => handleMarkRead(item)}
+                      data-testid={`mark-read-${item.id}`}
+                    >
+                      {messages['staff.notifications.markRead']}
+                    </Button>
+                  )}
+                  {item.type === 'staff_notice' && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className={styles.dismissButton}
+                      onClick={() => handleDismiss(item)}
+                      data-testid={`dismiss-${item.id}`}
+                    >
+                      {messages['toast.dismiss']}
+                    </Button>
+                  )}
+                </div>
               </div>
             </li>
           );
@@ -322,23 +386,6 @@ export function StaffNotifications({
       </ul>
     );
   };
-
-  if (isStandalone) {
-    return (
-      <section
-        className={[styles.panel, className].filter(Boolean).join(' ')}
-        data-testid="staff-notifications-surface"
-        aria-labelledby="staff-notifications-title"
-      >
-        <header className={styles.panelHeader}>
-          <h2 id="staff-notifications-title" className={styles.panelTitle}>
-            {messages['staff.notifications.title']}
-          </h2>
-        </header>
-        <div className={styles.panelBody}>{renderContent()}</div>
-      </section>
-    );
-  }
 
   return (
     <div
@@ -388,15 +435,6 @@ export function StaffNotifications({
             <h2 id="staff-notifications-title" className={styles.panelTitle}>
               {messages['staff.notifications.title']}
             </h2>
-            <button
-              type="button"
-              className={styles.closeButton}
-              aria-label="Close"
-              onClick={() => setOpen(false)}
-              data-testid="staff-notifications-close"
-            >
-              <Icon name="x" />
-            </button>
           </header>
           <div className={styles.panelBody}>{renderContent()}</div>
         </div>

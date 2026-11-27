@@ -6,10 +6,16 @@ import { AppShell } from '../../components/shell/AppShell';
 import { PlatformOwnerHeader } from '../../components/shell/PlatformOwnerHeader';
 import {
   StaffNotifications,
+  formatCairoDate,
   getNotificationText,
 } from '../../components/shell/StaffNotifications';
 import { getMessages } from '../../lib/i18n';
 import type { UnifiedStaffNotification } from '../../app/(app)/notifications/actions';
+import {
+  parseStaffNotices,
+  STAFF_NOTICE_MESSAGE,
+  type StaffNoticeKind,
+} from '../../lib/progress-coaching/food-replacement/notice-projection';
 
 describe('StaffNotifications role gate (FR-013, S71-028ui)', () => {
   it('renders the bell button for staff roles (trainer, workspace_owner, platform_owner)', () => {
@@ -54,144 +60,169 @@ describe('StaffNotifications role gate (FR-013, S71-028ui)', () => {
   });
 });
 
-describe('StaffNotifications copy & localization (CB-P8-01, S71-PO-9)', () => {
-  it('renders approved English and Egyptian Arabic copy for notification kinds', () => {
-    const en = getMessages('en');
-    const ar = getMessages('ar');
+describe('StaffNotifications exact stored kinds & copy (B8, B13, CB-P8-01)', () => {
+  const en = getMessages('en');
+  const ar = getMessages('ar');
+  const sampleDate = '2026-11-30T10:00:00Z';
 
-    const sampleDate = '2026-11-30T10:00:00Z';
-
-    const t3Notice: UnifiedStaffNotification = {
-      type: 'staff_notice',
-      id: '11111111-1111-4111-8111-111111111111',
-      kind: 'expiry_t3',
-      workspaceId: '22222222-2222-4222-8222-222222222222',
-      sourceKey: 'sub-1',
-      createdAt: '2026-11-27T10:00:00Z',
-      readAt: null,
+  const storedKindsTable: Array<{
+    kind: StaffNoticeKind;
+    clientName?: string;
+    expiryDate?: string;
+    expectedEn: string;
+    expectedAr: string;
+  }> = [
+    {
+      kind: 'food_replacement_open',
+      expectedEn: en['foodReplacement.notification.open'],
+      expectedAr: ar['foodReplacement.notification.open'],
+    },
+    {
+      kind: 'monthly_quality_reminder',
+      expectedEn: en['workforce.reminder.body'],
+      expectedAr: ar['workforce.reminder.body'],
+    },
+    {
+      kind: 'subscription_expiring_t3',
       clientName: 'Ahmed',
       expiryDate: sampleDate,
-    };
-
-    const shortLeadNotice: UnifiedStaffNotification = {
-      type: 'staff_notice',
-      id: '22222222-1111-4111-8111-111111111111',
-      kind: 'expiry_t3_short_lead',
-      workspaceId: '22222222-2222-4222-8222-222222222222',
-      sourceKey: 'sub-2',
-      createdAt: '2026-11-27T10:00:00Z',
-      readAt: null,
+      expectedEn: "Ahmed's subscription expires in 3 days",
+      expectedAr: 'اشتراك Ahmed هينتهي كمان ٣ أيام',
+    },
+    {
+      kind: 'subscription_expiring_t3_short_lead',
       clientName: 'Sara',
       expiryDate: sampleDate,
-    };
-
-    const expiredNotice: UnifiedStaffNotification = {
-      type: 'staff_notice',
-      id: '33333333-1111-4111-8111-111111111111',
-      kind: 'expired',
-      workspaceId: '22222222-2222-4222-8222-222222222222',
-      sourceKey: 'sub-3',
-      createdAt: '2026-11-27T10:00:00Z',
-      readAt: null,
+      expectedEn: "Sara's subscription expires soon",
+      expectedAr: 'اشتراك Sara قرب ينتهي',
+    },
+    {
+      kind: 'subscription_expired',
       clientName: 'Mohamed',
       expiryDate: sampleDate,
-    };
+      expectedEn: "Mohamed's subscription expired on",
+      expectedAr: 'اشتراك Mohamed انتهى يوم',
+    },
+  ];
 
-    const formAlertClient: UnifiedStaffNotification = {
-      type: 'form_alert',
-      id: '44444444-1111-4111-8111-111111111111',
-      stage: 'client_owners_immediate',
+  it.each(storedKindsTable)(
+    'formats stored kind "$kind" correctly in EN and Egyptian Arabic (B8, B13)',
+    ({ kind, clientName, expiryDate, expectedEn, expectedAr }) => {
+      const notice: UnifiedStaffNotification = {
+        type: 'staff_notice',
+        id: '11111111-1111-4111-8111-111111111111',
+        kind,
+        workspaceId: '22222222-2222-4222-8222-222222222222',
+        sourceKey: '33333333-3333-4333-8333-333333333333',
+        createdAt: '2026-11-27T10:00:00Z',
+        readAt: null,
+        clientName,
+        expiryDate,
+      };
+
+      const textEn = getNotificationText(notice, en, 'en');
+      expect(textEn).not.toBeNull();
+      expect(textEn).toContain(expectedEn);
+
+      const textAr = getNotificationText(notice, ar, 'ar');
+      expect(textAr).not.toBeNull();
+      expect(textAr).toContain(expectedAr);
+    },
+  );
+
+  it('verifies exact stored kinds in STAFF_NOTICE_MESSAGE and rejects aliases (B8 mutation)', () => {
+    const canonicalKinds = Object.keys(STAFF_NOTICE_MESSAGE);
+    expect(canonicalKinds).toEqual([
+      'food_replacement_open',
+      'monthly_quality_reminder',
+      'subscription_expiring_t3',
+      'subscription_expiring_t3_short_lead',
+      'subscription_expired',
+    ]);
+
+    // Unstored aliases must not exist in STAFF_NOTICE_MESSAGE
+    expect(STAFF_NOTICE_MESSAGE).not.toHaveProperty('expiry_t3');
+    expect(STAFF_NOTICE_MESSAGE).not.toHaveProperty('expiry_t3_short_lead');
+    expect(STAFF_NOTICE_MESSAGE).not.toHaveProperty('expired');
+    expect(STAFF_NOTICE_MESSAGE).not.toHaveProperty('subscription_expiry_t3');
+  });
+
+  it('fails closed on unknown kinds, returning null and never raw kind string (B13)', () => {
+    const unknownNotice: UnifiedStaffNotification = {
+      type: 'staff_notice',
+      id: '11111111-1111-4111-8111-111111111111',
+      kind: 'some_unknown_random_kind',
       workspaceId: '22222222-2222-4222-8222-222222222222',
+      sourceKey: '33333333-3333-4333-8333-333333333333',
       createdAt: '2026-11-27T10:00:00Z',
       readAt: null,
     };
 
-    const formAlertTrainer: UnifiedStaffNotification = {
-      type: 'form_alert',
-      id: '55555555-1111-4111-8111-111111111111',
-      stage: 'trainer_initial',
-      workspaceId: '22222222-2222-4222-8222-222222222222',
-      createdAt: '2026-11-27T10:00:00Z',
-      readAt: null,
-    };
-
-    // EN tests
-    expect(getNotificationText(t3Notice, en, 'en')).toContain(
-      "Ahmed's subscription expires in 3 days",
-    );
-    expect(getNotificationText(shortLeadNotice, en, 'en')).toContain(
-      "Sara's subscription expires soon",
-    );
-    expect(getNotificationText(expiredNotice, en, 'en')).toContain(
-      "Mohamed's subscription expired on",
-    );
-    expect(getNotificationText(formAlertClient, en, 'en')).toBe(
-      'Client form overdue',
-    );
-    expect(getNotificationText(formAlertTrainer, en, 'en')).toBe(
-      'Trainer delivery overdue',
-    );
-
-    // AR tests (Egyptian colloquial)
-    expect(getNotificationText(t3Notice, ar, 'ar')).toContain(
-      'اشتراك Ahmed هينتهي كمان ٣ أيام',
-    );
-    expect(getNotificationText(shortLeadNotice, ar, 'ar')).toContain(
-      'اشتراك Sara قرب ينتهي',
-    );
-    expect(getNotificationText(expiredNotice, ar, 'ar')).toContain(
-      'اشتراك Mohamed انتهى يوم',
-    );
-    expect(getNotificationText(formAlertClient, ar, 'ar')).toBe(
-      'استمارة العميل متأخرة',
-    );
-    expect(getNotificationText(formAlertTrainer, ar, 'ar')).toBe(
-      'تسليم المدرّب متأخر',
-    );
+    const text = getNotificationText(unknownNotice, en, 'en');
+    expect(text).toBeNull();
   });
 });
 
-describe('StaffNotifications accessible surface states (SC-007, FR-013)', () => {
-  it('renders the empty state when there are no notices or alerts', () => {
-    const messages = getMessages('en');
-    const html = renderToStaticMarkup(
-      <StaffNotifications
-        messages={messages}
-        initialOpen={true}
-        initialNotifications={[]}
-      />,
-    );
-    const dom = new JSDOM(html);
-    const emptyBox = dom.window.document.querySelector(
-      '[data-testid="staff-notifications-empty"]',
-    );
-    expect(emptyBox).not.toBeNull();
-    expect(emptyBox?.textContent).toBe('You are all caught up.');
+describe('StaffNotifications date-only Cairo formatting and clientName requirement (B9)', () => {
+  const en = getMessages('en');
 
-    // Egyptian AR check
-    const arMessages = getMessages('ar');
-    const arHtml = renderToStaticMarkup(
-      <StaffNotifications
-        messages={arMessages}
-        locale="ar"
-        initialOpen={true}
-        initialNotifications={[]}
-      />,
-    );
-    const arDom = new JSDOM(arHtml);
-    const arEmptyBox = arDom.window.document.querySelector(
-      '[data-testid="staff-notifications-empty"]',
-    );
-    expect(arEmptyBox?.textContent).toBe('مفيش إشعارات جديدة.');
+  it('formats Cairo calendar date without time (B9)', () => {
+    const isoDate = '2026-11-30T10:00:00Z';
+    const formattedEn = formatCairoDate(isoDate, 'en');
+    // Date only: medium date style in en-GB is "30 Nov 2026"
+    expect(formattedEn).toContain('2026');
+    expect(formattedEn).toContain('Nov');
+    // Must NOT contain time (no colons for hours/minutes)
+    expect(formattedEn).not.toContain(':');
+
+    const formattedAr = formatCairoDate(isoDate, 'ar');
+    expect(formattedAr).not.toContain(':');
   });
 
-  it('renders notifications list with mark-read action on unread items', () => {
-    const messages = getMessages('en');
+  it('omits expiry notices when clientName is missing, preventing internal UUID leaks (B9)', () => {
+    const noticeWithoutClientName: UnifiedStaffNotification = {
+      type: 'staff_notice',
+      id: '11111111-1111-4111-8111-111111111111',
+      kind: 'subscription_expiring_t3',
+      workspaceId: '22222222-2222-4222-8222-222222222222',
+      sourceKey: '33333333-3333-4333-8333-333333333333',
+      createdAt: '2026-11-27T10:00:00Z',
+      readAt: null,
+      expiryDate: '2026-11-30T10:00:00Z',
+      // clientName is omitted
+    };
+
+    const text = getNotificationText(noticeWithoutClientName, en, 'en');
+    expect(text).toBeNull();
+  });
+
+  it('omits expiry notices when expiryDate is missing (B9)', () => {
+    const noticeWithoutExpiryDate: UnifiedStaffNotification = {
+      type: 'staff_notice',
+      id: '11111111-1111-4111-8111-111111111111',
+      kind: 'subscription_expiring_t3',
+      workspaceId: '22222222-2222-4222-8222-222222222222',
+      sourceKey: '33333333-3333-4333-8333-333333333333',
+      createdAt: '2026-11-27T10:00:00Z',
+      readAt: null,
+      clientName: 'Nour',
+      // expiryDate is omitted
+    };
+
+    const text = getNotificationText(noticeWithoutExpiryDate, en, 'en');
+    expect(text).toBeNull();
+  });
+});
+
+describe('StaffNotifications dismiss control & no hardcoded close (B4, B14, S72-PO-4)', () => {
+  const en = getMessages('en');
+
+  it('renders dismiss control on staff notices using toast.dismiss key (B4)', () => {
     const notifications: UnifiedStaffNotification[] = [
       {
         type: 'staff_notice',
         id: '11111111-1111-4111-8111-111111111111',
-        kind: 'expiry_t3',
+        kind: 'subscription_expiring_t3',
         workspaceId: 'ws-1',
         sourceKey: 'sub-1',
         createdAt: '2026-11-27T10:00:00Z',
@@ -211,78 +242,218 @@ describe('StaffNotifications accessible surface states (SC-007, FR-013)', () => 
 
     const html = renderToStaticMarkup(
       <StaffNotifications
-        messages={messages}
+        messages={en}
         initialOpen={true}
         initialNotifications={notifications}
       />,
     );
     const dom = new JSDOM(html);
 
-    const list = dom.window.document.querySelector(
-      '[data-testid="staff-notifications-list"]',
-    );
-    expect(list).not.toBeNull();
-
-    // First item is unread -> has Mark as read button
-    const unreadItem = dom.window.document.querySelector(
+    // Staff notice has Dismiss button with toast.dismiss copy
+    const staffNoticeItem = dom.window.document.querySelector(
       '[data-testid="notification-item-11111111-1111-4111-8111-111111111111"]',
     );
-    expect(unreadItem?.getAttribute('data-unread')).toBe('true');
-    const markReadBtn = unreadItem?.querySelector(
-      '[data-testid="mark-read-11111111-1111-4111-8111-111111111111"]',
+    const dismissBtn = staffNoticeItem?.querySelector(
+      '[data-testid="dismiss-11111111-1111-4111-8111-111111111111"]',
     );
-    expect(markReadBtn?.textContent).toBe('Mark as read');
+    expect(dismissBtn).not.toBeNull();
+    expect(dismissBtn?.textContent).toBe('Dismiss notification');
 
-    // Second item is read -> no Mark as read button
-    const readItem = dom.window.document.querySelector(
+    // Form alert has NO dismiss button
+    const formAlertItem = dom.window.document.querySelector(
       '[data-testid="notification-item-22222222-1111-4111-8111-111111111111"]',
     );
-    expect(readItem?.getAttribute('data-unread')).toBe('false');
-    const readBtn = readItem?.querySelector('button');
-    expect(readBtn).toBeNull();
+    const formAlertDismissBtn = formAlertItem?.querySelector(
+      '[data-testid="dismiss-22222222-1111-4111-8111-111111111111"]',
+    );
+    expect(formAlertDismissBtn).toBeNull();
   });
 
-  it('renders accessible panel attributes', () => {
-    const messages = getMessages('en');
+  it('has no hardcoded English Close button (B14, S72-PO-4)', () => {
     const html = renderToStaticMarkup(
       <StaffNotifications
-        messages={messages}
+        messages={en}
         initialOpen={true}
         initialNotifications={[]}
       />,
     );
     const dom = new JSDOM(html);
-    const panel = dom.window.document.querySelector(
-      '[data-testid="staff-notifications-panel"]',
-    );
-    expect(panel?.getAttribute('role')).toBe('dialog');
-    expect(panel?.getAttribute('aria-labelledby')).toBe(
-      'staff-notifications-title',
-    );
-    const title = dom.window.document.querySelector(
-      '#staff-notifications-title',
-    );
-    expect(title?.textContent).toBe('Notifications');
-  });
 
-  it('renders standalone surface variant for notifications page', () => {
-    const messages = getMessages('en');
+    const closeBtn = dom.window.document.querySelector(
+      '[data-testid="staff-notifications-close"]',
+    );
+    expect(closeBtn).toBeNull();
+
+    const allButtons = Array.from(
+      dom.window.document.querySelectorAll('button'),
+    );
+    const englishClose = allButtons.find(
+      (b) =>
+        b.getAttribute('aria-label') === 'Close' || b.textContent === 'Close',
+    );
+    expect(englishClose).toBeUndefined();
+  });
+});
+
+describe('StaffNotifications single shell surface only (B12, FR-008, FR-013)', () => {
+  it('renders only the shell container and bell entry point, no standalone surface', () => {
+    const en = getMessages('en');
     const html = renderToStaticMarkup(
-      <StaffNotifications
-        messages={messages}
-        isStandalone={true}
-        initialNotifications={[]}
-      />,
+      <StaffNotifications messages={en} initialNotifications={[]} />,
     );
     const dom = new JSDOM(html);
-    const surface = dom.window.document.querySelector(
-      '[data-testid="staff-notifications-surface"]',
+
+    const container = dom.window.document.querySelector(
+      '[data-testid="staff-notifications-container"]',
     );
-    expect(surface).not.toBeNull();
-    // Standalone has no bell toggle button
+    expect(container).not.toBeNull();
+
     const bell = dom.window.document.querySelector(
       '[data-testid="staff-notifications-bell"]',
     );
-    expect(bell).toBeNull();
+    expect(bell).not.toBeNull();
+
+    const standaloneSurface = dom.window.document.querySelector(
+      '[data-testid="staff-notifications-surface"]',
+    );
+    expect(standaloneSurface).toBeNull();
+  });
+});
+
+describe('Staff notice parser table-driven and fail-closed tests (B8, B13)', () => {
+  it('parses all stored notice kinds successfully', () => {
+    const validRawNotices = [
+      {
+        notice_id: '11111111-1111-4111-8111-111111111111',
+        workspace_id: '22222222-2222-4222-8222-222222222222',
+        notice_kind: 'food_replacement_open',
+        source_key: '33333333-3333-4333-8333-333333333333',
+        created_at: '2026-11-27T10:00:00Z',
+        read_at: null,
+      },
+      {
+        notice_id: '22222222-1111-4111-8111-111111111111',
+        workspace_id: '22222222-2222-4222-8222-222222222222',
+        notice_kind: 'monthly_quality_reminder',
+        source_key: '33333333-3333-4333-8333-333333333333',
+        created_at: '2026-11-27T10:00:00Z',
+        read_at: null,
+      },
+      {
+        notice_id: '33333333-1111-4111-8111-111111111111',
+        workspace_id: '22222222-2222-4222-8222-222222222222',
+        notice_kind: 'subscription_expiring_t3',
+        source_key: '33333333-3333-4333-8333-333333333333',
+        created_at: '2026-11-27T10:00:00Z',
+        read_at: null,
+        client_name: 'Tamer',
+        expiry_date: '2026-11-30',
+        dismissed_at: null,
+      },
+      {
+        notice_id: '44444444-1111-4111-8111-111111111111',
+        workspace_id: '22222222-2222-4222-8222-222222222222',
+        notice_kind: 'subscription_expiring_t3_short_lead',
+        source_key: '33333333-3333-4333-8333-333333333333',
+        created_at: '2026-11-27T10:00:00Z',
+        read_at: null,
+        client_name: 'Hany',
+        expiry_date: '2026-11-29',
+        dismissed_at: null,
+      },
+      {
+        notice_id: '55555555-1111-4111-8111-111111111111',
+        workspace_id: '22222222-2222-4222-8222-222222222222',
+        notice_kind: 'subscription_expired',
+        source_key: '33333333-3333-4333-8333-333333333333',
+        created_at: '2026-11-27T10:00:00Z',
+        read_at: null,
+        client_name: 'Adel',
+        expiry_date: '2026-11-26',
+        dismissed_at: null,
+      },
+    ];
+
+    const result = parseStaffNotices({
+      status: 'ok',
+      notices: validRawNotices,
+    });
+    expect(result.status).toBe('ok');
+    if (result.status === 'ok') {
+      expect(result.notices).toHaveLength(5);
+      expect(result.notices.map((n) => n.kind)).toEqual([
+        'food_replacement_open',
+        'monthly_quality_reminder',
+        'subscription_expiring_t3',
+        'subscription_expiring_t3_short_lead',
+        'subscription_expired',
+      ]);
+    }
+  });
+
+  it('omits unknown notice kinds on UI surface without failing the whole list (B13)', () => {
+    const en = getMessages('en');
+    const mixedNotices: UnifiedStaffNotification[] = [
+      {
+        type: 'staff_notice',
+        id: '11111111-1111-4111-8111-111111111111',
+        kind: 'monthly_quality_reminder',
+        workspaceId: 'ws-1',
+        sourceKey: 'sub-1',
+        createdAt: '2026-11-27T10:00:00Z',
+        readAt: null,
+      },
+      {
+        type: 'staff_notice',
+        id: '99999999-1111-4111-8111-111111111111',
+        kind: 'unknown_mystery_kind',
+        workspaceId: 'ws-1',
+        sourceKey: 'sub-9',
+        createdAt: '2026-11-27T10:00:00Z',
+        readAt: null,
+      },
+    ];
+
+    const html = renderToStaticMarkup(
+      <StaffNotifications
+        messages={en}
+        initialOpen={true}
+        initialNotifications={mixedNotices}
+      />,
+    );
+    const dom = new JSDOM(html);
+    const list = dom.window.document.querySelector(
+      '[data-testid="staff-notifications-list"]',
+    );
+    expect(list).not.toBeNull();
+    // Valid item is rendered
+    expect(
+      dom.window.document.querySelector(
+        '[data-testid="notification-item-11111111-1111-4111-8111-111111111111"]',
+      ),
+    ).not.toBeNull();
+    // Unknown kind is omitted
+    expect(
+      dom.window.document.querySelector(
+        '[data-testid="notification-item-99999999-1111-4111-8111-111111111111"]',
+      ),
+    ).toBeNull();
+  });
+
+  it('fails parsing closed to denied when an unstored kind alias is used (mutation test evidence)', () => {
+    const noticeWithAlias = {
+      notice_id: '11111111-1111-4111-8111-111111111111',
+      workspace_id: '22222222-2222-4222-8222-222222222222',
+      notice_kind: 'subscription_expiry_t3', // mutated: alias with 'expiry' instead of 'expiring'
+      source_key: '33333333-3333-4333-8333-333333333333',
+      created_at: '2026-11-27T10:00:00Z',
+      read_at: null,
+    };
+
+    const result = parseStaffNotices({
+      status: 'ok',
+      notices: [noticeWithAlias],
+    });
+    expect(result.status).toBe('denied');
   });
 });

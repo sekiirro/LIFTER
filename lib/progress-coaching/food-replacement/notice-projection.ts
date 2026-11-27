@@ -3,13 +3,10 @@ import type { MessageKey } from '../../i18n';
 /** Approved copy per staff notice kind (S55-PO-10, S71-PO-9, specs/028 copy status). */
 export const STAFF_NOTICE_MESSAGE = {
   food_replacement_open: 'foodReplacement.notification.open',
-  expiry_t3: 'staff.notices.expiryT3',
-  expiry_t3_short_lead: 'staff.notices.expiryT3ShortLead',
-  expired: 'staff.notices.expired',
-  subscription_expiry_t3: 'staff.notices.expiryT3',
-  subscription_expiry_t3_short_lead: 'staff.notices.expiryT3ShortLead',
-  subscription_expired: 'staff.notices.expired',
   monthly_quality_reminder: 'workforce.reminder.body',
+  subscription_expiring_t3: 'staff.notices.expiryT3',
+  subscription_expiring_t3_short_lead: 'staff.notices.expiryT3ShortLead',
+  subscription_expired: 'staff.notices.expired',
 } as const satisfies Record<string, MessageKey>;
 
 export type StaffNoticeKind = keyof typeof STAFF_NOTICE_MESSAGE;
@@ -22,6 +19,7 @@ export type StaffNotice = {
   requestId: string;
   createdAt: string;
   readAt: string | null;
+  dismissedAt?: string | null;
   clientName?: string;
   expiryDate?: string;
 };
@@ -41,9 +39,15 @@ const isTimestamp = (value: unknown): value is string =>
 
 function parseNotice(value: unknown): StaffNotice | null {
   if (!isRecord(value)) return null;
-  const { notice_id, workspace_id, notice_kind, source_key, created_at } =
-    value;
-  const read_at = value.read_at;
+  const {
+    notice_id,
+    workspace_id,
+    notice_kind,
+    source_key,
+    created_at,
+    read_at,
+    dismissed_at,
+  } = value;
   if (
     typeof notice_id !== 'string' ||
     !UUID.test(notice_id) ||
@@ -54,7 +58,10 @@ function parseNotice(value: unknown): StaffNotice | null {
     typeof source_key !== 'string' ||
     !UUID.test(source_key) ||
     !isTimestamp(created_at) ||
-    (read_at !== null && !isTimestamp(read_at))
+    (read_at !== null && !isTimestamp(read_at)) ||
+    (dismissed_at !== undefined &&
+      dismissed_at !== null &&
+      !isTimestamp(dismissed_at))
   )
     return null;
   return {
@@ -64,6 +71,7 @@ function parseNotice(value: unknown): StaffNotice | null {
     requestId: source_key,
     createdAt: created_at,
     readAt: read_at,
+    ...(typeof dismissed_at === 'string' ? { dismissedAt: dismissed_at } : {}),
     ...(typeof value.client_name === 'string'
       ? { clientName: value.client_name }
       : {}),
@@ -93,5 +101,18 @@ export function markStaffNoticeResult(
 ): 'read' | 'not_found' | 'denied' {
   if (isRecord(raw) && (raw.status === 'read' || raw.status === 'not_found'))
     return raw.status;
+  return 'denied';
+}
+
+export function dismissStaffNoticeResult(
+  raw: unknown,
+): 'dismissed' | 'not_found' | 'denied' {
+  if (
+    isRecord(raw) &&
+    (raw.status === 'dismissed' || raw.status === 'not_found')
+  )
+    return raw.status;
+  if (raw === true || raw === null || (isRecord(raw) && raw.status === 'ok'))
+    return 'dismissed';
   return 'denied';
 }

@@ -138,7 +138,20 @@ export function parseDirectoryQuery(params: {
   }
   if (expiry !== undefined && expiry !== '') {
     if (!(EXPIRY_FILTERS as readonly string[]).includes(expiry)) return null;
-    expiryFilter = expiry as ExpiryFilter;
+    const parsedExpiry = expiry as ExpiryFilter;
+    if (parsedExpiry === 'expiring') {
+      if (subscriptionStatus !== null && subscriptionStatus !== 'expiring') {
+        return null;
+      }
+      subscriptionStatus = 'expiring';
+      expiryFilter = 'expiring';
+    } else if (parsedExpiry === 'expired') {
+      if (subscriptionStatus !== null && subscriptionStatus !== 'expired') {
+        return null;
+      }
+      subscriptionStatus = 'expired';
+      expiryFilter = 'expired';
+    }
   }
   let assignmentFilter: AssignmentFilter | null = null;
   if (assignment !== undefined && assignment !== '') {
@@ -224,7 +237,7 @@ export function directoryRpcArgs(
   query: DirectoryQuery,
   assignmentAllowed = false,
 ) {
-  const args: Record<string, unknown> = {
+  return {
     p_workspace_id: workspaceId,
     p_search: query.search,
     p_approval_state: query.approvalState,
@@ -233,10 +246,6 @@ export function directoryRpcArgs(
     p_offset: (query.page - 1) * DIRECTORY_PAGE_SIZE,
     p_assignment: assignmentAllowed ? query.assignment : null,
   };
-  if (query.expiry) {
-    args.p_expiry = query.expiry;
-  }
-  return args;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

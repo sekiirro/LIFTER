@@ -5,6 +5,7 @@ import { readAlertInbox, markAlertRead } from '../../../lib/forms/alert-inbox';
 import {
   readStaffNotices,
   markStaffNoticeRead,
+  dismissStaffNotice,
 } from '../../../lib/progress-coaching/food-replacement/notifications';
 
 export type UnifiedStaffNotification =
@@ -24,6 +25,7 @@ export type UnifiedStaffNotification =
       sourceKey: string;
       createdAt: string;
       readAt: string | null;
+      dismissedAt?: string | null;
       clientName?: string;
       expiryDate?: string;
     };
@@ -66,6 +68,7 @@ export async function fetchStaffNotificationsAction(): Promise<{
           sourceKey: notice.requestId,
           createdAt: notice.createdAt,
           readAt: notice.readAt,
+          dismissedAt: notice.dismissedAt,
           clientName: notice.clientName,
           expiryDate: notice.expiryDate,
         });
@@ -109,6 +112,25 @@ export async function markStaffNotificationReadAction(
       return { status: 'error' };
     }
 
+    return { status: 'error' };
+  } catch {
+    return { status: 'error' };
+  }
+}
+
+export async function dismissStaffNotificationAction(
+  type: 'form_alert' | 'staff_notice',
+  id: string,
+): Promise<{ status: 'ok' | 'not_found' | 'error' }> {
+  try {
+    if (type === 'staff_notice') {
+      const res = await dismissStaffNotice(id);
+      if (res === 'dismissed') return { status: 'ok' };
+      if (res === 'not_found') return { status: 'not_found' };
+      return { status: 'error' };
+    }
+
+    // F15 form alerts: no dismiss unless an existing dismiss RPC already exists
     return { status: 'error' };
   } catch {
     return { status: 'error' };

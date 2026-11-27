@@ -10,22 +10,66 @@ import { getMessages } from '../../lib/i18n';
 const wsA = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const clientId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
-describe('Client directory expiring/expired filter query parsing (CB-P8-01, FR-008)', () => {
-  it('accepts subscription=expiring and maps to expiry filter', () => {
-    const query = parseDirectoryQuery({ subscription: 'expiring' });
-    expect(query).not.toBeNull();
-    expect(query?.subscriptionStatus).toBe('expiring');
-    expect(query?.expiry).toBe('expiring');
+describe('Client directory expiring/expired filter query parsing (CB-P8-01, FR-008, B10)', () => {
+  it('canonicalizes both URL aliases to subscriptionStatus (B10)', () => {
+    const q1 = parseDirectoryQuery({ subscription: 'expiring' });
+    expect(q1).not.toBeNull();
+    expect(q1?.subscriptionStatus).toBe('expiring');
+
+    const q2 = parseDirectoryQuery({ expiry: 'expiring' });
+    expect(q2).not.toBeNull();
+    expect(q2?.subscriptionStatus).toBe('expiring');
+
+    const q3 = parseDirectoryQuery({ subscription: 'expired' });
+    expect(q3).not.toBeNull();
+    expect(q3?.subscriptionStatus).toBe('expired');
+
+    const q4 = parseDirectoryQuery({ expiry: 'expired' });
+    expect(q4).not.toBeNull();
+    expect(q4?.subscriptionStatus).toBe('expired');
   });
 
-  it('accepts expiry=expiring and expiry=expired directly', () => {
-    const qExpiring = parseDirectoryQuery({ expiry: 'expiring' });
+  it('accepts consistent matching subscription and expiry aliases', () => {
+    const qExpiring = parseDirectoryQuery({
+      subscription: 'expiring',
+      expiry: 'expiring',
+    });
     expect(qExpiring).not.toBeNull();
-    expect(qExpiring?.expiry).toBe('expiring');
+    expect(qExpiring?.subscriptionStatus).toBe('expiring');
 
-    const qExpired = parseDirectoryQuery({ expiry: 'expired' });
+    const qExpired = parseDirectoryQuery({
+      subscription: 'expired',
+      expiry: 'expired',
+    });
     expect(qExpired).not.toBeNull();
-    expect(qExpired?.expiry).toBe('expired');
+    expect(qExpired?.subscriptionStatus).toBe('expired');
+  });
+
+  it('rejects contradictory combinations between subscription and expiry (B10)', () => {
+    // Contradictory: active + expiring
+    expect(
+      parseDirectoryQuery({ subscription: 'active', expiry: 'expiring' }),
+    ).toBeNull();
+
+    // Contradictory: frozen + expiring
+    expect(
+      parseDirectoryQuery({ subscription: 'frozen', expiry: 'expiring' }),
+    ).toBeNull();
+
+    // Contradictory: expiring + expired
+    expect(
+      parseDirectoryQuery({ subscription: 'expiring', expiry: 'expired' }),
+    ).toBeNull();
+
+    // Contradictory: expired + expiring
+    expect(
+      parseDirectoryQuery({ subscription: 'expired', expiry: 'expiring' }),
+    ).toBeNull();
+
+    // Contradictory: active + expired
+    expect(
+      parseDirectoryQuery({ subscription: 'active', expiry: 'expired' }),
+    ).toBeNull();
   });
 
   it('rejects invalid expiry filter values (fails closed)', () => {
@@ -35,21 +79,41 @@ describe('Client directory expiring/expired filter query parsing (CB-P8-01, FR-0
     expect(parseDirectoryQuery({ expiry: 'unknown' })).toBeNull();
   });
 
-  it('generates directory RPC arguments and href with expiry filter', () => {
-    const query = parseDirectoryQuery({ subscription: 'expiring' })!;
-    const args = directoryRpcArgs(wsA, query);
-    expect(args).toMatchObject({
-      p_workspace_id: wsA,
-      p_subscription_status: 'expiring',
-      p_expiry: 'expiring',
-    });
+  it('generates directory RPC arguments with p_subscription_status only and no p_expiry (B10)', () => {
+    for (const input of [
+      { subscription: 'expiring' },
+      { expiry: 'expiring' },
+      { subscription: 'expiring', expiry: 'expiring' },
+    ]) {
+      const query = parseDirectoryQuery(input)!;
+      const args = directoryRpcArgs(wsA, query);
+      expect(args).toMatchObject({
+        p_workspace_id: wsA,
+        p_subscription_status: 'expiring',
+      });
+      expect(args).not.toHaveProperty('p_expiry');
+    }
 
+    for (const input of [
+      { subscription: 'expired' },
+      { expiry: 'expired' },
+      { subscription: 'expired', expiry: 'expired' },
+    ]) {
+      const query = parseDirectoryQuery(input)!;
+      const args = directoryRpcArgs(wsA, query);
+      expect(args).toMatchObject({
+        p_workspace_id: wsA,
+        p_subscription_status: 'expired',
+      });
+      expect(args).not.toHaveProperty('p_expiry');
+    }
+
+    const query = parseDirectoryQuery({ subscription: 'expiring' })!;
     const href = directoryHref(wsA, query, 1);
     expect(href).toContain('subscription=expiring');
-    expect(href).toContain('expiry=expiring');
   });
 
-  it('parses directory rows with expiring indicators', () => {
+  it('parses directory rows with expiry_bucket for badge derivation (B11)', () => {
     const rowWithExpiryBucket = {
       client_id: clientId,
       name: 'Expiring Client',
@@ -59,7 +123,6 @@ describe('Client directory expiring/expired filter query parsing (CB-P8-01, FR-0
       plans_waiting_for_delivery: 0,
       pending_food_replacements: 0,
       expiry_bucket: 'expiring',
-      is_expiring: true,
     };
 
     const result = parseDirectoryResult(
@@ -71,30 +134,33 @@ describe('Client directory expiring/expired filter query parsing (CB-P8-01, FR-0
     if (result.status === 'ok') {
       expect(result.rows).toHaveLength(1);
       expect(result.rows[0]?.expiryBucket).toBe('expiring');
-      expect(result.rows[0]?.isExpiring).toBe(true);
+      // Status is the underlying active status
+      expect(result.rows[0]?.subscriptionStatus).toBe('active');
     }
   });
 
-  it('accepts subscription_status="expiring" on rows', () => {
-    const rowExpiringStatus = {
+  it('parses directory rows with expired bucket', () => {
+    const rowWithExpiredBucket = {
       client_id: clientId,
-      name: 'Expiring Status Client',
+      name: 'Expired Client',
       approval_state: 'approved',
-      subscription_status: 'expiring',
+      subscription_status: 'expired',
       refund_scope: null,
       plans_waiting_for_delivery: 0,
       pending_food_replacements: 0,
+      expiry_bucket: 'expired',
     };
 
     const result = parseDirectoryResult(
-      { status: 'ok', clients: [rowExpiringStatus], has_more: false },
+      { status: 'ok', clients: [rowWithExpiredBucket], has_more: false },
       null,
     );
 
     expect(result.status).toBe('ok');
     if (result.status === 'ok') {
       expect(result.rows).toHaveLength(1);
-      expect(result.rows[0]?.subscriptionStatus).toBe('expiring');
+      expect(result.rows[0]?.expiryBucket).toBe('expired');
+      expect(result.rows[0]?.subscriptionStatus).toBe('expired');
     }
   });
 });

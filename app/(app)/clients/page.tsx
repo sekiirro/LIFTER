@@ -271,9 +271,7 @@ export default async function ClientDirectoryPage({
                 {m['registrationApproval.clientStatus']}:{' '}
                 {m[approvalLabel[row.approvalState]]}
               </p>
-              {(row.subscriptionStatus === 'expiring' ||
-                row.expiryBucket === 'expiring' ||
-                row.isExpiring) && (
+              {row.expiryBucket === 'expiring' && (
                 <p
                   className={styles.meta}
                   data-testid="directory-expiring-badge"
