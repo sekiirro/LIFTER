@@ -488,6 +488,85 @@ describe('PR #334 review-round-2 fixes', () => {
     });
   });
 
+  it('S4-B12: a concurrent F11 Trainer role change and quality write never holds the period fence while waiting for staff locks', async () => {
+    const blocker = sql();
+    let signalRoleLock!: () => void;
+    let releaseRoleChange!: () => void;
+    const roleLocked = new Promise<void>((resolve) => {
+      signalRoleLock = resolve;
+    });
+    const roleChange = blocker.begin(async (tx) => {
+      await tx`
+        update public.staff_profiles
+        set role = 'sales'::public.staff_role
+        where user_id = ${f.trainerA.userId}
+      `;
+      signalRoleLock();
+      await new Promise<void>((resolve) => {
+        releaseRoleChange = resolve;
+      });
+    });
+
+    let qualityWrite:
+      Promise<Awaited<ReturnType<typeof f.po.client.rpc>>> | undefined;
+    try {
+      await roleLocked;
+      qualityWrite = (async () =>
+        await f.po.client.rpc(
+          'record_monthly_quality',
+          qualityArgs(f, f.trainerA.userId, '2026-11'),
+        ))();
+
+      const deadline = Date.now() + 8_000;
+      let waiting = false;
+      let qualityPid: number | undefined;
+      while (!waiting && Date.now() < deadline) {
+        const [activity] = await db`
+          select pid, wait_event_type
+          from pg_catalog.pg_stat_activity
+          where datname = current_database()
+            and query ilike '%record_monthly_quality%'
+            and wait_event_type = 'Lock'
+          order by query_start desc
+          limit 1
+        `;
+        waiting = Boolean(activity);
+        qualityPid = activity?.pid as number | undefined;
+        if (!waiting) await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      expect(waiting, 'quality write must reach the held F11 staff row').toBe(
+        true,
+      );
+
+      const [fence] = await db`
+        select exists (
+          select 1
+          from pg_catalog.pg_locks l
+          where l.pid = ${qualityPid}
+            and l.locktype = 'advisory'
+            and l.granted
+            and l.classid = ((pg_catalog.hashtextextended(${f.wsA.id}::text || ':2026-11-01', 0) >> 32) & 4294967295)::oid
+            and l.objid = (pg_catalog.hashtextextended(${f.wsA.id}::text || ':2026-11-01', 0) & 4294967295)::oid
+        ) as held
+      `;
+      expect(
+        fence?.held,
+        'period fence must be acquired after staff locks',
+      ).toBe(false);
+    } finally {
+      if (releaseRoleChange) releaseRoleChange();
+      await Promise.allSettled([
+        roleChange,
+        ...(qualityWrite ? [qualityWrite] : []),
+      ]);
+      await blocker.end();
+    }
+
+    const result = await qualityWrite;
+    expect(result?.error?.code).toBe('22023');
+    expect(result?.error?.message).toMatch(/trainer_not_found/);
+  });
+
   it.each(['NaN', 'Infinity', '-Infinity'])(
     '334-B11: rejects non-finite %s in both RPCs',
     async (special) => {
