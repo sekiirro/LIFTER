@@ -229,7 +229,7 @@ test('PO and own workspace owner see scoped monthly reporting values and can swi
   await expect(page).toHaveURL(new RegExp(`month=${currentMonth}`));
   await expect(month).toHaveValue(currentMonth);
 
-  const workspace = page.getByLabel(en['packages.workspace']);
+  const workspace = page.getByLabel(en['packages.workspace'], { exact: true });
   await expect(
     workspace.locator(`option[value="${fixture.wsB.id}"]`),
   ).toHaveCount(1);
@@ -243,9 +243,13 @@ test('PO and own workspace owner see scoped monthly reporting values and can swi
     page.getByText(clientName, { exact: true }).first(),
   ).toBeVisible();
   await expect(
-    page.getByLabel(en['packages.workspace']).locator('option'),
+    page
+      .getByLabel(en['packages.workspace'], { exact: true })
+      .locator('option'),
   ).toHaveCount(1);
-  await page.getByLabel(en['packages.workspace']).selectOption(fixture.wsA.id);
+  await page
+    .getByLabel(en['packages.workspace'], { exact: true })
+    .selectOption(fixture.wsA.id);
   await expect(
     page.getByText(en['reports.installmentClient']).first(),
   ).toBeVisible();
