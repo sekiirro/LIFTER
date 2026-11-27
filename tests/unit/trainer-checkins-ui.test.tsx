@@ -14,6 +14,7 @@ import { ToastProvider } from '../../components/ui/Toast';
 import type { TrainerCheckinRow } from '../../lib/workforce/types';
 import TrainerCheckinsPage from '../../app/(app)/workforce/check-ins/page';
 import TrainerCheckinsLoading from '../../app/(app)/workforce/check-ins/loading';
+import { loadMoreTrainerCheckinsAction } from '../../app/(app)/workforce/check-ins/actions';
 
 function renderView(props: TrainerCheckinsViewProps) {
   const messages = getMessages(props.locale);
@@ -294,6 +295,33 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
       .not.toBeNull();
     await act(async () => root.unmount());
     host.remove();
+  });
+
+  it('requests the next RPC page at the current row offset', async () => {
+    mocks.actor.mockResolvedValue({
+      role: 'trainer',
+      activeWorkspaceIds: ['ws-1'],
+    });
+    mocks.readTrainerCheckins.mockResolvedValue({
+      status: 'ok',
+      checkins: [sampleCheckins[2]!],
+    });
+
+    const result = await loadMoreTrainerCheckinsAction({
+      workspaceId: 'ws-1',
+      from: '2026-01-01',
+      to: '2026-12-31',
+      offset: 100,
+    });
+
+    expect(mocks.readTrainerCheckins).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      from: '2026-01-01',
+      to: '2026-12-31',
+      limit: 100,
+      offset: 100,
+    });
+    expect(result).toEqual({ status: 'ok', checkins: [sampleCheckins[2]] });
   });
 
   it('renders empty state when no check-ins exist', () => {
