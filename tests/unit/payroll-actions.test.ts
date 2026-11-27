@@ -200,6 +200,26 @@ describe('Payroll Service & RPC Action Handlers', () => {
   });
 
   describe('postMonetaryPayrollInput', () => {
+    it('rejects a missing caller-owned intent instead of generating retry identities', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'po-1',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      });
+      mocks.rpc.mockResolvedValue({ data: 'input-1', error: null });
+
+      const result = await postMonetaryPayrollInput({
+        employeeId: 'emp-1',
+        effectiveMonth: '2026-11',
+        category: 'incentive',
+        amount: '250.50',
+        currency: 'EGP',
+      });
+
+      expect(result).toEqual({ status: 'invalid_input' });
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
+
     it('successfully posts an incentive input', async () => {
       mocks.actor.mockResolvedValue({
         userId: 'po-1',
