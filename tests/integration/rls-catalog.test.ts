@@ -3124,7 +3124,10 @@ describe('P7 T033 strike security catalog', () => {
 });
 
 describe('P7 T009 plan-delay security catalog', () => {
-  const tables = ['public.workforce_plan_delay_events'];
+  const tables = [
+    'public.workforce_plan_delay_events',
+    'public.workforce_plan_delay_corrections',
+  ];
 
   it('forces RLS, withholds direct table access, and protects immutable history', async () => {
     for (const relation of tables) {
@@ -3159,6 +3162,22 @@ describe('P7 T009 plan-delay security catalog', () => {
       `;
       expect(trigger?.count, relation).toBeGreaterThan(0);
     }
+
+    const [rpc] = await db`
+      select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+      from pg_proc p where p.oid='public.reattribute_workforce_plan_delay(uuid,uuid,uuid,text,uuid)'::regprocedure
+    `;
+    expect(rpc).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(rpc?.proconfig).toContain('search_path=""');
 
     const [helper] = await db`
       select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
