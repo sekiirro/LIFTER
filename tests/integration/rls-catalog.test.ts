@@ -415,6 +415,7 @@ describe('tenancy security catalog (T007)', () => {
           ...privateAuthenticated,
           'p7_payroll_lineage',
           'p7_payroll_lock',
+          'p7_recheck_f19_earned_actor',
           'p7_reject_immutable_write',
           'p7_require_payroll_employee',
           'p7_require_platform_owner',
@@ -904,6 +905,7 @@ describe('tenancy security catalog (T007)', () => {
               'capture_workforce_checkin_pending',
               'guard_workforce_checkin_transition',
               'guard_workforce_checkin_transition_truncate',
+              'p7_recheck_f19_earned_actor',
             ].includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
@@ -1643,7 +1645,7 @@ describe('jobs security catalog (T006)', () => {
 
   it('hardens RPC ownership/search paths and restricts execution to service_role', async () => {
     const functions = [
-      'public.jobs_claim(integer,integer)',
+      'public.jobs_claim(integer,integer,text[])',
       'public.jobs_complete(uuid,uuid)',
       'public.jobs_fail(uuid,uuid,text,boolean)',
       'app_private.enqueue_job(text,uuid,jsonb,text,timestamptz,integer)',
