@@ -292,6 +292,83 @@ describe('P7 own compensation read', () => {
     expect(poRead.data).toEqual(saleOwn.data);
   });
 
+  it('keeps an approved salary amount paired with its approved currency after a later revision', async () => {
+    const approvedMonth = '2031-02-01';
+    await setSalary(po, {
+      p_employee_id: sales.userId,
+      p_effective_month: approvedMonth,
+      p_market: 'International',
+      p_amount_minor: '100000',
+      p_currency: 'USD',
+      p_expected_revision: 0,
+      p_idempotency_key: randomUUID(),
+    });
+    const reviewed = await snapshot(po, sales.userId, approvedMonth);
+    await approve(po, sales.userId, approvedMonth, reviewed);
+    await setSalary(po, {
+      p_employee_id: sales.userId,
+      p_effective_month: approvedMonth,
+      p_market: 'International',
+      p_amount_minor: '200000',
+      p_currency: 'SAR',
+      p_expected_revision: 1,
+      p_idempotency_key: randomUUID(),
+    });
+
+    for (const actor of [sales, po]) {
+      const own = await actor.client.rpc('p7_get_own_compensation', {
+        p_employee_id: sales.userId,
+        p_effective_month: approvedMonth,
+      });
+      expect(own.error).toBeNull();
+      expect(own.data).toMatchObject([
+        {
+          basic_salary_amount_minor: '100000',
+          basic_salary_amount: '1000.00',
+          currency: 'USD',
+          approved: true,
+          approved_snapshot_total_minor: '100000',
+          approved_snapshot_total: '1000.00',
+        },
+      ]);
+    }
+
+    const unapprovedMonth = '2031-03-01';
+    await setSalary(po, {
+      p_employee_id: sales.userId,
+      p_effective_month: unapprovedMonth,
+      p_market: 'International',
+      p_amount_minor: '300000',
+      p_currency: 'USD',
+      p_expected_revision: 0,
+      p_idempotency_key: randomUUID(),
+    });
+    await setSalary(po, {
+      p_employee_id: sales.userId,
+      p_effective_month: unapprovedMonth,
+      p_market: 'International',
+      p_amount_minor: '400000',
+      p_currency: 'SAR',
+      p_expected_revision: 1,
+      p_idempotency_key: randomUUID(),
+    });
+    const unapproved = await sales.client.rpc('p7_get_own_compensation', {
+      p_employee_id: sales.userId,
+      p_effective_month: unapprovedMonth,
+    });
+    expect(unapproved.error).toBeNull();
+    expect(unapproved.data).toMatchObject([
+      {
+        basic_salary_amount_minor: '400000',
+        basic_salary_amount: '4000.00',
+        currency: 'SAR',
+        approved: false,
+        approved_snapshot_total_minor: null,
+        approved_snapshot_total: null,
+      },
+    ]);
+  });
+
   it('denies other staff, WO and anon with the same not_permitted error', async () => {
     const otherStaff = await trainer.client.rpc('p7_get_own_compensation', {
       p_employee_id: sales.userId,
