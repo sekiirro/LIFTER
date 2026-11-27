@@ -284,6 +284,7 @@ describe('F14 definer function privileges', () => {
       { signature: 'public.execute_deletion_step_d(uuid, uuid)' },
       { signature: 'public.finish_f15_telegram_delivery(uuid, text)' },
       { signature: 'public.handle_client_trainer_distribution(uuid, uuid)' },
+      { signature: 'public.handle_quality_monthly_reminder(uuid, uuid)' },
       { signature: 'public.prepare_f15_telegram_delivery(uuid, uuid)' },
       {
         signature:

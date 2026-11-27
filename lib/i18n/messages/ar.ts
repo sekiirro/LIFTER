@@ -1532,6 +1532,10 @@ export const ar = {
   'workforce.checkin.denied': 'مش مسموح لك تشوف المتابعات.',
   'workforce.checkin.filter.formStatus': 'حالة الفورم',
   'workforce.checkin.filter.followUpStatus': 'حالة التواصل',
+  'workforce.reminder.title': 'مراجعة جودة الخدمة الشهرية',
+  'workforce.reminder.body':
+    'وقت تسجيل جودة الخدمة للشهر ده. افتح LIFTER وسجّلها.',
+  'workforce.reminder.cta': 'افتح المراجعة',
   'workforce.salary.title': 'المرتب الأساسي',
   'workforce.salary.market': 'السوق',
   'workforce.salary.currencyHint': 'مصر: EGP. دولي: EGP أو USD أو SAR.',
