@@ -1637,4 +1637,14 @@ export const ar = {
   'workforce.finalize.error': 'مقدرناش نعتمد الشهر. حاول تاني.',
   'workforce.finalize.stale': 'الشهر اتغير. حدّث قبل الاعتماد.',
   'workforce.finalize.denied': 'مالك المنصة بس اللي يقدر يعتمد الشهور.',
+  'workforce.salesProjection.title': 'إجمالي نقاطي للشهر',
+  'workforce.salesProjection.total': 'الإجمالي المعتمد',
+  'workforce.salesProjection.notAvailable': 'مش متاح لسه',
+  'workforce.salesProjection.notAvailableHint':
+    'الإجمالي بيظهر بعد ما الشهر يخلص ومالك المنصة يعتمده.',
+  'workforce.salesProjection.empty': 'مفيش إجمالي معتمد للشهر ده.',
+  'workforce.salesProjection.loading': 'بنحمّل إجمالي الشهر…',
+  'workforce.salesProjection.loadError':
+    'مش عارفين نحمّل إجمالي الشهر. حاول تاني.',
+  'workforce.salesProjection.denied': 'مش مسموح لك تشوف الإجمالي ده.',
 } as const;

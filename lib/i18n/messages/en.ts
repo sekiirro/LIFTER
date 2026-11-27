@@ -1699,4 +1699,14 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.finalize.error': 'Could not finalize the month. Try again.',
   'workforce.finalize.stale': 'The month changed. Reload before finalizing.',
   'workforce.finalize.denied': 'Only the Platform Owner can finalize months.',
+  'workforce.salesProjection.title': 'My monthly total',
+  'workforce.salesProjection.total': 'Finalized total',
+  'workforce.salesProjection.notAvailable': 'Not available yet',
+  'workforce.salesProjection.notAvailableHint':
+    'This total appears after the month ends and the PO finalizes it.',
+  'workforce.salesProjection.empty': 'No finalized total for this month.',
+  'workforce.salesProjection.loading': 'Loading your monthly total…',
+  'workforce.salesProjection.loadError':
+    'Unable to load your monthly total. Try again.',
+  'workforce.salesProjection.denied': 'You cannot view this total.',
 };
