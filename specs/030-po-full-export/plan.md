@@ -4,18 +4,18 @@
 
 ## Summary
 
-Extend the existing PO reporting/export surface to deliver the approved comprehensive client dataset only to PO, with a manifest, audited request and safe artifact handling. Package format, fields, sync/async mode, and expiry remain PENDING-PO (MCQ 030-01). This spec creates no export page/service/worker/table.
+Add a PO-only export section to the existing Reports screen to deliver one asynchronous UTF-8 CSV file for one workspace or all workspaces, with a versioned field manifest, audited request/generation/retrieval and safe artifact handling. Reuse spec 006 jobs/outbox and adapt audited export code patterns. A private export-artifacts bucket and policies are added; no export page, job table, worker or duplicate data store is created. The proposed field manifest and expiry duration require per-screen PO approval.
 
 ## Technical Context
 
 **Language/Version**: Existing TypeScript/Next.js and PostgreSQL/Supabase; docs-only lane.
-**Primary Dependencies**: Existing `/reports`, current reporting readers, approved audit/export patterns and existing private storage/job surfaces if PO selects them.
-**Storage**: Existing source records; artifact storage choice depends on MCQ 030-01.
+**Primary Dependencies**: Existing `/reports`, current reporting readers, spec 006 jobs/outbox, audited export paths `lib/client-access/plan-export.ts`, `lib/plans/nutrition/export.ts`, and `lib/workout-planner/client-export.ts`, approved audit patterns, and a new private export-artifacts bucket.
+**Storage**: Existing source records and spec 006 jobs/outbox; one private export-artifacts bucket with scoped policies for short-lived authenticated CSV downloads.
 **Testing**: Planned RED-first PO-only, direct endpoint/RPC, scope and artifact authorization tests; not run here.
 **Target Platform**: Existing LIFTER app and Supabase; no production data use.
 **Project Type**: Web application and authorized export data path.
-**Performance Goals**: No export capacity target is invented; test against approved volume and package choice.
-**Constraints**: PO only; audit sensitive export action; do not log client/health fields; package questions must resolve first.
+**Performance Goals**: Stream source rows in keyset pages of at most 500 rows; measure bounded memory at the illustrative spec 008 pilot volumes.
+**Constraints**: PO only; audit sensitive export action; do not log client/health fields; export only the PO-approved manifest.
 **Scale/Scope**: Comprehensive client data, explicit workspace/platform scope selected by PO.
 
 ## Constitution Check
@@ -25,23 +25,25 @@ PASS: Principles I, III, VII, IX. PO-only export, server/RLS authorization, mini
 ## Reuse decisions
 
 - Reuse existing Reports route and its authorization/service conventions; do not create an export dashboard.
-- Reuse existing source readers and immutable source-of-truth records; no duplicated export dataset table.
-- Reuse existing audit-event path with an allow-listed event containing actor, scope, safe outcome and opaque reference only.
-- Reuse existing job/Storage facilities only if MCQ 030-01 selects asynchronous artifact delivery; no new worker/scheduler is assumed.
+- The audit found no comprehensive dataset reader, endpoint, or CSV export engine. Add a new PO-authorized export reader/request path over existing source facts; do not add an export dataset table.
+- Reuse the existing audit-event pattern with allow-listed events for request, generation outcome and every retrieval; include actor, scope, safe outcome and opaque reference only, and fail closed when a retrieval event cannot be written.
+- Reuse spec 006 `public.jobs`/outbox and its existing cron drain/handler registry for asynchronous generation; add no new jobs table, worker, or scheduler.
+- Adapt authorization, audit and spreadsheet-safety patterns from `lib/client-access/plan-export.ts`, `lib/plans/nutrition/export.ts`, and `lib/workout-planner/client-export.ts`. None is a comprehensive CSV engine; add RFC 4180 UTF-8 CSV serialization for this feature while retaining their plan PDF/Excel behavior.
+- Add a private `export-artifacts` bucket with restrictive policies; no existing authorized export-artifact storage path is present. Access only through an authenticated route that reauthorizes and audits each retrieval; direct storage reads and bearer URLs are denied.
 - Existing report route/readers are shared by PO and WO. Add a distinct PO-only comprehensive-export capability check at application and reader/storage boundaries, and regression-test that authorized WO workspace reporting still works. Never widen the shared report authorization to export.
 - Do not change client-plan PDF/Excel export (a separate capability), WO rights, or spec 024 leaderboard.
 
 ## Clarifications
 
-PO-only comprehensive export is settled. MCQ 030-01 decides the package/fields/lifetime. Authorization, audit, minimization and direct denial can be designed without selecting the format.
+S71-PO-6 resolves MCQ 030-01 as one asynchronous UTF-8 CSV file, one workspace or all, with short-lived authenticated download. The versioned field manifest, expiry duration and copy remain PROPOSED per-screen PO approval items; no field is treated as approved until that approval is recorded.
 
 ## Proposed implementation slices
 
 1. RED authz tests through app, API/RPC, artifact URL, direct table/storage path, foreign actor/workspace and replay.
-2. Approve field manifest and package using MCQ 030-01; extend existing authorized reader with bounded output.
-3. Add audited generation/retrieval lifecycle and only reuse existing async jobs/Storage if selected.
+2. Present the versioned field manifest as PROPOSED for per-screen PO approval, then implement a new PO-guarded source reader/request path with bounded UTF-8 CSV output.
+3. Add an export handler to the existing spec 006 job registry, private bucket policies, and audited retrieval; authenticated retrieval rechecks current PO authorization and the per-screen PO-approved short-lived expiry.
 4. Verify artifact expiry/revocation, no leakage in logs, usability and data completeness.
 
 ## Structure Decision
 
-Keep export within current report route/service, current audit path and current data/worker/storage owners. New page, export database, unapproved storage or worker is not planned. Planned extension points: `app/(app)/reports/page.tsx`, `app/(app)/reports/ReportsView.tsx`, `lib/packages/reporting.ts`, the identified existing report RPC, plus matching existing component/RPC integration tests. Before T004 execution, list exact existing test file paths and assert baseline WO report behavior. Implement neither package generation nor new schema until T001-T003 access tests and the T005-T006 RED fixtures exist.
+Keep export within current report route/service, current audit path and current job/worker owners; add one private bucket and scoped storage policies through a migration. New page, export database, job table or worker is not planned. Planned extension points: `app/(app)/reports/page.tsx`, `app/(app)/reports/ReportsView.tsx`, `lib/packages/reporting.ts`, a new PO-only reader/RPC and authenticated retrieval route, plus matching existing component/RPC integration tests. Before implementation, list exact existing test file paths and assert baseline WO report behavior. No export is enabled until the proposed field manifest and expiry duration receive per-screen PO approval.

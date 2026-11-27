@@ -1,13 +1,9 @@
-﻿# PO MCQs: Platform Owner comprehensive client dataset export
+# PO decisions: PO full export
 
-**Authority already applied**: S71-PO-1 approves PO full export; BRD-06/PRD-11 exclude comprehensive export for WO. These decisions are not re-asked.
+## MCQ 030-01 — Comprehensive export package
 
-## MCQ 030-01 — What is the “full export” package?
+**Decision — DECIDED (S71-PO-6, Q4):** “* Q4: A — Async CSV archive.”
 
-**Where**: FR-003/FR-006; no source sets fields, format, sync/async generation, or download lifetime.
+**Applied meaning:** Generate a UTF-8 CSV archive asynchronously for one selected workspace or all workspaces (platform scope remains PO-only). Use the existing jobs/outbox from spec 006 and adapt the export implementation patterns identified in the reuse audit. Bind downloads to current authenticated PO authorization and make the download short-lived. The field manifest is PROPOSED and requires per-screen PO approval before the export screen ships; no field outside the approved manifest may be exported. Existing plan PDF/Excel exports remain separate.
 
-A. Asynchronous UTF-8 CSV archive per selected workspace or all workspaces, using a PO-approved field manifest and short-lived authenticated download. **(Recommended)** Inspectable and bounded; sensitive fields remain explicitly selected.
-B. Synchronous CSV per request, limited to one workspace. Simpler but limits platform scope and may time out.
-C. CSV plus JSON for selected workspaces, generated asynchronously and available for 30 days. More flexible but adds formats, storage and retention obligations.
-
-**PO choice**: PENDING-PO. Affects FR-003/FR-004/FR-006 and the field manifest; authorization, audit and minimization proceed independently.
+**Source:** `C:/Users/NEW LAP/.lifter/runs/s71-po/s71-po-6.verbatim.txt` (SHA-256 `DAA3A26C19CD1536486BCD508377FAF0EE33163B51A7C1C0E396FB7EC091F1B5`).

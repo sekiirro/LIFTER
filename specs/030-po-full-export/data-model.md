@@ -1,12 +1,12 @@
 ﻿# Data Model: PO comprehensive client export
 
-No export-specific entity is approved until MCQ 030-01 is resolved. The conceptual model for later design is:
+No duplicate export database is introduced. The conceptual model extends existing job/outbox and authorized storage:
 
-| Concept        | Existing source/reuse                                       | Constraint                                                                                                            |
-| -------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Export request | Existing authorized request/operation and audit conventions | Store actor, selected scope, manifest version, request/finish state and opaque ID only; no row/health data in audit.  |
-| Field manifest | PO-approved schema choice                                   | Explicit allow-list; separate health/fitness-sensitive fields from ordinary identity; no silent schema drift.         |
-| Artifact       | Existing storage if selected                                | Bind to requesting PO, selected scope and approved expiry; authenticated retrieval and deletion on expiry/revocation. |
-| Export rows    | Existing source-of-truth tables/readers                     | Stream/page bounded data; preserve workspace scope; do not persist a duplicate dataset.                               |
+| Concept        | Existing source/reuse                                                                                             | Constraint                                                                                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Export request | Existing spec 006 `public.jobs`/outbox and audit conventions                                                      | Enqueue an idempotent export job with scope and manifest version; payload contains IDs only; audit stores safe metadata, never row/health data.                                   |
+| Field manifest | Versioned allow-list shown in the existing Reports export screen                                                  | PROPOSED per-screen field/copy approval item; no export is enabled until PO approves the manifest. No silent schema drift.                                                        |
+| Artifact       | New private export-artifacts bucket with scoped policies                                                          | Bind to requesting PO, selected scope and PO-approved short expiry; authenticated retrieval rechecks current PO authority and records audit; delete/deny on expiry or revocation. |
+| Export rows    | Existing source-of-truth tables/readers; authorization/audit/spreadsheet-safety patterns from audited export code | Generate UTF-8 CSV in keyset pages of at most 500 rows; preserve workspace isolation; do not persist a duplicate dataset.                                                         |
 
-Exact persistence, format and artifact lifecycle are PENDING-PO. The client-plan export entity/route is out of scope and must not be reused as if it were comprehensive export.
+Delivery is one asynchronous UTF-8 CSV file per S71-PO-6, generated through jobs/outbox spec 006. Adapt authorization/audit/spreadsheet-safety patterns from `lib/client-access/plan-export.ts`, `lib/plans/nutrition/export.ts`, and `lib/workout-planner/client-export.ts`; none implements a comprehensive CSV engine, so this feature adds its own RFC 4180 serializer. Formula neutralization follows each PO-approved manifest field type. The proposed field manifest, expiry duration and copy require PO approval on the export screen.

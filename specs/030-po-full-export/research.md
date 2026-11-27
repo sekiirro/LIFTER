@@ -14,6 +14,6 @@
 
 ## Reuse decisions and technical findings
 
-Use existing PO report authorization, source readers and audit conventions. Comprehensive export is not a new user-facing page or replacement for client plan PDF/Excel. Re-check authorization at generation and every artifact fetch; if artifact storage or async work is selected, extend the existing worker/storage job ownership after checking its ACL and retention capabilities. Keep artifact contents out of audit and logs. Full-export field list, serialization and artifact lifetime are absent from approved sources and must remain PENDING-PO.
+Use existing PO report authorization, source readers and audit conventions. S71-PO-6 selects one asynchronous UTF-8 CSV file for one workspace or all workspaces. Reuse spec 006 jobs/outbox; adapt authorization/audit/spreadsheet-safety patterns from `lib/client-access/plan-export.ts`, `lib/plans/nutrition/export.ts`, and `lib/workout-planner/client-export.ts`. The audit found no comprehensive dataset reader, CSV engine, or authorized export-artifact bucket. Add a PO-only source reader, private bucket policies and RFC 4180 serializer while keeping plan PDF/Excel exports separate. Re-check authorization and write audit evidence at generation and every authenticated artifact fetch; keep artifact contents out of audit/logs. The field manifest and expiry duration are PROPOSED per-screen PO approval items.
 
-No claim from the parallel audit is used. No legal, retention, field, format, or packaging default is inferred.
+The reuse audit is relied on for existing export-code paths; it found no comprehensive dataset export implementation. No unapproved field list or additional package behavior is inferred.

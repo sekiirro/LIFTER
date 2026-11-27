@@ -2,13 +2,13 @@
 
 ## API contract (proposed extension)
 
-| Operation         | Contract                                                                                                                                                               |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Request export    | PO-authenticated only; accepts approved explicit scope/filters and manifest version; server validates each input; returns safe request state/opaque ID only.           |
-| Generate export   | Reads existing approved source rows under one consistent snapshot/window; bounded; package mode follows MCQ 030-01; records audit event without contents.              |
-| Retrieve artifact | Authenticated request rechecks current PO authorization, requesting actor, artifact scope and expiry on every retrieval. No bearer/public URL or authorization bypass. |
-| Retry/replay      | Same operation key returns same request/result; changed scope under same key is refused; no duplicate artifact or second audit success.                                |
-| Cancel/expire     | Revoke access and delete artifact through selected existing storage path; no new cron is assumed.                                                                      |
+| Operation         | Contract                                                                                                                                                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Request export    | PO-authenticated only; accepts approved explicit scope/filters and manifest version; server validates each input; returns safe request state/opaque ID only.                                                                               |
+| Generate export   | Existing spec 006 jobs/outbox asynchronously generates one UTF-8 CSV file for one workspace or all workspaces; reads at most 500 source rows per keyset page using the PO-approved manifest; records audit event without contents.         |
+| Retrieve artifact | Short-lived authenticated download rechecks current PO authorization, requesting actor, artifact scope and expiry on every retrieval; writes a retrieval audit event before releasing bytes. No public/bearer URL or authorization bypass. |
+| Retry/replay      | Existing job idempotency key returns the same request/result; changed scope under same key is refused; no duplicate archive or second audit success.                                                                                       |
+| Cancel/expire     | Revoke access and delete/deny the file in the private export-artifacts bucket after the per-screen PO-approved expiry or revocation; cleanup uses the existing jobs/outbox path and adds no cron.                                          |
 
 ## RLS / permission matrix
 
@@ -21,8 +21,8 @@
 | Client            | Deny                  | Deny                                      | May use separate own-plan PDF/Excel only while entitlement permits  |
 | Anonymous/revoked | Deny                  | Deny                                      | No row/count/artifact existence disclosure                          |
 
-**Authorization walls**: application layer plus database/source/storage policies. Direct endpoint/RPC, object identifier, storage path and URL replay tests are required. Any storage delivery mechanism must preserve authenticated current-PO authorization; a signed or bearer URL is not sufficient by itself and cannot bypass revocation/expiry checks. RLS must deny access to any internal request/artifact table except through narrow owner-authorized functions. Audit events include actor/scope/time/outcome/opaque reference; no file contents, health data, secrets, or URLs.
+**Authorization walls**: application layer plus database/source/storage policies. Add a private `export-artifacts` bucket and scoped policies in a migration. Direct endpoint/RPC, object identifier, storage path and URL replay tests are required. Any storage delivery mechanism must preserve authenticated current-PO authorization; signed or bearer URLs are not used. RLS denies direct artifact access. Audit events cover request, generation and every retrieval, include actor/scope/time/outcome/opaque reference, and contain no file contents, health data, secrets, or URLs. Retrieval fails closed if its audit cannot be written.
 
 ## Responses and states
 
-Safe states are `accepted`, `processing` (only if async is approved), `ready`, `failed`, `expired`, and generic `not_permitted`. Empty selected scope is distinct from an authorization failure only for PO. No non-PO response reveals whether an artifact exists.
+Safe states are `accepted`, `processing`, `ready`, `failed`, `expired`, and generic `not_permitted`. Empty selected scope is distinct from an authorization failure only for PO. No non-PO response reveals whether an artifact exists. Download endpoints require current authentication and PO authorization; public/signed bearer URLs are not used. CSV text fields are formula-safe and RFC 4180 escaped before UTF-8 serialization.

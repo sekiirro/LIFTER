@@ -2,7 +2,7 @@
 
 Future validation only; this spec lane ran no code/tests.
 
-1. Resolve MCQ 030-01 and approve the field manifest before implementation.
+1. Implement the S71-PO-6 async UTF-8 CSV archive for one workspace or all workspaces. Present the versioned field manifest as PROPOSED and obtain per-screen PO approval before enabling export.
 2. Seed synthetic clients across workspaces with each candidate field, including health/fitness-sensitive values, and keep real data out.
 3. RED-first test PO vs WO/Trainer/Sales/Client/anonymous; use direct API/RPC/storage IDs, foreign workspace scopes, guessed identifiers, URL replay, expired auth and revoked PO.
 4. Verify scope completeness and exclusion against the manifest and source rows; no duplicates, missing fields, cross-scope rows or plan-export regressions.

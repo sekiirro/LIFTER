@@ -14,20 +14,25 @@
 
 ## Requirements and traceability
 
-- [x] FR-001..FR-009 have Given/When/Then acceptance and measurable SCs.
+- [x] FR-001..FR-010 have Given/When/Then acceptance and measurable SCs.
 - [x] Contracts cover PO/WO/Trainer/Sales/Client/anonymous/revoked direct API/RPC/storage access.
 - [x] RED authorization, log leakage, manifest, lifecycle and artifact tests precede implementation.
-- [x] MCQ 030-01 gates manifest/package/format/scope/lifetime; pending choices are not defaulted.
+- [x] S71-PO-6 selects async UTF-8 CSV, one workspace or all, and short-lived authenticated retrieval; the field manifest is explicitly PROPOSED for per-screen PO approval.
 - [x] Task labels and plan name existing extension points; exact tests are required before execution.
 - [x] AR-RTL/EN-LTR, light/dark, mobile/desktop and relevant UI states are in acceptance.
 - [x] Proposed copy remains unapproved until approval per screen.
+- [x] UTF-8 CSV serialization is RFC 4180 escaped and formula-injection neutralization has RED test coverage before implementation.
 
 ## Findings
 
 - CRITICAL: 0 open.
 - HIGH: 0 open; authorization conflict removed.
 - MEDIUM: 0 open; 5 critique findings addressed or verified not present.
-- PENDING-PO: MCQ 030-01 only.
+- PO decisions: none remain open. The per-screen field manifest approval remains an implementation gate, not an unresolved MCQ.
 - Constitution conflicts: none remain. No amendment proposed.
 
 No other open ambiguities are assumed.
+
+## S71 final re-Analyze status
+
+The successful Analyze report identified one CRITICAL and five HIGH findings. The docs now specify retrieval auditing, a private artifact bucket and policies, migration/security tasks, corrected export-code paths, bounded paging, and per-screen approval gates for the manifest and expiry duration. A final Analyze rerun on these edits is still required before claiming zero open CRITICAL/HIGH findings.
