@@ -476,16 +476,30 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
       authenticated_count_head: false,
     });
     const auditReaders = await db`
-      select policyname,roles,qual
+      select policyname,permissive,roles,qual
       from pg_catalog.pg_policies
       where schemaname='public' and tablename='audit_events' and cmd='SELECT'
     `;
-    expect(auditReaders).toHaveLength(1);
-    expect(auditReaders[0]).toMatchObject({
+    expect(auditReaders).toHaveLength(2);
+    const scopedReader = auditReaders.find(
+      (policy) => policy.policyname === 'audit_events_select_scoped',
+    );
+    expect(scopedReader).toMatchObject({
       policyname: 'audit_events_select_scoped',
+      permissive: 'PERMISSIVE',
       roles: ['authenticated'],
     });
-    expect(auditReaders[0]?.qual).toContain('workspace_owner');
+    expect(scopedReader?.qual).toContain('workspace_owner');
+    const exportReader = auditReaders.find(
+      (policy) => policy.policyname === 'po_export_audit_po_only',
+    );
+    expect(exportReader).toMatchObject({
+      policyname: 'po_export_audit_po_only',
+      permissive: 'RESTRICTIVE',
+      roles: ['authenticated'],
+    });
+    expect(exportReader?.qual).toContain('po_export.%');
+    expect(exportReader?.qual).toContain('job.dead_lettered');
     const routines = await db`
       select p.prosecdef, p.proconfig,
         has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
