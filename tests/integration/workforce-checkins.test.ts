@@ -127,6 +127,13 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
         submitted_at + interval '1 hour'
         from app_private.form_submissions
         where workspace_id=${f.wsA.id} and assignment_id=${assignmentId}`;
+      await tx`insert into public.audit_events(
+        actor_user_id,action,target_table,target_id,workspace_id,details
+      ) select ${f.trainerA.userId},'audit.opaque_reference','opaque_reference',t.id,
+        ${f.wsA.id},jsonb_build_object('reference_id',t.id)
+        from app_private.workforce_checkin_transitions t
+        where t.workspace_id=${f.wsA.id} and t.assignment_id=${assignmentId}
+          and t.status='Followed Up'`;
       await asUser(
         tx,
         f.po.userId,
