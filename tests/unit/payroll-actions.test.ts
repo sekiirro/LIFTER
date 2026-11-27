@@ -5,6 +5,7 @@ import {
   createPayrollSnapshot,
   approveExternalPayroll,
   getEligibleEmployees,
+  getPayrollMonth,
 } from '../../lib/workforce/payroll';
 
 const mocks = vi.hoisted(() => ({
@@ -107,6 +108,112 @@ describe('Payroll Service & RPC Action Handlers', () => {
     });
   });
 
+  describe('getPayrollMonth', () => {
+    it('loads and shapes the PO-only salary, inputs, snapshot and approval state', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'po-1',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      });
+      mocks.rpc.mockResolvedValue({
+        data: {
+          salary: {
+            id: 'salary-1',
+            revision: 1,
+            amount_minor: '100000',
+            currency: 'USD',
+            market: 'International',
+          },
+          inputs: [
+            {
+              id: 'input-1',
+              category: 'correction',
+              amount_minor: '2500',
+              currency: 'USD',
+            },
+          ],
+          snapshot: {
+            id: 'snap-1',
+            version: 2,
+            amount_minor: '102500',
+            currency: 'USD',
+          },
+          approval: null,
+        },
+        error: null,
+      });
+
+      const result = await getPayrollMonth({
+        employeeId: 'emp-1',
+        effectiveMonth: '2026-11',
+      });
+
+      expect(mocks.rpc).toHaveBeenCalledWith('p7_get_payroll_month', {
+        p_employee_id: 'emp-1',
+        p_effective_month: '2026-11-01',
+      });
+      expect(result).toEqual({
+        status: 'ok',
+        data: {
+          salary: {
+            id: 'salary-1',
+            revision: 1,
+            amountMinor: '100000',
+            currency: 'USD',
+            market: 'International',
+          },
+          inputs: [
+            {
+              id: 'input-1',
+              category: 'correction',
+              amountMinor: '2500',
+              currency: 'USD',
+            },
+          ],
+          snapshot: {
+            id: 'snap-1',
+            version: 2,
+            amountMinor: '102500',
+            currency: 'USD',
+          },
+          approval: null,
+        },
+      });
+    });
+
+    it('denies non-PO callers before loading payroll state', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'trainer-1',
+        role: 'trainer',
+        activeWorkspaceIds: ['ws-1'],
+      });
+
+      expect(
+        await getPayrollMonth({
+          employeeId: 'emp-1',
+          effectiveMonth: '2026-11',
+        }),
+      ).toEqual({ status: 'denied' });
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid month before loading payroll state', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'po-1',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      });
+
+      expect(
+        await getPayrollMonth({
+          employeeId: 'emp-1',
+          effectiveMonth: '2026-13',
+        }),
+      ).toEqual({ status: 'invalid_input' });
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
+  });
+
   describe('setBasicSalary', () => {
     it('successfully calls p7_set_basic_salary for PO', async () => {
       mocks.actor.mockResolvedValue({
@@ -200,6 +307,26 @@ describe('Payroll Service & RPC Action Handlers', () => {
   });
 
   describe('postMonetaryPayrollInput', () => {
+    it('rejects a missing caller-owned intent instead of generating retry identities', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'po-1',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      });
+      mocks.rpc.mockResolvedValue({ data: 'input-1', error: null });
+
+      const result = await postMonetaryPayrollInput({
+        employeeId: 'emp-1',
+        effectiveMonth: '2026-11',
+        category: 'incentive',
+        amount: '250.50',
+        currency: 'EGP',
+      });
+
+      expect(result).toEqual({ status: 'invalid_input' });
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
+
     it('successfully posts an incentive input', async () => {
       mocks.actor.mockResolvedValue({
         userId: 'po-1',
@@ -217,6 +344,8 @@ describe('Payroll Service & RPC Action Handlers', () => {
         category: 'incentive',
         amount: '250.50',
         currency: 'EGP',
+        reasonRef: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: '33333333-3333-4333-8333-333333333333',
       });
 
       expect(mocks.rpc).toHaveBeenCalledWith(
@@ -227,6 +356,8 @@ describe('Payroll Service & RPC Action Handlers', () => {
           p_category: 'incentive',
           p_amount_minor: '25050',
           p_currency: 'EGP',
+          p_reason_ref: '22222222-2222-4222-8222-222222222222',
+          p_idempotency_key: '33333333-3333-4333-8333-333333333333',
           p_supersedes_input_id: null,
         }),
       );
@@ -269,6 +400,8 @@ describe('Payroll Service & RPC Action Handlers', () => {
         category: 'deduction',
         amount: '100.00',
         currency: 'USD',
+        reasonRef: '44444444-4444-4444-8444-444444444444',
+        idempotencyKey: '55555555-5555-4555-8555-555555555555',
       });
 
       expect(result.status).toBe('currency_mismatch');

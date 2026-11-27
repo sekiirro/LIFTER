@@ -1620,4 +1620,31 @@ export const ar = {
   'workforce.finalize.error': 'مقدرناش نعتمد الشهر. حاول تاني.',
   'workforce.finalize.stale': 'الشهر اتغير. حدّث قبل الاعتماد.',
   'workforce.finalize.denied': 'مالك المنصة بس اللي يقدر يعتمد الشهور.',
+  // CB-P8-03 (S71-PO-12) — spec 030 PO full export, screen 1.
+  'reports.export.title': 'تصدير بيانات العملاء',
+  'reports.export.description': 'نزّل ملف CSV كامل ومجمّع لبيانات العملاء.',
+  'reports.export.scope.label': 'نطاق التصدير',
+  'reports.export.confirmScope': 'راجع نطاق التصدير',
+  'reports.export.scope.all': 'كل مساحات العمل',
+  'reports.export.scope.workspace': 'مساحة العمل المحددة',
+  'reports.export.action': 'تصدير بيانات العملاء',
+  'reports.export.status.queued': 'في الانتظار',
+  'reports.export.status.running': 'بنجهز التصدير',
+  'reports.export.status.ready': 'جاهز',
+  'reports.export.status.failed': 'فشل التصدير',
+  'reports.export.download': 'نزّل التصدير',
+  'reports.export.expiryNotice':
+    'روابط التنزيل بتنتهي صلاحيتها بعد وقت قصير وبتحتاج تسجيل دخول مالك المنصة.',
+  'reports.export.empty': 'مفيش بيانات عملاء مطابقة للنطاق ده',
+  'reports.export.error': 'مقدرناش نجهز التصدير. حاول تاني.',
+  'workforce.salesProjection.title': 'إجمالي نقاطي للشهر',
+  'workforce.salesProjection.total': 'الإجمالي المعتمد',
+  'workforce.salesProjection.notAvailable': 'مش متاح لسه',
+  'workforce.salesProjection.notAvailableHint':
+    'الإجمالي بيظهر بعد ما الشهر يخلص ومالك المنصة يعتمده.',
+  'workforce.salesProjection.empty': 'مفيش إجمالي معتمد للشهر ده.',
+  'workforce.salesProjection.loading': 'بنحمّل إجمالي الشهر…',
+  'workforce.salesProjection.loadError':
+    'مش عارفين نحمّل إجمالي الشهر. حاول تاني.',
+  'workforce.salesProjection.denied': 'مش مسموح لك تشوف الإجمالي ده.',
 } as const;

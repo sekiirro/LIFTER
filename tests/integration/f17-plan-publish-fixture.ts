@@ -13,6 +13,7 @@ export async function seedSubmittedIntake(
     configuredBy?: string;
     deadlineAt?: Date;
   } = {},
+  answers: Record<string, string> = { q1: 'submitted' },
 ) {
   const policy = `f17-intake-${randomUUID()}`;
   await tx`insert into app_private.terms_policy_versions(version, policy_kind, status)
@@ -22,7 +23,11 @@ export async function seedSubmittedIntake(
   const assignmentPolicyId = randomUUID();
   const occurrenceKey = options.occurrenceKey ?? `initial:${clientId}`;
   const definition = {
-    questions: [{ id: 'q1', sectionId: 'intake', type: 'shortText' }],
+    questions: Object.keys(answers).map((id) => ({
+      id,
+      sectionId: 'intake',
+      type: 'shortText',
+    })),
   };
   const [workspace] = await tx`
     select created_by from public.workspaces where id=${workspaceId}
@@ -69,7 +74,7 @@ export async function seedSubmittedIntake(
     ${options.deadlineAt?.toISOString() ?? null}
   )`;
   await tx`insert into public.form_answer_revisions(workspace_id, assignment_id, revision, answer_values)
-    values(${workspaceId}, ${assignmentId}, 1, ${tx.json({ q1: 'submitted' })})`;
+    values(${workspaceId}, ${assignmentId}, 1, ${tx.json(answers)})`;
   await tx`insert into app_private.form_submissions(workspace_id, assignment_id, revision, submitted_at)
     values(${workspaceId}, ${assignmentId}, 1, clock_timestamp())`;
   if (options.authoritative && subscriptionId) {

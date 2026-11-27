@@ -1680,4 +1680,32 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.finalize.error': 'Could not finalize the month. Try again.',
   'workforce.finalize.stale': 'The month changed. Reload before finalizing.',
   'workforce.finalize.denied': 'Only the Platform Owner can finalize months.',
+  // CB-P8-03 (S71-PO-12) — spec 030 PO full export, screen 1.
+  'reports.export.title': 'Export client data',
+  'reports.export.description':
+    'Download a complete UTF-8 CSV archive of client records.',
+  'reports.export.scope.label': 'Export scope',
+  'reports.export.confirmScope': 'Review export scope',
+  'reports.export.scope.all': 'All workspaces',
+  'reports.export.scope.workspace': 'Selected workspace',
+  'reports.export.action': 'Export client data',
+  'reports.export.status.queued': 'Queued',
+  'reports.export.status.running': 'Preparing your export',
+  'reports.export.status.ready': 'Ready',
+  'reports.export.status.failed': 'Failed',
+  'reports.export.download': 'Download export',
+  'reports.export.expiryNotice':
+    'Download links expire shortly after generation and require active Platform Owner sign-in.',
+  'reports.export.empty': 'No client data matches this scope',
+  'reports.export.error': 'Export couldn’t be prepared. Try again.',
+  'workforce.salesProjection.title': 'My monthly total',
+  'workforce.salesProjection.total': 'Finalized total',
+  'workforce.salesProjection.notAvailable': 'Not available yet',
+  'workforce.salesProjection.notAvailableHint':
+    'This total appears after the month ends and the PO finalizes it.',
+  'workforce.salesProjection.empty': 'No finalized total for this month.',
+  'workforce.salesProjection.loading': 'Loading your monthly total…',
+  'workforce.salesProjection.loadError':
+    'Unable to load your monthly total. Try again.',
+  'workforce.salesProjection.denied': 'You cannot view this total.',
 };

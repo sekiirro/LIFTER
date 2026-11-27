@@ -420,14 +420,18 @@ describe('tenancy security catalog (T007)', () => {
           ...p7QualityPrivate,
           ...f22Private,
           ...p7Private,
+          'p7_checkin_late_penalty_after_insert',
+          'p7_record_checkin_delay_penalty',
           ...p7StrikePrivate,
           ...p7PlanDelayPrivate,
           ...privateAuthenticated,
           'p7_payroll_lineage',
           'p7_payroll_lock',
+          'p7_recheck_f19_earned_actor',
           'p7_reject_immutable_write',
           'p7_require_payroll_employee',
           'p7_require_platform_owner',
+          'po_export_audit',
           'apply_food_default_alternatives',
           'archive_f15_selection_update',
           'audit_package_created',
@@ -653,6 +657,7 @@ describe('tenancy security catalog (T007)', () => {
           'f17_client_safe_set',
           'f17_client_safe_item',
           'f17_client_safe_workout_document',
+          'po_export_audit',
           'capture_workforce_checkin_pending',
           'guard_workforce_checkin_transition',
           'guard_workforce_checkin_transition_truncate',
@@ -917,6 +922,9 @@ describe('tenancy security catalog (T007)', () => {
               'capture_workforce_checkin_pending',
               'guard_workforce_checkin_transition',
               'guard_workforce_checkin_transition_truncate',
+              'p7_recheck_f19_earned_actor',
+              'p7_checkin_late_penalty_after_insert',
+              'p7_record_checkin_delay_penalty',
             ].includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
@@ -935,6 +943,7 @@ describe('tenancy security catalog (T007)', () => {
               'guard_package_reporting_fx_snapshot',
               'seed_package_reporting_fx_pending',
               'package_promotion_period_active',
+              'po_export_audit',
               'catalog_assert_exercise_text_limits',
               'catalog_create_food_legacy',
               'catalog_food_duplicate_exists',
@@ -1657,7 +1666,7 @@ describe('jobs security catalog (T006)', () => {
 
   it('hardens RPC ownership/search paths and restricts execution to service_role', async () => {
     const functions = [
-      'public.jobs_claim(integer,integer)',
+      'public.jobs_claim(integer,integer,text[])',
       'public.jobs_complete(uuid,uuid)',
       'public.jobs_fail(uuid,uuid,text,boolean)',
       'app_private.enqueue_job(text,uuid,jsonb,text,timestamptz,integer)',
@@ -2504,6 +2513,59 @@ describe('P7 earned ledger and monthly close catalog', () => {
     });
     expect(reporter!.proconfig).toContain('search_path=""');
   });
+
+  it('limits the check-in delay evaluator to the explicitly checked operator role', async () => {
+    const [evaluator] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role,
+        pg_catalog.pg_get_functiondef(p.oid) as definition
+      from pg_proc p
+      where p.oid='public.run_p7_checkin_delay_evaluator(uuid)'::regprocedure`;
+    expect(evaluator).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: false,
+      service_role: true,
+    });
+    expect(evaluator!.proconfig).toContain('search_path=""');
+    expect(evaluator!.definition.toLowerCase()).toContain(
+      "auth.role() is distinct from 'service_role'",
+    );
+    const [penalty] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'app_private.p7_record_checkin_delay_penalty(uuid,uuid)'::regprocedure) as definition`;
+    const source = penalty!.definition.toLowerCase();
+    expect(source.indexOf('for update of s')).toBeGreaterThanOrEqual(0);
+    expect(source.indexOf('for update of s')).toBeLessThan(
+      source.indexOf('f11.responsible_trainer.workspace:'),
+    );
+    expect(source.indexOf('f11.responsible_trainer.workspace:')).toBeLessThan(
+      source.indexOf('app_private.p7_lock_period'),
+    );
+    const clientForeignKeys = await db`
+      select c.conname from pg_constraint c
+      where c.conrelid='public.p7_adjustment_entries'::regclass and c.contype='f'
+        and c.confrelid='public.clients'::regclass`;
+    expect(clientForeignKeys).toHaveLength(0);
+  });
+
+  it('restricts Sales monthly projection RPC to authenticated callers with search_path=""', async () => {
+    const [proc] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='public.p7_get_sales_monthly_total(uuid,date,uuid)'::regprocedure`;
+    expect(proc).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(proc!.proconfig).toContain('search_path=""');
+  });
 });
 
 describe('F13 T044a Sales productivity catalog', () => {
@@ -2597,6 +2659,34 @@ describe('F13 T044a Sales productivity catalog', () => {
       "l.created_by_role_snapshot = 'sales'::public.staff_role",
     );
     expect(p7Award?.definition).toContain('app_private.p7_lock_period');
+  });
+});
+
+describe('P7 T020 Sales funnel RPC catalog', () => {
+  it('is a hardened authenticated RPC with a leading platform-owner guard', async () => {
+    const [funnel] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role,
+        pg_catalog.pg_get_functiondef(p.oid) as definition
+      from pg_proc p where p.oid='public.get_sales_funnel(uuid,date)'::regprocedure`;
+    expect(funnel).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(funnel?.proconfig).toContain('search_path=""');
+    expect(
+      funnel?.definition.indexOf('app_private.is_platform_owner'),
+    ).toBeLessThan(
+      funnel?.definition.indexOf('public.registration_links') ?? -1,
+    );
+    expect(funnel?.definition).not.toMatch(
+      /email|phone|client_name|token_hash/i,
+    );
   });
 });
 
@@ -3073,7 +3163,12 @@ describe('package tier name security catalog (T078)', () => {
         relrowsecurity: true,
         relforcerowsecurity: true,
       });
-      for (const role of ['anon', 'service_role']) {
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [readGrant] =
+          await db`select has_table_privilege(${role}, ${relation}, 'SELECT') as allowed`;
+        expect(readGrant?.allowed).toBe(
+          table === 'p7_monthly_reminder_outbox' && role === 'authenticated',
+        );
         for (const privilege of ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) {
           const [grant] =
             await db`select has_table_privilege(${role}, ${relation}, ${privilege}) as allowed`;
@@ -3171,7 +3266,11 @@ describe('package tier name security catalog (T078)', () => {
     ]);
     const [view] =
       await db`select reloptions from pg_class where oid='public.p7_monthly_quality_effective'::regclass`;
-    expect(view?.reloptions).toContain('security_invoker=true');
+    expect(view?.reloptions ?? []).not.toContain('security_invoker=true');
+    const [projection] =
+      await db`select pg_get_viewdef('public.p7_monthly_quality_effective'::regclass, true) as body`;
+    expect(projection?.body).toContain('is_platform_owner');
+    expect(projection?.body).toContain('has_workspace_access');
   });
 });
 
@@ -3315,6 +3414,13 @@ describe('P7 T033 strike security catalog', () => {
     'public.get_workforce_strikes(uuid,uuid)',
     'public.correct_workforce_strike(uuid,uuid,text,uuid,text,uuid)',
   ];
+  const reasonCodes = [
+    'client_caused_delay',
+    'system_issue',
+    'wrong_trainer',
+    'duplicate',
+    'po_exception',
+  ];
 
   it('forces RLS, denies direct table access, and prevents strike-history mutation', async () => {
     for (const relation of tables) {
@@ -3377,6 +3483,46 @@ describe('P7 T033 strike security catalog', () => {
       });
       expect(fn?.proconfig).toContain('search_path=""');
     }
+  });
+
+  it('keeps strike correction reasons as exact checked codes with no free-text column', async () => {
+    const columns = await db`
+      select column_name,data_type
+      from information_schema.columns
+      where table_schema='public' and table_name='workforce_strike_corrections'
+      order by ordinal_position
+    `;
+    expect(
+      columns.find((column) => column.column_name === 'reason'),
+    ).toBeUndefined();
+    expect(
+      columns.find((column) => column.column_name === 'reason_code'),
+    ).toEqual({
+      column_name: 'reason_code',
+      data_type: 'text',
+    });
+    expect(
+      columns
+        .filter((column) =>
+          ['text', 'character varying', 'character'].includes(
+            String(column.data_type),
+          ),
+        )
+        .map((column) => column.column_name),
+    ).toEqual(['correction_kind', 'reason_code']);
+    const [check] = await db`
+      select pg_catalog.pg_get_constraintdef(oid) as definition
+      from pg_constraint
+      where conrelid='public.workforce_strike_corrections'::regclass
+        and contype='c'
+        and conname='workforce_strike_corrections_reason_code_check'
+    `;
+    expect(check?.definition).toBeDefined();
+    const checkedCodes = Array.from(
+      String(check?.definition).matchAll(/'([^']+)'/g),
+      (match) => match[1],
+    ).sort();
+    expect(checkedCodes).toEqual([...reasonCodes].sort());
   });
 });
 
@@ -3492,6 +3638,12 @@ describe('P7 T002/T004 check-in transition security catalog', () => {
         and not t.tgisinternal order by t.tgname
     `;
     expect(triggers).toEqual([
+      {
+        tgname: 'p7_checkin_late_penalty_after_insert',
+        proname: 'p7_checkin_late_penalty_after_insert',
+        tgtype: 5,
+        tgenabled: 'O',
+      },
       {
         tgname: 'workforce_checkin_transitions_append_only',
         proname: 'guard_workforce_checkin_transition',

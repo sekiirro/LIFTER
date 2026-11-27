@@ -302,6 +302,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           date: "'2050-01-01'::date",
           'timestamp with time zone': 'now()',
           'uuid[]': "'{}'::uuid[]",
+          'text[]': "'{}'::text[]",
         };
         if (!values[typeName])
           throw new Error('Uncovered public RPC argument type');
