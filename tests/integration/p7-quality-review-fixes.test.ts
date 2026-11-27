@@ -447,6 +447,47 @@ describe('PR #334 review-round-2 fixes', () => {
     expect(columns?.data_type).toBe('text');
   });
 
+  it('S4-B10: denies authenticated raw quality and settings table reads while PO projections stay readable', async () => {
+    const month = '2026-08';
+    const quality = await f.po.client.rpc(
+      'record_monthly_quality',
+      qualityArgs(f, f.trainerA.userId, month, {
+        p_positive_count: 1,
+        p_positive_weight: 5,
+        p_negative_weight: 0,
+      }),
+    );
+    expect(quality.error).toBeNull();
+    const settings = await f.po.client.rpc(
+      'set_trainer_quality_settings',
+      settingsArgs(f, f.trainerA.userId),
+    );
+    expect(settings.error).toBeNull();
+
+    for (const table of [
+      'p7_monthly_quality_revisions',
+      'p7_trainer_quality_settings',
+    ]) {
+      const raw = await f.po.client.from(table).select('*').limit(1);
+      expect(
+        raw.error?.code,
+        `${table} must reject authenticated raw access`,
+      ).toBe('42501');
+    }
+
+    const { data: projection, error: projectionError } = await f.po.client
+      .from('p7_monthly_quality_effective')
+      .select('positive_weight,negative_weight,net_points')
+      .eq('id', quality.data.id)
+      .single();
+    expect(projectionError).toBeNull();
+    expect(projection).toEqual({
+      positive_weight: '5.00',
+      negative_weight: '0.00',
+      net_points: '5.00',
+    });
+  });
+
   it.each(['NaN', 'Infinity', '-Infinity'])(
     '334-B11: rejects non-finite %s in both RPCs',
     async (special) => {
