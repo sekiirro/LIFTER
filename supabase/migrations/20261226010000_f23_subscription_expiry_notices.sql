@@ -5,7 +5,8 @@ alter table app_private.staff_inbox_notices
   drop constraint staff_inbox_notices_kind_check;
 alter table app_private.staff_inbox_notices
   add constraint staff_inbox_notices_kind_check check (notice_kind in (
-    'food_replacement_open', 'subscription_expiring_t3', 'subscription_expired'
+    'food_replacement_open', 'monthly_quality_reminder',
+    'subscription_expiring_t3', 'subscription_expired'
   ));
 
 -- source_key remains the subscription id. source_revision is F13's effective
@@ -29,6 +30,72 @@ end $$;
 alter table app_private.staff_inbox_notices
   add constraint staff_inbox_notices_revision_dedup
   unique (workspace_id, recipient_user_id, notice_kind, source_key, source_revision);
+
+-- P7 shares this existing inbox. Keep its producer on the new revision-aware
+-- dedup key so its established monthly reminder contract continues to work.
+create or replace function public.handle_quality_monthly_reminder(
+  p_job_id uuid,
+  p_lease_token uuid
+) returns boolean
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_job public.jobs%rowtype;
+  v_reminder public.p7_monthly_reminder_outbox%rowtype;
+  v_recipient uuid;
+  v_inserted integer := 0;
+begin
+  if p_job_id is null or p_lease_token is null then return false; end if;
+  select * into v_job
+  from public.jobs j
+  where j.id = p_job_id and j.kind = 'quality.monthly_reminder'
+    and j.status = 'running' and j.lease_token = p_lease_token
+    and j.lease_expires_at > pg_catalog.statement_timestamp()
+  for update;
+  if not found then return false; end if;
+
+  select * into v_reminder
+  from public.p7_monthly_reminder_outbox r
+  where r.job_id = p_job_id and r.workspace_id = v_job.workspace_id
+  for update;
+  if not found or v_reminder.notification_kind <> 'monthly_quality_reminder'
+    or v_job.payload->>'workspace_id' is distinct from v_job.workspace_id::text
+    or v_job.payload->>'month' is distinct from v_reminder.month
+    or v_reminder.status = 'failed' then
+    return false;
+  end if;
+  if v_reminder.status = 'sent' then return true; end if;
+
+  if not exists (select 1 from public.staff_profiles p where p.role = 'platform_owner') then
+    raise exception 'quality_reminder_recipient_unavailable' using errcode = '40001';
+  end if;
+  for v_recipient in
+    select p.user_id from public.staff_profiles p
+    where p.role = 'platform_owner' order by p.user_id
+  loop
+    insert into app_private.staff_inbox_notices (
+      workspace_id, recipient_user_id, notice_kind, source_key, source_revision
+    ) values (
+      v_reminder.workspace_id, v_recipient, 'monthly_quality_reminder', v_reminder.id, 'source'
+    )
+    on conflict (workspace_id, recipient_user_id, notice_kind, source_key, source_revision) do nothing;
+    if found then v_inserted := v_inserted + 1; end if;
+  end loop;
+
+  update public.p7_monthly_reminder_outbox
+  set status = 'sent'
+  where id = v_reminder.id and status = 'enqueued';
+  if not found then
+    raise exception 'quality_reminder_state_invalid' using errcode = '40001';
+  end if;
+
+  insert into public.audit_events (
+    actor_user_id, action, target_table, target_id, workspace_id, details
+  ) values (
+    auth.uid(), 'quality.reminder_delivered', 'p7_monthly_reminder_outbox',
+    v_reminder.id, v_reminder.workspace_id, jsonb_build_object('reminder_id', v_reminder.id)
+  );
+  return true;
+end $$;
 
 create or replace function app_private.f23_guard_staff_notice() returns trigger
 language plpgsql security definer set search_path = '' as $$
