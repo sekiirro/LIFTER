@@ -15,6 +15,8 @@ export async function seedSubmittedIntake(
   } = {},
 ) {
   const policy = `f17-intake-${randomUUID()}`;
+  await tx`insert into app_private.terms_policy_versions(version, policy_kind, status)
+    values(${policy}, 'terms', 'published')`;
   const formId = randomUUID();
   const assignmentId = randomUUID();
   const assignmentPolicyId = randomUUID();
@@ -28,8 +30,6 @@ export async function seedSubmittedIntake(
   const configuredBy = options.configuredBy ?? workspace!.created_by;
   const subscriptionId = options.subscriptionId;
 
-  await tx`insert into app_private.terms_policy_versions(version, policy_kind, status)
-    values(${policy}, 'terms', 'published')`;
   await tx`insert into public.forms(id, workspace_id, name)
     values(${formId}, ${workspaceId}, 'F17 synthetic intake')`;
   await tx`insert into public.form_versions(
