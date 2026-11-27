@@ -132,7 +132,10 @@ const p7StrikePrivate = [
   'guard_workforce_strike_immutable',
   'reject_workforce_strike_truncate',
 ];
-const p7PlanDelayPrivate = ['guard_workforce_plan_delay_immutable'];
+const p7PlanDelayPrivate = [
+  'guard_workforce_plan_delay_immutable',
+  'record_due_workforce_strikes',
+];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
   'purge_retention_for_platform_owner',
@@ -418,6 +421,7 @@ describe('tenancy security catalog (T007)', () => {
           ...f22Private,
           ...p7Private,
           ...p7StrikePrivate,
+          ...p7PlanDelayPrivate,
           ...privateAuthenticated,
           'p7_payroll_lineage',
           'p7_payroll_lock',
@@ -672,6 +676,7 @@ describe('tenancy security catalog (T007)', () => {
         'f15_alert_schedule_immutable',
         'f15_alert_schedule_run',
         ...p7StrikePrivate,
+        ...p7PlanDelayPrivate,
         'f15_answer_is_present',
         'f15_answer_values_valid',
         'f15_forms_purge_run',
@@ -919,6 +924,7 @@ describe('tenancy security catalog (T007)', () => {
             !f22Private.includes(row.proname) &&
             !p7Private.includes(row.proname) &&
             !p7StrikePrivate.includes(row.proname) &&
+            !p7PlanDelayPrivate.includes(row.proname) &&
             !p7QualityPrivate.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
@@ -3379,6 +3385,9 @@ describe('P7 T009 plan-delay security catalog', () => {
     'public.workforce_plan_delay_events',
     'public.workforce_plan_delay_corrections',
   ];
+  const publicFunctions = [
+    'public.reattribute_workforce_plan_delay(uuid,uuid,uuid,text,uuid)',
+  ];
 
   it('forces RLS, withholds direct table access, and protects immutable history', async () => {
     for (const relation of tables) {
@@ -3414,21 +3423,23 @@ describe('P7 T009 plan-delay security catalog', () => {
       expect(trigger?.count, relation).toBeGreaterThan(0);
     }
 
-    const [rpc] = await db`
+    for (const signature of publicFunctions) {
+      const [rpc] = await db`
       select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
         has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
         has_function_privilege('anon',p.oid,'EXECUTE') as anon,
         has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
-      from pg_proc p where p.oid='public.reattribute_workforce_plan_delay(uuid,uuid,uuid,text,uuid)'::regprocedure
+      from pg_proc p where p.oid=${signature}::regprocedure
     `;
-    expect(rpc).toMatchObject({
-      prosecdef: true,
-      owner: 'postgres',
-      authenticated: true,
-      anon: false,
-      service_role: false,
-    });
-    expect(rpc?.proconfig).toContain('search_path=""');
+      expect(rpc).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(rpc?.proconfig).toContain('search_path=""');
+    }
 
     const [helper] = await db`
       select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,

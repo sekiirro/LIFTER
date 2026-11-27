@@ -59,9 +59,16 @@ begin
     select distinct on (s.workspace_id, s.id)
       s.workspace_id, s.id as subscription_id, s.client_id, sla.deadline_at as breach_at
     from public.subscriptions s
+    join app_private.form_assignment_consumptions consumed
+      on consumed.workspace_id = s.workspace_id
+      and consumed.subscription_id = s.id
+      and consumed.client_id = s.client_id
     join public.form_assignments fa
-      on fa.workspace_id = s.workspace_id and fa.client_id = s.client_id
-      and fa.occurrence_key = 'initial'
+      on fa.workspace_id = consumed.workspace_id
+      and fa.id = consumed.assignment_id
+      and fa.client_id = consumed.client_id
+      and fa.form_id = consumed.form_id
+      and fa.occurrence_key = 'initial:' || s.client_id::text
     left join app_private.form_assignment_policies fp
       on fp.workspace_id = fa.workspace_id and fp.id = fa.policy_id
     join app_private.form_submissions fs
@@ -85,8 +92,19 @@ begin
     if not found then continue; end if;
     if exists (
       select 1 from public.subscription_activations a
+      join public.plan_deliveries workout
+        on workout.workspace_id = a.workspace_id
+        and workout.id = a.workout_delivery_id
+        and workout.subscription_id = a.subscription_id
+        and workout.plan_kind = 'workout'
+      join public.plan_deliveries nutrition
+        on nutrition.workspace_id = a.workspace_id
+        and nutrition.id = a.nutrition_delivery_id
+        and nutrition.subscription_id = a.subscription_id
+        and nutrition.plan_kind = 'nutrition'
       where a.workspace_id = source_row.workspace_id
         and a.subscription_id = source_row.subscription_id
+        and a.activation_source = 'plan_deliveries'
         and a.activated_at <= source_row.breach_at
     ) then
       continue;
@@ -146,7 +164,7 @@ begin
       source_row.workspace_id, breach_trainer, -1.00,
       app_private.p7_month_for_trigger(source_row.breach_at),
       app_private.p7_month_for_trigger(source_row.breach_at),
-      opaque_source, source_hash, 'workforce.plan_delay'
+      opaque_source, source_hash, 'plan_delay'
     ) on conflict (workspace_id, source_key) do nothing;
     get diagnostics rows_inserted = row_count;
     if rows_inserted = 0 then continue; end if;

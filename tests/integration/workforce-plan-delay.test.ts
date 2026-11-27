@@ -11,18 +11,25 @@ afterAll(() => db.end());
 async function seedPlanDeadline(deadlineDelaySeconds = 3) {
   const context = await clientContext();
   const ids = await db.begin((tx) => graph(tx, context));
+  const deadlineAt = new Date(Date.now() + deadlineDelaySeconds * 1_000);
   const assignmentId = await db.begin(async (tx) => {
     const assignment = await seedSubmittedIntake(
       tx,
       context.wsA.id,
       ids.client,
+      {
+        subscriptionId: ids.subscription,
+        authoritative: true,
+        configuredBy: context.po.userId,
+        deadlineAt,
+      },
     );
     await tx`
       insert into app_private.form_submission_slas(
         workspace_id,assignment_id,rule_id,start_date,day_five_date,deadline_at
       ) values (
         ${context.wsA.id},${assignment},'cairo-d03-v1','2026-11-20','2026-11-26',
-        (clock_timestamp() + ${deadlineDelaySeconds} * interval '1 second')::timestamptz
+        ${deadlineAt.toISOString()}::timestamptz
       )
     `;
     return assignment;
@@ -109,7 +116,7 @@ it('records one separate -1 for the late first pair using the persisted breach a
   await evaluate(fixture.deadlineAt);
   const [beforeDelivery] = await db`
     select count(*)::int as count from public.p7_adjustment_entries
-    where workspace_id=${fixture.context.wsA.id} and reason_code='workforce.plan_delay'
+    where workspace_id=${fixture.context.wsA.id} and reason_code='plan_delay'
   `;
   expect(beforeDelivery?.count).toBe(0);
   await new Promise((resolve) =>
@@ -151,7 +158,7 @@ it('records one separate -1 for the late first pair using the persisted breach a
     trainer_user_id: fixture.context.trainerA.userId,
     confirmer_user_id: replacement.userId,
     points: '-1.00',
-    reason_code: 'workforce.plan_delay',
+    reason_code: 'plan_delay',
   });
   expect(new Date(point!.breach_at as string).toISOString()).toBe(
     fixture.deadlineAt.toISOString(),
@@ -201,7 +208,7 @@ it('routes a closed-month plan-delay entry through the shared P7 period trigger'
       workspace_id,staff_user_id,points,effective_month,original_month,source_key,source_hash,reason_code
     ) values (
       ${context.wsA.id},${context.trainerA.userId},-1.00,${closedMonth},${closedMonth},
-      ${sourceKey},${'a'.repeat(64)},'workforce.plan_delay'
+      ${sourceKey},${'a'.repeat(64)},'plan_delay'
     )
   `;
   const [entry] = await db`
@@ -262,16 +269,15 @@ it('keeps plan-delay evidence immutable and appends PO reattribution effects', a
     select points,staff_user_id,reason_code from public.p7_adjustment_entries
     where workspace_id=${fixture.context.wsA.id}
     order by case reason_code
-      when 'workforce.plan_delay' then 1
-      when 'workforce.plan_delay.reattribution_reverse' then 2
+      when 'plan_delay' then 1
       else 3 end
   `;
   expect(rows).toHaveLength(3);
   expect(rows.map((row) => row.points)).toEqual(['-1.00', '1.00', '-1.00']);
   expect(rows.map((row) => row.reason_code)).toEqual([
-    'workforce.plan_delay',
-    'workforce.plan_delay.reattribution_reverse',
-    'workforce.plan_delay.reattribution_target',
+    'plan_delay',
+    'plan_delay',
+    'plan_delay',
   ]);
   const [original] = await db`
     select trainer_user_id from public.workforce_plan_delay_events where id=${event!.id}
@@ -373,14 +379,14 @@ it('mutation: replacing the deterministic occurrence key allows a replay to add 
     `;
     const [mutatedCount] = await tx`
       select count(*)::int as count from public.p7_adjustment_entries
-      where workspace_id=${fixture.context.wsA.id} and reason_code='workforce.plan_delay'
+      where workspace_id=${fixture.context.wsA.id} and reason_code='plan_delay'
     `;
     expect(mutatedCount?.count).toBe(2);
     await tx`rollback to savepoint plan_delay_idempotency_mutation`;
   });
   const [count] = await db`
     select count(*)::int as count from public.p7_adjustment_entries
-    where workspace_id=${fixture.context.wsA.id} and reason_code='workforce.plan_delay'
+    where workspace_id=${fixture.context.wsA.id} and reason_code='plan_delay'
   `;
   expect(count?.count).toBe(1);
 });

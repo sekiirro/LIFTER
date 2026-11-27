@@ -134,11 +134,11 @@ begin
   insert into public.p7_adjustment_entries(workspace_id,staff_user_id,points,effective_month,original_month,
     source_key,source_hash,reason_code)
   values (p_workspace_id,prior_target,1.00,app_private.p7_month_for_trigger(event_row.breach_at),
-    app_private.p7_month_for_trigger(event_row.breach_at),reverse_key,request_hash,'workforce.plan_delay.reattribution_reverse');
+    app_private.p7_month_for_trigger(event_row.breach_at),reverse_key,request_hash,'plan_delay');
   insert into public.p7_adjustment_entries(workspace_id,staff_user_id,points,effective_month,original_month,
     source_key,source_hash,reason_code)
   values (p_workspace_id,p_target_trainer_user_id,-1.00,app_private.p7_month_for_trigger(event_row.breach_at),
-    app_private.p7_month_for_trigger(event_row.breach_at),target_key,request_hash,'workforce.plan_delay.reattribution_target');
+    app_private.p7_month_for_trigger(event_row.breach_at),target_key,request_hash,'plan_delay');
   insert into public.audit_events(actor_user_id,action,target_table,target_id,workspace_id,details)
   values(actor,'workforce.plan_delay_reattributed','workforce_plan_delay_corrections',correction_id,p_workspace_id,
     pg_catalog.jsonb_build_object('reference',audit_reference));
