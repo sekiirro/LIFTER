@@ -178,7 +178,7 @@ describe('P7 T010/T011 check-in delay occurrence', () => {
       staff_user_id: f.f.trainerA.userId,
       points: '-0.50',
       source_key: f.assignmentId,
-      reason_code: 'p7-checkin-delay',
+      reason_code: 'checkin_delay',
     });
     const [month] = await db`
       select app_private.p7_month_for_trigger(${source!.due_at}::timestamptz)::text as month`;
@@ -230,6 +230,7 @@ describe('P7 T010/T011 check-in delay occurrence', () => {
       staff_user_id: f.f.trainerA.userId,
       points: '-0.50',
       source_key: f.assignmentId,
+      reason_code: 'checkin_delay',
     });
     const [history] = await db`
       select array_agg(status order by occurred_at,status) as statuses

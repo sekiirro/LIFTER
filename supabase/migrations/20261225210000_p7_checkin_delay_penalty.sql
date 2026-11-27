@@ -91,7 +91,7 @@ begin
   insert into public.p7_adjustment_entries(
     workspace_id,staff_user_id,points,effective_month,source_key,source_hash,reason_code
   ) values (
-    p_workspace_id,trainer_id,-0.50,trigger_month,p_assignment_id,source_hash,'p7-checkin-delay'
+    p_workspace_id,trainer_id,-0.50,trigger_month,p_assignment_id,source_hash,'checkin_delay'
   ) on conflict (workspace_id,source_key) do nothing
   returning id into entry_id;
   if entry_id is null then
