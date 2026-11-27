@@ -776,6 +776,14 @@ describe('P7 PO payroll-month hydration projection', () => {
     expect(definition!.sql).toMatch(
       /app_private\.p7_payroll_lock\(p_employee_id,\s*p_effective_month\)/i,
     );
+    expect(
+      definition!.sql.match(/app_private\.p7_require_platform_owner\(\)/gi),
+    ).toHaveLength(2);
+    expect(
+      definition!.sql.match(
+        /app_private\.p7_require_payroll_employee\(p_employee_id\)/gi,
+      ),
+    ).toHaveLength(2);
     expect(result.data).toMatchObject({
       salary: {
         revision: 1,

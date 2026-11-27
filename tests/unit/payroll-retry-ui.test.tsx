@@ -96,6 +96,7 @@ describe('Payroll manual-input retry identity', () => {
     await setInputAmount('25.50');
 
     await submitManualInput();
+    await setInputAmount('25.5');
     await submitManualInput();
 
     expect(actions.postInput).toHaveBeenCalledTimes(2);

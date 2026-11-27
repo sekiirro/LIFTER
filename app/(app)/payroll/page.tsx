@@ -64,6 +64,9 @@ export default async function PayrollPage() {
         initialEmployees={employees}
         initialMonth={initialMonth}
         initialPayrollMonth={initialPayrollMonth}
+        initialPayrollError={Boolean(
+          initialEmployee && payrollMonth?.status !== 'ok',
+        )}
         denied={false}
       />
     </ToastProvider>

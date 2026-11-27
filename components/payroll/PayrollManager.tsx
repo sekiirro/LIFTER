@@ -42,6 +42,7 @@ export type PayrollManagerProps = {
   initialEmployees: EligibleEmployee[];
   initialMonth: string;
   initialPayrollMonth?: PayrollMonthState;
+  initialPayrollError?: boolean;
   denied?: boolean;
 };
 
@@ -68,6 +69,7 @@ export function PayrollManager({
   initialEmployees,
   initialMonth,
   initialPayrollMonth = emptyPayrollMonth,
+  initialPayrollError = false,
   denied = false,
 }: PayrollManagerProps) {
   const { success } = useToast();
@@ -123,7 +125,9 @@ export function PayrollManager({
     initialPayrollMonth.approval !== null,
   );
   const [scopeLoading, setScopeLoading] = useState<boolean>(false);
-  const [scopeError, setScopeError] = useState<string | null>(null);
+  const [scopeError, setScopeError] = useState<string | null>(
+    initialPayrollError ? messages['workforce.payroll.review.error'] : null,
+  );
 
   const scopeRequest = useRef(0);
   const inputSubmitPending = useRef(false);
@@ -180,7 +184,7 @@ export function PayrollManager({
     setScopeError(null);
     if (!employeeId) {
       setScopeLoading(false);
-      return;
+      return request;
     }
 
     setScopeLoading(true);
@@ -189,7 +193,7 @@ export function PayrollManager({
         employeeId,
         effectiveMonth,
       });
-      if (request !== scopeRequest.current) return;
+      if (request !== scopeRequest.current) return request;
       if (result.status === 'ok') {
         applyPayrollMonth(result.data);
       } else if (result.status === 'denied') {
@@ -204,6 +208,7 @@ export function PayrollManager({
     } finally {
       if (request === scopeRequest.current) setScopeLoading(false);
     }
+    return request;
   }
 
   // Update market and enforce currency
@@ -221,7 +226,13 @@ export function PayrollManager({
     e.preventDefault();
     setSalaryError(null);
 
-    if (!selectedEmployeeId || scopeLoading) {
+    if (
+      !selectedEmployeeId ||
+      scopeLoading ||
+      scopeError ||
+      isPending ||
+      snapshotLoading
+    ) {
       setSalaryError(messages['workforce.payroll.selectEmployeeFirst']);
       return;
     }
@@ -245,6 +256,10 @@ export function PayrollManager({
           setActiveSalaryCurrency(result.data.currency);
           setExpectedRevision(result.data.revision);
           setSalaryAmount(minorUnitsToDecimal(result.data.amount_minor));
+          if (!isApproved) {
+            setSnapshot(null);
+            setSnapshotError(null);
+          }
         } else if (result.status === 'stale') {
           setSalaryError(messages['workforce.payroll.approve.stale']);
         } else if (result.status === 'denied') {
@@ -265,17 +280,26 @@ export function PayrollManager({
     e.preventDefault();
     setInputError(null);
 
-    if (!selectedEmployeeId || scopeLoading || inputSubmitPending.current) {
+    if (
+      !selectedEmployeeId ||
+      scopeLoading ||
+      scopeError ||
+      isPending ||
+      snapshotLoading ||
+      inputSubmitPending.current
+    ) {
       return;
     }
 
     const supersedesInputIdForRequest =
       category === 'correction' ? supersedesInputId : null;
+    const amountMinor = decimalToMinorUnits(inputAmount);
+    const canonicalAmount = amountMinor?.toString() ?? inputAmount.trim();
     const fingerprint = JSON.stringify([
       selectedEmployeeId,
       month,
       category,
-      inputAmount,
+      canonicalAmount,
       activeSalaryCurrency,
       supersedesInputIdForRequest,
     ]);
@@ -312,7 +336,10 @@ export function PayrollManager({
           inputIntent.current = null;
           setInputAmount('');
           setSupersedesInputId('');
-          const amountMinor = decimalToMinorUnits(inputAmount);
+          if (!isApproved) {
+            setSnapshot(null);
+            setSnapshotError(null);
+          }
           if (amountMinor !== null) {
             setPayrollInputs((current) => [
               ...current,
@@ -349,7 +376,14 @@ export function PayrollManager({
 
   // Generate / Review Snapshot
   const handleCreateSnapshot = async () => {
-    if (!selectedEmployeeId || scopeLoading || isApproved) return;
+    if (
+      !selectedEmployeeId ||
+      scopeLoading ||
+      scopeError ||
+      isApproved ||
+      isPending
+    )
+      return;
     const request = scopeRequest.current;
     setSnapshotLoading(true);
     setSnapshotError(null);
@@ -392,7 +426,16 @@ export function PayrollManager({
 
   // Confirm External Payment Approval
   const handleApprovePayroll = () => {
-    if (!snapshot || !selectedEmployeeId || scopeLoading || isApproved) return;
+    if (
+      !snapshot ||
+      !selectedEmployeeId ||
+      scopeLoading ||
+      scopeError ||
+      isApproved ||
+      snapshotLoading ||
+      isPending
+    )
+      return;
     setApprovalError(null);
     const request = scopeRequest.current;
 
@@ -413,9 +456,15 @@ export function PayrollManager({
           success(messages['workforce.payroll.approve.success']);
           setIsApproved(true);
         } else if (result.status === 'already_approved') {
-          setApprovalError(
-            messages['workforce.payroll.approve.alreadyApproved'],
+          const reloadRequest = await loadPayrollScope(
+            selectedEmployeeId,
+            `${month}-01`,
           );
+          if (reloadRequest === scopeRequest.current) {
+            setApprovalError(
+              messages['workforce.payroll.approve.alreadyApproved'],
+            );
+          }
         } else if (result.status === 'stale') {
           setApprovalError(messages['workforce.payroll.approve.stale']);
         } else if (result.status === 'denied') {
@@ -614,7 +663,12 @@ export function PayrollManager({
                 type="submit"
                 variant="primary"
                 loading={isPending}
-                disabled={scopeLoading}
+                disabled={
+                  scopeLoading ||
+                  Boolean(scopeError) ||
+                  isPending ||
+                  snapshotLoading
+                }
               >
                 {messages['dialog.confirm']}
               </Button>
@@ -747,7 +801,12 @@ export function PayrollManager({
                 type="submit"
                 variant="primary"
                 loading={isPending}
-                disabled={scopeLoading}
+                disabled={
+                  scopeLoading ||
+                  Boolean(scopeError) ||
+                  isPending ||
+                  snapshotLoading
+                }
               >
                 {messages['dialog.confirm']}
               </Button>
@@ -768,7 +827,9 @@ export function PayrollManager({
             <Button
               variant="secondary"
               loading={snapshotLoading}
-              disabled={scopeLoading || isApproved}
+              disabled={
+                scopeLoading || Boolean(scopeError) || isApproved || isPending
+              }
               onClick={handleCreateSnapshot}
               data-testid="generate-snapshot-btn"
             >
@@ -848,7 +909,13 @@ export function PayrollManager({
               <div className={styles.buttonRow}>
                 <Button
                   variant="primary"
-                  disabled={isApproved || isPending || scopeLoading}
+                  disabled={
+                    isApproved ||
+                    isPending ||
+                    scopeLoading ||
+                    Boolean(scopeError) ||
+                    snapshotLoading
+                  }
                   onClick={() => setConfirmOpen(true)}
                   data-testid="approve-payroll-btn"
                 >

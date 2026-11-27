@@ -95,6 +95,8 @@ begin
   end if;
   perform app_private.p7_require_payroll_employee(p_employee_id);
   perform app_private.p7_payroll_lock(p_employee_id, p_effective_month);
+  perform app_private.p7_require_platform_owner();
+  perform app_private.p7_require_payroll_employee(p_employee_id);
 
   select * into salary_row
   from public.p7_salary_revisions

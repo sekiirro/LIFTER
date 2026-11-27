@@ -58,6 +58,27 @@ describe('Payroll UI: Page & Components', () => {
       },
     );
 
+    it('disables payroll mutations when initial month hydration fails', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'po-user-1',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      });
+      mocks.getEligible.mockResolvedValue({
+        status: 'ok',
+        employees: [
+          { userId: '00000000-0000-0000-0000-000000000001', role: 'trainer' },
+        ],
+      });
+      mocks.getPayrollMonth.mockResolvedValue({ status: 'unavailable' });
+
+      const html = renderToStaticMarkup(await Page());
+
+      expect(html).toContain('data-testid="payroll-scope-error"');
+      expect(html).toContain(en['workforce.payroll.review.error']);
+      expect(html).toMatch(/<button[^>]*disabled=""/);
+    });
+
     it('grants access to platform_owner and renders payroll manager', async () => {
       mocks.actor.mockResolvedValue({
         userId: 'po-user-1',

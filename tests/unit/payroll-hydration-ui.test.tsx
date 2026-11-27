@@ -58,6 +58,11 @@ const hydratedMonth: PayrollMonthState = {
   },
 };
 
+const resumableMonth: PayrollMonthState = {
+  ...hydratedMonth,
+  approval: null,
+};
+
 const emptyMonth: PayrollMonthState = {
   salary: null,
   inputs: [],
@@ -255,6 +260,60 @@ describe('Payroll month hydration and scope reset', () => {
       employeeId: employeeC,
       effectiveMonth: '2026-12-01',
     });
+  });
+
+  it('clears an unapproved snapshot after a salary revision makes it stale', async () => {
+    await renderManager(resumableMonth);
+    expect(host.querySelector('[data-testid="snapshot-details"]')).toBeTruthy();
+
+    await submitSalary();
+
+    expect(host.querySelector('[data-testid="snapshot-details"]')).toBeNull();
+  });
+
+  it('blocks approval while a replacement snapshot is loading', async () => {
+    let resolveSnapshot!: (value: unknown) => void;
+    actions.createSnapshot.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSnapshot = resolve;
+        }),
+    );
+    await renderManager(resumableMonth);
+    const approve = host.querySelector<HTMLButtonElement>(
+      '[data-testid="approve-payroll-btn"]',
+    );
+    expect(approve?.disabled).toBe(false);
+
+    await act(async () => {
+      host
+        .querySelector<HTMLButtonElement>(
+          '[data-testid="generate-snapshot-btn"]',
+        )
+        ?.click();
+    });
+    expect(
+      host.querySelector<HTMLButtonElement>(
+        '[data-testid="approve-payroll-btn"]',
+      )?.disabled,
+    ).toBe(true);
+
+    await act(async () => {
+      resolveSnapshot({
+        status: 'ok',
+        data: {
+          id: 'snap-3',
+          version: 3,
+          amount_minor: '102500',
+          currency: 'USD',
+        },
+      });
+    });
+    expect(
+      host.querySelector<HTMLButtonElement>(
+        '[data-testid="approve-payroll-btn"]',
+      )?.disabled,
+    ).toBe(false);
   });
 
   it('ignores a salary response from the previously selected scope', async () => {
