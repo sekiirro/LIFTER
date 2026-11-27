@@ -38,6 +38,7 @@ export type AppShellProps = Omit<
   children: ReactNode;
   contentAs?: 'main' | 'div';
   workspaceId?: string;
+  notifications?: boolean;
 };
 
 export function AppShell({
@@ -48,12 +49,14 @@ export function AppShell({
   contentAs: Content = 'main',
   workspaceId,
   fallback,
+  notifications = true,
 }: AppShellProps) {
   const navigation = getNavigation(role);
   const isStaff =
-    role === 'platform_owner' ||
-    role === 'workspace_owner' ||
-    role === 'trainer';
+    (role === 'platform_owner' ||
+      role === 'workspace_owner' ||
+      role === 'trainer') &&
+    notifications;
 
   if (role === 'platform_owner')
     return (
@@ -65,21 +68,16 @@ export function AppShell({
   if (navigation.status === 'needs-decision')
     return (
       <div className={styles.shell} data-shell="">
+        <Content>{children}</Content>
         {isStaff && (
           <div className={styles.staffHeader}>
             <StaffNotifications messages={messages} />
           </div>
         )}
-        <Content>{children}</Content>
       </div>
     );
   return (
     <div className={styles.shell} data-shell="">
-      {isStaff && (
-        <div className={styles.staffHeader}>
-          <StaffNotifications messages={messages} />
-        </div>
-      )}
       <ShellNavigation
         role={role}
         items={navigation.items}
@@ -91,6 +89,11 @@ export function AppShell({
         bottomClassName={styles.bottom}
       />
       <Content className={styles.content}>{children}</Content>
+      {isStaff && (
+        <div className={styles.staffHeader}>
+          <StaffNotifications messages={messages} />
+        </div>
+      )}
     </div>
   );
 }

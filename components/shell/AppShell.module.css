@@ -47,16 +47,6 @@
 /* S31-PO-7 Q5: the vertical inline-start sidebar shows from 64rem (1024px);
    the labeled bottom bar shows below 64rem. FR-021 / FR-027 / SC-010. */
 @media (min-width: 64rem) {
-  .staffHeader {
-    position: fixed;
-    inset-block-start: var(--space-4);
-    inset-inline-end: var(--space-4);
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-
   .rail {
     display: flex;
   }
