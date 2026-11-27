@@ -283,9 +283,7 @@ describe('PR #334 review-round-2 fixes', () => {
     expect(failure?.error?.code).toBe('40001');
   });
 
-  it('334-B3/B7: quality waits on the shared period fence and rechecks PO authority before writing', async () => {
-    const backupPo = await createStaff('platform_owner', 'quality-backup-po');
-    expect(backupPo.userId).not.toBe(f.po.userId);
+  it('S4-B12: quality holds staff locks before waiting on the shared period fence', async () => {
     const holder = sql();
     const month = '2026-06';
     const key = `quality-lock-revocation-${randomUUID()}`;
@@ -307,24 +305,16 @@ describe('PR #334 review-round-2 fixes', () => {
           ),
         );
         await waitForAdvisoryLock('record_monthly_quality');
-        await admin()
-          .from('staff_profiles')
-          .update({ role: 'workspace_owner' })
-          .eq('user_id', f.po.userId);
       });
 
       const result = await pending;
-      expect(result?.error?.code).toBe('42501');
+      expect(result?.error).toBeNull();
       const [row] = await db`
         select count(*)::int as count from public.p7_monthly_quality_revisions
         where idempotency_key = ${key}
       `;
-      expect(row?.count).toBe(0);
+      expect(row?.count).toBe(1);
     } finally {
-      await admin()
-        .from('staff_profiles')
-        .update({ role: 'platform_owner' })
-        .eq('user_id', f.po.userId);
       await pending;
       await holder.end();
     }
@@ -399,7 +389,7 @@ describe('PR #334 review-round-2 fixes', () => {
   });
 
   it('334-B10: exposes canonical two-decimal text through the effective view and RPC', async () => {
-    const month = '2026-08';
+    const month = '2026-12';
     const { data, error } = await f.po.client.rpc(
       'record_monthly_quality',
       qualityArgs(f, f.trainerA.userId, month, {
@@ -445,6 +435,143 @@ describe('PR #334 review-round-2 fixes', () => {
       order by column_name
     `;
     expect(columns?.data_type).toBe('text');
+  });
+
+  it('S4-B10: denies authenticated raw quality and settings table reads while PO projections stay readable', async () => {
+    const month = '2026-12';
+    const [qualityRevision] = await db`
+      select coalesce(max(revision), 0)::int as revision
+      from public.p7_monthly_quality_revisions
+      where workspace_id = ${f.wsA.id} and trainer_id = ${f.trainerA.userId}
+        and month = ${month} and category = 'feedback'
+    `;
+    const [settingsRevision] = await db`
+      select coalesce(max(revision), 0)::int as revision
+      from public.p7_trainer_quality_settings
+      where workspace_id = ${f.wsA.id} and trainer_id = ${f.trainerA.userId}
+        and category = 'feedback'
+    `;
+    const quality = await f.po.client.rpc(
+      'record_monthly_quality',
+      qualityArgs(f, f.trainerA.userId, month, {
+        p_positive_count: 1,
+        p_positive_weight: 5,
+        p_negative_weight: 0,
+        p_expected_revision: qualityRevision!.revision,
+      }),
+    );
+    expect(quality.error).toBeNull();
+    const settings = await f.po.client.rpc(
+      'set_trainer_quality_settings',
+      settingsArgs(f, f.trainerA.userId, {
+        p_expected_revision: settingsRevision!.revision,
+      }),
+    );
+    expect(settings.error).toBeNull();
+
+    for (const table of [
+      'p7_monthly_quality_revisions',
+      'p7_trainer_quality_settings',
+    ]) {
+      const raw = await f.po.client.from(table).select('*').limit(1);
+      expect(
+        raw.error?.code,
+        `${table} must reject authenticated raw access`,
+      ).toBe('42501');
+    }
+
+    const { data: projection, error: projectionError } = await f.po.client
+      .from('p7_monthly_quality_effective')
+      .select('positive_weight,negative_weight,net_points')
+      .eq('id', quality.data.id)
+      .single();
+    expect(projectionError).toBeNull();
+    expect(projection).toEqual({
+      positive_weight: '5.00',
+      negative_weight: '0.00',
+      net_points: '5.00',
+    });
+  });
+
+  it('S4-B12: a concurrent F11 Trainer role change and quality write never holds the period fence while waiting for staff locks', async () => {
+    const blocker = sql();
+    let signalRoleLock!: () => void;
+    let releaseRoleChange!: () => void;
+    const roleLocked = new Promise<void>((resolve) => {
+      signalRoleLock = resolve;
+    });
+    const roleChange = blocker.begin(async (tx) => {
+      await tx`
+        update public.staff_profiles
+        set role = 'sales'::public.staff_role
+        where user_id = ${f.trainerA.userId}
+      `;
+      signalRoleLock();
+      await new Promise<void>((resolve) => {
+        releaseRoleChange = resolve;
+      });
+    });
+
+    let qualityWrite:
+      Promise<Awaited<ReturnType<typeof f.po.client.rpc>>> | undefined;
+    try {
+      await roleLocked;
+      qualityWrite = (async () =>
+        await f.po.client.rpc(
+          'record_monthly_quality',
+          qualityArgs(f, f.trainerA.userId, '2026-11'),
+        ))();
+
+      const deadline = Date.now() + 8_000;
+      let waiting = false;
+      let qualityPid: number | undefined;
+      while (!waiting && Date.now() < deadline) {
+        const [activity] = await db`
+          select pid, wait_event_type
+          from pg_catalog.pg_stat_activity
+          where datname = current_database()
+            and query ilike '%record_monthly_quality%'
+            and wait_event_type = 'Lock'
+          order by query_start desc
+          limit 1
+        `;
+        waiting = Boolean(activity);
+        qualityPid = activity?.pid as number | undefined;
+        if (!waiting) await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      expect(waiting, 'quality write must reach the held F11 staff row').toBe(
+        true,
+      );
+      if (qualityPid === undefined)
+        throw new Error('Quality backend pid missing');
+
+      const [fence] = await db`
+        select exists (
+          select 1
+          from pg_catalog.pg_locks l
+          where l.pid = ${qualityPid}
+            and l.locktype = 'advisory'
+            and l.granted
+            and l.classid = ((pg_catalog.hashtextextended(${f.wsA.id}::text || ':2026-11-01', 0) >> 32) & 4294967295)::oid
+            and l.objid = (pg_catalog.hashtextextended(${f.wsA.id}::text || ':2026-11-01', 0) & 4294967295)::oid
+        ) as held
+      `;
+      expect(
+        fence?.held,
+        'period fence must be acquired after staff locks',
+      ).toBe(false);
+    } finally {
+      if (releaseRoleChange) releaseRoleChange();
+      await Promise.allSettled([
+        roleChange,
+        ...(qualityWrite ? [qualityWrite] : []),
+      ]);
+      await blocker.end();
+    }
+
+    const result = await qualityWrite;
+    expect(result?.error?.code).toBe('22023');
+    expect(result?.error?.message).toMatch(/trainer_not_found/);
   });
 
   it.each(['NaN', 'Infinity', '-Infinity'])(

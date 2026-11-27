@@ -3128,7 +3128,12 @@ describe('package tier name security catalog (T078)', () => {
         relrowsecurity: true,
         relforcerowsecurity: true,
       });
-      for (const role of ['anon', 'service_role']) {
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [readGrant] =
+          await db`select has_table_privilege(${role}, ${relation}, 'SELECT') as allowed`;
+        expect(readGrant?.allowed).toBe(
+          table === 'p7_monthly_reminder_outbox' && role === 'authenticated',
+        );
         for (const privilege of ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) {
           const [grant] =
             await db`select has_table_privilege(${role}, ${relation}, ${privilege}) as allowed`;
@@ -3226,7 +3231,11 @@ describe('package tier name security catalog (T078)', () => {
     ]);
     const [view] =
       await db`select reloptions from pg_class where oid='public.p7_monthly_quality_effective'::regclass`;
-    expect(view?.reloptions).toContain('security_invoker=true');
+    expect(view?.reloptions ?? []).not.toContain('security_invoker=true');
+    const [projection] =
+      await db`select pg_get_viewdef('public.p7_monthly_quality_effective'::regclass, true) as body`;
+    expect(projection?.body).toContain('is_platform_owner');
+    expect(projection?.body).toContain('has_workspace_access');
   });
 });
 
