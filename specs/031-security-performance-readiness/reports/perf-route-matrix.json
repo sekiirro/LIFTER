@@ -6,12 +6,36 @@
   "routes": [
     { "path": "/api/health", "surface": "mobile-web/health", "kind": "public" },
     { "path": "/login", "surface": "mobile-web/auth", "kind": "public" },
-    { "path": "/auth/recovery", "surface": "mobile-web/auth", "kind": "public" },
-    { "path": "/clients", "surface": "client directory", "kind": "authenticated-shell" },
-    { "path": "/clients?page=1&pageSize=50", "surface": "client directory/pagination", "kind": "authenticated-shell" },
-    { "path": "/clients?query=Pilot", "surface": "client directory/filtering", "kind": "authenticated-shell" },
-    { "path": "/workspaces", "surface": "workspace/staff directory", "kind": "authenticated-shell" },
+    {
+      "path": "/auth/recovery",
+      "surface": "mobile-web/auth",
+      "kind": "public"
+    },
+    {
+      "path": "/clients",
+      "surface": "client directory",
+      "kind": "authenticated-shell"
+    },
+    {
+      "path": "/clients?page=1&pageSize=50",
+      "surface": "client directory/pagination",
+      "kind": "authenticated-shell"
+    },
+    {
+      "path": "/clients?query=Pilot",
+      "surface": "client directory/filtering",
+      "kind": "authenticated-shell"
+    },
+    {
+      "path": "/workspaces",
+      "surface": "workspace/staff directory",
+      "kind": "authenticated-shell"
+    },
     { "path": "/reports", "surface": "reports", "kind": "authenticated-shell" },
-    { "path": "/welcome", "surface": "client portal mobile web", "kind": "authenticated-shell" }
+    {
+      "path": "/welcome",
+      "surface": "client portal mobile web",
+      "kind": "authenticated-shell"
+    }
   ]
 }

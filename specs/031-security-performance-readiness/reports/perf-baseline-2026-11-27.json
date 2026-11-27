@@ -1,11 +1,7 @@
 {
   "generated_utc": "2026-11-27T10:45:25.414Z",
   "gate_status": "PROPOSED_ONLY_NOT_A_GATE_PENDING_PO_SIGNATURE",
-  "authority": [
-    "S71-PO-7",
-    "S70-PO-1 item N",
-    "S71-R10"
-  ],
+  "authority": ["S71-PO-7", "S70-PO-1 item N", "S71-R10"],
   "environment": {
     "target": "local non-production Stack D (Docker Desktop), Next dev server on loopback:3000",
     "hosted_target": "pending PI-04 approval; not used",

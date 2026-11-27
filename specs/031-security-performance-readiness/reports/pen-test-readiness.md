@@ -6,14 +6,14 @@
 
 ## 1. What is and is not decided
 
-| Item                       | State                                                                                              |
-| -------------------------- | -------------------------------------------------------------------------------------------------- |
-| Need for external test     | PO-approved in principle (S71-PO-1); PT-01 is Open and blocking pre-go-live.                       |
-| Vendor / assessor identity | **Deferred until after the pilot** (S71-PO-7). No vendor is named, contacted or shortlisted here.  |
-| Timing / window            | **Deferred until after the pilot** (S71-PO-7). No calendar slot is proposed or booked.             |
-| Budget / spend             | **PO decision; not requested or estimated here.** No procurement action is authorized.             |
+| Item                       | State                                                                                                                                           |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Need for external test     | PO-approved in principle (S71-PO-1); PT-01 is Open and blocking pre-go-live.                                                                    |
+| Vendor / assessor identity | **Deferred until after the pilot** (S71-PO-7). No vendor is named, contacted or shortlisted here.                                               |
+| Timing / window            | **Deferred until after the pilot** (S71-PO-7). No calendar slot is proposed or booked.                                                          |
+| Budget / spend             | **PO decision; not requested or estimated here.** No procurement action is authorized.                                                          |
 | Target                     | Synthetic, non-production, least-privilege only. Real client data and production targets are out of scope without separate written PO approval. |
-| Scope, roles, evidence     | Prepared below; no test has been commissioned or run.                                              |
+| Scope, roles, evidence     | Prepared below; no test has been commissioned or run.                                                                                           |
 
 Nothing in this pack marks PT-01 `Done`, changes another `docs/13` row, or authorizes an engagement.
 
