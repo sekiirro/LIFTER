@@ -1,4 +1,7 @@
+// @vitest-environment happy-dom
+import { act } from 'react';
 import { createElement, type ReactElement } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { getMessages } from '../../lib/i18n';
@@ -205,6 +208,50 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
     });
     expect(arHtml).toContain(ar['workforce.checkin.denied']);
     expect(arHtml).not.toContain('table');
+  });
+
+  it('replaces prior workspace rows when the same view receives a new scope', async () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = createRoot(host);
+    const confirmFollowup = vi.fn();
+
+    await act(async () => {
+      root.render(
+        createElement(
+          ToastProvider,
+          { dismissLabel: 'Dismiss' },
+          createElement(TrainerCheckinsView, {
+            workspaceId: 'workspace-a',
+            locale: 'en',
+            checkins: [sampleCheckins[0]!],
+            confirmFollowup,
+          }),
+        ),
+      );
+    });
+    expect(host.textContent).toContain('Ahmed Youssef');
+
+    await act(async () => {
+      root.render(
+        createElement(
+          ToastProvider,
+          { dismissLabel: 'Dismiss' },
+          createElement(TrainerCheckinsView, {
+            workspaceId: 'workspace-b',
+            locale: 'en',
+            checkins: [sampleCheckins[2]!],
+            confirmFollowup,
+          }),
+        ),
+      );
+    });
+    expect(host.textContent).toContain('Omar Tarek');
+    expect(host.textContent).not.toContain('Ahmed Youssef');
+    expect(host.textContent).not.toContain('+201001234567');
+
+    await act(async () => root.unmount());
+    host.remove();
   });
 
   it('renders empty state when no check-ins exist', () => {
