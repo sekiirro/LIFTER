@@ -39,14 +39,7 @@ describe('PO export jobs handler (T009)', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
-        const reader = (init?.body as ReadableStream<Uint8Array>).getReader();
-        const decoder = new TextDecoder();
-        for (;;) {
-          const result = await reader.read();
-          if (result.done) break;
-          uploaded += decoder.decode(result.value, { stream: true });
-        }
-        uploaded += decoder.decode();
+        uploaded = String(init?.body ?? '');
         return new Response('{}', { status: 200 });
       }),
     );
@@ -86,7 +79,7 @@ describe('PO export jobs handler (T009)', () => {
     const rpc = (async (name: string) => {
       calls.push(name);
       if (name === 'po_export_snapshot')
-        return { rows: [], row_count: 50001, exceeded_limit: true };
+        return { rows: [], row_count: 10001, exceeded_limit: true };
       if (name === 'po_export_failed') return true;
       throw new Error(`Unexpected RPC ${name}`);
     }) as unknown as Rpc;
@@ -101,7 +94,10 @@ describe('PO export jobs handler (T009)', () => {
         payload: {},
         leaseToken,
       }),
-    ).rejects.toMatchObject({ code: 'po_export_generation_failed' });
+    ).rejects.toMatchObject({
+      code: 'po_export_row_cap_exceeded',
+      permanent: true,
+    });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(calls).toEqual(['po_export_snapshot', 'po_export_failed']);
   });

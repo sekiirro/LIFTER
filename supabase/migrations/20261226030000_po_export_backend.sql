@@ -79,14 +79,18 @@ alter function public.read_po_client_export_status(uuid) owner to postgres;
 revoke all on function public.read_po_client_export_status(uuid) from public, anon, service_role;
 grant execute on function public.read_po_client_export_status(uuid) to authenticated;
 
-create function public.po_export_page(
-  p_job_id uuid, p_lease_token uuid, p_after_workspace_id uuid default null,
-  p_after_client_id uuid default null, p_limit integer default 500
-) returns jsonb language plpgsql security definer set search_path = '' as $$
-declare job public.jobs%rowtype; actor uuid; ws uuid;
+-- The 10,000-row pilot cap keeps one snapshot bounded. The sentinel row detects
+-- overflow; an oversized result returns no rows, so the worker cannot upload a prefix.
+create function public.po_export_snapshot(p_job_id uuid, p_lease_token uuid)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare
+  job public.jobs%rowtype;
+  actor uuid;
+  ws uuid;
+  row_count integer;
+  rows_json jsonb;
 begin
-  if auth.role() <> 'service_role'
-    or p_limit is null or p_limit < 1 or p_limit > 500 then
+  if auth.role() <> 'service_role' then
     raise exception 'not_found' using errcode = '42501';
   end if;
   select * into job from public.jobs j where j.id=p_job_id and j.kind='po.export'
@@ -97,63 +101,70 @@ begin
   if not exists(select 1 from public.staff_profiles p where p.user_id=actor and p.role='platform_owner') then
     raise exception 'not_found' using errcode = '42501';
   end if;
-  return (
-    select coalesce(jsonb_agg(jsonb_build_object(
-      'workspace_id', page.workspace_id, 'client_id', page.client_id, 'row', page.row
-    ) order by page.workspace_id, page.client_id), '[]'::jsonb)
-    from (
-      select c.workspace_id, c.id as client_id,
-        jsonb_build_object(
-          'clients.id', c.id::text,
-          'clients.workspace_id', c.workspace_id::text,
-          'clients.name', c.name,
-          'clients.email_normalized', c.email_normalized,
-          'clients.phone_e164', c.phone_e164,
-          'clients.approval_state', c.approval_state,
-          'clients.created_at', c.created_at,
-          'subscriptions.package_name', pv.name_en,
-          'subscriptions.status', ep.status,
-          'subscriptions.start_at', sa.activated_at,
-          'subscriptions.expires_at', ep.effective_end_exclusive,
-          'client_trainer_assignments.trainer_name', sp.display_name,
-          'client_trainer_assignments.assigned_at', ta.assigned_at,
-          'forms.intake_submitted_at', fs.submitted_at,
-          'forms.fitness_goals', fr.answer_values->>'fitness_goals'
-        ) as row
-      from public.clients c
-      left join lateral (
-        select s.* from public.subscriptions s where s.workspace_id=c.workspace_id and s.client_id=c.id
-          and s.created_at <= job.created_at
-        order by s.created_at desc, s.id desc limit 1
-      ) s on true
-      left join public.package_versions pv on pv.workspace_id=s.workspace_id and pv.id=s.package_version_id
-      left join app_private.subscription_entitlement_projection ep on ep.workspace_id=s.workspace_id and ep.subscription_id=s.id
-      left join public.subscription_activations sa on sa.workspace_id=s.workspace_id and sa.subscription_id=s.id
-      left join lateral (
-        select a.* from public.client_trainer_assignments a
-        where a.workspace_id=c.workspace_id and a.client_id=c.id
-          and a.assigned_at <= job.created_at
-          and (a.ended_at is null or a.ended_at > job.created_at)
-        order by a.assigned_at desc,a.id desc limit 1
-      ) ta on true
-      left join public.staff_profiles sp on sp.user_id=ta.trainer_user_id
-      left join lateral (
-        select sub.workspace_id, sub.assignment_id, sub.revision, sub.submitted_at from app_private.form_submissions sub
-        join public.form_assignments fa on fa.workspace_id=sub.workspace_id and fa.id=sub.assignment_id
-        where fa.workspace_id=c.workspace_id and fa.client_id=c.id and sub.submitted_at <= job.created_at
-        order by sub.submitted_at desc,sub.assignment_id desc limit 1
-      ) fs on true
-      left join public.form_answer_revisions fr on fr.workspace_id=fs.workspace_id and fr.assignment_id=fs.assignment_id and fr.revision=fs.revision
-      where c.created_at <= job.created_at and (ws is null or c.workspace_id=ws)
-        and (p_after_workspace_id is null or (c.workspace_id,c.id)>(p_after_workspace_id,p_after_client_id))
-      order by c.workspace_id,c.id limit p_limit
-    ) page
+
+  -- This single SELECT captures every exported value under one MVCC snapshot.
+  with source_rows as materialized (
+    select c.workspace_id, c.id as client_id,
+      jsonb_build_object(
+        'clients.id', c.id::text,
+        'clients.workspace_id', c.workspace_id::text,
+        'clients.name', c.name,
+        'clients.email_normalized', c.email_normalized,
+        'clients.phone_e164', c.phone_e164,
+        'clients.approval_state', c.approval_state,
+        'clients.created_at', c.created_at,
+        'subscriptions.package_name', pv.name_en,
+        'subscriptions.status', ep.status,
+        'subscriptions.start_at', sa.activated_at,
+        'subscriptions.expires_at', ep.effective_end_exclusive,
+        'client_trainer_assignments.trainer_name', sp.display_name,
+        'client_trainer_assignments.assigned_at', ta.assigned_at,
+        'forms.intake_submitted_at', fs.submitted_at,
+        'forms.fitness_goals', fr.answer_values->>'fitness_goals'
+      ) as row
+    from public.clients c
+    left join lateral (
+      select s.* from public.subscriptions s where s.workspace_id=c.workspace_id and s.client_id=c.id
+        and s.created_at <= job.created_at
+      order by s.created_at desc, s.id desc limit 1
+    ) s on true
+    left join public.package_versions pv on pv.workspace_id=s.workspace_id and pv.id=s.package_version_id
+    left join app_private.subscription_entitlement_projection ep on ep.workspace_id=s.workspace_id and ep.subscription_id=s.id
+    left join public.subscription_activations sa on sa.workspace_id=s.workspace_id and sa.subscription_id=s.id
+    left join lateral (
+      select a.* from public.client_trainer_assignments a
+      where a.workspace_id=c.workspace_id and a.client_id=c.id
+        and a.assigned_at <= job.created_at
+        and (a.ended_at is null or a.ended_at > job.created_at)
+      order by a.assigned_at desc,a.id desc limit 1
+    ) ta on true
+    left join public.staff_profiles sp on sp.user_id=ta.trainer_user_id
+    left join lateral (
+      select sub.workspace_id, sub.assignment_id, sub.revision, sub.submitted_at from app_private.form_submissions sub
+      join public.form_assignments fa on fa.workspace_id=sub.workspace_id and fa.id=sub.assignment_id
+      where fa.workspace_id=c.workspace_id and fa.client_id=c.id and sub.submitted_at <= job.created_at
+      order by sub.submitted_at desc,sub.assignment_id desc limit 1
+    ) fs on true
+    left join public.form_answer_revisions fr on fr.workspace_id=fs.workspace_id and fr.assignment_id=fs.assignment_id and fr.revision=fs.revision
+    where c.created_at <= job.created_at and (ws is null or c.workspace_id=ws)
+    order by c.workspace_id,c.id limit 10001
+  )
+  select count(*)::integer,
+    coalesce(jsonb_agg(jsonb_build_object(
+      'workspace_id',source_rows.workspace_id,'client_id',source_rows.client_id,'row',source_rows.row
+    ) order by source_rows.workspace_id,source_rows.client_id),'[]'::jsonb)
+    into row_count, rows_json from source_rows;
+
+  return jsonb_build_object(
+    'rows', case when row_count > 10000 then '[]'::jsonb else rows_json end,
+    'row_count', row_count,
+    'exceeded_limit', row_count > 10000
   );
 end;
 $$;
-alter function public.po_export_page(uuid,uuid,uuid,uuid,integer) owner to postgres;
-revoke all on function public.po_export_page(uuid,uuid,uuid,uuid,integer) from public, anon, authenticated;
-grant execute on function public.po_export_page(uuid,uuid,uuid,uuid,integer) to service_role;
+alter function public.po_export_snapshot(uuid,uuid) owner to postgres;
+revoke all on function public.po_export_snapshot(uuid,uuid) from public, anon, authenticated;
+grant execute on function public.po_export_snapshot(uuid,uuid) to service_role;
 
 create function public.po_export_finalize(
   p_job_id uuid, p_lease_token uuid, p_object_path text, p_row_count bigint

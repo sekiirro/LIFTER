@@ -25,19 +25,13 @@ type RpcMethods = {
     args: { p_job_id: string; p_lease_token: string };
     result: boolean;
   };
-  po_export_page: {
-    args: {
-      p_job_id: string;
-      p_lease_token: string;
-      p_after_workspace_id: string | null;
-      p_after_client_id: string | null;
-      p_limit: number;
+  po_export_snapshot: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: {
+      rows: Array<{ row: Record<string, string | null> }>;
+      row_count: number;
+      exceeded_limit: boolean;
     };
-    result: Array<{
-      workspace_id: string;
-      client_id: string;
-      row: Record<string, string | null>;
-    }>;
   };
   po_export_finalize: {
     args: {

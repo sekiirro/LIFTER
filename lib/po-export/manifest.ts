@@ -3,6 +3,9 @@ import type { ExportField } from './csv';
 /** S71-PO-12 / S71-R27: health_notes is never an export field. */
 export const PO_EXPORT_MANIFEST_VERSION = '030-v1' as const;
 
+/** Pilot exports above this cap fail as a whole; no truncated artifact is stored. */
+export const PO_EXPORT_MAX_ROWS = 10_000;
+
 export const PO_EXPORT_FIELDS: readonly ExportField[] = [
   { key: 'clients.id', type: 'text' },
   { key: 'clients.workspace_id', type: 'text' },
