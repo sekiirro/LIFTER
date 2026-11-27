@@ -117,6 +117,8 @@ const f24Invoker = [
   'f24_guard_publication',
 ];
 const p7Private = [
+  'p7_backfill_sales_productivity_units',
+  'p7_earn_sales_productivity_unit',
   'p7_earn_f19_activation',
   'p7_lock_period',
   'p7_month_for_trigger',
@@ -408,6 +410,9 @@ describe('tenancy security catalog (T007)', () => {
           ...brandingPrivate,
           ...f23Private,
           ...f24Private,
+          ...p7Private,
+          'p7_backfill_sales_productivity_units',
+          'p7_earn_sales_productivity_unit',
           ...p7QualityPrivate,
           ...f22Private,
           ...p7Private,
@@ -741,6 +746,8 @@ describe('tenancy security catalog (T007)', () => {
         'p7_payroll_lineage',
         'p7_payroll_lock',
         'p7_reject_immutable_write',
+        'p7_earn_sales_productivity_unit',
+        'p7_backfill_sales_productivity_units',
         'p7_require_payroll_employee',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
@@ -2453,6 +2460,12 @@ describe('P7 earned ledger and monthly close catalog', () => {
         and c.confrelid in ('public.clients'::regclass, 'public.subscriptions'::regclass,
           'public.productivity_units'::regclass, 'public.subscription_activations'::regclass)`;
     expect(clientForeignKeys).toHaveLength(0);
+    const [sourceKeyUnique] = await db`select exists (
+      select 1 from pg_indexes where schemaname='public'
+        and tablename='p7_earned_points'
+        and indexdef like '%UNIQUE% (workspace_id, source_key)%'
+    ) as present`;
+    expect(sourceKeyUnique?.present).toBe(true);
   });
 
   it('locks the period helper and restricts finalization to authenticated callers', async () => {
@@ -2470,6 +2483,21 @@ describe('P7 earned ledger and monthly close catalog', () => {
       service_role: false,
     });
     expect(finalizer!.proconfig).toContain('search_path=""');
+
+    const [reporter] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='public.p7_workforce_report(uuid,date)'::regprocedure`;
+    expect(reporter).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(reporter!.proconfig).toContain('search_path=""');
   });
 });
 
@@ -2499,6 +2527,11 @@ describe('F13 T044a Sales productivity catalog', () => {
       from pg_trigger t join pg_proc p on p.oid=t.tgfoid
       where tgrelid='public.sales_productivity_units'::regclass and not tgisinternal order by tgname`;
     expect(triggers).toEqual([
+      {
+        tgname: 'p7_earn_sales_productivity_unit_after_insert',
+        type: 5,
+        proname: 'p7_earn_sales_productivity_unit',
+      },
       {
         tgname: 'sales_productivity_units_immutable',
         type: 31,
@@ -2540,6 +2573,25 @@ describe('F13 T044a Sales productivity catalog', () => {
       service_role: false,
     });
     expect(award?.proconfig).toContain('search_path=""');
+    const [p7Award] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role,
+        pg_get_functiondef(p.oid) as definition
+      from pg_proc p where p.oid='app_private.p7_earn_sales_productivity_unit()'::regprocedure`;
+    expect(p7Award).toMatchObject({
+      prosecdef: false,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(p7Award?.proconfig).toContain('search_path=""');
+    expect(p7Award?.definition).toContain(
+      "l.created_by_role_snapshot = 'sales'::public.staff_role",
+    );
+    expect(p7Award?.definition).toContain('app_private.p7_lock_period');
   });
 });
 
