@@ -254,6 +254,48 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
     host.remove();
   });
 
+  it('loads and exposes a follow-up beyond the first check-in page', async () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = createRoot(host);
+    const laterRow: TrainerCheckinRow = {
+      ...sampleCheckins[0]!,
+      assignment_id: 'assignment-101',
+      client_id: 'client-101',
+      client_name: 'Beyond first page',
+      phone_e164: '+201001010101',
+    };
+    await act(async () => {
+      root.render(
+        createElement(
+          ToastProvider,
+          { dismissLabel: 'Dismiss' },
+          createElement(TrainerCheckinsView, {
+            workspaceId: 'workspace-a',
+            locale: 'en',
+            checkins: [sampleCheckins[0]!],
+            hasMore: true,
+            onLoadMore: vi.fn().mockResolvedValue({
+              status: 'ok',
+              checkins: [laterRow],
+            }),
+            confirmFollowup: vi.fn(),
+          }),
+        ),
+      );
+    });
+    const nextPage = host.querySelector('[data-testid="checkins-next-page"]');
+    expect(nextPage).not.toBeNull();
+    await act(async () => {
+      nextPage?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(host.textContent).toContain('Beyond first page');
+    expect(host.querySelector('[data-testid="followup-btn-assignment-101"]'))
+      .not.toBeNull();
+    await act(async () => root.unmount());
+    host.remove();
+  });
+
   it('renders empty state when no check-ins exist', () => {
     const en = getMessages('en');
     const html = renderView({
