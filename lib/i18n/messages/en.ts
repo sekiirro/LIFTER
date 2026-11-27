@@ -1578,6 +1578,10 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.checkin.denied': 'You cannot view check-ins.',
   'workforce.checkin.filter.formStatus': 'Form status',
   'workforce.checkin.filter.followUpStatus': 'Follow-up status',
+  'workforce.reminder.title': 'Monthly quality review',
+  'workforce.reminder.body':
+    "It is time to enter this month's service quality. Open LIFTER to record it.",
+  'workforce.reminder.cta': 'Open review',
   'workforce.salary.title': 'Basic salary',
   'workforce.salary.market': 'Market',
   'workforce.salary.currencyHint':
@@ -1626,4 +1630,21 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.salary.market.international': 'International',
   'workforce.payroll.selectEmployeeFirst': 'Select an employee first.',
   'workforce.payroll.employee': 'Employee',
+  'workforce.finalize.title': 'Finalize month',
+  'workforce.finalize.selectMonth':
+    'Select a month that has ended (Cairo time)',
+  'workforce.finalize.closedHint':
+    'Only a month that has ended can be finalized.',
+  'workforce.finalize.action': 'Finalize month',
+  'workforce.finalize.confirmTitle': 'Finalize this month?',
+  'workforce.finalize.confirmBody':
+    'This finalization is recorded by the Platform Owner and is permanent. Later corrections go to the current open month and link to this month.',
+  'workforce.finalize.finalized': 'Finalized',
+  'workforce.finalize.alreadyFinalized': 'This month is already finalized.',
+  'workforce.finalize.currentMonthError':
+    'The current month cannot be finalized.',
+  'workforce.finalize.success': 'Month finalized.',
+  'workforce.finalize.error': 'Could not finalize the month. Try again.',
+  'workforce.finalize.stale': 'The month changed. Reload before finalizing.',
+  'workforce.finalize.denied': 'Only the Platform Owner can finalize months.',
 };

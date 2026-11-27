@@ -100,6 +100,16 @@ const f24Private = [
   'f24_username_issue',
   'f24_visible_username',
 ];
+// Spec 027 (P7) monthly-quality private helpers.
+const p7QualityPrivate = [
+  'guard_p7_quality_revisions_immutable',
+  'p7_require_quality_actor',
+  'p7_require_quality_trainer',
+  'enqueue_monthly_reminder',
+  'p7_monthly_reminders_run',
+  'p7_monthly_reminder_schedule_activate',
+  'p7_monthly_reminder_schedule_deactivate',
+];
 // Spec 024 immutability/swap guards run with the caller's rights.
 const f24Invoker = [
   'f24_guard_current',
@@ -111,7 +121,14 @@ const p7Private = [
   'p7_lock_period',
   'p7_month_for_trigger',
   'p7_reject_mutation',
+  'p7_route_closed_period',
   'p7_retention_has_open_dispute',
+];
+// T033 private strike helpers have a dedicated catalog list.
+const p7StrikePrivate = [
+  'record_due_workforce_strikes',
+  'guard_workforce_strike_immutable',
+  'reject_workforce_strike_truncate',
 ];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
@@ -391,8 +408,10 @@ describe('tenancy security catalog (T007)', () => {
           ...brandingPrivate,
           ...f23Private,
           ...f24Private,
-          ...p7Private,
+          ...p7QualityPrivate,
           ...f22Private,
+          ...p7Private,
+          ...p7StrikePrivate,
           ...privateAuthenticated,
           'p7_payroll_lineage',
           'p7_payroll_lock',
@@ -492,6 +511,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_alert_schedule_deactivate',
           'f15_alert_schedule_immutable',
           'f15_alert_schedule_run',
+          ...p7StrikePrivate,
           'f15_answer_is_present',
           'f15_answer_values_valid',
           'f15_approval_reconcile_trigger',
@@ -645,6 +665,7 @@ describe('tenancy security catalog (T007)', () => {
         'f15_alert_schedule_deactivate',
         'f15_alert_schedule_immutable',
         'f15_alert_schedule_run',
+        ...p7StrikePrivate,
         'f15_answer_is_present',
         'f15_answer_values_valid',
         'f15_forms_purge_run',
@@ -699,6 +720,7 @@ describe('tenancy security catalog (T007)', () => {
         'f18_invalid_uuid_alias',
         'f19_set_plan_revision_contributor_actions',
         ...p7Private,
+        ...p7StrikePrivate,
         // F15 T029: D1 erasure cron wrappers declare `security invoker` and enforce
         // the postgres-owner check in the body; only d1_erase_inapplicable_answers
         // is `security definer` (20261215030000_f15_d1_privacy_erasure.sql:188,499,569,577,598).
@@ -765,6 +787,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
           ...p7Private,
+          ...p7StrikePrivate,
           'f18_guard_plan_version_content',
           'f18_guard_nutrition_selection',
           'audit_package_promotion_period',
@@ -825,6 +848,10 @@ describe('tenancy security catalog (T007)', () => {
         // These internal helpers and F19 trigger routines revoke EXECUTE from PUBLIC, anon, authenticated, and service_role.
         expect(row.service_role_execute, row.proname).toBe(false);
       }
+      if (p7Private.includes(row.proname)) {
+        expect(row.authenticated_execute, row.proname).toBe(false);
+        expect(row.service_role_execute, row.proname).toBe(false);
+      }
       if (row.proname === 'archive_f15_selection_update') {
         expect(row.service_role_execute, row.proname).toBe(false);
       }
@@ -883,6 +910,8 @@ describe('tenancy security catalog (T007)', () => {
             // F22 helpers revoke EXECUTE from authenticated (definer RPCs call them).
             !f22Private.includes(row.proname) &&
             !p7Private.includes(row.proname) &&
+            !p7StrikePrivate.includes(row.proname) &&
+            !p7QualityPrivate.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
               'audit_events_immutable',
@@ -938,6 +967,7 @@ describe('tenancy security catalog (T007)', () => {
               'f15_alert_schedule_deactivate',
               'f15_alert_schedule_immutable',
               'f15_alert_schedule_run',
+              ...p7StrikePrivate,
               'f15_client_alert_schedule_insert',
               'register_f15_trainer_alert_schedule',
               'evaluate_forms_alerts_core',
@@ -2381,36 +2411,63 @@ describe('F19 T021 activation catalog', () => {
   });
 });
 
-describe('P7 earned ledger catalog', () => {
-  it('forces RLS, withholds direct access, and keeps client identifiers out of facts', async () => {
-    const [table] = await db`
-      select relrowsecurity, relforcerowsecurity
-      from pg_class where oid='public.p7_earned_points'::regclass`;
-    expect(table).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
-    const policies = await db`select * from pg_policies
-      where schemaname='public' and tablename='p7_earned_points'`;
-    expect(policies).toHaveLength(0);
-    for (const role of ['anon', 'authenticated', 'service_role'])
-      for (const privilege of [
-        'SELECT',
-        'INSERT',
-        'UPDATE',
-        'DELETE',
-        'TRUNCATE',
-      ]) {
-        const [grant] = await db`select has_table_privilege(${role},
-          'public.p7_earned_points', ${privilege}) as allowed`;
-        expect(grant!.allowed, `${role} ${privilege}`).toBe(false);
-      }
-    const [clientId] =
-      await db`select exists(select 1 from information_schema.columns
-      where table_schema='public' and table_name='p7_earned_points' and column_name='client_id') as present`;
+describe('P7 earned ledger and monthly close catalog', () => {
+  it('forces RLS and withholds direct access to all P7 accounting tables', async () => {
+    for (const table of [
+      'p7_earned_points',
+      'p7_adjustment_entries',
+      'p7_month_snapshots',
+    ]) {
+      const [security] = await db`
+        select relrowsecurity, relforcerowsecurity
+        from pg_class where oid=${`public.${table}`}::regclass`;
+      expect(security, table).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies = await db`
+        select * from pg_policies where schemaname='public' and tablename=${table}`;
+      expect(policies, table).toHaveLength(0);
+      for (const role of ['anon', 'authenticated', 'service_role'])
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+        ]) {
+          const [grant] = await db`
+            select has_table_privilege(${role}, ${`public.${table}`}, ${privilege}) as allowed`;
+          expect(grant!.allowed, `${role} ${privilege} ${table}`).toBe(false);
+        }
+    }
+    const [clientId] = await db`
+      select exists(select 1 from information_schema.columns where table_schema='public'
+        and table_name='p7_earned_points' and column_name='client_id') as present`;
     expect(clientId!.present).toBe(false);
-    const clientForeignKeys = await db`select c.conname from pg_constraint c
+    const clientForeignKeys = await db`
+      select c.conname from pg_constraint c
       where c.conrelid='public.p7_earned_points'::regclass and c.contype='f'
         and c.confrelid in ('public.clients'::regclass, 'public.subscriptions'::regclass,
           'public.productivity_units'::regclass, 'public.subscription_activations'::regclass)`;
     expect(clientForeignKeys).toHaveLength(0);
+  });
+
+  it('locks the period helper and restricts finalization to authenticated callers', async () => {
+    const [finalizer] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid='public.p7_finalize_month(uuid,date)'::regprocedure`;
+    expect(finalizer).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(finalizer!.proconfig).toContain('search_path=""');
   });
 });
 
@@ -2944,6 +3001,119 @@ describe('package tier name security catalog (T078)', () => {
       'updated_at',
     ]);
   });
+  it('hardens the P7 workforce monthly quality and reminder tables and RPCs', async () => {
+    for (const table of [
+      'p7_monthly_quality_revisions',
+      'p7_trainer_quality_settings',
+      'p7_monthly_reminder_outbox',
+    ]) {
+      const relation = `public.${table}`;
+      const [classRow] =
+        await db`select relrowsecurity, relforcerowsecurity from pg_class where oid = ${relation}::regclass`;
+      expect(classRow).toMatchObject({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'service_role']) {
+        for (const privilege of ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) {
+          const [grant] =
+            await db`select has_table_privilege(${role}, ${relation}, ${privilege}) as allowed`;
+          expect(grant?.allowed).toBe(false);
+        }
+      }
+    }
+
+    const triggers =
+      await db`select tgname, tgtype::int as type, tgenabled from pg_trigger where tgrelid = 'public.p7_monthly_quality_revisions'::regclass and not tgisinternal order by tgname`;
+    expect(triggers).toEqual(
+      [
+        {
+          tgname: 'p7_monthly_quality_revisions_no_delete',
+          type: 11,
+          tgenabled: 'O',
+        },
+        {
+          tgname: 'p7_monthly_quality_revisions_no_truncate',
+          type: 34,
+          tgenabled: 'O',
+        },
+        {
+          tgname: 'p7_monthly_quality_revisions_no_update',
+          type: 19,
+          tgenabled: 'O',
+        },
+      ].sort((a, b) => a.tgname.localeCompare(b.tgname)),
+    );
+
+    const settingsTriggers =
+      await db`select tgname, tgtype::int as type, tgenabled from pg_trigger where tgrelid = 'public.p7_trainer_quality_settings'::regclass and not tgisinternal order by tgname`;
+    expect(settingsTriggers).toEqual(
+      [
+        {
+          tgname: 'p7_trainer_quality_settings_no_delete',
+          type: 11,
+          tgenabled: 'O',
+        },
+        {
+          tgname: 'p7_trainer_quality_settings_no_truncate',
+          type: 34,
+          tgenabled: 'O',
+        },
+        {
+          tgname: 'p7_trainer_quality_settings_no_update',
+          type: 19,
+          tgenabled: 'O',
+        },
+      ].sort((a, b) => a.tgname.localeCompare(b.tgname)),
+    );
+
+    for (const name of [
+      'public.record_monthly_quality(uuid,uuid,text,text,integer,integer,numeric,numeric,text,integer)',
+      'public.set_trainer_quality_settings(uuid,uuid,text,numeric,numeric,text,integer)',
+      'public.get_trainer_quality_settings(uuid,uuid)',
+      'public.get_monthly_quality_revisions(uuid,text,uuid,text)',
+      'public.get_monthly_quality_effective(uuid,text,uuid,text)',
+      'app_private.guard_p7_quality_revisions_immutable()',
+      'app_private.p7_require_quality_actor(uuid,uuid,boolean)',
+      'app_private.p7_require_quality_trainer(uuid,uuid,boolean)',
+      'app_private.enqueue_monthly_reminder(uuid,text,timestamptz)',
+      'app_private.p7_monthly_reminders_run(text)',
+    ]) {
+      const [fn] =
+        await db`select prosecdef, proconfig, pg_get_userbyid(proowner) as owner from pg_proc where oid = ${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn?.proconfig).toContain('search_path=""');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role}, ${name}, 'EXECUTE') as allowed`;
+        expect(grant?.allowed).toBe(
+          role === 'authenticated' && name.startsWith('public.'),
+        );
+      }
+    }
+
+    const handler = 'public.handle_quality_monthly_reminder(uuid,uuid)';
+    const [handlerFn] =
+      await db`select prosecdef, proconfig, pg_get_userbyid(proowner) as owner from pg_proc where oid = ${handler}::regprocedure`;
+    expect(handlerFn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+    expect(handlerFn?.proconfig).toContain('search_path=""');
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      const [grant] =
+        await db`select has_function_privilege(${role}, ${handler}, 'EXECUTE') as allowed`;
+      expect(grant?.allowed).toBe(role === 'service_role');
+    }
+
+    const decimalColumns =
+      await db`select column_name, data_type from information_schema.columns where table_schema='public' and table_name='p7_monthly_quality_effective' and column_name in ('positive_weight','negative_weight','net_points') order by column_name`;
+    expect(decimalColumns).toEqual([
+      { column_name: 'negative_weight', data_type: 'text' },
+      { column_name: 'net_points', data_type: 'text' },
+      { column_name: 'positive_weight', data_type: 'text' },
+    ]);
+    const [view] =
+      await db`select reloptions from pg_class where oid='public.p7_monthly_quality_effective'::regclass`;
+    expect(view?.reloptions).toContain('security_invoker=true');
+  });
 });
 
 describe('P7 T017/T026/T027 payroll security catalog', () => {
@@ -3042,6 +3212,112 @@ describe('P7 T017/T026/T027 payroll security catalog', () => {
       service_role: false,
     });
     expect(employeeGuard?.proconfig).toContain('search_path=""');
+  });
+
+  it('derives staff scope from auth.uid and keeps the own-id guard non-disclosing', async () => {
+    const [fn] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'public.p7_get_own_compensation(uuid,date)'::regprocedure
+      ) as definition
+    `;
+    expect(fn?.definition).toMatch(
+      /p_employee_id\s+is distinct from\s+auth\.uid\(\)/i,
+    );
+    expect(fn?.definition).toMatch(
+      /raise exception 'not_permitted' using errcode = '42501'/i,
+    );
+    expect(fn?.definition).not.toMatch(
+      /p7_earned_points|p7_adjustment_entries|penalt/i,
+    );
+    const [privilege] = await db`
+      select p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p where p.oid = 'public.p7_get_own_compensation(uuid,date)'::regprocedure
+    `;
+    expect(privilege).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: true,
+      service_role: false,
+    });
+    expect(privilege?.proconfig).toContain('search_path=""');
+  });
+});
+
+describe('P7 T033 strike security catalog', () => {
+  const tables = [
+    'public.workforce_strike_events',
+    'public.workforce_strike_corrections',
+  ];
+  const publicFunctions = [
+    'public.get_workforce_strikes(uuid,uuid)',
+    'public.correct_workforce_strike(uuid,uuid,text,uuid,text,uuid)',
+  ];
+
+  it('forces RLS, denies direct table access, and prevents strike-history mutation', async () => {
+    for (const relation of tables) {
+      const [table] = await db`
+        select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass
+      `;
+      expect(table, relation).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] = await db`
+            select has_table_privilege(${role},${relation},${privilege}) as allowed
+          `;
+          expect(grant?.allowed, `${role} ${privilege} ${relation}`).toBe(
+            false,
+          );
+        }
+      }
+      const [trigger] = await db`
+        select
+          count(*) filter (where (tgtype & 16)<>0)::int as update_guards,
+          count(*) filter (where (tgtype & 8)<>0)::int as delete_guards,
+          count(*) filter (where (tgtype & 32)<>0)::int as truncate_guards
+        from pg_trigger
+        where tgrelid=${relation}::regclass and not tgisinternal
+      `;
+      expect(trigger, relation).toEqual({
+        update_guards: 1,
+        delete_guards: 1,
+        truncate_guards: 1,
+      });
+    }
+  });
+
+  it('exposes only authenticated RPCs with SECURITY DEFINER and an empty search path', async () => {
+    for (const signature of publicFunctions) {
+      const [fn] = await db`
+        select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+          has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+          has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+        from pg_proc p where p.oid=${signature}::regprocedure
+      `;
+      expect(fn).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig).toContain('search_path=""');
+    }
   });
 });
 
