@@ -1,0 +1,260 @@
+{
+  "generated_utc": "2026-11-27T10:45:25.414Z",
+  "gate_status": "PROPOSED_ONLY_NOT_A_GATE_PENDING_PO_SIGNATURE",
+  "authority": ["S71-PO-7", "S70-PO-1 item N", "S71-R10"],
+  "environment": {
+    "target": "local non-production Stack D (Docker Desktop), Next dev server on loopback:3000",
+    "hosted_target": "pending PI-04 approval; not used",
+    "data": "synthetic only; no real client data, no secrets",
+    "cpu": "not available locally (platform request logs only); pending hosted run"
+  },
+  "tooling": {
+    "http_probe": "scripts/free-tier/http-probe.mjs (spec 008, unmodified)",
+    "stats": "scripts/free-tier/lib/stats.mjs (spec 008, unmodified)",
+    "pilot_volumes": "scripts/free-tier/lib/pilot-volumes.mjs (spec 008, unmodified)",
+    "harness": "scripts/free-tier/baseline-031.mjs (orchestration only)"
+  },
+  "pilot_volumes": {
+    "inputs": {
+      "workspaces": 2,
+      "clientsPerWorkspace": 150,
+      "staffPerWorkspace": 2,
+      "plansPerClient": 2,
+      "newPlanVersionsPerClientPerMonth": 2
+    },
+    "derivedVolumes": {
+      "workspaces": 2,
+      "clients": 300,
+      "staffMemberships": 4,
+      "plans": 600,
+      "newPlanVersionsPerMonth": 600
+    },
+    "unverified": [
+      {
+        "input": "public.staff_profiles distinct user total",
+        "reason": "pilot fixes 2 staff per workspace but not whether the same staff are shared across the 2 workspaces; PK is user_id",
+        "source": "supabase/migrations/20261027120000_tenancy.sql:4-8",
+        "status": "UNVERIFIED"
+      },
+      {
+        "input": "auth.user rows",
+        "reason": "Supabase Auth managed table, not created in repo migrations; total depends on the unresolved distinct staff total",
+        "source": "supabase/migrations/20261031121000_client_accounts_model.sql:65",
+        "status": "UNVERIFIED"
+      },
+      {
+        "input": "public.nutrition_plan_version_contents rows",
+        "reason": "1:1 with nutrition plan_revisions, but the pilot does not split plans by plan_kind",
+        "source": "supabase/migrations/20261119010000_f18_nutrition_plan_version_contents.sql:3-17",
+        "status": "UNVERIFIED"
+      },
+      {
+        "input": "public.audit_events rows",
+        "reason": "no S31-PO-4 pilot unit determines audit volume",
+        "source": "supabase/migrations/20261027150000_audit_log.sql:2-11",
+        "status": "UNVERIFIED"
+      },
+      {
+        "input": "public.jobs rows",
+        "reason": "no S31-PO-4 pilot unit determines job volume",
+        "source": "supabase/migrations/20261027160000_jobs.sql:2-19",
+        "status": "UNVERIFIED"
+      },
+      {
+        "input": "bytes per row (total_bytes / reltuples)",
+        "reason": "no offline DB measurement exists; the only reltuples values in the repo are synthetic test fixtures (one is -1) and are invalid per the T012 unknown-basis rule",
+        "source": "tests/unit/free-tier-projection.test.ts:4-9",
+        "status": "UNVERIFIED"
+      }
+    ]
+  },
+  "route_matrix": "specs/031-security-performance-readiness/reports/perf-route-matrix.json",
+  "requests_per_route": 20,
+  "concurrency": 2,
+  "http_routes": [
+    {
+      "route": "GET /api/health",
+      "count": 20,
+      "statuses": {
+        "200": 20
+      },
+      "p50_ms": 14.73909999999998,
+      "p95_ms": 45.086600000000004,
+      "median_bytes": 33,
+      "surface": "mobile-web/health",
+      "kind": "public",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    },
+    {
+      "route": "GET /login",
+      "count": 20,
+      "statuses": {
+        "200": 20
+      },
+      "p50_ms": 72.7226,
+      "p95_ms": 95.36679999999998,
+      "median_bytes": 127142,
+      "surface": "mobile-web/auth",
+      "kind": "public",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    },
+    {
+      "route": "GET /auth/recovery",
+      "count": 20,
+      "statuses": {
+        "200": 20
+      },
+      "p50_ms": 80.54520000000002,
+      "p95_ms": 92.29480000000001,
+      "median_bytes": 125863,
+      "surface": "mobile-web/auth",
+      "kind": "public",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    },
+    {
+      "route": "GET /clients",
+      "count": 20,
+      "statuses": {
+        "307": 20
+      },
+      "p50_ms": 13.317900000000009,
+      "p95_ms": 16.265899999999874,
+      "median_bytes": 22,
+      "surface": "client directory",
+      "kind": "authenticated-shell",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    },
+    {
+      "route": "GET /clients",
+      "count": 20,
+      "statuses": {
+        "307": 20
+      },
+      "p50_ms": 14.480699999999615,
+      "p95_ms": 16.27319999999986,
+      "median_bytes": 49,
+      "surface": "client directory/pagination",
+      "kind": "authenticated-shell",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    },
+    {
+      "route": "GET /clients",
+      "count": 20,
+      "statuses": {
+        "307": 20
+      },
+      "p50_ms": 14.819200000000365,
+      "p95_ms": 16.07250000000022,
+      "median_bytes": 38,
+      "surface": "client directory/filtering",
+      "kind": "authenticated-shell",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    },
+    {
+      "route": "GET /workspaces",
+      "count": 20,
+      "statuses": {
+        "307": 20
+      },
+      "p50_ms": 14.789700000000266,
+      "p95_ms": 16.48660000000018,
+      "median_bytes": 25,
+      "surface": "workspace/staff directory",
+      "kind": "authenticated-shell",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    },
+    {
+      "route": "GET /reports",
+      "count": 20,
+      "statuses": {
+        "307": 20
+      },
+      "p50_ms": 13.5600000000004,
+      "p95_ms": 16.747399999999743,
+      "median_bytes": 22,
+      "surface": "reports",
+      "kind": "authenticated-shell",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    },
+    {
+      "route": "GET /welcome",
+      "count": 20,
+      "statuses": {
+        "307": 20
+      },
+      "p50_ms": 14.931900000000041,
+      "p95_ms": 16.605099999999766,
+      "median_bytes": 22,
+      "surface": "client portal mobile web",
+      "kind": "authenticated-shell",
+      "proposed_p95_budget_ms": 200,
+      "proposed_error_budget_pct": 1
+    }
+  ],
+  "db_query_classes": [
+    {
+      "query_class": "directory_page_1",
+      "requests": 20,
+      "concurrency": 2,
+      "errors": 0,
+      "p50_ms": 11.41,
+      "p95_ms": 13.32,
+      "max_ms": 29.29,
+      "median_bytes": 14286,
+      "median_rows": 1,
+      "throughput_rps": 148.1,
+      "proposed_p95_budget_ms": 100,
+      "proposed_error_budget_pct": 0.5
+    },
+    {
+      "query_class": "directory_page_6",
+      "requests": 20,
+      "concurrency": 2,
+      "errors": 0,
+      "p50_ms": 23.4,
+      "p95_ms": 26.63,
+      "max_ms": 27.42,
+      "median_bytes": 47,
+      "median_rows": 1,
+      "throughput_rps": 83,
+      "proposed_p95_budget_ms": 100,
+      "proposed_error_budget_pct": 0.5
+    },
+    {
+      "query_class": "directory_search_filter",
+      "requests": 20,
+      "concurrency": 2,
+      "errors": 0,
+      "p50_ms": 11.26,
+      "p95_ms": 15.32,
+      "max_ms": 15.67,
+      "median_bytes": 14288,
+      "median_rows": 1,
+      "throughput_rps": 157.4,
+      "proposed_p95_budget_ms": 100,
+      "proposed_error_budget_pct": 0.5
+    },
+    {
+      "query_class": "directory_approval_filter",
+      "requests": 20,
+      "concurrency": 2,
+      "errors": 0,
+      "p50_ms": 10,
+      "p95_ms": 13.17,
+      "max_ms": 15.73,
+      "median_bytes": 14286,
+      "median_rows": 1,
+      "throughput_rps": 182.3,
+      "proposed_p95_budget_ms": 100,
+      "proposed_error_budget_pct": 0.5
+    }
+  ]
+}

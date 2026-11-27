@@ -3,6 +3,7 @@ import type { MessageKey } from '../../i18n';
 /** Approved copy per staff notice kind (S55-PO-10, specs/023 copy-proposal.md). */
 export const STAFF_NOTICE_MESSAGE = {
   food_replacement_open: 'foodReplacement.notification.open',
+  monthly_quality_reminder: 'workforce.reminder.body',
 } as const satisfies Record<string, MessageKey>;
 
 export type StaffNoticeKind = keyof typeof STAFF_NOTICE_MESSAGE;
