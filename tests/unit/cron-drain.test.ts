@@ -384,6 +384,8 @@ describe('cron edge wiring', () => {
           await refundDrainGate;
           return Response.json([]);
         }
+        if (url.includes('/rpc/po_export_expired_artifacts'))
+          return Response.json([]);
         return Response.json(true);
       });
     const logError = vi.spyOn(console, 'error').mockImplementation(() => {});

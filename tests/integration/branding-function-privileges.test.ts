@@ -250,7 +250,7 @@ describe('F14 definer function privileges', () => {
     ]);
   });
 
-  it('limits service-role app_private call paths to the public GC and lockout-worker wrappers', async () => {
+  it('limits service-role app_private call paths to approved public worker wrappers', async () => {
     const paths = await db<ServiceRoleAppPrivatePath[]>`
       select format('%I.%I(%s)', n.nspname, p.proname,
         oidvectortypes(p.proargtypes)) as signature
@@ -285,6 +285,9 @@ describe('F14 definer function privileges', () => {
       { signature: 'public.finish_f15_telegram_delivery(uuid, text)' },
       { signature: 'public.handle_client_trainer_distribution(uuid, uuid)' },
       { signature: 'public.handle_quality_monthly_reminder(uuid, uuid)' },
+      { signature: 'public.po_export_failed(uuid, uuid)' },
+      { signature: 'public.po_export_finalize(uuid, uuid, text, bigint)' },
+      { signature: 'public.po_export_snapshot(uuid, uuid)' },
       { signature: 'public.prepare_f15_telegram_delivery(uuid, uuid)' },
       {
         signature:
@@ -294,6 +297,7 @@ describe('F14 definer function privileges', () => {
         signature:
           'public.retry_refund_auth_lockout_job(uuid, integer, timestamp with time zone, text)',
       },
+      { signature: 'public.run_p7_checkin_delay_evaluator(uuid)' },
       {
         signature:
           'public.save_package_reporting_fx_snapshot(uuid, uuid, text, text, text, date)',
