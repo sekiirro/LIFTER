@@ -103,6 +103,8 @@ const f24Private = [
 // Spec 027 (P7) monthly-quality private helpers.
 const p7QualityPrivate = [
   'guard_p7_quality_revisions_immutable',
+  'p7_require_quality_actor',
+  'p7_require_quality_trainer',
   'enqueue_monthly_reminder',
   'p7_monthly_reminders_run',
   'p7_monthly_reminder_schedule_activate',
@@ -3054,11 +3056,13 @@ describe('package tier name security catalog (T078)', () => {
 
     for (const name of [
       'public.record_monthly_quality(uuid,uuid,text,text,integer,integer,numeric,numeric,text,integer)',
-      'public.set_trainer_quality_settings(uuid,uuid,text,numeric,numeric,text)',
+      'public.set_trainer_quality_settings(uuid,uuid,text,numeric,numeric,text,integer)',
       'public.get_trainer_quality_settings(uuid,uuid)',
       'public.get_monthly_quality_revisions(uuid,text,uuid,text)',
       'public.get_monthly_quality_effective(uuid,text,uuid,text)',
       'app_private.guard_p7_quality_revisions_immutable()',
+      'app_private.p7_require_quality_actor(uuid,uuid,boolean)',
+      'app_private.p7_require_quality_trainer(uuid,uuid,boolean)',
       'app_private.enqueue_monthly_reminder(uuid,text,timestamptz)',
       'app_private.p7_monthly_reminders_run(text)',
     ]) {
@@ -3074,6 +3078,28 @@ describe('package tier name security catalog (T078)', () => {
         );
       }
     }
+
+    const handler = 'public.handle_quality_monthly_reminder(uuid,uuid)';
+    const [handlerFn] =
+      await db`select prosecdef, proconfig, pg_get_userbyid(proowner) as owner from pg_proc where oid = ${handler}::regprocedure`;
+    expect(handlerFn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+    expect(handlerFn?.proconfig).toContain('search_path=""');
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      const [grant] =
+        await db`select has_function_privilege(${role}, ${handler}, 'EXECUTE') as allowed`;
+      expect(grant?.allowed).toBe(role === 'service_role');
+    }
+
+    const decimalColumns =
+      await db`select column_name, data_type from information_schema.columns where table_schema='public' and table_name='p7_monthly_quality_effective' and column_name in ('positive_weight','negative_weight','net_points') order by column_name`;
+    expect(decimalColumns).toEqual([
+      { column_name: 'negative_weight', data_type: 'text' },
+      { column_name: 'net_points', data_type: 'text' },
+      { column_name: 'positive_weight', data_type: 'text' },
+    ]);
+    const [view] =
+      await db`select reloptions from pg_class where oid='public.p7_monthly_quality_effective'::regclass`;
+    expect(view?.reloptions).toContain('security_invoker=true');
   });
 });
 

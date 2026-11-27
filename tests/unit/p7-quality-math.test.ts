@@ -161,5 +161,101 @@ describe('P7 Workforce Quality Math (Unit)', () => {
         }),
       ).toThrow(/transformation does not support negative count/);
     });
+
+    it('334-B9: uses exact BigInt arithmetic when large terms cancel', () => {
+      const result = calculateQualityPoints({
+        category: 'feedback',
+        positiveCount: 1_000_000_001,
+        negativeCount: 1_000_000_000,
+        positiveWeight: '99999999.99',
+        negativeWeight: '-99999999.99',
+      });
+      expect(result.netPoints).toBe('99999999.99');
+    });
+
+    it('334-B9: accepts numeric(10,2) boundaries and canonicalizes zero', () => {
+      expect(
+        calculateQualityPoints({
+          category: 'feedback',
+          positiveCount: 1,
+          positiveWeight: '99999999.99',
+          negativeWeight: '0',
+        }).netPoints,
+      ).toBe('99999999.99');
+      expect(
+        calculateQualityPoints({
+          category: 'feedback',
+          positiveCount: 0,
+          negativeCount: 1,
+          positiveWeight: '0',
+          negativeWeight: '-99999999.99',
+        }).netPoints,
+      ).toBe('-99999999.99');
+      expect(
+        calculateQualityPoints({
+          category: 'feedback',
+          positiveCount: 1,
+          negativeCount: 1,
+          positiveWeight: '-0.00',
+          negativeWeight: '-0.00',
+        }).netPoints,
+      ).toBe('0.00');
+    });
+
+    it('334-B9: rejects out-of-range weights, counts, and final net points', () => {
+      for (const weight of ['100000000.00', '-100000000.00']) {
+        expect(() =>
+          calculateQualityPoints({
+            category: 'feedback',
+            positiveCount: 1,
+            positiveWeight: weight,
+          }),
+        ).toThrow(/range/);
+      }
+      expect(() =>
+        calculateQualityPoints({
+          category: 'feedback',
+          positiveCount: 2,
+          positiveWeight: '99999999.99',
+        }),
+      ).toThrow(/range/);
+      expect(() =>
+        calculateQualityPoints({
+          category: 'transformation',
+          positiveCount: 2_147_483_648,
+          positiveWeight: '0',
+        }),
+      ).toThrow(/non-negative integer/);
+      expect(() =>
+        calculateQualityPoints({
+          category: 'transformation',
+          positiveCount: Number.MAX_SAFE_INTEGER + 1,
+          positiveWeight: '0',
+        }),
+      ).toThrow(/non-negative integer/);
+    });
+
+    it('334-B9/B11: rejects malformed and non-finite weight strings', () => {
+      for (const weight of [
+        'abc',
+        'Infinity',
+        '-Infinity',
+        'NaN',
+        '0x10',
+        '1e3',
+        '',
+        '1,000',
+        '+',
+        '1.234',
+      ]) {
+        expect(() =>
+          calculateQualityPoints({
+            category: 'feedback',
+            positiveCount: 1,
+            positiveWeight: weight,
+          }),
+        ).toThrow();
+      }
+    });
   });
 });
