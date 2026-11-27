@@ -388,7 +388,8 @@ it('343-B2 rechecks authorization after the period-fence wait and raises 42501 o
             const [activity] = await lockConnection`
               select wait_event_type, wait_event
               from pg_catalog.pg_stat_activity where pid=${pid}`;
-            if (activity?.wait_event_type === 'Lock') return activity.wait_event;
+            if (activity?.wait_event_type === 'Lock')
+              return activity.wait_event;
             return finished ? 'finished' : null;
           },
           { timeout: 8000 },
@@ -481,7 +482,10 @@ it('343-B3 kill-test: a broken backfill audit insert rolls back the mapped fact'
   const definition = row!.definition as string;
   const auditInsert = 'insert into public.audit_events(';
   expect(definition).toContain(auditInsert);
-  const mutant = definition.replace(auditInsert, 'insert into public.audit_events_missing(');
+  const mutant = definition.replace(
+    auditInsert,
+    'insert into public.audit_events_missing(',
+  );
 
   const f = await clientContext();
   const target = await registered(f, null, undefined, f.salesA.client);
@@ -549,9 +553,7 @@ it('343-B4 kill-test: both producers hash a UTC-canonical timestamp, not the ses
   ]) {
     const [row] = await db`
       select prosrc from pg_proc where oid=${name}::regprocedure`;
-    expect(row!.prosrc as string).toContain(
-      "to_char(",
-    );
+    expect(row!.prosrc as string).toContain('to_char(');
     expect(row!.prosrc as string).toContain("at time zone 'UTC'");
   }
 });
