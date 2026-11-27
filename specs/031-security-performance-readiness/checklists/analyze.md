@@ -7,7 +7,7 @@
 
 ## Scope and source fidelity
 
-- [x] S71-PO-1-approved pen-test readiness/process and performance evidence included; procurement and numeric budgets remain pending PO decisions.
+- [x] S71-PO-7 decisions applied: vendor/timing after pilot with PT-01 blocking pre-go-live; baseline and proposed per-route p95 latency/error budgets with PI-03 gating only after PO signature.
 - [x] Existing docs/13 PT-01 and PI-03 rows are extended; no duplicate readiness register or benchmark tool is proposed.
 - [x] PRD-13.1 test surfaces and role/object boundaries map to existing authorization policies and sanitized evidence.
 - [x] Existing security, CI, backup and go-live gates remain independent; no real-client data, production testing or deployment is authorized.
@@ -18,7 +18,7 @@
 - [x] FR-001..FR-010 have Given/When/Then acceptance, including decision-neutral readiness, role outcomes, full clauses, comparison after approved targets and preservation of current gates.
 - [x] PO/WO/Trainer/Sales/Client positive and negative scope is explicit and tied to `docs/02-architecture.md:35-49`.
 - [x] Existing client, staff and workspace directory surfaces, reports, mobile, pagination/filtering/loading/failure are included where applicable.
-- [x] MCQ 031-01 gates procurement; MCQ 031-02 gates numeric pass/fail thresholds; unconditional work continues without guessing.
+- [x] MCQ 031-01/02 are DECIDED; no product behavior remains pending. Performance gate waits for PO signature of the proposed budgets.
 - [x] Every proposed requirement maps to PT-01 or PI-03 and its docs/13 evidence/owner/status row.
 - [x] Copy is PROPOSED; UTF-8 Arabic strings are legible; per-screen approval remains required.
 
@@ -27,7 +27,11 @@
 - CRITICAL: 0 open.
 - HIGH: 0 open; 2 critique findings addressed.
 - MEDIUM: 0 open; 4 critique findings addressed or verified not present.
-- PENDING-PO: MCQ 031-01 (procurement choices), 031-02 (numeric performance budgets).
+- PO decisions: none remain open. Vendor/timing and budget-signature stages are specified above.
 - Constitution conflicts: none. No amendment proposed.
 
 No other open ambiguities are assumed.
+
+## S71 final re-Analyze status
+
+The post-correction `/speckit-analyze` rerun was attempted twice on 2026-11-27 and both attempts failed before analysis with `Unable to connect to API: SSL certificate verification failed`. The identified HIGH contradiction was corrected in the acceptance scenario; current CRITICAL/HIGH counts are unverified. Do not treat this checklist as final acceptance until Speckit Analyze completes on the changed requirement text.

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `s71-031-hardening`
 **Created**: 2026-11-27
-**Status**: Draft; external vendor/budget/timing and performance targets are PENDING-PO in `checklists/po-mcqs.md`.
+**Status**: Draft; S71-PO-7 defers vendor/timing until after the pilot while retaining a blocking pre-go-live pen-test gate, and requires performance baselines before PO-signature of proposed budgets.
 **Authority**: S71-PO-1 approves the P8 external pen-test and performance items. Readiness/process/gates only; no test execution or production change.
 
 ## Constitution check
@@ -21,7 +21,7 @@ As PO, I can approve a qualified test scope, vendor, budget and window, receive 
 
 **Acceptance Scenarios**:
 
-1. **Given** vendor/budget/window approval is absent, **When** readiness is reviewed, **Then** no engagement is commissioned and production gate stays open.
+1. **Given** the pilot is incomplete, **When** readiness is reviewed, **Then** vendor and timing selection are deferred and PT-01 remains a blocking pre-go-live gate in `docs/13-production-readiness.md`.
 2. **Given** PO approves an engagement, **When** an assessor completes testing, **Then** coverage includes APIs, exports, bot, storage and jobs and the report is sanitized.
 3. **Given** required findings remain unresolved, **When** production readiness is checked, **Then** the gate remains open until verified remediation and required retest disposition are recorded.
 
@@ -33,9 +33,9 @@ As PO, I can review reproducible measurements for core mobile web and directory/
 
 **Acceptance Scenarios**:
 
-1. **Given** synthetic pilot-volume fixtures, **When** approved scripts run, **Then** route timings, response size, CPU and failures are recorded against approved targets.
-2. **Given** a route exceeds a selected threshold, **When** results are reported, **Then** it is labeled as not passing readiness.
-3. **Given** no numeric target is approved, **When** measurements are collected, **Then** they are baseline-only and no pass is asserted.
+1. **Given** synthetic pilot-volume fixtures, **When** approved scripts run, **Then** route timings, response size, CPU and failures are recorded; comparison to proposed budgets occurs only after PO signature.
+2. **Given** a baseline at spec 008 pilot volumes, **When** route results are reviewed, **Then** proposed per-route p95 latency and error budgets are documented for PO signature.
+3. **Given** the PO has not signed the proposed budgets, **When** measurements are collected, **Then** they are baseline-only and no pass/fail gate is asserted; after signature, compare the same reproducible run with the signed budgets.
 
 ### Edge Cases
 
@@ -46,41 +46,41 @@ As PO, I can review reproducible measurements for core mobile web and directory/
 
 ## Clarifications
 
-S71-PO-1 approves test/performance scope. Vendor, budget, timing and acceptance thresholds are PENDING-PO in MCQ 031-01/02. Preserve the existing illustrative volume inputs from spec 008; they are not reasked. No other open ambiguity is assumed.
+S71-PO-7 resolves MCQ 031-01/02: select vendor and timing after the pilot, with the pen-test a blocking pre-go-live docs/13 gate; baseline at spec 008 pilot volumes and propose per-route p95 latency/error budgets, which become a gate only after PO signature. No open PO ambiguity remains.
 
 ## Requirements
 
-- **FR-001**: Produce external pen-test readiness plan and gate; do not purchase, schedule or execute without MCQ 031-01 (**PENDING-PO**).
+- **FR-001**: Keep PT-01 as a blocking pre-go-live external pen-test gate in `docs/13-production-readiness.md`; vendor and timing are selected after the pilot, and the gate remains open until required test, remediation and retest evidence are recorded.
 - **FR-002**: Proposed test scope covers cross-workspace/object access for APIs, exports, bot, storage, background jobs, authenticated routes and role boundaries.
 - **FR-003**: Require synthetic accounts/data, least-privilege test identities, approved rules of engagement, sanitized evidence, severity tracking, remediation verification and final retest disposition.
 - **FR-004**: Keep production-data use/go-live blocked until external evidence and remediation satisfy docs/13; do not mark existing gates Done.
-- **FR-005**: Define repeatable non-production measurements for mobile web and the existing client, staff, and workspace directory surfaces where present, plus reports and PRD-13 pagination/filtering paths.
+- **FR-005**: Define repeatable non-production measurements for mobile web, the existing client, staff, and workspace directory surfaces, reports, and PRD-13 pagination/filtering paths; T006 records the applicable route list in the measurement matrix before any run.
 - **FR-006**: Use spec 008 illustrative volumes (2 workspaces, 150 clients/workspace, 2 staff/workspace, 2 plans/client, 2 new versions/client/month) unless superseded by a later PO-approved target.
-- **FR-007**: Record baseline and compare with numeric targets only after MCQ 031-02 (**PENDING-PO**); invent no SLA.
+- **FR-007**: After the pilot, measure a baseline at spec 008 pilot volumes and propose per-route p95 latency and error budgets. Do not assert pass/fail until the PO signs the proposed values; after signature, compare reproducible runs against those values.
 - **FR-008**: Use synthetic data, redact secrets/PII, and preserve current safety, CI and production-approval gates.
 - **FR-009**: Update existing docs/13 readiness rows with stable ID, source, owner, evidence and status where needed; do not create another readiness register.
 - **FR-010**: Exclude leaderboard/legal review (spec 024), implementation changes, duplicate benchmark tools, and production testing.
 
 ### FR Acceptance Matrix
 
-| FR     | Given / When / Then acceptance test                                                                                                                                                                                                                                                                                  |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-001 | **Given** no PO procurement approval, **When** PT-01 readiness is reviewed, **Then** a decision-neutral readiness plan and open gate exist while vendor work remains uncommissioned.                                                                                                                                 |
-| FR-002 | **Given** an approved rules-of-engagement draft, **When** coverage is checked, **Then** APIs, exports, bot, storage, jobs, authenticated routes and role/object boundaries appear, with positive and negative cases mapped to the permissions in `docs/02-architecture.md:35-49`.                                    |
-| FR-003 | **Given** test identities and evidence handling, **When** the plan is inspected, **Then** synthetic-only data, least privilege, redaction, severity, remediation and retest are required.                                                                                                                            |
-| FR-004 | **Given** the external report or remediation is incomplete, **When** production readiness is evaluated, **Then** the go-live gate remains open and no row is marked Done.                                                                                                                                            |
-| FR-005 | **Given** the existing client, staff and workspace directory surfaces and supported report routes, **When** spec 008 measurements run, **Then** mobile latency, response bytes, CPU, errors, pagination, filtering, loading and graceful-failure evidence is captured for each applicable surface.                   |
-| FR-006 | **Given** synthetic fixtures, **When** the volume matrix is prepared, **Then** it uses approved spec 008 illustrative pilot inputs unless a later PO-approved target supersedes them.                                                                                                                                |
-| FR-007 | **Given** no numeric budget is approved, **When** baseline results are reported, **Then** they are baseline-only and no performance pass is asserted; **Given** targets later approved by PO, **When** the same reproducible run is compared, **Then** each metric is labeled pass/fail against the recorded target. |
-| FR-008 | **Given** evidence artifacts and existing CI/security/production gates, **When** they are reviewed, **Then** no real-client data or secrets appear and existing gates remain independently required and unweakened.                                                                                                  |
-| FR-009 | **Given** a new readiness requirement, **When** docs are updated, **Then** the matching docs/13 row includes stable ID, source, owner, observable evidence and status with no duplicate register.                                                                                                                    |
-| FR-010 | **Given** P8 scope, **When** implementation planning is reviewed, **Then** spec 024 leaderboard/legal review, code, duplicate tooling and production execution remain excluded.                                                                                                                                      |
+| FR     | Given / When / Then acceptance test                                                                                                                                                                                                                                                                            |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-001 | **Given** the pilot is incomplete or required pen-test evidence is missing, **When** PT-01 is reviewed, **Then** vendor/timing remain deferred until after pilot and the external pen-test remains a blocking pre-go-live gate.                                                                                |
+| FR-002 | **Given** an approved rules-of-engagement draft, **When** coverage is checked, **Then** APIs, exports, bot, storage, jobs, authenticated routes and role/object boundaries appear, with positive and negative cases mapped to the permissions in `docs/02-architecture.md:35-49`.                              |
+| FR-003 | **Given** test identities and evidence handling, **When** the plan is inspected, **Then** synthetic-only data, least privilege, redaction, severity, remediation and retest are required.                                                                                                                      |
+| FR-004 | **Given** the external report or remediation is incomplete, **When** production readiness is evaluated, **Then** the go-live gate remains open and no row is marked Done.                                                                                                                                      |
+| FR-005 | **Given** the existing client, staff and workspace directory surfaces and supported report routes, **When** spec 008 measurements run, **Then** mobile latency, response bytes, CPU, errors, pagination, filtering, loading and graceful-failure evidence is captured for each applicable surface.             |
+| FR-006 | **Given** synthetic fixtures, **When** the volume matrix is prepared, **Then** it uses approved spec 008 illustrative pilot inputs unless a later PO-approved target supersedes them.                                                                                                                          |
+| FR-007 | **Given** baseline measurements at spec 008 pilot volumes, **When** per-route p95 latency/error budgets are proposed, **Then** no pass/fail gate is asserted before PO signature; **Given** signed budgets, **When** a reproducible run is compared, **Then** each route is labeled against the signed values. |
+| FR-008 | **Given** evidence artifacts and existing CI/security/production gates, **When** they are reviewed, **Then** no real-client data or secrets appear and existing gates remain independently required and unweakened.                                                                                            |
+| FR-009 | **Given** a new readiness requirement, **When** docs are updated, **Then** the matching docs/13 row includes stable ID, source, owner, observable evidence and status with no duplicate register.                                                                                                              |
+| FR-010 | **Given** P8 scope, **When** implementation planning is reviewed, **Then** spec 024 leaderboard/legal review, code, duplicate tooling and production execution remain excluded.                                                                                                                                |
 
 ### Success Criteria
 
 - **SC-001**: PO can determine from the readiness pack whether the external test is authorized, complete and remediated using sanitized evidence.
 - **SC-002**: Every PRD-13.1 test surface has a coverage-evidence row.
-- **SC-003**: Baselines are reproducible at spec 008 pilot volumes; no threshold is passed without PO approval.
+- **SC-003**: Baselines are reproducible at spec 008 pilot volumes; proposed per-route p95 latency/error budgets are recorded, with no gate until PO signature.
 - **SC-004**: No secret or real client datum appears in committed evidence.
 - **SC-005**: Every open requirement maps to a docs/13 gate and owner.
 
