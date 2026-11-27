@@ -638,7 +638,8 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
         and p.proname not in (
           'get_trainer_checkins', 'confirm_trainer_checkin_followup',
           'p7_set_basic_salary', 'p7_post_monetary_payroll_input',
-          'p7_create_payroll_snapshot', 'p7_approve_external_payroll'
+          'p7_create_payroll_snapshot', 'p7_approve_external_payroll',
+          'p7_get_own_compensation'
         )
         and pg_catalog.pg_get_functiondef(p.oid) ~* '(p7_salary_revisions|p7_monetary_payroll_inputs|p7_payroll_snapshots|p7_payroll_approvals|workforce_checkin_transitions)'
     `;
