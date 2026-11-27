@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { TransactionSql } from 'postgres';
 import {
   asUser,
   portalFixture,
@@ -54,6 +56,25 @@ async function readAs(subject: PortalClient): Promise<Record<string, unknown>> {
       return row!.value as Record<string, unknown>;
     }),
   );
+}
+
+async function inRolledBackTx(body: (tx: TransactionSql) => Promise<void>) {
+  const rollback = Symbol('rollback');
+  try {
+    await p.db.begin(async (tx) => {
+      await body(tx);
+      throw rollback;
+    });
+  } catch (error) {
+    if (error !== rollback) throw error;
+  }
+}
+
+async function readDefinition(tx: TransactionSql) {
+  const [row] = await tx`
+    select pg_catalog.pg_get_functiondef(
+      'public.read_client_notices(integer,timestamptz)'::regprocedure) as definition`;
+  return row!.definition as string;
 }
 
 const kinds = (value: Record<string, unknown>) =>
@@ -130,5 +151,27 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(kinds(await readAs(client))).toContain('subscription_expiring_t1');
     await evaluate(expiry);
     expect(kinds(await readAs(client))).toContain('subscription_expired');
+  });
+
+  it('kills a client-scope mutation in the existing F22 reader', async () => {
+    await p.db`select app_private.f22_enqueue_client_notice(
+      ${p.fixture.wsA.id}::uuid, ${client.clientId}::uuid,
+      'subscription_activated', ${randomUUID()}::uuid)`;
+
+    await inRolledBackTx(async (tx) => {
+      const original = await readDefinition(tx);
+      const mutant = original.replace(
+        'and n.client_id = client_row.client_id',
+        'and n.client_id is not null',
+      );
+      expect(mutant).not.toBe(original);
+      await tx.unsafe(mutant);
+      await asUser(tx, other.authUserId, async (inner) => {
+        const [row] = await inner`select public.read_client_notices(100, null) as value`;
+        expect(kinds(row!.value as Record<string, unknown>)).toContain(
+          'subscription_activated',
+        );
+      });
+    });
   });
 });
