@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
+import { createStaff } from './harness';
 import { clientContext, graph, sql } from './registration-approval-fixture';
 
 const db = sql();
@@ -305,6 +306,41 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
     expect(count!.count).toBe(1);
   });
 
+  it('rechecks every candidate period after rerouting past a second closed month', async () => {
+    const context = await clientContext();
+    const [periods] = await db`
+      select (date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date
+        - interval '1 month')::date::text as first_closed,
+        date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date::text as second_closed,
+        (date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date
+          + interval '1 month')::date::text as next_open`;
+    const firstClosed = periods!.first_closed as string;
+    const secondClosed = periods!.second_closed as string;
+    const nextOpen = periods!.next_open as string;
+
+    await db`
+      insert into public.p7_month_snapshots(workspace_id,effective_month,formula_version,
+        source_watermark,totals,finalized_by)
+      values
+        (${context.wsA.id},${firstClosed},'p7-net-points-v1',clock_timestamp(),'{}',${context.po.userId}),
+        (${context.wsA.id},${secondClosed},'p7-net-points-v1',clock_timestamp(),'{}',${context.po.userId})`;
+    const sourceKey = randomUUID();
+    await db`
+      insert into public.p7_adjustment_entries(workspace_id,staff_user_id,points,effective_month,
+        source_key,source_hash,reason_code)
+      values(${context.wsA.id},${context.trainerA.userId},-0.25,${firstClosed},
+        ${sourceKey},'two-closed-periods','p7-test-correction')`;
+
+    const [routed] = await db`
+      select effective_month::text as effective_month,original_month::text as original_month
+      from public.p7_adjustment_entries
+      where workspace_id=${context.wsA.id} and source_key=${sourceKey}`;
+    expect(routed).toEqual({
+      effective_month: nextOpen,
+      original_month: firstClosed,
+    });
+  });
+
   it('serializes finalization against a late F19 activation producer', async () => {
     const context = await clientContext();
     const seeded = await db.begin((tx) => graph(tx, context));
@@ -355,5 +391,87 @@ describe('P7 T028 monthly snapshots and T029 period fence', () => {
       });
       expect(snapshot!.totals).toEqual({});
     }
+  });
+
+  it('rolls back an F19 PO override when its actor is demoted while waiting on the period fence', async () => {
+    const context = await clientContext();
+    await createStaff('platform_owner', 'p7-demoter');
+    const seeded = await db.begin((tx) => graph(tx, context));
+    const [period] = await db`
+      select date_trunc('month',statement_timestamp() at time zone 'Africa/Cairo')::date::text as month`;
+    const month = period!.month as string;
+    const barrier = sql();
+    let unlock!: () => void;
+    let signalLocked!: () => void;
+    const locked = new Promise<void>((resolve) => (signalLocked = resolve));
+    const release = new Promise<void>((resolve) => (unlock = resolve));
+    const barrierTask = barrier.begin(async (tx) => {
+      await tx`select app_private.p7_lock_period(${context.wsA.id},${month}::date)`;
+      signalLocked();
+      await release;
+    });
+
+    await locked;
+    const operationKey = randomUUID();
+    let producerResult = 'pending';
+    const producer = context.po.client
+      .rpc('override_activate_subscription', {
+        p_workspace_id: context.wsA.id,
+        p_subscription_id: seeded.subscription,
+        p_recipient_trainer_user_id: context.trainerA.userId,
+        p_operation_key: operationKey,
+      })
+      .then((result) => {
+        producerResult = result.error
+          ? `error:${result.error.code ?? 'unknown'}`
+          : `status:${result.data?.status ?? 'empty'}`;
+        return result;
+      });
+    try {
+      const deadline = Date.now() + 10_000;
+      let waiting = false;
+      while (Date.now() < deadline) {
+        const [activity] = await db`
+          select exists(
+            select 1 from pg_stat_activity
+            where wait_event_type='Lock' and wait_event='advisory'
+              and cardinality(pg_blocking_pids(pid)) > 0
+          ) as waiting`;
+        if (activity?.waiting) {
+          waiting = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      expect(waiting, producerResult).toBe(true);
+      await db`update public.staff_profiles set role='workspace_owner'
+        where user_id=${context.po.userId}`;
+    } finally {
+      unlock();
+      await barrierTask;
+      await barrier.end();
+    }
+
+    const result = await producer;
+    expect(result.error?.code).toBe('42501');
+    const [counts] = await db`
+      select
+        (select count(*)::int from public.subscription_activations
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as activations,
+        (select count(*)::int from public.productivity_units
+          where workspace_id=${context.wsA.id} and subscription_id=${seeded.subscription}) as units,
+        (select count(*)::int from public.audit_events
+          where workspace_id=${context.wsA.id}
+            and action in ('subscription.activation_committed','workforce.earned_fact_recorded')
+            and (details->>'subscription_id'=${seeded.subscription}
+              or target_table in ('subscription_activations','p7_earned_points'))) as audits,
+        (select count(*)::int from app_private.f19_override_operations
+          where workspace_id=${context.wsA.id} and operation_key=${operationKey}) as operations`;
+    expect(counts).toEqual({
+      activations: 0,
+      units: 0,
+      audits: 0,
+      operations: 0,
+    });
   });
 });

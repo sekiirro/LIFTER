@@ -564,6 +564,7 @@ describe('PR #334 review-round-2 fixes', () => {
     const claimed = await admin().rpc('jobs_claim', {
       batch: 100,
       lease_seconds: 300,
+      allowed_kinds: ['quality.monthly_reminder'],
     });
     expect(claimed.error).toBeNull();
     const job = claimed.data?.find(
