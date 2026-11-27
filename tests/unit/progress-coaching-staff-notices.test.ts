@@ -76,4 +76,23 @@ describe('staff notice projection (T033/T040)', () => {
     expect(proposal).toContain(getMessages('en')[key]);
     expect(proposal).toContain(getMessages('ar')[key]);
   });
+
+  it('334-B8: accepts the ids-only monthly quality reminder and approved copy', () => {
+    const parsed = parseStaffNotices({
+      status: 'ok',
+      notices: [row({ notice_kind: 'monthly_quality_reminder' })],
+    });
+    expect(parsed).toMatchObject({
+      status: 'ok',
+      notices: [{ kind: 'monthly_quality_reminder', requestId: REQ }],
+    });
+    const key = STAFF_NOTICE_MESSAGE.monthly_quality_reminder;
+    const approved = readFileSync(
+      'specs/027-workforce-management/copy-approved-cb01-cb03.md',
+      'utf8',
+    );
+    expect(key).toBe('workforce.reminder.body');
+    expect(approved).toContain(getMessages('en')[key]);
+    expect(approved).toContain(getMessages('ar')[key]);
+  });
 });

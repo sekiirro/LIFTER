@@ -1,10 +1,13 @@
 # Specification Analysis Report: P7 Workforce Management
 
+**Re-analyzed**: 2026-11-27 UTC, after merging origin/main (train sync) into PR #334
+**Re-analyzed**: 2026-11-26 03:50 UTC, after merging origin/main and renaming the quality migration
 **Re-analyzed**: 2026-11-25 14:07 UTC, after S70-R110 requirement clarification across spec, plan, model, contracts, task, and decision register
 **Re-analyzed**: 2026-11-25 03:29 UTC, after final edits to all specification, planning, contract, task and checklist artifacts
 **Re-analyzed after docs union**: 2026-11-26 UTC, after merging origin/main into the PR #339 docs branch (architect-approved S70-R121). tasks.md checkbox states and traceability.md evidence rows were revalidated as a union; no requirement text, scope or product decision changed. Open CRITICAL: 0. Open HIGH: 0.
 **Re-analyzed after docs union**: 2026-11-26 UTC, after merging origin/main into the PR #340 docs branch (architect-approved S70-R121). tasks.md checkbox states and traceability.md evidence rows were revalidated as a union; no requirement text, scope or product decision changed. Open CRITICAL: 0. Open HIGH: 0.
-**Inputs reviewed**: spec.md, plan.md, tasks.md, research.md, data-model.md, both contracts, quickstart.md, traceability.md, copy-table.md, requirements.md, po-mcqs.md, critique.md, S70-R95, S70-PO-18, S70-PO-20 and S70-R109
+**Re-analyzed after copy-fix union**: 2026-11-26 UTC, after merging origin/main into PR #345 and union-resolving tasks.md/traceability.md/analyze.md; T006 copy-fix evidence retained. No requirement text, scope or product decision changed. Open CRITICAL: 0. Open HIGH: 0.
+**Inputs reviewed**: spec.md, plan.md, tasks.md, research.md, data-model.md, both contracts, quickstart.md, traceability.md, copy-table.md, requirements.md, po-mcqs.md, critique.md, S70-R95, S70-PO-18, S70-PO-20, S70-R109, S70-PO-24 and S70-R122
 **Method**: cross-artifact Spec Kit analysis. Tasks are plans; no implementation or test completion is claimed.
 
 ## Findings and status
@@ -75,7 +78,7 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - Sol critique findings resolved in artifacts: 24/24.
 - Constitution CRITICAL records: 2 (C1/C2, resolved by pending amendment PR). Other open CRITICAL: 0. Open HIGH: 0.
 - PENDING-PO: 0. Open MCQs: 0.
-- Implementation tasks checked: T005, T018, T021, T030, T031 (evidence in traceability.md); sync-lane focused integration: Sales award + RLS catalog, 70/70 passed.
+- Implementation tasks checked: 0; implementation tests executed in this docs lane: 0.
 
 ## Analyze result
 
@@ -104,7 +107,3 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - RLS catalog coverage, explicit SECURITY DEFINER checks, append-only enforcement, idempotency/concurrency, purge behavior, and kill tests remain implementation acceptance gates in T033; no implementation or test completion is claimed by this Analyze.
 
 **Analyze result**: PASS for updated strike requirements. No new open CRITICAL/HIGH findings; strike implementation may proceed under T033 and S70-R110.
-
-## PR #343 sync validation
-
-**Validated**: 2026-11-26 after merging latest origin/main `d018e78b`. The latest main Analyze for S70-R110 is retained; this sync changed no additional FR, SC, acceptance behavior, or requirement text. T021 evidence is unioned with main T005/T018/T030/T031 evidence. Open CRITICAL/HIGH findings: 0; open MCQs: 0.

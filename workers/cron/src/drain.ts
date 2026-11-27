@@ -25,6 +25,10 @@ type RpcMethods = {
     args: { p_job_id: string; p_lease_token: string };
     result: boolean;
   };
+  handle_quality_monthly_reminder: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: boolean;
+  };
   alert_expired_refund_auth_lockouts: {
     args: { p_limit: number; p_checked_at: string };
     result: number;
