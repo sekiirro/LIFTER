@@ -587,6 +587,8 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
           'form_assignments->clients',
           'form_assignments->form_versions',
           'form_versions->forms',
+          'p7_refund_fault_reviews->clients',
+          'subscriptions->clients',
         ]);
         const [earnedColumns] = await tx`
         select array_agg(a.attname order by a.attnum) as columns
