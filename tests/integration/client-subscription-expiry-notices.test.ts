@@ -131,6 +131,111 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(kinds(await readAs(late))).toContain('subscription_expiring_t1');
   });
 
+  it('suppresses obsolete client stages after renewal, freeze, or full refund', async () => {
+    const renewed = await p.makeClient({ activate: true, label: 'expiry renewal' });
+    await moveExpiryToTwoDays(renewed);
+    const renewalExpiry = await expiryAt(renewed);
+    await evaluate(new Date(renewalExpiry.getTime() - 48 * 60 * 60 * 1000));
+    const [offer] = await p.db`
+      select o.id from public.subscriptions s
+      join public.package_offers o on o.current_version_id = s.package_version_id
+        and o.available is true
+      where s.workspace_id = ${p.fixture.wsA.id}::uuid
+        and s.id = ${renewed.subscriptionId}::uuid`;
+    expect(offer?.id).toBeTruthy();
+    const renewal = await p.fixture.po.client.rpc('record_renewal', {
+      request: {
+        workspace_id: p.fixture.wsA.id,
+        client_id: renewed.clientId,
+        predecessor_subscription_id: renewed.subscriptionId,
+        package_offer_id: offer!.id,
+        request_key: randomUUID(),
+        expected_revision: 0,
+        renewal_confirmed: true,
+        installments: null,
+      },
+    });
+    expect(renewal.error).toBeNull();
+    expect(renewal.data).toMatchObject({ status: 'ok' });
+    await evaluate(new Date(renewalExpiry.getTime() - 24 * 60 * 60 * 1000));
+    const [renewalRows] = await p.db`
+      select count(*)::integer as t1,
+        count(*) filter (where notice_kind in (
+          'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'))::integer as t3
+      from app_private.client_inbox_notices
+      where workspace_id = ${p.fixture.wsA.id}::uuid
+        and client_id = ${renewed.clientId}::uuid
+        and source_key = ${renewed.subscriptionId}::uuid
+        and (notice_kind in ('subscription_expiring_t1',
+          'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'))`;
+    expect(Number(renewalRows!.t1)).toBe(0);
+    expect(Number(renewalRows!.t3)).toBe(1);
+
+    const frozen = await p.makeClient({ activate: true, label: 'expiry freeze' });
+    await moveExpiryToTwoDays(frozen);
+    const freezeExpiry = await expiryAt(frozen);
+    await evaluate(new Date(freezeExpiry.getTime() - 48 * 60 * 60 * 1000));
+    const freeze = await p.fixture.trainerA.client.rpc(
+      'subscription_freeze_operation',
+      {
+        request: {
+          action: 'apply',
+          workspace_id: p.fixture.wsA.id,
+          client_id: frozen.clientId,
+          subscription_id: frozen.subscriptionId,
+          request_key: randomUUID(),
+          expected_revision: 0,
+          duration_days: 7,
+        },
+      },
+    );
+    expect(freeze.error).toBeNull();
+    expect(freeze.data).toMatchObject({ status: 'applied', revision: 1 });
+    await evaluate(new Date(freezeExpiry.getTime() - 24 * 60 * 60 * 1000));
+    const [freezeRows] = await p.db`
+      select count(*)::integer as t1,
+        count(*) filter (where notice_kind in (
+          'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'))::integer as t3
+      from app_private.client_inbox_notices
+      where workspace_id = ${p.fixture.wsA.id}::uuid
+        and client_id = ${frozen.clientId}::uuid
+        and source_key = ${frozen.subscriptionId}::uuid
+        and notice_kind in ('subscription_expiring_t1',
+          'subscription_expiring_t3', 'subscription_expiring_t3_short_lead')`;
+    expect(Number(freezeRows!.t1)).toBe(0);
+    expect(Number(freezeRows!.t3)).toBe(1);
+
+    const refunded = await p.makeClient({ activate: true, label: 'expiry refund' });
+    await moveExpiryToTwoDays(refunded);
+    const refundExpiry = await expiryAt(refunded);
+    await evaluate(new Date(refundExpiry.getTime() - 48 * 60 * 60 * 1000));
+    const refund = await p.fixture.po.client.rpc('record_refund', {
+      request: {
+        workspace_id: p.fixture.wsA.id,
+        client_id: refunded.clientId,
+        purchase_id: refunded.subscriptionId,
+        request_key: randomUUID(),
+        amount_minor: '1200',
+        external_confirmation: true,
+      },
+    });
+    expect(refund.error).toBeNull();
+    expect(refund.data).toMatchObject({ status: 'ok' });
+    await evaluate(new Date(refundExpiry.getTime() - 24 * 60 * 60 * 1000));
+    const [refundRows] = await p.db`
+      select count(*)::integer as t1,
+        count(*) filter (where notice_kind in (
+          'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'))::integer as t3
+      from app_private.client_inbox_notices
+      where workspace_id = ${p.fixture.wsA.id}::uuid
+        and client_id = ${refunded.clientId}::uuid
+        and source_key = ${refunded.subscriptionId}::uuid
+        and notice_kind in ('subscription_expiring_t1',
+          'subscription_expiring_t3', 'subscription_expiring_t3_short_lead')`;
+    expect(Number(refundRows!.t1)).toBe(0);
+    expect(Number(refundRows!.t3)).toBe(1);
+  });
+
   it('uses the F13 Cairo first-existing expiry instant for T-3, T-1 and expiry stages', async () => {
     const [row] = await p.db`
       select
