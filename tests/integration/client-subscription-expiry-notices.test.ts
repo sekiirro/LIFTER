@@ -62,6 +62,16 @@ async function readAs(subject: PortalClient): Promise<Record<string, unknown>> {
   );
 }
 
+async function dismissAs(subject: PortalClient, noticeId: string) {
+  return p.db.begin((tx) =>
+    asUser(tx, subject.authUserId, async (inner) => {
+      const [row] = await inner`
+        select public.dismiss_client_notice(${noticeId}::uuid) as value`;
+      return row!.value as { status: string };
+    }),
+  );
+}
+
 async function inRolledBackTx(body: (tx: TransactionSql) => Promise<void>) {
   const rollback = Symbol('rollback');
   try {
@@ -301,6 +311,46 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(kinds(await readAs(client))).toContain('subscription_expiring_t1');
     await evaluate(expiry);
     expect(kinds(await readAs(client))).toContain('subscription_expired');
+  });
+
+  it('returns date-only expiry data and dismisses only the acting client row idempotently', async () => {
+    const subject = await p.makeClient({
+      activate: true,
+      label: 'expiry dismiss owner',
+    });
+    await moveExpiryToTwoDays(subject);
+    const expiry = await expiryAt(subject);
+    await evaluate(new Date(expiry.getTime() - 72 * 60 * 60 * 1000));
+    const [core] = await p.db`
+      select app_private.f22_subscription_core(${p.fixture.wsA.id}::uuid,
+        ${subject.clientId}::uuid) as value`;
+    const expiryDate = (core!.value as { effective_end_exclusive: string })
+      .effective_end_exclusive;
+
+    const own = await readAs(subject);
+    const notice = (own.notices as Array<Record<string, unknown>>).find(
+      (row) => row.notice_kind === 'subscription_expiring_t3',
+    );
+    expect(notice).toMatchObject({
+      expiry_date: expiryDate,
+      dismissed_at: null,
+    });
+    const noticeId = notice!.notice_id as string;
+    await expect(dismissAs(subject, noticeId)).resolves.toEqual({
+      status: 'dismissed',
+    });
+    await expect(dismissAs(subject, noticeId)).resolves.toEqual({
+      status: 'dismissed',
+    });
+    await expect(dismissAs(other, noticeId)).resolves.toEqual({
+      status: 'not_found',
+    });
+    await expect(dismissAs(subject, randomUUID())).resolves.toEqual({
+      status: 'not_found',
+    });
+    expect(kinds(await readAs(subject))).not.toContain(
+      'subscription_expiring_t3',
+    );
   });
 
   it('kills a client-scope mutation in the existing F22 reader', async () => {

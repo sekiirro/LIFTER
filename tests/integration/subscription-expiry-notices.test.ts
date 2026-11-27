@@ -300,7 +300,9 @@ describe('Spec 028 F23 expiry evaluator', () => {
       select distinct source_revision from app_private.staff_inbox_notices
       where workspace_id = ${p.fixture.wsA.id}::uuid
         and source_key = ${frozen.subscriptionId}::uuid
-        and notice_kind = 'subscription_expiring_t3'`;
+        and notice_kind in (
+          'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'
+        ) and source_stage = 't3'`;
     expect(before?.source_revision).toBeTruthy();
 
     const changed = await p.fixture.trainerA.client.rpc(
@@ -326,7 +328,9 @@ describe('Spec 028 F23 expiry evaluator', () => {
       from app_private.staff_inbox_notices
       where workspace_id = ${p.fixture.wsA.id}::uuid
         and source_key = ${frozen.subscriptionId}::uuid
-        and notice_kind = 'subscription_expiring_t3'`;
+        and notice_kind in (
+          'subscription_expiring_t3', 'subscription_expiring_t3_short_lead'
+        ) and source_stage = 't3'`;
     expect(after!.revisions).toEqual([before!.source_revision]);
   });
 
@@ -422,10 +426,18 @@ describe('Spec 028 F23 expiry evaluator', () => {
         (result as { clients: Array<{ client_id: string }> }).clients.map(
           (row) => row.client_id,
         );
+      const rows = (result: unknown) =>
+        (
+          result as {
+            clients: Array<{ client_id: string; expiry_bucket: string | null }>;
+          }
+        ).clients;
       // Inclusive at `now`, exclusive at `now + 72h`; the F13-expired client
       // appears only under `expired`.
       expect(ids(expiring!.value)).toEqual([atNow.clientId]);
       expect(ids(expired!.value)).toEqual([expiredClient.clientId]);
+      expect(rows(expiring!.value)[0]?.expiry_bucket).toBe('expiring');
+      expect(rows(expired!.value)[0]?.expiry_bucket).toBe('expired');
     });
 
     for (const status of ['expiring', 'expired'] as const) {
@@ -444,5 +456,240 @@ describe('Spec 028 F23 expiry evaluator', () => {
       expect(foreign.error?.code).toBe('42501');
       expect(foreign.data).toBeNull();
     }
+  });
+
+  it('uses one short-lead T-3 stage and hydrates and dismisses staff notices per recipient', async () => {
+    const subject = await p.makeClient({
+      activate: true,
+      label: 'staff expiry hydration',
+    });
+    await p.db.begin(async (tx) => {
+      await tx`set local session_replication_role = replica`;
+      await tx`update public.subscription_activations a
+        set activated_at = app_private.f23_cairo_date_start(
+          (clock_timestamp() at time zone 'Africa/Cairo')::date + 2 - s.duration_days)
+        from public.subscriptions s
+        where a.workspace_id = s.workspace_id and a.subscription_id = s.id
+          and s.workspace_id = ${p.fixture.wsA.id}::uuid
+          and s.id = ${subject.subscriptionId}::uuid`;
+      await tx`set local session_replication_role = origin`;
+    });
+    const [core] = await p.db`
+      select app_private.f22_subscription_core(${p.fixture.wsA.id}::uuid,
+        ${subject.clientId}::uuid) as value`;
+    const endDay = (core!.value as { effective_end_exclusive: string })
+      .effective_end_exclusive;
+    const [boundary] = await p.db`
+      select app_private.f23_cairo_date_start(${endDay}::date) as value`;
+    await p.db`select app_private.f23_subscription_expiry_notices_run(
+      ${new Date((boundary!.value as Date).getTime() - 48 * 60 * 60 * 1000).toISOString()}::timestamptz,
+      250)`;
+
+    const [stored] = await p.db`
+      select count(*)::integer as count,
+        count(*) filter (where notice_kind = 'subscription_expiring_t3_short_lead')::integer as short_lead
+      from app_private.staff_inbox_notices
+      where workspace_id = ${p.fixture.wsA.id}::uuid
+        and source_key = ${subject.subscriptionId}::uuid and source_stage = 't3'`;
+    expect(stored).toEqual({
+      count: expect.any(Number),
+      short_lead: expect.any(Number),
+    });
+    expect(Number(stored!.count)).toBeGreaterThan(0);
+    expect(Number(stored!.short_lead)).toBe(Number(stored!.count));
+    await Promise.all(
+      Array.from(
+        { length: 5 },
+        () => p.db`
+        select app_private.f23_subscription_expiry_notices_run(
+          ${new Date((boundary!.value as Date).getTime() - 48 * 60 * 60 * 1000).toISOString()}::timestamptz,
+          250)`,
+      ),
+    );
+    const [afterRetry] = await p.db`
+      select count(*)::integer as count from app_private.staff_inbox_notices
+      where workspace_id = ${p.fixture.wsA.id}::uuid
+        and source_key = ${subject.subscriptionId}::uuid and source_stage = 't3'`;
+    expect(Number(afterRetry!.count)).toBe(Number(stored!.count));
+
+    const staffRead = await p.fixture.trainerA.client.rpc(
+      'read_staff_notices',
+      {
+        p_limit: 100,
+        p_before: null,
+      },
+    );
+    expect(staffRead.error).toBeNull();
+    const rows = (staffRead.data as { notices: Array<Record<string, unknown>> })
+      .notices;
+    const notice = rows.find(
+      (row) => row.source_key === subject.subscriptionId,
+    );
+    expect(notice).toMatchObject({
+      notice_kind: 'subscription_expiring_t3_short_lead',
+      client_name: subject.name,
+      expiry_date: endDay,
+      dismissed_at: null,
+    });
+    const foreignRead = await p.fixture.trainerB.client.rpc(
+      'read_staff_notices',
+      {
+        p_limit: 100,
+        p_before: null,
+      },
+    );
+    expect(foreignRead.error).toBeNull();
+    expect(
+      (
+        foreignRead.data as { notices: Array<Record<string, unknown>> }
+      ).notices.some((row) => row.source_key === subject.subscriptionId),
+    ).toBe(false);
+
+    const otherRecipient = await p.fixture.woA.client.rpc(
+      'read_staff_notices',
+      {
+        p_limit: 100,
+        p_before: null,
+      },
+    );
+    const ownerNotice = (
+      otherRecipient.data as { notices: Array<Record<string, unknown>> }
+    ).notices.find((row) => row.source_key === subject.subscriptionId);
+    expect(ownerNotice?.notice_id).toBeTruthy();
+    const dismissed = await p.fixture.trainerA.client.rpc(
+      'dismiss_staff_notice',
+      {
+        p_notice_id: notice!.notice_id,
+      },
+    );
+    expect(dismissed.data).toEqual({ status: 'dismissed' });
+    const repeated = await p.fixture.trainerA.client.rpc(
+      'dismiss_staff_notice',
+      {
+        p_notice_id: notice!.notice_id,
+      },
+    );
+    expect(repeated.data).toEqual({ status: 'dismissed' });
+    const stillVisible = await p.fixture.woA.client.rpc('read_staff_notices', {
+      p_limit: 100,
+      p_before: null,
+    });
+    expect(
+      (
+        stillVisible.data as { notices: Array<Record<string, unknown>> }
+      ).notices.some((row) => row.notice_id === ownerNotice!.notice_id),
+    ).toBe(true);
+    const foreign = await p.fixture.trainerB.client.rpc(
+      'dismiss_staff_notice',
+      {
+        p_notice_id: notice!.notice_id,
+      },
+    );
+    expect(foreign.data).toEqual({ status: 'not_found' });
+    const hidden = await p.fixture.trainerA.client.rpc('read_staff_notices', {
+      p_limit: 100,
+      p_before: null,
+    });
+    expect(
+      (hidden.data as { notices: Array<Record<string, unknown>> }).notices.some(
+        (row) => row.notice_id === notice!.notice_id,
+      ),
+    ).toBe(false);
+  });
+
+  it('kills removal of the staff recipient predicate from the expiry reader', async () => {
+    const subject = await p.makeClient({
+      activate: true,
+      label: 'staff reader privacy mutation',
+    });
+    await p.db.begin(async (tx) => {
+      await tx`set local session_replication_role = replica`;
+      await tx`update public.subscription_activations a
+        set activated_at = app_private.f23_cairo_date_start(
+          (clock_timestamp() at time zone 'Africa/Cairo')::date + 2 - s.duration_days)
+        from public.subscriptions s
+        where a.workspace_id = s.workspace_id and a.subscription_id = s.id
+          and s.workspace_id = ${p.fixture.wsA.id}::uuid
+          and s.id = ${subject.subscriptionId}::uuid`;
+      await tx`set local session_replication_role = origin`;
+    });
+    const [core] = await p.db`
+      select app_private.f22_subscription_core(${p.fixture.wsA.id}::uuid,
+        ${subject.clientId}::uuid) as value`;
+    const endDay = (core!.value as { effective_end_exclusive: string })
+      .effective_end_exclusive;
+    const [boundary] = await p.db`
+      select app_private.f23_cairo_date_start(${endDay}::date) as value`;
+    await p.db`select app_private.f23_subscription_expiry_notices_run(
+      ${new Date((boundary!.value as Date).getTime() - 48 * 60 * 60 * 1000).toISOString()}::timestamptz,
+      250)`;
+    const [foreignRecipient] = await p.db`
+      select id from app_private.staff_inbox_notices
+      where workspace_id = ${p.fixture.wsA.id}::uuid
+        and source_key = ${subject.subscriptionId}::uuid
+        and recipient_user_id = ${p.fixture.woA.userId}::uuid`;
+    expect(foreignRecipient?.id).toBeTruthy();
+
+    await inRolledBackTx(async (tx) => {
+      const identity = 'public.read_staff_notices(integer,timestamptz)';
+      const original = await definition(tx, identity);
+      const mutated = original.replace(
+        'where n.recipient_user_id = actor and n.dismissed_at is null',
+        'where n.recipient_user_id is not null and n.dismissed_at is null',
+      );
+      expect(mutated).not.toBe(original);
+      await tx.unsafe(mutated);
+      await tx`select set_config('request.jwt.claims', ${JSON.stringify({
+        sub: p.fixture.trainerA.userId,
+        role: 'authenticated',
+      })}, true)`;
+      await tx`set local role authenticated`;
+      const [response] = await tx`
+        select public.read_staff_notices(100, null) as value`;
+      await tx`reset role`;
+      const rows = (
+        response!.value as { notices: Array<Record<string, unknown>> }
+      ).notices;
+      expect(rows.some((row) => row.notice_id === foreignRecipient!.id)).toBe(
+        true,
+      );
+    });
+  });
+
+  it('re-resolves the subscription after the client lock and rejects stale-candidate routing', async () => {
+    const [row] = await p.db`
+      select pg_catalog.pg_get_functiondef(
+        'app_private.f23_subscription_expiry_notices_run(timestamptz,integer)'::regprocedure
+      ) as definition`;
+    const definition = row!.definition as string;
+    const satisfiesCanonicalRouting = (body: string) => {
+      const clientSelect = body.indexOf('select c.* into client_row');
+      const clientLock = body.indexOf('for update;', clientSelect);
+      const resolve = body.indexOf(
+        'canonical_subscription_id := app_private.f19_resolve_subscription_id',
+        clientLock,
+      );
+      const subscriptionLock = body.indexOf(
+        'select s.* into subscription',
+        resolve,
+      );
+      const nextLoop = body.indexOf('end loop;', subscriptionLock);
+      const postLockBody = body.slice(resolve, nextLoop);
+      const candidateReferences =
+        postLockBody.match(/candidate\.subscription_id/g) ?? [];
+      return (
+        clientLock > clientSelect &&
+        resolve > clientLock &&
+        subscriptionLock > resolve &&
+        candidateReferences.length === 1
+      );
+    };
+    expect(satisfiesCanonicalRouting(definition)).toBe(true);
+    const staleCandidateMutant = definition.replace(
+      'canonical_subscription_id := app_private.f19_resolve_subscription_id(\n      candidate.workspace_id, candidate.subscription_id);',
+      'canonical_subscription_id := candidate.subscription_id;',
+    );
+    expect(staleCandidateMutant).not.toBe(definition);
+    expect(satisfiesCanonicalRouting(staleCandidateMutant)).toBe(false);
   });
 });

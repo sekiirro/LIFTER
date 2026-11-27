@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { requireActor } from '../../../lib/auth/actor';
 import { readClientPortalOverview } from '../../../lib/client-access/portal';
 import { readClientNotices } from '../../../lib/client-access/notices';
+import { shouldShowClientNotices } from '../../../lib/client-access/notices-projection';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import { takeLeaderboardDashboardNotice } from '../../../lib/leaderboard/service';
@@ -48,7 +49,7 @@ export default async function ClientPlansPage() {
         <LeaderboardDashboardNotice messages={m} />
       )}
       {/* FR-004: the restricted dashboard shows only status, end date and the restricted state. */}
-      {overview.status === 'ok' && (
+      {shouldShowClientNotices(overview.status) && (
         <ClientNotices result={notices} locale={locale} messages={m} />
       )}
       {overview.status === 'restricted' ? (

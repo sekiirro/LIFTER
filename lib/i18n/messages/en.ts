@@ -1513,6 +1513,15 @@ export const en: Record<keyof typeof ar, string> = {
     'Your nutrition plan is ready, and your subscription is now active.',
   'client.portal.inbox.markRead': 'Mark as read',
   'client.portal.inbox.empty': 'You are all caught up.',
+  'client.portal.inbox.notice.expiryT3.title': 'Subscription expires in 3 days',
+  'client.portal.inbox.notice.expiryT3.body':
+    'Your subscription ends on {expiryDate}.',
+  'client.portal.inbox.notice.expiryT1.title': 'Subscription expires tomorrow',
+  'client.portal.inbox.notice.expiryT1.body':
+    'Your subscription ends on {expiryDate}.',
+  'client.portal.inbox.notice.expired.title': 'Subscription expired',
+  'client.portal.inbox.notice.expired.body':
+    'Your subscription ended on {expiryDate}.',
   'staff.clientDirectory.title': 'Clients',
   'staff.clientDirectory.search': 'Search clients',
   'staff.clientDirectory.filters': 'Filters',

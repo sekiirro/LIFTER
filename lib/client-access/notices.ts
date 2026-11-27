@@ -3,8 +3,10 @@ import { createSessionClient } from '../supabase/server';
 import { isUuid } from './portal-projection';
 import {
   projectClientNotices,
+  projectDismissNoticeResult,
   projectMarkNoticeResult,
   type ClientNotices,
+  type DismissNoticeResult,
   type MarkNoticeResult,
 } from './notices-projection';
 
@@ -49,6 +51,22 @@ export async function markClientNotice(
   }
 }
 
+export async function dismissClientNotice(
+  client: NoticeRpc,
+  noticeId: unknown,
+): Promise<DismissNoticeResult> {
+  if (!isUuid(noticeId)) return { status: 'not_found' };
+  try {
+    const { data, error } = await client.rpc('dismiss_client_notice', {
+      p_notice_id: noticeId,
+    });
+    if (error) return { status: 'denied' };
+    return projectDismissNoticeResult(data);
+  } catch {
+    return { status: 'denied' };
+  }
+}
+
 export async function readClientNotices(): Promise<ClientNotices> {
   const client = await createSessionClient();
   if (!client) return { status: 'denied' };
@@ -61,4 +79,12 @@ export async function markClientNoticeRead(
   const client = await createSessionClient();
   if (!client) return { status: 'denied' };
   return markClientNotice(client, noticeId);
+}
+
+export async function dismissClientNoticeForCurrentActor(
+  noticeId: unknown,
+): Promise<DismissNoticeResult> {
+  const client = await createSessionClient();
+  if (!client) return { status: 'denied' };
+  return dismissClientNotice(client, noticeId);
 }
