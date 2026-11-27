@@ -229,7 +229,10 @@ test('PO and own workspace owner see scoped monthly reporting values and can swi
   await expect(page).toHaveURL(new RegExp(`month=${currentMonth}`));
   await expect(month).toHaveValue(currentMonth);
 
-  const workspace = page.getByLabel(en['packages.workspace']);
+  // Scope to the existing report controls: the new PO export section also has
+  // approved labels containing "workspace".
+  const reportsControls = page.locator('section[aria-label="Reports"]');
+  const workspace = reportsControls.getByLabel(en['packages.workspace']);
   await expect(
     workspace.locator(`option[value="${fixture.wsB.id}"]`),
   ).toHaveCount(1);
@@ -243,9 +246,11 @@ test('PO and own workspace owner see scoped monthly reporting values and can swi
     page.getByText(clientName, { exact: true }).first(),
   ).toBeVisible();
   await expect(
-    page.getByLabel(en['packages.workspace']).locator('option'),
+    reportsControls.getByLabel(en['packages.workspace']).locator('option'),
   ).toHaveCount(1);
-  await page.getByLabel(en['packages.workspace']).selectOption(fixture.wsA.id);
+  await reportsControls
+    .getByLabel(en['packages.workspace'])
+    .selectOption(fixture.wsA.id);
   await expect(
     page.getByText(en['reports.installmentClient']).first(),
   ).toBeVisible();
