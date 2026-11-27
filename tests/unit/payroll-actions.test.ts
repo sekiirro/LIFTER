@@ -5,6 +5,7 @@ import {
   createPayrollSnapshot,
   approveExternalPayroll,
   getEligibleEmployees,
+  getPayrollMonth,
 } from '../../lib/workforce/payroll';
 
 const mocks = vi.hoisted(() => ({
@@ -104,6 +105,112 @@ describe('Payroll Service & RPC Action Handlers', () => {
           { userId: 'sales-1', role: 'sales' },
         ],
       });
+    });
+  });
+
+  describe('getPayrollMonth', () => {
+    it('loads and shapes the PO-only salary, inputs, snapshot and approval state', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'po-1',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      });
+      mocks.rpc.mockResolvedValue({
+        data: {
+          salary: {
+            id: 'salary-1',
+            revision: 1,
+            amount_minor: '100000',
+            currency: 'USD',
+            market: 'International',
+          },
+          inputs: [
+            {
+              id: 'input-1',
+              category: 'correction',
+              amount_minor: '2500',
+              currency: 'USD',
+            },
+          ],
+          snapshot: {
+            id: 'snap-1',
+            version: 2,
+            amount_minor: '102500',
+            currency: 'USD',
+          },
+          approval: null,
+        },
+        error: null,
+      });
+
+      const result = await getPayrollMonth({
+        employeeId: 'emp-1',
+        effectiveMonth: '2026-11',
+      });
+
+      expect(mocks.rpc).toHaveBeenCalledWith('p7_get_payroll_month', {
+        p_employee_id: 'emp-1',
+        p_effective_month: '2026-11-01',
+      });
+      expect(result).toEqual({
+        status: 'ok',
+        data: {
+          salary: {
+            id: 'salary-1',
+            revision: 1,
+            amountMinor: '100000',
+            currency: 'USD',
+            market: 'International',
+          },
+          inputs: [
+            {
+              id: 'input-1',
+              category: 'correction',
+              amountMinor: '2500',
+              currency: 'USD',
+            },
+          ],
+          snapshot: {
+            id: 'snap-1',
+            version: 2,
+            amountMinor: '102500',
+            currency: 'USD',
+          },
+          approval: null,
+        },
+      });
+    });
+
+    it('denies non-PO callers before loading payroll state', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'trainer-1',
+        role: 'trainer',
+        activeWorkspaceIds: ['ws-1'],
+      });
+
+      expect(
+        await getPayrollMonth({
+          employeeId: 'emp-1',
+          effectiveMonth: '2026-11',
+        }),
+      ).toEqual({ status: 'denied' });
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid month before loading payroll state', async () => {
+      mocks.actor.mockResolvedValue({
+        userId: 'po-1',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      });
+
+      expect(
+        await getPayrollMonth({
+          employeeId: 'emp-1',
+          effectiveMonth: '2026-13',
+        }),
+      ).toEqual({ status: 'invalid_input' });
+      expect(mocks.rpc).not.toHaveBeenCalled();
     });
   });
 
