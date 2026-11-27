@@ -67,6 +67,7 @@ export async function probe(
       route: normalizeRoute('GET', target.href),
       count: samples.length,
       statuses,
+      status_samples: samples.map((sample) => sample.status),
       p50_ms: percentile(
         samples.map((sample) => sample.ms),
         50,
@@ -75,10 +76,13 @@ export async function probe(
         samples.map((sample) => sample.ms),
         95,
       ),
+      max_ms: Math.max(...samples.map((sample) => sample.ms)),
       median_bytes: percentile(
         samples.map((sample) => sample.bytes),
         50,
       ),
+      max_bytes: Math.max(...samples.map((sample) => sample.bytes)),
+      response_bytes: samples.map((sample) => sample.bytes),
     });
   }
   return report;

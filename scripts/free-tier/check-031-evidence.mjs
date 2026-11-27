@@ -4,12 +4,13 @@ import { readFile, access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
 const base = 'specs/031-security-performance-readiness/reports';
+const baselinePath = process.argv[2] ?? `${base}/perf-baseline-2026-11-27.json`;
 const files = [
   `${base}/pen-test-readiness.md`,
   `${base}/coverage-map.md`,
   `${base}/evidence-index.md`,
   `${base}/perf-route-matrix.json`,
-  `${base}/perf-baseline-2026-11-27.json`,
+  baselinePath,
   `${base}/perf-baseline-2026-11-27.md`,
   'scripts/free-tier/baseline-031.mjs',
 ];
@@ -44,9 +45,7 @@ check(
 );
 check(register.includes('S71-PO-7'), 'docs/13 does not cite S71-PO-7');
 
-const baseline = JSON.parse(
-  await readFile(`${base}/perf-baseline-2026-11-27.json`, 'utf8'),
-);
+const baseline = JSON.parse(await readFile(baselinePath, 'utf8'));
 check(
   baseline.gate_status === 'PROPOSED_ONLY_NOT_A_GATE_PENDING_PO_SIGNATURE',
   'baseline gate status is not proposal-only',
@@ -61,6 +60,31 @@ check(
   baseline.pilot_volumes.derivedVolumes.plans === 600,
   'pilot plans not 600',
 );
+
+if (process.argv[2]) {
+  check(
+    ['next-start-production', 'next-dev'].includes(
+      baseline.environment?.server_mode,
+    ),
+    'baseline server mode is missing or unsupported',
+  );
+  for (const route of baseline.http_routes) {
+    check(
+      Array.isArray(route.status_samples) &&
+        route.status_samples.length === route.count &&
+        route.status_samples.every((status) => status === 200),
+      `route did not record only HTTP 200 samples: ${route.route}`,
+    );
+    check(
+      Number.isFinite(route.p50_ms) &&
+        Number.isFinite(route.p95_ms) &&
+        Number.isFinite(route.max_ms) &&
+        Array.isArray(route.response_bytes) &&
+        route.response_bytes.length === route.count,
+      `route timing or response-byte samples are incomplete: ${route.route}`,
+    );
+  }
+}
 
 for (const file of files.filter(
   (f) => f.endsWith('.md') || f.endsWith('.json'),
