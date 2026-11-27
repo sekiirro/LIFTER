@@ -47,6 +47,11 @@ export type TrainerCheckinsViewProps = {
   denied?: boolean;
   error?: boolean;
   onRetry?: () => void;
+  hasMore?: boolean;
+  onLoadMore?: (offset: number) => Promise<{
+    status: 'ok' | 'denied' | 'error';
+    checkins?: TrainerCheckinRow[];
+  }>;
   confirmFollowup: (params: {
     workspaceId: string;
     assignmentId: string;
@@ -61,12 +66,46 @@ export function TrainerCheckinsView({
   denied = false,
   error = false,
   onRetry,
+  hasMore = false,
+  onLoadMore,
   confirmFollowup,
 }: TrainerCheckinsViewProps) {
   const messages: Messages = getMessages(locale);
   const toast = useToast();
 
-  const [items, setItems] = useState<TrainerCheckinRow[]>(initialCheckins);
+  const [rowsState, setRowsState] = useState({
+    workspaceId,
+    locale,
+    source: initialCheckins,
+    items: initialCheckins,
+  });
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pageHasMore, setPageHasMore] = useState(hasMore);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const [locallyDenied, setLocallyDenied] = useState(false);
+  const rowsMatchProps =
+    rowsState.workspaceId === workspaceId &&
+    rowsState.locale === locale &&
+    rowsState.source === initialCheckins;
+  const items = rowsMatchProps ? rowsState.items : initialCheckins;
+  const replaceItems = (
+    update: (rows: TrainerCheckinRow[]) => TrainerCheckinRow[],
+  ) => {
+    setRowsState((state) => {
+      const current =
+        state.workspaceId === workspaceId &&
+        state.locale === locale &&
+        state.source === initialCheckins
+          ? state.items
+          : initialCheckins;
+      return {
+        workspaceId,
+        locale,
+        source: initialCheckins,
+        items: update(current),
+      };
+    });
+  };
   const [formFilter, setFormFilter] = useState<FormStatusFilter>('all');
   const [followupFilter, setFollowupFilter] =
     useState<FollowupStatusFilter>('all');
@@ -88,7 +127,7 @@ export function TrainerCheckinsView({
   }, [items, formFilter, followupFilter]);
 
   // If permission denied, show only the denied message without disclosing data existence
-  if (denied) {
+  if (denied || locallyDenied) {
     return (
       <main className={styles.page}>
         <div
@@ -137,7 +176,7 @@ export function TrainerCheckinsView({
 
         if (result.status === 'already_recorded') {
           toast.success(messages['workforce.checkin.followUp.alreadyRecorded']);
-          setItems((prev) =>
+          replaceItems((prev) =>
             prev.map((row) =>
               row.assignment_id === targetAssignmentId
                 ? {
@@ -150,7 +189,7 @@ export function TrainerCheckinsView({
           );
         } else if (result.status === 'ok') {
           toast.success(messages['workforce.checkin.followUp.success']);
-          setItems((prev) =>
+          replaceItems((prev) =>
             prev.map((row) =>
               row.assignment_id === targetAssignmentId
                 ? {
@@ -170,6 +209,36 @@ export function TrainerCheckinsView({
         setSelectedItem(null);
       }
     });
+  };
+
+  const handleLoadMore = async () => {
+    if (!onLoadMore || isLoadingMore) return;
+    setIsLoadingMore(true);
+    setLoadMoreError(false);
+    try {
+      const result = await onLoadMore(items.length);
+      if (result.status === 'denied') {
+        replaceItems(() => []);
+        setLocallyDenied(true);
+        setSelectedItem(null);
+      } else if (result.status === 'ok') {
+        const nextRows = result.checkins ?? [];
+        setPageHasMore(nextRows.length === 100);
+        replaceItems((current) => {
+          const seen = new Set(current.map((row) => row.assignment_id));
+          return [
+            ...current,
+            ...nextRows.filter((row) => !seen.has(row.assignment_id)),
+          ];
+        });
+      } else {
+        setLoadMoreError(true);
+      }
+    } catch {
+      setLoadMoreError(true);
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   const getFormStatusLabel = (status: FormStatus) => {
@@ -592,9 +661,30 @@ export function TrainerCheckinsView({
         </>
       )}
 
+      {pageHasMore && onLoadMore && !denied && !locallyDenied && (
+        <div className={styles.filtersGroup}>
+          <Button
+            variant="secondary"
+            onClick={handleLoadMore}
+            loading={isLoadingMore}
+            disabled={isLoadingMore}
+            data-testid="checkins-next-page"
+          >
+            {messages['registrationApproval.nextPage']}
+          </Button>
+          {loadMoreError && (
+            <ErrorState
+              title={messages['workforce.checkin.loadError']}
+              retryLabel={messages['states.retry']}
+              onRetry={handleLoadMore}
+            />
+          )}
+        </div>
+      )}
+
       {/* Confirmation Dialog */}
       <ConfirmDialog
-        open={selectedItem !== null}
+        open={rowsMatchProps && selectedItem !== null}
         title={messages['workforce.checkin.followUp.confirmTitle']}
         description={messages['workforce.checkin.followUp.confirmBody']}
         confirmLabel={messages['dialog.confirm']}

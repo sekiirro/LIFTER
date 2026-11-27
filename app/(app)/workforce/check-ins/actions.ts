@@ -2,7 +2,37 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireActor } from '../../../../lib/auth/actor';
-import { confirmTrainerCheckinFollowup } from '../../../../lib/workforce/checkins';
+import {
+  confirmTrainerCheckinFollowup,
+  readTrainerCheckins,
+} from '../../../../lib/workforce/checkins';
+
+export async function loadMoreTrainerCheckinsAction(input: {
+  workspaceId: string;
+  from: string;
+  to: string;
+  offset: number;
+}) {
+  const actor = await requireActor();
+  if (
+    !actor.role ||
+    (actor.role !== 'platform_owner' && actor.role !== 'trainer') ||
+    (actor.role === 'trainer' &&
+      !actor.activeWorkspaceIds.includes(input.workspaceId))
+  ) {
+    return { status: 'denied' as const };
+  }
+
+  const result = await readTrainerCheckins({
+    workspaceId: input.workspaceId,
+    from: input.from,
+    to: input.to,
+    limit: 100,
+    offset: input.offset,
+  });
+  if (result.status !== 'ok') return result;
+  return { status: 'ok' as const, checkins: result.checkins };
+}
 
 export async function confirmTrainerFollowupAction(input: {
   workspaceId: string;

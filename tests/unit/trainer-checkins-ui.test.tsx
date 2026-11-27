@@ -16,6 +16,11 @@ import TrainerCheckinsPage from '../../app/(app)/workforce/check-ins/page';
 import TrainerCheckinsLoading from '../../app/(app)/workforce/check-ins/loading';
 import { loadMoreTrainerCheckinsAction } from '../../app/(app)/workforce/check-ins/actions';
 
+const TestToastProvider = ToastProvider as unknown as (props: {
+  dismissLabel: string;
+  children?: unknown;
+}) => ReactElement;
+
 function renderView(props: TrainerCheckinsViewProps) {
   const messages = getMessages(props.locale);
   return renderToStaticMarkup(
@@ -220,9 +225,15 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
     await act(async () => {
       root.render(
         createElement(
-          ToastProvider,
+          TestToastProvider,
           { dismissLabel: 'Dismiss' },
           createElement(TrainerCheckinsView, {
+            key: JSON.stringify([
+              'workspace-a',
+              sampleCheckins
+                .slice(0, 1)
+                .map((row) => [row.assignment_id, row.followup_status]),
+            ]),
             workspaceId: 'workspace-a',
             locale: 'en',
             checkins: [sampleCheckins[0]!],
@@ -236,9 +247,18 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
     await act(async () => {
       root.render(
         createElement(
-          ToastProvider,
+          TestToastProvider,
           { dismissLabel: 'Dismiss' },
           createElement(TrainerCheckinsView, {
+            key: JSON.stringify([
+              'workspace-b',
+              [
+                [
+                  sampleCheckins[2]!.assignment_id,
+                  sampleCheckins[2]!.followup_status,
+                ],
+              ],
+            ]),
             workspaceId: 'workspace-b',
             locale: 'en',
             checkins: [sampleCheckins[2]!],
@@ -250,6 +270,32 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
     expect(host.textContent).toContain('Omar Tarek');
     expect(host.textContent).not.toContain('Ahmed Youssef');
     expect(host.textContent).not.toContain('+201001234567');
+
+    await act(async () => {
+      root.render(
+        createElement(
+          TestToastProvider,
+          { dismissLabel: 'Dismiss' },
+          createElement(TrainerCheckinsView, {
+            key: JSON.stringify([
+              'workspace-b',
+              [
+                [
+                  sampleCheckins[1]!.assignment_id,
+                  sampleCheckins[1]!.followup_status,
+                ],
+              ],
+            ]),
+            workspaceId: 'workspace-b',
+            locale: 'en',
+            checkins: [sampleCheckins[1]!],
+            confirmFollowup,
+          }),
+        ),
+      );
+    });
+    expect(host.textContent).toContain('Sara Karim');
+    expect(host.textContent).not.toContain('Omar Tarek');
 
     await act(async () => root.unmount());
     host.remove();
@@ -269,7 +315,7 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
     await act(async () => {
       root.render(
         createElement(
-          ToastProvider,
+          TestToastProvider,
           { dismissLabel: 'Dismiss' },
           createElement(TrainerCheckinsView, {
             workspaceId: 'workspace-a',
@@ -291,8 +337,9 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
       nextPage?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(host.textContent).toContain('Beyond first page');
-    expect(host.querySelector('[data-testid="followup-btn-assignment-101"]'))
-      .not.toBeNull();
+    expect(
+      host.querySelector('[data-testid="followup-btn-assignment-101"]'),
+    ).not.toBeNull();
     await act(async () => root.unmount());
     host.remove();
   });

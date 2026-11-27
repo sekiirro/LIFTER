@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { requireActor } from '../../../../lib/auth/actor';
 import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
@@ -5,7 +6,10 @@ import { getMessages } from '../../../../lib/i18n';
 import { ToastProvider } from '../../../../components/ui/Toast';
 import { readTrainerCheckins } from '../../../../lib/workforce/checkins';
 import { TrainerCheckinsView } from '../../../../components/workforce/TrainerCheckinsView';
-import { confirmTrainerFollowupAction } from './actions';
+import {
+  confirmTrainerFollowupAction,
+  loadMoreTrainerCheckinsAction,
+} from './actions';
 import { createSessionClient } from '../../../../lib/supabase/server';
 
 export default async function TrainerCheckinsPage({
@@ -130,6 +134,13 @@ export default async function TrainerCheckinsPage({
     return (
       <ToastProvider dismissLabel={messages['toast.dismiss']}>
         <TrainerCheckinsView
+          key={JSON.stringify([
+            activeWorkspace.id,
+            fromDate,
+            toDate,
+            locale,
+            'denied',
+          ])}
           workspaceId={activeWorkspace.id}
           locale={locale}
           checkins={[]}
@@ -144,6 +155,13 @@ export default async function TrainerCheckinsPage({
     return (
       <ToastProvider dismissLabel={messages['toast.dismiss']}>
         <TrainerCheckinsView
+          key={JSON.stringify([
+            activeWorkspace.id,
+            fromDate,
+            toDate,
+            locale,
+            'error',
+          ])}
           workspaceId={activeWorkspace.id}
           locale={locale}
           checkins={[]}
@@ -157,9 +175,27 @@ export default async function TrainerCheckinsPage({
   return (
     <ToastProvider dismissLabel={messages['toast.dismiss']}>
       <TrainerCheckinsView
+        key={JSON.stringify([
+          activeWorkspace.id,
+          fromDate,
+          toDate,
+          locale,
+          createHash('sha256')
+            .update(JSON.stringify(result.checkins))
+            .digest('hex'),
+        ])}
         workspaceId={activeWorkspace.id}
         locale={locale}
         checkins={result.checkins}
+        hasMore={result.checkins.length === 100}
+        onLoadMore={(offset) =>
+          loadMoreTrainerCheckinsAction({
+            workspaceId: activeWorkspace.id,
+            from: fromDate,
+            to: toDate,
+            offset,
+          })
+        }
         confirmFollowup={confirmTrainerFollowupAction}
       />
     </ToastProvider>
