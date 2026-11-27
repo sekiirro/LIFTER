@@ -8,6 +8,7 @@ import {
   sql,
   twoWorkspaceFixture,
 } from './harness';
+import { portalFixture } from './client-portal-fixture';
 
 let f: Awaited<ReturnType<typeof twoWorkspaceFixture>>;
 const svc = admin();
@@ -73,6 +74,39 @@ describe('PO export authorization RED (T001-T003)', () => {
     // Deliberately use an unauthenticated path if the synthetic credential is
     // unavailable; there is no role profile that could ever grant export.
     if (!signedIn.error) await assertDeniedWithoutDisclosure(client, f.wsA.id);
+  });
+
+  it('a client account cannot request one-workspace or all-workspace exports', async () => {
+    const portal = await portalFixture();
+    const email = `po-export-client-${randomUUID()}@example.test`;
+    const password = `S71-${randomUUID()}-aA1!`;
+    const created = await svc.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (created.error || !created.data.user)
+      throw new Error('Unable to create synthetic client actor');
+    try {
+      const clientAccount = await portal.makeClient({
+        activate: false,
+        label: 'po-export-client',
+        authUserId: created.data.user.id,
+      });
+      expect(clientAccount.authUserId).toBe(created.data.user.id);
+      const client = anonClient();
+      const signedIn = await client.auth.signInWithPassword({
+        email,
+        password,
+      });
+      expect(signedIn.error).toBeNull();
+      await assertDeniedWithoutDisclosure(client, f.wsA.id);
+      await assertDeniedWithoutDisclosure(client, f.wsB.id);
+      await assertDeniedWithoutDisclosure(client, randomUUID());
+    } finally {
+      await portal.close();
+      await svc.auth.admin.deleteUser(created.data.user.id);
+    }
   });
 
   it('direct job and guessed artifact reads do not reveal export existence', async () => {
@@ -169,6 +203,37 @@ describe('PO export authorization RED (T001-T003)', () => {
     expect(JSON.stringify(events)).not.toMatch(
       /health_notes|health-canary|email|phone|csv|url|secret/iu,
     );
+  });
+
+  it('leases the bounded source snapshot to the service worker only (T006)', async () => {
+    const requested = await f.po.client.rpc('request_po_client_export', {
+      p_workspace_id: f.wsA.id,
+      p_idempotency_key: randomUUID(),
+    });
+    expect(requested.error).toBeNull();
+    const lease = randomUUID();
+    await db`
+      update public.jobs set status='running', lease_token=${lease},
+        lease_expires_at=now()+interval '5 minutes'
+      where id=${requested.data!} and kind='po.export'
+    `;
+
+    const snapshot = await svc.rpc('po_export_snapshot', {
+      p_job_id: requested.data!,
+      p_lease_token: lease,
+    });
+    expect(snapshot.error).toBeNull();
+    expect(snapshot.data).toMatchObject({
+      rows: [],
+      row_count: 0,
+      exceeded_limit: false,
+    });
+    const direct = await f.po.client.rpc('po_export_snapshot', {
+      p_job_id: requested.data!,
+      p_lease_token: lease,
+    });
+    expect(direct.data).toBeNull();
+    expect(direct.error?.code).toBe('42501');
   });
 
   it('authorization denial test kills a mutant that grants every actor PO status (mutation)', async () => {
