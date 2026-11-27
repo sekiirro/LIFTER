@@ -315,6 +315,7 @@ declare
   actor uuid := auth.uid();
   can_assign boolean;
   code_needle text;
+  username_needle text;
   sampled timestamptz := statement_timestamp();
 begin
   if p_workspace_id is null
@@ -348,6 +349,9 @@ begin
   if needle is not null then
     needle := '%' || replace(replace(replace(needle, '\', '\\'), '%', '\%'), '_', '\_') || '%';
   end if;
+  username_needle := case when nullif(btrim(p_search), '') is not null then
+    '%' || replace(replace(replace(lower(normalize(btrim(p_search), NFKC)), chr(92), chr(92) || chr(92)), '%', chr(92) || '%'), '_', chr(92) || '_') || '%'
+  end;
   with matched as (
     select c.id, c.name, c.approval_state,
       app_private.f22_subscription_core(c.workspace_id, c.id) as summary,
@@ -362,11 +366,21 @@ begin
             where r.workspace_id = p.workspace_id and r.plan_id = p.id)) as plans_waiting,
       (select count(*)::integer from public.food_replacement_requests q
         where q.workspace_id = c.workspace_id and q.client_id = c.id
-          and q.status = 'open') as pending_replacements
+          and q.status = 'open') as pending_replacements,
+      (select count(*)::integer
+       from app_private.form_submissions s
+       join public.form_assignments a
+         on a.workspace_id = s.workspace_id and a.id = s.assignment_id
+       join app_private.form_assignment_policies p
+         on p.workspace_id = a.workspace_id and p.id = a.policy_id and p.trigger_kind = 'weekly_checkin'
+       where s.workspace_id = c.workspace_id
+         and a.client_id = c.id
+         and s.submitted_at >= now() - interval '7 days') as new_check_ins
     from public.clients c
     where c.workspace_id = p_workspace_id
       and (needle is null or c.name ilike needle or c.email_normalized ilike needle
         or c.phone_e164 like needle
+        or c.username_normalized ilike username_needle
         or (code_needle is not null and c.client_code = code_needle))
       and (p_approval_state is null or c.approval_state = p_approval_state)
   ), assigned as (
@@ -392,7 +406,8 @@ begin
       'client_id', n.id, 'name', n.name, 'approval_state', n.approval_state,
       'subscription_status', n.summary->>'status', 'refund_scope', n.summary->>'refund_scope',
       'plans_waiting_for_delivery', n.plans_waiting,
-      'pending_food_replacements', n.pending_replacements)
+      'pending_food_replacements', n.pending_replacements,
+      'new_check_ins', n.new_check_ins)
       || case when can_assign then jsonb_build_object('assignment', n.assignment,
         'client_code', n.client_code) else '{}'::jsonb end order by n.rn)
       filter (where n.rn <= p_limit), '[]'::jsonb), count(*) > p_limit
