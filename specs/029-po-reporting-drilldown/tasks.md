@@ -4,15 +4,15 @@
 
 ## Phase 1: Authorization and aggregate RED
 
-- [ ] T001 [US1] [FR-002,FR-003,FR-005] RED route/RPC tests for PO, own/foreign WO, Trainer, Sales, Client, revoked and anonymous access; include direct RPC and count/existence probes before reader changes. Preserve existing WO workspace report authorization.
-- [ ] T002 [US1] [FR-003,FR-005] RED row-level tests prove own-workspace boundary and selected workspace filters before aggregation.
-- [ ] T003 [US1] [FR-004,FR-006] RED fixture proves PO platform total → workspace subtotal → month/package breakdown → source rows using established BRD/PRD measures; assert period boundaries and currency partitions.
+- [x] T001 [US1] [FR-002,FR-003,FR-005] RED route/RPC tests for PO, own/foreign WO, Trainer, Sales, Client, revoked and anonymous access; include direct RPC and count/existence probes before reader changes. Preserve existing WO workspace report authorization. Verified: PR #362 MERGED `5cbcd347dd84fb99e8face35b9e1d7b79fa673a2` (ancestor of origin/main); `tests/integration/po-reporting-drilldown.test.ts`.
+- [x] T002 [US1] [FR-003,FR-005] RED row-level tests prove own-workspace boundary and selected workspace filters before aggregation. Verified: PR #362 MERGED `5cbcd347dd84fb99e8face35b9e1d7b79fa673a2` (ancestor of origin/main); `tests/integration/po-reporting-drilldown.test.ts`.
+- [x] T003 [US1] [FR-004,FR-006] RED fixture proves PO platform total → workspace subtotal → month/package breakdown → source rows using established BRD/PRD measures; assert period boundaries and currency partitions. Verified: PR #362 MERGED `5cbcd347dd84fb99e8face35b9e1d7b79fa673a2` (ancestor of origin/main); `tests/integration/po-reporting-drilldown.test.ts`.
 
 ## Phase 2: Reconciliation and bounded readers
 
-- [ ] T004 [US1] [FR-004,FR-006] RED synthetic fixtures reconcile parent totals to source rows across month and package breakdowns and currency; test rounding, reversals/refunds, and pending FX according to existing source semantics.
-- [ ] T005 [US1] [FR-002,FR-004,FR-005,FR-006] Add a PO-only platform aggregate reader/RPC over existing revenue, client, subscription and finance source facts; integrate it into `/reports` with month/package breakdowns. Preserve currency/event representation, validated filters, distinct PO platform authorization and bounded deterministic cursor.
-- [ ] T006 [US1] [FR-005,FR-008] Verify integer minor-unit math, period boundaries, stable pagination, query bound, safe generic errors, and exclusion of leaderboard/export/audit browsing.
+- [x] T004 [US1] [FR-004,FR-006] RED synthetic fixtures reconcile parent totals to source rows across month and package breakdowns and currency; test rounding, reversals/refunds, and pending FX according to existing source semantics. Verified: PR #362 MERGED `5cbcd347dd84fb99e8face35b9e1d7b79fa673a2` (ancestor of origin/main); `tests/integration/po-reporting-drilldown.test.ts`.
+- [x] T005 [US1] [FR-002,FR-004,FR-005,FR-006] Add a PO-only platform aggregate reader/RPC over existing revenue, client, subscription and finance source facts; integrate it into `/reports` with month/package breakdowns. Preserve currency/event representation, validated filters, distinct PO platform authorization and bounded deterministic cursor. Verified: PR #362 MERGED `5cbcd347dd84fb99e8face35b9e1d7b79fa673a2` (ancestor of origin/main); `tests/integration/po-reporting-drilldown.test.ts`.
+- [x] T006 [US1] [FR-005,FR-008] Verify integer minor-unit math, period boundaries, stable pagination, query bound, safe generic errors, and exclusion of leaderboard/export/audit browsing. Verified: PR #362 MERGED `5cbcd347dd84fb99e8face35b9e1d7b79fa673a2` (ancestor of origin/main); `tests/integration/po-reporting-drilldown.test.ts`.
 
 ## Phase 3: Existing report view and acceptance
 
