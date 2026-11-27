@@ -2655,6 +2655,34 @@ describe('F13 T044a Sales productivity catalog', () => {
   });
 });
 
+describe('P7 T020 Sales funnel RPC catalog', () => {
+  it('is a hardened authenticated RPC with a leading platform-owner guard', async () => {
+    const [funnel] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role,
+        pg_catalog.pg_get_functiondef(p.oid) as definition
+      from pg_proc p where p.oid='public.get_sales_funnel(uuid,date)'::regprocedure`;
+    expect(funnel).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+    expect(funnel?.proconfig).toContain('search_path=""');
+    expect(
+      funnel?.definition.indexOf('app_private.is_platform_owner'),
+    ).toBeLessThan(
+      funnel?.definition.indexOf('public.registration_links') ?? -1,
+    );
+    expect(funnel?.definition).not.toMatch(
+      /email|phone|client_name|token_hash/i,
+    );
+  });
+});
+
 describe('F11 responsible-Trainer assignment catalog', () => {
   it('forces RLS, exposes only scoped reads, and grants no table writes', async () => {
     const [table] = await db`select relrowsecurity, relforcerowsecurity
