@@ -13,7 +13,7 @@ export async function seedSubmittedIntake(
     configuredBy?: string;
     deadlineAt?: Date;
   } = {},
-  answers: Record<string, unknown> = { q1: 'submitted' },
+  answers: Record<string, string> = { q1: 'submitted' },
 ) {
   const policy = `f17-intake-${randomUUID()}`;
   await tx`insert into app_private.terms_policy_versions(version, policy_kind, status)

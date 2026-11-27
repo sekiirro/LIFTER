@@ -34,6 +34,8 @@ describe('PO export jobs handler (T009)', () => {
         return { rows: snapshot, row_count: 1, exceeded_limit: false };
       }
       if (name === 'po_export_finalize') return true;
+      if (name === 'po_export_attempt')
+        return `${jobId}/${leaseToken}/00000000-0000-4000-8000-000000000032/archive.csv`;
       if (name === 'po_export_failed') return true;
       throw new Error(`Unexpected RPC ${name}`);
     }) as unknown as Rpc;
@@ -68,7 +70,7 @@ describe('PO export jobs handler (T009)', () => {
       args: {
         p_job_id: jobId,
         p_lease_token: leaseToken,
-        p_object_path: `${jobId}/archive.csv`,
+        p_object_path: `${jobId}/${leaseToken}/00000000-0000-4000-8000-000000000032/archive.csv`,
         p_row_count: 1,
       },
     });
@@ -121,6 +123,8 @@ describe('PO export jobs handler (T009)', () => {
           row_count: 1,
           exceeded_limit: false,
         };
+      if (name === 'po_export_attempt')
+        return `${jobId}/${leaseToken}/00000000-0000-4000-8000-000000000032/archive.csv`;
       if (name === 'po_export_failed') return true;
       throw new Error('Unexpected RPC');
     }) as unknown as Rpc;
@@ -138,6 +142,10 @@ describe('PO export jobs handler (T009)', () => {
         leaseToken,
       }),
     ).rejects.toMatchObject({ code: 'po_export_generation_failed' });
-    expect(calls).toEqual(['po_export_snapshot', 'po_export_failed']);
+    expect(calls).toEqual([
+      'po_export_snapshot',
+      'po_export_attempt',
+      'po_export_failed',
+    ]);
   });
 });

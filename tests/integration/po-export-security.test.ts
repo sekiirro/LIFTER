@@ -157,8 +157,7 @@ describe('PO export authorization RED (T001-T003)', () => {
     expect(new Set(concurrent.map((result) => result.data)).size).toBe(1);
     const [concurrentJob] = await db`
       select count(*)::int as count from public.jobs
-      where idempotency_key like ${`po-export:${f.po.userId}:${f.wsB.id}:%`}
-        and idempotency_key like ${`%:${concurrentKey}`}
+      where idempotency_key = ${`po-export:${f.po.userId}:${concurrentKey}`}
     `;
     expect(concurrentJob?.count).toBe(1);
     const jobs = checked(
@@ -245,6 +244,126 @@ describe('PO export authorization RED (T001-T003)', () => {
     );
   });
 
+  it('lease attempts use separate objects and finalize publishes once idempotently', async () => {
+    const requested = await f.po.client.rpc('request_po_client_export', {
+      p_workspace_id: f.wsA.id,
+      p_idempotency_key: randomUUID(),
+    });
+    expect(requested.error).toBeNull();
+    const oldLease = randomUUID();
+    const newLease = randomUUID();
+    await db`
+      update public.jobs set status='running',lease_token=${oldLease},lease_expires_at=now()+interval '5 minutes'
+      where id=${requested.data!}
+    `;
+    const oldAttempt = await svc.rpc('po_export_attempt', {
+      p_job_id: requested.data!,
+      p_lease_token: oldLease,
+    });
+    expect(oldAttempt.error).toBeNull();
+    expect(oldAttempt.data).toMatch(
+      new RegExp(
+        `^${requested.data}/${oldLease}/[0-9a-f-]{36}/archive\\.csv$`,
+        'iu',
+      ),
+    );
+    const oldUpload = await svc.storage
+      .from('po-export-artifacts')
+      .upload(oldAttempt.data!, new Blob(['old lease'], { type: 'text/csv' }));
+    expect(oldUpload.error).toBeNull();
+
+    await db`
+      update public.jobs set lease_token=${newLease},lease_expires_at=now()+interval '5 minutes'
+      where id=${requested.data!} and lease_token=${oldLease}
+    `;
+    const newAttempt = await svc.rpc('po_export_attempt', {
+      p_job_id: requested.data!,
+      p_lease_token: newLease,
+    });
+    expect(newAttempt.error).toBeNull();
+    expect(newAttempt.data).not.toBe(oldAttempt.data);
+    const newUpload = await svc.storage
+      .from('po-export-artifacts')
+      .upload(
+        newAttempt.data!,
+        new Blob(['current lease'], { type: 'text/csv' }),
+      );
+    expect(newUpload.error).toBeNull();
+
+    const staleFinalize = await svc.rpc('po_export_finalize', {
+      p_job_id: requested.data!,
+      p_lease_token: oldLease,
+      p_object_path: oldAttempt.data!,
+      p_row_count: 1,
+    });
+    expect(staleFinalize.data).toBe(false);
+    const finalized = await svc.rpc('po_export_finalize', {
+      p_job_id: requested.data!,
+      p_lease_token: newLease,
+      p_object_path: newAttempt.data!,
+      p_row_count: 1,
+    });
+    const idempotent = await svc.rpc('po_export_finalize', {
+      p_job_id: requested.data!,
+      p_lease_token: newLease,
+      p_object_path: newAttempt.data!,
+      p_row_count: 1,
+    });
+    expect(finalized.data).toBe(true);
+    expect(idempotent.data).toBe(true);
+    const [audit] = await db`
+      select count(*)::int as n from public.audit_events
+      where target_id=${requested.data!} and action='po_export.generated'
+    `;
+    expect(audit?.n).toBe(1);
+
+    await svc.storage.from('po-export-artifacts').remove([oldAttempt.data!]);
+    const published = await svc.storage
+      .from('po-export-artifacts')
+      .download(newAttempt.data!);
+    expect(published.data).not.toBeNull();
+    await svc.storage.from('po-export-artifacts').remove([newAttempt.data!]);
+  });
+
+  it('tracks a pre-upload attempt until the expiry sweep confirms cleanup', async () => {
+    const requested = await f.po.client.rpc('request_po_client_export', {
+      p_workspace_id: f.wsA.id,
+      p_idempotency_key: randomUUID(),
+    });
+    expect(requested.error).toBeNull();
+    const oldLease = randomUUID();
+    const newLease = randomUUID();
+    await db`
+      update public.jobs set status='running',lease_token=${oldLease},lease_expires_at=now()+interval '5 minutes'
+      where id=${requested.data!}
+    `;
+    const attempt = await svc.rpc('po_export_attempt', {
+      p_job_id: requested.data!,
+      p_lease_token: oldLease,
+    });
+    expect(attempt.error).toBeNull();
+    await db`
+      update public.jobs set lease_token=${newLease},lease_expires_at=now()+interval '5 minutes'
+      where id=${requested.data!} and lease_token=${oldLease}
+    `;
+    const expired = await svc.rpc('po_export_expired_artifacts', {
+      p_limit: 100,
+    });
+    expect(expired.error).toBeNull();
+    expect(expired.data).toContainEqual({
+      job_id: requested.data!,
+      object_path: attempt.data,
+    });
+    const marked = await svc.rpc('po_export_expired_mark', {
+      p_job_id: requested.data!,
+      p_object_path: attempt.data!,
+    });
+    expect(marked.data).toBe(true);
+    const [job] =
+      await db`select payload from public.jobs where id=${requested.data!}`;
+    expect(job!.payload.artifact_attempt_paths).toEqual([]);
+  });
+
   it('hides PO-export audit and dead-letter metadata from every non-PO role', async () => {
     const requested = await f.po.client.rpc('request_po_client_export', {
       p_workspace_id: f.wsA.id,
@@ -313,6 +432,19 @@ describe('PO export authorization RED (T001-T003)', () => {
             event.action !== 'job.dead_lettered',
         ),
       ).toBe(true);
+      const rollback = new Error('rollback B1 audit-policy mutant');
+      await expect(
+        db.begin(async (tx) => {
+          await tx`drop policy po_export_audit_po_only on public.audit_events`;
+          await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.woA.userId, role: 'authenticated' })},true)`;
+          await tx`set local role authenticated`;
+          const [mutated] = await tx`
+            select count(*)::int as visible from public.audit_events where target_id in (${targetIds[0]},${targetIds[1]})
+          `;
+          expect(mutated?.visible).toBeGreaterThan(0);
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
     } finally {
       await portal.close();
       await svc.auth.admin.deleteUser(created.data.user.id);
@@ -425,12 +557,13 @@ describe('PO export authorization RED (T001-T003)', () => {
     expect(JSON.stringify(audit)).not.toContain('synthetic');
 
     const expiredId = randomUUID();
+    const expiredPath = `${expiredId}/archive.csv`;
     await db`
       insert into public.jobs(id,kind,workspace_id,payload,idempotency_key,status,finished_at)
       values(${expiredId},'po.export',${f.wsA.id},${db.json({
         actor_user_id: f.po.userId,
         scope_workspace_id: f.wsA.id,
-        artifact_path: `${expiredId}/archive.csv`,
+        artifact_path: expiredPath,
         manifest_version: '030-v1',
         generated_at: new Date(Date.now() - 16 * 60_000).toISOString(),
         expires_at: new Date(Date.now() - 1_000).toISOString(),
@@ -469,10 +602,11 @@ describe('PO export authorization RED (T001-T003)', () => {
     expect(expiredBatch.error).toBeNull();
     expect(expiredBatch.data).toContainEqual({
       job_id: expiredId,
-      object_path: `${expiredId}/archive.csv`,
+      object_path: expiredPath,
     });
     const marked = await svc.rpc('po_export_expired_mark', {
       p_job_id: expiredId,
+      p_object_path: expiredPath,
     });
     expect(marked.data).toBe(true);
     const expiredJob = checked(

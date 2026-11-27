@@ -26,11 +26,17 @@ beforeAll(async () => {
     label: 'export-snapshot-foreign',
   });
   await db.begin((tx) =>
-    seedSubmittedIntake(tx, home.fixture.wsA.id, homeClient.clientId, {
-      q1: 'submitted',
-      fitness_goals: 'strength-canary',
-      health_notes: 'health-canary-private',
-    }),
+    seedSubmittedIntake(
+      tx,
+      home.fixture.wsA.id,
+      homeClient.clientId,
+      {},
+      {
+        q1: 'submitted',
+        fitness_goals: 'strength-canary',
+        health_notes: 'health-canary-private',
+      },
+    ),
   );
   const [membership] = await db`
     select id from public.workspace_memberships
@@ -60,6 +66,21 @@ async function runningJob(workspaceId: string | null) {
     })},${`po-export-snapshot-${jobId}`},'running',${lease},now()+interval '5 minutes')
   `;
   return { jobId, lease };
+}
+
+async function snapshotSql(jobId: string, lease: string) {
+  return db.begin(async (tx) => {
+    await tx`select set_config('request.jwt.claim.role','service_role',true)`;
+    await tx`select set_config('statement_timeout','90000',true)`;
+    const [result] = await tx`
+      select public.po_export_snapshot(${jobId}::uuid,${lease}::uuid) as value
+    `;
+    return result!.value as {
+      rows: Array<{ client_id: string; row: Record<string, unknown> }>;
+      row_count: number;
+      exceeded_limit: boolean;
+    };
+  });
 }
 
 const expectedColumns = [
@@ -128,7 +149,75 @@ describe('PO export real database snapshot', () => {
       p_lease_token: allJob.lease,
     });
     expect(allResult.error).toBeNull();
-    expect((allResult.data as { row_count: number }).row_count).toBe(2);
+    const allData = allResult.data as {
+      rows: Array<{ client_id: string }>;
+      row_count: number;
+    };
+    expect(allData.row_count).toBeGreaterThanOrEqual(2);
+    expect(allData.rows.map((item) => item.client_id)).toEqual(
+      expect.arrayContaining([homeClient.clientId, foreignClient.clientId]),
+    );
+  });
+
+  it('scope predicate mutation exposes the foreign workspace and is rolled back', async () => {
+    const job = await runningJob(home.fixture.wsA.id);
+    const rollback = new Error('rollback B6 scope mutant');
+    await expect(
+      db.begin(async (tx) => {
+        const [source] = await tx`
+          select pg_get_functiondef('public.po_export_snapshot(uuid,uuid)'::regprocedure) as definition
+        `;
+        const mutant = String(source!.definition).replace(
+          'and (ws is null or c.workspace_id=ws)',
+          'and true',
+        );
+        expect(mutant).not.toBe(source!.definition);
+        await tx.unsafe(mutant);
+        await tx`select set_config('request.jwt.claim.role','service_role',true)`;
+        const [snapshot] = await tx`
+          select public.po_export_snapshot(${job.jobId}::uuid,${job.lease}::uuid) as value
+        `;
+        const data = snapshot!.value as {
+          rows: Array<{ client_id: string }>;
+          row_count: number;
+        };
+        expect(data.row_count).toBeGreaterThan(1);
+        expect(data.rows.map((item) => item.client_id)).toContain(
+          foreignClient.clientId,
+        );
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it('health_notes field mutation is detectable and rolled back', async () => {
+    const job = await runningJob(home.fixture.wsA.id);
+    const rollback = new Error('rollback B6 health_notes mutant');
+    await expect(
+      db.begin(async (tx) => {
+        const [source] = await tx`
+          select pg_get_functiondef('public.po_export_snapshot(uuid,uuid)'::regprocedure) as definition
+        `;
+        const mutant = String(source!.definition).replace(
+          "'forms.fitness_goals', fr.answer_values->>'fitness_goals'",
+          "'forms.fitness_goals', fr.answer_values->>'fitness_goals', 'forms.health_notes', fr.answer_values->>'health_notes'",
+        );
+        expect(mutant).not.toBe(source!.definition);
+        await tx.unsafe(mutant);
+        await tx`select set_config('request.jwt.claim.role','service_role',true)`;
+        const [snapshot] = await tx`
+          select public.po_export_snapshot(${job.jobId}::uuid,${job.lease}::uuid) as value
+        `;
+        const data = snapshot!.value as {
+          rows: Array<{ client_id: string; row: Record<string, unknown> }>;
+        };
+        const row = data.rows.find(
+          (item) => item.client_id === homeClient.clientId,
+        )?.row;
+        expect(row?.['forms.health_notes']).toBe('health-canary-private');
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
   });
 
   it('keeps one MVCC view while a client row is concurrently updated', async () => {
@@ -218,24 +307,19 @@ describe('PO export real database snapshot', () => {
     }
 
     const atLimit = await runningJob(home.fixture.wsA.id);
-    const accepted = await svc.rpc('po_export_snapshot', {
-      p_job_id: atLimit.jobId,
-      p_lease_token: atLimit.lease,
-    });
-    expect(accepted.error).toBeNull();
-    expect(
-      (accepted.data as { row_count: number; exceeded_limit: boolean })
-        .row_count,
-    ).toBe(10000);
-    expect((accepted.data as { exceeded_limit: boolean }).exceeded_limit).toBe(
-      false,
-    );
+    const accepted = await snapshotSql(atLimit.jobId, atLimit.lease);
+    expect(accepted.row_count).toBe(10000);
+    expect(accepted.exceeded_limit).toBe(false);
 
     const overflow = await runningJob(null);
-    const rpc = (async (name: string, args: Record<string, unknown>) => {
-      const result = await svc.rpc(name, args as never);
-      if (result.error) throw new Error('test_worker_rpc_failed');
-      return result.data;
+    const overflowSnapshot = await snapshotSql(overflow.jobId, overflow.lease);
+    expect(overflowSnapshot.row_count).toBe(10001);
+    expect(overflowSnapshot.rows).toEqual([]);
+    expect(overflowSnapshot.exceeded_limit).toBe(true);
+    const rpc = (async (name: string) => {
+      if (name === 'po_export_snapshot') return overflowSnapshot;
+      if (name === 'po_export_failed') return true;
+      throw new Error('unexpected worker rpc');
     }) as unknown as Rpc;
     const fetchBefore = vi.spyOn(globalThis, 'fetch');
     const handler = createHandlers(rpc, {
@@ -243,7 +327,7 @@ describe('PO export real database snapshot', () => {
       SUPABASE_SERVICE_ROLE_KEY: 'stack-injected',
     })['po.export'];
     await expect(
-      handler({
+      handler!({
         jobId: overflow.jobId,
         kind: 'po.export',
         workspaceId: null,
@@ -261,7 +345,9 @@ describe('PO export real database snapshot', () => {
     ).toBe(false);
     const artifact = await svc.storage
       .from('po-export-artifacts')
-      .download(`${overflow.jobId}/${overflow.lease}/archive.csv`);
+      .download(
+        `${overflow.jobId}/${overflow.lease}/${randomUUID()}/archive.csv`,
+      );
     expect(artifact.data).toBeNull();
     fetchBefore.mockRestore();
   }, 180_000);

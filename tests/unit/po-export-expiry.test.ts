@@ -11,9 +11,9 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('PO export expiry sweep', () => {
   it('removes expired objects through storage and only then clears the job reference', async () => {
-    const calls: string[] = [];
-    const rpc = (async (name: string) => {
-      calls.push(name);
+    const calls: Array<{ name: string; args: Record<string, unknown> }> = [];
+    const rpc = (async (name: string, args: Record<string, unknown>) => {
+      calls.push({ name, args });
       if (name === 'po_export_expired_artifacts')
         return [
           {
@@ -41,9 +41,13 @@ describe('PO export expiry sweep', () => {
         method: 'DELETE',
       },
     ]);
-    expect(calls).toEqual([
+    expect(calls.map(({ name }) => name)).toEqual([
       'po_export_expired_artifacts',
       'po_export_expired_mark',
     ]);
+    expect(calls[1]).toEqual({
+      name: 'po_export_expired_mark',
+      args: { p_job_id: 'job-1', p_object_path: 'job-1/archive.csv' },
+    });
   });
 });

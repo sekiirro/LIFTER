@@ -33,6 +33,10 @@ type RpcMethods = {
       exceeded_limit: boolean;
     };
   };
+  po_export_attempt: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: string | null;
+  };
   po_export_finalize: {
     args: {
       p_job_id: string;
@@ -51,7 +55,7 @@ type RpcMethods = {
     result: Array<{ job_id: string; object_path: string }>;
   };
   po_export_expired_mark: {
-    args: { p_job_id: string };
+    args: { p_job_id: string; p_object_path: string };
     result: boolean;
   };
   handle_quality_monthly_reminder: {

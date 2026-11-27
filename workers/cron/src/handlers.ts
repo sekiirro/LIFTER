@@ -25,7 +25,7 @@ export function createHandlers(
         throw new JobError('po_export_environment_missing', {
           permanent: true,
         });
-      const objectPath = `${jobId}/archive.csv`;
+      let objectPath: string | null = null;
       let uploadAttempted = false;
       let rowCapExceeded = false;
       try {
@@ -47,6 +47,11 @@ export function createHandlers(
           PO_EXPORT_FIELDS,
           snapshot.rows.map((item) => item.row),
         );
+        objectPath = await rpc('po_export_attempt', {
+          p_job_id: jobId,
+          p_lease_token: leaseToken,
+        });
+        if (!objectPath) throw new Error('po_export_attempt_lease_invalid');
         const baseUrl = env.SUPABASE_URL.replace(/\/$/u, '');
         uploadAttempted = true;
         const upload = await fetch(
@@ -58,7 +63,6 @@ export function createHandlers(
               apikey: env.SUPABASE_SERVICE_ROLE_KEY,
               Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
               'Content-Type': 'text/csv; charset=utf-8',
-              'x-upsert': 'true',
             },
             body: csv,
           },
@@ -72,9 +76,9 @@ export function createHandlers(
         });
         if (!finalized) throw new Error('po_export_finalize_failed');
       } catch {
-        if (uploadAttempted) {
+        if (uploadAttempted && objectPath) {
           try {
-            await fetch(
+            const deleted = await fetch(
               `${env.SUPABASE_URL.replace(/\/$/u, '')}/storage/v1/object/po-export-artifacts/${objectPath}`,
               {
                 method: 'DELETE',
@@ -85,8 +89,14 @@ export function createHandlers(
                 },
               },
             );
+            if (deleted.ok || deleted.status === 404) {
+              await rpc('po_export_expired_mark', {
+                p_job_id: jobId,
+                p_object_path: objectPath,
+              });
+            }
           } catch {
-            // The expiry sweep will retry cleanup without exposing the artifact.
+            // The tracked attempt path remains for the expiry sweep.
           }
         }
         try {

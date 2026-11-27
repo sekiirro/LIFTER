@@ -10,6 +10,17 @@ create policy po_export_artifacts_no_authenticated_write on storage.objects
   as restrictive for all to authenticated using (bucket_id <> 'po-export-artifacts')
   with check (bucket_id <> 'po-export-artifacts');
 
+-- Export audit rows contain existence and count metadata that must stay PO-only.
+create policy po_export_audit_po_only on public.audit_events
+  as restrictive for select to authenticated
+  using (
+    app_private.is_platform_owner()
+    or not (
+      action like 'po_export.%'
+      or (action = 'job.dead_lettered' and details->>'kind' = 'po.export')
+    )
+  );
+
 create function app_private.po_export_audit(
   p_job_id uuid, p_action text, p_actor uuid, p_workspace uuid,
   p_outcome text, p_extra jsonb default '{}'::jsonb
@@ -30,7 +41,7 @@ revoke all on function app_private.po_export_audit(uuid,text,uuid,uuid,text,json
 
 create function public.request_po_client_export(p_workspace_id uuid, p_idempotency_key text)
 returns uuid language plpgsql security definer set search_path = '' as $$
-declare actor uuid := auth.uid(); job_id uuid; safe_key text;
+declare actor uuid := auth.uid(); job_id uuid; safe_key text; existing_job public.jobs%rowtype;
 begin
   if actor is null or not app_private.is_platform_owner() then
     raise exception 'not_found' using errcode = '42501';
@@ -41,10 +52,18 @@ begin
   if p_workspace_id is not null and not exists(select 1 from public.workspaces w where w.id=p_workspace_id) then
     raise exception 'not_found' using errcode = 'P0002';
   end if;
-  safe_key := 'po-export:' || actor::text || ':' || coalesce(p_workspace_id::text, 'all') || ':' || p_idempotency_key;
+  safe_key := 'po-export:' || actor::text || ':' || p_idempotency_key;
   job_id := app_private.enqueue_job('po.export', p_workspace_id,
     jsonb_build_object('actor_user_id', actor, 'scope_workspace_id', p_workspace_id,
       'manifest_version', '030-v1'), safe_key, now(), 5);
+  select * into existing_job from public.jobs where id=job_id;
+  if existing_job.kind <> 'po.export'
+    or existing_job.workspace_id is distinct from p_workspace_id
+    or existing_job.payload->>'actor_user_id' is distinct from actor::text
+    or existing_job.payload->>'scope_workspace_id' is distinct from p_workspace_id::text
+    or existing_job.payload->>'manifest_version' is distinct from '030-v1' then
+    raise exception 'idempotency_scope_conflict' using errcode = '22023';
+  end if;
   perform app_private.po_export_audit(job_id, 'po_export.requested', actor, p_workspace_id, 'queued',
     jsonb_build_object('scope', case when p_workspace_id is null then 'all' else 'workspace' end));
   return job_id;
@@ -166,6 +185,28 @@ alter function public.po_export_snapshot(uuid,uuid) owner to postgres;
 revoke all on function public.po_export_snapshot(uuid,uuid) from public, anon, authenticated;
 grant execute on function public.po_export_snapshot(uuid,uuid) to service_role;
 
+create function public.po_export_attempt(p_job_id uuid, p_lease_token uuid) returns text
+language plpgsql security definer set search_path = '' as $$
+declare object_path text; attempt_id uuid := gen_random_uuid();
+begin
+  object_path := p_job_id::text || '/' || p_lease_token::text || '/' || attempt_id::text || '/archive.csv';
+  update public.jobs j set payload=jsonb_set(
+    j.payload,
+    '{artifact_attempt_paths}',
+    coalesce(j.payload->'artifact_attempt_paths','[]'::jsonb) ||
+      jsonb_build_array(jsonb_build_object('path',object_path,'lease_token',p_lease_token,'created_at',clock_timestamp())),
+    true
+  )
+  where j.id=p_job_id and j.kind='po.export' and j.status='running'
+    and j.lease_token=p_lease_token;
+  if not found then return null; end if;
+  return object_path;
+end;
+$$;
+alter function public.po_export_attempt(uuid,uuid) owner to postgres;
+revoke all on function public.po_export_attempt(uuid,uuid) from public, anon, authenticated;
+grant execute on function public.po_export_attempt(uuid,uuid) to service_role;
+
 create function public.po_export_finalize(
   p_job_id uuid, p_lease_token uuid, p_object_path text, p_row_count bigint
 ) returns boolean language plpgsql security definer set search_path = '' as $$
@@ -173,7 +214,20 @@ declare job public.jobs%rowtype; actor uuid; ws uuid;
 begin
   select * into job from public.jobs j where j.id=p_job_id and j.kind='po.export'
     and j.status='running' and j.lease_token=p_lease_token for update;
-  if not found or p_object_path <> p_job_id::text || '/archive.csv' or p_row_count < 0 then
+  if not found or p_row_count < 0 then
+    return false;
+  end if;
+  if job.payload->>'artifact_path' = p_object_path
+    and (job.payload->>'row_count')::bigint = p_row_count then
+    return true;
+  end if;
+  if job.payload->>'artifact_path' is not null then
+    return false;
+  end if;
+  if not exists (
+    select 1 from jsonb_array_elements(coalesce(job.payload->'artifact_attempt_paths','[]'::jsonb)) attempt
+    where attempt->>'path'=p_object_path and attempt->>'lease_token'=p_lease_token::text
+  ) then
     return false;
   end if;
   actor := (job.payload->>'actor_user_id')::uuid;
@@ -184,7 +238,11 @@ begin
   end if;
   update public.jobs set payload=payload || jsonb_build_object(
     'artifact_path',p_object_path,'row_count',p_row_count,'generated_at',clock_timestamp(),
-    'expires_at',clock_timestamp()+interval '15 minutes')
+    'expires_at',clock_timestamp()+interval '15 minutes') || jsonb_build_object(
+      'artifact_attempt_paths', coalesce((
+        select jsonb_agg(attempt) from jsonb_array_elements(coalesce(payload->'artifact_attempt_paths','[]'::jsonb)) attempt
+        where attempt->>'path' <> p_object_path
+      ),'[]'::jsonb))
     where id=p_job_id and lease_token=p_lease_token and status='running';
   perform app_private.po_export_audit(p_job_id,'po_export.generated',actor,ws,'ready',
     jsonb_build_object('row_count',p_row_count));
@@ -220,12 +278,22 @@ begin
     raise exception 'not_found' using errcode = '42501';
   end if;
   return query
-    select j.id, j.payload->>'artifact_path'
-    from public.jobs j
-    where j.kind='po.export' and j.status='done'
-      and j.payload->>'artifact_path' is not null
-      and (j.payload->>'expires_at')::timestamptz <= clock_timestamp()
-    order by (j.payload->>'expires_at')::timestamptz, j.id
+    select pending.job_id, pending.object_path
+    from (
+      select j.id as job_id, j.payload->>'artifact_path' as object_path,
+        (j.payload->>'expires_at')::timestamptz as sort_at
+      from public.jobs j
+      where j.kind='po.export' and j.status in ('done','dead')
+        and j.payload->>'artifact_path' is not null
+        and (j.status='dead' or (j.payload->>'expires_at')::timestamptz <= clock_timestamp())
+      union all
+      select j.id, attempt->>'path', coalesce((attempt->>'created_at')::timestamptz, j.created_at)
+      from public.jobs j
+      cross join lateral jsonb_array_elements(coalesce(j.payload->'artifact_attempt_paths','[]'::jsonb)) attempt
+      where j.kind='po.export'
+        and (j.status <> 'running' or attempt->>'lease_token' is distinct from j.lease_token::text)
+    ) pending
+    order by pending.sort_at, pending.job_id
     limit p_limit;
 end;
 $$;
@@ -233,22 +301,34 @@ alter function public.po_export_expired_artifacts(integer) owner to postgres;
 revoke all on function public.po_export_expired_artifacts(integer) from public, anon, authenticated;
 grant execute on function public.po_export_expired_artifacts(integer) to service_role;
 
-create function public.po_export_expired_mark(p_job_id uuid) returns boolean
+create function public.po_export_expired_mark(p_job_id uuid, p_object_path text) returns boolean
 language plpgsql security definer set search_path = '' as $$
+declare changed boolean := false;
 begin
   if auth.role() <> 'service_role' then
     raise exception 'not_found' using errcode = '42501';
   end if;
-  update public.jobs j set payload=j.payload-'artifact_path'-'expires_at'
-  where j.id=p_job_id and j.kind='po.export' and j.status='done'
-    and j.payload->>'artifact_path' is not null
-    and (j.payload->>'expires_at')::timestamptz <= clock_timestamp();
-  return found;
+  update public.jobs j set payload=(j.payload-'artifact_path'-'expires_at'-'row_count'-'generated_at') || jsonb_build_object(
+    'artifact_attempt_paths', coalesce((
+      select jsonb_agg(attempt) from jsonb_array_elements(coalesce(j.payload->'artifact_attempt_paths','[]'::jsonb)) attempt
+      where attempt->>'path' <> p_object_path
+    ),'[]'::jsonb))
+  where j.id=p_job_id and j.kind='po.export' and j.status in ('done','dead')
+    and j.payload->>'artifact_path'=p_object_path
+    and (j.status='dead' or (j.payload->>'expires_at')::timestamptz <= clock_timestamp());
+  changed := found;
+  update public.jobs j set payload=jsonb_set(j.payload,'{artifact_attempt_paths}',coalesce((
+    select jsonb_agg(attempt) from jsonb_array_elements(coalesce(j.payload->'artifact_attempt_paths','[]'::jsonb)) attempt
+    where attempt->>'path' <> p_object_path
+  ),'[]'::jsonb),true)
+  where j.id=p_job_id and j.kind='po.export'
+    and exists(select 1 from jsonb_array_elements(coalesce(j.payload->'artifact_attempt_paths','[]'::jsonb)) attempt where attempt->>'path'=p_object_path);
+  return changed or found;
 end;
 $$;
-alter function public.po_export_expired_mark(uuid) owner to postgres;
-revoke all on function public.po_export_expired_mark(uuid) from public, anon, authenticated;
-grant execute on function public.po_export_expired_mark(uuid) to service_role;
+alter function public.po_export_expired_mark(uuid,text) owner to postgres;
+revoke all on function public.po_export_expired_mark(uuid,text) from public, anon, authenticated;
+grant execute on function public.po_export_expired_mark(uuid,text) to service_role;
 
 create function public.record_po_export_retrieval(p_job_id uuid) returns text
 language plpgsql security definer set search_path = '' as $$
