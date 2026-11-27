@@ -88,6 +88,71 @@ it('T022 reverses a Sales acquisition once across repeated completed partial ref
   ]);
 });
 
+it('T022 keeps the Sales earned month when a refund routes out of a closed month', async () => {
+  const { f, target, approved } = await salesAcquisition();
+  expect(approved.status).toBe('ok');
+  const purchaseId = approved.receipt!.subscription_id as string;
+  const [unit] = await db`
+    select id from public.sales_productivity_units
+    where workspace_id=${f.wsA.id} and client_id=${target.id}`;
+  expect(unit?.id).toBeTruthy();
+
+  const [months] = await db`
+    select date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date::text as open_month,
+      (date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date
+        - interval '2 months')::date::text as source_month`;
+  const openMonth = months!.open_month as string;
+  const sourceMonth = months!.source_month as string;
+
+  // Model an acquisition whose earned fact belongs to an earlier month. The
+  // integration stack's clock is not time-travelling, so seed its source month
+  // before closing that month and exercising the real refund/router path.
+  await db.begin(async (tx) => {
+    await tx`alter table public.p7_earned_points disable trigger p7_earned_points_immutable`;
+    await tx`
+      update public.p7_earned_points set effective_month=${sourceMonth}, original_month=${sourceMonth},
+        trigger_at=(${sourceMonth}::date + 5) at time zone 'Africa/Cairo'
+      where workspace_id=${f.wsA.id} and source_key=${unit!.id}`;
+    await tx`alter table public.p7_earned_points enable trigger p7_earned_points_immutable`;
+  });
+  const [earned] = await db`
+    select effective_month::text as effective_month
+    from public.p7_earned_points where workspace_id=${f.wsA.id} and source_key=${unit!.id}`;
+  expect(earned?.effective_month).toBe(sourceMonth);
+
+  const finalized = await f.po.client.rpc('p7_finalize_month', {
+    p_workspace_id: f.wsA.id,
+    p_month: sourceMonth,
+  });
+  expect(finalized.error).toBeNull();
+  expect(finalized.data).toMatchObject({ status: 'finalized' });
+  const [snapshotBefore] = await db`
+    select totals from public.p7_month_snapshots
+    where workspace_id=${f.wsA.id} and effective_month=${sourceMonth}`;
+
+  const concurrent = await Promise.all([
+    refund(f.po.client, f.wsA.id, target.id, purchaseId, '1'),
+    refund(f.po.client, f.wsA.id, target.id, purchaseId, '1'),
+  ]);
+  expect(concurrent.map((result) => result.status)).toEqual(['ok', 'ok']);
+  const reversals = await db`
+    select points::text as points, effective_month::text as effective_month,
+      original_month::text as original_month
+    from public.p7_adjustment_entries
+    where workspace_id=${f.wsA.id} and source_key=${unit!.id}`;
+  expect(reversals).toEqual([
+    {
+      points: '-1.00',
+      effective_month: openMonth,
+      original_month: sourceMonth,
+    },
+  ]);
+  const [snapshotAfter] = await db`
+    select totals from public.p7_month_snapshots
+    where workspace_id=${f.wsA.id} and effective_month=${sourceMonth}`;
+  expect(snapshotAfter?.totals).toEqual(snapshotBefore?.totals);
+});
+
 it('T022 opens one PO review for a full refund and none for a partial refund', async () => {
   const partialSetup = await salesAcquisition();
   const { f } = partialSetup;

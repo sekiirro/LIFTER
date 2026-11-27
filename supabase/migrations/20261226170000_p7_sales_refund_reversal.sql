@@ -273,15 +273,16 @@ begin
   definition:=pg_catalog.replace(definition,full_marker,
     full_marker||chr(10)||'  full_refund:=requested::numeric=available;');
   definition:=pg_catalog.replace(definition,effects_marker,
-    'select u.id,u.recipient_sales_user_id into acquisition from public.sales_productivity_units u'||chr(10)||
+    'select u.id,u.recipient_sales_user_id,e.effective_month into acquisition from public.sales_productivity_units u'||chr(10)||
     '    join app_private.registration_approval_events a on a.workspace_id=u.workspace_id'||chr(10)||
     '      and a.id=u.approval_event_id and a.subscription_id='||'sid'||chr(10)||
+    '    join public.p7_earned_points e on e.workspace_id=u.workspace_id and e.source_key=u.id'||chr(10)||
     '    where u.workspace_id='||'ws'||' and a.client_id='||'cid'||';'||chr(10)||
     '  if found then'||chr(10)||
     '    period:=app_private.p7_month_for_trigger(sampled);'||chr(10)||
     '    perform app_private.p7_lock_period(ws,period);'||chr(10)||
     '    insert into public.p7_adjustment_entries(workspace_id,staff_user_id,points,effective_month,original_month,source_key,source_hash,reason_code)'||chr(10)||
-    '      values(ws,acquisition.recipient_sales_user_id,-1.00,period,period,acquisition.id,'||chr(10)||
+    '      values(ws,acquisition.recipient_sales_user_id,-1.00,period,acquisition.effective_month,acquisition.id,'||chr(10)||
     '        encode(extensions.digest(convert_to(ws::text||''|''||acquisition.id::text||''|-1.00|p7-sales-refund-v1'',''UTF8''),''sha256''),''hex''),''sales_acquisition_refund'')'||chr(10)||
     '      on conflict(workspace_id,source_key) do nothing returning id into reversal_id;'||chr(10)||
     '    if reversal_id is not null then'||chr(10)||
