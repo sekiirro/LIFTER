@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   admin,
   anonClient,
+  checked,
   createStaff,
   sql,
   twoWorkspaceFixture,
@@ -29,35 +30,104 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     wsId = f.wsA.id;
 
     // Ensure trainer2 is also a member of wsA for same-workspace peer isolation tests
-    await admin().from('workspace_memberships').insert({
-      workspace_id: wsId,
-      user_id: trainer2.userId,
-    });
+    checked(
+      await admin().from('workspace_memberships').insert({
+        workspace_id: wsId,
+        user_id: trainer2.userId,
+        granted_by: poStaff.userId,
+      }),
+    );
   });
 
   afterAll(async () => {
     await db.end();
   });
 
+  const qualityExpectedByKey = new Map<string, number>();
+  const settingsExpectedByKey = new Map<string, number>();
+
+  async function record(args: {
+    p_workspace_id: string;
+    p_trainer_id: string;
+    p_month: string;
+    p_category: string;
+    p_idempotency_key?: string;
+    p_expected_revision?: number;
+    [key: string]: unknown;
+  }) {
+    const key =
+      typeof args.p_idempotency_key === 'string'
+        ? args.p_idempotency_key
+        : `idem-quality-${randomUUID()}`;
+    const [row] = await db`
+      select coalesce(max(revision), 0)::int as revision
+      from public.p7_monthly_quality_revisions
+      where workspace_id = ${args.p_workspace_id}::uuid
+        and trainer_id = ${args.p_trainer_id}::uuid
+        and month = ${args.p_month}::text
+        and category = ${args.p_category}::text
+    `;
+    const expected =
+      typeof args.p_expected_revision === 'number'
+        ? args.p_expected_revision
+        : (qualityExpectedByKey.get(key) ?? row?.revision ?? 0);
+    const result = await poStaff.client.rpc('record_monthly_quality', {
+      ...args,
+      p_idempotency_key: key,
+      p_expected_revision: expected,
+    });
+    if (!result.error) qualityExpectedByKey.set(key, expected);
+    return result;
+  }
+
+  async function setSettings(args: {
+    p_workspace_id: string;
+    p_trainer_id: string;
+    p_category: string;
+    p_idempotency_key?: string;
+    p_expected_revision?: number;
+    [key: string]: unknown;
+  }) {
+    const key =
+      typeof args.p_idempotency_key === 'string'
+        ? args.p_idempotency_key
+        : `idem-settings-${randomUUID()}`;
+    const [row] = await db`
+      select coalesce(max(revision), 0)::int as revision
+      from public.p7_trainer_quality_settings
+      where workspace_id = ${args.p_workspace_id}::uuid
+        and trainer_id = ${args.p_trainer_id}::uuid
+        and category = ${args.p_category}::text
+    `;
+    const expected =
+      typeof args.p_expected_revision === 'number'
+        ? args.p_expected_revision
+        : (settingsExpectedByKey.get(key) ?? row?.revision ?? 0);
+    const result = await poStaff.client.rpc('set_trainer_quality_settings', {
+      ...args,
+      p_idempotency_key: key,
+      p_expected_revision: expected,
+    });
+    if (!result.error) settingsExpectedByKey.set(key, expected);
+    return result;
+  }
+
   describe('T014: Monthly quality revisions & mathematical integrity', () => {
     it('allows PO to record monthly transformation with default weight (+1.00)', async () => {
       const month = '2026-11';
       const key = `idem-trans-1-${randomUUID()}`;
 
-      const { data, error } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'transformation',
-          p_positive_count: 5,
-          p_negative_count: 0,
-          p_positive_weight: null,
-          p_negative_weight: null,
-          p_idempotency_key: key,
-        },
-      );
+      const { data, error } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'transformation',
+        p_positive_count: 5,
+        p_negative_count: 0,
+        p_positive_weight: null,
+        p_negative_weight: null,
+        p_idempotency_key: key,
+      });
 
       expect(error).toBeNull();
       expect(data).toMatchObject({
@@ -78,20 +148,17 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       const month = '2026-12';
       const key = `idem-trans-custom-${randomUUID()}`;
 
-      const { data, error } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'transformation',
-          p_positive_count: 4,
-          p_negative_count: 0,
-          p_positive_weight: 2.5,
-          p_negative_weight: 0,
-          p_idempotency_key: key,
-        },
-      );
+      const { data, error } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'transformation',
+        p_positive_count: 4,
+        p_negative_count: 0,
+        p_positive_weight: 2.5,
+        p_negative_weight: 0,
+        p_idempotency_key: key,
+      });
 
       expect(error).toBeNull();
       expect(data).toMatchObject({
@@ -106,20 +173,17 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       const month = '2026-11';
       const key = `idem-fb-def-${randomUUID()}`;
 
-      const { data, error } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'feedback',
-          p_positive_count: 10,
-          p_negative_count: 3,
-          p_positive_weight: null,
-          p_negative_weight: null,
-          p_idempotency_key: key,
-        },
-      );
+      const { data, error } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'feedback',
+        p_positive_count: 10,
+        p_negative_count: 3,
+        p_positive_weight: null,
+        p_negative_weight: null,
+        p_idempotency_key: key,
+      });
 
       expect(error).toBeNull();
       expect(data).toMatchObject({
@@ -136,33 +200,27 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       const key = `idem-fb-custom-settings-${randomUUID()}`;
 
       // 1. PO sets custom weights for trainer2: +1.50 positive, -0.50 negative
-      const { error: settingsError } = await poStaff.client.rpc(
-        'set_trainer_quality_settings',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer2.userId,
-          p_category: 'feedback',
-          p_positive_weight: 1.5,
-          p_negative_weight: -0.5,
-        },
-      );
+      const { error: settingsError } = await setSettings({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer2.userId,
+        p_category: 'feedback',
+        p_positive_weight: 1.5,
+        p_negative_weight: -0.5,
+      });
       expect(settingsError).toBeNull();
 
       // 2. PO records feedback for trainer2 without supplying weights -> uses saved custom defaults!
-      const { data, error } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer2.userId,
-          p_month: '2026-11',
-          p_category: 'feedback',
-          p_positive_count: 6,
-          p_negative_count: 2,
-          p_positive_weight: null,
-          p_negative_weight: null,
-          p_idempotency_key: key,
-        },
-      );
+      const { data, error } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer2.userId,
+        p_month: '2026-11',
+        p_category: 'feedback',
+        p_positive_count: 6,
+        p_negative_count: 2,
+        p_positive_weight: null,
+        p_negative_weight: null,
+        p_idempotency_key: key,
+      });
 
       expect(error).toBeNull();
       // 6 * 1.50 + 2 * (-0.50) = 9.00 - 1.00 = 8.00
@@ -174,7 +232,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     });
 
     it('rejects weights with more than two decimal places', async () => {
-      const { error } = await poStaff.client.rpc('record_monthly_quality', {
+      const { error } = await record({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_month: '2026-11',
@@ -196,53 +254,44 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       const key3 = `idem-occ-3-${randomUUID()}`;
 
       // 1. First revision: expected 0 (or null) -> revision 1
-      const { data: rev1, error: err1 } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'transformation',
-          p_positive_count: 2,
-          p_negative_count: 0,
-          p_idempotency_key: key1,
-          p_expected_revision: 0,
-        },
-      );
+      const { data: rev1, error: err1 } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'transformation',
+        p_positive_count: 2,
+        p_negative_count: 0,
+        p_idempotency_key: key1,
+        p_expected_revision: 0,
+      });
       expect(err1).toBeNull();
       expect(rev1.revision).toBe(1);
 
       // 2. Second revision with expected revision = 1 -> succeeds with revision 2
-      const { data: rev2, error: err2 } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'transformation',
-          p_positive_count: 3,
-          p_negative_count: 0,
-          p_idempotency_key: key2,
-          p_expected_revision: 1,
-        },
-      );
+      const { data: rev2, error: err2 } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'transformation',
+        p_positive_count: 3,
+        p_negative_count: 0,
+        p_idempotency_key: key2,
+        p_expected_revision: 1,
+      });
       expect(err2).toBeNull();
       expect(rev2.revision).toBe(2);
 
       // 3. Stale revision with expected revision = 1 (current is 2) -> REJECTS with stale_revision!
-      const { error: errStale } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'transformation',
-          p_positive_count: 4,
-          p_negative_count: 0,
-          p_idempotency_key: key3,
-          p_expected_revision: 1,
-        },
-      );
+      const { error: errStale } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'transformation',
+        p_positive_count: 4,
+        p_negative_count: 0,
+        p_idempotency_key: key3,
+        p_expected_revision: 1,
+      });
       expect(errStale).not.toBeNull();
       expect(errStale?.message).toMatch(/stale_revision/i);
     });
@@ -252,50 +301,41 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       const key = `idem-dup-${randomUUID()}`;
 
       // Initial write
-      const { data: initial, error: errInitial } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'transformation',
-          p_positive_count: 6,
-          p_negative_count: 0,
-          p_idempotency_key: key,
-        },
-      );
+      const { data: initial, error: errInitial } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'transformation',
+        p_positive_count: 6,
+        p_negative_count: 0,
+        p_idempotency_key: key,
+      });
       expect(errInitial).toBeNull();
 
       // Replay with identical arguments -> returns same revision idempotently
-      const { data: replay, error: errReplay } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'transformation',
-          p_positive_count: 6,
-          p_negative_count: 0,
-          p_idempotency_key: key,
-        },
-      );
+      const { data: replay, error: errReplay } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'transformation',
+        p_positive_count: 6,
+        p_negative_count: 0,
+        p_idempotency_key: key,
+      });
       expect(errReplay).toBeNull();
       expect(replay.id).toBe(initial.id);
       expect(replay.revision).toBe(initial.revision);
 
       // Replay with different arguments -> fails with idempotency conflict
-      const { error: errConflict } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'transformation',
-          p_positive_count: 99, // changed count!
-          p_negative_count: 0,
-          p_idempotency_key: key,
-        },
-      );
+      const { error: errConflict } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'transformation',
+        p_positive_count: 99, // changed count!
+        p_negative_count: 0,
+        p_idempotency_key: key,
+      });
       expect(errConflict).not.toBeNull();
       expect(errConflict?.message).toMatch(/idempotency/i);
     });
@@ -303,7 +343,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     it('supports zeroing a Trainer quality points', async () => {
       const month = '2026-07';
       // 1. Initial count = 5
-      await poStaff.client.rpc('record_monthly_quality', {
+      await record({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_month: month,
@@ -314,18 +354,15 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       });
 
       // 2. Zeroing out via count = 0
-      const { data: zeroed, error } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: month,
-          p_category: 'feedback',
-          p_positive_count: 0,
-          p_negative_count: 0,
-          p_idempotency_key: `idem-zero-2-${randomUUID()}`,
-        },
-      );
+      const { data: zeroed, error } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: month,
+        p_category: 'feedback',
+        p_positive_count: 0,
+        p_negative_count: 0,
+        p_idempotency_key: `idem-zero-2-${randomUUID()}`,
+      });
 
       expect(error).toBeNull();
       expect(zeroed.revision).toBe(2);
@@ -335,7 +372,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     it('safely handles concurrent parallel writes across categories', async () => {
       const month = '2026-08';
       const [transResult, fbResult] = await Promise.all([
-        poStaff.client.rpc('record_monthly_quality', {
+        record({
           p_workspace_id: wsId,
           p_trainer_id: trainer1.userId,
           p_month: month,
@@ -344,7 +381,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
           p_negative_count: 0,
           p_idempotency_key: `idem-par-trans-${randomUUID()}`,
         }),
-        poStaff.client.rpc('record_monthly_quality', {
+        record({
           p_workspace_id: wsId,
           p_trainer_id: trainer1.userId,
           p_month: month,
@@ -366,7 +403,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     it('returns only the latest effective revision per Trainer/month/category and does NOT sum superseded revisions', async () => {
       const month = '2026-09';
       // Rev 1: 5 points
-      await poStaff.client.rpc('record_monthly_quality', {
+      await record({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_month: month,
@@ -377,7 +414,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       });
 
       // Rev 2: 8 points
-      await poStaff.client.rpc('record_monthly_quality', {
+      await record({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_month: month,
@@ -427,7 +464,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     it('zeroed revision replaces prior positive revision in the projection without summing', async () => {
       const month = '2026-10';
       // Rev 1: 7 points
-      await poStaff.client.rpc('record_monthly_quality', {
+      await record({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_month: month,
@@ -438,7 +475,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       });
 
       // Rev 2: zeroed
-      await poStaff.client.rpc('record_monthly_quality', {
+      await record({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_month: month,
@@ -592,7 +629,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     it('Q1: Trainer (own id or another id), WO and Sales get 42501 from all 3 read RPCs', async () => {
       const month = '2026-11';
       // First ensure some revisions and settings exist for trainer1 and trainer2
-      await poStaff.client.rpc('record_monthly_quality', {
+      await record({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_month: month,
@@ -601,7 +638,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         p_negative_count: 0,
         p_idempotency_key: `idem-q1-init-${randomUUID()}`,
       });
-      await poStaff.client.rpc('set_trainer_quality_settings', {
+      await setSettings({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_category: 'feedback',
@@ -764,7 +801,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       const month = '2026-11';
       const key = `idem-audit-chk-${randomUUID()}`;
 
-      const { data } = await poStaff.client.rpc('record_monthly_quality', {
+      const { data } = await record({
         p_workspace_id: wsId,
         p_trainer_id: trainer1.userId,
         p_month: month,
@@ -799,43 +836,44 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     });
 
     it('mutation kill-test: verify that removing PO authorization guard fails security test', async () => {
-      // Direct assertion that PO guard is active:
-      // Verify is_platform_owner check is enforced on record_monthly_quality
       const [fn] = await db`
         select prosrc from pg_proc
         where oid = 'public.record_monthly_quality(uuid,uuid,text,text,integer,integer,numeric,numeric,text,integer)'::regprocedure
       `;
-      expect(fn?.prosrc).toContain('is_platform_owner');
-      expect(fn?.prosrc).toContain('not_permitted');
+      expect(fn?.prosrc).toContain('p7_require_quality_actor');
+      expect(
+        fn?.prosrc.match(/p7_require_quality_actor/g)?.length,
+      ).toBeGreaterThanOrEqual(5);
+
+      const [guard] = await db`
+        select prosrc from pg_proc
+        where oid = 'app_private.p7_require_quality_actor(uuid,uuid,boolean)'::regprocedure
+      `;
+      expect(guard?.prosrc).toContain('platform_owner');
+      expect(guard?.prosrc).toContain('not_permitted');
     });
   });
 
   describe('Q2: Append-only settings revisions & immutability', () => {
     it('2 successive setting changes keep both rows and current setting equals latest revision', async () => {
       // Successive changes for trainer1 transformation
-      const { data: s1, error: e1 } = await poStaff.client.rpc(
-        'set_trainer_quality_settings',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_category: 'transformation',
-          p_positive_weight: 1.25,
-          p_negative_weight: 0.0,
-        },
-      );
+      const { data: s1, error: e1 } = await setSettings({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_category: 'transformation',
+        p_positive_weight: 1.25,
+        p_negative_weight: 0.0,
+      });
       expect(e1).toBeNull();
       expect(s1.revision).toBe(1);
 
-      const { data: s2, error: e2 } = await poStaff.client.rpc(
-        'set_trainer_quality_settings',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_category: 'transformation',
-          p_positive_weight: 1.75,
-          p_negative_weight: 0.0,
-        },
-      );
+      const { data: s2, error: e2 } = await setSettings({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_category: 'transformation',
+        p_positive_weight: 1.75,
+        p_negative_weight: 0.0,
+      });
       expect(e2).toBeNull();
       expect(s2.revision).toBe(2);
 
@@ -873,20 +911,17 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       });
 
       // Verify record_monthly_quality resolves weights from the latest revision
-      const { data: recData, error: recErr } = await poStaff.client.rpc(
-        'record_monthly_quality',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer1.userId,
-          p_month: '2026-12',
-          p_category: 'transformation',
-          p_positive_count: 4,
-          p_negative_count: 0,
-          p_positive_weight: null,
-          p_negative_weight: null,
-          p_idempotency_key: `idem-q2-res-${randomUUID()}`,
-        },
-      );
+      const { data: recData, error: recErr } = await record({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer1.userId,
+        p_month: '2026-12',
+        p_category: 'transformation',
+        p_positive_count: 4,
+        p_negative_count: 0,
+        p_positive_weight: null,
+        p_negative_weight: null,
+        p_idempotency_key: `idem-q2-res-${randomUUID()}`,
+      });
       expect(recErr).toBeNull();
       // 4 * 1.75 = 7.00
       expect(recData).toMatchObject({
@@ -939,16 +974,13 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
     });
 
     it('setting changes write an audit_events row with opaque details', async () => {
-      const { data, error } = await poStaff.client.rpc(
-        'set_trainer_quality_settings',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer2.userId,
-          p_category: 'transformation',
-          p_positive_weight: 2.5,
-          p_negative_weight: 0.0,
-        },
-      );
+      const { data, error } = await setSettings({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer2.userId,
+        p_category: 'transformation',
+        p_positive_weight: 2.5,
+        p_negative_weight: 0.0,
+      });
       expect(error).toBeNull();
 
       const [auditEvent] = await db`
@@ -973,68 +1005,60 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       const idemKey = `idem-sett-${randomUUID()}`;
 
       // First call
-      const { data: first, error: err1 } = await poStaff.client.rpc(
-        'set_trainer_quality_settings',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer2.userId,
-          p_category: 'feedback',
-          p_positive_weight: 3.0,
-          p_negative_weight: -1.0,
-          p_idempotency_key: idemKey,
-        },
-      );
+      const { data: first, error: err1 } = await setSettings({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer2.userId,
+        p_category: 'feedback',
+        p_positive_weight: 3.0,
+        p_negative_weight: -1.0,
+        p_idempotency_key: idemKey,
+      });
       expect(err1).toBeNull();
 
       // Replay with exact same parameters -> returns same row idempotently
-      const { data: replay, error: err2 } = await poStaff.client.rpc(
-        'set_trainer_quality_settings',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer2.userId,
-          p_category: 'feedback',
-          p_positive_weight: 3.0,
-          p_negative_weight: -1.0,
-          p_idempotency_key: idemKey,
-        },
-      );
+      const { data: replay, error: err2 } = await setSettings({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer2.userId,
+        p_category: 'feedback',
+        p_positive_weight: 3.0,
+        p_negative_weight: -1.0,
+        p_idempotency_key: idemKey,
+      });
       expect(err2).toBeNull();
       expect(replay.id).toBe(first.id);
       expect(replay.revision).toBe(first.revision);
 
       // Replay with diverged weights -> fails with idempotency conflict
-      const { error: errConflict } = await poStaff.client.rpc(
-        'set_trainer_quality_settings',
-        {
-          p_workspace_id: wsId,
-          p_trainer_id: trainer2.userId,
-          p_category: 'feedback',
-          p_positive_weight: 4.0, // changed!
-          p_negative_weight: -1.0,
-          p_idempotency_key: idemKey,
-        },
-      );
+      const { error: errConflict } = await setSettings({
+        p_workspace_id: wsId,
+        p_trainer_id: trainer2.userId,
+        p_category: 'feedback',
+        p_positive_weight: 4.0, // changed!
+        p_negative_weight: -1.0,
+        p_idempotency_key: idemKey,
+      });
       expect(errConflict).not.toBeNull();
       expect(errConflict?.message).toMatch(/idempotency/i);
     });
 
-    it('concurrency holds for parallel setting changes without unique violation or corruption', async () => {
+    it('serializes parallel setting changes and rejects the stale expected revision', async () => {
       // Create a third trainer for clean concurrency testing
       const trainer3 = await createStaff('trainer', 'concurrency-trainer');
       await admin().from('workspace_memberships').insert({
         workspace_id: wsId,
         user_id: trainer3.userId,
+        granted_by: poStaff.userId,
       });
 
       const [res1, res2] = await Promise.all([
-        poStaff.client.rpc('set_trainer_quality_settings', {
+        setSettings({
           p_workspace_id: wsId,
           p_trainer_id: trainer3.userId,
           p_category: 'feedback',
           p_positive_weight: 1.1,
           p_negative_weight: -0.1,
         }),
-        poStaff.client.rpc('set_trainer_quality_settings', {
+        setSettings({
           p_workspace_id: wsId,
           p_trainer_id: trainer3.userId,
           p_category: 'feedback',
@@ -1043,13 +1067,17 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         }),
       ]);
 
-      expect(res1.error).toBeNull();
-      expect(res2.error).toBeNull();
-      expect(res1.data.revision).not.toBe(res2.data.revision);
-      const revs = [res1.data.revision, res2.data.revision].sort(
-        (a, b) => a - b,
-      );
-      expect(revs[1]).toBe(revs[0] + 1);
+      const results = [res1, res2];
+      expect(results.filter((result) => result.error === null)).toHaveLength(1);
+      const failure = results.find((result) => result.error !== null);
+      expect(failure?.error?.code).toBe('40001');
+      const [row] = await db`
+        select count(*)::int as count from public.p7_trainer_quality_settings
+        where workspace_id = ${wsId}::uuid
+          and trainer_id = ${trainer3.userId}::uuid
+          and category = 'feedback'
+      `;
+      expect(row?.count).toBe(1);
     });
   });
 });
