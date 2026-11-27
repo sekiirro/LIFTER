@@ -11,7 +11,7 @@
 - [x] S71-PO-1/6 scope and S71-R12 technical defaults are applied: PO, relevant WO, all Trainers with current workspace coaching access, revision-stage notices, and scoped expiring/expired list.
 - [x] Client PRD-07 notices at T-3/T-1/expiry are preserved with no renewal CTA.
 - [x] P8 drill-down/export/pen-test/performance are split into specs 029-031; leaderboard remains excluded because spec 024 owns it.
-- [x] F13 is the lifecycle source; F22/F23 inboxes, F11 T057/F15 alert path, current Worker cron, staff directory, and F26 retention/purge are reused and differentiated.
+- [x] F13 is the lifecycle source; F22/F23 inboxes, the separate F11 late-alert/F15 alert paths, current Worker cron, staff directory, and F26 retention/purge are reused and differentiated.
 
 ## Requirements and traceability
 
@@ -29,7 +29,7 @@
 
 - CRITICAL: 0 open (0 found).
 - HIGH: 0 open (0 found). Three independent critique findings were fixed and recorded; requirement/ruling consistency was rechecked.
-- MEDIUM: 0 open (1 found and fixed: approved staff/directory copy was still labeled proposed).
+- MEDIUM: 0 open (2 found and fixed: approved staff/directory copy was still labeled proposed; the F11 task reference in this checklist was parsed as an undeclared spec-028 task by the CI consistency gate).
 - PO decisions: 0 remaining. MCQ 028-01/03 are DECIDED by S71-PO-6; 028-02/04 are S71-R12 architect technical defaults.
 - Constitution conflicts: none. No amendment proposed.
 
