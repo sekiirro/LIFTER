@@ -236,6 +236,37 @@ describe('F22 client notice projection (T019; FR-009)', () => {
     });
   });
 
+  it('uses the approved short-lead expiry title in English and Arabic', () => {
+    const parsed = projectClientNotices({
+      status: 'ok',
+      notices: [
+        row({
+          notice_kind: 'subscription_expiring_t3_short_lead',
+          expiry_date: '2026-12-01',
+        }),
+      ],
+    });
+    if (parsed.status !== 'ok') throw new Error('expected ok');
+    const [notice] = renderableNotices(parsed.notices);
+
+    expect(notice).toMatchObject({
+      message: 'client.portal.inbox.notice.expiryT3ShortLead.title',
+      bodyMessage: 'client.portal.inbox.notice.expiryT3.body',
+      expiryDate: '2026-12-01',
+    });
+    expect(getMessages('en')).toMatchObject({
+      'client.portal.inbox.notice.expiryT3ShortLead.title':
+        'Subscription expires soon',
+      'client.portal.inbox.notice.expiryT3.body':
+        'Your subscription ends on {expiryDate}.',
+    });
+    expect(getMessages('ar')).toMatchObject({
+      'client.portal.inbox.notice.expiryT3ShortLead.title': 'اشتراكك قرب ينتهي',
+      'client.portal.inbox.notice.expiryT3.body':
+        'اشتراكك هينتهي يوم {expiryDate}.',
+    });
+  });
+
   it('keeps expiry notices visible for restricted overviews only', () => {
     expect(shouldShowClientNotices('ok')).toBe(true);
     expect(shouldShowClientNotices('restricted')).toBe(true);

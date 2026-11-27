@@ -1514,6 +1514,8 @@ export const en: Record<keyof typeof ar, string> = {
   'client.portal.inbox.markRead': 'Mark as read',
   'client.portal.inbox.empty': 'You are all caught up.',
   'client.portal.inbox.notice.expiryT3.title': 'Subscription expires in 3 days',
+  'client.portal.inbox.notice.expiryT3ShortLead.title':
+    'Subscription expires soon',
   'client.portal.inbox.notice.expiryT3.body':
     'Your subscription ends on {expiryDate}.',
   'client.portal.inbox.notice.expiryT1.title': 'Subscription expires tomorrow',

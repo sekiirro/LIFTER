@@ -38,7 +38,7 @@ export const NOTICE_MESSAGE: Record<ClientNoticeKind, MessageKey | null> = {
   food_replacement_resolved: 'foodReplacement.notification.resolved',
   subscription_expiring_t3: 'client.portal.inbox.notice.expiryT3.title',
   subscription_expiring_t3_short_lead:
-    'client.portal.inbox.notice.expiryT3.title',
+    'client.portal.inbox.notice.expiryT3ShortLead.title',
   subscription_expiring_t1: 'client.portal.inbox.notice.expiryT1.title',
   subscription_expired: 'client.portal.inbox.notice.expired.title',
 };
