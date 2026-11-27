@@ -6,20 +6,18 @@
 
 ## Scope and source
 
-- [x] CHK001 S71-PO-1 approved staff notices, timing, recipients, and scoped list are carried without reopening.
+- [x] CHK001 S71-PO-1/6 and S71-R12 approved scope, recipient rules, revision identity, short-lead behavior, and list window are recorded without reopening.
 - [x] CHK002 PRD-07 client T-3/T-1/expiry behavior and no renewal CTA are preserved.
 - [x] CHK003 P8 leaderboard spec 024 is excluded.
-- [x] CHK004 Reuse decisions cite existing F13/F15/F22/F23/F26/worker/cron surfaces.
+- [x] CHK004 Reuse decisions cite existing F13/F15/F22/F23/F26/worker/cron surfaces; one shared staff notifications surface uses existing F15/F23 readers and mutations.
 
 ## Authorization and lifecycle
 
-- [x] CHK005 PO/WO/Trainer/Sales/Client access is specified; pending Trainer interpretation is an MCQ.
+- [x] CHK005 PO/WO/all Trainers with current coaching access/Sales/Client access is specified in requirements, contracts, and test tasks.
 - [x] CHK006 Current F13 effective expiry and state changes drive stage eligibility.
 - [x] CHK007 Retry/concurrency idempotency and per-recipient read/dismiss are explicit.
-- [x] CHK008 Retention, audit, P7 audit isolation, and no Realtime publication are explicit.
+- [x] CHK008 Retention, audit, P7 audit isolation, and no new inbox/table/job/Realtime publication are explicit.
 
-## Pending decisions
+## Decision status
 
-- [ ] CHK009 Resolve MCQ 028-01 Trainer definition before implementing Trainer recipient/list access.
-- [ ] CHK010 Resolve MCQ 028-02 short-lead catch-up before implementing that boundary.
-- [ ] CHK011 Resolve MCQ 028-03 post-delivery extension identity before implementing revision behavior.
+No open PO decisions remain. Architect technical defaults are identified separately from PO answers in `po-mcqs.md`.
