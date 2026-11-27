@@ -3,7 +3,10 @@ import { requireActor } from '../../../lib/auth/actor';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import { ToastProvider } from '../../../components/ui/Toast';
-import { getEligibleEmployees } from '../../../lib/workforce/payroll';
+import {
+  getEligibleEmployees,
+  getPayrollMonth,
+} from '../../../lib/workforce/payroll';
 import { PayrollManager } from '../../../components/payroll/PayrollManager';
 
 function cairoMonth() {
@@ -40,6 +43,18 @@ export default async function PayrollPage() {
 
   const result = await getEligibleEmployees();
   const employees = result.status === 'ok' ? result.employees : [];
+  const initialMonth = cairoMonth();
+  const initialEmployee = employees[0];
+  const payrollMonth = initialEmployee
+    ? await getPayrollMonth({
+        employeeId: initialEmployee.userId,
+        effectiveMonth: initialMonth,
+      })
+    : null;
+  const initialPayrollMonth =
+    payrollMonth?.status === 'ok'
+      ? payrollMonth.data
+      : { salary: null, inputs: [], snapshot: null, approval: null };
 
   return (
     <ToastProvider dismissLabel={messages['dialog.cancel']}>
@@ -47,7 +62,11 @@ export default async function PayrollPage() {
         locale={locale}
         messages={messages}
         initialEmployees={employees}
-        initialMonth={cairoMonth()}
+        initialMonth={initialMonth}
+        initialPayrollMonth={initialPayrollMonth}
+        initialPayrollError={Boolean(
+          initialEmployee && payrollMonth?.status !== 'ok',
+        )}
         denied={false}
       />
     </ToastProvider>

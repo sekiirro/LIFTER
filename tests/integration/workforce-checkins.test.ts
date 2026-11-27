@@ -111,14 +111,35 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
           (${f.wsA.id},${assignmentId},2,${tx.json({ workoutAdherence: 8, dietAdherence: 5 })})`;
       await tx`insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
         values(${f.wsA.id},${assignmentId},2,clock_timestamp() - interval '26 hours')`;
+      await tx`insert into public.client_trainer_assignments(
+        workspace_id,client_id,trainer_user_id,assigned_by,assigned_at,workspace_membership_id
+      ) select ${f.wsA.id},${ids.client},${f.trainerA.userId},${f.po.userId},
+        s.submitted_at - interval '1 hour',m.id
+        from app_private.form_submissions s
+        join public.workspace_memberships m
+          on m.workspace_id=s.workspace_id and m.user_id=${f.trainerA.userId}
+        where s.workspace_id=${f.wsA.id} and s.assignment_id=${assignmentId}`;
+      await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+        values(${f.wsA.id},${f.trainerB.userId},${f.po.userId})`;
+      await tx`insert into app_private.workforce_checkin_transitions(
+        workspace_id,assignment_id,status,actor_user_id,occurred_at
+      ) select ${f.wsA.id},${assignmentId},'Followed Up',${f.trainerA.userId},
+        submitted_at + interval '1 hour'
+        from app_private.form_submissions
+        where workspace_id=${f.wsA.id} and assignment_id=${assignmentId}`;
+      await tx`insert into public.audit_events(
+        actor_user_id,action,target_table,target_id,workspace_id,details
+      ) select ${f.trainerA.userId},'audit.opaque_reference','opaque_reference',t.id,
+        ${f.wsA.id},jsonb_build_object('reference_id',t.id)
+        from app_private.workforce_checkin_transitions t
+        where t.workspace_id=${f.wsA.id} and t.assignment_id=${assignmentId}
+          and t.status='Followed Up'`;
       await asUser(
         tx,
         f.po.userId,
         (sp) =>
-          sp`select public.assign_client_responsible_trainer(${f.wsA.id},${ids.client},${f.trainerA.userId})`,
+          sp`select public.assign_client_responsible_trainer(${f.wsA.id},${ids.client},${f.trainerB.userId})`,
       );
-      await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
-        values(${f.wsA.id},${f.trainerB.userId},${f.po.userId})`;
 
       const read = (userId: string) =>
         asUser(
@@ -133,7 +154,15 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
         expect(rows[0]).toMatchObject({
           assignment_id: assignmentId,
           form_status: 'Submitted',
-          followup_status: 'Late',
+          followup_status: 'Followed Up',
+          responsible_trainer_id: f.trainerA.userId,
+          followup_history: [
+            expect.objectContaining({ status: 'Pending' }),
+            expect.objectContaining({
+              status: 'Followed Up',
+              actor_user_id: f.trainerA.userId,
+            }),
+          ],
           answer_history: [
             { answers: { workoutAdherence: 8, dietAdherence: 5 } },
           ],
@@ -163,9 +192,9 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
       );
       expect(followedUp[0]).toMatchObject({
         followup_status: 'Followed Up',
+        responsible_trainer_id: f.trainerA.userId,
         followup_history: [
           expect.objectContaining({ status: 'Pending' }),
-          expect.objectContaining({ status: 'Late' }),
           expect.objectContaining({
             status: 'Followed Up',
             actor_user_id: f.trainerA.userId,
@@ -601,6 +630,8 @@ describe('P7 T002/T003/T004 same-workspace check-ins projection', () => {
           'form_assignments->clients',
           'form_assignments->form_versions',
           'form_versions->forms',
+          'p7_refund_fault_reviews->clients',
+          'subscriptions->clients',
         ]);
         const [earnedColumns] = await tx`
         select array_agg(a.attname order by a.attnum) as columns

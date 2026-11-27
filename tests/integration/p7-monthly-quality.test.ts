@@ -754,7 +754,7 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
       expect(poEffErr).toBeNull();
     });
 
-    it('Q1: Trainer, WO and Sales see 0 rows from both tables and the view via direct select', async () => {
+    it('Q1: raw quality tables reject authenticated reads and the PO projection returns strings', async () => {
       for (const client of [
         trainer1.client,
         trainer2.client,
@@ -762,16 +762,16 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         salesStaff.client,
       ]) {
         // Table 1: p7_monthly_quality_revisions
-        const { data: revData } = await client
+        const { error: revError } = await client
           .from('p7_monthly_quality_revisions')
           .select('*');
-        expect(revData).toEqual([]);
+        expect(revError?.code).toBe('42501');
 
         // Table 2: p7_trainer_quality_settings
-        const { data: settsData } = await client
+        const { error: settsError } = await client
           .from('p7_trainer_quality_settings')
           .select('*');
-        expect(settsData).toEqual([]);
+        expect(settsError?.code).toBe('42501');
 
         // View: p7_monthly_quality_effective
         const { data: effData } = await client
@@ -780,21 +780,22 @@ describe('P7 Workforce Monthly Quality & Reminders (T014, T015, T016)', () => {
         expect(effData).toEqual([]);
       }
 
-      // PO sees data in all 3 relations
-      const { data: poRevData } = await poStaff.client
+      // The PO reads quality only through its canonical string projection.
+      const { error: poRevError } = await poStaff.client
         .from('p7_monthly_quality_revisions')
         .select('*');
-      expect(poRevData?.length ?? 0).toBeGreaterThan(0);
+      expect(poRevError?.code).toBe('42501');
 
-      const { data: poSettsData } = await poStaff.client
+      const { error: poSettsError } = await poStaff.client
         .from('p7_trainer_quality_settings')
         .select('*');
-      expect(poSettsData?.length ?? 0).toBeGreaterThan(0);
+      expect(poSettsError?.code).toBe('42501');
 
       const { data: poEffData } = await poStaff.client
         .from('p7_monthly_quality_effective')
-        .select('*');
+        .select('positive_weight,negative_weight,net_points');
       expect(poEffData?.length ?? 0).toBeGreaterThan(0);
+      expect(typeof poEffData?.[0]?.positive_weight).toBe('string');
     });
 
     it('audit events for quality mutations carry opaque reference ONLY (FR-020, SOL-03)', async () => {

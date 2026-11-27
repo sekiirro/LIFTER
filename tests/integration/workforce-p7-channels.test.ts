@@ -385,12 +385,9 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
 
     await db.begin(async (tx) => {
       const ids = await graph(tx, fixture);
-      const [termsRow] = await tx`
-        select version from app_private.terms_policy_versions
-        where policy_kind = 'terms' and status = 'published'
-        order by created_at desc, version desc limit 1
-      `;
-      const terms = termsRow!.version as string;
+      const terms = `workforce-p7-channels-${randomUUID()}`;
+      await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values(${terms},'terms','published')`;
       const formId = randomUUID();
       await tx`insert into public.forms(id,workspace_id,name)
         values(${formId},${wsId},'P7 synthetic check-in')`;
@@ -639,7 +636,7 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
           'get_trainer_checkins', 'confirm_trainer_checkin_followup',
           'p7_set_basic_salary', 'p7_post_monetary_payroll_input',
           'p7_create_payroll_snapshot', 'p7_approve_external_payroll',
-          'p7_get_own_compensation',
+          'p7_get_own_compensation', 'p7_get_payroll_month',
           'run_p7_checkin_delay_evaluator'
         )
         and pg_catalog.pg_get_functiondef(p.oid) ~* '(p7_salary_revisions|p7_monetary_payroll_inputs|p7_payroll_snapshots|p7_payroll_approvals|workforce_checkin_transitions)'

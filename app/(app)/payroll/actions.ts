@@ -7,10 +7,12 @@ import {
   createPayrollSnapshot,
   approveExternalPayroll,
   getEligibleEmployees,
+  getPayrollMonth,
   type SetBasicSalaryInput,
   type PostMonetaryInputParams,
   type CreateSnapshotParams,
   type ApprovePayrollParams,
+  type GetPayrollMonthParams,
 } from '../../../lib/workforce/payroll';
 
 export async function setBasicSalaryAction(input: SetBasicSalaryInput) {
@@ -53,4 +55,8 @@ export async function approveExternalPayrollAction(
 
 export async function getEligibleEmployeesAction() {
   return await getEligibleEmployees();
+}
+
+export async function getPayrollMonthAction(params: GetPayrollMonthParams) {
+  return await getPayrollMonth(params);
 }

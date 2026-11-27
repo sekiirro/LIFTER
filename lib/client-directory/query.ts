@@ -30,6 +30,9 @@ export type ApprovalState = (typeof APPROVAL_STATES)[number];
 export const ASSIGNMENT_FILTERS = ['assigned', 'unassigned'] as const;
 export type AssignmentFilter = (typeof ASSIGNMENT_FILTERS)[number];
 
+export const EXPIRY_FILTERS = ['expiring', 'expired'] as const;
+export type ExpiryFilter = (typeof EXPIRY_FILTERS)[number];
+
 export const DIRECTORY_PAGE_SIZE = 50;
 export const DIRECTORY_SEARCH_MAX = 100;
 export const DIRECTORY_MAX_PAGE = 200;
@@ -37,9 +40,10 @@ export const DIRECTORY_MAX_PAGE = 200;
 export type DirectoryQuery = {
   search: string | null;
   approvalState: ApprovalState | null;
-  subscriptionStatus: SubscriptionStatus | null;
+  subscriptionStatus: SubscriptionStatus | 'expiring' | null;
   /** Honoured only for callers passing {@link canUseAssignment}; see there. */
   assignment: AssignmentFilter | null;
+  expiry?: ExpiryFilter | null;
   page: number;
 };
 
@@ -47,7 +51,7 @@ export type DirectoryRow = {
   clientId: string;
   name: string;
   approvalState: ApprovalState;
-  subscriptionStatus: SubscriptionStatus | null;
+  subscriptionStatus: SubscriptionStatus | 'expiring' | null;
   /** Only with `refunded`: F13 full vs partial refund (S57-PO-12). */
   refundScope: RefundScope | null;
   plansWaitingForDelivery: number;
@@ -55,6 +59,9 @@ export type DirectoryRow = {
   pendingFoodReplacements: number;
   /** F15 new check-ins indicator for this client (T036). */
   newCheckIns?: number;
+  /** FR-008 / S71-PO-9: expiring/expired filter indicator */
+  expiryBucket?: 'expiring' | 'expired' | null;
+  isExpiring?: boolean;
   /**
    * F11 assignment state; present only for callers passing
    * {@link canUseAssignment}. Never carries the trainer identity.
@@ -87,18 +94,21 @@ export function parseDirectoryQuery(params: {
   approval?: SearchValue;
   subscription?: SearchValue;
   assignment?: SearchValue;
+  expiry?: SearchValue;
   page?: SearchValue;
 }): DirectoryQuery | null {
   const q = single(params.q);
   const approval = single(params.approval);
   const subscription = single(params.subscription);
   const assignment = single(params.assignment);
+  const expiry = single(params.expiry);
   const page = single(params.page);
   if (
     q === null ||
     approval === null ||
     subscription === null ||
     assignment === null ||
+    expiry === null ||
     page === null
   )
     return null;
@@ -109,11 +119,39 @@ export function parseDirectoryQuery(params: {
     if (!(APPROVAL_STATES as readonly string[]).includes(approval)) return null;
     approvalState = approval as ApprovalState;
   }
-  let subscriptionStatus: SubscriptionStatus | null = null;
+  let subscriptionStatus: SubscriptionStatus | 'expiring' | null = null;
+  let expiryFilter: ExpiryFilter | null = null;
   if (subscription !== undefined && subscription !== '') {
-    if (!(SUBSCRIPTION_STATUSES as readonly string[]).includes(subscription))
+    if (subscription === 'expiring') {
+      subscriptionStatus = 'expiring';
+      expiryFilter = 'expiring';
+    } else if (
+      !(SUBSCRIPTION_STATUSES as readonly string[]).includes(subscription)
+    ) {
       return null;
-    subscriptionStatus = subscription as SubscriptionStatus;
+    } else {
+      subscriptionStatus = subscription as SubscriptionStatus;
+      if (subscription === 'expired') {
+        expiryFilter = 'expired';
+      }
+    }
+  }
+  if (expiry !== undefined && expiry !== '') {
+    if (!(EXPIRY_FILTERS as readonly string[]).includes(expiry)) return null;
+    const parsedExpiry = expiry as ExpiryFilter;
+    if (parsedExpiry === 'expiring') {
+      if (subscriptionStatus !== null && subscriptionStatus !== 'expiring') {
+        return null;
+      }
+      subscriptionStatus = 'expiring';
+      expiryFilter = 'expiring';
+    } else if (parsedExpiry === 'expired') {
+      if (subscriptionStatus !== null && subscriptionStatus !== 'expired') {
+        return null;
+      }
+      subscriptionStatus = 'expired';
+      expiryFilter = 'expired';
+    }
   }
   let assignmentFilter: AssignmentFilter | null = null;
   if (assignment !== undefined && assignment !== '') {
@@ -133,6 +171,7 @@ export function parseDirectoryQuery(params: {
     subscriptionStatus,
     assignment: assignmentFilter,
     page: pageNumber,
+    ...(expiryFilter !== null ? { expiry: expiryFilter } : {}),
   };
 }
 
@@ -227,13 +266,17 @@ function parseRow(value: unknown): DirectoryRow | null {
   const hasAssignment = 'assignment' in value;
   const hasCode = 'client_code' in value;
   const hasNewCheckIns = 'new_check_ins' in value;
+  const hasExpiryBucket = 'expiry_bucket' in value;
+  const hasIsExpiring = 'is_expiring' in value;
   if (
     Object.keys(value)
       .filter(
         (key) =>
           key !== 'assignment' &&
           key !== 'client_code' &&
-          key !== 'new_check_ins',
+          key !== 'new_check_ins' &&
+          key !== 'expiry_bucket' &&
+          key !== 'is_expiring',
       )
       .sort()
       .join(',') !==
@@ -262,6 +305,7 @@ function parseRow(value: unknown): DirectoryRow | null {
     !(APPROVAL_STATES as readonly unknown[]).includes(approval_state) ||
     !(
       subscription_status === null ||
+      subscription_status === 'expiring' ||
       (SUBSCRIPTION_STATUSES as readonly unknown[]).includes(
         subscription_status,
       )
@@ -278,7 +322,8 @@ function parseRow(value: unknown): DirectoryRow | null {
     clientId: client_id,
     name,
     approvalState: approval_state as ApprovalState,
-    subscriptionStatus: subscription_status as SubscriptionStatus | null,
+    subscriptionStatus: subscription_status as
+      SubscriptionStatus | 'expiring' | null,
     refundScope: refund_scope as RefundScope | null,
     plansWaitingForDelivery: plans_waiting_for_delivery,
     pendingFoodReplacements: pending_food_replacements,
@@ -287,6 +332,10 @@ function parseRow(value: unknown): DirectoryRow | null {
     ...(hasAssignment
       ? { assignment: value.assignment as AssignmentFilter | null }
       : {}),
+    ...(hasExpiryBucket
+      ? { expiryBucket: value.expiry_bucket as 'expiring' | 'expired' | null }
+      : {}),
+    ...(hasIsExpiring ? { isExpiring: Boolean(value.is_expiring) } : {}),
   };
 }
 
@@ -330,6 +379,7 @@ export function directoryHref(
   if (query.subscriptionStatus)
     params.set('subscription', query.subscriptionStatus);
   if (query.assignment) params.set('assignment', query.assignment);
+  if (query.expiry) params.set('expiry', query.expiry);
   if (page > 1) params.set('page', String(page));
   return `/clients?${params.toString()}`;
 }

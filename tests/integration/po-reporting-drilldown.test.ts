@@ -7,8 +7,10 @@ const db = sql();
 let f: Context;
 let monthStart: string;
 let eventId: string;
+let refundSourceEventId: string;
 let reversalEventId: string;
 let clientId: string;
+let subscriptionId: string;
 let clientActor: ReturnType<typeof anonClient>;
 
 beforeAll(async () => {
@@ -29,14 +31,22 @@ beforeAll(async () => {
     installment: randomUUID(),
     event: randomUUID(),
     reversal: randomUUID(),
+    refundPartial: randomUUID(),
+    refundFull: randomUUID(),
+    egpInstallment: randomUUID(),
+    egpEvent: randomUUID(),
+    refundInstallment: randomUUID(),
+    refundEvent: randomUUID(),
   };
   const phoneDigits = BigInt(`0x${ids.client.replaceAll('-', '')}`)
     .toString()
     .padStart(11, '0')
     .slice(-11);
   eventId = ids.event;
+  refundSourceEventId = ids.refundEvent;
   reversalEventId = ids.reversal;
   clientId = ids.client;
+  subscriptionId = ids.subscription;
   await db.begin(async (tx) => {
     await tx`set local session_replication_role = replica`;
     await tx`insert into public.clients(id,workspace_id,auth_user_id,registration_link_id,package_version_id,
@@ -61,6 +71,38 @@ beforeAll(async () => {
         ${ids.event},-400,'USD',-40,null,(clock_timestamp() at time zone 'Africa/Cairo')::date,${f.po.userId},${randomUUID()})`;
     await tx`insert into app_private.package_reporting_fx_snapshots(workspace_id,payment_event_id,status,source_currency,provider_key,transaction_at)
       select ${f.wsA.id},${ids.reversal},'pending','USD','CBE',recorded_at from public.payment_events where id=${ids.reversal}`;
+    await tx`insert into public.subscription_installments(id,workspace_id,subscription_id,seq,amount_minor,currency,issued_day_offset,source_kind)
+      values(${ids.refundInstallment},${f.wsA.id},${ids.subscription},2,400,'USD',30,'issued_schedule')`;
+    await tx`insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,kind,
+      amount_minor,currency,commission_minor,collected_on,effective_on,recorded_by,operation_id)
+      values(${ids.refundEvent},${f.wsA.id},${ids.subscription},${ids.refundInstallment},2,1,'collection',400,'USD',40,
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,(clock_timestamp() at time zone 'Africa/Cairo')::date,
+        ${f.po.userId},${randomUUID()})`;
+    await tx`insert into app_private.package_reporting_fx_snapshots(workspace_id,payment_event_id,status,source_currency,provider_key,transaction_at)
+      select ${f.wsA.id},${ids.refundEvent},'pending','USD','CBE',recorded_at from public.payment_events where id=${ids.refundEvent}`;
+    await tx`insert into public.refund_operations(id,workspace_id,client_id,subscription_id,operation_id,
+      actor_user_id,amount_minor,currency,effective_on,expected_revision,recorded_at)
+      values(${ids.refundPartial},${f.wsA.id},${ids.client},${ids.subscription},${randomUUID()},${f.po.userId},
+        100,'USD',(clock_timestamp() at time zone 'Africa/Cairo')::date,0,clock_timestamp()),
+        (${ids.refundFull},${f.wsA.id},${ids.client},${ids.subscription},${randomUUID()},${f.po.userId},
+        300,'USD',(clock_timestamp() at time zone 'Africa/Cairo')::date + 40,0,clock_timestamp())`;
+    await tx`insert into public.refund_allocation_events(workspace_id,subscription_id,obligation_id,
+      refund_operation_id,source_collection_event_id,amount_minor,commission_minor,currency,effective_on,recorded_by)
+      values(${f.wsA.id},${ids.subscription},${ids.refundInstallment},${ids.refundPartial},${ids.refundEvent},-100,-10,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,${f.po.userId}),
+        (${f.wsA.id},${ids.subscription},${ids.refundInstallment},${ids.refundFull},${ids.refundEvent},-300,-30,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date + 40,${f.po.userId})`;
+    await tx`insert into public.subscription_obligation_cancellations(workspace_id,subscription_id,obligation_id,
+      refund_operation_id,actor_user_id,effective_on)
+      values(${f.wsA.id},${ids.subscription},${ids.refundInstallment},${ids.refundFull},${f.po.userId},
+        (clock_timestamp() at time zone 'Africa/Cairo')::date + 40)`;
+    await tx`insert into public.subscription_installments(id,workspace_id,subscription_id,seq,amount_minor,currency,issued_day_offset,source_kind)
+      values(${ids.egpInstallment},${f.wsA.id},${ids.subscription},3,257,'EGP',60,'issued_schedule')`;
+    await tx`insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,kind,
+      amount_minor,currency,commission_minor,collected_on,effective_on,recorded_by,operation_id)
+      values(${ids.egpEvent},${f.wsA.id},${ids.subscription},${ids.egpInstallment},3,1,'collection',257,'EGP',25,
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,(clock_timestamp() at time zone 'Africa/Cairo')::date,
+        ${f.po.userId},${randomUUID()})`;
   });
   const clientLogin = await clientActor.auth.signInWithPassword({
     email: clientEmail,
@@ -72,6 +114,166 @@ beforeAll(async () => {
     await db`select to_char(recorded_at at time zone 'Africa/Cairo','YYYY-MM-01') month_start
     from public.payment_events where id=${eventId}`;
   monthStart = month!.month_start as string;
+});
+
+it('T005 reconciles partial and full refunds by effective Cairo month and package to allocation source rows', async () => {
+  const result = await f.po.client.rpc('po_reporting_aggregate', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+  });
+  expect(result.error).toBeNull();
+  const usd = result.data.currency_totals.find(
+    (row: { currency: string }) => row.currency === 'USD',
+  );
+  expect(usd.refund_minor).toBe('-400');
+  expect(result.data.months).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        month: monthStart.slice(0, 7),
+        currency: 'USD',
+        refund_minor: '-100',
+      }),
+    ]),
+  );
+  expect(result.data.packages).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        package_id: f.p.offer.package_id,
+        currency: 'USD',
+        refund_minor: '-400',
+      }),
+    ]),
+  );
+  expect(
+    result.data.months
+      .filter((row: { currency: string }) => row.currency === 'USD')
+      .reduce(
+        (sum: bigint, row: { refund_minor: string }) =>
+          sum + BigInt(row.refund_minor),
+        0n,
+      ),
+  ).toBe(-400n);
+  const rows = await f.po.client.rpc('po_reporting_source_rows', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+    p_page_size: 100,
+    p_cursor_recorded_at: null,
+    p_cursor_event_id: null,
+  });
+  const refunds = rows.data.rows.filter(
+    (row: { kind: string }) => row.kind === 'refund',
+  );
+  expect(refunds).toHaveLength(2);
+  expect(
+    refunds.reduce(
+      (sum: bigint, row: { amount_minor: string }) =>
+        sum + BigInt(row.amount_minor),
+      0n,
+    ),
+  ).toBe(-400n);
+});
+
+it('T006 counts distinct client and subscription records by their own Cairo creation month and assigned package', async () => {
+  const result = await f.po.client.rpc('po_reporting_aggregate', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+  });
+  expect(result.error).toBeNull();
+  expect(result.data.counts).toEqual({
+    distinct_clients: 1,
+    distinct_subscriptions: 1,
+  });
+  expect(result.data.month_counts).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        month: monthStart.slice(0, 7),
+        distinct_clients: 1,
+        distinct_subscriptions: 1,
+      }),
+    ]),
+  );
+  expect(result.data.package_counts).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        package_id: f.p.offer.package_id,
+        distinct_clients: 1,
+        distinct_subscriptions: 1,
+      }),
+    ]),
+  );
+  expect(
+    result.data.month_counts.reduce(
+      (sum: number, row: { distinct_clients: number }) =>
+        sum + row.distinct_clients,
+      0,
+    ),
+  ).toBe(result.data.counts.distinct_clients);
+  expect(
+    result.data.month_counts.reduce(
+      (sum: number, row: { distinct_subscriptions: number }) =>
+        sum + row.distinct_subscriptions,
+      0,
+    ),
+  ).toBe(result.data.counts.distinct_subscriptions);
+  const source = await f.po.client.rpc('po_reporting_source_rows', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+    p_page_size: 100,
+    p_cursor_recorded_at: null,
+    p_cursor_event_id: null,
+  });
+  const clientSources = source.data.rows.filter(
+    (row: { kind: string }) => row.kind === 'client_count',
+  );
+  const subscriptionSources = source.data.rows.filter(
+    (row: { kind: string }) => row.kind === 'subscription_count',
+  );
+  expect(clientSources).toHaveLength(result.data.counts.distinct_clients);
+  expect(subscriptionSources).toHaveLength(
+    result.data.counts.distinct_subscriptions,
+  );
+  expect(clientSources[0].client_id).toBe(clientId);
+  expect(subscriptionSources[0].subscription_id).toBe(subscriptionId);
+});
+
+it('T007 preserves exact minor units across currency partitions and reconciles package source rows', async () => {
+  const result = await f.po.client.rpc('po_reporting_aggregate', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+  });
+  expect(result.error).toBeNull();
+  expect(result.data.currency_totals).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ currency: 'USD', refund_minor: '-400' }),
+      expect.objectContaining({
+        currency: 'EGP',
+        collection_minor: '257',
+        converted_egp_exact: '257',
+      }),
+    ]),
+  );
+  const rows = await f.po.client.rpc('po_reporting_source_rows', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+    p_page_size: 100,
+    p_cursor_recorded_at: null,
+    p_cursor_event_id: null,
+  });
+  const egp = rows.data.rows.filter(
+    (row: { currency: string }) => row.currency === 'EGP',
+  );
+  expect(egp).toHaveLength(1);
+  expect(egp[0]).toMatchObject({
+    kind: 'collection',
+    amount_minor: '257',
+    converted_egp_exact: '257',
+  });
 });
 
 afterAll(async () => {
@@ -171,30 +373,37 @@ it('T003 makes platform, workspace, month, package, and source-row reads availab
     status: 'ok',
     workspace_id: f.wsA.id,
   });
-  expect(workspace.data.currency_totals).toEqual([
-    expect.objectContaining({
-      currency: 'USD',
-      collection_minor: '400',
-      reversal_minor: '-400',
-      commission_minor: '0',
-      converted_egp_exact: null,
-      pending_fx_count: 2,
-    }),
-  ]);
-  expect(workspace.data.months).toEqual([
-    expect.objectContaining({
-      month: monthStart.slice(0, 7),
-      currency: 'USD',
-      collection_minor: '400',
-    }),
-  ]);
-  expect(workspace.data.packages).toEqual([
-    expect.objectContaining({
-      package_id: f.p.offer.package_id,
-      currency: 'USD',
-      collection_minor: '400',
-    }),
-  ]);
+  expect(
+    workspace.data.currency_totals.find(
+      (row: { currency: string }) => row.currency === 'USD',
+    ),
+  ).toMatchObject({
+    currency: 'USD',
+    collection_minor: '800',
+    reversal_minor: '-400',
+    refund_minor: '-400',
+    commission_minor: '0',
+    converted_egp_exact: null,
+    pending_fx_count: 5,
+  });
+  expect(workspace.data.months).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        month: monthStart.slice(0, 7),
+        currency: 'USD',
+        collection_minor: '800',
+      }),
+    ]),
+  );
+  expect(workspace.data.packages).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        package_id: f.p.offer.package_id,
+        currency: 'USD',
+        collection_minor: '800',
+      }),
+    ]),
+  );
 
   const rows = await sourceRows(f.po.client, f.wsA.id);
   expect(rows.error).toBeNull();
@@ -203,24 +412,32 @@ it('T003 makes platform, workspace, month, package, and source-row reads availab
     has_more: false,
     next_cursor: null,
   });
-  expect(rows.data.rows).toEqual([
-    expect.objectContaining({
-      event_id: reversalEventId,
-      workspace_id: f.wsA.id,
-      client_id: clientId,
-      package_id: f.p.offer.package_id,
-      kind: 'correction_reversal',
-      amount_minor: '-400',
-      currency: 'USD',
-      fx: { status: 'pending' },
-    }),
-    expect.objectContaining({
-      event_id: eventId,
-      kind: 'collection',
-      amount_minor: '400',
-      commission_minor: '40',
-    }),
-  ]);
+  expect(rows.data.rows).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        event_id: reversalEventId,
+        workspace_id: f.wsA.id,
+        client_id: clientId,
+        package_id: f.p.offer.package_id,
+        kind: 'correction_reversal',
+        amount_minor: '-400',
+        currency: 'USD',
+        fx: { status: 'pending' },
+      }),
+      expect.objectContaining({
+        event_id: eventId,
+        kind: 'collection',
+        amount_minor: '400',
+        commission_minor: '40',
+      }),
+      expect.objectContaining({
+        event_id: refundSourceEventId,
+        kind: 'collection',
+        amount_minor: '400',
+      }),
+      expect.objectContaining({ kind: 'refund', amount_minor: '-100' }),
+    ]),
+  );
 });
 
 it('T004 applies Cairo month boundaries and package filters before source aggregation', async () => {
@@ -249,13 +466,21 @@ it('T004 applies Cairo month boundaries and package filters before source aggreg
   ]);
   for (const result of [unfiltered, byMonth, byPackage, monthAndPackage])
     expect(result.error).toBeNull();
-  expect(byMonth.data.currency_totals).toEqual(unfiltered.data.currency_totals);
-  expect(byPackage.data.currency_totals).toEqual(
-    unfiltered.data.currency_totals,
-  );
-  expect(monthAndPackage.data.currency_totals).toEqual(
-    unfiltered.data.currency_totals,
-  );
+  expect(
+    byMonth.data.currency_totals.find(
+      (row: { currency: string }) => row.currency === 'USD',
+    ).refund_minor,
+  ).toBe('-100');
+  expect(
+    byPackage.data.currency_totals.find(
+      (row: { currency: string }) => row.currency === 'USD',
+    ).refund_minor,
+  ).toBe('-400');
+  expect(
+    monthAndPackage.data.currency_totals.find(
+      (row: { currency: string }) => row.currency === 'USD',
+    ).refund_minor,
+  ).toBe('-100');
 
   const rows = await f.po.client.rpc('po_reporting_source_rows', {
     p_workspace_id: f.wsA.id,
@@ -266,12 +491,7 @@ it('T004 applies Cairo month boundaries and package filters before source aggreg
     p_cursor_event_id: null,
   });
   expect(rows.error).toBeNull();
-  expect(rows.data.rows).toHaveLength(2);
-  expect(rows.data.rows[0]).toMatchObject({
-    event_id: reversalEventId,
-    package_id: packageId,
-    amount_minor: '-400',
-  });
+  expect(rows.data.rows).toHaveLength(7);
   const firstPage = await f.po.client.rpc('po_reporting_source_rows', {
     p_workspace_id: f.wsA.id,
     p_month_start: monthStart,
@@ -281,25 +501,25 @@ it('T004 applies Cairo month boundaries and package filters before source aggreg
     p_cursor_event_id: null,
   });
   expect(firstPage.data.has_more).toBe(true);
-  expect(firstPage.data.next_cursor).toMatchObject({
-    event_id: reversalEventId,
-  });
-  const cursor = firstPage.data.next_cursor as {
+  const seen = [...firstPage.data.rows] as Array<{ event_id: string }>;
+  let cursor = firstPage.data.next_cursor as {
     recorded_at: string;
     event_id: string;
   };
-  const secondPage = await f.po.client.rpc('po_reporting_source_rows', {
-    p_workspace_id: f.wsA.id,
-    p_month_start: monthStart,
-    p_package_id: packageId,
-    p_page_size: 1,
-    p_cursor_recorded_at: cursor.recorded_at,
-    p_cursor_event_id: cursor.event_id,
-  });
-  expect(secondPage.data.has_more).toBe(false);
-  expect(secondPage.data.rows).toEqual([
-    expect.objectContaining({ event_id: eventId }),
-  ]);
+  while (cursor) {
+    const next = await f.po.client.rpc('po_reporting_source_rows', {
+      p_workspace_id: f.wsA.id,
+      p_month_start: monthStart,
+      p_package_id: packageId,
+      p_page_size: 1,
+      p_cursor_recorded_at: cursor.recorded_at,
+      p_cursor_event_id: cursor.event_id,
+    });
+    seen.push(...next.data.rows);
+    cursor = next.data.next_cursor;
+  }
+  expect(seen).toHaveLength(7);
+  expect(new Set(seen.map((row) => row.event_id)).size).toBe(7);
 });
 
 it('T004 returns the same safe denial for foreign and unknown workspace identifiers', async () => {
@@ -371,4 +591,152 @@ it('T006 rejects invalid period, package, cursor, and page bounds before reading
     anon_rows: false,
     service_rows: false,
   });
+});
+it('T008 reports partial and full upgrade-backed refunds once with source currency and FX state', async () => {
+  const ids = {
+    partialOperation: randomUUID(),
+    fullOperation: randomUUID(),
+    partialUpgrade: randomUUID(),
+    fullUpgrade: randomUUID(),
+    partialRefund: randomUUID(),
+    fullRefund: randomUUID(),
+  };
+  await db.begin(async (tx) => {
+    await tx`set local session_replication_role = replica`;
+    await tx`insert into app_private.subscription_upgrade_operations(
+      id,workspace_id,client_id,subscription_id,actor_user_id,request_key,expected_revision,
+      canonical_args_hash,result_receipt,recorded_at,transaction_id)
+      values(${ids.partialOperation},${f.wsA.id},${clientId},${subscriptionId},${f.po.userId},${randomUUID()},1,
+        extensions.digest(convert_to('reporting partial upgrade fixture','UTF8'),'sha256'),'{}'::jsonb,
+        clock_timestamp(),pg_current_xact_id()),
+        (${ids.fullOperation},${f.wsA.id},${clientId},${subscriptionId},${f.po.userId},${randomUUID()},2,
+        extensions.digest(convert_to('reporting full upgrade fixture','UTF8'),'sha256'),'{}'::jsonb,
+        clock_timestamp(),pg_current_xact_id())`;
+    await tx`insert into public.subscription_upgrades(
+      id,workspace_id,client_id,subscription_id,operation_id,package_offer_id,package_version_id,tier_rank,
+      package_price_minor,currency,commission_rate_bp,duration_days,credit_minor,additional_payment_minor,
+      commission_minor,expected_revision,recorded_by,recorded_at)
+      values(${ids.partialUpgrade},${f.wsA.id},${clientId},${subscriptionId},${ids.partialOperation},${f.p.offer.id},${f.p.versionId},1,
+        500,'USD',1000,30,0,500,50,1,${f.po.userId},clock_timestamp()),
+        (${ids.fullUpgrade},${f.wsA.id},${clientId},${subscriptionId},${ids.fullOperation},${f.p.offer.id},${f.p.versionId},1,
+        500,'USD',1000,30,0,500,50,2,${f.po.userId},clock_timestamp())`;
+    await tx`insert into public.refund_operations(id,workspace_id,client_id,subscription_id,operation_id,
+      actor_user_id,amount_minor,currency,effective_on,expected_revision,recorded_at)
+      values(${ids.partialRefund},${f.wsA.id},${clientId},${subscriptionId},${randomUUID()},${f.po.userId},125,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,0,clock_timestamp()),
+        (${ids.fullRefund},${f.wsA.id},${clientId},${subscriptionId},${randomUUID()},${f.po.userId},500,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,0,clock_timestamp())`;
+    await tx`insert into public.refund_allocation_events(workspace_id,subscription_id,refund_operation_id,
+      source_upgrade_id,amount_minor,commission_minor,currency,effective_on,recorded_by)
+      values(${f.wsA.id},${subscriptionId},${ids.partialRefund},${ids.partialUpgrade},-125,-13,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,${f.po.userId}),
+        (${f.wsA.id},${subscriptionId},${ids.fullRefund},${ids.fullUpgrade},-500,-50,'USD',
+        (clock_timestamp() at time zone 'Africa/Cairo')::date,${f.po.userId})`;
+  });
+  const [partialAllocation] = await db`
+    select id from public.refund_allocation_events where refund_operation_id=${ids.partialRefund}`;
+  const [fullAllocation] = await db`
+    select id from public.refund_allocation_events where refund_operation_id=${ids.fullRefund}`;
+  await db`update app_private.package_reporting_fx_snapshots
+    set status='ready',provider_key='CBE',rate=30.5,publication_date='2026-11-27',exact_egp_minor=12200
+    where workspace_id=${f.wsA.id} and payment_event_id=${refundSourceEventId}`;
+
+  const aggregateResult = await f.po.client.rpc('po_reporting_aggregate', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+  });
+  expect(aggregateResult.error).toBeNull();
+  const usd = aggregateResult.data.currency_totals.find(
+    (row: { currency: string }) => row.currency === 'USD',
+  );
+  expect(usd).toMatchObject({
+    collection_minor: '800',
+    reversal_minor: '-400',
+    refund_minor: '-1025',
+    converted_egp_exact: '0.0',
+    pending_fx_count: 4,
+  });
+  for (const partition of [
+    aggregateResult.data.workspaces,
+    aggregateResult.data.months,
+    aggregateResult.data.packages,
+  ]) {
+    expect(
+      partition
+        .filter((row: { currency: string }) => row.currency === 'USD')
+        .reduce(
+          (sum: bigint, row: { refund_minor: string }) =>
+            sum + BigInt(row.refund_minor),
+          0n,
+        ),
+    ).toBe(-1025n);
+  }
+
+  const sourceResult = await f.po.client.rpc('po_reporting_source_rows', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: f.p.offer.package_id,
+    p_page_size: 100,
+    p_cursor_recorded_at: null,
+    p_cursor_event_id: null,
+  });
+  expect(sourceResult.error).toBeNull();
+  const refunds = sourceResult.data.rows.filter(
+    (row: { kind: string }) => row.kind === 'refund',
+  );
+  expect(refunds).toHaveLength(4);
+  expect(
+    refunds.reduce(
+      (sum: bigint, row: { amount_minor: string }) =>
+        sum + BigInt(row.amount_minor),
+      0n,
+    ),
+  ).toBe(-1025n);
+  const collectionBacked = refunds.filter(
+    (row: { converted_egp_exact: string | null }) =>
+      row.converted_egp_exact !== null,
+  );
+  expect(collectionBacked).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        amount_minor: '-100',
+        converted_egp_exact: '-3050.0',
+        currency: 'USD',
+        fx: {
+          status: 'ready',
+          provider: 'CBE',
+          rate: '30.5',
+          publication_date: '2026-11-27',
+        },
+      }),
+      expect.objectContaining({
+        amount_minor: '-300',
+        converted_egp_exact: '-9150.0',
+        currency: 'USD',
+        fx: {
+          status: 'ready',
+          provider: 'CBE',
+          rate: '30.5',
+          publication_date: '2026-11-27',
+        },
+      }),
+    ]),
+  );
+  for (const [eventId, amount] of [
+    [partialAllocation!.id, '-125'],
+    [fullAllocation!.id, '-500'],
+  ]) {
+    const matched = refunds.filter(
+      (row: { event_id: string }) => row.event_id === eventId,
+    );
+    expect(matched).toHaveLength(1);
+    expect(matched[0]).toMatchObject({
+      amount_minor: amount,
+      commission_minor: amount === '-125' ? '-13' : '-50',
+      currency: 'USD',
+      converted_egp_exact: null,
+      fx: { status: 'pending' },
+    });
+  }
 });
