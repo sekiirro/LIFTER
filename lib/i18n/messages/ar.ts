@@ -1572,4 +1572,18 @@ export const ar = {
   'workforce.salary.market.international': 'دولي',
   'workforce.payroll.selectEmployeeFirst': 'اختار الموظف الأول.',
   'workforce.payroll.employee': 'الموظف',
+  'workforce.finalize.title': 'اعتماد الشهر',
+  'workforce.finalize.selectMonth': 'اختار شهر خلص (بتوقيت القاهرة)',
+  'workforce.finalize.closedHint': 'الشهر اللي خلص بس هو اللي يتعتمد.',
+  'workforce.finalize.action': 'اعتماد الشهر',
+  'workforce.finalize.confirmTitle': 'تعتمد الشهر ده؟',
+  'workforce.finalize.confirmBody':
+    'الاعتماد ده بيسجّله مالك المنصة وهو نهائي. أي تصحيح بعد كده هيروح للشهر الحالي وهيكون مرتبط بالشهر ده.',
+  'workforce.finalize.finalized': 'معتمد',
+  'workforce.finalize.alreadyFinalized': 'الشهر ده معتمد خلاص.',
+  'workforce.finalize.currentMonthError': 'مش ممكن تعتمد الشهر الحالي.',
+  'workforce.finalize.success': 'اتعتمد الشهر.',
+  'workforce.finalize.error': 'مقدرناش نعتمد الشهر. حاول تاني.',
+  'workforce.finalize.stale': 'الشهر اتغير. حدّث قبل الاعتماد.',
+  'workforce.finalize.denied': 'مالك المنصة بس اللي يقدر يعتمد الشهور.',
 } as const;
