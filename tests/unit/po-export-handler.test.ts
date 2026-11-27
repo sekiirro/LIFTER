@@ -18,16 +18,18 @@ describe('PO export jobs handler (T009)', () => {
     const rpc = (async (name: string, args: Record<string, unknown>) => {
       rpcCalls.push({ name, args });
       if (name === 'po_export_snapshot') {
-        const snapshot = [{
-          workspace_id: 'workspace-a',
-          client_id: 'client-a',
-          row: {
-            'clients.id': 'client-a',
-            'clients.name': currentName,
-            'forms.fitness_goals': '=1+1',
-            'forms.health_notes': 'health-canary-never-export',
+        const snapshot = [
+          {
+            workspace_id: 'workspace-a',
+            client_id: 'client-a',
+            row: {
+              'clients.id': 'client-a',
+              'clients.name': currentName,
+              'forms.fitness_goals': '=1+1',
+              'forms.health_notes': 'health-canary-never-export',
+            },
           },
-        }];
+        ];
         currentName = 'After concurrent update';
         return { rows: snapshot, row_count: 1, exceeded_limit: false };
       }
@@ -58,8 +60,9 @@ describe('PO export jobs handler (T009)', () => {
     expect(uploaded).toContain("'=1+1");
     expect(uploaded).not.toContain('health_notes');
     expect(uploaded).not.toContain('health-canary-never-export');
-    expect(rpcCalls.filter((call) => call.name === 'po_export_snapshot'))
-      .toHaveLength(1);
+    expect(
+      rpcCalls.filter((call) => call.name === 'po_export_snapshot'),
+    ).toHaveLength(1);
     expect(rpcCalls.at(-1)).toMatchObject({
       name: 'po_export_finalize',
       args: {
@@ -108,7 +111,13 @@ describe('PO export jobs handler (T009)', () => {
       calls.push(name);
       if (name === 'po_export_snapshot')
         return {
-          rows: [{ workspace_id: 'workspace-a', client_id: 'client-a', row: { 'clients.id': 'client-a' } }],
+          rows: [
+            {
+              workspace_id: 'workspace-a',
+              client_id: 'client-a',
+              row: { 'clients.id': 'client-a' },
+            },
+          ],
           row_count: 1,
           exceeded_limit: false,
         };
