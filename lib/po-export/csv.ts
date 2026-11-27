@@ -20,7 +20,7 @@ function cell(value: CsvValue, field: ExportField): string {
   // Only actual numeric values in numeric manifest fields retain a leading
   // minus sign as numeric data. Any string is still treated as text so an
   // unexpected textual value cannot turn into a spreadsheet formula.
-  if (typeof value === 'number') {
+  if (typeof value === 'number' && field.type === 'number') {
     if (!Number.isFinite(value)) return '';
     return String(value);
   }
@@ -39,7 +39,9 @@ export function serializeCsv(
 ): string {
   if (
     manifest.length === 0 ||
-    manifest.some((field) => !field.key || !/^(text|number)$/u.test(field.type)) ||
+    manifest.some(
+      (field) => !field.key || !/^(text|number)$/u.test(field.type),
+    ) ||
     new Set(manifest.map((field) => field.key)).size !== manifest.length
   ) {
     throw new Error('Invalid PO export manifest');

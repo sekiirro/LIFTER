@@ -25,6 +25,41 @@ type RpcMethods = {
     args: { p_job_id: string; p_lease_token: string };
     result: boolean;
   };
+  po_export_page: {
+    args: {
+      p_job_id: string;
+      p_lease_token: string;
+      p_after_workspace_id: string | null;
+      p_after_client_id: string | null;
+      p_limit: number;
+    };
+    result: Array<{
+      workspace_id: string;
+      client_id: string;
+      row: Record<string, string | null>;
+    }>;
+  };
+  po_export_finalize: {
+    args: {
+      p_job_id: string;
+      p_lease_token: string;
+      p_object_path: string;
+      p_row_count: number;
+    };
+    result: boolean;
+  };
+  po_export_failed: {
+    args: { p_job_id: string; p_lease_token: string };
+    result: boolean;
+  };
+  po_export_expired_artifacts: {
+    args: { p_limit: number };
+    result: Array<{ job_id: string; object_path: string }>;
+  };
+  po_export_expired_mark: {
+    args: { p_job_id: string };
+    result: boolean;
+  };
   alert_expired_refund_auth_lockouts: {
     args: { p_limit: number; p_checked_at: string };
     result: number;

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { PO_EXPORT_FIELDS, PO_EXPORT_MANIFEST_VERSION } from '../../lib/po-export/manifest';
+import {
+  PO_EXPORT_FIELDS,
+  PO_EXPORT_MANIFEST_VERSION,
+} from '../../lib/po-export/manifest';
 import { serializeCsv } from '../../lib/po-export/csv';
 
 describe('approved PO export manifest (T005)', () => {
@@ -33,7 +36,7 @@ describe('approved PO export manifest (T005)', () => {
         'forms.health_notes': 'health-canary-not-for-export',
       },
     ];
-    const output = serializeCsv(input, PO_EXPORT_FIELDS);
+    const output = serializeCsv(PO_EXPORT_FIELDS, input);
     expect(output).not.toContain('health_notes');
     expect(output).not.toContain('health-canary-not-for-export');
   });
