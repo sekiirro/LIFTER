@@ -542,6 +542,8 @@ describe('PR #334 review-round-2 fixes', () => {
       expect(waiting, 'quality write must reach the held F11 staff row').toBe(
         true,
       );
+      if (qualityPid === undefined)
+        throw new Error('Quality backend pid missing');
 
       const [fence] = await db`
         select exists (
