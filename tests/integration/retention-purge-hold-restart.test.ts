@@ -201,17 +201,20 @@ it('T004 holds closure data while open and restarts 30 days at resolution', asyn
   }
 });
 
-it('T031 leaves a tested P7 dispute-hold extension point without inventing a dispute model', async () => {
+it('T031 keeps the P7 purge hold extension compatible with refund reviews', async () => {
   const f = await clientContext();
   await db.begin(async (tx) => {
     const candidate = await clientWithLockout(tx, f, 'succeeded', 60, 60);
     const [models] = await tx`
-      select count(*)::int as count from pg_catalog.pg_class c
+      select array_agg(c.relname order by c.relname) as names from pg_catalog.pg_class c
       join pg_catalog.pg_namespace n on n.oid=c.relnamespace
       where c.relkind in ('r','p') and n.nspname in ('public','app_private')
         and (c.relname ilike '%dispute%' or c.relname ilike '%refund%review%')
     `;
-    expect(models!.count).toBe(0);
+    expect(models!.names).toEqual([
+      'p7_refund_fault_review_resolutions',
+      'p7_refund_fault_reviews',
+    ]);
 
     const signature = 'app_private.p7_retention_has_open_dispute(uuid,uuid)';
     const [before] = await tx`

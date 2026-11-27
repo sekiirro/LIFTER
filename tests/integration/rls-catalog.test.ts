@@ -123,6 +123,7 @@ const p7Private = [
   'p7_lock_period',
   'p7_month_for_trigger',
   'p7_reject_mutation',
+  'p7_reject_refund_review_truncate',
   'p7_route_closed_period',
   'p7_retention_has_open_dispute',
 ];
@@ -655,6 +656,7 @@ describe('tenancy security catalog (T007)', () => {
           'po_export_audit',
           'capture_workforce_checkin_pending',
           'guard_workforce_checkin_transition',
+          'p7_guard_refund_review_mutation',
           'guard_workforce_checkin_transition_truncate',
         ]),
       ].sort(),
@@ -799,6 +801,7 @@ describe('tenancy security catalog (T007)', () => {
           'f19_guard_activation_source',
           'f19_guard_productivity_unit',
           ...p7Private,
+          'p7_guard_refund_review_mutation',
           ...p7StrikePrivate,
           'f18_guard_plan_version_content',
           'f18_guard_nutrition_selection',
@@ -915,6 +918,7 @@ describe('tenancy security catalog (T007)', () => {
             ![
               'capture_workforce_checkin_pending',
               'guard_workforce_checkin_transition',
+              'p7_guard_refund_review_mutation',
               'guard_workforce_checkin_transition_truncate',
               'p7_recheck_f19_earned_actor',
               'p7_checkin_late_penalty_after_insert',
@@ -2473,6 +2477,100 @@ describe('P7 earned ledger and monthly close catalog', () => {
         and indexdef like '%UNIQUE% (workspace_id, source_key)%'
     ) as present`;
     expect(sourceKeyUnique?.present).toBe(true);
+    const [adjustmentClientId] = await db`
+      select exists(select 1 from information_schema.columns
+        where table_schema='public' and table_name='p7_adjustment_entries' and column_name='client_id') as present`;
+    expect(adjustmentClientId?.present).toBe(false);
+  });
+});
+
+describe('P7 T022/T023 Sales refund security catalog', () => {
+  const tables = [
+    'public.p7_refund_fault_reviews',
+    'public.p7_refund_fault_review_resolutions',
+  ];
+  const functions = [
+    'public.p7_list_open_refund_fault_reviews(uuid)',
+    'public.p7_resolve_refund_fault_review(jsonb)',
+  ];
+
+  it('forces RLS, denies direct access, and restricts review rows to the purge path', async () => {
+    for (const relation of tables) {
+      const [table] = await db`
+        select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass`;
+      expect(table, relation).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies =
+        await db`select * from pg_policies where schemaname='public'
+        and tablename=${relation.slice('public.'.length)}`;
+      expect(policies, relation).toHaveLength(0);
+      for (const role of ['anon', 'authenticated', 'service_role'])
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role},${relation},${privilege}) as allowed`;
+          expect(grant?.allowed, `${role} ${privilege} ${relation}`).toBe(
+            false,
+          );
+        }
+      const [allowlist] = await db`select can_delete,can_update,traverse
+        from app_private.retention_purge_allowlist where table_oid=${relation}::regclass`;
+      expect(allowlist, relation).toEqual({
+        can_delete: true,
+        can_update: false,
+        traverse: true,
+      });
+    }
+    const [reviewPii] =
+      await db`select exists(select 1 from information_schema.columns
+      where table_schema='public' and table_name='p7_refund_fault_reviews'
+        and column_name in ('name','email','phone','telegram_username')) as present`;
+    expect(reviewPii?.present).toBe(false);
+    const [route] = await db`select count(*)::int as count from pg_trigger t
+      where t.tgrelid='public.p7_adjustment_entries'::regclass
+        and t.tgname='p7_adjustment_route_before_insert'
+        and t.tgfoid='app_private.p7_route_closed_period()'::regprocedure`;
+    expect(route?.count).toBe(1);
+  });
+
+  it('grants only the two PO RPCs and protects the shared retention extension', async () => {
+    for (const signature of functions) {
+      const [fn] =
+        await db`select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+        from pg_proc p where p.oid=${signature}::regprocedure`;
+      expect(fn, signature).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig).toContain('search_path=""');
+    }
+    const [guard] = await db`select p.prosecdef,p.proconfig,
+      has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+      has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+      has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+      from pg_proc p where p.oid='app_private.p7_retention_has_open_dispute(uuid,uuid)'::regprocedure`;
+    expect(guard).toMatchObject({
+      prosecdef: false,
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(guard?.proconfig).toContain('search_path=""');
   });
 
   it('locks the period helper and restricts finalization to authenticated callers', async () => {
