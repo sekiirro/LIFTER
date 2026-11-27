@@ -358,8 +358,8 @@ export default async function ReportsPage({
       workspaces={workspaces.map(({ id, name }) => ({ id, name }))}
       data={data}
       totalConvertedEgp={totalConvertedEgp}
-      messages={m}
       role={actor.role}
+      messages={m}
       breakdown={breakdown}
       platformData={platformData}
       drilldownData={drilldownData}

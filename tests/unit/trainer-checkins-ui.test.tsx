@@ -1,4 +1,7 @@
+// @vitest-environment happy-dom
+import { act } from 'react';
 import { createElement, type ReactElement } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { getMessages } from '../../lib/i18n';
@@ -11,6 +14,12 @@ import { ToastProvider } from '../../components/ui/Toast';
 import type { TrainerCheckinRow } from '../../lib/workforce/types';
 import TrainerCheckinsPage from '../../app/(app)/workforce/check-ins/page';
 import TrainerCheckinsLoading from '../../app/(app)/workforce/check-ins/loading';
+import { loadMoreTrainerCheckinsAction } from '../../app/(app)/workforce/check-ins/actions';
+
+const TestToastProvider = ToastProvider as unknown as (props: {
+  dismissLabel: string;
+  children?: unknown;
+}) => ReactElement;
 
 function renderView(props: TrainerCheckinsViewProps) {
   const messages = getMessages(props.locale);
@@ -205,6 +214,163 @@ describe('Trainer Check-ins UI (T006 / FR-004, FR-005, FR-017, FR-029)', () => {
     });
     expect(arHtml).toContain(ar['workforce.checkin.denied']);
     expect(arHtml).not.toContain('table');
+  });
+
+  it('replaces prior workspace rows when the same view receives a new scope', async () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = createRoot(host);
+    const confirmFollowup = vi.fn();
+
+    await act(async () => {
+      root.render(
+        createElement(
+          TestToastProvider,
+          { dismissLabel: 'Dismiss' },
+          createElement(TrainerCheckinsView, {
+            key: JSON.stringify([
+              'workspace-a',
+              sampleCheckins
+                .slice(0, 1)
+                .map((row) => [row.assignment_id, row.followup_status]),
+            ]),
+            workspaceId: 'workspace-a',
+            locale: 'en',
+            checkins: [sampleCheckins[0]!],
+            confirmFollowup,
+          }),
+        ),
+      );
+    });
+    expect(host.textContent).toContain('Ahmed Youssef');
+
+    await act(async () => {
+      root.render(
+        createElement(
+          TestToastProvider,
+          { dismissLabel: 'Dismiss' },
+          createElement(TrainerCheckinsView, {
+            key: JSON.stringify([
+              'workspace-b',
+              [
+                [
+                  sampleCheckins[2]!.assignment_id,
+                  sampleCheckins[2]!.followup_status,
+                ],
+              ],
+            ]),
+            workspaceId: 'workspace-b',
+            locale: 'en',
+            checkins: [sampleCheckins[2]!],
+            confirmFollowup,
+          }),
+        ),
+      );
+    });
+    expect(host.textContent).toContain('Omar Tarek');
+    expect(host.textContent).not.toContain('Ahmed Youssef');
+    expect(host.textContent).not.toContain('+201001234567');
+
+    await act(async () => {
+      root.render(
+        createElement(
+          TestToastProvider,
+          { dismissLabel: 'Dismiss' },
+          createElement(TrainerCheckinsView, {
+            key: JSON.stringify([
+              'workspace-b',
+              [
+                [
+                  sampleCheckins[1]!.assignment_id,
+                  sampleCheckins[1]!.followup_status,
+                ],
+              ],
+            ]),
+            workspaceId: 'workspace-b',
+            locale: 'en',
+            checkins: [sampleCheckins[1]!],
+            confirmFollowup,
+          }),
+        ),
+      );
+    });
+    expect(host.textContent).toContain('Sara Karim');
+    expect(host.textContent).not.toContain('Omar Tarek');
+
+    await act(async () => root.unmount());
+    host.remove();
+  });
+
+  it('loads and exposes a follow-up beyond the first check-in page', async () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = createRoot(host);
+    const laterRow: TrainerCheckinRow = {
+      ...sampleCheckins[0]!,
+      assignment_id: 'assignment-101',
+      client_id: 'client-101',
+      client_name: 'Beyond first page',
+      phone_e164: '+201001010101',
+    };
+    await act(async () => {
+      root.render(
+        createElement(
+          TestToastProvider,
+          { dismissLabel: 'Dismiss' },
+          createElement(TrainerCheckinsView, {
+            workspaceId: 'workspace-a',
+            locale: 'en',
+            checkins: [sampleCheckins[0]!],
+            hasMore: true,
+            onLoadMore: vi.fn().mockResolvedValue({
+              status: 'ok',
+              checkins: [laterRow],
+            }),
+            confirmFollowup: vi.fn(),
+          }),
+        ),
+      );
+    });
+    const nextPage = host.querySelector('[data-testid="checkins-next-page"]');
+    expect(nextPage).not.toBeNull();
+    await act(async () => {
+      nextPage?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(host.textContent).toContain('Beyond first page');
+    expect(
+      host.querySelector('[data-testid="followup-btn-assignment-101"]'),
+    ).not.toBeNull();
+    await act(async () => root.unmount());
+    host.remove();
+  });
+
+  it('requests the next RPC page at the current row offset', async () => {
+    mocks.actor.mockResolvedValue({
+      role: 'trainer',
+      activeWorkspaceIds: ['ws-1'],
+    });
+    mocks.readTrainerCheckins.mockResolvedValue({
+      status: 'ok',
+      checkins: [sampleCheckins[2]!],
+    });
+
+    const result = await loadMoreTrainerCheckinsAction(
+      {
+        workspaceId: 'ws-1',
+        from: '2026-01-01',
+        to: '2026-12-31',
+      },
+      100,
+    );
+
+    expect(mocks.readTrainerCheckins).toHaveBeenCalledWith({
+      workspaceId: 'ws-1',
+      from: '2026-01-01',
+      to: '2026-12-31',
+      limit: 100,
+      offset: 100,
+    });
+    expect(result).toEqual({ status: 'ok', checkins: [sampleCheckins[2]] });
   });
 
   it('renders empty state when no check-ins exist', () => {

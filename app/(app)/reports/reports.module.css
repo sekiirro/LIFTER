@@ -223,3 +223,64 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* Spec 030 — PO-only full export surface on the existing Reports area. */
+.exportScope {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.exportScope legend {
+  padding-inline: var(--space-1);
+  font-weight: 600;
+}
+.exportChoice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--touch-min);
+  cursor: pointer;
+}
+.exportHint {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+.exportStatus {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-bg);
+}
+.exportBadge {
+  display: inline-flex;
+  inline-size: fit-content;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: var(--color-card);
+  border: 1px solid var(--color-border-strong);
+}
+.exportDownload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: fit-content;
+  min-block-size: var(--touch-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-button);
+  color: var(--color-text);
+  background: var(--color-card);
+  text-decoration: none;
+}
+.exportNotice {
+  margin: 0;
+  color: var(--color-text-muted);
+}

@@ -128,6 +128,50 @@ export type ApprovePayrollResult =
       message?: string;
     };
 
+export type PayrollMonthSnapshot = {
+  id: string;
+  version: number;
+  amountMinor: string;
+  currency: string;
+};
+
+export type PayrollMonthInput = {
+  id: string;
+  category: PayrollAdjustmentCategory;
+  amountMinor: string;
+  currency: string;
+};
+
+export type PayrollMonthApproval = {
+  id: string;
+  snapshotId: string;
+  snapshotVersion: number;
+  amountMinor: string;
+  currency: string;
+};
+
+export type PayrollMonthState = {
+  salary: {
+    id: string;
+    revision: number;
+    amountMinor: string;
+    currency: string;
+    market: PayrollMarket;
+  } | null;
+  inputs: PayrollMonthInput[];
+  snapshot: PayrollMonthSnapshot | null;
+  approval: PayrollMonthApproval | null;
+};
+
+export type GetPayrollMonthParams = {
+  employeeId: string;
+  effectiveMonth: string;
+};
+
+export type GetPayrollMonthResult =
+  | { status: 'ok'; data: PayrollMonthState }
+  | { status: 'denied' | 'invalid_input' | 'unavailable' };
+
 function normalizeEffectiveMonth(month: string): string | null {
   const trimmed = month.trim();
   if (/^\d{4}-(0[1-9]|1[0-2])$/.test(trimmed)) {
@@ -167,6 +211,94 @@ export async function getEligibleEmployees(): Promise<
   }));
 
   return { status: 'ok', employees };
+}
+
+export async function getPayrollMonth(
+  params: GetPayrollMonthParams,
+): Promise<GetPayrollMonthResult> {
+  const actor = await getActor();
+  if (!actor || actor.role !== 'platform_owner') {
+    return { status: 'denied' };
+  }
+
+  const effectiveMonth = normalizeEffectiveMonth(params.effectiveMonth);
+  if (!effectiveMonth) return { status: 'invalid_input' };
+
+  const client = await createSessionClient();
+  if (!client) return { status: 'unavailable' };
+
+  const { data, error } = await client.rpc('p7_get_payroll_month', {
+    p_employee_id: params.employeeId,
+    p_effective_month: effectiveMonth,
+  });
+  if (error || !data) return { status: 'unavailable' };
+
+  const row = data as {
+    salary: {
+      id: string;
+      revision: number;
+      amount_minor: string;
+      currency: string;
+      market: PayrollMarket;
+    } | null;
+    inputs: Array<{
+      id: string;
+      category: PayrollAdjustmentCategory;
+      amount_minor: string;
+      currency: string;
+    }>;
+    snapshot: {
+      id: string;
+      version: number;
+      amount_minor: string;
+      currency: string;
+    } | null;
+    approval: {
+      id: string;
+      snapshot_id: string;
+      snapshot_version: number;
+      amount_minor: string;
+      currency: string;
+    } | null;
+  };
+
+  return {
+    status: 'ok',
+    data: {
+      salary: row.salary
+        ? {
+            id: row.salary.id,
+            revision: row.salary.revision,
+            amountMinor: row.salary.amount_minor,
+            currency: row.salary.currency,
+            market: row.salary.market,
+          }
+        : null,
+      inputs: (row.inputs ?? []).map((input) => ({
+        id: input.id,
+        category: input.category,
+        amountMinor: input.amount_minor,
+        currency: input.currency,
+      })),
+      snapshot: row.snapshot
+        ? {
+            id: row.snapshot.id,
+            version: row.snapshot.version,
+            amountMinor: row.snapshot.amount_minor,
+            currency: row.snapshot.currency,
+          }
+        : null,
+      approval: row.approval
+        ? {
+            id: row.approval.id,
+            snapshotId: row.approval.snapshot_id,
+            snapshotVersion: row.approval.snapshot_version,
+            amountMinor: row.approval.amount_minor,
+            currency: row.approval.currency,
+          }
+        : null,
+    },
+  };
 }
 
 export async function setBasicSalary(
@@ -281,8 +413,11 @@ export async function postMonetaryPayrollInput(
     }
   }
 
-  const reasonRef = input.reasonRef || randomUUID();
-  const idempotencyKey = input.idempotencyKey || randomUUID();
+  if (!input.reasonRef || !input.idempotencyKey) {
+    return { status: 'invalid_input' };
+  }
+  const reasonRef = input.reasonRef;
+  const idempotencyKey = input.idempotencyKey;
 
   const { data, error } = await client.rpc('p7_post_monetary_payroll_input', {
     p_employee_id: input.employeeId,

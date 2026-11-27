@@ -13,6 +13,14 @@ const db = sql();
 afterAll(() => db.end());
 type StrikeContext = Context;
 
+const REASON_CODES = [
+  'client_caused_delay',
+  'system_issue',
+  'wrong_trainer',
+  'duplicate',
+  'po_exception',
+] as const;
+
 async function seedOverdueInitial() {
   const context = await clientContext();
   const ids = await db.begin((tx) => graph(tx, context));
@@ -534,6 +542,100 @@ it('uses the exact rolling window and only exposes 3/6/9 review flags to the PO'
   });
 });
 
+it.each(REASON_CODES)(
+  'stores approved strike correction reason code %s',
+  async (reasonCode) => {
+    const fixture = await seedOverdueInitial();
+    await recordDue(fixture.deadlineAt);
+    const [event] = await db`
+      select id from public.workforce_strike_events where workspace_id=${fixture.context.wsA.id}
+    `;
+    const correction = await fixture.context.po.client.rpc(
+      'correct_workforce_strike',
+      {
+        p_workspace_id: fixture.context.wsA.id,
+        p_strike_id: event!.id,
+        p_operation: 'void',
+        p_target_trainer_user_id: null,
+        p_reason_code: reasonCode,
+        p_idempotency_key: randomUUID(),
+      },
+    );
+    expect(correction.error).toBeNull();
+    expect(correction.data).toMatchObject({ status: 'ok', replayed: false });
+    const [stored] = await db`
+      select reason_code from public.workforce_strike_corrections
+      where workspace_id=${fixture.context.wsA.id} and strike_id=${event!.id}
+    `;
+    expect(stored?.reason_code).toBe(reasonCode);
+  },
+);
+
+it('rejects unknown and free-text strike correction reason codes with 22023', async () => {
+  const fixture = await seedOverdueInitial();
+  await recordDue(fixture.deadlineAt);
+  const [event] = await db`
+    select id from public.workforce_strike_events where workspace_id=${fixture.context.wsA.id}
+  `;
+  for (const reasonCode of [
+    'not_an_approved_code',
+    'Client Hana 01000000000',
+    '   ',
+  ]) {
+    const correction = await fixture.context.po.client.rpc(
+      'correct_workforce_strike',
+      {
+        p_workspace_id: fixture.context.wsA.id,
+        p_strike_id: event!.id,
+        p_operation: 'void',
+        p_target_trainer_user_id: null,
+        p_reason_code: reasonCode,
+        p_idempotency_key: randomUUID(),
+      },
+    );
+    expect(correction.error).toMatchObject({ code: '22023' });
+    expect(correction.data).toBeNull();
+  }
+  const [stored] = await db`
+    select count(*)::int as count from public.workforce_strike_corrections
+    where workspace_id=${fixture.context.wsA.id} and strike_id=${event!.id}
+  `;
+  expect(stored?.count).toBe(0);
+});
+
+it('mutation: removing the reason-code CHECK lets an invalid code through', async () => {
+  const fixture = await seedOverdueInitial();
+  await recordDue(fixture.deadlineAt);
+  const [event] = await db`
+    select id from public.workforce_strike_events where workspace_id=${fixture.context.wsA.id}
+  `;
+  await db.begin(async (tx) => {
+    await tx`savepoint strike_reason_code_check_mutation`;
+    const [constraint] = await tx`
+      select conname from pg_constraint
+      where conrelid='public.workforce_strike_corrections'::regclass
+        and contype='c'
+        and conname='workforce_strike_corrections_reason_code_check'
+    `;
+    expect(constraint?.conname).toBe(
+      'workforce_strike_corrections_reason_code_check',
+    );
+    await tx.unsafe(`
+      alter table public.workforce_strike_corrections
+      drop constraint workforce_strike_corrections_reason_code_check
+    `);
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.context.po.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    const [mutated] = await tx`
+      select public.correct_workforce_strike(
+        ${fixture.context.wsA.id},${event!.id},'void',null,'invalid_code',${randomUUID()}
+      ) as result
+    `;
+    expect(mutated?.result).toMatchObject({ status: 'ok', replayed: false });
+    await tx`rollback to savepoint strike_reason_code_check_mutation`;
+  });
+});
+
 it('appends void, reinstate and breach-time reattribution without changing the strike row', async () => {
   const fixture = await seedOverdueInitial();
   await recordDue(fixture.deadlineAt);
@@ -559,7 +661,7 @@ it('appends void, reinstate and breach-time reattribution without changing the s
       p_operation: operation,
       p_target_trainer_user_id:
         operation === 'reattribute' ? targetTrainer.userId : null,
-      p_reason: 'source review correction',
+      p_reason_code: 'po_exception',
       p_idempotency_key: key,
     });
   expect((await call('void')).data).toMatchObject({ status: 'ok' });
@@ -622,7 +724,7 @@ it('appends void, reinstate and breach-time reattribution without changing the s
     fixture.deadlineAt.toISOString(),
   );
   const corrections = await db`
-    select correction_kind,reason,audit_ref from public.workforce_strike_corrections
+    select correction_kind,reason_code,audit_ref from public.workforce_strike_corrections
     where workspace_id=${fixture.context.wsA.id} and strike_id=${event!.id}
     order by correction_no
   `;
@@ -631,9 +733,9 @@ it('appends void, reinstate and breach-time reattribution without changing the s
     'reinstate',
     'reattribute',
   ]);
-  expect(
-    corrections.every((row) => row.reason === 'source review correction'),
-  ).toBe(true);
+  expect(corrections.every((row) => row.reason_code === 'po_exception')).toBe(
+    true,
+  );
   expect(
     corrections.every(
       (row) => row.audit_ref && String(row.audit_ref).length > 0,
@@ -694,7 +796,7 @@ it('rejects invalid corrections and changed replay arguments without mutating hi
   const call = (
     operation: string,
     target: string | null = null,
-    reason = 'negative correction fixture',
+    reasonCode = 'po_exception',
     key = randomUUID(),
   ) =>
     fixture.context.po.client.rpc('correct_workforce_strike', {
@@ -702,12 +804,12 @@ it('rejects invalid corrections and changed replay arguments without mutating hi
       p_strike_id: event!.id,
       p_operation: operation,
       p_target_trainer_user_id: target,
-      p_reason: reason,
+      p_reason_code: reasonCode,
       p_idempotency_key: key,
     });
 
-  expect((await call('void', null, '   ')).data).toMatchObject({
-    status: 'invalid_input',
+  expect((await call('void', null, '   ')).error).toMatchObject({
+    code: '22023',
   });
   expect((await call('reinstate')).data).toMatchObject({
     status: 'invalid_correction',
@@ -730,11 +832,16 @@ it('rejects invalid corrections and changed replay arguments without mutating hi
   expect(before?.count).toBe(0);
 
   const replayKey = randomUUID();
+  const original = await call('void', null, 'duplicate', replayKey);
+  expect(original.data).toMatchObject({ status: 'ok', replayed: false });
+  const replay = await call('void', null, 'duplicate', replayKey);
+  expect(replay.data).toMatchObject({
+    status: 'ok',
+    replayed: true,
+    correction_id: original.data.correction_id,
+  });
   expect(
-    (await call('void', null, 'original replay reason', replayKey)).data,
-  ).toMatchObject({ status: 'ok' });
-  expect(
-    (await call('void', null, 'changed replay reason', replayKey)).data,
+    (await call('void', null, 'system_issue', replayKey)).data,
   ).toMatchObject({ status: 'idempotency_conflict' });
   const [afterReplay] = await db`
     select count(*)::int as count from public.workforce_strike_corrections
@@ -743,8 +850,8 @@ it('rejects invalid corrections and changed replay arguments without mutating hi
   expect(afterReplay?.count).toBe(1);
 
   const concurrent = await Promise.all([
-    call('void', null, 'different key one'),
-    call('void', null, 'different key two'),
+    call('void', null, 'client_caused_delay'),
+    call('void', null, 'wrong_trainer'),
   ]);
   expect(concurrent.map((result) => result.data.status)).toEqual(['ok', 'ok']);
   expect(
@@ -761,7 +868,7 @@ it('rejects invalid corrections and changed replay arguments without mutating hi
   expect(afterDifferentKeys?.count).toBe(3);
 });
 
-it('serializes concurrent retries of one PO correction idempotency key', async () => {
+it('serializes concurrent retries of one PO correction idempotency key with the same reason code', async () => {
   const fixture = await seedOverdueInitial();
   await recordDue(fixture.deadlineAt);
   const [event] = await db`
@@ -773,7 +880,7 @@ it('serializes concurrent retries of one PO correction idempotency key', async (
     p_strike_id: event!.id,
     p_operation: 'void',
     p_target_trainer_user_id: null,
-    p_reason: 'duplicate request replay',
+    p_reason_code: 'duplicate',
     p_idempotency_key: key,
   };
   const [first, second] = await Promise.all([
@@ -816,7 +923,7 @@ it('denies Trainer, WO and Sales strike reads and corrections before resolving i
           userId,
           (sp) =>
             sp`select public.correct_workforce_strike(
-            ${context.wsA.id},${randomUUID()},'void',null,'forbidden',${randomUUID()}
+            ${context.wsA.id},${randomUUID()},'void',null,'po_exception',${randomUUID()}
           ) as result`,
         ),
       ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
@@ -837,7 +944,7 @@ it('rejects direct UPDATE, DELETE and TRUNCATE attempts on retained strike histo
       p_strike_id: event!.id,
       p_operation: 'void',
       p_target_trainer_user_id: null,
-      p_reason: 'immutable history fixture',
+      p_reason_code: 'po_exception',
       p_idempotency_key: randomUUID(),
     },
   );
@@ -852,7 +959,7 @@ it('rejects direct UPDATE, DELETE and TRUNCATE attempts on retained strike histo
     db`truncate public.workforce_strike_events cascade`,
   ).rejects.toThrow(/workforce_strike_immutable/);
   await expect(
-    db`update public.workforce_strike_corrections set reason=reason where strike_id=${event!.id}`,
+    db`update public.workforce_strike_corrections set reason_code=reason_code where strike_id=${event!.id}`,
   ).rejects.toThrow(/workforce_strike_immutable/);
   await expect(
     db`delete from public.workforce_strike_corrections where strike_id=${event!.id}`,
@@ -875,7 +982,7 @@ it('keeps non-PII strike history outside the F26 client purge closure', async ()
       p_strike_id: event!.id,
       p_operation: 'void',
       p_target_trainer_user_id: null,
-      p_reason: 'retention fixture',
+      p_reason_code: 'client_caused_delay',
       p_idempotency_key: randomUUID(),
     },
   );
@@ -912,10 +1019,10 @@ it('keeps non-PII strike history outside the F26 client purge closure', async ()
       const [retainedEvent] =
         await tx`select id from public.workforce_strike_events where id=${event!.id}`;
       const [retainedCorrection] =
-        await tx`select id,reason from public.workforce_strike_corrections
+        await tx`select id,reason_code from public.workforce_strike_corrections
         where workspace_id=${fixture.context.wsA.id} and strike_id=${event!.id}`;
       expect(retainedEvent?.id).toBe(event!.id);
-      expect(retainedCorrection?.reason).toBe('retention fixture');
+      expect(retainedCorrection?.reason_code).toBe('client_caused_delay');
       throw rollback;
     });
   } catch (error) {
@@ -1061,7 +1168,7 @@ it('rechecks PO authority after a correction waits on the strike row', async () 
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.context.po.userId, role: 'authenticated' })},true)`;
       await tx`set local role authenticated`;
       const [row] = await tx`select public.correct_workforce_strike(
-        ${fixture.context.wsA.id},${event!.id},'void',null,'revocation race',${randomUUID()}
+        ${fixture.context.wsA.id},${event!.id},'void',null,'po_exception',${randomUUID()}
       ) as result`;
       return row?.result;
     });
@@ -1134,7 +1241,7 @@ it('mutation: removing the post-lock PO recheck exposes corrections after demoti
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.context.po.userId, role: 'authenticated' })},true)`;
         await tx`set local role authenticated`;
         const [row] = await tx`select public.correct_workforce_strike(
-          ${fixture.context.wsA.id},${event!.id},'void',null,'revocation mutation',${randomUUID()}
+          ${fixture.context.wsA.id},${event!.id},'void',null,'po_exception',${randomUUID()}
         ) as result`;
         return row?.result;
       });
@@ -1206,7 +1313,7 @@ it('mutation: removing the PO guard exposes strike reads and corrections', async
     await tx`set local role authenticated`;
     const [mutatedCorrection] = await tx`
       select public.correct_workforce_strike(
-        ${fixture.context.wsA.id},${event!.id},'void',null,'guard mutation',${randomUUID()}
+        ${fixture.context.wsA.id},${event!.id},'void',null,'po_exception',${randomUUID()}
       ) as result
     `;
     expect(mutatedCorrection?.result).toMatchObject({ status: 'ok' });
@@ -1240,7 +1347,7 @@ it('mutation: removing idempotency replay checks exposes duplicate correction wr
       const key = randomUUID();
       const invoke = () => tx`
         select public.correct_workforce_strike(
-          ${fixture.context.wsA.id},${event!.id},'void',null,'duplicate mutation',${key}
+          ${fixture.context.wsA.id},${event!.id},'void',null,'duplicate',${key}
         ) as result
       `;
       expect((await invoke())[0]?.result).toMatchObject({ status: 'ok' });

@@ -7,6 +7,7 @@ import { EmptyState } from '../../../components/ui/States';
 import { Button } from '../../../components/ui/Button';
 import { formatMinorUnits } from '../../../lib/packages/money';
 import type { Messages } from '../../../lib/i18n';
+import { ExportSection } from './ExportSection';
 import styles from './reports.module.css';
 
 export type ReportPackage = {
@@ -228,8 +229,8 @@ export function ReportsView({
   workspaces,
   data,
   totalConvertedEgp,
-  messages: m,
   role = 'platform_owner',
+  messages: m,
   breakdown = 'month',
   platformData,
   drilldownData,
@@ -240,8 +241,8 @@ export function ReportsView({
   workspaces: { id: string; name: string }[];
   data: ReportsData;
   totalConvertedEgp: string | null;
+  role?: string | null;
   messages: Messages;
-  role?: 'platform_owner' | 'workspace_owner';
   breakdown?: 'month' | 'package';
   platformData?: PlatformData | null;
   drilldownData?: DrilldownData | null;
@@ -798,6 +799,15 @@ export function ReportsView({
             )}
           </section>
         </>
+      )}
+
+      {role === 'platform_owner' && (
+        <ExportSection
+          canExport
+          locale={locale}
+          workspaces={workspaces}
+          messages={m}
+        />
       )}
     </main>
   );
