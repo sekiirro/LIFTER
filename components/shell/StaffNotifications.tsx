@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Locale } from '../../lib/design/preferences';
 import type { Messages } from '../../lib/i18n';
+import { interpolateNumbers } from '../../lib/i18n/format';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
 import { Icon } from '../icons/Icon';
@@ -330,6 +331,14 @@ export function StaffNotifications({
   }, [notifications, focusNonce]);
 
   const unreadCount = notifications.filter((n) => n.readAt === null).length;
+  const bellLabel =
+    unreadCount > 0
+      ? interpolateNumbers(
+          messages['staff.notifications.bellLabelWithCount'],
+          { count: unreadCount },
+          locale,
+        )
+      : messages['staff.notifications.bellLabel'];
 
   const renderContent = () => {
     if (loading) {
@@ -455,7 +464,7 @@ export function StaffNotifications({
         ref={triggerRef}
         type="button"
         className={styles.bellButton}
-        aria-label={messages['staff.notifications.bellLabel']}
+        aria-label={bellLabel}
         aria-expanded={open}
         aria-controls={open ? 'staff-notifications-panel' : undefined}
         onClick={() => {

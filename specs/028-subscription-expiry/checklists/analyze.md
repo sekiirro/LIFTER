@@ -1,6 +1,7 @@
 ﻿# Analyze Checklist: Subscription expiry notices and scoped client list
 
 **Created**: 2026-11-27 01:14 UTC
+**Date-only status revalidation — 2026-11-28 UTC**: task ticks only on merged PRs with exact-head CI and test files present on origin/main (S74, docs-only); no FR/SC/plan/requirement text, copy or PO decision changed, so no full Analyze rerun is required (S54 R6). **0 open CRITICAL, 0 open HIGH.**
 **Analyze run**: 2026-11-27 09:37 UTC; in-session cross-artifact review using the repository's Analyze checklist structure.
 **Spec/plan/tasks last changed**: 2026-11-27 01:14 UTC
 **Independent critique**: Sol Medium, recorded in [critique-sol-medium.md](critique-sol-medium.md); 3 HIGH and 3 MEDIUM findings corrected.
