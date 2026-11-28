@@ -1584,6 +1584,22 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.report.netPointsHint':
     'Refund reversals appear as entries in the ledger.',
   'workforce.report.pointsNotSalary': 'Points are separate from salary.',
+  'workforce.report.points.add': 'Add points',
+  'workforce.report.points.deduct': 'Deduct points',
+  'workforce.report.points.correct': 'Correct points',
+  'workforce.report.points.reattribute': 'Reattribute points',
+  'workforce.report.points.reasonRequired': 'A reason is required.',
+  'workforce.report.points.reasonHint':
+    'Manual point edits are PO-only and recorded with a reason. They never change salary.',
+  'workforce.report.points.confirmTitle': 'Confirm point change?',
+  'workforce.report.points.confirmBody':
+    'This records a manual, PO-only point change with your reason. It does not change salary.',
+  'workforce.report.points.saved': 'Point change recorded.',
+  'workforce.report.points.error':
+    'Could not record the point change. Try again.',
+  'workforce.report.points.stale':
+    'A newer revision exists. Reload before saving.',
+  'workforce.report.refund.selectStaff': 'Select workspace Trainers or Sales',
   'workforce.report.negativeTotal': 'Negative total',
   'workforce.report.negativeHint':
     'Negative totals are valid. They do not change salary.',

@@ -1535,6 +1535,21 @@ export const ar = {
     'النقاط الصافية = المكتسبة + التحوّلات وآراء العملاء − الخصومات + تعديلات مالك المنصة.',
   'workforce.report.netPointsHint': 'عكس نقاط الاسترداد بيظهر كقيد في السجل.',
   'workforce.report.pointsNotSalary': 'النقاط منفصلة عن المرتب.',
+  'workforce.report.points.add': 'ضيف نقاط',
+  'workforce.report.points.deduct': 'خصم نقاط',
+  'workforce.report.points.correct': 'صحّح النقاط',
+  'workforce.report.points.reattribute': 'انقل النقاط لشخص تاني',
+  'workforce.report.points.reasonRequired': 'لازم تكتب السبب.',
+  'workforce.report.points.reasonHint':
+    'تعديل النقاط باليد مقفول على مالك المنصة وبيتحفظ مع السبب. مش بيغيّر المرتب.',
+  'workforce.report.points.confirmTitle': 'تأكيد تعديل النقاط؟',
+  'workforce.report.points.confirmBody':
+    'ده تسجيل تعديل نقاط باليد من مالك المنصة مع السبب اللي كتبته. مش بيغيّر المرتب.',
+  'workforce.report.points.saved': 'اتسجل تعديل النقاط.',
+  'workforce.report.points.error': 'مقدرناش نسجّل تعديل النقاط. حاول تاني.',
+  'workforce.report.points.stale': 'فيه نسخة أحدث. حدّث قبل الحفظ.',
+  'workforce.report.refund.selectStaff':
+    'اختار المدرّبين أو المبيعات في مساحة العمل',
   'workforce.report.negativeTotal': 'إجمالي سالب',
   'workforce.report.negativeHint': 'الإجمالي السالب مقبول. مش بيغيّر المرتب.',
   'workforce.report.ledger.title': 'سجل النقاط',

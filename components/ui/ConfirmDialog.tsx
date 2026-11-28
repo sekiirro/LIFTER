@@ -102,6 +102,7 @@ export function ConfirmDialog({
           ref={cancelRef}
           variant="secondary"
           data-testid="dialog-cancel"
+          disabled={loading}
           onClick={onCancel}
         >
           {cancelLabel}
