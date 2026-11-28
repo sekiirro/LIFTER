@@ -761,4 +761,53 @@ describe('PO export authorization RED (T001-T003)', () => {
     expect(denied.error).not.toBeNull();
     await svc.storage.from('po-export-artifacts').remove([objectPath]);
   });
+
+  it('authenticated (non-service) callers are rejected by grants and explicit guard on export worker functions (NB-030-06)', async () => {
+    // 1. PostgREST authenticated caller is rejected by grants (today and forward).
+    const attemptRpc = await f.po.client.rpc('po_export_attempt', {
+      p_job_id: randomUUID(),
+      p_lease_token: randomUUID(),
+    });
+    expect(attemptRpc.data).toBeNull();
+    expect(attemptRpc.error?.code).toBe('42501');
+
+    const finalizeRpc = await f.po.client.rpc('po_export_finalize', {
+      p_job_id: randomUUID(),
+      p_lease_token: randomUUID(),
+      p_object_path: 'synthetic/archive.csv',
+      p_row_count: 10,
+    });
+    expect(finalizeRpc.data).toBeNull();
+    expect(finalizeRpc.error?.code).toBe('42501');
+
+    const failedRpc = await f.po.client.rpc('po_export_failed', {
+      p_job_id: randomUUID(),
+      p_lease_token: randomUUID(),
+    });
+    expect(failedRpc.data).toBeNull();
+    expect(failedRpc.error?.code).toBe('42501');
+
+    // 2. Direct calls as postgres with role set to authenticated assert the explicit
+    // auth.role() <> 'service_role' defense-in-depth guard (throws 42501 'not_found').
+    await expect(
+      db.begin(async (tx) => {
+        await tx`select set_config('request.jwt.claim.role', 'authenticated', true)`;
+        await tx`select public.po_export_attempt(${randomUUID()}::uuid, ${randomUUID()}::uuid)`;
+      }),
+    ).rejects.toMatchObject({ message: 'not_found', code: '42501' });
+
+    await expect(
+      db.begin(async (tx) => {
+        await tx`select set_config('request.jwt.claim.role', 'authenticated', true)`;
+        await tx`select public.po_export_finalize(${randomUUID()}::uuid, ${randomUUID()}::uuid, 'synthetic/archive.csv', 10::bigint)`;
+      }),
+    ).rejects.toMatchObject({ message: 'not_found', code: '42501' });
+
+    await expect(
+      db.begin(async (tx) => {
+        await tx`select set_config('request.jwt.claim.role', 'authenticated', true)`;
+        await tx`select public.po_export_failed(${randomUUID()}::uuid, ${randomUUID()}::uuid)`;
+      }),
+    ).rejects.toMatchObject({ message: 'not_found', code: '42501' });
+  });
 });
