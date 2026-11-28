@@ -8,6 +8,7 @@ import {
   cairoCurrentMonth,
   isValidMonth,
   fetchWorkforceReport,
+  fetchSalesFunnel,
 } from '../../../../lib/workforce/report';
 import { WorkforceReportView } from '../../../../components/workforce/WorkforceReportView';
 import {
@@ -100,7 +101,10 @@ export default async function WorkforceReportPage({
     );
   }
 
-  const reportRes = await fetchWorkforceReport(client, workspaceId, month);
+  const [reportRes, salesFunnel] = await Promise.all([
+    fetchWorkforceReport(client, workspaceId, month),
+    fetchSalesFunnel(client, workspaceId, month),
+  ]);
 
   if (reportRes.status === 'denied') {
     return (
@@ -142,6 +146,7 @@ export default async function WorkforceReportPage({
         locale={locale}
         messages={m}
         currentMonth={month}
+        salesFunnel={salesFunnel}
         postPointAdjustment={postPointAdjustmentAction}
         reattributePointEntry={reattributePointEntryAction}
       />

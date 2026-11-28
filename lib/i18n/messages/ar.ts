@@ -1780,4 +1780,20 @@ export const ar = {
   'workforce.salesProjection.aria.total': 'إجماليك المعتمد للشهر',
   'workforce.salesProjection.notAvailableUntilNextMonth':
     'إجمالي نقاط الحافز بتاعك مش متاحه لسه ، هتبقي متاحه أول الشهر الجاي لما نعتمدها',
+  'workforce.salesFunnel.title': 'مسار المبيعات',
+  'workforce.salesFunnel.column.linksIssued': 'الروابط اللي اتبعتت',
+  'workforce.salesFunnel.column.registrations': 'التسجيلات',
+  'workforce.salesFunnel.column.approvals': 'الاعتمادات',
+  'workforce.salesFunnel.column.confirmedFirstPayments':
+    'الدفعات الأولى اللي اتأكدت',
+  'workforce.salesFunnel.column.acquisitionPoints': 'نقاط الاكتساب',
+  'workforce.salesFunnel.column.refundReversals': 'عكس الاستردادات',
+  'workforce.salesFunnel.column.pointDeductions': 'خصومات النقاط',
+  'workforce.salesFunnel.column.poAdjustments': 'تعديلات مالك المنصة',
+  'workforce.salesFunnel.empty': 'مفيش بيانات مسار مبيعات للشهر ده.',
+  'workforce.salesFunnel.loading': 'بنحمّل مسار المبيعات…',
+  'workforce.salesFunnel.loadError':
+    'مش عارفين نحمّل مسار المبيعات. حاول تاني.',
+  'workforce.salesFunnel.denied': 'مش مسموح لك تشوف مسار المبيعات.',
+  'workforce.salesFunnel.aria.table': 'تفاصيل مسار المبيعات',
 } as const;
