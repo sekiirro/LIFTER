@@ -430,6 +430,43 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
       }
     });
 
+    it('passes a cursor through and returns server pagination metadata', async () => {
+      const cursor = {
+        recorded_at: '2026-11-10T12:00:00Z',
+        event_id: '11111111-0000-0000-0000-000000000001',
+      };
+      mocks.rpc
+        .mockResolvedValueOnce({
+          data: {
+            ...sampleBackendSourceRows,
+            has_more: true,
+            next_cursor: cursor,
+          },
+          error: null,
+        })
+        .mockResolvedValueOnce({ data: sampleBackendAggregate, error: null });
+
+      const res = await getWorkspaceDrilldownRows({
+        workspaceId: wsId,
+        monthStart: '2026-11-01',
+        cursor,
+      });
+
+      expect(mocks.rpc).toHaveBeenCalledWith('po_reporting_source_rows', {
+        p_workspace_id: wsId,
+        p_month_start: '2026-11-01',
+        p_package_id: null,
+        p_page_size: 50,
+        p_cursor_recorded_at: cursor.recorded_at,
+        p_cursor_event_id: cursor.event_id,
+      });
+      expect(res.status).toBe('ok');
+      if (res.status === 'ok') {
+        expect(res.hasMore).toBe(true);
+        expect(res.nextCursor).toEqual(cursor);
+      }
+    });
+
     it('returns unavailable on missing RPC error without silent legacy fallback', async () => {
       mocks.rpc.mockResolvedValueOnce({
         data: null,
