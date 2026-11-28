@@ -48,16 +48,13 @@ export async function GET(
   // NB-030-04: the retrieval audit above is deliberately written before bytes.
   // If storage delivery fails, append a failure outcome using the existing
   // 'failed' audit value so the trail is not a 'downloaded'-only success record.
+  const admin = createAdminClient();
   const recordDeliveryFailure = async () => {
-    await session.rpc('record_po_export_retrieval_failure', {
+    await admin?.rpc('record_po_export_retrieval_failure', {
       p_job_id: jobId,
     });
   };
-  const admin = createAdminClient();
-  if (!admin) {
-    await recordDeliveryFailure();
-    return response(503);
-  }
+  if (!admin) return response(503);
   const { data: file, error: storageError } = await admin.storage
     .from('po-export-artifacts')
     .download(path);

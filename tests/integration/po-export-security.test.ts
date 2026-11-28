@@ -641,12 +641,17 @@ describe('PO export authorization RED (T001-T003)', () => {
     expect(denied.data).toBeNull();
     expect(denied.error?.code).toBe('42501');
 
-    const failure = await f.po.client.rpc(
+    const directPoFailure = await f.po.client.rpc(
       'record_po_export_retrieval_failure',
       {
         p_job_id: id,
       },
     );
+    expect(directPoFailure.data).toBeNull();
+    expect(directPoFailure.error?.code).toBe('42501');
+    const failure = await svc.rpc('record_po_export_retrieval_failure', {
+      p_job_id: id,
+    });
     expect(failure.error).toBeNull();
     const audit = await db`
       select action,actor_user_id,workspace_id,details from public.audit_events

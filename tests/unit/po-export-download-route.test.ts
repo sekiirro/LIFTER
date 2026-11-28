@@ -5,6 +5,7 @@ const m = vi.hoisted(() => ({
   createAdmin: vi.fn(),
   auth: vi.fn(),
   rpc: vi.fn(),
+  adminRpc: vi.fn(),
   download: vi.fn(),
   events: [] as string[],
 }));
@@ -33,6 +34,7 @@ function request() {
 
 beforeEach(() => {
   m.events.length = 0;
+  m.adminRpc.mockClear();
   m.auth.mockResolvedValue({ data: { user: { id: 'po-user' } }, error: null });
   m.rpc.mockImplementation(async (name: string) => {
     m.events.push(name);
@@ -46,6 +48,7 @@ beforeEach(() => {
   });
   m.createSession.mockResolvedValue({ auth: { getUser: m.auth }, rpc: m.rpc });
   m.createAdmin.mockReturnValue({
+    rpc: m.adminRpc,
     storage: { from: () => ({ download: m.download }) },
   });
 });
@@ -108,11 +111,21 @@ describe('PO export HTTP download route', () => {
       'read_po_client_export_status',
       'record_po_export_retrieval',
       'storage.download',
-      'record_po_export_retrieval_failure',
     ]);
-    expect(m.rpc).toHaveBeenCalledWith('record_po_export_retrieval_failure', {
-      p_job_id: jobId,
-    });
+    expect(m.adminRpc).toHaveBeenCalledWith(
+      'record_po_export_retrieval_failure',
+      {
+        p_job_id: jobId,
+      },
+    );
+  });
+
+  it('does not record a failed retrieval when the admin client is unavailable', async () => {
+    m.createAdmin.mockReturnValueOnce(null);
+    const unavailable = await GET(request(), context);
+    expect(unavailable.status).toBe(503);
+    expect(m.download).not.toHaveBeenCalled();
+    expect(m.adminRpc).not.toHaveBeenCalled();
   });
 
   it('does not download expired jobs', async () => {
