@@ -330,6 +330,58 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
       }
     });
 
+    it('rounds workspace partitions independently and sums the parent from its children', async () => {
+      const secondWorkspaceId = '00000000-0000-0000-0000-000000000003';
+      const fractional = {
+        ...sampleBackendAggregate,
+        currency_totals: [
+          {
+            ...sampleBackendAggregate.currency_totals[0]!,
+            converted_egp_exact: '101',
+            converted_egp_minor: '101',
+          },
+        ],
+        workspaces: [wsId, secondWorkspaceId].map((workspace_id) => ({
+          ...sampleBackendAggregate.workspaces[0]!,
+          workspace_id,
+          converted_egp_exact: '50.5',
+          converted_egp_minor: '51',
+        })),
+      };
+      mocks.rpc.mockResolvedValueOnce({ data: fractional, error: null });
+      mocks.from.mockImplementation((table: string) => {
+        const q = queryBuilder(table);
+        if (table === 'workspaces') {
+          q.then = (resolve: (v: unknown) => unknown) =>
+            Promise.resolve({
+              data: [
+                ...workspacesData,
+                { id: secondWorkspaceId, name: 'Beta Fitness' },
+              ],
+              error: null,
+            }).then(resolve);
+        }
+        return q;
+      });
+
+      const res = await getPlatformAggregateReport({
+        monthStart: '2026-11-01',
+        breakdown: 'month',
+      });
+
+      expect(res.status).toBe('ok');
+      if (res.status === 'ok') {
+        expect(res.totals.revenueConvertedEgpMinor).toBe('102');
+        expect(
+          res.workspaceAggregates.reduce(
+            (sum, workspace) =>
+              sum + BigInt(workspace.revenueConvertedEgpMinor),
+            0n,
+          ),
+        ).toBe(102n);
+      }
+    });
+
     it('returns unavailable on missing RPC error without silent legacy fallback', async () => {
       mocks.rpc.mockResolvedValueOnce({
         data: null,
