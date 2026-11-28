@@ -31,6 +31,9 @@ export async function finalizeMonthAction(input: {
   if (result.status === 'finalized') {
     revalidatePath('/workforce/finalize');
     revalidatePath('/reports');
+    revalidatePath('/workforce/report');
+    revalidatePath('/workforce/sales-projection');
+    revalidatePath('/sales-projection');
   }
 
   return result;
