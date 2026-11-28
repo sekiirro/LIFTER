@@ -874,4 +874,24 @@ describe('Staff notice parser table-driven and fail-closed tests (B8, B13)', () 
     });
     expect(result.status).toBe('denied');
   });
+
+  it.each(['expiry_t3', 'expiry_t3_short_lead', 'expired'])(
+    'fails parsing closed to denied for rejected alias kind "%s" (S72-R59)',
+    (aliasKind) => {
+      const noticeWithAlias = {
+        notice_id: '11111111-1111-4111-8111-111111111111',
+        workspace_id: '22222222-2222-4222-8222-222222222222',
+        notice_kind: aliasKind,
+        source_key: '33333333-3333-4333-8333-333333333333',
+        created_at: '2026-11-27T10:00:00Z',
+        read_at: null,
+      };
+
+      const result = parseStaffNotices({
+        status: 'ok',
+        notices: [noticeWithAlias],
+      });
+      expect(result.status).toBe('denied');
+    },
+  );
 });
