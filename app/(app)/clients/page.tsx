@@ -65,14 +65,7 @@ export default async function ClientDirectoryPage({
   const renderFailure = (isExpiring = false) => (
     <main className={styles.main}>
       <h1>{m['staff.clientDirectory.title']}</h1>
-      <Alert
-        tone="error"
-        title={
-          isExpiring
-            ? m['staff.clientDirectory.expiring.loadError']
-            : m['states.error.title']
-        }
-      >
+      <Alert tone="error" title={m['states.error.title']}>
         <p>
           {isExpiring
             ? m['staff.clientDirectory.expiring.loadError']
@@ -273,10 +266,20 @@ export default async function ClientDirectoryPage({
               </p>
               {row.expiryBucket === 'expiring' && (
                 <p
-                  className={styles.meta}
+                  className={styles.expiryBadge}
                   data-testid="directory-expiring-badge"
                 >
                   <span>{m['staff.clientDirectory.expiring']}</span>
+                </p>
+              )}
+              {row.expiryBucket === 'expired' && (
+                <p
+                  className={styles.expiryBadge}
+                  data-testid="directory-expired-badge"
+                >
+                  <span>
+                    {m['staff.clientDirectory.subscriptionStatus.expired']}
+                  </span>
                 </p>
               )}
               {row.subscriptionStatus &&
