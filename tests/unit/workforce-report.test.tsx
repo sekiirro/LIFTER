@@ -369,6 +369,27 @@ describe('WorkforceReportView', () => {
     expect(html).toContain('عكس نقاط الاسترداد');
     expect(html).toContain('الشهر الأصلي: 2026-10-01');
   });
+
+  it('renders the ledger table wrapper as a named region with existing accessible name (S74-400-01)', () => {
+    const html = renderToStaticMarkup(
+      createElement(WorkforceReportView, {
+        report: sampleReport,
+        status: 'ok',
+        locale: 'en',
+        messages: enMessages,
+        currentMonth: '2026-11',
+      }),
+    );
+
+    const accessibleName = enMessages['workforce.report.ledger.title'];
+    expect(html).toContain('role="region"');
+    expect(html).toContain(`aria-label="${accessibleName}"`);
+    expect(html).toMatch(
+      new RegExp(
+        `<div[^>]*role="region"[^>]*aria-label="${accessibleName}"|<div[^>]*aria-label="${accessibleName}"[^>]*role="region"`,
+      ),
+    );
+  });
 });
 
 describe('WorkforceReportPage server route', () => {
