@@ -298,3 +298,9 @@ Scope: Greptile PR #98 round-2 blocking findings. Aligned the Analyze rule wordi
 ## S67 evidence-only refresh (2026-11-19; S67-R1)
 
 T022/T029/T030 ticked as delivered-historically and superseded; non-normative notes only beside FR-024, SC-013 and SC-019 in `spec.md`; no requirement wording change; 0 CRITICAL, 0 open HIGH; no open ambiguities remain. Date refresh only, not a re-Analyze.
+
+## S76 record-only refresh (2026-11-28; S76-R12)
+
+- Scope: a record-only note on FR-030 in `spec.md` cites the existing S67-R1 `:265` note on constitution 1.19.0. No FR, SC, acceptance, plan, task or requirement text changed. This is a date refresh for the spec-consistency date-order check, not a re-Analyze (S54 R6).
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for this documentation-only correction; no open ambiguities remain.

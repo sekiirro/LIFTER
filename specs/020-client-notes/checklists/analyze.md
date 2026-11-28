@@ -523,4 +523,4 @@ After the final spec numbering edit, rechecked GWT scenario numbering (1–4), F
 **Analysis date:** 2026-11-18, after appending the T007 implementation-head gate execution record to `traceability.md` and the T007 Status (S64) note to `tasks.md`.
 **Scope:** Task-status/traceability evidence refresh only. No FR, SC, acceptance, plan-design, copy, permission, retention, schema, or product-decision text changed; this lane made no code, migration, test, or hosted change.
 **Findings:** 0 open CRITICAL; 0 open HIGH.
-**Ambiguity status:** No open ambiguity; no PO decision is required. (The 004 README-gate sentence wording is a separate PO-DECISION-NEEDED recorded in the lane report, not a 020 ambiguity.)
+**Ambiguity status:** No open ambiguity; no PO decision is required. (The 004 README-gate sentence wording was decided by S64-PO-4: evidence recorded in `specs/004-auth/tasks.md:194` and `specs/004-auth/checklists/analyze.md:14`; it is not a 020 ambiguity and no longer pending.)

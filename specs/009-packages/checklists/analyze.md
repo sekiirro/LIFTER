@@ -404,3 +404,10 @@ This is a document-consistency Analyze. Runtime, mutation, CI and all-ref migrat
 - T032, T051, T063, and T071 are closed on the accepted SHA. T032 evidence records 8/8 independent quickstart section 4 mutant kills and a clean Stack C rerun; T051 is ACCEPTED by independent read-only review `s69-luna-009rev`; T063/T071 reconcile immutable history, four-category invariants, role/security matrices, and full FR-001..FR-036 / SC-001..SC-026 traceability.
 - T059 is the only unticked task and remains a pre-production provider terms-of-use gate per S65-R7.
 - Retained gates: ND-F9-2/3/5, BLOCKED-COPY, and S68-PO-3 F-1 accepted SAMA provenance residual risk. The documented Windows OpenNext edge symlink host note remains.
+
+## S76 record-only reconciliation (2026-11-28; S76-R12)
+
+**Analyzed:** 2026-11-28 UTC. Status/record-only refresh: stale line locators in `specs/009-packages/reviews/t065-conformance.md` and the T065/D10 notes in `tasks.md`, `traceability.md` and `t070-security-review.md` were reconciled with the S69-R13 acceptance. No FR, SC, acceptance scenario, PO decision, plan design or requirement text changed; no task checkbox changed (T065 remains unticked). This is a date refresh for the spec-consistency date-order check, not a re-Analyze (S54 R6).
+
+- Findings: 0 CRITICAL, 0 HIGH, 0 open PO-DECISION-NEEDED.
+- Verdict: PASS for this documentation-only correction.
