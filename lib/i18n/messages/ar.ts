@@ -1566,6 +1566,16 @@ export const ar = {
   'workforce.report.ledger.category.poAdjustment': 'تعديل مالك المنصة',
   'workforce.report.ledger.category.refundReversal': 'عكس نقاط الاسترداد',
   'workforce.report.ledger.column.points': 'النقاط',
+  'workforce.report.refund.questionTitle': 'استرداد كامل — فيه خطأ من الفريق؟',
+  'workforce.report.refund.questionBody':
+    'الاسترداد الكامل حصل بسبب خطأ من الفريق؟ السؤال ده بيظهر مرة واحدة للاسترداد الكامل بس.',
+  'workforce.report.refund.faultYes': 'أيوه',
+  'workforce.report.refund.faultNo': 'لا',
+  'workforce.report.refund.individualDeductions': 'خصومات نقاط فردية',
+  'workforce.report.refund.saved': 'اتسجلت مراجعة الاسترداد.',
+  'workforce.report.refund.duplicate': 'مراجعة الاسترداد دي متسجّلة خلاص.',
+  'workforce.report.refund.emptyQueue':
+    'مفيش طلبات استرداد فلوس في انتظار المراجعة.',
   'workforce.report.ledger.column.reason': 'السبب',
   'workforce.strike.correction.action': 'صحّح تأخير الخطة',
   'workforce.strike.correction.void': 'إلغي التأخير',
@@ -1703,6 +1713,8 @@ export const ar = {
   'workforce.payroll.employee': 'الموظف',
   'staff.notifications.title': 'الإشعارات',
   'staff.notifications.bellLabel': 'افتح الإشعارات',
+  'staff.notifications.bellLabelWithCount':
+    'افتح الإشعارات ({count} إشعار مش مقروء)',
   'staff.notifications.loading': 'جارٍ التحميل',
   'staff.notifications.empty': 'مفيش إشعارات جديدة.',
   'staff.notifications.error': 'تعذّر تحميل البيانات',
@@ -1718,6 +1730,9 @@ export const ar = {
   'staff.clientDirectory.expiring.empty': 'مفيش عملاء مطابقين للفلتر ده',
   'staff.clientDirectory.expiring.loadError':
     'مقدرناش نحمل القائمة. حاول تاني.',
+  'staff.clientDirectory.previousPage': 'الصفحة السابقة',
+  'staff.clientDirectory.nextPage': 'الصفحة التالية',
+  'staff.clientDirectory.paginationLabel': 'صفحات العملاء',
   'workforce.finalize.title': 'اعتماد الشهر',
   'workforce.finalize.selectMonth': 'اختار شهر خلص (بتوقيت القاهرة)',
   'workforce.finalize.closedHint': 'الشهر اللي خلص بس هو اللي يتعتمد.',

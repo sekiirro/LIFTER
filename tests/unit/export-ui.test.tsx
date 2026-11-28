@@ -411,7 +411,7 @@ describe('spec 030 interactive ExportSection behavior', () => {
     expect(getClientExportStatus).not.toHaveBeenCalled();
   });
 
-  it('shows error on failure and reuses the exact same idempotency key on retry', async () => {
+  it('shows error on failure and creates a new idempotency key on retry (CR-030-03)', async () => {
     vi.mocked(requestClientExport).mockResolvedValueOnce({
       status: 'queued',
       jobId: 'job-003',
@@ -460,7 +460,116 @@ describe('spec 030 interactive ExportSection behavior', () => {
 
     expect(firstCallKey).toBeDefined();
     expect(secondCallKey).toBeDefined();
-    expect(secondCallKey).toBe(firstCallKey);
+    // CR-030-03: a retry after a terminal failure is a new request and must
+    // create a new job/archive (S71-R29), not replay the consumed key.
+    expect(secondCallKey).not.toBe(firstCallKey);
+  });
+
+  it('reuses the idempotency key when a rejected request is retried (S74-412-01)', async () => {
+    vi.mocked(requestClientExport).mockRejectedValueOnce(
+      new Error('network unavailable'),
+    );
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    const retryBtn = container.querySelector(
+      '[data-testid="retry-button"]',
+    ) as HTMLButtonElement;
+    expect(retryBtn).not.toBeNull();
+
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-transport-retry',
+    });
+    await act(async () => {
+      retryBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(2);
+    const [firstCall, secondCall] = vi.mocked(requestClientExport).mock.calls;
+    expect(firstCall?.[1]).toBeDefined();
+    // The server may already have enqueued the job despite the lost response.
+    expect(secondCall?.[1]).toBe(firstCall?.[1]);
+  });
+
+  it('reuses the key after a client-side error status with no jobId (S74-412-01)', async () => {
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'error',
+      jobId: null,
+    });
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      submitBtn.click();
+    });
+
+    const retryBtn = container.querySelector(
+      '[data-testid="retry-button"]',
+    ) as HTMLButtonElement;
+    expect(retryBtn).not.toBeNull();
+
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-error-retry',
+    });
+    await act(async () => {
+      retryBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(2);
+    const [firstCall, secondCall] = vi.mocked(requestClientExport).mock.calls;
+    expect(firstCall?.[1]).toBeDefined();
+    expect(secondCall?.[1]).toBe(firstCall?.[1]);
+  });
+
+  it('creates a new key after an expired terminal status (S74-412-01)', async () => {
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-expired',
+    });
+    vi.mocked(getClientExportStatus).mockResolvedValueOnce({
+      status: 'expired',
+    });
+
+    await renderInteractive('en');
+    const submitBtn = container.querySelector(
+      '[data-testid="export-action"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      submitBtn.click();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    expect(container.textContent).toContain('Expired');
+    const retryBtn = container.querySelector(
+      '[data-testid="retry-button"]',
+    ) as HTMLButtonElement;
+    expect(retryBtn).not.toBeNull();
+
+    vi.mocked(requestClientExport).mockResolvedValueOnce({
+      status: 'queued',
+      jobId: 'job-expired-retry',
+    });
+    await act(async () => {
+      retryBtn.click();
+    });
+
+    expect(requestClientExport).toHaveBeenCalledTimes(2);
+    const [firstCall, secondCall] = vi.mocked(requestClientExport).mock.calls;
+    expect(firstCall?.[1]).toBeDefined();
+    expect(secondCall?.[1]).toBeDefined();
+    expect(secondCall?.[1]).not.toBe(firstCall?.[1]);
   });
 
   it('protects against duplicate in-flight requests on rapid double-click', async () => {

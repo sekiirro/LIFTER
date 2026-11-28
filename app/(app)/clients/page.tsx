@@ -364,14 +364,14 @@ export default async function ClientDirectoryPage({
       {(query.page > 1 || result.hasMore) && (
         <nav
           className={styles.pager}
-          aria-label={m['staff.clientDirectory.title']}
+          aria-label={m['staff.clientDirectory.paginationLabel']}
         >
           {query.page > 1 && (
             <Link
               className={styles.link}
               href={directoryHref(workspaceId, query, query.page - 1)}
             >
-              {m['button.secondary']}
+              {m['staff.clientDirectory.previousPage']}
             </Link>
           )}
           {result.hasMore && (
@@ -379,7 +379,7 @@ export default async function ClientDirectoryPage({
               className={styles.link}
               href={directoryHref(workspaceId, query, query.page + 1)}
             >
-              {m['button.primary']}
+              {m['staff.clientDirectory.nextPage']}
             </Link>
           )}
         </nav>

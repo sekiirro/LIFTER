@@ -12,6 +12,14 @@ import type {
 } from '../../lib/workforce/manual-points';
 import type { WorkforceReportData } from '../../lib/workforce/report-types';
 
+vi.mock('../../app/(app)/workforce/report/refund-fault-actions', () => ({
+  listOpenRefundFaultReviewsAction: vi.fn().mockResolvedValue({
+    status: 'ok',
+    reviews: [],
+  }),
+  resolveRefundFaultReviewAction: vi.fn().mockResolvedValue({ status: 'ok' }),
+}));
+
 const workspaceId = '00000000-0000-4000-8000-000000000001';
 const trainerId = '11111111-1111-4000-8000-111111111111';
 const salesId = '22222222-2222-4000-8000-222222222222';

@@ -201,6 +201,8 @@ export type WorkspaceDrilldownResult =
       workspaceName: string;
       rows: DrilldownSourceRow[];
       totals: PlatformMetricTotals;
+      hasMore: boolean;
+      nextCursor: { recorded_at: string; event_id: string } | null;
     }
   | ReportDenied
   | ReportUnavailable;
@@ -341,9 +343,11 @@ export async function getPlatformAggregateReport(params: {
   }
 
   let totalRevenueMinor = 0n;
-  for (const ct of payload.currency_totals ?? []) {
-    if (ct.converted_egp_minor) {
-      totalRevenueMinor += BigInt(ct.converted_egp_minor);
+  // Workspace rows are the immediate children shown in this report. Sum them
+  // to keep the platform total reconcilable after partition-level rounding.
+  for (const workspace of payload.workspaces ?? []) {
+    if (workspace.converted_egp_minor) {
+      totalRevenueMinor += BigInt(workspace.converted_egp_minor);
     }
   }
 
@@ -478,6 +482,7 @@ export async function getPlatformAggregateReport(params: {
 export async function getWorkspaceDrilldownRows(params: {
   workspaceId: string;
   monthStart: string;
+  cursor?: { recorded_at: string; event_id: string } | null;
 }): Promise<WorkspaceDrilldownResult> {
   const access = await platformOwnerClient();
   if (access.status !== 'ok') return access;
@@ -493,8 +498,8 @@ export async function getWorkspaceDrilldownRows(params: {
       p_month_start: normalizedMonthStart,
       p_package_id: null,
       p_page_size: 50,
-      p_cursor_recorded_at: null,
-      p_cursor_event_id: null,
+      p_cursor_recorded_at: params.cursor?.recorded_at ?? null,
+      p_cursor_event_id: params.cursor?.event_id ?? null,
     }),
     access.client.rpc('po_reporting_aggregate', {
       p_workspace_id: params.workspaceId,
@@ -583,6 +588,8 @@ export async function getWorkspaceDrilldownRows(params: {
     workspaceId: params.workspaceId,
     workspaceName,
     rows,
+    hasMore: payload.has_more,
+    nextCursor: payload.next_cursor,
     totals: {
       revenueConvertedEgpMinor,
       subscriptionCount,

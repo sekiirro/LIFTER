@@ -1617,6 +1617,16 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.report.ledger.category.poAdjustment': 'PO adjustment',
   'workforce.report.ledger.category.refundReversal': 'Refund reversal',
   'workforce.report.ledger.column.points': 'Points',
+  'workforce.report.refund.questionTitle': 'Full refund — staff fault?',
+  'workforce.report.refund.questionBody':
+    'Was this full refund caused by staff fault? This is asked once per full refund only.',
+  'workforce.report.refund.faultYes': 'Yes',
+  'workforce.report.refund.faultNo': 'No',
+  'workforce.report.refund.individualDeductions': 'Individual point deductions',
+  'workforce.report.refund.saved': 'Refund review recorded.',
+  'workforce.report.refund.duplicate':
+    'This refund review was already recorded.',
+  'workforce.report.refund.emptyQueue': 'No refund reviews are waiting.',
   'workforce.report.ledger.column.reason': 'Reason',
   'workforce.strike.correction.action': 'Correct strike',
   'workforce.strike.correction.void': 'Void strike',
@@ -1770,6 +1780,8 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.payroll.employee': 'Employee',
   'staff.notifications.title': 'Notifications',
   'staff.notifications.bellLabel': 'Open notifications',
+  'staff.notifications.bellLabelWithCount':
+    'Open notifications ({count} unread)',
   'staff.notifications.loading': 'Loading',
   'staff.notifications.empty': 'You are all caught up.',
   'staff.notifications.error': 'Unable to load data',
@@ -1787,6 +1799,9 @@ export const en: Record<keyof typeof ar, string> = {
   'staff.clientDirectory.expiring.empty': 'No clients match this filter',
   'staff.clientDirectory.expiring.loadError':
     "We couldn't load this list. Try again.",
+  'staff.clientDirectory.previousPage': 'Previous page',
+  'staff.clientDirectory.nextPage': 'Next page',
+  'staff.clientDirectory.paginationLabel': 'Clients pagination',
   'workforce.finalize.title': 'Finalize month',
   'workforce.finalize.selectMonth':
     'Select a month that has ended (Cairo time)',
