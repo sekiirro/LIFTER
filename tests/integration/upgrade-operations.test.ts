@@ -294,7 +294,11 @@ it('T048 refuses an upgrade with an unsettled installment before any writes', as
       upgrade_confirmed: true,
     });
 
-    expect(result.status).not.toBe('ok');
+    // S65-246: the settlement guard returns exactly 'invalid_input'
+    // (record_subscription_upgrade, latest definition in
+    // 20261112175511_f13_review_integrity_corrections.sql) — assert the
+    // code, not merely a non-ok status.
+    expect(result.status).toBe('invalid_input');
     const [after] = await tx`
       select
         (select to_jsonb(s) from public.subscriptions s where s.id=${purchase.sid}) as subscription,
@@ -355,7 +359,11 @@ it('T048 refuses an upgrade while a payment remains pending after locking', asyn
       upgrade_confirmed: true,
     });
 
-    expect(result.status).not.toBe('ok');
+    // S65-246: the settlement guard returns exactly 'invalid_input'
+    // (record_subscription_upgrade, latest definition in
+    // 20261112175511_f13_review_integrity_corrections.sql) — assert the
+    // code, not merely a non-ok status.
+    expect(result.status).toBe('invalid_input');
     const [after] = await tx`
       select
         (select to_jsonb(s) from public.subscriptions s where s.id=${purchase.sid}) as subscription,

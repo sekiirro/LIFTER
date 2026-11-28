@@ -1349,8 +1349,17 @@ describe.skipIf(!LOCAL_HOOK_TESTS)('staff-reset-link (T040)', () => {
 describe.skipIf(!LOCAL_HOOK_TESTS)('staff-reset-delivery-cap (T038b)', () => {
   it('returns generic confirmation on the third request without another delivery', async () => {
     const approved = await ensureApprovedResetStaff();
+    // PR #305: seed the 2 prior deliveries inside this test so it
+    // passes alone and in the full file — previously it relied on T040's
+    // emails still being in Mailpit and its accepted claims still being
+    // inside the 1-hour delivery window.
+    await resetHookRequests();
     const messagesBefore = await capturedMessageCount();
-    expect(messagesBefore).toBeGreaterThanOrEqual(2);
+    expect(await appReset(approved.email)).toEqual({ status: 'ok' });
+    // Same 1.1s gap T040 uses between consecutive reset requests.
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    expect(await appReset(approved.email)).toEqual({ status: 'ok' });
+    expect(await capturedMessageCount()).toBe(messagesBefore + 2);
     const thirdOutcome = await claimHookRequest(
       approved.email,
       approved.userId,
@@ -1359,8 +1368,8 @@ describe.skipIf(!LOCAL_HOOK_TESTS)('staff-reset-delivery-cap (T038b)', () => {
     );
     expect(thirdOutcome).toBe('delivery_limited');
     expect(await appReset(approved.email)).toEqual({ status: 'ok' });
-    expect(await capturedMessageCount()).toBe(messagesBefore);
-  });
+    expect(await capturedMessageCount()).toBe(messagesBefore + 2);
+  }, 120_000);
 });
 
 describe('staff-reset-sessions (T049e)', () => {
