@@ -1774,4 +1774,7 @@ export const ar = {
   'workforce.salesProjection.loadError':
     'مش عارفين نحمّل إجمالي الشهر. حاول تاني.',
   'workforce.salesProjection.denied': 'مش مسموح لك تشوف الإجمالي ده.',
+  'workforce.salesProjection.aria.total': 'إجماليك المعتمد للشهر',
+  'workforce.salesProjection.notAvailableUntilNextMonth':
+    'إجمالي نقاط الحافز بتاعك مش متاحه لسه ، هتبقي متاحه أول الشهر الجاي لما نعتمدها',
 } as const;

@@ -3,7 +3,10 @@ import { requireActor } from '../../../../lib/auth/actor';
 import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
 import { getMessages } from '../../../../lib/i18n';
 import { ToastProvider } from '../../../../components/ui/Toast';
-import { readSalesMonthlyTotal } from '../../../../lib/workforce/sales-projection';
+import {
+  readOwnBasicSalary,
+  readSalesMonthlyTotal,
+} from '../../../../lib/workforce/sales-projection';
 import {
   SalesMonthlyTotalView,
   type SalesProjectionState,
@@ -79,7 +82,22 @@ export default async function SalesMonthlyTotalPage({
     month,
   });
 
-  const status: SalesProjectionState = result.status;
+  let status: SalesProjectionState = result.status;
+  let ownBasicSalary: { amount: string; currency: string } | undefined;
+  if (status === 'not_available') {
+    const compensation = await readOwnBasicSalary({
+      employeeId: actor.userId,
+      month: result.month ?? month,
+    });
+    if (compensation.status === 'denied') status = 'denied';
+    else if (compensation.status === 'error') status = 'error';
+    else if (compensation.amount && compensation.currency) {
+      ownBasicSalary = {
+        amount: compensation.amount,
+        currency: compensation.currency,
+      };
+    }
+  }
 
   return (
     <ToastProvider dismissLabel={messages['toast.dismiss']}>
@@ -89,6 +107,7 @@ export default async function SalesMonthlyTotalPage({
         month={result.month ?? month}
         status={status}
         total={result.total}
+        ownBasicSalary={ownBasicSalary}
       />
     </ToastProvider>
   );

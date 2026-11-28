@@ -122,6 +122,21 @@
   max-inline-size: 400px;
 }
 
+.ownBasicSalary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding-block: var(--space-2);
+}
+
+.salaryAmount {
+  color: var(--color-text);
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .loadingContainer {
   display: flex;
   flex-direction: column;

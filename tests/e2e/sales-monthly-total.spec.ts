@@ -184,8 +184,13 @@ test.describe('P7 T025 Sales My Monthly Total UI', () => {
       page.getByText(enMessages['workforce.salesProjection.notAvailable']),
     ).toBeVisible();
     await expect(
-      page.getByText(enMessages['workforce.salesProjection.notAvailableHint']),
+      page.getByText(
+        enMessages['workforce.salesProjection.notAvailableUntilNextMonth'],
+      ),
     ).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(
+      enMessages['workforce.salesProjection.notAvailableHint'],
+    );
     await expect(
       page.getByTestId('sales-projection-not-available'),
     ).toBeVisible();

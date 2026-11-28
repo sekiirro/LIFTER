@@ -1847,4 +1847,7 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.salesProjection.loadError':
     'Unable to load your monthly total. Try again.',
   'workforce.salesProjection.denied': 'You cannot view this total.',
+  'workforce.salesProjection.aria.total': 'Your finalized monthly total',
+  'workforce.salesProjection.notAvailableUntilNextMonth':
+    "Your KPI points total isn't available yet. It will be available at the start of next month, once it's finalized.",
 };
