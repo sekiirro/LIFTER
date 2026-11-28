@@ -3588,7 +3588,7 @@ describe('P7 T017/T026/T027 payroll security catalog', () => {
       prosecdef: true,
       owner: 'postgres',
       authenticated: true,
-      anon: true,
+      anon: false,
       service_role: false,
     });
     expect(privilege?.proconfig).toContain('search_path=""');
