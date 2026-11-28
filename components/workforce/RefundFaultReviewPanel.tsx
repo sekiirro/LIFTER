@@ -212,7 +212,9 @@ export function RefundFaultReviewPanel({
             return (
               <fieldset className={styles.review} key={review.review_id}>
                 <legend className={styles.reviewTitle}>
-                  <Bidi dir="ltr">{review.purchase_id}</Bidi>
+                  <span className={styles.purchaseId}>
+                    <Bidi dir="ltr">{review.purchase_id}</Bidi>
+                  </span>
                 </legend>
                 <p className={styles.body}>
                   {m['workforce.report.refund.questionBody']}

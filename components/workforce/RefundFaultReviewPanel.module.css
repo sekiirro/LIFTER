@@ -45,6 +45,13 @@
   overflow-wrap: anywhere;
 }
 
+.purchaseId {
+  unicode-bidi: isolate;
+  direction: ltr;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
 .body,
 .meta,
 .opened {
