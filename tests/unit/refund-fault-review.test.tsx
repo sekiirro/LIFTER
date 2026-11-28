@@ -14,6 +14,7 @@ import {
 } from '../../app/(app)/workforce/report/refund-fault-actions';
 import { RefundFaultReviewPanel } from '../../components/workforce/RefundFaultReviewPanel';
 import { getMessages } from '../../lib/i18n';
+import { formatCairoDateTime } from '../../lib/i18n/format';
 import type { StaffTotal } from '../../lib/workforce/report-types';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -106,6 +107,41 @@ describe('refund-fault review panel', () => {
       );
     },
   );
+
+  it('isolates the purchase id LTR and formats opened_at in Cairo time in AR', async () => {
+    vi.mocked(listOpenRefundFaultReviewsAction).mockResolvedValue({
+      status: 'ok',
+      reviews: [review],
+    });
+    await render('ar');
+    await settle();
+
+    expect(host?.querySelector('section')?.getAttribute('dir')).toBe('rtl');
+    const isolatedId = host?.querySelector('legend bdi[dir="ltr"]');
+    expect(isolatedId?.textContent).toBe(review.purchase_id);
+    expect(host?.textContent).toContain(
+      formatCairoDateTime(review.opened_at, 'ar'),
+    );
+    expect(host?.textContent).not.toContain(review.opened_at);
+  });
+
+  it('keeps the EN opened_at formatting and copy unchanged', async () => {
+    vi.mocked(listOpenRefundFaultReviewsAction).mockResolvedValue({
+      status: 'ok',
+      reviews: [review],
+    });
+    await render('en');
+    await settle();
+
+    expect(host?.textContent).toContain(
+      getMessages('en')['workforce.report.refund.questionTitle'],
+    );
+    expect(host?.textContent).toContain('Nov 27, 2026, 12:00');
+    expect(host?.textContent).not.toContain(review.opened_at);
+    expect(host?.querySelector('legend bdi[dir="ltr"]')?.textContent).toBe(
+      review.purchase_id,
+    );
+  });
 
   it.each(['en', 'ar'] as const)(
     'renders the approved empty refund queue in %s',
