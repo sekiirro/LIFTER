@@ -121,6 +121,10 @@ export type DrilldownData = {
     clientCount: number;
     pendingFxCount?: number;
   };
+  hasMore?: boolean;
+  nextCursor?: { recorded_at: string; event_id: string } | null;
+  currentCursor?: { recorded_at: string; event_id: string } | null;
+  cursorHistory?: ({ recorded_at: string; event_id: string } | null)[];
 };
 
 export function packageLabel(item: ReportPackage | null, locale: 'ar' | 'en') {
@@ -299,6 +303,8 @@ export function ReportsView({
     workspace?: string;
     breakdown?: string;
     drilldown?: string;
+    cursor?: { recorded_at: string; event_id: string } | null;
+    cursorHistory?: ({ recorded_at: string; event_id: string } | null)[];
   }) {
     const query = new URLSearchParams();
     query.set('month', next.month !== undefined ? next.month : month);
@@ -312,7 +318,51 @@ export function ReportsView({
     } else if (drilldownData?.workspaceId) {
       query.set('drilldown', drilldownData.workspaceId);
     }
+    if (next.cursor !== undefined) {
+      if (next.cursor) {
+        query.set('cursor_recorded_at', next.cursor.recorded_at);
+        query.set('cursor_event_id', next.cursor.event_id);
+      }
+    } else if (drilldownData?.currentCursor && next.drilldown === undefined) {
+      query.set('cursor_recorded_at', drilldownData.currentCursor.recorded_at);
+      query.set('cursor_event_id', drilldownData.currentCursor.event_id);
+    }
+    if (next.cursorHistory !== undefined) {
+      if (next.cursorHistory.length > 0) {
+        query.set('cursor_history', JSON.stringify(next.cursorHistory));
+      }
+    } else if (
+      drilldownData?.cursorHistory &&
+      drilldownData.cursorHistory.length > 0 &&
+      next.drilldown === undefined
+    ) {
+      query.set('cursor_history', JSON.stringify(drilldownData.cursorHistory));
+    }
     router.push(`/reports?${query.toString()}`);
+  }
+
+  const currentCursor = drilldownData?.currentCursor ?? null;
+  const cursorHistory = drilldownData?.cursorHistory ?? [];
+  const hasPrevious = cursorHistory.length > 0;
+  const hasNext = Boolean(drilldownData?.hasMore && drilldownData?.nextCursor);
+
+  function handleNextPage() {
+    if (!drilldownData?.nextCursor || !drilldownData.hasMore) return;
+    const newHistory = [...cursorHistory, currentCursor];
+    navigate({
+      cursor: drilldownData.nextCursor,
+      cursorHistory: newHistory,
+    });
+  }
+
+  function handlePreviousPage() {
+    if (cursorHistory.length === 0) return;
+    const previousCursor = cursorHistory[cursorHistory.length - 1];
+    const newHistory = cursorHistory.slice(0, -1);
+    navigate({
+      cursor: previousCursor,
+      cursorHistory: newHistory,
+    });
   }
 
   const columns = {
@@ -534,6 +584,25 @@ export function ReportsView({
                   />
                 </span>
               </footer>
+              <nav
+                className={styles.pager}
+                aria-label={m['reports.drilldown.paginationLabel']}
+              >
+                <Button
+                  variant="secondary"
+                  disabled={!hasPrevious}
+                  onClick={handlePreviousPage}
+                >
+                  {m['reports.drilldown.previousPage']}
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={!hasNext}
+                  onClick={handleNextPage}
+                >
+                  {m['reports.drilldown.nextPage']}
+                </Button>
+              </nav>
             </>
           )}
         </section>

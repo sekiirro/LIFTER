@@ -49,6 +49,9 @@ export const ar = {
   'reports.column.kind': 'النوع',
   'reports.column.status': 'الحالة',
   'reports.drilldown.sourceRows.empty': 'مفيش سجلات لمساحة العمل دي.',
+  'reports.drilldown.previousPage': 'الصفحة السابقة',
+  'reports.drilldown.nextPage': 'الصفحة التالية',
+  'reports.drilldown.paginationLabel': 'صفحات التقارير',
   // spec 023 client progress coaching (S55-PO-10 approved copy)
   'progress.title': 'التقدم',
   'progress.measurements.title': 'القياسات',

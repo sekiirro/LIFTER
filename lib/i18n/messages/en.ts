@@ -56,6 +56,9 @@ export const en: Record<keyof typeof ar, string> = {
   'reports.column.status': 'Status',
   'reports.drilldown.sourceRows.empty':
     'No source rows found for this workspace.',
+  'reports.drilldown.previousPage': 'Previous page',
+  'reports.drilldown.nextPage': 'Next page',
+  'reports.drilldown.paginationLabel': 'Reports pagination',
   // spec 023 client progress coaching (S55-PO-10 approved copy)
   'progress.title': 'Progress',
   'progress.measurements.title': 'Measurements',
