@@ -618,6 +618,49 @@ describe('PO export authorization RED (T001-T003)', () => {
     await svc.storage.from('po-export-artifacts').remove([objectPath]);
   });
 
+  it('records the existing failed outcome when storage delivery cannot be completed (NB-030-04)', async () => {
+    const id = randomUUID();
+    const objectPath = `${id}/archive.csv`;
+    await db`
+      insert into public.jobs(id,kind,workspace_id,payload,idempotency_key,status,finished_at)
+      values(${id},'po.export',${f.wsA.id},${db.json({
+        actor_user_id: f.po.userId,
+        scope_workspace_id: f.wsA.id,
+        artifact_path: objectPath,
+        manifest_version: '030-v1',
+        generated_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+      })},${`po-export-failure-audit-${id}`},'done',now())
+    `;
+    const denied = await f.woA.client.rpc(
+      'record_po_export_retrieval_failure',
+      {
+        p_job_id: id,
+      },
+    );
+    expect(denied.data).toBeNull();
+    expect(denied.error?.code).toBe('42501');
+
+    const failure = await f.po.client.rpc(
+      'record_po_export_retrieval_failure',
+      {
+        p_job_id: id,
+      },
+    );
+    expect(failure.error).toBeNull();
+    const audit = await db`
+      select action,actor_user_id,workspace_id,details from public.audit_events
+      where target_id=${id} and action='po_export.retrieved'
+    `;
+    expect(audit).toHaveLength(1);
+    expect(audit[0]).toMatchObject({
+      actor_user_id: f.po.userId,
+      workspace_id: f.wsA.id,
+      details: { outcome: 'failed', manifest_version: '030-v1' },
+    });
+    expect(JSON.stringify(audit)).not.toContain('archive.csv');
+  });
+
   it('NULL expires_at fails closed on retrieval: expired status and no retrieval audit (CR-030-01)', async () => {
     const id = randomUUID();
     const objectPath = `${id}/archive.csv`;
