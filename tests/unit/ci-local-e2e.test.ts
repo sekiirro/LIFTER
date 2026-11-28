@@ -14,6 +14,11 @@ const INTEGRATION_SHARD_RUN =
   /^ {8}run: npm run test:integration -- --shard=\$\{\{ matrix\.shard \}\}\/3 --reporter=json --outputFile="\$RUNNER_TEMP\/vitest-report\.json"$/m;
 const E2E_SHARD_RUN =
   'npm run e2e -- --shard=${{ matrix.shard }}/3 --workers=1 --reporter=json';
+// These proofs launch real Node/Bash processes; the default 5s budget is too
+// short on Windows when the full unit suite runs in parallel.
+const PROCESS_TEST_TIMEOUT_MS = 30_000;
+const test = (name: string, run: () => void) =>
+  it(name, run, PROCESS_TEST_TIMEOUT_MS);
 
 function workflowText(): string {
   return readFileSync('.github/workflows/ci.yml', 'utf8');
@@ -247,7 +252,7 @@ function coverageScript(): string {
   return script.replace(/^ {10}/gm, '');
 }
 
-it('executes the sharded coverage proof against tampered reports', () => {
+test('executes the sharded coverage proof against tampered reports', () => {
   const script = coverageScript();
 
   const cases: Array<{
@@ -462,7 +467,7 @@ it('runs full CI outside pull-request docs-only changes and keeps dispatch jobs 
   );
 });
 
-it('executes the integration aggregator script against push and PR revision cases', () => {
+test('executes the integration aggregator script against push and PR revision cases', () => {
   const workflowPath =
     process.env.CI_WORKFLOW_FILE ?? '.github/workflows/ci.yml';
   const workflow = readFileSync(workflowPath, 'utf8');

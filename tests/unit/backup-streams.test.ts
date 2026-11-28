@@ -30,9 +30,22 @@ it('times out a sleeping Node process and terminates it', async () => {
       {
         timeoutMs: 2000,
         output: async (stream) => {
-          let output = '';
-          for await (const chunk of stream) output += chunk.toString();
-          pids.push(...output.trim().split(/\s+/).filter(Boolean).map(Number));
+          // Timeout teardown destroys stdout before the async iterator closes.
+          // Record each complete PID line as it arrives instead of waiting for EOF.
+          let pending = '';
+          const recordLine = (line: string) => {
+            pids.push(...line.trim().split(/\s+/).filter(Boolean).map(Number));
+          };
+          for await (const chunk of stream) {
+            pending += chunk.toString();
+            let newline = pending.indexOf('\n');
+            while (newline !== -1) {
+              recordLine(pending.slice(0, newline));
+              pending = pending.slice(newline + 1);
+              newline = pending.indexOf('\n');
+            }
+          }
+          recordLine(pending);
         },
       },
     ),
