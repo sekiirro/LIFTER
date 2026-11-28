@@ -63,7 +63,7 @@ async function renderPage(searchParams: Record<string, string> = {}) {
   return renderToStaticMarkup(element).replace(/&#x27;/g, "'");
 }
 
-describe('clients directory expiry badges (S73-UIQA-F08/F09/F10)', () => {
+describe('clients directory expiry badges (S73-UIQA-F08/F09/F10/F10b)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.actor.mockResolvedValue({
@@ -129,6 +129,41 @@ describe('clients directory expiry badges (S73-UIQA-F08/F09/F10)', () => {
       /<p[^>]*data-testid="directory-expired-badge"[^>]*>/,
     );
     expect(badge?.[0]).toContain('expiryBadge');
+  });
+
+  it('shows only the badge for an expired row, no duplicate status line', async () => {
+    mocks.directory.mockResolvedValue({
+      status: 'ok',
+      rows: [
+        directoryRow({
+          expiryBucket: 'expired',
+          subscriptionStatus: 'expired',
+        }),
+      ],
+      hasMore: false,
+    });
+    const html = await renderPage();
+    expect(html).toContain('data-testid="directory-expired-badge"');
+    expect(html.split('data-testid="directory-expired-badge"').length - 1).toBe(
+      1,
+    );
+    expect(html).not.toContain('data-testid="directory-subscription-status"');
+    // Within the results list, "Expired" appears exactly once (the badge);
+    // the filter <select> also has an "Expired" option, so count list-only.
+    const resultsStart = html.indexOf('data-testid="client-directory-results"');
+    const results = resultsStart === -1 ? '' : html.slice(resultsStart);
+    expect(results.split('Expired').length - 1).toBe(1);
+  });
+
+  it('keeps the status line for an active row', async () => {
+    mocks.directory.mockResolvedValue({
+      status: 'ok',
+      rows: [directoryRow()],
+      hasMore: false,
+    });
+    const html = await renderPage();
+    expect(html).toContain('data-testid="directory-subscription-status"');
+    expect(html).not.toContain('data-testid="directory-expired-badge"');
   });
 
   it('shows a different title and body when the expiring filter load fails', async () => {
