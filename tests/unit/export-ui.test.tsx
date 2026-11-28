@@ -119,6 +119,7 @@ describe('spec 030 export status rendering', () => {
     expect(ready).toContain('Ready');
     expect(ready).toContain('Download export');
     expect(ready).toContain('href="/api/reports/po-export/job-1"');
+    expect(ready).toMatch(/<a[^>]*\sdownload(="")?[\s>]/);
     expect(ready).toContain('Download links expire shortly after generation');
     expect(ready).not.toContain('http');
     expect(ready).not.toContain('token');
@@ -139,6 +140,7 @@ describe('spec 030 export status rendering', () => {
 
   it('renders the empty scope state', () => {
     expect(panel('empty')).toContain('No client data matches this scope');
+    expect(panel('empty')).toContain('role="status"');
     expect(panel('empty')).not.toContain('Download export');
   });
 
@@ -398,6 +400,7 @@ describe('spec 030 interactive ExportSection behavior', () => {
     expect(downloadLink.getAttribute('href')).toBe(
       '/api/reports/po-export/job-002',
     );
+    expect(downloadLink.hasAttribute('download')).toBe(true);
     expect(downloadLink.textContent).toBe('Download export');
 
     // Verify polling stopped: advancing timer further does not call getClientExportStatus again
