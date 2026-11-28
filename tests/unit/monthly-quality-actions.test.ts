@@ -32,7 +32,7 @@ const revision = {
   id: '33333333-3333-3333-3333-333333333333',
   workspace_id: workspaceId,
   trainer_id: trainerId,
-  month: '2026-11-01',
+  month: '2026-11',
   category: 'feedback',
   revision: 2,
   positive_count: 4,
@@ -111,7 +111,7 @@ describe('Monthly quality server action and existing RPC boundary', () => {
       'get_monthly_quality_effective',
       {
         p_workspace_id: workspaceId,
-        p_month: '2026-11-01',
+        p_month: '2026-11',
         p_trainer_id: null,
         p_category: null,
       },
@@ -121,7 +121,7 @@ describe('Monthly quality server action and existing RPC boundary', () => {
       'get_monthly_quality_revisions',
       {
         p_workspace_id: workspaceId,
-        p_month: '2026-11-01',
+        p_month: '2026-11',
         p_trainer_id: null,
         p_category: null,
       },
@@ -149,7 +149,7 @@ describe('Monthly quality server action and existing RPC boundary', () => {
     expect(mocks.rpc).toHaveBeenCalledWith('record_monthly_quality', {
       p_workspace_id: workspaceId,
       p_trainer_id: trainerId,
-      p_month: '2026-11-01',
+      p_month: '2026-11',
       p_category: 'feedback',
       p_positive_count: 4,
       p_negative_count: 1,

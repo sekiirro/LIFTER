@@ -139,6 +139,7 @@ export type PlatformMetricTotals = {
   revenueConvertedEgpMinor: string;
   subscriptionCount: number;
   clientCount: number;
+  pendingFxCount?: number;
 };
 
 export type PlatformBreakdownRow = {
@@ -148,6 +149,7 @@ export type PlatformBreakdownRow = {
   revenueConvertedEgpMinor: string;
   subscriptionCount: number;
   clientCount: number;
+  pendingFxCount?: number;
 };
 
 export type WorkspaceAggregateRow = {
@@ -156,6 +158,7 @@ export type WorkspaceAggregateRow = {
   revenueConvertedEgpMinor: string;
   subscriptionCount: number;
   clientCount: number;
+  pendingFxCount?: number;
 };
 
 export type PlatformAggregateReportResult =
@@ -343,11 +346,19 @@ export async function getPlatformAggregateReport(params: {
   }
 
   let totalRevenueMinor = 0n;
-  // Workspace rows are the immediate children shown in this report. Sum them
-  // to keep the platform total reconcilable after partition-level rounding.
+  let totalPendingFx = 0;
+  // Platform revenue total = sum of the rounded WORKSPACE partitions
+  // (CR-029-05, #417) so it reconciles with the displayed workspace rows.
   for (const workspace of payload.workspaces ?? []) {
     if (workspace.converted_egp_minor) {
       totalRevenueMinor += BigInt(workspace.converted_egp_minor);
+    }
+  }
+  // pendingFxCount is computed from the CURRENCY partitions (#413).
+  for (const ct of payload.currency_totals ?? []) {
+    if (ct.converted_egp_minor == null || (ct.pending_fx_count ?? 0) > 0) {
+      totalPendingFx +=
+        (ct.pending_fx_count ?? 0) > 0 ? (ct.pending_fx_count ?? 0) : 1;
     }
   }
 
@@ -355,6 +366,7 @@ export async function getPlatformAggregateReport(params: {
     revenueConvertedEgpMinor: totalRevenueMinor.toString(),
     subscriptionCount: Number(payload.counts?.distinct_subscriptions ?? 0),
     clientCount: Number(payload.counts?.distinct_clients ?? 0),
+    pendingFxCount: totalPendingFx,
   };
 
   let wsQuery = access.client
@@ -368,12 +380,20 @@ export async function getPlatformAggregateReport(params: {
   const workspaces = wsResult.data ?? [];
 
   const wsRevenueMap = new Map<string, bigint>();
+  const wsPendingMap = new Map<string, number>();
   for (const w of payload.workspaces ?? []) {
     wsRevenueMap.set(
       w.workspace_id,
       (wsRevenueMap.get(w.workspace_id) ?? 0n) +
         BigInt(w.converted_egp_minor || '0'),
     );
+    if (w.converted_egp_minor == null || (w.pending_fx_count ?? 0) > 0) {
+      const add = (w.pending_fx_count ?? 0) > 0 ? (w.pending_fx_count ?? 0) : 1;
+      wsPendingMap.set(
+        w.workspace_id,
+        (wsPendingMap.get(w.workspace_id) ?? 0) + add,
+      );
+    }
   }
   const wsCountsMap = new Map<string, { clients: number; subs: number }>();
   for (const wc of payload.workspace_counts ?? []) {
@@ -385,24 +405,32 @@ export async function getPlatformAggregateReport(params: {
 
   const workspaceAggregates: WorkspaceAggregateRow[] = workspaces.map((ws) => {
     const counts = wsCountsMap.get(ws.id);
+    const pending = wsPendingMap.get(ws.id) ?? 0;
     return {
       workspaceId: ws.id,
       workspaceName: ws.name,
       revenueConvertedEgpMinor: (wsRevenueMap.get(ws.id) ?? 0n).toString(),
       subscriptionCount: counts?.subs ?? 0,
       clientCount: counts?.clients ?? 0,
+      pendingFxCount: pending,
     };
   });
 
   const breakdowns: PlatformBreakdownRow[] = [];
   if (params.breakdown === 'month') {
     const monthRevenueMap = new Map<string, bigint>();
+    const monthPendingMap = new Map<string, number>();
     for (const m of payload.months ?? []) {
       monthRevenueMap.set(
         m.month,
         (monthRevenueMap.get(m.month) ?? 0n) +
           BigInt(m.converted_egp_minor || '0'),
       );
+      if (m.converted_egp_minor == null || (m.pending_fx_count ?? 0) > 0) {
+        const add =
+          (m.pending_fx_count ?? 0) > 0 ? (m.pending_fx_count ?? 0) : 1;
+        monthPendingMap.set(m.month, (monthPendingMap.get(m.month) ?? 0) + add);
+      }
     }
     const monthCountsMap = new Map<string, { clients: number; subs: number }>();
     for (const mc of payload.month_counts ?? []) {
@@ -420,12 +448,14 @@ export async function getPlatformAggregateReport(params: {
     }
     const sortedMonths = Array.from(monthKeys).sort();
     for (const mKey of sortedMonths) {
+      const pending = monthPendingMap.get(mKey) ?? 0;
       breakdowns.push({
         key: mKey,
         label: mKey,
         revenueConvertedEgpMinor: (monthRevenueMap.get(mKey) ?? 0n).toString(),
         subscriptionCount: monthCountsMap.get(mKey)?.subs ?? 0,
         clientCount: monthCountsMap.get(mKey)?.clients ?? 0,
+        pendingFxCount: pending,
       });
     }
   } else {
@@ -436,12 +466,21 @@ export async function getPlatformAggregateReport(params: {
     const packageById = new Map(packages.map((p) => [p.id, p]));
 
     const pkgRevenueMap = new Map<string, bigint>();
+    const pkgPendingMap = new Map<string, number>();
     for (const p of payload.packages ?? []) {
       pkgRevenueMap.set(
         p.package_id,
         (pkgRevenueMap.get(p.package_id) ?? 0n) +
           BigInt(p.converted_egp_minor || '0'),
       );
+      if (p.converted_egp_minor == null || (p.pending_fx_count ?? 0) > 0) {
+        const add =
+          (p.pending_fx_count ?? 0) > 0 ? (p.pending_fx_count ?? 0) : 1;
+        pkgPendingMap.set(
+          p.package_id,
+          (pkgPendingMap.get(p.package_id) ?? 0) + add,
+        );
+      }
     }
     const pkgCountsMap = new Map<string, { clients: number; subs: number }>();
     for (const pc of payload.package_counts ?? []) {
@@ -458,6 +497,7 @@ export async function getPlatformAggregateReport(params: {
     ]);
     for (const pkgId of pkgKeys) {
       const pkg = packageById.get(pkgId) ?? null;
+      const pending = pkgPendingMap.get(pkgId) ?? 0;
       breakdowns.push({
         key: pkgId,
         label: pkg ? `${pkg.market ?? '—'} · ${pkg.type ?? '—'}` : '—',
@@ -465,6 +505,7 @@ export async function getPlatformAggregateReport(params: {
         revenueConvertedEgpMinor: (pkgRevenueMap.get(pkgId) ?? 0n).toString(),
         subscriptionCount: pkgCountsMap.get(pkgId)?.subs ?? 0,
         clientCount: pkgCountsMap.get(pkgId)?.clients ?? 0,
+        pendingFxCount: pending,
       });
     }
   }
@@ -549,38 +590,26 @@ export async function getWorkspaceDrilldownRows(params: {
     commissionMinor: row.commission_minor ?? null,
   }));
 
-  let revenueConvertedEgpMinor = '0';
-  let subscriptionCount = 0;
-  let clientCount = 0;
+  if (aggResult.error) {
+    if (aggResult.error.code === '42501') return { status: 'not_permitted' };
+    return { status: 'unavailable' };
+  }
+  const agg = aggResult.data as BackendAggregateResponse | null;
+  if (!agg || agg.status !== 'ok') {
+    if (agg?.status === 'not_permitted') return { status: 'not_permitted' };
+    return { status: 'unavailable' };
+  }
 
-  if (
-    aggResult.data &&
-    (aggResult.data as BackendAggregateResponse).status === 'ok'
-  ) {
-    const agg = aggResult.data as BackendAggregateResponse;
-    let sum = 0n;
-    for (const ct of agg.currency_totals ?? []) {
-      if (ct.converted_egp_minor) {
-        sum += BigInt(ct.converted_egp_minor);
-      }
+  let sum = 0n;
+  let pendingFx = 0;
+  for (const ct of agg.currency_totals ?? []) {
+    if (ct.converted_egp_minor) {
+      sum += BigInt(ct.converted_egp_minor);
     }
-    revenueConvertedEgpMinor = sum.toString();
-    subscriptionCount = Number(agg.counts?.distinct_subscriptions ?? 0);
-    clientCount = Number(agg.counts?.distinct_clients ?? 0);
-  } else {
-    let sum = 0n;
-    for (const r of rows) {
-      if (r.convertedEgpExact) {
-        sum += BigInt(Math.floor(Number(r.convertedEgpExact) + 0.5));
-      }
+    if (ct.converted_egp_minor == null || (ct.pending_fx_count ?? 0) > 0) {
+      pendingFx +=
+        (ct.pending_fx_count ?? 0) > 0 ? (ct.pending_fx_count ?? 0) : 1;
     }
-    revenueConvertedEgpMinor = sum.toString();
-    subscriptionCount = new Set(
-      (payload.rows ?? []).map((r) => r.subscription_id).filter(Boolean),
-    ).size;
-    clientCount = new Set(
-      (payload.rows ?? []).map((r) => r.client_id).filter(Boolean),
-    ).size;
   }
 
   return {
@@ -591,9 +620,10 @@ export async function getWorkspaceDrilldownRows(params: {
     hasMore: payload.has_more,
     nextCursor: payload.next_cursor,
     totals: {
-      revenueConvertedEgpMinor,
-      subscriptionCount,
-      clientCount,
+      revenueConvertedEgpMinor: sum.toString(),
+      subscriptionCount: Number(agg.counts?.distinct_subscriptions ?? 0),
+      clientCount: Number(agg.counts?.distinct_clients ?? 0),
+      pendingFxCount: pendingFx,
     },
   };
 }
