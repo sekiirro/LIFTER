@@ -1030,6 +1030,70 @@ describe('ClientNotes behaviour', () => {
     expect(onUpdate).not.toHaveBeenCalled();
   });
 
+  it('uses the blank-input guidance for U+0085-only create input (S54-CR-005)', async () => {
+    const onCreate = vi.fn(async () => ({ status: 'invalid_input' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [],
+      onCreate,
+    });
+
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, '\u0085\u0085\u0085'),
+    );
+    await act(async () => {
+      host!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.blankError']);
+    expect(host!.textContent).not.toContain(mEn['clientNotes.tooLongError']);
+    expect(onCreate).not.toHaveBeenCalled();
+  });
+
+  it('uses the blank-input guidance for U+0085-only update input (S54-CR-005)', async () => {
+    const note = {
+      id: 'n-unicode-blank',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'original note',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    const onUpdate = vi.fn(async () => ({ status: 'invalid_input' }));
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      onUpdate,
+      role: 'trainer',
+      actorId: 'u1',
+      canCreate: false,
+    });
+
+    const row = host!.querySelector('li')!;
+    await act(async () =>
+      Array.from(row.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.edit'])!
+        .click(),
+    );
+    await act(async () => setValue(host!.querySelector('textarea')!, '\u0085'));
+    await act(async () => {
+      Array.from(host!.querySelectorAll('button'))
+        .find(
+          (button) => button.textContent === mEn['clientNotes.saveChanges'],
+        )!
+        .click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(host!.textContent).toContain(mEn['clientNotes.blankError']);
+    expect(host!.textContent).not.toContain(mEn['clientNotes.tooLongError']);
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+
   it('uses the approved permission-refusal copy for definite denied mutations', async () => {
     const note = {
       id: 'n-denied',
@@ -2008,6 +2072,167 @@ describe('ClientNotes behaviour', () => {
     expect(host!.querySelector('dialog')).not.toBeNull();
     await act(async () =>
       byText(mEn['clientNotes.exitWarning.discard']).click(),
+    );
+    expect(replayed).toBe(1);
+  });
+
+  it('replays navigation after Discard when only a delete is in flight (S54-CR-004)', async () => {
+    const notes = [
+      {
+        id: 'n-delete-target',
+        workspace_id: 'w',
+        client_id: 'c',
+        author_user_id: 'u1',
+        body: 'to delete',
+        created_at: '2026-11-08T10:15:00Z',
+        edited_at: null,
+      },
+      {
+        id: 'n-other',
+        workspace_id: 'w',
+        client_id: 'c',
+        author_user_id: 'u1',
+        body: 'other note',
+        created_at: '2026-11-08T10:16:00Z',
+        edited_at: null,
+      },
+    ];
+    let resolveDelete: ((result: { status: string }) => void) | undefined;
+    const onDelete = vi.fn(
+      () =>
+        new Promise<{ status: string }>((resolve) => {
+          resolveDelete = resolve;
+        }),
+    );
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes,
+      role: 'platform_owner',
+      actorId: 'owner',
+      onDelete,
+    });
+    const targetRow = Array.from(host!.querySelectorAll('li')).find((li) =>
+      li.textContent?.includes('to delete'),
+    )!;
+    await act(async () =>
+      Array.from(targetRow.querySelectorAll('button'))
+        .find((button) => button.textContent === mEn['clientNotes.delete'])!
+        .click(),
+    );
+    await act(async () =>
+      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button'))
+        .find(
+          (button) =>
+            button.textContent === mEn['clientNotes.deleteDialogConfirm'],
+        )!
+        .click(),
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onDelete).toHaveBeenCalledTimes(1);
+
+    const link = dom!.window.document.createElement('a');
+    link.href = '/home';
+    link.textContent = 'Home';
+    dom!.window.document.body.append(link);
+    let replayed = 0;
+    let captureReplay = false;
+    link.addEventListener('click', (event) => {
+      if (!captureReplay) return;
+      replayed += 1;
+      event.preventDefault();
+    });
+    const click = () =>
+      link.dispatchEvent(
+        new dom!.window.MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+        }),
+      );
+    let prevented = false;
+    await act(async () => {
+      prevented = !click();
+    });
+    expect(prevented).toBe(true);
+    expect(host!.querySelector('dialog')).not.toBeNull();
+    captureReplay = true;
+    await act(async () =>
+      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button'))
+        .find(
+          (button) =>
+            button.textContent === mEn['clientNotes.exitWarning.discard'],
+        )!
+        .click(),
+    );
+    expect(replayed).toBe(1);
+    await act(async () => resolveDelete?.({ status: 'ok' }));
+  });
+
+  it('replays navigation after Discard when a separate create draft exists (S54-CR-004)', async () => {
+    const note = {
+      id: 'n-edit-target',
+      workspace_id: 'w',
+      client_id: 'c',
+      author_user_id: 'u1',
+      body: 'committed body',
+      created_at: '2026-11-08T10:15:00Z',
+      edited_at: null,
+    };
+    await render({
+      locale: 'en',
+      messages: mEn,
+      status: 'ready',
+      notes: [note],
+      role: 'trainer',
+      actorId: 'u1',
+    });
+    const byText = (text: string) =>
+      Array.from(host!.querySelectorAll('button')).find(
+        (button) => button.textContent === text,
+      )!;
+    await act(async () =>
+      setValue(host!.querySelector('textarea')!, 'separate create draft'),
+    );
+    await act(async () => byText(mEn['clientNotes.edit']).click());
+    expect(host!.querySelector('textarea')).not.toBeNull();
+
+    const link = dom!.window.document.createElement('a');
+    link.href = '/home';
+    link.textContent = 'Home';
+    dom!.window.document.body.append(link);
+    let replayed = 0;
+    let captureReplay = false;
+    link.addEventListener('click', (event) => {
+      if (!captureReplay) return;
+      replayed += 1;
+      event.preventDefault();
+    });
+    const click = () =>
+      link.dispatchEvent(
+        new dom!.window.MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+        }),
+      );
+    let prevented = false;
+    await act(async () => {
+      prevented = !click();
+    });
+    expect(prevented).toBe(true);
+    expect(host!.querySelector('dialog')).not.toBeNull();
+    captureReplay = true;
+    await act(async () =>
+      Array.from(host!.querySelectorAll<HTMLButtonElement>('dialog button'))
+        .find(
+          (button) =>
+            button.textContent === mEn['clientNotes.exitWarning.discard'],
+        )!
+        .click(),
     );
     expect(replayed).toBe(1);
   });

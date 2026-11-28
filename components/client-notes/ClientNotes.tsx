@@ -17,7 +17,10 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { getMessages } from '../../lib/i18n';
 import type { Locale } from '../../lib/design/preferences';
 import { dirFor } from '../../lib/design/preferences';
-import { normalizeClientNoteBody } from '../../lib/client-notes/validation';
+import {
+  normalizeClientNoteBody,
+  trimClientNoteBody,
+} from '../../lib/client-notes/validation';
 import {
   clearClientNotesRequestSequences,
   clientNotesHasUnsavedWork,
@@ -701,7 +704,7 @@ export function ClientNotes(props: ClientNotesProps) {
       if (body === null) {
         if (rawBody.includes('\u0000'))
           setSaveError(m['clientNotes.saveError']);
-        else if (rawBody.trim().length === 0)
+        else if (trimClientNoteBody(rawBody).length === 0)
           setSaveError(m['clientNotes.blankError']);
         else setSaveError(m['clientNotes.tooLongError']);
         return;
@@ -818,7 +821,7 @@ export function ClientNotes(props: ClientNotesProps) {
       if (ownsEditor()) {
         if (rawBody.includes('\u0000'))
           setSaveError(m['clientNotes.saveError']);
-        else if (rawBody.trim().length === 0)
+        else if (trimClientNoteBody(rawBody).length === 0)
           setSaveError(m['clientNotes.blankError']);
         else setSaveError(m['clientNotes.tooLongError']);
       }
@@ -1008,7 +1011,13 @@ export function ClientNotes(props: ClientNotesProps) {
       const currentEditNeedsDiscard =
         saving || unknownEdit || editDraft !== editedNote?.body;
       if (!stillOwnsTarget || !currentEditNeedsDiscard) {
-        pendingNavigation.current = null;
+        // The captured edit resolved itself while the warning was open
+        // (for example it saved): the navigation it captured is stale,
+        // so cancel it instead of replaying. When the edit is still
+        // owned and simply unchanged, Discard still settles the
+        // navigation the user attempted.
+        if (stillOwnsTarget && target.navigation) continueNavigation();
+        else pendingNavigation.current = null;
         return;
       }
       if (target.switchTo) {
@@ -1055,7 +1064,13 @@ export function ClientNotes(props: ClientNotesProps) {
       sameCreateDraft &&
       (saving || unknownCreate || draft.length > 0 || pendingCreate !== null);
     if (!createStillNeedsDiscard) {
-      pendingNavigation.current = null;
+      // The create draft is exactly as captured (a delete in flight is
+      // the only reason the warning opened): Discard still settles the
+      // navigation the user attempted. When the draft changed or the
+      // create resolved itself while the warning was open, the captured
+      // navigation is stale, so cancel it instead of replaying.
+      if (sameCreateDraft && target.navigation) continueNavigation();
+      else pendingNavigation.current = null;
       return;
     }
     if (unknownCreate && pendingCreate) {
