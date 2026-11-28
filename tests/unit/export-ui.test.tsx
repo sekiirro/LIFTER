@@ -411,7 +411,7 @@ describe('spec 030 interactive ExportSection behavior', () => {
     expect(getClientExportStatus).not.toHaveBeenCalled();
   });
 
-  it('shows error on failure and reuses the exact same idempotency key on retry', async () => {
+  it('shows error on failure and creates a new idempotency key on retry (CR-030-03)', async () => {
     vi.mocked(requestClientExport).mockResolvedValueOnce({
       status: 'queued',
       jobId: 'job-003',
@@ -460,7 +460,9 @@ describe('spec 030 interactive ExportSection behavior', () => {
 
     expect(firstCallKey).toBeDefined();
     expect(secondCallKey).toBeDefined();
-    expect(secondCallKey).toBe(firstCallKey);
+    // CR-030-03: a retry after a terminal failure is a new request and must
+    // create a new job/archive (S71-R29), not replay the consumed key.
+    expect(secondCallKey).not.toBe(firstCallKey);
   });
 
   it('protects against duplicate in-flight requests on rapid double-click', async () => {
