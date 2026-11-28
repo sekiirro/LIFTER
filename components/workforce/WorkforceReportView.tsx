@@ -74,6 +74,19 @@ export function WorkforceReportView({
     }
   };
 
+  const operationLabel = (operation: NonNullable<LedgerEntry['operation']>) => {
+    switch (operation) {
+      case 'add':
+        return m['workforce.report.points.add'];
+      case 'deduct':
+        return m['workforce.report.points.deduct'];
+      case 'correct':
+        return m['workforce.report.points.correct'];
+      case 'reattribute':
+        return m['workforce.report.points.reattribute'];
+    }
+  };
+
   const trainers = report?.trainers ?? [];
   const sales = report?.sales ?? [];
   const ledger = report?.ledger ?? [];
@@ -484,7 +497,11 @@ export function WorkforceReportView({
             {filteredLedger.length === 0 ? (
               <p className={styles.metaText}>{m['workforce.report.empty']}</p>
             ) : (
-              <div className={styles.tableWrapper}>
+              <div
+                className={styles.tableWrapper}
+                tabIndex={0}
+                aria-label={m['workforce.report.ledger.title']}
+              >
                 <table className={styles.table}>
                   <thead>
                     <tr>
@@ -573,11 +590,35 @@ export function WorkforceReportView({
                             )}
                           </td>
                           <td className={styles.metaText}>
-                            {entry.reason_code ? (
+                            {entry.reason ? (
+                              <Bidi dir="auto">{entry.reason}</Bidi>
+                            ) : entry.reason_code ? (
                               <Bidi dir="ltr">{entry.reason_code}</Bidi>
                             ) : (
                               '—'
                             )}
+                            {entry.operation && (
+                              <div>
+                                <Bidi dir="auto">
+                                  {operationLabel(entry.operation)}
+                                </Bidi>
+                              </div>
+                            )}
+                            {entry.original_entry_id &&
+                              entry.original_entry_kind && (
+                                <div>
+                                  <Bidi dir="auto">
+                                    {categoryLabel(
+                                      entry.original_entry_kind === 'earned'
+                                        ? 'earned'
+                                        : 'poAdjustment',
+                                    )}
+                                  </Bidi>{' '}
+                                  <Bidi dir="ltr">
+                                    {entry.original_entry_id}
+                                  </Bidi>
+                                </div>
+                              )}
                           </td>
                           <td className={styles.metaText}>
                             {entry.actor ? (
