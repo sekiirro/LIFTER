@@ -119,6 +119,10 @@ describe('refund-fault review panel', () => {
     expect(host?.querySelector('section')?.getAttribute('dir')).toBe('rtl');
     const isolatedId = host?.querySelector('legend bdi[dir="ltr"]');
     expect(isolatedId?.textContent).toBe(review.purchase_id);
+    // S74-410-01: the id stays a single isolated LTR unit when it wraps.
+    const idWrapper = isolatedId?.parentElement;
+    expect(idWrapper?.tagName).toBe('SPAN');
+    expect(idWrapper?.className).toContain('purchaseId');
     expect(host?.textContent).toContain(
       formatCairoDateTime(review.opened_at, 'ar'),
     );
