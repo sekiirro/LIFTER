@@ -157,6 +157,16 @@ export function kindLabel(kind: string, m: Messages): string {
   }
 }
 
+const drilldownStatusKeys: Partial<Record<string, keyof Messages>> = {
+  completed: 'reports.drilldown.status.completed',
+};
+
+function drilldownStatusLabel(status: string, m: Messages) {
+  if (!Object.hasOwn(drilldownStatusKeys, status)) return null;
+  const key = drilldownStatusKeys[status];
+  return key ? m[key] : null;
+}
+
 function exactAmount(value: string, currency: string, locale: 'ar' | 'en') {
   if (value === '0') {
     const numberLocale = locale === 'ar' ? 'ar-EG' : 'en';
@@ -411,7 +421,7 @@ export function ReportsView({
                       <dt>{columns.kind}</dt>
                       <dd>{kindLabel(row.kind, m)}</dd>
                       <dt>{columns.status}</dt>
-                      <dd>{row.status}</dd>
+                      <dd>{drilldownStatusLabel(row.status, m)}</dd>
                       {row.amountMinor !== null &&
                         row.amountMinor !== undefined &&
                         row.currency && (

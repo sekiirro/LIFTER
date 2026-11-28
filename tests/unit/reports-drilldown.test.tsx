@@ -127,6 +127,27 @@ const sampleDrilldownData: DrilldownData = {
   ],
 };
 
+function renderSourceRow(status: string, locale: 'ar' | 'en') {
+  const messages = getMessages(locale);
+  const html = renderToStaticMarkup(
+    createElement(ReportsView, {
+      locale,
+      month: '2026-11',
+      workspaceId: wsId1,
+      workspaces,
+      data: emptyReportsData,
+      totalConvertedEgp: null,
+      messages,
+      role: 'platform_owner',
+      drilldownData: {
+        ...sampleDrilldownData,
+        rows: [{ ...sampleDrilldownData.rows[0]!, status }],
+      },
+    }),
+  );
+  return { html, messages };
+}
+
 function queryResult(data: unknown, error: unknown = null) {
   const query: Record<string, unknown> = {};
   for (const method of ['select', 'order', 'in', 'eq'])
@@ -354,7 +375,36 @@ describe('Spec 029: Platform Owner Reporting Drill-Down UI', () => {
       expect(html).toContain(messages['reports.column.commission']);
       expect(html).toContain(messages['reports.column.paid']);
       expect(html).toContain(messages['reports.column.remaining']);
+      expect(html).toContain(messages['reports.export.title']);
     });
+
+    it.each([
+      ['en', 'Completed'],
+      ['ar', 'تم'],
+    ] as const)(
+      'renders the approved %s completed label without the raw status',
+      (locale, label) => {
+        const { html, messages } = renderSourceRow('completed', locale);
+
+        expect(html).toContain(
+          `<dt>${messages['reports.column.status']}</dt><dd>${label}</dd>`,
+        );
+        expect(html).not.toContain('completed');
+      },
+    );
+
+    it.each(['en', 'ar'] as const)(
+      'renders nothing for an unknown source-row status in %s',
+      (locale) => {
+        const status = 'unexpected_internal_status';
+        const { html, messages } = renderSourceRow(status, locale);
+
+        expect(html).toContain(
+          `<dt>${messages['reports.column.status']}</dt><dd></dd>`,
+        );
+        expect(html).not.toContain(status);
+      },
+    );
 
     it('renders empty state when workspace has no source rows', () => {
       const messages = getMessages('en');

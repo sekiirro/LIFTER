@@ -45,6 +45,7 @@ export const ar = {
   'reports.drilldown.empty': 'مفيش بيانات تقرير للاختيار ده',
   'reports.drilldown.error': 'مقدرناش نحمل التقارير. حاول تاني.',
   'reports.drilldown.workspaceHeading': 'تفاصيل مساحة العمل',
+  'reports.drilldown.status.completed': 'تم',
   'reports.column.kind': 'النوع',
   'reports.column.status': 'الحالة',
   'reports.drilldown.sourceRows.empty': 'مفيش سجلات لمساحة العمل دي.',

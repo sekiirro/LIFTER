@@ -51,6 +51,7 @@ export const en: Record<keyof typeof ar, string> = {
   'reports.drilldown.empty': 'No report data for this selection',
   'reports.drilldown.error': 'Reports couldn’t be loaded. Try again.',
   'reports.drilldown.workspaceHeading': 'Workspace details',
+  'reports.drilldown.status.completed': 'Completed',
   'reports.column.kind': 'Type',
   'reports.column.status': 'Status',
   'reports.drilldown.sourceRows.empty':
