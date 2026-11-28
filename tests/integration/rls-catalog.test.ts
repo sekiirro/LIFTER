@@ -135,6 +135,10 @@ const p7StrikePrivate = [
   'guard_workforce_strike_immutable',
   'reject_workforce_strike_truncate',
 ];
+const p7PlanDelayPrivate = [
+  'guard_workforce_plan_delay_immutable',
+  'record_due_workforce_strikes',
+];
 const privateAuthenticated = [
   'f15_alert_trainer_assignment_visible',
   'purge_retention_for_platform_owner',
@@ -422,6 +426,7 @@ describe('tenancy security catalog (T007)', () => {
           'p7_checkin_late_penalty_after_insert',
           'p7_record_checkin_delay_penalty',
           ...p7StrikePrivate,
+          ...p7PlanDelayPrivate,
           ...privateAuthenticated,
           'p7_payroll_lineage',
           'p7_payroll_lock',
@@ -680,6 +685,7 @@ describe('tenancy security catalog (T007)', () => {
         'f15_alert_schedule_immutable',
         'f15_alert_schedule_run',
         ...p7StrikePrivate,
+        ...p7PlanDelayPrivate,
         'f15_answer_is_present',
         'f15_answer_values_valid',
         'f15_forms_purge_run',
@@ -932,6 +938,7 @@ describe('tenancy security catalog (T007)', () => {
             !f22Private.includes(row.proname) &&
             !p7Private.includes(row.proname) &&
             !p7StrikePrivate.includes(row.proname) &&
+            !p7PlanDelayPrivate.includes(row.proname) &&
             !p7QualityPrivate.includes(row.proname) &&
             ![
               'apply_food_default_alternatives',
@@ -3622,6 +3629,133 @@ describe('P7 T033 strike security catalog', () => {
       (match) => match[1],
     ).sort();
     expect(checkedCodes).toEqual([...reasonCodes].sort());
+  });
+});
+
+describe('P7 T009 plan-delay security catalog', () => {
+  const tables = [
+    'public.workforce_plan_delay_events',
+    'public.workforce_plan_delay_corrections',
+  ];
+  const publicFunctions = [
+    'public.reattribute_workforce_plan_delay(uuid,uuid,uuid,text,uuid)',
+  ];
+
+  it('forces RLS, withholds direct table access, and protects immutable history', async () => {
+    for (const relation of tables) {
+      const [table] = await db`
+        select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass
+      `;
+      expect(table, relation).toEqual({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] = await db`
+            select has_table_privilege(${role},${relation},${privilege}) as allowed
+          `;
+          expect(grant?.allowed, `${role} ${privilege} ${relation}`).toBe(
+            false,
+          );
+        }
+      }
+      const [trigger] = await db`
+        select count(*)::int as count from pg_trigger
+        where tgrelid=${relation}::regclass and not tgisinternal and (tgtype & 28)<>0
+      `;
+      expect(trigger?.count, relation).toBeGreaterThan(0);
+    }
+
+    for (const signature of publicFunctions) {
+      const [rpc] = await db`
+      select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+      from pg_proc p where p.oid=${signature}::regprocedure
+    `;
+      expect(rpc).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(rpc?.proconfig).toContain('search_path=""');
+    }
+
+    const [helper] = await db`
+      select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+      from pg_proc p where p.proname = any(${p7PlanDelayPrivate})
+    `;
+    expect(helper).toMatchObject({
+      prosecdef: false,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
+    });
+    expect(helper?.proconfig).toContain('search_path=""');
+  });
+
+  it('stores only one of the fixed reason codes and exposes the renamed RPC argument', async () => {
+    const columns = await db`
+      select column_name,data_type
+      from information_schema.columns
+      where table_schema='public' and table_name='workforce_plan_delay_corrections'
+    `;
+    expect(
+      columns.find((column) => column.column_name === 'reason'),
+    ).toBeUndefined();
+    expect(
+      columns.find((column) => column.column_name === 'reason_code'),
+    ).toEqual({ column_name: 'reason_code', data_type: 'text' });
+
+    const [check] = await db`
+      select pg_catalog.pg_get_constraintdef(oid) as definition
+      from pg_constraint
+      where conrelid='public.workforce_plan_delay_corrections'::regclass
+        and contype='c'
+        and conname='workforce_plan_delay_corrections_reason_code_check'
+    `;
+    expect(check?.definition).toBeDefined();
+    expect(
+      Array.from(
+        String(check?.definition).matchAll(/'([^']+)'/g),
+        (match) => match[1],
+      ).sort(),
+    ).toEqual([
+      'client_caused_delay',
+      'duplicate',
+      'po_exception',
+      'system_issue',
+      'wrong_trainer',
+    ]);
+
+    const [rpc] = await db`
+      select p.proargnames
+      from pg_proc p
+      where p.oid='public.reattribute_workforce_plan_delay(uuid,uuid,uuid,text,uuid)'::regprocedure
+    `;
+    expect(rpc?.proargnames).toEqual([
+      'p_workspace_id',
+      'p_event_id',
+      'p_target_trainer_user_id',
+      'p_reason_code',
+      'p_idempotency_key',
+    ]);
   });
 });
 

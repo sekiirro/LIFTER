@@ -482,6 +482,7 @@ export async function pendingHttpAccess(
             'client_leaderboard_my_rank',
             'find_client_by_code',
             'p7_finalize_month',
+            'reattribute_workforce_plan_delay',
             'p7_list_open_refund_fault_reviews',
             'p7_resolve_refund_fault_review',
           ].includes(fn.proname)
