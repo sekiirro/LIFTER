@@ -13,7 +13,11 @@ returns table (
   acquisition_point_count bigint,
   acquisition_points text,
   refund_reversal_count bigint,
-  refund_reversal_points text
+  refund_reversal_points text,
+  point_deduction_count bigint,
+  point_deduction_points text,
+  po_adjustment_count bigint,
+  po_adjustment_points text
 )
 language plpgsql stable security definer set search_path = '' as $$
 begin
@@ -117,6 +121,34 @@ begin
         )::date = m.month_start
       group by a.staff_user_id
     ),
+    point_deductions as (
+      select a.staff_user_id as sales_user_id,
+        pg_catalog.count(*)::bigint as point_deduction_count,
+        coalesce(pg_catalog.sum(a.points), 0)::numeric(12,2)::text as point_deduction_points
+      from public.p7_adjustment_entries a
+      cross join requested_month m
+      where a.workspace_id = $1
+        and a.reason is null
+        and a.points < 0
+        and a.reason_code is distinct from 'sales_acquisition_refund'
+        and pg_catalog.date_trunc(
+          'month', pg_catalog.timezone('Africa/Cairo', a.recorded_at)
+        )::date = m.month_start
+      group by a.staff_user_id
+    ),
+    po_adjustments as (
+      select a.staff_user_id as sales_user_id,
+        pg_catalog.count(*)::bigint as po_adjustment_count,
+        coalesce(pg_catalog.sum(a.points), 0)::numeric(12,2)::text as po_adjustment_points
+      from public.p7_adjustment_entries a
+      cross join requested_month m
+      where a.workspace_id = $1
+        and a.reason is not null
+        and pg_catalog.date_trunc(
+          'month', pg_catalog.timezone('Africa/Cairo', a.recorded_at)
+        )::date = m.month_start
+      group by a.staff_user_id
+    ),
     sales AS (
       select link_counts.sales_user_id from link_counts
       union select registration_counts.sales_user_id from registration_counts
@@ -124,6 +156,8 @@ begin
       union select first_payment_counts.sales_user_id from first_payment_counts
       union select acquisition_points.sales_user_id from acquisition_points
       union select refund_reversals.sales_user_id from refund_reversals
+      union select point_deductions.sales_user_id from point_deductions
+      union select po_adjustments.sales_user_id from po_adjustments
     )
     select m.month_start, s.sales_user_id,
       coalesce(l.link_count, 0)::bigint,
@@ -133,7 +167,11 @@ begin
       coalesce(ap.acquisition_point_count, 0)::bigint,
       coalesce(ap.acquisition_points, '0.00')::text,
       coalesce(rr.refund_reversal_count, 0)::bigint,
-      coalesce(rr.refund_reversal_points, '0.00')::text
+      coalesce(rr.refund_reversal_points, '0.00')::text,
+      coalesce(pd.point_deduction_count, 0)::bigint,
+      coalesce(pd.point_deduction_points, '0.00')::text,
+      coalesce(pa.po_adjustment_count, 0)::bigint,
+      coalesce(pa.po_adjustment_points, '0.00')::text
     from sales s
     cross join requested_month m
     left join link_counts l on l.sales_user_id = s.sales_user_id
@@ -142,6 +180,8 @@ begin
     left join first_payment_counts fp on fp.sales_user_id = s.sales_user_id
     left join acquisition_points ap on ap.sales_user_id = s.sales_user_id
     left join refund_reversals rr on rr.sales_user_id = s.sales_user_id
+    left join point_deductions pd on pd.sales_user_id = s.sales_user_id
+    left join po_adjustments pa on pa.sales_user_id = s.sales_user_id
     order by s.sales_user_id;
 end
 $$;

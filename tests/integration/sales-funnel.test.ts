@@ -88,6 +88,35 @@ it('T020/T039 reports Sales funnel milestones and P7 facts by Cairo event month'
       pg_catalog.date_trunc('month', now() at time zone 'Africa/Cairo'),
       'YYYY-MM-DD'
     ) as month`;
+  const automaticDeduction = await db`
+    insert into public.p7_adjustment_entries(
+      workspace_id, staff_user_id, points, effective_month, source_key,
+      source_hash, reason_code
+    ) values (
+      ${f.wsA.id}, ${f.salesA.userId}, -0.50, ${period?.month},
+      ${randomUUID()}, 't039-point-deduction-test', 'checkin_delay'
+    )`;
+  expect(automaticDeduction.count).toBe(1);
+
+  for (const [operation, points] of [
+    ['add', '2.50'],
+    ['deduct', '-0.75'],
+  ] as const) {
+    const adjustment = await f.po.client.rpc('p7_post_point_adjustment', {
+      p_workspace_id: f.wsA.id,
+      p_staff_user_id: f.salesA.userId,
+      p_operation: operation,
+      p_points: points,
+      p_effective_month: period?.month,
+      p_original_entry_kind: null,
+      p_original_entry_id: null,
+      p_reason: `T039 ${operation} funnel test`,
+      p_idempotency_key: randomUUID(),
+    });
+    expect(adjustment.error).toBeNull();
+    expect(adjustment.data).toMatchObject({ status: 'ok' });
+  }
+
   const { data, error } = await f.po.client.rpc('get_sales_funnel', {
     workspace_id: f.wsA.id,
     p_month: period?.month,
@@ -108,6 +137,11 @@ it('T020/T039 reports Sales funnel milestones and P7 facts by Cairo event month'
       refund_reversal_count: salesUserId === f.salesA.userId ? 1 : 0,
       refund_reversal_points:
         salesUserId === f.salesA.userId ? '-1.00' : '0.00',
+      point_deduction_count: salesUserId === f.salesA.userId ? 1 : 0,
+      point_deduction_points:
+        salesUserId === f.salesA.userId ? '-0.50' : '0.00',
+      po_adjustment_count: salesUserId === f.salesA.userId ? 2 : 0,
+      po_adjustment_points: salesUserId === f.salesA.userId ? '1.75' : '0.00',
     });
   }
   expect(JSON.stringify(data)).not.toMatch(/client|email|phone|name|token/i);
@@ -189,6 +223,10 @@ it('T020/T039 assigns funnel events and facts to their Cairo months', async () =
         acquisition_points: month === '2026-12-01' ? '1.00' : '0.00',
         refund_reversal_count: 0,
         refund_reversal_points: '0.00',
+        point_deduction_count: 0,
+        point_deduction_points: '0.00',
+        po_adjustment_count: 0,
+        po_adjustment_points: '0.00',
       },
     ]);
   }

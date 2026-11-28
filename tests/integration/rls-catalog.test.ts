@@ -2873,6 +2873,13 @@ describe('P7 T020 Sales funnel RPC catalog', () => {
     expect(funnel?.result_shape).toContain('first_payment_count bigint');
     expect(funnel?.result_shape).toContain('acquisition_points text');
     expect(funnel?.result_shape).toContain('refund_reversal_points text');
+    expect(funnel?.result_shape).toContain('point_deduction_count bigint');
+    expect(funnel?.result_shape).toContain('point_deduction_points text');
+    expect(funnel?.result_shape).toContain('po_adjustment_count bigint');
+    expect(funnel?.result_shape).toContain('po_adjustment_points text');
+    expect(funnel?.definition).toContain('a.reason is null');
+    expect(funnel?.definition).toContain('a.reason is not null');
+    expect(funnel?.definition).toContain('sales_acquisition_refund');
     expect(
       funnel?.definition.indexOf('app_private.is_platform_owner'),
     ).toBeLessThan(
