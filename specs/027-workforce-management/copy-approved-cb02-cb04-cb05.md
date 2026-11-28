@@ -219,3 +219,21 @@ Counts: 86 rows total = 20 (A) + 26 (B) + 20 (C) + 20 (D), matching the four sou
 - **PO only**: the CB-02 and CB-05 screens are PO-only; denied strings say only the Platform Owner (مالك المنصة) can act and disclose no existence or month detail. CB-04 is Sales-only and reaches no other employee's data.
 - **Terminology**: Platform Owner = مالك المنصة; follow-up = التواصل / اتواصل (client form = المتابعة الأسبوعية); strike = تأخير الخطة / تأخيرات الخطط; points are separate from salary (النقاط منفصلة عن المرتب).
 - **No approval inferred**: status identifiers (Closed, Current month, Finalized, Disputed, Effective, Earlier revision) are requirement identifiers, not approvals of any other screen's copy.
+
+## S73-PO-5 — monthly quality feedback labels (CB-05)
+
+Verbatim PO answer (`s73-po-5.verbatim.txt`):
+
+> A
+> (context: interpreted by architect as answer to CB05-QUALITY-1 option A = four labels: "Positive feedback count" / "عدد الآراء الإيجابية"; "Negative feedback count" / "عدد الآراء السلبية"; "Points per positive item" / "النقاط لكل حالة إيجابية"; "Points per negative item" / "النقاط لكل حالة سلبية". Dispute PDN-01..08 answer requested separately.)
+
+Approved labels (EN | AR, byte-exact):
+
+| EN                       | AR                      |
+| ------------------------ | ----------------------- |
+| Positive feedback count  | عدد الآراء الإيجابية    |
+| Negative feedback count  | عدد الآراء السلبية      |
+| Points per positive item | النقاط لكل حالة إيجابية |
+| Points per negative item | النقاط لكل حالة سلبية   |
+
+Key names: key: assigned in the quality UI PR
