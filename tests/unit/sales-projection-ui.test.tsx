@@ -28,12 +28,14 @@ const mocks = vi.hoisted(() => ({
   actor: vi.fn(),
   cookies: vi.fn(),
   readSalesMonthlyTotal: vi.fn(),
+  readOwnBasicSalary: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('../../lib/auth/actor', () => ({ requireActor: mocks.actor }));
 vi.mock('../../lib/workforce/sales-projection', () => ({
   readSalesMonthlyTotal: mocks.readSalesMonthlyTotal,
+  readOwnBasicSalary: mocks.readOwnBasicSalary,
 }));
 vi.mock('next/headers', () => ({ cookies: mocks.cookies }));
 
@@ -57,32 +59,37 @@ describe('Sales My Monthly Total UI (T025 / FR-012, FR-017, FR-020, FR-029)', ()
       expect(html).toContain(messages['reports.month']);
       expect(html).toContain(expectedTotalLabel);
       expect(html).toContain('25.00');
+      expect(html).toContain(
+        `aria-label="${messages['workforce.salesProjection.aria.total']}"`,
+      );
     },
   );
 
-  it.each([
-    [
-      'en',
-      'Not available yet',
-      'This total appears after the month ends and the PO finalizes it.',
-    ],
-    [
-      'ar',
-      'مش متاح لسه',
-      'الإجمالي بيظهر بعد ما الشهر يخلص ومالك المنصة يعتمده.',
-    ],
-  ] as const)(
-    'renders not-available-yet state in %s',
-    (locale, expectedNotAvail, expectedHint) => {
+  it.each(['en', 'ar'] as const)(
+    'renders not-available-yet state with own salary in %s',
+    (locale) => {
+      const messages = getMessages(locale);
       const html = renderView({
         workspaceId: 'ws-1',
         locale,
         month: '2026-11-01',
         status: 'not_available',
+        ownBasicSalary: { amount: '2500.50', currency: 'EGP' },
       });
 
-      expect(html).toContain(expectedNotAvail);
-      expect(html).toContain(expectedHint);
+      expect(html).toContain(
+        messages['workforce.salesProjection.notAvailable'],
+      );
+      expect(html).toContain(
+        messages['workforce.compensation.own.basicSalary'],
+      );
+      expect(html).toContain('2500.50 EGP');
+      expect(html.replaceAll('&#x27;', "'")).toContain(
+        messages['workforce.salesProjection.notAvailableUntilNextMonth'],
+      );
+      expect(html).not.toContain(
+        messages['workforce.salesProjection.notAvailableHint'],
+      );
       expect(html).not.toContain('25.00');
     },
   );
@@ -252,6 +259,7 @@ describe('Sales My Monthly Total UI (T025 / FR-012, FR-017, FR-020, FR-029)', ()
 
     it('allows Sales employee and displays not available yet for unfinalized month', async () => {
       mocks.actor.mockResolvedValue({
+        userId: 'sales-user-1',
         role: 'sales',
         activeWorkspaceIds: ['ws-1'],
       });
@@ -260,6 +268,11 @@ describe('Sales My Monthly Total UI (T025 / FR-012, FR-017, FR-020, FR-029)', ()
       });
       mocks.readSalesMonthlyTotal.mockResolvedValue({
         status: 'not_available',
+      });
+      mocks.readOwnBasicSalary.mockResolvedValue({
+        status: 'ok',
+        amount: '2500.50',
+        currency: 'EGP',
       });
 
       const page = await SalesMonthlyTotalPage({
@@ -272,7 +285,17 @@ describe('Sales My Monthly Total UI (T025 / FR-012, FR-017, FR-020, FR-029)', ()
 
       const en = getMessages('en');
       expect(html).toContain(en['workforce.salesProjection.notAvailable']);
-      expect(html).toContain(en['workforce.salesProjection.notAvailableHint']);
+      expect(html.replaceAll('&#x27;', "'")).toContain(
+        en['workforce.salesProjection.notAvailableUntilNextMonth'],
+      );
+      expect(html).toContain('2500.50 EGP');
+      expect(html).not.toContain(
+        en['workforce.salesProjection.notAvailableHint'],
+      );
+      expect(mocks.readOwnBasicSalary).toHaveBeenCalledWith({
+        employeeId: 'sales-user-1',
+        month: '2026-11-01',
+      });
     });
   });
 });

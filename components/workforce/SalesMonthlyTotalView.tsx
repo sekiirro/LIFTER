@@ -39,6 +39,7 @@ export type SalesMonthlyTotalViewProps = {
   month: string;
   status: SalesProjectionState;
   total?: string | null;
+  ownBasicSalary?: { amount: string; currency: string };
   onRetry?: () => void;
   onMonthChange?: (month: string) => void;
 };
@@ -48,6 +49,7 @@ export function SalesMonthlyTotalView({
   month,
   status,
   total,
+  ownBasicSalary,
   onRetry,
 }: SalesMonthlyTotalViewProps) {
   const messages: Messages = getMessages(locale);
@@ -137,8 +139,20 @@ export function SalesMonthlyTotalView({
             <h2 className={styles.notAvailableTitle}>
               {messages['workforce.salesProjection.notAvailable']}
             </h2>
+            {ownBasicSalary ? (
+              <div className={styles.ownBasicSalary}>
+                <span className={styles.totalLabel}>
+                  {messages['workforce.compensation.own.basicSalary']}
+                </span>
+                <span className={styles.salaryAmount}>
+                  <Bidi dir="ltr">
+                    {ownBasicSalary.amount} {ownBasicSalary.currency}
+                  </Bidi>
+                </span>
+              </div>
+            ) : null}
             <p className={styles.notAvailableHint}>
-              {messages['workforce.salesProjection.notAvailableHint']}
+              {messages['workforce.salesProjection.notAvailableUntilNextMonth']}
             </p>
           </Card>
         </div>
@@ -193,7 +207,11 @@ export function SalesMonthlyTotalView({
               {messages['workforce.salesProjection.total']}
             </span>
           </div>
-          <div className={styles.totalAmount}>
+          <div
+            className={styles.totalAmount}
+            role="group"
+            aria-label={messages['workforce.salesProjection.aria.total']}
+          >
             <Bidi>{total ?? '0.00'}</Bidi>
           </div>
         </Card>
