@@ -3,6 +3,7 @@ import { requireActor } from '../../../lib/auth/actor';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import { createSessionClient } from '../../../lib/supabase/server';
+import { isUuid } from '../../../lib/client-notes/validation';
 import {
   getPackageCommissionReport,
   getPackageInstallmentReport,
@@ -45,6 +46,101 @@ function cairoMonth() {
 
 function validMonth(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
+// S75-430-01: RPC page size is 50 rows (po_reporting_source_rows default).
+// 50 pages covers up to 2,500 drill-down records for a single workspace month,
+// which is the smallest bound justified by the RPC page size (50) that supports
+// deep pagination while guaranteeing serialized cursor_history fits comfortably
+// within standard HTTP GET header limits (<8KB URL-encoded) without header truncation.
+export const MAX_CURSOR_HISTORY_LENGTH = 50;
+
+export function isIsoTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}(?::?\d{2})?)$/.test(
+      value,
+    )
+  ) {
+    return false;
+  }
+  return !Number.isNaN(Date.parse(value));
+}
+
+export function validateReportsPagerInput(params: {
+  cursor_recorded_at?: unknown;
+  cursor_event_id?: unknown;
+  cursor_history?: unknown;
+}): {
+  cursor: { recorded_at: string; event_id: string } | null;
+  cursorHistory: ({ recorded_at: string; event_id: string } | null)[];
+} {
+  const fallback = { cursor: null, cursorHistory: [] };
+
+  let cursor: { recorded_at: string; event_id: string } | null = null;
+  const hasRecordedAt = params.cursor_recorded_at !== undefined;
+  const hasEventId = params.cursor_event_id !== undefined;
+
+  if (hasRecordedAt || hasEventId) {
+    if (
+      typeof params.cursor_recorded_at !== 'string' ||
+      typeof params.cursor_event_id !== 'string' ||
+      !isIsoTimestamp(params.cursor_recorded_at) ||
+      !isUuid(params.cursor_event_id)
+    ) {
+      return fallback;
+    }
+    cursor = {
+      recorded_at: params.cursor_recorded_at,
+      event_id: params.cursor_event_id,
+    };
+  }
+
+  let cursorHistory: ({ recorded_at: string; event_id: string } | null)[] = [];
+  if (params.cursor_history !== undefined && params.cursor_history !== '') {
+    if (typeof params.cursor_history !== 'string') {
+      return fallback;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(params.cursor_history);
+    } catch {
+      return fallback;
+    }
+    if (!Array.isArray(parsed) || parsed.length > MAX_CURSOR_HISTORY_LENGTH) {
+      return fallback;
+    }
+    const history: ({ recorded_at: string; event_id: string } | null)[] = [];
+    for (const item of parsed) {
+      if (item === null) {
+        history.push(null);
+      } else if (
+        typeof item === 'object' &&
+        item !== null &&
+        !Array.isArray(item) &&
+        'recorded_at' in item &&
+        'event_id' in item &&
+        isIsoTimestamp((item as { recorded_at: unknown }).recorded_at) &&
+        isUuid((item as { event_id: unknown }).event_id) &&
+        Object.keys(item).length === 2
+      ) {
+        history.push({
+          recorded_at: (item as { recorded_at: string }).recorded_at,
+          event_id: (item as { event_id: string }).event_id,
+        });
+      } else {
+        return fallback;
+      }
+    }
+    cursorHistory = history;
+  }
+
+  // Consistent pager state: page 1 (cursor === null) cannot have back-history
+  if (cursor === null && cursorHistory.length > 0) {
+    return fallback;
+  }
+
+  return { cursor, cursorHistory };
 }
 
 function formatConvertedTotal(value: string, locale: 'ar' | 'en') {
@@ -222,32 +318,7 @@ export default async function ReportsPage({
     if (!workspaces.some((w) => w.id === drilldownId)) {
       return denied(locale, m['reports.denied']);
     }
-    const cursorRecordedAt =
-      typeof params.cursor_recorded_at === 'string'
-        ? params.cursor_recorded_at
-        : null;
-    const cursorEventId =
-      typeof params.cursor_event_id === 'string'
-        ? params.cursor_event_id
-        : null;
-    const cursor =
-      cursorRecordedAt && cursorEventId
-        ? { recorded_at: cursorRecordedAt, event_id: cursorEventId }
-        : null;
-
-    let cursorHistory: ({ recorded_at: string; event_id: string } | null)[] =
-      [];
-    if (
-      typeof params.cursor_history === 'string' &&
-      params.cursor_history.length > 0
-    ) {
-      try {
-        const parsed = JSON.parse(params.cursor_history);
-        if (Array.isArray(parsed)) cursorHistory = parsed;
-      } catch {
-        cursorHistory = [];
-      }
-    }
+    const { cursor, cursorHistory } = validateReportsPagerInput(params);
 
     const drillResult = await getWorkspaceDrilldownRows({
       workspaceId: drilldownId,

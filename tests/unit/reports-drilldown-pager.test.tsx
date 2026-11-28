@@ -440,12 +440,13 @@ describe('CR-029-04 reports workspace drill-down pager UI', () => {
         nextCursor,
       });
 
+      const validEventId = '00000000-0000-4000-8000-000000000099';
       const element = await Page({
         searchParams: Promise.resolve({
           month: '2026-11',
           drilldown: wsId,
           cursor_recorded_at: '2026-11-20T10:00:00Z',
-          cursor_event_id: 'ev-0',
+          cursor_event_id: validEventId,
         }),
       });
 
@@ -454,7 +455,7 @@ describe('CR-029-04 reports workspace drill-down pager UI', () => {
         monthStart: '2026-11-01',
         cursor: {
           recorded_at: '2026-11-20T10:00:00Z',
-          event_id: 'ev-0',
+          event_id: validEventId,
         },
       });
 
