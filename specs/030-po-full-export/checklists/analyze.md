@@ -1,12 +1,12 @@
 # Analyze Checklist: PO comprehensive client export
 
-## S73 date-only status revalidation — 2026-11-28 UTC
+## S74 revalidation — 2026-11-28 UTC (NB-030-02)
 
-Revalidated after the merged-PR status-only task ticks recorded in commit `c452c7189e6ef33a6912f03ca63bb61614e2e712`: task ticks only; no requirement text changed (S54 R6). FR/SC requirement text, plan and approved copy are unchanged, so no full Analyze rerun is required for this status-only update. **0 open CRITICAL, 0 open HIGH.**
+Revalidated after requirement text update for NB-030-02 (architect technical decision S72-R37 / S71-R34): aligns FR-006, plan.md and T007 with shipped behavior of one definer RPC (`po_export_snapshot`) returning one MVCC-consistent bounded rowset in a single statement (limit 10001, >10,000 fails closed with no artifact, no cross-transaction paging). Requirements, plan and tasks are consistent. **0 open CRITICAL, 0 open HIGH.**
 
 **Created**: 2026-11-27 00:27 UTC
-**Analyze run**: 2026-11-27 09:37 UTC; in-session cross-artifact review using the repository's Analyze checklist structure.
-**Spec/plan/tasks last changed**: 2026-11-27 00:27 UTC
+**Analyze run**: 2026-11-28 11:52 UTC; in-session cross-artifact review using the repository's Analyze checklist structure.
+**Spec/plan/tasks last changed**: 2026-11-28 11:52 UTC
 **Independent critique**: Sol Medium, [critique-sol-medium.md](critique-sol-medium.md); 1 HIGH and 5 MEDIUM findings addressed or verified not present.
 **Purpose**: Post-Tasks requirements consistency, source fidelity and traceability analysis.
 
