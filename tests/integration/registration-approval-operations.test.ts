@@ -398,6 +398,14 @@ it('T056 rolled-back approval writes no job and retry writes exactly one', async
 });
 
 it('T056 rejection and denied approval enqueue no distribution job; reconsideration enqueues one', async () => {
+  // S65-258: unfiltered workspace-wide public.jobs count — no kind or
+  // client filter, so a denied path writing a job of any kind is caught.
+  const jobsCount = async () => {
+    const [row] = await db`select count(*)::int as count from public.jobs
+      where workspace_id = ${f.wsA.id}`;
+    return row!.count as number;
+  };
+  const jobsBefore = await jobsCount();
   const tDenied = await registered(f);
   expect(
     await call(f.actors.salesA.client, 'approve', request(f, tDenied)),
@@ -412,6 +420,7 @@ it('T056 rejection and denied approval enqueue no distribution job; reconsiderat
   expect(
     await db`select id from public.jobs where workspace_id = ${f.wsA.id} and kind = 'client.distribution' and payload->>'client_id' = ${tDenied.id}`,
   ).toHaveLength(0);
+  expect(await jobsCount()).toBe(jobsBefore);
 
   const tRejected = await registered(f);
   expect(
@@ -421,11 +430,11 @@ it('T056 rejection and denied approval enqueue no distribution job; reconsiderat
   expect(
     await db`select id from public.jobs where workspace_id = ${f.wsA.id} and kind = 'client.distribution' and payload->>'client_id' = ${tRejected.id}`,
   ).toHaveLength(0);
+  expect(await jobsCount()).toBe(jobsBefore);
 
-  expect(
-    (await call(f.po.client, 'reconsider', request(f, tRejected, 'reconsider')))
-      .status,
-  ).toBe('ok');
+  const reconsiderReq = request(f, tRejected, 'reconsider');
+  const reconsidered = await call(f.po.client, 'reconsider', reconsiderReq);
+  expect(reconsidered.status).toBe('ok');
   const [fact] = await db`
     select id from app_private.registration_approval_events
     where workspace_id = ${f.wsA.id} and client_id = ${tRejected.id}`;
@@ -443,6 +452,15 @@ it('T056 rejection and denied approval enqueue no distribution job; reconsiderat
       idempotency_key: `client.distribution:${tRejected.id}:${fact!.id}`,
     },
   ]);
+  expect(await jobsCount()).toBe(jobsBefore + 1);
+
+  // S65-258: replaying the same reconsideration writes no second job.
+  const replay = await call(f.po.client, 'reconsider', reconsiderReq);
+  expect(replay).toEqual(reconsidered);
+  expect(await jobsCount()).toBe(jobsBefore + 1);
+  expect(
+    await db`select id from public.jobs where workspace_id = ${f.wsA.id} and kind = 'client.distribution' and payload->>'client_id' = ${tRejected.id}`,
+  ).toHaveLength(1);
 });
 
 async function transitionClientDeletion(
