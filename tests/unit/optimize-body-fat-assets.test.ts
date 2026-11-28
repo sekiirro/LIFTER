@@ -11,9 +11,12 @@ const script = join(
   'scripts/media/optimize-body-fat-assets.mjs',
 );
 const tempDirs: string[] = [];
-// Every case launches FFmpeg or the generator; allow for Windows process
-// startup and full-suite worker contention without changing any assertions.
-const PROCESS_TEST_TIMEOUT_MS = 30_000;
+// Every case launches FFmpeg plus one or two generator processes. Under
+// Windows full-suite load (and concurrent lint/typecheck/edge builds) these
+// subprocess proofs have been observed taking 5-10s, past Vitest's old 5s
+// budget; #399 raised that to 30s. Widen the budget once more for loaded
+// hosts; all byte, format and budget assertions stay unchanged.
+const PROCESS_TEST_TIMEOUT_MS = 60_000;
 const test = (name: string, run: () => Promise<void>) =>
   it(name, run, PROCESS_TEST_TIMEOUT_MS);
 
