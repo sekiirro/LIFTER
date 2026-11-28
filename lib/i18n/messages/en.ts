@@ -1643,6 +1643,31 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.reminder.body':
     "It is time to enter this month's service quality. Open LIFTER to record it.",
   'workforce.reminder.cta': 'Open review',
+  // S73-R38 / CB-05-D + S73-PO-5: monthly quality UI (contiguous merge block).
+  'workforce.quality.title': 'Monthly quality',
+  'workforce.quality.category.transformation': 'Transformation',
+  'workforce.quality.category.feedback': 'Feedback',
+  'workforce.quality.count': 'Count',
+  'workforce.quality.weight': 'Points per item',
+  'workforce.quality.positiveCount': 'Positive feedback count',
+  'workforce.quality.negativeCount': 'Negative feedback count',
+  'workforce.quality.positiveWeight': 'Points per positive item',
+  'workforce.quality.negativeWeight': 'Points per negative item',
+  'workforce.quality.defaultHint':
+    'Defaults: +1 for positive feedback, -1 for negative. Editable per Trainer.',
+  'workforce.quality.weight.decimalError': 'Use at most two decimal places.',
+  'workforce.quality.stale': 'A newer revision exists. Reload before saving.',
+  'workforce.quality.saved': 'Quality entry saved.',
+  'workforce.quality.saveError': 'Could not save the quality entry. Try again.',
+  'workforce.quality.revision.history': 'Revision history',
+  'workforce.quality.revision.history.empty': 'No earlier revisions.',
+  'workforce.quality.revision.history.column.recordedAt': 'Recorded at',
+  'workforce.quality.revision.effective': 'Counted',
+  'workforce.quality.revision.earlier': 'Earlier revision',
+  'workforce.quality.revision.latestNote': 'Only the latest revision counts.',
+  'workforce.quality.zeroConfirmTitle': 'Save a zero count?',
+  'workforce.quality.zeroConfirmBody':
+    'A zero count replaces the value that counts for this month.',
   'workforce.salary.title': 'Basic salary',
   'workforce.salary.market': 'Market',
   'workforce.salary.currencyHint':
