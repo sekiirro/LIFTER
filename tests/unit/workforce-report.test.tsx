@@ -525,10 +525,12 @@ describe('WorkforceReportPage server route', () => {
       role: 'platform_owner',
       activeWorkspaceIds: [wsId],
     });
-    mocks.rpc.mockResolvedValue({
-      data: sampleReport,
-      error: null,
-    });
+    mocks.rpc.mockImplementation((functionName: string) =>
+      Promise.resolve({
+        data: functionName === 'get_sales_funnel' ? [] : sampleReport,
+        error: null,
+      }),
+    );
 
     const page = await WorkforceReportPage({
       searchParams: Promise.resolve({ workspace: wsId, month: '2026-11' }),
