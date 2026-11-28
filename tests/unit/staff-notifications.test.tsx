@@ -1,5 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 vi.mock('server-only', () => ({}));
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AppShell } from '../../components/shell/AppShell';
@@ -273,8 +275,44 @@ describe('StaffNotifications date-only Cairo formatting and clientName requireme
   });
 });
 
-describe('StaffNotifications dismiss control & no hardcoded close (B4, B14, S72-PO-4)', () => {
+describe('StaffNotifications dismiss control & close button (B4, F-06, F-07, S72-PO-4, S73-UIQA)', () => {
   const en = getMessages('en');
+
+  let dom: JSDOM;
+  let root: ReturnType<typeof createRoot>;
+  let host: HTMLElement;
+
+  function setupEnvironment() {
+    dom = new JSDOM(
+      '<!doctype html><html><body><div id="root"></div></body></html>',
+      {
+        url: 'http://localhost',
+      },
+    );
+    vi.stubGlobal('window', dom.window);
+    vi.stubGlobal('document', dom.window.document);
+    vi.stubGlobal('HTMLElement', dom.window.HTMLElement);
+    vi.stubGlobal('HTMLButtonElement', dom.window.HTMLButtonElement);
+    vi.stubGlobal('HTMLHeadingElement', dom.window.HTMLHeadingElement);
+    vi.stubGlobal('Node', dom.window.Node);
+    vi.stubGlobal('Event', dom.window.Event);
+    vi.stubGlobal('PointerEvent', dom.window.PointerEvent);
+    vi.stubGlobal('KeyboardEvent', dom.window.KeyboardEvent);
+    vi.stubGlobal('MouseEvent', dom.window.MouseEvent);
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    host = dom.window.document.getElementById('root')!;
+    root = createRoot(host);
+  }
+
+  afterEach(async () => {
+    if (root) {
+      await act(async () => {
+        root.unmount();
+      });
+    }
+    dom?.window?.close();
+    vi.unstubAllGlobals();
+  });
 
   it('renders dismiss control on staff notices using toast.dismiss key (B4)', () => {
     const notifications: UnifiedStaffNotification[] = [
@@ -328,29 +366,350 @@ describe('StaffNotifications dismiss control & no hardcoded close (B4, B14, S72-
     expect(formAlertDismissBtn).toBeNull();
   });
 
-  it('has no hardcoded English Close button (B14, S72-PO-4)', () => {
-    const html = renderToStaticMarkup(
+  it('renders explicit Close button in panel header using approved auth.close key in EN and AR (F-07)', () => {
+    for (const locale of ['en', 'ar'] as const) {
+      const messages = getMessages(locale);
+      const html = renderToStaticMarkup(
+        <StaffNotifications
+          messages={messages}
+          locale={locale}
+          initialOpen={true}
+          initialNotifications={[]}
+        />,
+      );
+      const dom = new JSDOM(html);
+      const closeBtn = dom.window.document.querySelector(
+        '[data-testid="staff-notifications-close"]',
+      );
+      expect(closeBtn).not.toBeNull();
+      expect(closeBtn?.getAttribute('aria-label')).toBe(messages['auth.close']);
+    }
+
+    // Never renders hardcoded English literal when key is missing
+    const sparse = { ...en };
+    delete (sparse as Record<string, string>)['auth.close'];
+    const htmlSparse = renderToStaticMarkup(
       <StaffNotifications
-        messages={en}
+        messages={sparse}
         initialOpen={true}
         initialNotifications={[]}
       />,
     );
-    const dom = new JSDOM(html);
-
-    const closeBtn = dom.window.document.querySelector(
+    const domSparse = new JSDOM(htmlSparse);
+    const closeBtnSparse = domSparse.window.document.querySelector(
       '[data-testid="staff-notifications-close"]',
     );
-    expect(closeBtn).toBeNull();
+    expect(closeBtnSparse?.getAttribute('aria-label')).not.toBe('Close');
+  });
 
-    const allButtons = Array.from(
-      dom.window.document.querySelectorAll('button'),
+  it('closes panel and returns focus to bell button when Close button is clicked (F-07)', async () => {
+    setupEnvironment();
+    await act(async () => {
+      root.render(
+        <StaffNotifications
+          messages={en}
+          initialOpen={true}
+          initialNotifications={[]}
+        />,
+      );
+    });
+
+    const bell = host.querySelector<HTMLButtonElement>(
+      '[data-testid="staff-notifications-bell"]',
     );
-    const englishClose = allButtons.find(
-      (b) =>
-        b.getAttribute('aria-label') === 'Close' || b.textContent === 'Close',
+    const closeBtn = host.querySelector<HTMLButtonElement>(
+      '[data-testid="staff-notifications-close"]',
     );
-    expect(englishClose).toBeUndefined();
+    expect(bell).not.toBeNull();
+    expect(closeBtn).not.toBeNull();
+
+    await act(async () => {
+      closeBtn!.click();
+    });
+
+    // Panel is closed
+    expect(
+      host.querySelector('[data-testid="staff-notifications-panel"]'),
+    ).toBeNull();
+    expect(bell?.getAttribute('aria-expanded')).toBe('false');
+    // Focus returned to bell
+    expect(dom.window.document.activeElement).toBe(bell);
+  });
+
+  it('moves focus to next item first action after dismiss removes an item (F-06)', async () => {
+    let notices: UnifiedStaffNotification[] = [
+      {
+        type: 'staff_notice',
+        id: 'notice-0',
+        kind: 'subscription_expiring_t3',
+        workspaceId: 'ws-1',
+        sourceKey: 'sub-0',
+        createdAt: '2026-11-27T10:00:00Z',
+        readAt: null,
+        clientName: 'Client 0',
+        expiryDate: '2026-11-30T10:00:00Z',
+      },
+      {
+        type: 'staff_notice',
+        id: 'notice-1',
+        kind: 'subscription_expiring_t3',
+        workspaceId: 'ws-1',
+        sourceKey: 'sub-1',
+        createdAt: '2026-11-27T09:00:00Z',
+        readAt: null,
+        clientName: 'Client 1',
+        expiryDate: '2026-11-30T10:00:00Z',
+      },
+      {
+        type: 'staff_notice',
+        id: 'notice-2',
+        kind: 'subscription_expiring_t3',
+        workspaceId: 'ws-1',
+        sourceKey: 'sub-2',
+        createdAt: '2026-11-27T08:00:00Z',
+        readAt: null,
+        clientName: 'Client 2',
+        expiryDate: '2026-11-30T10:00:00Z',
+      },
+    ];
+
+    const onFetch = vi.fn(async () => ({
+      status: 'ok' as const,
+      notifications: notices,
+    }));
+    const onDismiss = vi.fn(
+      async (_type: 'form_alert' | 'staff_notice', id: string) => {
+        notices = notices.filter((n) => n.id !== id);
+        return { status: 'ok' };
+      },
+    );
+
+    setupEnvironment();
+    await act(async () => {
+      root.render(
+        <StaffNotifications
+          messages={en}
+          initialOpen={true}
+          initialNotifications={notices}
+          onFetch={onFetch}
+          onDismiss={onDismiss}
+        />,
+      );
+    });
+
+    // Dismiss middle item (notice-1)
+    const dismiss1 = host.querySelector<HTMLButtonElement>(
+      '[data-testid="dismiss-notice-1"]',
+    );
+    expect(dismiss1).not.toBeNull();
+
+    await act(async () => {
+      dismiss1!.click();
+    });
+
+    // Middle item is removed, focus should move to next item's first action (mark-read or dismiss on notice-2)
+    const notice2Action = host.querySelector<HTMLButtonElement>(
+      '[data-testid="notification-item-notice-2"] button',
+    );
+    expect(notice2Action).not.toBeNull();
+    expect(dom.window.document.activeElement).toBe(notice2Action);
+    expect(dom.window.document.activeElement).not.toBe(
+      dom.window.document.body,
+    );
+  });
+
+  it('moves focus to previous item action after dismiss removes the last item (F-06)', async () => {
+    let notices: UnifiedStaffNotification[] = [
+      {
+        type: 'staff_notice',
+        id: 'notice-0',
+        kind: 'subscription_expiring_t3',
+        workspaceId: 'ws-1',
+        sourceKey: 'sub-0',
+        createdAt: '2026-11-27T10:00:00Z',
+        readAt: null,
+        clientName: 'Client 0',
+        expiryDate: '2026-11-30T10:00:00Z',
+      },
+      {
+        type: 'staff_notice',
+        id: 'notice-1',
+        kind: 'subscription_expiring_t3',
+        workspaceId: 'ws-1',
+        sourceKey: 'sub-1',
+        createdAt: '2026-11-27T09:00:00Z',
+        readAt: null,
+        clientName: 'Client 1',
+        expiryDate: '2026-11-30T10:00:00Z',
+      },
+    ];
+
+    const onFetch = vi.fn(async () => ({
+      status: 'ok' as const,
+      notifications: notices,
+    }));
+    const onDismiss = vi.fn(
+      async (_type: 'form_alert' | 'staff_notice', id: string) => {
+        notices = notices.filter((n) => n.id !== id);
+        return { status: 'ok' };
+      },
+    );
+
+    setupEnvironment();
+    await act(async () => {
+      root.render(
+        <StaffNotifications
+          messages={en}
+          initialOpen={true}
+          initialNotifications={notices}
+          onFetch={onFetch}
+          onDismiss={onDismiss}
+        />,
+      );
+    });
+
+    // Dismiss last item (notice-1)
+    const dismiss1 = host.querySelector<HTMLButtonElement>(
+      '[data-testid="dismiss-notice-1"]',
+    );
+    expect(dismiss1).not.toBeNull();
+
+    await act(async () => {
+      dismiss1!.click();
+    });
+
+    // Last item is removed and there is no next item. Focus should move to previous item's action
+    const notice0Action = host.querySelector<HTMLButtonElement>(
+      '[data-testid="notification-item-notice-0"] button',
+    );
+    expect(notice0Action).not.toBeNull();
+    expect(dom.window.document.activeElement).toBe(notice0Action);
+    expect(dom.window.document.activeElement).not.toBe(
+      dom.window.document.body,
+    );
+  });
+
+  it('moves focus to panel heading with tabIndex=-1 when last remaining item is removed (F-06)', async () => {
+    let notices: UnifiedStaffNotification[] = [
+      {
+        type: 'staff_notice',
+        id: 'notice-0',
+        kind: 'subscription_expiring_t3',
+        workspaceId: 'ws-1',
+        sourceKey: 'sub-0',
+        createdAt: '2026-11-27T10:00:00Z',
+        readAt: null,
+        clientName: 'Client 0',
+        expiryDate: '2026-11-30T10:00:00Z',
+      },
+    ];
+
+    const onFetch = vi.fn(async () => ({
+      status: 'ok' as const,
+      notifications: notices,
+    }));
+    const onDismiss = vi.fn(
+      async (_type: 'form_alert' | 'staff_notice', id: string) => {
+        notices = notices.filter((n) => n.id !== id);
+        return { status: 'ok' };
+      },
+    );
+
+    setupEnvironment();
+    await act(async () => {
+      root.render(
+        <StaffNotifications
+          messages={en}
+          initialOpen={true}
+          initialNotifications={notices}
+          onFetch={onFetch}
+          onDismiss={onDismiss}
+        />,
+      );
+    });
+
+    const dismiss0 = host.querySelector<HTMLButtonElement>(
+      '[data-testid="dismiss-notice-0"]',
+    );
+    expect(dismiss0).not.toBeNull();
+
+    await act(async () => {
+      dismiss0!.click();
+    });
+
+    // List is now empty. Focus should move to panel heading with tabIndex=-1
+    const heading = host.querySelector<HTMLHeadingElement>(
+      '#staff-notifications-title',
+    );
+    expect(heading).not.toBeNull();
+    expect(heading?.getAttribute('tabindex')).toBe('-1');
+    expect(dom.window.document.activeElement).toBe(heading);
+    expect(dom.window.document.activeElement).not.toBe(
+      dom.window.document.body,
+    );
+  });
+
+  it('moves focus to next item first action after mark-read removes an item (F-06)', async () => {
+    let notifications: UnifiedStaffNotification[] = [
+      {
+        type: 'form_alert',
+        id: 'alert-0',
+        stage: 'trainer_initial',
+        workspaceId: 'ws-1',
+        createdAt: '2026-11-27T10:00:00Z',
+        readAt: null,
+      },
+      {
+        type: 'form_alert',
+        id: 'alert-1',
+        stage: 'trainer_initial',
+        workspaceId: 'ws-1',
+        createdAt: '2026-11-27T09:00:00Z',
+        readAt: null,
+      },
+    ];
+
+    const onFetch = vi.fn(async () => ({
+      status: 'ok' as const,
+      notifications,
+    }));
+    const onMarkRead = vi.fn(
+      async (_type: 'form_alert' | 'staff_notice', id: string) => {
+        notifications = notifications.filter((n) => n.id !== id);
+        return { status: 'ok' };
+      },
+    );
+
+    setupEnvironment();
+    await act(async () => {
+      root.render(
+        <StaffNotifications
+          messages={en}
+          initialOpen={true}
+          initialNotifications={notifications}
+          onFetch={onFetch}
+          onMarkRead={onMarkRead}
+        />,
+      );
+    });
+
+    const markRead0 = host.querySelector<HTMLButtonElement>(
+      '[data-testid="mark-read-alert-0"]',
+    );
+    expect(markRead0).not.toBeNull();
+
+    await act(async () => {
+      markRead0!.click();
+    });
+
+    const alert1Action = host.querySelector<HTMLButtonElement>(
+      '[data-testid="notification-item-alert-1"] button',
+    );
+    expect(alert1Action).not.toBeNull();
+    expect(dom.window.document.activeElement).toBe(alert1Action);
+    expect(dom.window.document.activeElement).not.toBe(
+      dom.window.document.body,
+    );
   });
 });
 
