@@ -55,6 +55,7 @@ export default async function StaffLayout({
         <AppShell
           role={navigationRole}
           messages={getMessages(locale)}
+          locale={locale}
           workspaceId={workspaceId ?? undefined}
           contentAs="div"
         >

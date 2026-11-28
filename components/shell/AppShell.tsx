@@ -7,6 +7,7 @@ import {
   type Role,
 } from '../../lib/design/navigation';
 import type { GlassFallback } from '../ui/glass/GlassSurface';
+import type { Locale } from '../../lib/design/preferences';
 import type { Messages } from '../../lib/i18n';
 import { ShellNavigation } from './ShellNavigation';
 import { StaffNotifications } from './StaffNotifications';
@@ -39,6 +40,7 @@ export type AppShellProps = Omit<
   contentAs?: 'main' | 'div';
   workspaceId?: string;
   notifications?: boolean;
+  locale?: Locale;
 };
 
 export function AppShell({
@@ -50,6 +52,7 @@ export function AppShell({
   workspaceId,
   fallback,
   notifications = true,
+  locale = 'en',
 }: AppShellProps) {
   const navigation = getNavigation(role);
   const isStaff =
@@ -61,7 +64,7 @@ export function AppShell({
   if (role === 'platform_owner')
     return (
       <div className={styles.shell} data-shell="">
-        <PlatformOwnerHeader messages={messages} />
+        <PlatformOwnerHeader messages={messages} locale={locale} />
         <Content className={styles.content}>{children}</Content>
       </div>
     );
@@ -71,7 +74,7 @@ export function AppShell({
         <Content>{children}</Content>
         {isStaff && (
           <div className={styles.staffHeader}>
-            <StaffNotifications messages={messages} />
+            <StaffNotifications messages={messages} locale={locale} />
           </div>
         )}
       </div>
@@ -91,7 +94,7 @@ export function AppShell({
       <Content className={styles.content}>{children}</Content>
       {isStaff && (
         <div className={styles.staffHeader}>
-          <StaffNotifications messages={messages} />
+          <StaffNotifications messages={messages} locale={locale} />
         </div>
       )}
     </div>

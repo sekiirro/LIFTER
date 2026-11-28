@@ -3,11 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Messages } from '../../lib/i18n';
+import type { Locale } from '../../lib/design/preferences';
 import { Button } from '../ui/Button';
 import { StaffNotifications } from './StaffNotifications';
 import styles from './PlatformOwnerHeader.module.css';
 
-export function PlatformOwnerHeader({ messages }: { messages: Messages }) {
+export function PlatformOwnerHeader({
+  messages,
+  locale = 'en',
+}: {
+  messages: Messages;
+  locale?: Locale;
+}) {
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -37,7 +44,7 @@ export function PlatformOwnerHeader({ messages }: { messages: Messages }) {
       }}
     >
       <div className={styles.actions}>
-        <StaffNotifications messages={messages} />
+        <StaffNotifications messages={messages} locale={locale} />
         <nav aria-label={messages['nav.label']}>
           <Button
             ref={triggerRef}

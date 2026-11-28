@@ -171,7 +171,7 @@
 .markReadButton,
 .dismissButton {
   font-size: var(--text-xs);
-  min-block-size: 32px;
+  min-block-size: var(--touch-min);
   padding: var(--space-1) var(--space-3);
 }
 
