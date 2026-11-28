@@ -52,8 +52,18 @@
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-sm);
 }
-.sectionHeader h2 {
+.sectionHeader h2,
+.sectionHeading {
   margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+.subheading {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
 }
 .sectionHeader p {
   margin: var(--space-2) 0 0;
@@ -116,13 +126,93 @@
   padding-block-start: var(--space-3);
   border-block-start: 1px solid var(--color-border);
 }
+.platformSubtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+}
+.drilldownHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.drilldownTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.drilldownTitleRow h2 {
+  margin: 0;
+}
+.metricsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.metricLabel {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.metricValue {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+.metricSub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.breakdownSection {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+.breakdownSection h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.workspacesSection {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+.workspacesSection h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.cardAction {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: var(--space-3);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
 @media (min-width: 48rem) {
   .controls {
-    grid-template-columns: minmax(12rem, 1fr) auto minmax(14rem, 1fr);
+    grid-template-columns: minmax(12rem, 1fr) auto minmax(14rem, 1fr) minmax(
+        12rem,
+        1fr
+      );
     align-items: end;
   }
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metricsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .section {
     padding: var(--space-5);

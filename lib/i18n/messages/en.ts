@@ -39,6 +39,23 @@ export const en: Record<keyof typeof ar, string> = {
   'reports.totalConvertedEgp': 'Converted total (EGP)',
   'reports.statusPendingRate': 'Rate pending',
   'reports.installmentClient': 'Installment client',
+  // spec 029 PO reporting drill-down (CB-P8-02, S71-PO-12)
+  'reports.platform.title': 'Platform reports',
+  'reports.breakdown.label': 'Breakdown',
+  'reports.breakdown.byMonth': 'By month',
+  'reports.breakdown.byPackage': 'By package',
+  'reports.metric.revenue': 'Revenue',
+  'reports.metric.subscriptions': 'Subscriptions',
+  'reports.metric.clients': 'Clients',
+  'reports.drilldown.action': 'View details',
+  'reports.drilldown.empty': 'No report data for this selection',
+  'reports.drilldown.error': 'Reports couldn’t be loaded. Try again.',
+  'reports.drilldown.workspaceHeading': 'Workspace details',
+  'reports.drilldown.status.completed': 'Completed',
+  'reports.column.kind': 'Type',
+  'reports.column.status': 'Status',
+  'reports.drilldown.sourceRows.empty':
+    'No source rows found for this workspace.',
   // spec 023 client progress coaching (S55-PO-10 approved copy)
   'progress.title': 'Progress',
   'progress.measurements.title': 'Measurements',
