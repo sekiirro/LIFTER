@@ -15,7 +15,7 @@ Extend the current F22 client inbox, F23 staff notice inbox, F13 expiry projecti
 **Target Platform**: Existing LIFTER web app, Supabase, current Worker cron deployment.
 **Project Type**: Web application plus database RPC/jobs.
 **Performance Goals**: No numeric target specified; use bounded pagination, indexed due-stage reads, and existing route performance measurement.
-**Constraints**: No migrations/code/stack in this lane; no new inbox/list/job; current F26 retention and scheduling gates remain authoritative.
+**Constraints**: No migrations/code/stack in this lane; no new inbox/list/job; current F26 retention (`specs/026-retention-purge/spec.md` FR-004 / S70-R47) and scheduling gates remain authoritative.
 **Scale/Scope**: P8 expiry behavior for subscriptions/workspaces already represented in F13.
 
 ## Constitution Check
@@ -37,7 +37,7 @@ Extend the current F22 client inbox, F23 staff notice inbox, F13 expiry projecti
 | Staff directory/list | Existing `/clients` route and staff directory RPC                                                                                                                | Add expiry filter/status to its current authorized query and UI. Do not create an expiry list page.                                                                                                                                 |
 | Scheduler            | `workers/cron` already ticks each minute                                                                                                                         | Add expiry evaluator to the existing scheduled dispatch, or to its existing job/outbox path after exact implementation review. Do not add a distinct cron registration/job. Persistent notice writes are idempotent even on reruns. |
 | F15 late alerts      | F11 T057 and F15 forms inbox/scheduler                                                                                                                           | Keep separate form deadlines/stages and behavior; no new client-late or Trainer-late schedule.                                                                                                                                      |
-| Retention            | F26 approved 30-day rules and existing purge activation gate                                                                                                     | Extend F26's existing purge allowlist/flow for notice rows; do not add another purge cron or alter the approved clock.                                                                                                              |
+| Retention            | F26 approved 30-day rules and existing purge activation gate                                                                                                     | Extend F26's existing purge allowlist/flow for notice rows (`specs/026-retention-purge/spec.md` FR-004 / S70-R47); currently applies no dispute retention hold (S76-PO-1 1C); do not add another purge cron or alter the approved clock.                                                                                                              |
 | P7 audit privacy     | F27 role-safe P7 data/audit boundary                                                                                                                             | Expiry notices and list must not query or reveal P7 audit details.                                                                                                                                                                  |
 
 ## Scope split and reasoning
@@ -50,14 +50,14 @@ Extend the current F22 client inbox, F23 staff notice inbox, F13 expiry projecti
 
 ## Clarifications and open decisions
 
-S71-PO-1 scope is settled. S71-PO-6 records all-Trainer access and one new notice pair per new expiry date. S71-R12 records technical defaults for immediate-once T-3 when expiry is upcoming and less than 72 hours away, and the inclusive-now/exclusive-72-hour expiring window. No open PO ambiguities remain; proposed copy remains subject to per-screen approval.
+S71-PO-1 scope is settled. S71-PO-6 records all-Trainer access and one new notice pair per new expiry date. S71-R12 records technical defaults for immediate-once T-3 when expiry is upcoming and less than 72 hours away, and the inclusive-now/exclusive-72-hour expiring window. S76-PO-1 (ruling S76-R6) settles staff notifications date formatting (028-06 A: day-first en-GB) and dispute retention hold scope (028-R1 1C: no dispute hold until an approved dispute source exists per F26 `specs/026-retention-purge/spec.md` FR-004 / S70-R47, with 2A/3A/4A/5B conditions binding when an approved source exists). No open PO ambiguities remain; proposed copy remains subject to per-screen approval.
 
 ## Proposed implementation slices
 
 1. Add RED tests first for role/RLS denial, state/stage eligibility, F13 Cairo expiry-date-to-instant conversion, current recipient resolution, and lifecycle races. Serialize evaluation with the existing per-subscription lifecycle lock; recheck state/recipients after waits.
 2. Extend existing notice-kind/read/dismiss RPC seams and worker evaluation; prove cron reruns, concurrent claims, lifecycle changes and safe errors.
 3. Extend the current directory filter and build one shared staff notifications surface in the app shell. Verify F15/F23/expiry list composition, existing API reuse, all-Trainer coaching access RLS matrix, pagination, localization/accessibility states, and no P7 audit disclosure.
-4. Extend F26 purge allowlist. Keep notice rows while the account is active; after closure/deletion apply the approved 30-day clock and tied dispute hold/restart. Keep audit's separate 30-day-from-creation clock. Existing purge activation gates remain unchanged.
+4. Extend F26 purge allowlist (`specs/026-retention-purge/spec.md` FR-004 / S70-R47). Keep notice rows while the account is active; after closure/deletion apply the approved 30-day clock and holds already defined by approved sources (open refund lockouts). Feature 028 currently applies NO dispute retention hold (S76-PO-1 1C, S76-R6); dispute hold conditions (2A/3A/4A/5B) apply only once an approved dispute category/source exists. Keep audit's separate 30-day-from-creation clock. Existing purge activation gates remain unchanged.
 
 ## Structure Decision
 

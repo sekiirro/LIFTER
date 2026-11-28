@@ -2,8 +2,9 @@
 
 **Created**: 2026-11-27 01:14 UTC
 **Date-only status revalidation — 2026-11-28 UTC**: task ticks only on merged PRs with exact-head CI and test files present on origin/main (S74, docs-only); no FR/SC/plan/requirement text, copy or PO decision changed, so no full Analyze rerun is required (S54 R6). **0 open CRITICAL, 0 open HIGH.**
+**Analyze rerun — 2026-11-28 15:47 UTC**: Spec Kit requirements, plan, tasks, and PO decisions consistency analysis following S76-PO-1 / S76-R6 updates (FR-011, plan, T009/T017, po-mcqs 028-06 and 028-R1; F26 cross-reference to specs/026-retention-purge/spec.md FR-004 / S70-R47; currently NO dispute retention hold per 1C; 2A/3A/4A/5B recorded as conditions when an approved dispute source exists). Counts: **0 open CRITICAL, 0 open HIGH, 0 open MEDIUM.**
 **Analyze run**: 2026-11-27 09:37 UTC; in-session cross-artifact review using the repository's Analyze checklist structure.
-**Spec/plan/tasks last changed**: 2026-11-27 01:14 UTC
+**Spec/plan/tasks last changed**: 2026-11-28 15:47 UTC
 **Independent critique**: Sol Medium, recorded in [critique-sol-medium.md](critique-sol-medium.md); 3 HIGH and 3 MEDIUM findings corrected.
 **Purpose**: Spec Kit post-Tasks requirements consistency and traceability analysis.
 
@@ -22,7 +23,7 @@
 - [x] Retry/concurrency identity is `(subscription, effective-expiry revision, stage)`; delivered rows remain, obsolete due instants are suppressed, and read/dismiss is per recipient.
 - [x] Short-lead T-3 catch-up and inclusive-now/exclusive-72-hour list window are specified as S71-R12 technical defaults.
 - [x] One shared staff notifications surface lists F15 form alerts, F23 notices, and expiry kinds via existing read/mark APIs; no new inbox/table/job/Realtime publication.
-- [x] F26 active-account/closure clock, dispute hold/restart, audit creation clock and inactive purge gate are explicit.
+- [x] F26 active-account/closure clock, approved refund hold/restart (currently no dispute hold per 1C and specs/026-retention-purge/spec.md FR-004 / S70-R47), audit creation clock and inactive purge gate are explicit.
 - [x] Tasks T001-T009 are RED tests and precede T010-T017 implementation; all tasks cite FR IDs.
 - [x] CB-P8-01 screens 1 and 2 are marked APPROVED from S71-PO-9/S71-R19 in `copy-proposal.md`; client inbox copy remains PROPOSED.
 
@@ -31,7 +32,7 @@
 - CRITICAL: 0 open (0 found).
 - HIGH: 0 open (0 found). Three independent critique findings were fixed and recorded; requirement/ruling consistency was rechecked.
 - MEDIUM: 0 open (2 found and fixed: approved staff/directory copy was still labeled proposed; the F11 task reference in this checklist was parsed as an undeclared spec-028 task by the CI consistency gate).
-- PO decisions: 0 remaining. MCQ 028-01/03 are DECIDED by S71-PO-6; 028-02/04 are S71-R12 architect technical defaults.
+- PO decisions: 0 remaining. MCQ 028-01/03 are DECIDED by S71-PO-6; 028-02/04 are S71-R12 architect technical defaults; 028-06 is DECIDED by S76-PO-1 (A: day-first en-GB '30 Nov 2026'); 028-R1 (MCQ-1..5) is DECIDED by S76-PO-1 (1C, 2A, 3A, 4A, 5B).
 - Constitution conflicts: none. No amendment proposed.
 
 No open ambiguities remain. The two approved screens match the frozen S71-R19 source; client inbox copy remains proposed.
