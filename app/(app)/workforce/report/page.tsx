@@ -10,6 +10,10 @@ import {
   fetchWorkforceReport,
 } from '../../../../lib/workforce/report';
 import { WorkforceReportView } from '../../../../components/workforce/WorkforceReportView';
+import {
+  postPointAdjustmentAction,
+  reattributePointEntryAction,
+} from './actions';
 import strikeNavStyles from '../../../../components/workforce/StrikeNav.module.css';
 
 type Search = { workspace?: string | string[]; month?: string | string[] };
@@ -138,6 +142,8 @@ export default async function WorkforceReportPage({
         locale={locale}
         messages={m}
         currentMonth={month}
+        postPointAdjustment={postPointAdjustmentAction}
+        reattributePointEntry={reattributePointEntryAction}
       />
     </>
   );
