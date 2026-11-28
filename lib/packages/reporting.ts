@@ -544,38 +544,21 @@ export async function getWorkspaceDrilldownRows(params: {
     commissionMinor: row.commission_minor ?? null,
   }));
 
-  let revenueConvertedEgpMinor = '0';
-  let subscriptionCount = 0;
-  let clientCount = 0;
+  if (aggResult.error) {
+    if (aggResult.error.code === '42501') return { status: 'not_permitted' };
+    return { status: 'unavailable' };
+  }
+  const agg = aggResult.data as BackendAggregateResponse | null;
+  if (!agg || agg.status !== 'ok') {
+    if (agg?.status === 'not_permitted') return { status: 'not_permitted' };
+    return { status: 'unavailable' };
+  }
 
-  if (
-    aggResult.data &&
-    (aggResult.data as BackendAggregateResponse).status === 'ok'
-  ) {
-    const agg = aggResult.data as BackendAggregateResponse;
-    let sum = 0n;
-    for (const ct of agg.currency_totals ?? []) {
-      if (ct.converted_egp_minor) {
-        sum += BigInt(ct.converted_egp_minor);
-      }
+  let sum = 0n;
+  for (const ct of agg.currency_totals ?? []) {
+    if (ct.converted_egp_minor) {
+      sum += BigInt(ct.converted_egp_minor);
     }
-    revenueConvertedEgpMinor = sum.toString();
-    subscriptionCount = Number(agg.counts?.distinct_subscriptions ?? 0);
-    clientCount = Number(agg.counts?.distinct_clients ?? 0);
-  } else {
-    let sum = 0n;
-    for (const r of rows) {
-      if (r.convertedEgpExact) {
-        sum += BigInt(Math.floor(Number(r.convertedEgpExact) + 0.5));
-      }
-    }
-    revenueConvertedEgpMinor = sum.toString();
-    subscriptionCount = new Set(
-      (payload.rows ?? []).map((r) => r.subscription_id).filter(Boolean),
-    ).size;
-    clientCount = new Set(
-      (payload.rows ?? []).map((r) => r.client_id).filter(Boolean),
-    ).size;
   }
 
   return {
@@ -584,9 +567,9 @@ export async function getWorkspaceDrilldownRows(params: {
     workspaceName,
     rows,
     totals: {
-      revenueConvertedEgpMinor,
-      subscriptionCount,
-      clientCount,
+      revenueConvertedEgpMinor: sum.toString(),
+      subscriptionCount: Number(agg.counts?.distinct_subscriptions ?? 0),
+      clientCount: Number(agg.counts?.distinct_clients ?? 0),
     },
   };
 }
