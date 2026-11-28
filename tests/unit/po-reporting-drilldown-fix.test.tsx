@@ -286,6 +286,13 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
           revenueConvertedEgpMinor: '2000000',
           subscriptionCount: 50,
           clientCount: 45,
+          pendingFxCount: 0,
+          pendingRateCount: 0,
+          pendingRates: 0,
+          pendingCount: 0,
+          pending: 0,
+          hasPendingFx: false,
+          pendingFx: false,
         });
         expect(res.breakdowns).toHaveLength(1);
         expect(res.breakdowns[0]).toEqual({
@@ -294,6 +301,13 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
           revenueConvertedEgpMinor: '2000000',
           subscriptionCount: 50,
           clientCount: 45,
+          pendingFxCount: 0,
+          pendingRateCount: 0,
+          pendingRates: 0,
+          pendingCount: 0,
+          pending: 0,
+          hasPendingFx: false,
+          pendingFx: false,
         });
       }
     });
@@ -326,6 +340,13 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
           revenueConvertedEgpMinor: '2000000',
           subscriptionCount: 50,
           clientCount: 45,
+          pendingFxCount: 0,
+          pendingRateCount: 0,
+          pendingRates: 0,
+          pendingCount: 0,
+          pending: 0,
+          hasPendingFx: false,
+          pendingFx: false,
         });
       }
     });
