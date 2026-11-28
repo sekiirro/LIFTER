@@ -6,6 +6,7 @@ import { renderableNotices } from '../../lib/client-access/notices-projection';
 import type { ClientNotices as ClientNoticesResult } from '../../lib/client-access/notices-projection';
 import type { Locale } from '../../lib/design/preferences';
 import type { Messages } from '../../lib/i18n';
+import { Alert } from '../ui/Alert';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
 import { formatCalendarDate, formatPublishedAt } from './format';
@@ -14,7 +15,7 @@ import styles from './client-portal.module.css';
 /**
  * F22 US3 client notices (F15 inbox client-recipient extension). Approved copy
  * only: notice text by kind, "Mark as read", "Dismiss notification" and the empty state. A failed read
- * renders nothing rather than a misleading empty state.
+ * renders the standard generic error state (028-05) rather than a misleading empty state.
  */
 export function ClientNotices({
   result,
@@ -25,7 +26,16 @@ export function ClientNotices({
   locale: Locale;
   messages: Messages;
 }) {
-  if (result.status !== 'ok') return null;
+  if (result.status !== 'ok')
+    return (
+      <Alert
+        tone="error"
+        title={m['states.error.title']}
+        data-testid="client-notices-error"
+      >
+        <p>{m['states.error.description']}</p>
+      </Alert>
+    );
   const notices = renderableNotices(result.notices);
   if (notices.length === 0)
     return (
