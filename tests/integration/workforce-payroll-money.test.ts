@@ -428,7 +428,7 @@ describe('P7 own compensation read', () => {
       });
   });
 
-  it('denies other staff, WO and anon with the same not_permitted error', async () => {
+  it('denies other staff and WO with the same not_permitted error', async () => {
     const otherStaff = await trainer.client.rpc('p7_get_own_compensation', {
       p_employee_id: sales.userId,
       p_effective_month: '2026-11-01',
@@ -437,15 +437,53 @@ describe('P7 own compensation read', () => {
       p_employee_id: trainer.userId,
       p_effective_month: '2026-11-01',
     });
-    const anonymous = await anonClient().rpc('p7_get_own_compensation', {
-      p_employee_id: trainer.userId,
-      p_effective_month: '2026-11-01',
-    });
-    for (const result of [otherStaff, workspaceOwner, anonymous]) {
+    for (const result of [otherStaff, workspaceOwner]) {
       expect(result.data).toBeNull();
       expect(result.error).toMatchObject({ code: '42501' });
       expect(result.error?.message).toMatch(/not_permitted/);
     }
+  });
+
+  it('S70-R126: anon has no EXECUTE privilege and cannot reach the RPC', async () => {
+    const [privilege] = await db`
+      select
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_proc p
+      where p.oid = 'public.p7_get_own_compensation(uuid,date)'::regprocedure
+    `;
+    expect(privilege).toMatchObject({
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
+
+    const anonymous = await anonClient().rpc('p7_get_own_compensation', {
+      p_employee_id: trainer.userId,
+      p_effective_month: '2026-11-01',
+    });
+    expect(anonymous.data).toBeNull();
+    expect(anonymous.error).toMatchObject({ code: '42501' });
+    expect(anonymous.error?.message).toMatch(/permission denied for function/i);
+
+    // The canonical caller-owned path and the in-function denial path are
+    // unchanged by the privilege-only revocation.
+    const own = await trainer.client.rpc('p7_get_own_compensation', {
+      p_employee_id: trainer.userId,
+      p_effective_month: '2026-11-01',
+    });
+    expect(own.error).toBeNull();
+    expect(own.data).toMatchObject([
+      { basic_salary_amount_minor: '100000', currency: 'EGP' },
+    ]);
+    const otherStaff = await sales.client.rpc('p7_get_own_compensation', {
+      p_employee_id: trainer.userId,
+      p_effective_month: '2026-11-01',
+    });
+    expect(otherStaff.data).toBeNull();
+    expect(otherStaff.error).toMatchObject({ code: '42501' });
+    expect(otherStaff.error?.message).toMatch(/not_permitted/);
   });
 
   it('T019 kill test: removing the own-id predicate exposes the other salary', async () => {

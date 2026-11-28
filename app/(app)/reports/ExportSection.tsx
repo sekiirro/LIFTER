@@ -157,42 +157,38 @@ function ExportSectionBody({
   const [jobId, setJobId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const inFlightRef = useRef(false);
-  const idempotencyKeyRef = useRef<string | null>(null);
+  const transportRetryKeyRef = useRef<string | null>(null);
 
   const onScopeKindChange = (kind: 'all' | 'workspace') => {
     if (kind !== scopeKind) {
       setScopeKind(kind);
-      idempotencyKeyRef.current = null;
       setStatus('idle');
       setJobId(null);
+      transportRetryKeyRef.current = null;
     }
   };
 
   const onWorkspaceChange = (id: string) => {
     if (id !== workspaceId) {
       setWorkspaceId(id);
-      idempotencyKeyRef.current = null;
       setStatus('idle');
       setJobId(null);
+      transportRetryKeyRef.current = null;
     }
   };
 
   const submit = useCallback(async () => {
+    // A request already in flight owns its key: the guard makes a double-click
+    // a no-op, so it never issues a second request with a different key.
+    // A transport failure (rejection or client-side 'error' with no jobId) may
+    // still have enqueued a job server-side, so its key is kept for the retry.
+    // Terminal server states (failed/expired) are a new intent with a new key
+    // and a new archive (S71-R29 / CR-030-03); S74-412-01.
     if (inFlightRef.current || pending) return;
+    const key = transportRetryKeyRef.current ?? generateExportIdempotencyKey();
+    transportRetryKeyRef.current = null;
     inFlightRef.current = true;
     setPending(true);
-
-    // Generate ONE idempotency key per user intent, reuse on retry/double click,
-    // new key only for a new request (e.g. after ready) or changed scope.
-    const shouldReuseKey =
-      idempotencyKeyRef.current !== null &&
-      status !== 'ready' &&
-      status !== 'empty';
-    const key = shouldReuseKey
-      ? idempotencyKeyRef.current!
-      : generateExportIdempotencyKey();
-
-    idempotencyKeyRef.current = key;
 
     const scope: ExportScope =
       scopeKind === 'all'
@@ -203,13 +199,16 @@ function ExportSectionBody({
       const result = await requestClientExport(scope, key);
       setStatus(result.status);
       setJobId(result.jobId);
+      if (result.status === 'error' && !result.jobId)
+        transportRetryKeyRef.current = key;
     } catch {
       setStatus('error');
+      transportRetryKeyRef.current = key;
     } finally {
       inFlightRef.current = false;
       setPending(false);
     }
-  }, [pending, status, scopeKind, workspaceId]);
+  }, [pending, scopeKind, workspaceId]);
 
   const polling = status === 'queued' || status === 'running';
   useEffect(() => {

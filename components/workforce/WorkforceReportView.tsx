@@ -20,6 +20,7 @@ import type {
 } from '../../lib/workforce/manual-points';
 import { PointActionDialog } from './PointActionDialog';
 import styles from './WorkforceReport.module.css';
+import { RefundFaultReviewPanel } from './RefundFaultReviewPanel';
 
 type PointDialogState =
   | { operation: 'add' | 'deduct'; staff: StaffTotal }
@@ -217,6 +218,14 @@ export function WorkforceReportView({
           tone="success"
           title={m['workforce.report.points.saved']}
           data-testid="points-success"
+        />
+      )}
+      {report && (
+        <RefundFaultReviewPanel
+          workspaceId={report.workspace_id}
+          locale={locale}
+          messages={m}
+          staff={[...trainers, ...sales]}
         />
       )}
 
@@ -499,6 +508,7 @@ export function WorkforceReportView({
             ) : (
               <div
                 className={styles.tableWrapper}
+                role="region"
                 tabIndex={0}
                 aria-label={m['workforce.report.ledger.title']}
               >

@@ -6,7 +6,7 @@
 
 ## Summary
 
-Specify PO-controlled workforce/payroll and KPI reporting while reusing F10/F12 link and payment facts, F13 refunds, F15/F23 check-ins, F19 immutable productivity events, and F26 retention. Store every new penalty, reversal, correction and manual adjustment in a separate append-only KPI ledger. Compute period projections/snapshots from durable P7 earned facts and append-only adjustment/quality ledgers, never recomputing from client rows that F26 can purge. Apply server-side role projections; Sales receives only its own finalized month total after month-end. No code, migrations, stack, payout, or Telegram response-speed implementation is included in this lane.
+Specify PO-controlled workforce/payroll and KPI reporting while reusing F10/F12 link and payment facts, F13 refunds, F15/F23 check-ins, F19 immutable productivity events, and F26 retention. Store every new penalty, reversal, correction and manual adjustment in a separate append-only KPI ledger. Compute period projections/snapshots from durable P7 earned facts and append-only adjustment/quality ledgers, never recomputing from client rows that F26 can purge. Apply server-side role projections; before Cairo month-end and PO finalization, Sales may see only its own configured Basic Salary through the existing own-compensation self-read and a not-available state; after both gates, it receives only its own finalized month total. S74-PO-3 approves the exact S74-COPY-01 next-month explanation recorded in the copy approval table. The PO's eight-category Sales funnel is a section of the existing report. No code, migrations, stack, payout, or Telegram response-speed implementation is included in this lane.
 
 ## Technical Context
 
@@ -50,7 +50,7 @@ The worktree audit directly checked: BRD/PRD, current Constitution, roadmap, per
 
 ### Data and security approach
 
-See [data-model.md](data-model.md) and [contracts/authorization-and-projections.md](contracts/authorization-and-projections.md). No KPI behavior is authorized to infer from UI hiding. Role predicates must be rechecked in trusted server code and database policy/RPC. Sales detail denial applies to the raw API shape, RLS, aggregate view, export, replay receipt and error path. Create one minimal Sales monthly projection that exposes only own finalized total after Cairo month end.
+See [data-model.md](data-model.md) and [contracts/authorization-and-projections.md](contracts/authorization-and-projections.md). No KPI behavior is authorized to infer from UI hiding. Role predicates must be rechecked in trusted server code and database policy/RPC. Sales detail denial applies to the raw API shape, RLS, aggregate view, export, replay receipt and error path. The existing `p7_get_own_compensation` read permits Trainer/Sales only for the `auth.uid()` employee id; no access widening is part of T025. T039 extends `get_sales_funnel` from its current three milestone counts to eight categories using existing P7 ledger/refund-reversal/adjustment facts, with Cairo event month, workspace scope, PO-only authorization and non-PII output. The existing F21 `p7_workforce_report` projection supplies staff display names only to the PO. T039 precedes T025.
 
 ### Period, event, and concurrency approach
 
@@ -104,6 +104,7 @@ Additional checklists: checklists/requirements.md and checklists/critique.md.
 6. Use the existing F13 refund transaction boundary for one Sales acquisition reversal on any completed partial or full refund. Ask the PO about staff fault only for a full refund, classified against F13 refundable collected funds for that purchase scope; questionnaire decision is once per acquisition.
 7. No Telegram response monitor now. Document post-launch capability findings and the PO-approved future >1 hour / negative 0.5 Timeliness rule; human Trainer reply observability/identity remain unverified.
 8. S70-PO-20/R109 authorize immutable strike source facts from persisted F15 D-03; S70-R110 fixes the instant at deadline passage without a successful initial pair, even when no later delivery occurs. Count over exactly 90 x 24 hours with an exclusive lower bound and inclusive upper bound. PO corrections append `void`, `reinstate` latest void, or same-workspace breach-time `reattribute`; latest correction is effective, reason is required, and audit is opaque. These facts do not authorize automatic discipline.
+9. S74-PO-2 MCQ1/2 approve the Sales own-total and PO funnel copy batches (draft rows 1–11 and 12–27); MCQ4=B activates all eight funnel categories and T039; MCQ5=B reuses F21's PO-only `p7_workforce_report` name projection; MCQ6=B mounts the funnel in the existing report; MCQ7=A separates `empty` and `not_available`. MCQ3=A is modified to show the employee's own configured Basic Salary before close/finalization. S74-PO-3 approves the exact S74-COPY-01 message recorded in the copy approval table.
 
 ## Complexity Tracking
 

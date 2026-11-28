@@ -1,0 +1,154 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-4);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.title,
+.reviewTitle,
+.groupTitle {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.reviewTitle {
+  max-inline-size: 100%;
+  padding-inline: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.body,
+.meta,
+.opened {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-body);
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.choice,
+.staffChoice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 44px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.choice {
+  padding-inline: var(--space-2);
+}
+
+.choice input,
+.staffChoice input {
+  inline-size: 1rem;
+  block-size: 1rem;
+  accent-color: var(--brand-primary);
+}
+
+.deductions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.groupTitle {
+  padding-inline: var(--space-2);
+}
+
+.meta,
+.opened {
+  font-size: 0.875rem;
+}
+
+.staffRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.staffRow:last-child {
+  border-block-end: 0;
+}
+
+.staffChoice {
+  flex: 1 1 12rem;
+  overflow-wrap: anywhere;
+}
+
+.pointsField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 44px;
+  color: var(--color-text-muted);
+}
+
+.pointsField input {
+  inline-size: 8rem;
+  min-block-size: 44px;
+  padding-inline: var(--space-2);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.feedback {
+  margin: 0;
+  color: var(--color-success-fg);
+}
+
+@media (min-width: 48rem) {
+  .panel {
+    padding: var(--space-5);
+  }
+
+  .review {
+    padding: var(--space-4);
+  }
+}

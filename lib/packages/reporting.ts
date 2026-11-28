@@ -204,6 +204,8 @@ export type WorkspaceDrilldownResult =
       workspaceName: string;
       rows: DrilldownSourceRow[];
       totals: PlatformMetricTotals;
+      hasMore: boolean;
+      nextCursor: { recorded_at: string; event_id: string } | null;
     }
   | ReportDenied
   | ReportUnavailable;
@@ -345,10 +347,15 @@ export async function getPlatformAggregateReport(params: {
 
   let totalRevenueMinor = 0n;
   let totalPendingFx = 0;
-  for (const ct of payload.currency_totals ?? []) {
-    if (ct.converted_egp_minor) {
-      totalRevenueMinor += BigInt(ct.converted_egp_minor);
+  // Platform revenue total = sum of the rounded WORKSPACE partitions
+  // (CR-029-05, #417) so it reconciles with the displayed workspace rows.
+  for (const workspace of payload.workspaces ?? []) {
+    if (workspace.converted_egp_minor) {
+      totalRevenueMinor += BigInt(workspace.converted_egp_minor);
     }
+  }
+  // pendingFxCount is computed from the CURRENCY partitions (#413).
+  for (const ct of payload.currency_totals ?? []) {
     if (ct.converted_egp_minor == null || (ct.pending_fx_count ?? 0) > 0) {
       totalPendingFx +=
         (ct.pending_fx_count ?? 0) > 0 ? (ct.pending_fx_count ?? 0) : 1;
@@ -516,6 +523,7 @@ export async function getPlatformAggregateReport(params: {
 export async function getWorkspaceDrilldownRows(params: {
   workspaceId: string;
   monthStart: string;
+  cursor?: { recorded_at: string; event_id: string } | null;
 }): Promise<WorkspaceDrilldownResult> {
   const access = await platformOwnerClient();
   if (access.status !== 'ok') return access;
@@ -531,8 +539,8 @@ export async function getWorkspaceDrilldownRows(params: {
       p_month_start: normalizedMonthStart,
       p_package_id: null,
       p_page_size: 50,
-      p_cursor_recorded_at: null,
-      p_cursor_event_id: null,
+      p_cursor_recorded_at: params.cursor?.recorded_at ?? null,
+      p_cursor_event_id: params.cursor?.event_id ?? null,
     }),
     access.client.rpc('po_reporting_aggregate', {
       p_workspace_id: params.workspaceId,
@@ -609,6 +617,8 @@ export async function getWorkspaceDrilldownRows(params: {
     workspaceId: params.workspaceId,
     workspaceName,
     rows,
+    hasMore: payload.has_more,
+    nextCursor: payload.next_cursor,
     totals: {
       revenueConvertedEgpMinor: sum.toString(),
       subscriptionCount: Number(agg.counts?.distinct_subscriptions ?? 0),
