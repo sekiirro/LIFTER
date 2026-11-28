@@ -161,6 +161,25 @@ describe('StaffNotifications exact stored kinds & copy (B8, B13, CB-P8-01)', () 
     const text = getNotificationText(unknownNotice, en, 'en');
     expect(text).toBeNull();
   });
+
+  it.each(['expiry_t3', 'expiry_t3_short_lead', 'expired'])(
+    'fails closed for removed alias kind "%s" even with complete expiry fields (S72-R59)',
+    (kind) => {
+      const notice: UnifiedStaffNotification = {
+        type: 'staff_notice',
+        id: '11111111-1111-4111-8111-111111111111',
+        kind,
+        workspaceId: '22222222-2222-4222-8222-222222222222',
+        sourceKey: '33333333-3333-4333-8333-333333333333',
+        createdAt: '2026-11-27T10:00:00Z',
+        readAt: null,
+        clientName: 'Ahmed',
+        expiryDate: sampleDate,
+      };
+
+      expect(getNotificationText(notice, en, 'en')).toBeNull();
+    },
+  );
 });
 
 describe('StaffNotifications date-only Cairo formatting and clientName requirement (B9)', () => {
