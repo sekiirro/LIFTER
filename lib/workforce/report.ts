@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
+  SalesFunnelResponse,
+  SalesFunnelRow,
   WorkforceReportData,
   WorkforceReportResponse,
 } from './report-types';
@@ -51,4 +53,24 @@ export async function fetchWorkforceReport(
     status: 'ok',
     data: data as WorkforceReportData,
   };
+}
+
+export async function fetchSalesFunnel(
+  client: SupabaseClient,
+  workspaceId: string,
+  cairoMonthStr: string,
+): Promise<SalesFunnelResponse> {
+  const { data, error } = await client.rpc('get_sales_funnel', {
+    workspace_id: workspaceId,
+    p_month: `${cairoMonthStr}-01`,
+  });
+
+  if (error) {
+    if (error.code === '42501' || error.message?.includes('not_permitted')) {
+      return { status: 'denied' };
+    }
+    return { status: 'error' };
+  }
+
+  return { status: 'ok', rows: (data ?? []) as SalesFunnelRow[] };
 }

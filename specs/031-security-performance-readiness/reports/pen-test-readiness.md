@@ -57,3 +57,22 @@ A required finding without verified remediation and retest keeps PT-01 Open. Par
 ## 6. Explicit non-scope
 
 No legacy-data handling (`S71-R10`), no implementation change, no duplicate readiness register or benchmark tool (FR-010), no production test, no real client data, no vendor/budget/timing decision, no gate signature. These remain PO decisions after the pilot.
+
+## 7. Gate reconciliation (T001)
+
+PT-01 supplements, and does not duplicate, the existing docs/13 gates below. None of these rows is marked Done by this pack; their status and evidence remain independently required. PT-01 is the single external-test gate; no second readiness register is created.
+
+| Existing gate                       | Relationship to PT-01                                                                                     | Status preserved |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------- |
+| CS-02 (exact-head CI/release gates) | External test supplements exact-head CI; it never replaces it                                             | Open             |
+| CS-03 (secrets/provenance)          | check:secrets remains independently required; external report is sanitized                                | Open             |
+| SB-01/SB-04 (Storage/RLS policy)    | PT-01 storage surface reuses these tests as the baseline; external test adds cross-workspace probing      | Open             |
+| OP-03 (log redaction)               | Sanitized evidence rule (section 2 reporting) depends on OP-03; external test adds report-level redaction | Open             |
+| DP-03/DP-05 (token/IP redaction)    | External evidence must satisfy the same redaction standard                                                | Open             |
+| AI-01..AI-05 (hosted Auth)          | External test runs only on approved non-production targets; production Auth gates unchanged               | Open             |
+| BR-01..BR-04 (backup/restore)       | External test does not alter backup evidence requirements                                                 | Open             |
+| PI-02/PI-03/PI-04 (capacity)        | Performance baselines remain separate (PI-03); PT-01 does not change them                                 | Open             |
+| FN-01..FN-04 (finance)              | Out of PT-01 scope; no financial data in synthetic test                                                   | Open             |
+| PT-01                               | This gate itself: blocking pre-go-live, vendor/timing deferred until after pilot (S71-PO-7)               | Open             |
+
+Conclusion: no duplicate control introduced; PT-01 is the only new external-test gate, and all prior production gates remain Open and independently required.

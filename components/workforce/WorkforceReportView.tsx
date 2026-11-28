@@ -13,6 +13,7 @@ import type {
   StaffTotal,
   LedgerCategory,
   LedgerEntry,
+  SalesFunnelResponse,
 } from '../../lib/workforce/report-types';
 import type {
   PostPointAdjustmentAction,
@@ -37,6 +38,7 @@ export type WorkforceReportViewProps = {
   onRetry?: () => void;
   postPointAdjustment?: PostPointAdjustmentAction;
   reattributePointEntry?: ReattributePointAction;
+  salesFunnel?: SalesFunnelResponse;
 };
 
 export function WorkforceReportView({
@@ -49,6 +51,7 @@ export function WorkforceReportView({
   onRetry,
   postPointAdjustment,
   reattributePointEntry,
+  salesFunnel,
 }: WorkforceReportViewProps) {
   const [roleFilter, setRoleFilter] = useState<'all' | StaffRole>('all');
   const [pointDialog, setPointDialog] = useState<PointDialogState | null>(null);
@@ -489,6 +492,167 @@ export function WorkforceReportView({
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+                {salesFunnel && (
+                  <div className={styles.funnelSection}>
+                    {salesFunnel.status === 'loading' ? (
+                      <div aria-busy="true" aria-live="polite">
+                        <Skeleton lines={2} />
+                      </div>
+                    ) : salesFunnel.status === 'denied' ? (
+                      <Alert
+                        tone="error"
+                        title={m['workforce.salesFunnel.denied']}
+                      />
+                    ) : salesFunnel.status === 'error' ? (
+                      <ErrorState
+                        title={m['workforce.salesFunnel.loadError']}
+                        retryLabel={m['states.retry']}
+                        onRetry={onRetry ?? (() => window.location.reload())}
+                      />
+                    ) : salesFunnel.rows.length === 0 ? (
+                      <EmptyState title={m['workforce.salesFunnel.empty']} />
+                    ) : (
+                      <div
+                        className={styles.tableWrapper}
+                        role="region"
+                        tabIndex={0}
+                        aria-label={m['workforce.salesFunnel.aria.table']}
+                      >
+                        <table
+                          className={`${styles.table} ${styles.funnelTable}`}
+                          aria-label={m['workforce.salesFunnel.aria.table']}
+                        >
+                          <thead>
+                            <tr>
+                              <th scope="col">{m['forms.staffRole.sales']}</th>
+                              <th scope="col">
+                                {m['workforce.salesFunnel.column.linksIssued']}
+                              </th>
+                              <th scope="col">
+                                {
+                                  m[
+                                    'workforce.salesFunnel.column.registrations'
+                                  ]
+                                }
+                              </th>
+                              <th scope="col">
+                                {m['workforce.salesFunnel.column.approvals']}
+                              </th>
+                              <th scope="col">
+                                {
+                                  m[
+                                    'workforce.salesFunnel.column.confirmedFirstPayments'
+                                  ]
+                                }
+                              </th>
+                              <th scope="col">
+                                {
+                                  m[
+                                    'workforce.salesFunnel.column.acquisitionPoints'
+                                  ]
+                                }
+                              </th>
+                              <th scope="col">
+                                {
+                                  m[
+                                    'workforce.salesFunnel.column.refundReversals'
+                                  ]
+                                }
+                              </th>
+                              <th scope="col">
+                                {
+                                  m[
+                                    'workforce.salesFunnel.column.pointDeductions'
+                                  ]
+                                }
+                              </th>
+                              <th scope="col">
+                                {
+                                  m[
+                                    'workforce.salesFunnel.column.poAdjustments'
+                                  ]
+                                }
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {salesFunnel.rows.map((row) => {
+                              const staff = sales.find(
+                                (candidate) =>
+                                  candidate.staff_user_id === row.sales_user_id,
+                              );
+                              const metric = (
+                                count: number,
+                                points?: string,
+                              ) => (
+                                <span className={styles.funnelValues}>
+                                  <Bidi dir="ltr">{String(count)}</Bidi>
+                                  {points !== undefined && (
+                                    <span
+                                      className={
+                                        points.startsWith('-')
+                                          ? styles.negativePoints
+                                          : undefined
+                                      }
+                                    >
+                                      <Bidi dir="ltr">{points}</Bidi>
+                                    </span>
+                                  )}
+                                </span>
+                              );
+
+                              return (
+                                <tr key={row.sales_user_id}>
+                                  <td className={styles.funnelName}>
+                                    {staff?.display_name || (
+                                      <Bidi dir="ltr">{row.sales_user_id}</Bidi>
+                                    )}
+                                  </td>
+                                  <td className={styles.numericCell}>
+                                    {metric(row.link_count)}
+                                  </td>
+                                  <td className={styles.numericCell}>
+                                    {metric(row.registration_count)}
+                                  </td>
+                                  <td className={styles.numericCell}>
+                                    {metric(row.approval_count)}
+                                  </td>
+                                  <td className={styles.numericCell}>
+                                    {metric(row.first_payment_count)}
+                                  </td>
+                                  <td className={styles.numericCell}>
+                                    {metric(
+                                      row.acquisition_point_count,
+                                      row.acquisition_points,
+                                    )}
+                                  </td>
+                                  <td className={styles.numericCell}>
+                                    {metric(
+                                      row.refund_reversal_count,
+                                      row.refund_reversal_points,
+                                    )}
+                                  </td>
+                                  <td className={styles.numericCell}>
+                                    {metric(
+                                      row.point_deduction_count,
+                                      row.point_deduction_points,
+                                    )}
+                                  </td>
+                                  <td className={styles.numericCell}>
+                                    {metric(
+                                      row.po_adjustment_count,
+                                      row.po_adjustment_points,
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
               </section>

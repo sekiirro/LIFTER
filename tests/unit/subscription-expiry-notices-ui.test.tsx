@@ -17,6 +17,7 @@ import { getMessages } from '../../lib/i18n';
 import type {
   ClientNotice,
   ClientNoticeKind,
+  ClientNotices as ClientNoticesResult,
 } from '../../lib/client-access/notices-projection';
 import type { UnifiedStaffNotification } from '../../app/(app)/notifications/actions';
 import type { StaffNoticeKind } from '../../lib/progress-coaching/food-replacement/notice-projection';
@@ -575,28 +576,49 @@ describe('T008 Clause (b): Client inbox notices empty and error/denied states (r
       }
     }
   });
+});
 
-  it('returns null on failed/denied read, rendering nothing rather than a misleading empty state', () => {
+// PO 028-05 option B (S75-PO-3 / S75-R27): a failed client-notices read shows
+// the app's standard generic error state with the already-approved copy keys.
+// Spec 028 does not distinguish denied from error for this inbox (the projection
+// collapses every unexpected/failed response to 'denied'), so both are treated
+// as the same generic error state.
+describe('028-05: Client inbox generic error state on read failure', () => {
+  it('renders states.error.title and states.error.description for denied/error reads in EN and AR', () => {
     for (const locale of ['en', 'ar'] as const) {
       const messages = getMessages(locale);
-      const html = renderToStaticMarkup(
-        <ClientNotices
-          result={{ status: 'denied' }}
-          locale={locale}
-          messages={messages}
-        />,
-      );
-      expect(html).toBe('');
+      for (const status of ['denied', 'error'] as const) {
+        const html = renderToStaticMarkup(
+          <ClientNotices
+            result={{ status } as ClientNoticesResult}
+            locale={locale}
+            messages={messages}
+          />,
+        );
 
-      const dom = new JSDOM(html);
-      expect(
-        dom.window.document.querySelector('[data-testid="client-notices"]'),
-      ).toBeNull();
-      expect(
-        dom.window.document.querySelector(
-          '[data-testid="client-notices-empty"]',
-        ),
-      ).toBeNull();
+        const dom = new JSDOM(html);
+        const errorState = dom.window.document.querySelector(
+          '[role="alert"][data-testid="client-notices-error"]',
+        );
+        expect(
+          errorState,
+          `generic error state must render for ${locale}/${status}`,
+        ).not.toBeNull();
+        expect(errorState?.textContent).toContain(
+          messages['states.error.title'],
+        );
+        expect(errorState?.textContent).toContain(
+          messages['states.error.description'],
+        );
+        expect(
+          dom.window.document.querySelector('[data-testid="client-notices"]'),
+        ).toBeNull();
+        expect(
+          dom.window.document.querySelector(
+            '[data-testid="client-notices-empty"]',
+          ),
+        ).toBeNull();
+      }
     }
   });
 });

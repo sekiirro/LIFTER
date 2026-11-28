@@ -1853,4 +1853,20 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.salesProjection.aria.total': 'Your finalized monthly total',
   'workforce.salesProjection.notAvailableUntilNextMonth':
     "Your KPI points total isn't available yet. It will be available at the start of next month, once it's finalized.",
+  'workforce.salesFunnel.title': 'Sales funnel',
+  'workforce.salesFunnel.column.linksIssued': 'Links issued',
+  'workforce.salesFunnel.column.registrations': 'Registrations',
+  'workforce.salesFunnel.column.approvals': 'Approvals',
+  'workforce.salesFunnel.column.confirmedFirstPayments':
+    'Confirmed first payments',
+  'workforce.salesFunnel.column.acquisitionPoints': 'Acquisition points',
+  'workforce.salesFunnel.column.refundReversals': 'Refund reversals',
+  'workforce.salesFunnel.column.pointDeductions': 'Point deductions',
+  'workforce.salesFunnel.column.poAdjustments': 'PO adjustments',
+  'workforce.salesFunnel.empty': 'No Sales funnel data for this month.',
+  'workforce.salesFunnel.loading': 'Loading Sales funnel…',
+  'workforce.salesFunnel.loadError':
+    'Unable to load the Sales funnel. Try again.',
+  'workforce.salesFunnel.denied': 'You cannot view the Sales funnel.',
+  'workforce.salesFunnel.aria.table': 'Sales funnel details',
 };

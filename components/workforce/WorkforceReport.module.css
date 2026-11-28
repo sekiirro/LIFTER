@@ -167,6 +167,24 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.funnelSection {
+  margin-block-start: var(--space-4);
+}
+
+.funnelValues {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+}
+
+.funnelTable {
+  min-inline-size: max-content;
+}
+
+.funnelName {
+  white-space: nowrap;
+}
+
 .table {
   inline-size: 100%;
   border-collapse: collapse;
