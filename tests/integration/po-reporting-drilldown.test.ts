@@ -568,6 +568,16 @@ it('T006 rejects invalid period, package, cursor, and page bounds before reading
   });
   expect(badPageSize.data).toEqual({ status: 'not_permitted' });
 
+  const nullPageSize = await f.po.client.rpc('po_reporting_source_rows', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: null,
+    p_package_id: null,
+    p_page_size: null,
+    p_cursor_recorded_at: null,
+    p_cursor_event_id: null,
+  });
+  expect(nullPageSize.data).toEqual({ status: 'not_permitted' });
+
   const partialCursor = await f.po.client.rpc('po_reporting_source_rows', {
     p_workspace_id: f.wsA.id,
     p_month_start: null,
