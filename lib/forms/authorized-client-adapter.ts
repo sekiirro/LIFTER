@@ -118,9 +118,16 @@ export function createAuthorizedFormsClientAdapter(): FormsClientAdapter {
       if (result?.status === 'saved')
         return { status: 'saved', revision: revision(result) };
       if (isConflict(result?.status)) return { status: 'conflict' };
+      // S74-R4: 408/429 are transient like 5xx/network — keep retrying.
+      // Any other 4xx is a permanent client error.
       return {
         status:
-          !result || (result.httpStatus ?? 0) >= 500 ? 'retryable' : 'error',
+          !result ||
+          (result.httpStatus ?? 0) >= 500 ||
+          result.httpStatus === 408 ||
+          result.httpStatus === 429
+            ? 'retryable'
+            : 'error',
       };
     },
     submit: async ({ assignmentId, expectedRevision, answers }) => {
