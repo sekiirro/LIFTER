@@ -1,3 +1,5 @@
+## S74 sync387 re-check - 2026-11-28 11:53 UTC: merged spec re-checked (union of origin/main + #387) with 0 open CRITICAL/HIGH.
+
 ## S74 union status revalidation — 2026-11-28 10:37 UTC
 
 Merged current `origin/main` `6f8e21bc49555b073e598ccb45e2841542426398` after PRs #404, #405, #406 and #409 landed. Union-merged the verified T022/T023 task ticks and traceability evidence from PR #373 while retaining this lane's T024/T039/T025 decisions and S74-PO-2 traceability. No S74 FR, SC, plan or copy semantics changed. **0 open CRITICAL / 0 open HIGH.** S74-COPY-01 is now approved by S74-PO-3; all behavior MCQs remain answered.
@@ -49,6 +51,7 @@ Revalidated after the merged-PR status-only task ticks recorded in commit `c452c
 
 **Date-only status revalidation — 2026-11-28 UTC**: T013 ticked on merged PRs #393/#396 exact-head CI runs and T034 ticked on recorded per-screen CB-05 copy approvals (S70-PO-23 / S73-PO-1 / S73-PO-5) with merged PRs #395/#392. Status/evidence-only task and traceability edits; no FR/SC/plan/requirement text, PO decision or approved copy changed (S54 R6). **0 open CRITICAL, 0 open HIGH.**
 
+**Re-analyzed**: 2026-11-28 UTC, after S74-PO-1 (PDN-09) and S73-PO-6/S73-PO-8 follow-up dispute requirement changes (FR-004, FR-006, FR-018, FR-020, FR-029) and addition of T036-T038
 **Re-analyzed**: 2026-11-27 UTC, after merging origin/main (train sync) into PR #334
 **Re-analyzed**: 2026-11-26 03:50 UTC, after merging origin/main and renaming the quality migration
 **Re-analyzed**: 2026-11-25 14:07 UTC, after S70-R110 requirement clarification across spec, plan, model, contracts, task, and decision register
@@ -87,23 +90,23 @@ PENDING-PO FRs: 0. Open product MCQs: 0; P7-MCQ-04/05 are resolved by S70-R110.
 
 ## FR acceptance coverage
 
-| FR     | Acceptance/task coverage | FR     | Acceptance/task coverage                   |
-| ------ | ------------------------ | ------ | ------------------------------------------ |
-| FR-001 | T007-T008, T020-T021     | FR-016 | T033                                       |
-| FR-002 | T009                     | FR-017 | T002-T006, T013, T025, T032-T033           |
-| FR-003 | T010-T011                | FR-018 | T030-T031                                  |
-| FR-004 | T002-T006                | FR-019 | T001; post-launch documentation only       |
-| FR-005 | T003-T006                | FR-020 | T002-T004, T007-T017, T022-T023, T026-T032 |
-| FR-006 | T007-T013                | FR-021 | T028-T029                                  |
-| FR-007 | T013, T017, T023, T027   | FR-022 | T007-T010, T020-T023, T028-T029            |
-| FR-008 | T017-T019, T026-T027     | FR-023 | T014-T015                                  |
-| FR-009 | T014-T016, T018-T019     | FR-024 | T002, T032                                 |
-| FR-010 | T020-T023                | FR-025 | T002, T032                                 |
-| FR-011 | T022-T023                | FR-026 | T009, T033                                 |
-| FR-012 | T002, T024-T025, T032    | FR-027 | T010-T011                                  |
-| FR-013 | T028-T029                | FR-028 | T017-T019, T026-T027                       |
-| FR-014 | T028-T029                | FR-029 | T005, T012, T018, T024, T034               |
-| FR-015 | T022-T023                |        |                                            |
+| FR     | Acceptance/task coverage | FR     | Acceptance/task coverage                         |
+| ------ | ------------------------ | ------ | ------------------------------------------------ |
+| FR-001 | T007-T008, T020-T021     | FR-016 | T033                                             |
+| FR-002 | T009                     | FR-017 | T002-T006, T013, T025, T032-T033                 |
+| FR-003 | T010-T011                | FR-018 | T030-T031, T036                                  |
+| FR-004 | T002-T006, T036-T038     | FR-019 | T001; post-launch documentation only             |
+| FR-005 | T003-T006                | FR-020 | T002-T004, T007-T017, T022-T023, T026-T032, T036 |
+| FR-006 | T007-T013, T036-T037     | FR-021 | T028-T029                                        |
+| FR-007 | T013, T017, T023, T027   | FR-022 | T007-T010, T020-T023, T028-T029                  |
+| FR-008 | T017-T019, T026-T027     | FR-023 | T014-T015                                        |
+| FR-009 | T014-T016, T018-T019     | FR-024 | T002, T032                                       |
+| FR-010 | T020-T023                | FR-025 | T002, T032                                       |
+| FR-011 | T022-T023                | FR-026 | T009, T033                                       |
+| FR-012 | T002, T024-T025, T032    | FR-027 | T010-T011                                        |
+| FR-013 | T028-T029                | FR-028 | T017-T019, T026-T027                             |
+| FR-014 | T028-T029                | FR-029 | T005, T012, T018, T024, T034, T037-T038          |
+| FR-015 | T022-T023                |        |                                                  |
 
 Each mapped task includes acceptance evidence and remains unchecked until implementation tests execute and pass. Traceability was rebuilt for current task IDs; no test evidence is claimed in this docs lane.
 
@@ -156,3 +159,42 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - RLS catalog coverage, explicit SECURITY DEFINER checks, append-only enforcement, idempotency/concurrency, purge behavior, and kill tests remain implementation acceptance gates in T033; no implementation or test completion is claimed by this Analyze.
 
 **Analyze result**: PASS for updated strike requirements. No new open CRITICAL/HIGH findings; strike implementation may proceed under T033 and S70-R110.
+
+## S74-PO-1 / S73-PO-6 / S73-PO-8 follow-up dispute re-analysis
+
+**Re-analyzed**: 2026-11-28 UTC, after S74-PO-1 (PDN-09) and S73-PO-6/S73-PO-8 clarifications changed requirement text (FR-004, FR-006, FR-018, FR-020, FR-029) and added T036-T038 (S54 R6). Requirement authority: S74-PO-1 ("* PDN-09: A — additional penalty amount manually entered by PO per dispute"), S73-PO-8 (reason codes approved), S73-PO-6 ("all recommended").
+
+### Scope checks
+
+- FR-004 defines PO-only enter/resolve of follow-up `Disputed`, scope = follow-up accuracy and its -0.5 event only, transitions `Late`/`Followed Up` -> `Disputed` -> resolved with resolved display derived from immutable history, original -0.5 stays posted with any change a separate PO append-only correction, resolution outcomes mapped to explicit append-only ledger actions per S74-PO-1 Option A (`valid` -> +0.5 reversal of the follow-up penalty; `falseFollowUp` -> the -0.5 penalty stands; `additionalPenalty` -> an extra deduction whose amount the PO enters manually per dispute), PO report "dispute" = existing correction path (no separate case), required controlled reason code (code list/labels approved under S73-PO-8, no invented codes), one active dispute per follow-up, final resolution, resolution restarts the 30-day purge clock.
+- FR-006, FR-018, FR-020, FR-029 amended consistently; follow-up dispute record entity updated (stale "PENDING PO copy approval" removed); T036 (model/RPCs RED/GREEN/mutation), T037 (CB-05 dispute UI), T038 (reason-code copy batch, satisfied by S73-PO-8) added and tagged with FRs.
+- traceability.md updated for T036-T038; all origin/main merged task evidence and ticks preserved.
+- No new CRITICAL findings. C1/C2 remain external Constitution-governance dependencies. PDN-07 reason codes approved under S73-PO-8; PDN-09 outcome ledger mapping approved under S74-PO-1.
+- PDN-10 additionalPenalty amount is resolved by S74-PO-4: positive PO-entered amount per dispute, exactly 2 decimal places, maximum 99,999,999.99, validated like T013 manual deductions and stored as an append-only negative ledger entry.
+
+### PO decision register (updated)
+
+- P7-MCQ-01..05, SOL-08/09/20, P7-MCQ-03/04/05 remain ANSWERED/RESOLVED.
+- PDN-01..PDN-06 and PDN-08 RESOLVED by S73-PO-6.
+- PDN-07 RESOLVED by S73-PO-8; reason-code code list and EN/AR labels approved (see copy-approved-cb02-cb04-cb05.md section "S73-PO-8 — follow-up dispute reason codes").
+- PDN-09 RESOLVED by S74-PO-1 Option A (outcome-to-ledger action mapping recorded).
+- PDN-10 RESOLVED by S74-PO-4 Option A (PO-entered amount validation and negative ledger entry recorded).
+
+### Metrics (updated)
+
+- Functional requirements: 29 (unchanged; FR-004/006/018/020/029 amended, no new FR).
+- Task/acceptance mapping: 29/29 FRs; T036-T038 added for dispute follow-up.
+- Open CRITICAL: 0. Open HIGH: 0.
+- PENDING-PO requirements: none. Open product MCQs: 0.
+
+**Analyze result**: PASS. 0 open CRITICAL/HIGH findings. Requirement text change re-analyzed per S54 R6.
+
+## S74-PO-4 (PDN-10) re-analysis
+
+**Re-analyzed**: 2026-11-28 UTC, after PDN-10 requirements were clarified in FR-004, FR-006, the acceptance scenario, T036 and the clarification register (S54 R6). Requirement authority: S74-PO-4 (runs/s74-po/s74-po-4.verbatim.txt, "PDN-10 A"; architect mapping S74-R55).
+
+- The PO-entered amount is positive, has exactly 2 decimal places, is at most 99,999,999.99, follows the T013 manual deduction validation in `supabase/migrations/20261227030000_p7_manual_point_adjustments.sql`, and is persisted as an append-only negative ledger entry. `valid` appends +0.5; `falseFollowUp` makes no ledger change; the original -0.5 remains immutable.
+- Spec FRs, acceptance scenario, T036, and the PO-decision register agree. T036 remains an implementation task; no implementation or test completion is claimed by this Analyze.
+- No open CRITICAL or HIGH findings. PENDING-PO requirements: none; open product MCQs: 0.
+
+**Analyze result**: PASS. 0 open CRITICAL/HIGH findings. Requirement text change re-analyzed per S54 R6.

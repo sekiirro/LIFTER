@@ -237,3 +237,17 @@ Approved labels (EN | AR, byte-exact):
 | Points per negative item | النقاط لكل حالة سلبية   |
 
 Key names: key: assigned in the quality UI PR
+
+---
+
+## S73-PO-8 — follow-up dispute reason codes
+
+**Status**: APPROVED — S73-PO-8 (2026-11-28) approved all five PDN-07 reason codes and English labels, with Arabic edits to rows 1, 3 and 4 (rows 2 and 5 unchanged). Source: `C:/Users/NEW LAP/.lifter/runs/s73-po/s73-po-8.verbatim.txt`. Feature: `specs/027-workforce-management`. Controlled reason code for opening a follow-up dispute (FR-004/FR-020/FR-029); no client PII in retained dispute data.
+
+| Code                        | EN                                                    | AR                                        |
+| --------------------------- | ----------------------------------------------------- | ----------------------------------------- |
+| `follow_up_not_recorded`    | Follow-up happened but was not recorded.              | اتواصلت مع العميل بس المتابعة متسجلتش.    |
+| `recorded_time_incorrect`   | Recorded follow-up time is wrong.                     | وقت التواصل المتسجل غلط.                  |
+| `client_unreachable`        | Client was unreachable or contact details were wrong. | معرفتش أوصل للعميل أو بيانات التواصل غلط. |
+| `wrong_trainer_attributed`  | Follow-up attributed to the wrong Trainer.            | التواصل المفروض يكون مع مدرب تاني.        |
+| `system_or_technical_issue` | System or technical issue.                            | مشكلة في السيستم.                         |
