@@ -508,6 +508,7 @@ export function WorkforceReportView({
             ) : (
               <div
                 className={styles.tableWrapper}
+                role="region"
                 tabIndex={0}
                 aria-label={m['workforce.report.ledger.title']}
               >
