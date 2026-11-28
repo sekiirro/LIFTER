@@ -1770,6 +1770,8 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.payroll.employee': 'Employee',
   'staff.notifications.title': 'Notifications',
   'staff.notifications.bellLabel': 'Open notifications',
+  'staff.notifications.bellLabelWithCount':
+    'Open notifications ({count} unread)',
   'staff.notifications.loading': 'Loading',
   'staff.notifications.empty': 'You are all caught up.',
   'staff.notifications.error': 'Unable to load data',
@@ -1787,6 +1789,9 @@ export const en: Record<keyof typeof ar, string> = {
   'staff.clientDirectory.expiring.empty': 'No clients match this filter',
   'staff.clientDirectory.expiring.loadError':
     "We couldn't load this list. Try again.",
+  'staff.clientDirectory.previousPage': 'Previous page',
+  'staff.clientDirectory.nextPage': 'Next page',
+  'staff.clientDirectory.paginationLabel': 'Clients pagination',
   'workforce.finalize.title': 'Finalize month',
   'workforce.finalize.selectMonth':
     'Select a month that has ended (Cairo time)',
