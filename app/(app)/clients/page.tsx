@@ -28,6 +28,7 @@ import { Button } from '../../../components/ui/Button';
 import { EmptyState, NoResults } from '../../../components/ui/States';
 import { formatCount } from '../../../components/client-portal/format';
 import styles from '../../../components/client-portal/client-portal.module.css';
+import { DirectoryWorkspaceSelector } from './DirectoryWorkspaceSelector';
 
 const approvalLabel: Record<ApprovalState, MessageKey> = {
   'pending-approval': 'registrationApproval.pending',
@@ -131,17 +132,11 @@ export default async function ClientDirectoryPage({
               <label htmlFor="directory-workspace">
                 {m['registration.workspace']}
               </label>
-              <select
-                id="directory-workspace"
-                name="workspace"
-                defaultValue={workspaceId}
-              >
-                {workspaces.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+              <DirectoryWorkspaceSelector
+                workspaceId={workspaceId}
+                workspaces={workspaces}
+                query={query}
+              />
             </div>
           ) : (
             <input type="hidden" name="workspace" value={workspaceId} />
