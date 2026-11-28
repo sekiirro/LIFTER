@@ -25,3 +25,26 @@
 ## Explicit limits
 
 Mapping only: no vendor, budget, timing, target approval, test execution, production access or real-client data. Existing RLS/authorization tests remain independently required; the external test supplements them and never replaces exact-head CI or `check:secrets`.
+
+## Verified test files (origin/main)
+
+Each path below was verified present on origin/main; the representative test name is the first test in that file. These are the existing role/RLS/authorization tests PT-01 reuses; no new test is created by this spec.
+
+- tests/integration/rls-catalog.test.ts :: forces RLS with no policies and no API privileges
+- tests/integration/client-portal-isolation.test.ts :: denies a foreign-workspace trainer with the same error as a nonexistent workspace
+- tests/integration/client-directory-assignment.test.ts :: lets the Workspace Owner and Platform Owner filter and see assignment, matching F11 unassigned_clients
+- tests/integration/nutrition-export.test.ts :: records exactly one derived-workspace denial for a foreign-workspace coach
+- tests/integration/client-workout-export.test.ts :: views the selected revision as the shared F17 payload with the live video and writes no audit event
+- tests/integration/workout-export-audit.test.ts :: records one identity-only success event on an authorized export (no content/PII)
+- tests/integration/client-portal-export-audit-overdue.test.ts :: drops non-allowlisted keys from workout content
+- tests/integration/forms-telegram-links.test.ts :: rejects an active chat owned by another staff user without retrying the update
+- tests/integration/branding-storage-policy.test.ts :: keeps F14 buckets private and confines staging writes to the owning upload
+- tests/integration/branding-storage-context.test.ts :: a/b: restricted JWT authority and transaction-local claims/headers/operation reach object RLS
+- tests/integration/catalog-exercise-version-storage.test.ts :: stores Notes and Defaults on both immutable version tables (T090)
+- tests/integration/jobs.test.ts :: scopes generic claims to registered kinds and leaves forms.alert to its dedicated claimant
+- tests/integration/plan-delivery-authorization.test.ts :: refuses Sales, foreign-workspace staff, clients and anonymous callers without writes
+- tests/integration/forms-alert-channels.test.ts :: catalogs unique per-channel delivery, forced RLS, and alert RPC ACLs
+- tests/integration/forms-alert-inbox.test.ts :: does not count setup failures or rollback as a killed mutation
+- tests/integration/forms-alert-mutations.test.ts :: kills a trainer batch-starvation mutant and restores the evaluator
+- tests/integration/forms-alert-scheduler.test.ts :: uses the inert owner-only F11 cron pattern with restricted grants and advisory locks
+- tests/integration/forms-alerts.test.ts :: notifies PO/WO at the client deadline and the responsible Trainer at deadline+24h
