@@ -47,8 +47,11 @@ check(register.includes('S71-PO-7'), 'docs/13 does not cite S71-PO-7');
 
 const baseline = JSON.parse(await readFile(baselinePath, 'utf8'));
 check(
-  baseline.gate_status === 'PROPOSED_ONLY_NOT_A_GATE_PENDING_PO_SIGNATURE',
-  'baseline gate status is not proposal-only',
+  [
+    'PROPOSED_ONLY_NOT_A_GATE_PENDING_PO_SIGNATURE',
+    'SIGNED_PER_S73_PO_4',
+  ].includes(baseline.gate_status),
+  `baseline gate status is unexpected: ${baseline.gate_status}`,
 );
 check(baseline.http_routes.length === 9, 'expected 9 HTTP route rows');
 check(baseline.db_query_classes.length === 4, 'expected 4 DB query-class rows');

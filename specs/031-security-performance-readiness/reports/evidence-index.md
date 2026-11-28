@@ -11,6 +11,8 @@ Single index for the sanitized artifacts produced or planned under PT-01 and PI-
 | [perf-route-matrix.json](perf-route-matrix.json)               | PI-03 | Route list recorded before the run        | No                           |
 | [perf-baseline-2026-11-27.json](perf-baseline-2026-11-27.json) | PI-03 | One local baseline run (synthetic)        | No — redacted summary        |
 | [perf-baseline-2026-11-27.md](perf-baseline-2026-11-27.md)     | PI-03 | Proposed budgets (not a gate)             | No                           |
+| [perf-baseline-2026-11-28.json](perf-baseline-2026-11-28.json) | PI-03 | Local production-mode baseline (signed)   | No — redacted summary        |
+| [perf-baseline-2026-11-28.md](perf-baseline-2026-11-28.md)     | PI-03 | Performance budgets signed (S73-PO-4)     | No                           |
 
 ## Planned after the pilot (not produced by slice 1)
 
@@ -20,7 +22,7 @@ Single index for the sanitized artifacts produced or planned under PT-01 and PI-
 | Sanitized external report                   | PT-01         | assessor               | Pending — Open                                             |
 | Findings/remediation/retest register        | PT-01         | platform/security      | Pending — Open                                             |
 | Hosted measured run with CPU p50/p95/max    | PI-03 (PI-04) | PO + platform          | Pending approval — no production target used here          |
-| PO signature on proposed per-route budgets  | PI-03         | PO                     | Pending — proposals are not a gate until signed (S71-PO-7) |
+| PO signature on proposed per-route budgets  | PI-03         | PO                     | Signed per S73-PO-4; lifter-prod re-measurement deferred to pre-launch checklist (PI-04) |
 
 ## Sanitization rule
 
