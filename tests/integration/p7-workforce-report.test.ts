@@ -277,15 +277,22 @@ describe('P7 T013 PO workforce report RPC (p7_workforce_report)', () => {
         staff_user_id: string;
         category: string;
         points: string;
+        reason_code: string | null;
       }>
     ).filter(
       (row) =>
         row.staff_user_id === context.trainerA.userId &&
-        (row.category === 'transformation' || row.category === 'feedback'),
+        row.category === 'transformationFeedback',
     );
+    expect(qualityLedger).toHaveLength(2);
     expect(qualityLedger.map((row) => row.points).sort()).toEqual([
       '-2.00',
       '1.50',
+    ]);
+    // reason_code keeps transformation vs feedback distinguishable (S74-R44).
+    expect(qualityLedger.map((row) => row.reason_code).sort()).toEqual([
+      'feedback',
+      'transformation',
     ]);
 
     const finalized = await context.po.client.rpc('p7_finalize_month', {

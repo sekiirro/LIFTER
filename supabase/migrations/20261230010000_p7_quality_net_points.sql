@@ -159,7 +159,7 @@ begin
       q.trainer_id as staff_user_id,
       sp.role::text as staff_role,
       sp.display_name as staff_name,
-      q.category::text as category,
+      'transformationFeedback'::text as category,
       q.net_points::numeric(10,2)::text as points,
       (q.month || '-01')::date::text as effective_month,
       null::text as original_month,

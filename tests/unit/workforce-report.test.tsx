@@ -370,6 +370,80 @@ describe('WorkforceReportView', () => {
     expect(html).toContain('الشهر الأصلي: 2026-10-01');
   });
 
+  it('renders the approved transformationFeedback category label in EN and AR (S74-R44)', () => {
+    const qualityReport: WorkforceReportData = {
+      ...sampleReport,
+      ledger: [
+        {
+          id: 'quality-transform',
+          staff_user_id: trainerId,
+          staff_role: 'trainer',
+          staff_name: 'Coach Ahmed',
+          category: 'transformationFeedback',
+          points: '1.50',
+          effective_month: '2026-11-01',
+          original_month: null,
+          actor: null,
+          recorded_at: '2026-11-08T10:00:00Z',
+          reason_code: 'transformation',
+          reason: null,
+          operation: null,
+          original_entry_id: null,
+          original_entry_kind: null,
+        },
+        {
+          id: 'quality-feedback',
+          staff_user_id: trainerId,
+          staff_role: 'trainer',
+          staff_name: 'Coach Ahmed',
+          category: 'transformationFeedback',
+          points: '-2.00',
+          effective_month: '2026-11-01',
+          original_month: null,
+          actor: null,
+          recorded_at: '2026-11-09T10:00:00Z',
+          reason_code: 'feedback',
+          reason: null,
+          operation: null,
+          original_entry_id: null,
+          original_entry_kind: null,
+        },
+      ],
+    };
+
+    // Approved copy from specs/027-workforce-management/copy-approved-cb02-cb04-cb05.md.
+    expect(
+      enMessages['workforce.report.ledger.category.transformationFeedback'],
+    ).toBe('Transformation / feedback');
+    expect(
+      arMessages['workforce.report.ledger.category.transformationFeedback'],
+    ).toBe('التحوّلات وآراء العملاء');
+
+    const enHtml = renderToStaticMarkup(
+      createElement(WorkforceReportView, {
+        report: qualityReport,
+        status: 'ok',
+        locale: 'en',
+        messages: enMessages,
+        currentMonth: '2026-11',
+      }),
+    );
+    expect(enHtml.match(/<td>Transformation \/ feedback<\/td>/g)).toHaveLength(
+      2,
+    );
+
+    const arHtml = renderToStaticMarkup(
+      createElement(WorkforceReportView, {
+        report: qualityReport,
+        status: 'ok',
+        locale: 'ar',
+        messages: arMessages,
+        currentMonth: '2026-11',
+      }),
+    );
+    expect(arHtml.match(/<td>التحوّلات وآراء العملاء<\/td>/g)).toHaveLength(2);
+  });
+
   it('renders the ledger table wrapper as a named region with existing accessible name (S74-400-01)', () => {
     const html = renderToStaticMarkup(
       createElement(WorkforceReportView, {
