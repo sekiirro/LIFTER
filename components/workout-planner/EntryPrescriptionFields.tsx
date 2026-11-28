@@ -15,6 +15,11 @@ import type {
   EntryPrescriptions,
   Reps,
 } from '../../lib/workout-planner/entry-prescriptions';
+import {
+  isValidReps,
+  isValidRir,
+  isValidRestSec,
+} from '../../lib/workout-planner/entry-prescriptions';
 import { Field } from '../ui/Field';
 import styles from './EntryPrescriptionFields.module.css';
 
@@ -57,18 +62,16 @@ function parseWhole(raw: string): number | undefined {
   return Number.isSafeInteger(parsed) ? parsed : undefined;
 }
 
-/** Rest is whole seconds in 0..600 on the approved 15-second grid. */
+/** Rest is whole seconds in 0..600 on the approved 15-second grid (S60-D3). */
 function parseRest(raw: string): number | undefined {
   const rest = parseWhole(raw);
-  return rest !== undefined && rest <= 600 && rest % 15 === 0
-    ? rest
-    : undefined;
+  return rest !== undefined && isValidRestSec(rest) ? rest : undefined;
 }
 
-/** RIR is a whole number in 0..5. */
+/** RIR is a whole number in 0..5 (S60-D3). */
 function parseRir(raw: string): number | undefined {
   const rir = parseWhole(raw);
-  return rir !== undefined && rir <= 5 ? rir : undefined;
+  return rir !== undefined && isValidRir(rir) ? rir : undefined;
 }
 
 function show(value: number | undefined, locale: Locale): string {
@@ -101,23 +104,18 @@ function draftReps(draft: Draft): Reps | null | undefined {
     const raw = draft.repsValue.trim();
     if (raw === '') return null;
     const count = parseWhole(raw);
-    if (count === undefined || count < 1 || count > 100) return undefined;
-    return { value: count };
+    if (count === undefined) return undefined;
+    const reps = { value: count };
+    return isValidReps(reps) ? reps : undefined;
   }
   const minRaw = draft.repsMin.trim();
   const maxRaw = draft.repsMax.trim();
   if (minRaw === '' && maxRaw === '') return null;
   const min = parseWhole(minRaw);
   const max = parseWhole(maxRaw);
-  if (
-    min === undefined ||
-    max === undefined ||
-    min < 1 ||
-    max > 100 ||
-    min > max
-  )
-    return undefined;
-  return { min, max };
+  if (min === undefined || max === undefined) return undefined;
+  const reps = { min, max };
+  return isValidReps(reps) ? reps : undefined;
 }
 
 /**

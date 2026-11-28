@@ -6,6 +6,7 @@ import {
   type WorkoutItem,
   type WorkoutSet,
 } from './id-remap';
+import { isValidReps, isValidRir, isValidRestSec } from './entry-prescriptions';
 
 export type WorkoutExerciseReference = {
   source: 'global' | 'workspace_private';
@@ -111,25 +112,7 @@ function parseSet(value: unknown): WorkoutSet {
 }
 
 function parseReps(value: unknown): void {
-  if (!obj(value)) fail();
-  const reps = value as Record<string, unknown>;
-  if (
-    Object.keys(reps).length === 1 &&
-    Number.isInteger(reps.value) &&
-    (reps.value as number) >= 1 &&
-    (reps.value as number) <= 100
-  )
-    return;
-  if (
-    Object.keys(reps).length === 2 &&
-    Number.isInteger(reps.min) &&
-    Number.isInteger(reps.max) &&
-    (reps.min as number) >= 1 &&
-    (reps.max as number) <= 100 &&
-    (reps.min as number) <= (reps.max as number)
-  )
-    return;
-  fail();
+  if (!isValidReps(value)) fail();
 }
 
 function refKey(ref: WorkoutExerciseReference): string {
@@ -164,21 +147,9 @@ function parseItem(value: unknown, allIds: Set<string>): WorkoutItem {
     return fail();
   if (value.notes !== undefined && !text(value.notes)) return fail();
   if (value.reps !== undefined) parseReps(value.reps);
-  if (
-    value.restSec !== undefined &&
-    (!Number.isInteger(value.restSec) ||
-      (value.restSec as number) < 0 ||
-      (value.restSec as number) > 600 ||
-      (value.restSec as number) % 15 !== 0)
-  )
+  if (value.restSec !== undefined && !isValidRestSec(value.restSec))
     return fail();
-  if (
-    value.rir !== undefined &&
-    (!Number.isInteger(value.rir) ||
-      (value.rir as number) < 0 ||
-      (value.rir as number) > 5)
-  )
-    return fail();
+  if (value.rir !== undefined && !isValidRir(value.rir)) return fail();
   if (value.alternatives.length > 3) return fail();
   const alternativeKeys = new Set<string>();
   for (const alternative of value.alternatives) {
