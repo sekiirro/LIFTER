@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
 import { expect, it, vi } from 'vitest';
+import { normalizePhone } from '../../lib/client-accounts/phone';
 
 vi.mock('server-only', () => ({}));
 
@@ -59,8 +60,7 @@ it('T027 validates other selected countries and rejects malformed, short and lon
   }
 });
 
-it('T027 app phone adapter composes E.164 from the selected country without echoing input', async () => {
-  const { normalizePhone } = await import('../../lib/client-accounts/phone');
+it('T027 app phone adapter composes E.164 from the selected country without echoing input', () => {
   const egyptWithTrunk = normalizePhone(
     JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
   );

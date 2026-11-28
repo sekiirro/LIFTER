@@ -4,36 +4,21 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 const script = join(
   process.cwd(),
   'scripts/media/optimize-body-fat-assets.mjs',
 );
 const tempDirs: string[] = [];
-// Every case launches FFmpeg plus one or two generator processes. Under
-// Windows full-suite load (and concurrent lint/typecheck/edge builds) these
-// subprocess proofs have been observed taking 5-10s, past Vitest's old 5s
-// budget; #399 raised that to 30s. Widen the budget once more for loaded
-// hosts; all byte, format and budget assertions stay unchanged.
-const PROCESS_TEST_TIMEOUT_MS = 60_000;
-const test = (name: string, run: () => Promise<void>) =>
-  it(name, run, PROCESS_TEST_TIMEOUT_MS);
+let fixtureImage: Buffer;
+let fixtureSha256: string;
+let fixtureSourceRoot: string;
 
-afterEach(async () => {
-  await Promise.all(
-    tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })),
-  );
-});
-
-async function fixture() {
-  const root = await mkdtemp(join(tmpdir(), 'body-fat-media-'));
-  tempDirs.push(root);
-  const sourceRoot = join(root, 'source');
-  const imagePath = join(sourceRoot, 'female/18.png');
-  const outputRoot = join(root, 'output');
-  const provenancePath = join(root, 'PROVENANCE.md');
-  await mkdir(join(sourceRoot, 'female'), { recursive: true });
+beforeAll(async () => {
+  const root = await mkdtemp(join(tmpdir(), 'body-fat-media-source-'));
+  fixtureSourceRoot = root;
+  const imagePath = join(root, '18.png');
   const image = spawnSync(
     'ffmpeg',
     [
@@ -53,11 +38,32 @@ async function fixture() {
     { encoding: 'utf8' },
   );
   expect(image.status, image.stderr).toBe(0);
-  const bytes = await readFile(imagePath);
-  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  fixtureImage = await readFile(imagePath);
+  fixtureSha256 = createHash('sha256').update(fixtureImage).digest('hex');
+});
+
+afterAll(async () => {
+  await rm(fixtureSourceRoot, { recursive: true, force: true });
+});
+
+afterEach(async () => {
+  await Promise.all(
+    tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })),
+  );
+});
+
+async function fixture() {
+  const root = await mkdtemp(join(tmpdir(), 'body-fat-media-'));
+  tempDirs.push(root);
+  const sourceRoot = join(root, 'source');
+  const imagePath = join(sourceRoot, 'female/18.png');
+  const outputRoot = join(root, 'output');
+  const provenancePath = join(root, 'PROVENANCE.md');
+  await mkdir(join(sourceRoot, 'female'), { recursive: true });
+  await writeFile(imagePath, fixtureImage);
   await writeFile(
     provenancePath,
-    `| Relative source path | Bytes | SHA-256 |\n| --- | ---: | --- |\n| \`female/18.png\` | ${bytes.length} | \`${sha256}\` |\n`,
+    `| Relative source path | Bytes | SHA-256 |\n| --- | ---: | --- |\n| \`female/18.png\` | ${fixtureImage.length} | \`${fixtureSha256}\` |\n`,
     'utf8',
   );
 
@@ -69,7 +75,7 @@ function generate(args: string[]) {
 }
 
 describe('body-fat derivative generator', () => {
-  test('rejects empty and repeated format names', async () => {
+  it('rejects empty and repeated format names', async () => {
     const item = await fixture();
     for (const formats of [',', 'webp,webp']) {
       const result = generate([
@@ -88,7 +94,7 @@ describe('body-fat derivative generator', () => {
     }
   });
 
-  test('requires an explicit source root instead of a machine-local default', async () => {
+  it('requires an explicit source root instead of a machine-local default', async () => {
     const item = await fixture();
     const result = spawnSync(
       process.execPath,
@@ -109,7 +115,7 @@ describe('body-fat derivative generator', () => {
     expect(result.stderr).toContain('--source-root');
   });
 
-  test('emits the same bytes on repeated runs and reports output size against the budget', async () => {
+  it('emits the same bytes on repeated runs and reports output size against the budget', async () => {
     const item = await fixture();
     const common = [
       '--source-root',
@@ -155,7 +161,7 @@ describe('body-fat derivative generator', () => {
     ).toBe(true);
   });
 
-  test('caps derivative width and writes the declared WebP and AVIF formats', async () => {
+  it('caps derivative width and writes the declared WebP and AVIF formats', async () => {
     const item = await fixture();
     const result = generate([
       '--source-root',
@@ -206,7 +212,7 @@ describe('body-fat derivative generator', () => {
     }
   });
 
-  test('rejects a source whose bytes do not match the provenance SHA-256', async () => {
+  it('rejects a source whose bytes do not match the provenance SHA-256', async () => {
     const item = await fixture();
     const changedImage = spawnSync(
       'ffmpeg',
@@ -245,7 +251,7 @@ describe('body-fat derivative generator', () => {
     expect(`${result.stdout}${result.stderr}`).toContain('SHA-256');
   });
 
-  test('refuses to place generated files inside the read-only source tree', async () => {
+  it('refuses to place generated files inside the read-only source tree', async () => {
     const item = await fixture();
     const outputRoot = join(item.sourceRoot, 'generated');
     const result = generate([
