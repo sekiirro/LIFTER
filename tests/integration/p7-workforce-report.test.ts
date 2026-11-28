@@ -197,6 +197,124 @@ describe('P7 T013 PO workforce report RPC (p7_workforce_report)', () => {
     expect(trainerAdj?.reason_code).toBe('p7-test-adjustment');
   });
 
+  it('includes only the latest effective monthly quality points in report and finalized snapshot', async () => {
+    const context = await clientContext();
+    const [period] = await db`
+      select (date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date
+        - interval '2 month')::date::text as past_month`;
+    const pastMonth = period!.past_month as string;
+    const qualityMonth = pastMonth.slice(0, 7);
+
+    const firstTransformation = await context.po.client.rpc(
+      'record_monthly_quality',
+      {
+        p_workspace_id: context.wsA.id,
+        p_trainer_id: context.trainerA.userId,
+        p_month: qualityMonth,
+        p_category: 'transformation',
+        p_positive_count: 4,
+        p_negative_count: 0,
+        p_positive_weight: 0.25,
+        p_negative_weight: 0,
+        p_idempotency_key: `quality-report-transform-1-${randomUUID()}`,
+        p_expected_revision: 0,
+      },
+    );
+    expect(firstTransformation.error).toBeNull();
+    expect(firstTransformation.data).toMatchObject({ net_points: '1.00' });
+
+    const latestTransformation = await context.po.client.rpc(
+      'record_monthly_quality',
+      {
+        p_workspace_id: context.wsA.id,
+        p_trainer_id: context.trainerA.userId,
+        p_month: qualityMonth,
+        p_category: 'transformation',
+        p_positive_count: 2,
+        p_negative_count: 0,
+        p_positive_weight: 0.75,
+        p_negative_weight: 0,
+        p_idempotency_key: `quality-report-transform-2-${randomUUID()}`,
+        p_expected_revision: 1,
+      },
+    );
+    expect(latestTransformation.error).toBeNull();
+    expect(latestTransformation.data).toMatchObject({ net_points: '1.50' });
+
+    const feedback = await context.po.client.rpc('record_monthly_quality', {
+      p_workspace_id: context.wsA.id,
+      p_trainer_id: context.trainerA.userId,
+      p_month: qualityMonth,
+      p_category: 'feedback',
+      p_positive_count: 0,
+      p_negative_count: 4,
+      p_positive_weight: 1,
+      p_negative_weight: -0.5,
+      p_idempotency_key: `quality-report-feedback-${randomUUID()}`,
+      p_expected_revision: 0,
+    });
+    expect(feedback.error).toBeNull();
+    expect(feedback.data).toMatchObject({ net_points: '-2.00' });
+
+    const reportBeforeClose = await context.po.client.rpc(
+      'p7_workforce_report',
+      {
+        p_workspace_id: context.wsA.id,
+        p_month: pastMonth,
+      },
+    );
+    expect(reportBeforeClose.error).toBeNull();
+    const totalBeforeClose = (
+      reportBeforeClose.data.totals as Array<{
+        staff_user_id: string;
+        points: string;
+      }>
+    ).find((row) => row.staff_user_id === context.trainerA.userId);
+    expect(totalBeforeClose?.points).toBe('-0.50');
+
+    const qualityLedger = (
+      reportBeforeClose.data.ledger as Array<{
+        staff_user_id: string;
+        category: string;
+        points: string;
+      }>
+    ).filter(
+      (row) =>
+        row.staff_user_id === context.trainerA.userId &&
+        (row.category === 'transformation' || row.category === 'feedback'),
+    );
+    expect(qualityLedger.map((row) => row.points).sort()).toEqual([
+      '-2.00',
+      '1.50',
+    ]);
+
+    const finalized = await context.po.client.rpc('p7_finalize_month', {
+      p_workspace_id: context.wsA.id,
+      p_month: pastMonth,
+    });
+    expect(finalized.error).toBeNull();
+    expect(finalized.data).toMatchObject({ status: 'finalized' });
+
+    const reportAfterClose = await context.po.client.rpc(
+      'p7_workforce_report',
+      {
+        p_workspace_id: context.wsA.id,
+        p_month: pastMonth,
+      },
+    );
+    expect(reportAfterClose.error).toBeNull();
+    expect(reportAfterClose.data.snapshot.totals[context.trainerA.userId]).toBe(
+      '-0.50',
+    );
+    const totalAfterClose = (
+      reportAfterClose.data.totals as Array<{
+        staff_user_id: string;
+        points: string;
+      }>
+    ).find((row) => row.staff_user_id === context.trainerA.userId);
+    expect(totalAfterClose?.points).toBe('-0.50');
+  });
+
   it('returns written PO reason, actor, operation, and immutable lineage in the PO ledger projection', async () => {
     const context = await clientContext();
     const [period] = await db`
