@@ -54,3 +54,23 @@ The strike instant is when the persisted F15 D-03 deadline passes without a succ
 
 - PENDING-PO requirements: none.
 - Remaining governance dependency: Constitution C1/C2 are resolved by the pending separate Constitution 1.20.0 amendment PR in lane s70-gemini-const120; this is not a product question.
+
+## S73-PO-6 - Follow-up dispute decisions - RESOLVED (2026-11-28)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s73-po/s73-po-6.verbatim.txt` ("all recommended"); PDN-01..PDN-08 in `C:/Users/NEW LAP/.lifter/runs/s73-hungerg-dispute/report.md` lines 115-169; Recommended option taken verbatim for each.
+
+- **PDN-01** (who may enter/resolve follow-up `Disputed`): RESOLVED by S73-PO-6 — PO-only review marker; PO enters and resolves, Trainers/Sales read-only.
+- **PDN-02** (dispute scope): RESOLVED by S73-PO-6 — follow-up accuracy and its -0.5 event only.
+- **PDN-03** (transition graph): RESOLVED by S73-PO-6 — `Late`/`Followed Up` -> `Disputed` -> resolved; resolved display derives from immutable history.
+- **PDN-04** (the -0.5 while/after dispute): RESOLVED by S73-PO-6 — original -0.5 stays posted and immutable; any financial change is a separate PO append-only correction.
+- **PDN-05** (resolution outcomes): RESOLVED by S73-PO-6 — PO chooses `valid`, `falseFollowUp` or `additionalPenalty`, each mapped to an explicit ledger action.
+- **PDN-06** (PO report dispute as separate case): RESOLVED by S73-PO-6 — no separate case; "dispute" uses the existing append-only correction/reattribution path.
+- **PDN-07** (reason/evidence): RESOLVED in principle by S73-PO-6 — required controlled reason code, no client PII in retained dispute data. **OPEN (PO-DECISION-NEEDED):** the code list and its EN/AR labels remain PENDING PO copy approval; no codes are invented.
+- **PDN-08** (cardinality/reopen/purge clock): RESOLVED by S73-PO-6 — one active dispute per follow-up; resolution is final; resolution restarts the 30-day clock.
+
+Applied to: FR-004, FR-006, FR-018, FR-020, FR-029; follow-up dispute record entity; T036-T038.
+
+## Decision status (updated 2026-11-28)
+
+- Open product MCQs: 0 for actor/scope/transition/financial semantics. PDN-07 reason-code code list and EN/AR labels remain PENDING PO copy approval (PO-DECISION-NEEDED); no codes invented.
+- PENDING-PO requirements: PDN-07 reason-code code list + EN/AR labels.
