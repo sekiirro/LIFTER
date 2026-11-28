@@ -7,6 +7,7 @@
 // Shared by the PDF print route, Copy AI Prompt (T040), and browser exports.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 import { authorize, type Actor } from '../auth/authorize';
 import { loadActorRows } from '../auth/actor';
 import { roleHasCapability } from '../auth/capabilities';
@@ -94,6 +95,38 @@ export type LoadAuthorizedWorkoutExportOptions = {
   client?: SupabaseClient;
   actor?: Actor;
 };
+
+export type WorkoutExportRequestParams = {
+  revisionId: string;
+  locale: Locale;
+};
+
+/**
+ * Shared query parsing for the workout export API routes (S60-D2): the PDF
+ * print route and Copy AI Prompt accept the same `revision` + `locale` query.
+ * Returns null for any missing or invalid parameter — the routes answer those
+ * with the same generic 404 as any other denial, so no detail ever leaks.
+ */
+export function parseWorkoutExportRequest(
+  request: Request,
+): WorkoutExportRequestParams | null {
+  const url = new URL(request.url);
+  const revisionId = url.searchParams.get('revision');
+  const localeValue = url.searchParams.get('locale');
+  if (
+    !revisionId ||
+    !UUID_REGEX.test(revisionId) ||
+    (localeValue !== 'en' && localeValue !== 'ar')
+  ) {
+    return null;
+  }
+  return { revisionId, locale: localeValue };
+}
+
+/** Generic denial body for the workout export API routes: no content leaks. */
+export function workoutExportDeniedResponse(): NextResponse {
+  return NextResponse.json({ status: 'unavailable' }, { status: 404 });
+}
 
 export async function loadAuthorizedWorkoutExportPayload(
   options: LoadAuthorizedWorkoutExportOptions,
