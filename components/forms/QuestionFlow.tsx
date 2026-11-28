@@ -658,6 +658,14 @@ export function QuestionFlow({
           },
         ]);
         setState('submitted');
+        // S74-R21: the submission is confirmed here — end the submitting
+        // phase before the best-effort history refresh. While submitting
+        // is true the form stays locked, which disables the history Clear
+        // buttons at reduced opacity (3.99:1) and fails axe
+        // color-contrast in the submitted state. The refresh is a read,
+        // not part of the submission, and must not hold the lock.
+        submittingRef.current = false;
+        setSubmitting(false);
         // CR-008: refresh the just-appended history entry from the server
         // so the displayed history shows the authoritative answers and
         // revision instead of the client-side guess, without a reload.

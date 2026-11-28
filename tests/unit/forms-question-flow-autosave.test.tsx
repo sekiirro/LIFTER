@@ -355,6 +355,98 @@ describe('QuestionFlow autosave retry + history refresh (S54-58-CR-007/008)', ()
     expect(latest?.textContent).toContain('Build muscle (server)');
   });
 
+  it('(d) S74-R21: history Clear buttons are enabled while the post-submit refresh is still pending', async () => {
+    const baseAdapter = createMockFormsClientAdapter({
+      'test-assignment': {
+        revision: 1,
+        answers: {
+          'required-goal': 'Build strength',
+          'optional-notes': 'No injuries',
+        },
+      },
+    });
+    const submitSpy = vi
+      .spyOn(baseAdapter, 'submit')
+      .mockImplementation(async () => ({
+        status: 'submitted' as const,
+        revision: 5,
+      }));
+    // Hold the CR-008 reload open: the submission is already confirmed
+    // (state 'submitted') while the server round-trip is still pending.
+    type ReloadResult = Awaited<
+      ReturnType<NonNullable<typeof baseAdapter.reloadSubmitted>>
+    >;
+    let resolveReload!: (value: ReloadResult) => void;
+    const reloadSubmittedSpy = vi
+      .spyOn(baseAdapter, 'reloadSubmitted')
+      .mockImplementation(
+        () =>
+          new Promise<ReloadResult>((resolve) => {
+            resolveReload = resolve;
+          }),
+      );
+
+    await renderFlow({
+      adapter: baseAdapter,
+      initialAnswers: {
+        'required-goal': 'Build strength',
+        'optional-notes': 'No injuries',
+      },
+      history: [
+        {
+          version: 1,
+          createdAt: '2026-11-23T18:00:00Z',
+          answers: {
+            'required-goal': 'Build strength',
+            'optional-notes': 'No injuries',
+          },
+        },
+      ],
+    });
+
+    await typeAnswer('Lose fat');
+
+    const messages = getMessages('en');
+    await act(async () => {
+      findButton(messages['forms.next']).click();
+    });
+    await act(async () => {
+      findButton(messages['forms.submit']).click();
+    });
+
+    expect(submitSpy).toHaveBeenCalledTimes(1);
+    // The refresh has started but not finished: the form must not stay
+    // locked, or the disabled Clear buttons render at 3.99:1 and fail
+    // axe color-contrast in the submitted state.
+    expect(reloadSubmittedSpy).toHaveBeenCalledTimes(1);
+    const clearButtons = Array.from(
+      container?.querySelectorAll(
+        '[aria-label="Clear answer: Additional notes"]',
+      ) ?? [],
+    ) as HTMLButtonElement[];
+    expect(clearButtons.length).toBe(1);
+    expect(clearButtons[0]?.disabled).toBe(false);
+
+    // Let the refresh finish: the history still shows the server answers.
+    await act(async () => {
+      resolveReload({
+        status: 'loaded',
+        revision: 5,
+        answers: {
+          'required-goal': 'Lose fat (server)',
+          'optional-notes': 'No injuries',
+        },
+      });
+    });
+    const versionItems = container?.querySelectorAll(
+      'section[aria-labelledby="history-heading"] ol > li',
+    );
+    expect(versionItems?.length).toBe(2);
+    const latest = versionItems?.[versionItems.length - 1];
+    expect(latest?.textContent).toContain('Version 5');
+    expect(latest?.textContent).toContain('Lose fat (server)');
+  });
+
   it('(b) S74-R4: a 408 save failure through the real adapter keeps retrying per the current policy', async () => {
     vi.useFakeTimers();
     const fetchMock = vi.fn().mockImplementation(async () => ({
