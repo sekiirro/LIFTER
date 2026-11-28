@@ -1546,6 +1546,18 @@ export const ar = {
   'workforce.report.ledger.category.poAdjustment': 'تعديل مالك المنصة',
   'workforce.report.ledger.category.refundReversal': 'عكس نقاط الاسترداد',
   'workforce.report.ledger.column.points': 'النقاط',
+  'workforce.report.refund.questionTitle': 'استرداد كامل — فيه خطأ من الفريق؟',
+  'workforce.report.refund.questionBody':
+    'الاسترداد الكامل حصل بسبب خطأ من الفريق؟ السؤال ده بيظهر مرة واحدة للاسترداد الكامل بس.',
+  'workforce.report.refund.faultYes': 'أيوه',
+  'workforce.report.refund.faultNo': 'لا',
+  'workforce.report.refund.selectStaff':
+    'اختار المدرّبين أو المبيعات في مساحة العمل',
+  'workforce.report.refund.individualDeductions': 'خصومات نقاط فردية',
+  'workforce.report.refund.saved': 'اتسجلت مراجعة الاسترداد.',
+  'workforce.report.refund.duplicate': 'مراجعة الاسترداد دي متسجّلة خلاص.',
+  'workforce.report.refund.emptyQueue':
+    'مفيش طلبات استرداد فلوس في انتظار المراجعة.',
   'workforce.report.ledger.column.reason': 'السبب',
   'workforce.report.ledger.column.actor': 'سجّله',
   'workforce.report.ledger.column.effectiveMonth': 'الشهر الفعلي',

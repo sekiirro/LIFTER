@@ -1596,6 +1596,17 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.report.ledger.category.poAdjustment': 'PO adjustment',
   'workforce.report.ledger.category.refundReversal': 'Refund reversal',
   'workforce.report.ledger.column.points': 'Points',
+  'workforce.report.refund.questionTitle': 'Full refund — staff fault?',
+  'workforce.report.refund.questionBody':
+    'Was this full refund caused by staff fault? This is asked once per full refund only.',
+  'workforce.report.refund.faultYes': 'Yes',
+  'workforce.report.refund.faultNo': 'No',
+  'workforce.report.refund.selectStaff': 'Select workspace Trainers or Sales',
+  'workforce.report.refund.individualDeductions': 'Individual point deductions',
+  'workforce.report.refund.saved': 'Refund review recorded.',
+  'workforce.report.refund.duplicate':
+    'This refund review was already recorded.',
+  'workforce.report.refund.emptyQueue': 'No refund reviews are waiting.',
   'workforce.report.ledger.column.reason': 'Reason',
   'workforce.report.ledger.column.actor': 'Recorded by',
   'workforce.report.ledger.column.effectiveMonth': 'Effective month',

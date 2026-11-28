@@ -13,6 +13,7 @@ import type {
   LedgerCategory,
 } from '../../lib/workforce/report-types';
 import styles from './WorkforceReport.module.css';
+import { RefundFaultReviewPanel } from './RefundFaultReviewPanel';
 
 export type WorkforceReportViewProps = {
   report: WorkforceReportData | null;
@@ -159,6 +160,15 @@ export function WorkforceReportView({
           </Button>
         </div>
       </nav>
+
+      {report && (
+        <RefundFaultReviewPanel
+          workspaceId={report.workspace_id}
+          locale={locale}
+          messages={m}
+          staff={[...trainers, ...sales]}
+        />
+      )}
 
       {/* Formula & Hints Card */}
       <section
