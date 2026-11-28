@@ -113,6 +113,30 @@ describe('Client directory expiring/expired filter query parsing (CB-P8-01, FR-0
     expect(href).toContain('subscription=expiring');
   });
 
+  it('generates canonical single-parameter query string in directoryHref when subscriptionStatus and expiry coincide (CUMREV-028-02)', () => {
+    for (const input of [
+      { subscription: 'expiring' },
+      { expiry: 'expiring' },
+      { subscription: 'expiring', expiry: 'expiring' },
+    ]) {
+      const query = parseDirectoryQuery(input)!;
+      const href = directoryHref(wsA, query, 1);
+      expect(href).toBe(`/clients?workspace=${wsA}&subscription=expiring`);
+      expect(href).not.toContain('expiry=');
+    }
+
+    for (const input of [
+      { subscription: 'expired' },
+      { expiry: 'expired' },
+      { subscription: 'expired', expiry: 'expired' },
+    ]) {
+      const query = parseDirectoryQuery(input)!;
+      const href = directoryHref(wsA, query, 1);
+      expect(href).toBe(`/clients?workspace=${wsA}&subscription=expired`);
+      expect(href).not.toContain('expiry=');
+    }
+  });
+
   it('parses directory rows with expiry_bucket for badge derivation (B11)', () => {
     const rowWithExpiryBucket = {
       client_id: clientId,

@@ -376,10 +376,12 @@ export function directoryHref(
   const params = new URLSearchParams({ workspace: workspaceId });
   if (query.search) params.set('q', query.search);
   if (query.approvalState) params.set('approval', query.approvalState);
-  if (query.subscriptionStatus)
+  if (query.subscriptionStatus) {
     params.set('subscription', query.subscriptionStatus);
+  } else if (query.expiry) {
+    params.set('subscription', query.expiry);
+  }
   if (query.assignment) params.set('assignment', query.assignment);
-  if (query.expiry) params.set('expiry', query.expiry);
   if (page > 1) params.set('page', String(page));
   return `/clients?${params.toString()}`;
 }
