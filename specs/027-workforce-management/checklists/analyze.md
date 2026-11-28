@@ -1,3 +1,41 @@
+# S74-PO-2 Sales Projection/Funnel Re-Analyze — 2026-11-28 09:03 UTC
+
+**Scope reviewed after the spec, plan, tasks, read contract, copy record and traceability edits.** This full Analyze supersedes earlier date-only status checks for this change.
+
+## Entry check — PASS
+
+- `spec.md`: numbered FRs retained; measurable success criteria remain; US4 acceptance scenarios now cover pre-finalization salary/not-available state, empty/finalized mapping, and all eight PO funnel categories.
+- `spec.md`: S74-PO-2 is cited by its verbatim source file and reproduced verbatim above its architect mapping; no unapproved copy is described as approved.
+- `plan.md`: Sales own-compensation projection, PO-only funnel extension, F21 display-name reuse and T039 → T025 dependency are covered.
+- `tasks.md`: T024 retains the S74-COPY-01 exact-copy gate; T039 is RED/GREEN/mutation and tagged FR-010/FR-011/FR-017/FR-020; T025 depends on T024 and T039.
+- `checklists/analyze.md`: this dated analysis follows the artifact changes and records 0 open CRITICAL / 0 open HIGH.
+
+## Findings
+
+| ID | Severity | Finding | Disposition |
+| --- | --- | --- | --- |
+| A-S74-01 | HIGH | Sales salary before finalization could otherwise widen staff compensation access. | Resolved: migration `20261226130000_p7_payroll_resume_and_currency_fix.sql` enforces Sales target id = `auth.uid()` in `p7_get_own_compensation`; contract and spec require that existing own-row read. No authorization widening. |
+| A-S74-02 | HIGH | Funnel additions require facts not exposed by the current Sales funnel RPC. | Resolved as planned gated work: T039 extends the current three-count `get_sales_funnel` read using existing P7 facts, Cairo event month, PO-only, workspace-scoped and non-PII; T025 depends on T039. |
+| A-S74-03 | HIGH | Showing a name from `sales_user_id` could add a new PII surface. | Resolved: use existing PO-only F21 `public.p7_workforce_report`; no new non-PO name projection. |
+| A-S74-04 | CRITICAL | Draft message copy is not yet approved verbatim. | No open CRITICAL finding: `workforce.salesProjection.notAvailableUntilNextMonth` remains PROPOSED as S74-COPY-01, T024 remains unchecked for this sole pending exact-text approval, and T025 cannot ship it before approval. |
+
+**Current open counts: CRITICAL 0; HIGH 0.** No additional product gap surfaced. Behavior decisions MCQ1–MCQ7 are answered by S74-PO-2. One exact-copy approval remains pending (S74-COPY-01); this is a shipping gate, not an inferred requirement. Funnel title/key wiring is explicit: approved `workforce.salesFunnel.title` is not rendered as the section heading; the existing `workforce.report.section.sales` titles the section and `workforce.salesFunnel.aria.table` labels its table.
+
+## Cross-artifact reconciliation
+
+- FR-010/FR-011/FR-017/FR-020, T039, the logical read contract and traceability agree on the funnel read extension, eight categories, Cairo event month, workspace scope, PO-only authorization, non-PII response and F21 name reuse.
+- FR-012, US4, T024/T025 and copy record agree: only own configured Basic Salary may be shown before close/finalization; the approved not-available heading remains, the prior hint is hidden for this state, and proposed S74-COPY-01 is gated. `empty` maps to `workforce.salesProjection.empty`; `not_available` maps to that state.
+- MCQ6=B is reflected consistently: funnel is in the existing workforce report, with `workforce.report.section.sales` as the visible section heading and `workforce.salesFunnel.aria.table` as the table label.
+- Copy table contains the 27 approved batch rows from draft rows 1–27 in source order; a separate exact-string check passed. S74-COPY-01 is explicitly PROPOSED.
+- No implementation task is checked and no implementation/test evidence is claimed in this documentation lane.
+
+## Metrics
+
+- Functional requirements mapped: 29/29.
+- Open CRITICAL: 0. Open HIGH: 0.
+- Open behavior MCQs: 0. Pending exact-copy approval: S74-COPY-01 only.
+- New work task: T039; T025 depends on T039 and T024.
+- Implementation tasks checked in this lane: 0. Tests run: 0 (documentation-only).
 # Specification Analysis Report: P7 Workforce Management
 
 ## S73 date-only status revalidation — 2026-11-28 UTC

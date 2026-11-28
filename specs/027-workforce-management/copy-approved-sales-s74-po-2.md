@@ -1,0 +1,50 @@
+# Sales Projection and Funnel Copy — S74-PO-2
+
+Authority: PO decisions verbatim in `C:/Users/NEW LAP/.lifter/runs/s74-po/s74-po-2.verbatim.txt`; questions and exact source rows in `C:/Users/NEW LAP/.lifter/runs/s74-hy4-copy024/draft.md`; architect mapping in `C:/Users/NEW LAP/.lifter/runs/s74-rulings.md` (S74-R12). The approvals below apply to the two batches as specified by MCQ1=A and MCQ2=A; no other screen's copy is inferred.
+
+## MCQ1=A — Sales own-total batch, draft rows 1–11
+
+| Key | EN | AR | Record |
+| --- | --- | --- | --- |
+| `workforce.salesProjection.title` | My monthly total | إجمالي نقاطي للشهر | APPROVED — CB-04 reuse; byte-exact |
+| `reports.month` | Month | الشهر | APPROVED — reuse; byte-exact |
+| `workforce.salesProjection.total` | Finalized total | الإجمالي المعتمد | APPROVED — CB-04 reuse; byte-exact |
+| `workforce.salesProjection.notAvailable` | Not available yet | مش متاح لسه | APPROVED — CB-04 reuse; byte-exact |
+| `workforce.salesProjection.notAvailableHint` | This total appears after the month ends and the PO finalizes it. | الإجمالي بيظهر بعد ما الشهر يخلص ومالك المنصة يعتمده. | APPROVED — CB-04 reuse; byte-exact; not shown in the MCQ3 not-available state |
+| `workforce.salesProjection.empty` | No finalized total for this month. | مفيش إجمالي معتمد للشهر ده. | APPROVED — CB-04 reuse; byte-exact |
+| `workforce.salesProjection.loading` | Loading your monthly total… | بنحمّل إجمالي الشهر… | APPROVED — CB-04 reuse; byte-exact |
+| `workforce.salesProjection.loadError` | Unable to load your monthly total. Try again. | مش عارفين نحمّل إجمالي الشهر. حاول تاني. | APPROVED — CB-04 reuse; byte-exact |
+| `workforce.salesProjection.denied` | You cannot view this total. | مش مسموح لك تشوف الإجمالي ده. | APPROVED — CB-04 reuse; byte-exact |
+| `states.retry` | Retry | إعادة المحاولة | APPROVED — reuse; byte-exact |
+| `workforce.salesProjection.aria.total` | Your finalized monthly total | إجماليك المعتمد للشهر | APPROVED — new aria label, exact as drafted |
+
+## MCQ2=A — PO funnel batch, draft rows 12–27
+
+| Key | EN | AR | Record |
+| --- | --- | --- | --- |
+| `workforce.salesFunnel.title` | Sales funnel | مسار المبيعات | APPROVED — exact as drafted; approved but not rendered as a separate screen/section heading under MCQ6=B |
+| `forms.staffRole.sales` | Sales | مبيعات | APPROVED — existing reuse; byte-exact |
+| `workforce.salesFunnel.column.linksIssued` | Links issued | الروابط اللي اتبعتت | APPROVED — exact as drafted |
+| `workforce.salesFunnel.column.registrations` | Registrations | التسجيلات | APPROVED — exact as drafted |
+| `workforce.salesFunnel.column.approvals` | Approvals | الاعتمادات | APPROVED — exact as drafted |
+| `workforce.salesFunnel.column.confirmedFirstPayments` | Confirmed first payments | الدفعات الأولى اللي اتأكدت | APPROVED — conditional row activated by MCQ4=B |
+| `workforce.salesFunnel.column.acquisitionPoints` | Acquisition points | نقاط الاكتساب | APPROVED — conditional row activated by MCQ4=B |
+| `workforce.salesFunnel.column.refundReversals` | Refund reversals | عكس الاستردادات | APPROVED — conditional row activated by MCQ4=B |
+| `workforce.salesFunnel.column.pointDeductions` | Point deductions | خصومات النقاط | APPROVED — conditional row activated by MCQ4=B |
+| `workforce.salesFunnel.column.poAdjustments` | PO adjustments | تعديلات مالك المنصة | APPROVED — conditional row activated by MCQ4=B |
+| `workforce.salesProjection.total` | Finalized total | الإجمالي المعتمد | APPROVED — same exact approved CB-04 string; also approved for this batch |
+| `workforce.salesFunnel.empty` | No Sales funnel data for this month. | مفيش بيانات مسار مبيعات للشهر ده. | APPROVED — exact as drafted |
+| `workforce.salesFunnel.loading` | Loading Sales funnel… | بنحمّل مسار المبيعات… | APPROVED — exact as drafted |
+| `workforce.salesFunnel.loadError` | Unable to load the Sales funnel. Try again. | مش عارفين نحمّل مسار المبيعات. حاول تاني. | APPROVED — exact as drafted |
+| `workforce.salesFunnel.denied` | You cannot view the Sales funnel. | مش مسموح لك تشوف مسار المبيعات. | APPROVED — exact as drafted |
+| `workforce.salesFunnel.aria.table` | Sales funnel details | تفاصيل مسار المبيعات | APPROVED — exact as drafted; table accessible label |
+
+## MCQ3=A modified — exact text still pending
+
+`workforce.salesProjection.notAvailable` remains the approved heading; `workforce.salesProjection.notAvailableHint` is not shown for this state. The following requested next-month message is **PROPOSED only**, authored in architect mapping S74-R12 as S74-COPY-01, and requires the PO's exact-text approval before it may ship:
+
+| Key | EN | AR | Record |
+| --- | --- | --- | --- |
+| `workforce.salesProjection.notAvailableUntilNextMonth` | Your KPI points total isn't available yet. It will be available at the start of next month, once it's finalized. | إجمالي نقاط الـKPI بتاعتك مش متاح لسه. هيبقى متاح أول الشهر الجاي بعد ما يتعتمد. | PROPOSED — S74-COPY-01; pending PO exact-text approval; not approved |
+
+MCQ7=A maps `empty` to `workforce.salesProjection.empty` and `not_available` to the MCQ3 state above. MCQ3 also permits the existing approved Basic Salary label `workforce.compensation.own.basicSalary` with the caller's own salary value from the existing authorized `p7_get_own_compensation` read.
