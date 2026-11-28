@@ -7,8 +7,10 @@ import {
 } from '../../lib/workout-planner/document';
 import { duplicateItem } from '../../lib/workout-planner/id-remap';
 
-// The sequence runs 1,000 generated operations while resetting its deterministic
-// fixture every 25 operations, so validation remains bounded and repeatable.
+// This CPU-heavy proof performs 1,000 generated operations, each cloning and
+// serialising a document. Under Windows full-suite worker fan-out it has been
+// observed at 19.8-29.7s, beyond its old 20s budget. Widen only the time
+// budget; every corruption assertion stays unchanged.
 const uuid = (value: number) =>
   `00000000-0000-4000-8000-${value.toString().padStart(12, '0')}`;
 
@@ -99,36 +101,34 @@ function allIds(document: WorkoutDocumentV1) {
 
 describe('F17 schema-v1 document property operations (T048)', () => {
   it('runs 1,000 generated reorder/move/duplicate and rest-day rejection operations without corruption', () => {
-    const initialDocument = () =>
-      parseWorkoutDocumentV1({
-        schema_version: 1,
-        notes: 'Workout note stays unchanged',
-        days: [
-          {
-            id: uuid(1),
-            kind: 'session',
-            title: 'Day 1',
-            notes: 'Day note 1',
-            items: [makeItem(10), makeItem(11)],
-          },
-          {
-            id: uuid(2),
-            kind: 'session',
-            title: 'Day 2',
-            notes: 'Day note 2',
-            items: [makeItem(20), makeItem(21)],
-          },
-          {
-            id: uuid(3),
-            kind: 'session',
-            title: 'Day 3',
-            notes: 'Day note 3',
-            items: [makeItem(30), makeItem(31)],
-          },
-          { id: uuid(4), kind: 'rest', title: 'Rest day', items: [] },
-        ],
-      });
-    let document = initialDocument();
+    let document = parseWorkoutDocumentV1({
+      schema_version: 1,
+      notes: 'Workout note stays unchanged',
+      days: [
+        {
+          id: uuid(1),
+          kind: 'session',
+          title: 'Day 1',
+          notes: 'Day note 1',
+          items: [makeItem(10), makeItem(11)],
+        },
+        {
+          id: uuid(2),
+          kind: 'session',
+          title: 'Day 2',
+          notes: 'Day note 2',
+          items: [makeItem(20), makeItem(21)],
+        },
+        {
+          id: uuid(3),
+          kind: 'session',
+          title: 'Day 3',
+          notes: 'Day note 3',
+          items: [makeItem(30), makeItem(31)],
+        },
+        { id: uuid(4), kind: 'rest', title: 'Rest day', items: [] },
+      ],
+    });
     const random = deterministicRandom(0x17f048);
     let nextId = 1_000_000;
     const counts = {
@@ -140,9 +140,6 @@ describe('F17 schema-v1 document property operations (T048)', () => {
     };
 
     for (let operation = 0; operation < 1_000; operation += 1) {
-      // Keep the generated document bounded while retaining all 1,000
-      // operations and their per-operation corruption assertions.
-      if (operation > 0 && operation % 25 === 0) document = initialDocument();
       const before = document;
       const beforeText = JSON.stringify(before);
       const beforeLocations = itemLocations(before);
@@ -176,11 +173,7 @@ describe('F17 schema-v1 document property operations (T048)', () => {
           break;
         }
         case 1: {
-          const movable = active.filter(
-            ({ dayId }) =>
-              before.days.find((day) => day.id === dayId)!.items.length > 1,
-          );
-          const source = movable[random() % movable.length]!;
+          const source = active[random() % active.length]!;
           const destinations = sessions.filter(
             (day) => day.id !== source.dayId,
           );
@@ -272,5 +265,5 @@ describe('F17 schema-v1 document property operations (T048)', () => {
       addRest: 200,
       moveRest: 200,
     });
-  });
+  }, 60_000);
 });
