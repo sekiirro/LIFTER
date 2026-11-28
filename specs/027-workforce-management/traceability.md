@@ -48,3 +48,14 @@ Tasks are checked only with implementation evidence recorded above. T030/T031 pa
 | FR-029 | T006 | `tests/unit/trainer-checkins-ui.test.tsx::renders the approved loading copy in ar`              | same commit; AR loading state uses approved `workforce.checkin.loading`                                        |
 
 Gates: `npm run lint`, `npm run typecheck`, `npx prettier --check` on changed files and `TZ=Africa/Cairo npx vitest run tests/unit` (361 files, 4151 tests) pass on the implementation head.
+
+## S73 T013 report history evidence
+
+| FR | Task | Test | Evidence |
+| --- | --- | --- | --- |
+| FR-006 | T013 | `tests/unit/workforce-report-points-ui.test.tsx::renders manual reason and approved lineage labels in en/ar` | `21fd0259c07b60fef16544378159c4223dcbd769`; manual reason uses `Bidi dir="auto"`; automatic reason codes remain LTR; operation and source-kind labels reuse approved CB-02 keys. |
+| FR-007 | T013 | `tests/unit/workforce-report-points-ui.test.tsx::renders only the approved %s operation labels` | Same implementation commit; only approved add/deduct/correct/reattribute labels render. |
+| FR-016 | T013 | `tests/unit/workforce-report-points-ui.test.tsx::renders manual reason and approved lineage labels in en/ar` | Same implementation commit; actor display name and original entry ID/kind render in the PO ledger history. |
+| FR-017 | T013 | `tests/unit/workforce-report.test.tsx`; `tests/unit/workforce-report-points-ui.test.tsx` | Same implementation commit; typed RPC fields render in the PO-only workforce report view. |
+| FR-020 | T013 | `tests/unit/workforce-report-points-ui.test.tsx::renders a large negative signed total correctly in %s` | Same implementation commit; existing negative totals and automatic rows remain unchanged. |
+| FR-029 | T013 | `tests/unit/workforce-report-points-ui.test.tsx::renders manual reason and approved lineage labels in en/ar` | Same implementation commit; EN/AR verified; final Cairo full-unit run passed 397 files / 4,511 tests. |
