@@ -259,6 +259,8 @@ export function StaffNotifications({
     pendingFocusRef.current = { id: item.id, index };
     try {
       await markReadHandler(item.type, item.id);
+    } catch {
+      // Failures do not become unhandled rejections; state still reloads.
     } finally {
       await loadNotifications();
       setFocusNonce((n) => n + 1);
@@ -272,6 +274,8 @@ export function StaffNotifications({
     pendingFocusRef.current = { id: item.id, index };
     try {
       await dismissHandler(item.type, item.id);
+    } catch {
+      // Failures do not become unhandled rejections; state still reloads.
     } finally {
       await loadNotifications();
       setFocusNonce((n) => n + 1);
