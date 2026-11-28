@@ -78,7 +78,7 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s74-po/s74-po-1.verbatim.txt` ("* PDN-
   - `valid`: +0.5 reversal of the follow-up penalty, recorded as an append-only ledger entry.
   - `falseFollowUp`: the -0.5 penalty stands (penalty unchanged).
   - `additionalPenalty`: an extra deduction whose amount the PO enters manually per dispute (no fixed amount), recorded as an append-only ledger entry.
-  All as append-only ledger entries.
+    All as append-only ledger entries.
 
 Applied to: FR-004, FR-006, FR-018, FR-020; follow-up dispute record entity; T036-T037.
 

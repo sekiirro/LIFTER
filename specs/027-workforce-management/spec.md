@@ -199,7 +199,7 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s74-po/s74-po-1.verbatim.txt` ("* PDN-
   - `valid`: +0.5 reversal of the follow-up penalty, as an append-only ledger entry.
   - `falseFollowUp`: the -0.5 penalty stands (no additional ledger adjustment).
   - `additionalPenalty`: an extra deduction whose amount the PO enters manually per dispute (no fixed amount), as an append-only ledger entry.
-  All as append-only ledger entries.
-  Bounds and validation rules for the PO-entered amount are not decided by S74-PO-1; tracked as open PO-DECISION-NEEDED in the lane report while leaving the spec text neutral.
+    All as append-only ledger entries.
+    Bounds and validation rules for the PO-entered amount are not decided by S74-PO-1; tracked as open PO-DECISION-NEEDED in the lane report while leaving the spec text neutral.
 
 Applied to: FR-004, FR-006, FR-018, FR-020; follow-up dispute record entity; T036-T037.

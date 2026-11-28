@@ -45,23 +45,23 @@ PENDING-PO FRs: 0. Open product MCQs: 0; P7-MCQ-04/05 are resolved by S70-R110.
 
 ## FR acceptance coverage
 
-| FR     | Acceptance/task coverage | FR     | Acceptance/task coverage                   |
-| ------ | ------------------------ | ------ | ------------------------------------------ |
-| FR-001 | T007-T008, T020-T021     | FR-016 | T033                                       |
-| FR-002 | T009                     | FR-017 | T002-T006, T013, T025, T032-T033           |
-| FR-003 | T010-T011                | FR-018 | T030-T031, T036                            |
-| FR-004 | T002-T006, T036-T038     | FR-019 | T001; post-launch documentation only       |
+| FR     | Acceptance/task coverage | FR     | Acceptance/task coverage                         |
+| ------ | ------------------------ | ------ | ------------------------------------------------ |
+| FR-001 | T007-T008, T020-T021     | FR-016 | T033                                             |
+| FR-002 | T009                     | FR-017 | T002-T006, T013, T025, T032-T033                 |
+| FR-003 | T010-T011                | FR-018 | T030-T031, T036                                  |
+| FR-004 | T002-T006, T036-T038     | FR-019 | T001; post-launch documentation only             |
 | FR-005 | T003-T006                | FR-020 | T002-T004, T007-T017, T022-T023, T026-T032, T036 |
-| FR-006 | T007-T013, T036-T037     | FR-021 | T028-T029                                  |
-| FR-007 | T013, T017, T023, T027   | FR-022 | T007-T010, T020-T023, T028-T029            |
-| FR-008 | T017-T019, T026-T027     | FR-023 | T014-T015                                  |
-| FR-009 | T014-T016, T018-T019     | FR-024 | T002, T032                                 |
-| FR-010 | T020-T023                | FR-025 | T002, T032                                 |
-| FR-011 | T022-T023                | FR-026 | T009, T033                                 |
-| FR-012 | T002, T024-T025, T032    | FR-027 | T010-T011                                  |
-| FR-013 | T028-T029                | FR-028 | T017-T019, T026-T027                       |
-| FR-014 | T028-T029                | FR-029 | T005, T012, T018, T024, T034, T037-T038   |
-| FR-015 | T022-T023                |        |                                            |
+| FR-006 | T007-T013, T036-T037     | FR-021 | T028-T029                                        |
+| FR-007 | T013, T017, T023, T027   | FR-022 | T007-T010, T020-T023, T028-T029                  |
+| FR-008 | T017-T019, T026-T027     | FR-023 | T014-T015                                        |
+| FR-009 | T014-T016, T018-T019     | FR-024 | T002, T032                                       |
+| FR-010 | T020-T023                | FR-025 | T002, T032                                       |
+| FR-011 | T022-T023                | FR-026 | T009, T033                                       |
+| FR-012 | T002, T024-T025, T032    | FR-027 | T010-T011                                        |
+| FR-013 | T028-T029                | FR-028 | T017-T019, T026-T027                             |
+| FR-014 | T028-T029                | FR-029 | T005, T012, T018, T024, T034, T037-T038          |
+| FR-015 | T022-T023                |        |                                                  |
 
 Each mapped task includes acceptance evidence and remains unchecked until implementation tests execute and pass. Traceability was rebuilt for current task IDs; no test evidence is claimed in this docs lane.
 
