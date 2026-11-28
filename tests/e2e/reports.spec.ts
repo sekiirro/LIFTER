@@ -22,10 +22,15 @@ const screenshotDir =
   process.env.LIFTER_SCREENSHOT_DIR ??
   join(tmpdir(), 'lifter-reports-screenshots');
 const leakedMoneyPattern = new RegExp(
-  ['400', '800']
-    .map((minor) => formatMinorUnits(minor, 'USD', 'en'))
-    .map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('|'),
+  [
+    ...['400', '800']
+      .map((minor) => formatMinorUnits(minor, 'USD', 'en'))
+      .map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    // Any decimal USD amount, with optional thousand separators
+    // ('4.00 USD', '1,000.00 USD'): a leak of an amount other than the
+    // fixture's 400/800 minor units must fail the denied-role check too.
+    String.raw`\d[\d,]*\.\d{2}\s+USD`,
+  ].join('|'),
 );
 const baseURL = process.env.PLAYWRIGHT_BASE_URL!;
 const db = sql();

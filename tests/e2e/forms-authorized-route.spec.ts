@@ -591,6 +591,21 @@ test('approved F15 controls render in both locales, themes, and widths', async (
         ]);
         await page.goto(`/forms/${freshId}`);
         const next = nextFor(locale);
+        const waitForSettledSave = async () => {
+          await page.waitForFunction((buttonName) => {
+            const saveNow = [...document.querySelectorAll('button')].find(
+              (button) => button.textContent?.trim() === buttonName,
+            );
+            return (
+              (saveNow === undefined ||
+                (!saveNow.disabled &&
+                  getComputedStyle(saveNow).opacity === '1')) &&
+              document
+                .getAnimations()
+                .every((animation) => animation.playState !== 'running')
+            );
+          }, getMessages(locale)['forms.saveNow']);
+        };
         const capture = async (name: string, heading?: string) => {
           if (heading) {
             const target =
@@ -609,19 +624,7 @@ test('approved F15 controls render in both locales, themes, and widths', async (
             ].includes(name)
           )
             return;
-          await page.waitForFunction((buttonName) => {
-            const saveNow = [...document.querySelectorAll('button')].find(
-              (button) => button.textContent?.trim() === buttonName,
-            );
-            return (
-              (saveNow === undefined ||
-                (!saveNow.disabled &&
-                  getComputedStyle(saveNow).opacity === '1')) &&
-              document
-                .getAnimations()
-                .every((animation) => animation.playState !== 'running')
-            );
-          }, getMessages(locale)['forms.saveNow']);
+          await waitForSettledSave();
           await expectAxeClean(page);
           const path = join(
             screenshotDir,
@@ -821,19 +824,7 @@ test('approved F15 controls render in both locales, themes, and widths', async (
             ? 'Choose the body-fat reference that most closely resembles your body shape.'
             : 'اختار أقرب نسبة دهون لشكل جسمك',
         );
-        await page.waitForFunction((buttonName) => {
-          const saveNow = [...document.querySelectorAll('button')].find(
-            (button) => button.textContent?.trim() === buttonName,
-          );
-          return (
-            (saveNow === undefined ||
-              (!saveNow.disabled &&
-                getComputedStyle(saveNow).opacity === '1')) &&
-            document
-              .getAnimations()
-              .every((animation) => animation.playState !== 'running')
-          );
-        }, getMessages(locale)['forms.saveNow']);
+        await waitForSettledSave();
         await expectAxeClean(page);
       }
     }
