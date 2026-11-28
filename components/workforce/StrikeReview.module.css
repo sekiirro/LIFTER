@@ -1,0 +1,236 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  inline-size: 100%;
+  max-inline-size: 80rem;
+  margin-inline: auto;
+  padding: var(--space-4);
+}
+
+.header,
+.trainerHeader,
+.strikeMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.correctionHistory {
+  flex-basis: 100%;
+  min-inline-size: 0;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.historyTitle {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: var(--line-height-heading);
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyItem {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-4);
+  padding-block: var(--space-3);
+}
+
+.historyItem + .historyItem {
+  border-block-start: 1px solid var(--color-border);
+}
+
+.historyField {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.historyLabel {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.historyDateTime {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.title,
+.trainerName {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.title {
+  font-size: var(--text-2xl);
+  line-height: var(--line-height-heading);
+}
+
+.trainerName {
+  font-size: var(--text-lg);
+}
+
+.workspaceName,
+.note p,
+.pointsNote {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+}
+
+.workspaceNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.workspaceLink {
+  min-block-size: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-3);
+  color: var(--brand-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-card);
+}
+
+.workspaceLink[aria-current='page'] {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+  font-weight: 600;
+}
+
+.note,
+.trainerSection {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+}
+
+.note p {
+  margin: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.trainerSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.count {
+  display: inline-flex;
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.strike {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.strikeMeta {
+  justify-content: start;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.pointsNote {
+  font-size: var(--text-sm);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.field select {
+  min-block-size: var(--touch-min);
+  padding-inline: var(--space-3);
+  color: var(--color-text);
+  background: var(--color-card);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-button);
+  font: inherit;
+}
+
+.field select:focus-visible,
+.workspaceLink:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.formError {
+  margin: 0;
+  color: var(--color-error-fg);
+}
+
+@media (max-width: 40rem) {
+  .container {
+    padding: var(--space-3);
+  }
+
+  .strike {
+    align-items: stretch;
+  }
+
+  .strike button {
+    inline-size: 100%;
+  }
+
+  .historyItem {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
