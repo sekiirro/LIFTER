@@ -288,7 +288,11 @@ test('Design Gate: all locale, theme, and viewport cells render without overflow
       cell.locale === 'ar' ? 'rtl' : 'ltr',
     );
     await expect(
-      page.getByRole('heading', { name: messages['reports.title'] }),
+      page.getByRole('heading', {
+        level: 1,
+        name: messages['reports.title'],
+        exact: true,
+      }),
     ).toBeVisible();
     const dimensions = await page.evaluate(() => ({
       scroll: document.documentElement.scrollWidth,

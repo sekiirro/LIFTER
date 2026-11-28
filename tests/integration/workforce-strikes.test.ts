@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
 import type { TransactionSql } from 'postgres';
-import { admin, createStaff, sql } from './harness';
+import { admin, anonClient, createStaff, sql } from './harness';
 import { seedSubmittedIntake } from './f17-plan-publish-fixture';
 import {
   clientContext,
@@ -901,12 +901,17 @@ it('serializes concurrent retries of one PO correction idempotency key with the 
   expect(count?.count).toBe(1);
 });
 
-it('denies Trainer, WO and Sales strike reads and corrections before resolving identifiers', async () => {
-  const context = await clientContext();
+it('denies Trainer, WO, Sales and client strike-history reads before resolving identifiers', async () => {
+  const fixture = await seedOverdueInitial();
+  const context = fixture.context;
+  const [client] = await db`
+    select auth_user_id from public.clients where id=${fixture.ids.client}
+  `;
   for (const userId of [
     context.trainerA.userId,
     context.woA.userId,
     context.salesA.userId,
+    client!.auth_user_id as string,
   ]) {
     await db.begin(async (tx) => {
       await expect(
@@ -927,8 +932,64 @@ it('denies Trainer, WO and Sales strike reads and corrections before resolving i
           ) as result`,
         ),
       ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+      await expect(
+        asUser(
+          tx,
+          userId,
+          (sp) =>
+            sp`select public.get_workforce_strike_correction_history(
+              ${context.wsA.id},${randomUUID()}
+            ) as result`,
+        ),
+      ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
     });
   }
+  const anonymous = anonClient();
+  const anonymousResult = await anonymous.rpc(
+    'get_workforce_strike_correction_history',
+    { p_workspace_id: context.wsA.id, p_strike_id: randomUUID() },
+  );
+  expect(anonymousResult.error).not.toBeNull();
+});
+
+it('returns only the PO strike correction history projection', async () => {
+  const fixture = await seedOverdueInitial();
+  await recordDue(fixture.deadlineAt);
+  const [event] = await db`
+    select id from public.workforce_strike_events
+    where workspace_id=${fixture.context.wsA.id}
+  `;
+  const correction = await fixture.context.po.client.rpc(
+    'correct_workforce_strike',
+    {
+      p_workspace_id: fixture.context.wsA.id,
+      p_strike_id: event!.id,
+      p_operation: 'void',
+      p_target_trainer_user_id: null,
+      p_reason_code: 'duplicate',
+      p_idempotency_key: randomUUID(),
+    },
+  );
+  expect(correction.error).toBeNull();
+  const history = await fixture.context.po.client.rpc(
+    'get_workforce_strike_correction_history',
+    { p_workspace_id: fixture.context.wsA.id, p_strike_id: event!.id },
+  );
+  expect(history.error).toBeNull();
+  expect(history.data).toMatchObject({
+    status: 'ok',
+    corrections: [
+      {
+        action: 'void',
+        reason_code: 'duplicate',
+        actor_display_name: expect.any(String),
+        strike_id: event!.id,
+      },
+    ],
+  });
+  expect(history.data.corrections[0]).toHaveProperty('created_at');
+  expect(history.data.corrections[0]).not.toHaveProperty('actor_user_id');
+  expect(history.data.corrections[0]).not.toHaveProperty('reason');
 });
 
 it('rejects direct UPDATE, DELETE and TRUNCATE attempts on retained strike history', async () => {

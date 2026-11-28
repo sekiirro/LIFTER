@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { requireActor } from '../../../../lib/auth/actor';
 import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
 import { getMessages } from '../../../../lib/i18n';
@@ -13,6 +14,7 @@ import {
   postPointAdjustmentAction,
   reattributePointEntryAction,
 } from './actions';
+import strikeNavStyles from '../../../../components/workforce/StrikeNav.module.css';
 
 type Search = { workspace?: string | string[]; month?: string | string[] };
 
@@ -125,14 +127,24 @@ export default async function WorkforceReportPage({
   }
 
   return (
-    <WorkforceReportView
-      report={reportRes.data}
-      status="ok"
-      locale={locale}
-      messages={m}
-      currentMonth={month}
-      postPointAdjustment={postPointAdjustmentAction}
-      reattributePointEntry={reattributePointEntryAction}
-    />
+    <>
+      <nav
+        className={strikeNavStyles.navigation}
+        aria-label={m['workforce.report.title']}
+      >
+        <Link href="/workforce/strikes">
+          {m['workforce.report.strikes.title']}
+        </Link>
+      </nav>
+      <WorkforceReportView
+        report={reportRes.data}
+        status="ok"
+        locale={locale}
+        messages={m}
+        currentMonth={month}
+        postPointAdjustment={postPointAdjustmentAction}
+        reattributePointEntry={reattributePointEntryAction}
+      />
+    </>
   );
 }

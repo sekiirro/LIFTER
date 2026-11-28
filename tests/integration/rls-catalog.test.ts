@@ -3602,6 +3602,7 @@ describe('P7 T033 strike security catalog', () => {
   ];
   const publicFunctions = [
     'public.get_workforce_strikes(uuid,uuid)',
+    'public.get_workforce_strike_correction_history(uuid,uuid)',
     'public.correct_workforce_strike(uuid,uuid,text,uuid,text,uuid)',
   ];
   const reasonCodes = [

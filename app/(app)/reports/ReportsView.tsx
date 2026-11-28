@@ -5,6 +5,8 @@ import { useMemo } from 'react';
 import { Alert } from '../../../components/ui/Alert';
 import { EmptyState } from '../../../components/ui/States';
 import { Button } from '../../../components/ui/Button';
+import { Bidi } from '../../../components/ui/Bidi';
+import { cairoDate } from '../../../lib/time/cairo-calendar';
 import { formatMinorUnits } from '../../../lib/packages/money';
 import type { Messages } from '../../../lib/i18n';
 import { ExportSection } from './ExportSection';
@@ -133,11 +135,8 @@ export function packageLabel(item: ReportPackage | null, locale: 'ar' | 'en') {
   return market && type ? `${market} · ${type}` : '—';
 }
 
-function cairoDate(value: string, locale: 'ar' | 'en') {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en', {
-    timeZone: 'Africa/Cairo',
-    dateStyle: 'medium',
-  }).format(new Date(value));
+function formatCount(value: number, locale: 'ar' | 'en'): string {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en').format(value);
 }
 
 export function kindLabel(kind: string, m: Messages): string {
@@ -413,7 +412,9 @@ export function ReportsView({
                   <article className={styles.card} key={row.id}>
                     <dl className={styles.details}>
                       <dt>{columns.date}</dt>
-                      <dd>{cairoDate(row.recordedAt, locale)}</dd>
+                      <dd>
+                        <Bidi>{cairoDate(row.recordedAt, locale)}</Bidi>
+                      </dd>
                       <dt>{columns.package}</dt>
                       <dd>{packageNames(row.package)}</dd>
                       <dt>{columns.client}</dt>
@@ -466,7 +467,9 @@ export function ReportsView({
                       {row.dueOn && (
                         <>
                           <dt>{columns.due}</dt>
-                          <dd>{row.dueOn}</dd>
+                          <dd>
+                            <Bidi>{cairoDate(row.dueOn, locale)}</Bidi>
+                          </dd>
                         </>
                       )}
                       {row.paidMinor && row.currency && (
@@ -511,9 +514,9 @@ export function ReportsView({
       {isPlatformOwner && !drilldownData && platformData && (
         <section className={styles.section} aria-labelledby="platform-title">
           <div className={styles.sectionHeader}>
-            <div id="platform-title" className={styles.sectionHeading}>
+            <h2 id="platform-title" className={styles.sectionHeading}>
               {m['reports.platform.title']}
-            </div>
+            </h2>
           </div>
           {platformData.status === 'error' ? (
             <div>
@@ -551,7 +554,12 @@ export function ReportsView({
                     {m['reports.metric.subscriptions']}
                   </span>
                   <span className={styles.metricValue}>
-                    {platformData.totals.subscriptionCount}
+                    <Bidi>
+                      {formatCount(
+                        platformData.totals.subscriptionCount,
+                        locale,
+                      )}
+                    </Bidi>
                   </span>
                 </div>
                 <div className={styles.metricCard}>
@@ -559,7 +567,9 @@ export function ReportsView({
                     {m['reports.metric.clients']}
                   </span>
                   <span className={styles.metricValue}>
-                    {platformData.totals.clientCount}
+                    <Bidi>
+                      {formatCount(platformData.totals.clientCount, locale)}
+                    </Bidi>
                   </span>
                 </div>
               </div>
@@ -590,9 +600,15 @@ export function ReportsView({
                           )}
                         </dd>
                         <dt>{m['reports.metric.subscriptions']}</dt>
-                        <dd>{item.subscriptionCount}</dd>
+                        <dd>
+                          <Bidi>
+                            {formatCount(item.subscriptionCount, locale)}
+                          </Bidi>
+                        </dd>
                         <dt>{m['reports.metric.clients']}</dt>
-                        <dd>{item.clientCount}</dd>
+                        <dd>
+                          <Bidi>{formatCount(item.clientCount, locale)}</Bidi>
+                        </dd>
                       </dl>
                     </article>
                   ))}
@@ -620,9 +636,15 @@ export function ReportsView({
                           )}
                         </dd>
                         <dt>{m['reports.metric.subscriptions']}</dt>
-                        <dd>{ws.subscriptionCount}</dd>
+                        <dd>
+                          <Bidi>
+                            {formatCount(ws.subscriptionCount, locale)}
+                          </Bidi>
+                        </dd>
                         <dt>{m['reports.metric.clients']}</dt>
-                        <dd>{ws.clientCount}</dd>
+                        <dd>
+                          <Bidi>{formatCount(ws.clientCount, locale)}</Bidi>
+                        </dd>
                       </dl>
                       <div className={styles.cardAction}>
                         <Button
@@ -664,7 +686,9 @@ export function ReportsView({
                   <article className={styles.card} key={row.id}>
                     <dl className={styles.details}>
                       <dt>{columns.date}</dt>
-                      <dd>{cairoDate(row.recordedAt, locale)}</dd>
+                      <dd>
+                        <Bidi>{cairoDate(row.recordedAt, locale)}</Bidi>
+                      </dd>
                       <dt>{columns.package}</dt>
                       <dd>{packageNames(row.package)}</dd>
                       <dt>{columns.client}</dt>
@@ -698,7 +722,8 @@ export function ReportsView({
                 </span>
                 {pendingCount > 0 && (
                   <span className={styles.pending}>
-                    {m['reports.column.pendingRates']}: {pendingCount}
+                    {m['reports.column.pendingRates']}:{' '}
+                    <Bidi>{formatCount(pendingCount, locale)}</Bidi>
                   </span>
                 )}
               </footer>
@@ -748,7 +773,9 @@ export function ReportsView({
                         )}
                       </dd>
                       <dt>{columns.pending}</dt>
-                      <dd>{row.pendingRateCount}</dd>
+                      <dd>
+                        <Bidi>{formatCount(row.pendingRateCount, locale)}</Bidi>
+                      </dd>
                     </dl>
                   </article>
                 ))}
@@ -787,7 +814,13 @@ export function ReportsView({
                       <dt>{columns.package}</dt>
                       <dd>{packageNames(row.package)}</dd>
                       <dt>{columns.due}</dt>
-                      <dd>{row.dueOn ?? '—'}</dd>
+                      <dd>
+                        {row.dueOn ? (
+                          <Bidi>{cairoDate(row.dueOn, locale)}</Bidi>
+                        ) : (
+                          '—'
+                        )}
+                      </dd>
                       <dt>{columns.amount}</dt>
                       <dd>
                         {exactAmount(row.amountMinor, row.currency, locale)}
