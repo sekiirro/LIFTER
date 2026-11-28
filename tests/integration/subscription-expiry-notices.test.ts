@@ -166,6 +166,135 @@ describe('Spec 028 F23 expiry evaluator', () => {
     },
   );
 
+  it('uses the earliest activation for reattached subscriptions when choosing T-3 kind', async () => {
+    const subject = await p.makeClient({
+      activate: false,
+      label: 'reattached earliest expiry activation',
+    });
+    const aliasId = randomUUID();
+    const [target] = await p.db`
+      select (clock_timestamp() at time zone 'Africa/Cairo')::date + 2 as end_day`;
+    const endDay = target!.end_day as string;
+
+    const noticeCounts = await p.db.begin(async (tx) => {
+      // Keep the later activation first in heap order so the former unordered
+      // SELECT INTO reliably exposes the reattachment bug in this fixture.
+      await tx`set local enable_indexscan = off`;
+      await tx`set local enable_bitmapscan = off`;
+      await tx`set local session_replication_role = replica`;
+      await tx`
+        insert into public.subscriptions(
+          id, workspace_id, client_id, kind, registration_link_id,
+          package_version_id, price_minor, currency, commission_rate_bp,
+          duration_days, duration_months, created_by, predecessor_subscription_id
+        )
+        select ${aliasId}::uuid, s.workspace_id, s.client_id, 'renewal', null,
+          s.package_version_id, s.price_minor, s.currency, s.commission_rate_bp,
+          s.duration_days, s.duration_months, s.created_by, s.id
+        from public.subscriptions s
+        where s.workspace_id = ${p.fixture.wsA.id}::uuid
+          and s.id = ${subject.subscriptionId}::uuid`;
+      await tx`
+        insert into public.subscription_activations(
+          workspace_id, subscription_id, activated_at, delivery_event_id, activation_source
+        ) values (
+          ${p.fixture.wsA.id}::uuid, ${aliasId}::uuid, clock_timestamp(),
+          ${randomUUID()}::uuid, 'po_override'
+        )`;
+      await tx`
+        insert into public.subscription_activations(
+          workspace_id, subscription_id, activated_at, delivery_event_id, activation_source
+        )
+        select s.workspace_id, s.id,
+          app_private.f23_cairo_date_start(${endDay}::date - s.duration_days),
+          ${randomUUID()}::uuid, 'po_override'
+        from public.subscriptions s
+        where s.workspace_id = ${p.fixture.wsA.id}::uuid
+          and s.id = ${subject.subscriptionId}::uuid`;
+      await tx`
+        insert into public.subscription_manual_date_adjustments(
+          workspace_id, client_id, subscription_id, new_service_start_date,
+          new_service_end_exclusive, request_key, actor_user_id
+        )
+        select s.workspace_id, s.client_id, s.id,
+          ${endDay}::date - s.duration_days, ${endDay}::date,
+          ${randomUUID()}::uuid, ${p.fixture.po.userId}::uuid
+        from public.subscriptions s
+        where s.workspace_id = ${p.fixture.wsA.id}::uuid
+          and s.id = ${subject.subscriptionId}::uuid`;
+      await tx`set local session_replication_role = origin`;
+      await tx`
+        insert into app_private.subscription_reattachments(
+          workspace_id, successor_subscription_id, continuous_subscription_id,
+          actor_user_id, dry_run_evidence_hash
+        ) values (
+          ${p.fixture.wsA.id}::uuid, ${aliasId}::uuid,
+          ${subject.subscriptionId}::uuid, ${p.fixture.po.userId}::uuid,
+          decode(repeat('00', 32), 'hex')
+        )`;
+
+      const [boundary] = await tx`
+        select app_private.f23_cairo_date_start(${endDay}::date) as value`;
+      const [projection] = await tx`
+        select app_private.f22_subscription_core(
+          ${p.fixture.wsA.id}::uuid, ${subject.clientId}::uuid
+        ) as value,
+        app_private.f19_resolve_subscription_id(
+          ${p.fixture.wsA.id}::uuid, ${aliasId}::uuid
+        ) as canonical`;
+      expect(projection!.canonical).toBe(subject.subscriptionId);
+      expect((projection!.value as { status: string }).status).toBe('active');
+      expect(
+        (projection!.value as { effective_end_exclusive: string })
+          .effective_end_exclusive,
+      ).toBe(new Date(endDay).toISOString().slice(0, 10));
+      const sampledAt = new Date(
+        (boundary!.value as Date).getTime() - 48 * 60 * 60 * 1000,
+      );
+      const [evaluation] = await tx`select
+        app_private.f23_subscription_expiry_notices_run(
+          ${sampledAt.toISOString()}::timestamptz, 250) as inserted_count`;
+      expect(Number(evaluation!.inserted_count)).toBeGreaterThan(0);
+
+      const [counts] = await tx`
+        select
+          (select count(*)::integer from app_private.staff_inbox_notices
+            where workspace_id = ${p.fixture.wsA.id}::uuid
+              and source_key = ${subject.subscriptionId}::uuid and source_stage = 't3'
+              and source_revision = ${endDay}::date::text) as staff_total,
+          (select count(*)::integer from app_private.staff_inbox_notices
+            where workspace_id = ${p.fixture.wsA.id}::uuid
+              and source_key = ${subject.subscriptionId}::uuid and source_stage = 't3'
+              and source_revision = ${endDay}::date::text and notice_kind = 'subscription_expiring_t3') as staff_standard,
+          (select count(*)::integer from app_private.staff_inbox_notices
+            where workspace_id = ${p.fixture.wsA.id}::uuid
+              and source_key = ${subject.subscriptionId}::uuid and source_stage = 't3'
+              and source_revision = ${endDay}::date::text and notice_kind = 'subscription_expiring_t3_short_lead') as staff_short,
+          (select count(*)::integer from app_private.client_inbox_notices
+            where workspace_id = ${p.fixture.wsA.id}::uuid
+              and client_id = ${subject.clientId}::uuid and source_stage = 't3'
+              and source_revision = ${endDay}::date::text) as client_total,
+          (select count(*)::integer from app_private.client_inbox_notices
+            where workspace_id = ${p.fixture.wsA.id}::uuid
+              and client_id = ${subject.clientId}::uuid and source_stage = 't3'
+              and source_revision = ${endDay}::date::text and notice_kind = 'subscription_expiring_t3') as client_standard,
+          (select count(*)::integer from app_private.client_inbox_notices
+            where workspace_id = ${p.fixture.wsA.id}::uuid
+              and client_id = ${subject.clientId}::uuid and source_stage = 't3'
+              and source_revision = ${endDay}::date::text and notice_kind = 'subscription_expiring_t3_short_lead') as client_short`;
+      return counts!;
+    });
+
+    expect(Number(noticeCounts.staff_total)).toBeGreaterThan(0);
+    expect(Number(noticeCounts.staff_standard)).toBe(
+      Number(noticeCounts.staff_total),
+    );
+    expect(Number(noticeCounts.staff_short)).toBe(0);
+    expect(Number(noticeCounts.client_total)).toBe(1);
+    expect(Number(noticeCounts.client_standard)).toBe(1);
+    expect(Number(noticeCounts.client_short)).toBe(0);
+  });
+
   it('accepts expiring and expired filters through the existing scoped directory RPC', async () => {
     for (const status of ['expiring', 'expired']) {
       const result = await p.fixture.trainerA.client.rpc(
