@@ -49,7 +49,11 @@ export function ExportStatusPanel({
   if (status === 'idle') return null;
 
   if (status === 'empty')
-    return <EmptyState title={m['reports.export.empty']} />;
+    return (
+      <div role="status">
+        <EmptyState title={m['reports.export.empty']} />
+      </div>
+    );
 
   if (status === 'error' || status === 'failed')
     return (
@@ -99,6 +103,7 @@ export function ExportStatusPanel({
         <a
           className={styles.exportDownload}
           href={exportDownloadHref(jobId)}
+          download
           data-testid="export-download"
         >
           {m['reports.export.download']}
