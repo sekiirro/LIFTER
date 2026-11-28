@@ -90,12 +90,6 @@ export type PlatformData = {
     subscriptionCount: number;
     clientCount: number;
     pendingFxCount?: number;
-    pendingRateCount?: number;
-    pendingRates?: number;
-    pendingCount?: number;
-    pending?: number;
-    hasPendingFx?: boolean;
-    pendingFx?: boolean;
   };
   workspaceAggregates: {
     workspaceId: string;
@@ -104,12 +98,6 @@ export type PlatformData = {
     subscriptionCount: number;
     clientCount: number;
     pendingFxCount?: number;
-    pendingRateCount?: number;
-    pendingRates?: number;
-    pendingCount?: number;
-    pending?: number;
-    hasPendingFx?: boolean;
-    pendingFx?: boolean;
   }[];
   breakdowns: {
     key: string;
@@ -119,12 +107,6 @@ export type PlatformData = {
     subscriptionCount: number;
     clientCount: number;
     pendingFxCount?: number;
-    pendingRateCount?: number;
-    pendingRates?: number;
-    pendingCount?: number;
-    pending?: number;
-    hasPendingFx?: boolean;
-    pendingFx?: boolean;
   }[];
 };
 
@@ -138,12 +120,6 @@ export type DrilldownData = {
     subscriptionCount: number;
     clientCount: number;
     pendingFxCount?: number;
-    pendingRateCount?: number;
-    pendingRates?: number;
-    pendingCount?: number;
-    pending?: number;
-    hasPendingFx?: boolean;
-    pendingFx?: boolean;
   };
 };
 
@@ -253,26 +229,27 @@ function exactConvertedAmount(value: string, locale: 'ar' | 'en') {
   return `${negative ? '−' : ''}${integer}${decimal}${digits(majorFraction)} EGP`;
 }
 
-function pendingCountOf(value: unknown): number {
-  if (!value || typeof value !== 'object') return 0;
-  const o = value as Record<string, unknown>;
-  for (const key of [
-    'pendingFxCount',
-    'pendingRateCount',
-    'pendingRates',
-    'pendingCount',
-    'pending',
-    'pending_fx_count',
-    'pending_event_count',
-    'pending_event_ids',
-  ]) {
-    const v = o[key];
-    if (typeof v === 'number' && Number.isFinite(v) && v > 0) return v;
-    if (typeof v === 'boolean' && v) return 1;
-    if (Array.isArray(v) && v.length > 0) return v.length;
+function AmountOrPending({
+  amountMinor,
+  pendingFxCount,
+  locale,
+  pendingLabel,
+}: {
+  amountMinor: string | null | undefined;
+  pendingFxCount?: number;
+  locale: 'ar' | 'en';
+  pendingLabel: string;
+}) {
+  const pending = pendingFxCount ?? 0;
+  if (pending > 0 && (amountMinor === '0' || amountMinor == null)) {
+    return <span className={styles.pending}>{pendingLabel}</span>;
   }
-  if (o.hasPendingFx === true || o.pendingFx === true) return 1;
-  return 0;
+  return (
+    <>
+      {exactConvertedAmount(amountMinor ?? '0', locale)}
+      {pending > 0 && <span className={styles.pending}> {pendingLabel}</span>}
+    </>
+  );
 }
 
 function nextMonth(month: string, offset: number) {
@@ -549,28 +526,12 @@ export function ReportsView({
               <footer className={styles.total}>
                 <strong>{m['reports.totalConvertedEgp']}</strong>
                 <span>
-                  {(() => {
-                    const pending = pendingCountOf(drilldownData.totals);
-                    const value = drilldownData.totals.revenueConvertedEgpMinor;
-                    if (pending > 0 && (value === '0' || value == null)) {
-                      return (
-                        <span className={styles.pending}>
-                          {m['reports.statusPendingRate']}
-                        </span>
-                      );
-                    }
-                    return (
-                      <>
-                        {exactConvertedAmount(value ?? '0', locale)}
-                        {pending > 0 && (
-                          <span className={styles.pending}>
-                            {' '}
-                            {m['reports.statusPendingRate']}
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
+                  <AmountOrPending
+                    amountMinor={drilldownData.totals.revenueConvertedEgpMinor}
+                    pendingFxCount={drilldownData.totals.pendingFxCount}
+                    locale={locale}
+                    pendingLabel={m['reports.statusPendingRate']}
+                  />
                 </span>
               </footer>
             </>
@@ -608,29 +569,12 @@ export function ReportsView({
                     {m['reports.metric.revenue']}
                   </span>
                   <span className={styles.metricValue}>
-                    {(() => {
-                      const pending = pendingCountOf(platformData.totals);
-                      const value =
-                        platformData.totals.revenueConvertedEgpMinor;
-                      if (pending > 0 && (value === '0' || value == null)) {
-                        return (
-                          <span className={styles.pending}>
-                            {m['reports.statusPendingRate']}
-                          </span>
-                        );
-                      }
-                      return (
-                        <>
-                          {exactConvertedAmount(value ?? '0', locale)}
-                          {pending > 0 && (
-                            <span className={styles.pending}>
-                              {' '}
-                              {m['reports.statusPendingRate']}
-                            </span>
-                          )}
-                        </>
-                      );
-                    })()}
+                    <AmountOrPending
+                      amountMinor={platformData.totals.revenueConvertedEgpMinor}
+                      pendingFxCount={platformData.totals.pendingFxCount}
+                      locale={locale}
+                      pendingLabel={m['reports.statusPendingRate']}
+                    />
                   </span>
                   <span className={styles.metricSub}>
                     {m['reports.totalConvertedEgp']}
@@ -681,31 +625,12 @@ export function ReportsView({
                         <dd>{item.label}</dd>
                         <dt>{m['reports.metric.revenue']}</dt>
                         <dd>
-                          {(() => {
-                            const pending = pendingCountOf(item);
-                            const value = item.revenueConvertedEgpMinor;
-                            if (
-                              pending > 0 &&
-                              (value === '0' || value == null)
-                            ) {
-                              return (
-                                <span className={styles.pending}>
-                                  {m['reports.statusPendingRate']}
-                                </span>
-                              );
-                            }
-                            return (
-                              <>
-                                {exactConvertedAmount(value ?? '0', locale)}
-                                {pending > 0 && (
-                                  <span className={styles.pending}>
-                                    {' '}
-                                    {m['reports.statusPendingRate']}
-                                  </span>
-                                )}
-                              </>
-                            );
-                          })()}
+                          <AmountOrPending
+                            amountMinor={item.revenueConvertedEgpMinor}
+                            pendingFxCount={item.pendingFxCount}
+                            locale={locale}
+                            pendingLabel={m['reports.statusPendingRate']}
+                          />
                         </dd>
                         <dt>{m['reports.metric.subscriptions']}</dt>
                         <dd>
@@ -738,31 +663,12 @@ export function ReportsView({
                         </dd>
                         <dt>{m['reports.metric.revenue']}</dt>
                         <dd>
-                          {(() => {
-                            const pending = pendingCountOf(ws);
-                            const value = ws.revenueConvertedEgpMinor;
-                            if (
-                              pending > 0 &&
-                              (value === '0' || value == null)
-                            ) {
-                              return (
-                                <span className={styles.pending}>
-                                  {m['reports.statusPendingRate']}
-                                </span>
-                              );
-                            }
-                            return (
-                              <>
-                                {exactConvertedAmount(value ?? '0', locale)}
-                                {pending > 0 && (
-                                  <span className={styles.pending}>
-                                    {' '}
-                                    {m['reports.statusPendingRate']}
-                                  </span>
-                                )}
-                              </>
-                            );
-                          })()}
+                          <AmountOrPending
+                            amountMinor={ws.revenueConvertedEgpMinor}
+                            pendingFxCount={ws.pendingFxCount}
+                            locale={locale}
+                            pendingLabel={m['reports.statusPendingRate']}
+                          />
                         </dd>
                         <dt>{m['reports.metric.subscriptions']}</dt>
                         <dd>

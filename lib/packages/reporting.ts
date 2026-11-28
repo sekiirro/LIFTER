@@ -140,12 +140,6 @@ export type PlatformMetricTotals = {
   subscriptionCount: number;
   clientCount: number;
   pendingFxCount?: number;
-  pendingRateCount?: number;
-  pendingRates?: number;
-  pendingCount?: number;
-  pending?: number;
-  hasPendingFx?: boolean;
-  pendingFx?: boolean;
 };
 
 export type PlatformBreakdownRow = {
@@ -156,12 +150,6 @@ export type PlatformBreakdownRow = {
   subscriptionCount: number;
   clientCount: number;
   pendingFxCount?: number;
-  pendingRateCount?: number;
-  pendingRates?: number;
-  pendingCount?: number;
-  pending?: number;
-  hasPendingFx?: boolean;
-  pendingFx?: boolean;
 };
 
 export type WorkspaceAggregateRow = {
@@ -171,12 +159,6 @@ export type WorkspaceAggregateRow = {
   subscriptionCount: number;
   clientCount: number;
   pendingFxCount?: number;
-  pendingRateCount?: number;
-  pendingRates?: number;
-  pendingCount?: number;
-  pending?: number;
-  hasPendingFx?: boolean;
-  pendingFx?: boolean;
 };
 
 export type PlatformAggregateReportResult =
@@ -378,12 +360,6 @@ export async function getPlatformAggregateReport(params: {
     subscriptionCount: Number(payload.counts?.distinct_subscriptions ?? 0),
     clientCount: Number(payload.counts?.distinct_clients ?? 0),
     pendingFxCount: totalPendingFx,
-    pendingRateCount: totalPendingFx,
-    pendingRates: totalPendingFx,
-    pendingCount: totalPendingFx,
-    pending: totalPendingFx,
-    hasPendingFx: totalPendingFx > 0,
-    pendingFx: totalPendingFx > 0,
   };
 
   let wsQuery = access.client
@@ -430,12 +406,6 @@ export async function getPlatformAggregateReport(params: {
       subscriptionCount: counts?.subs ?? 0,
       clientCount: counts?.clients ?? 0,
       pendingFxCount: pending,
-      pendingRateCount: pending,
-      pendingRates: pending,
-      pendingCount: pending,
-      pending: pending,
-      hasPendingFx: pending > 0,
-      pendingFx: pending > 0,
     };
   });
 
@@ -479,12 +449,6 @@ export async function getPlatformAggregateReport(params: {
         subscriptionCount: monthCountsMap.get(mKey)?.subs ?? 0,
         clientCount: monthCountsMap.get(mKey)?.clients ?? 0,
         pendingFxCount: pending,
-        pendingRateCount: pending,
-        pendingRates: pending,
-        pendingCount: pending,
-        pending: pending,
-        hasPendingFx: pending > 0,
-        pendingFx: pending > 0,
       });
     }
   } else {
@@ -535,12 +499,6 @@ export async function getPlatformAggregateReport(params: {
         subscriptionCount: pkgCountsMap.get(pkgId)?.subs ?? 0,
         clientCount: pkgCountsMap.get(pkgId)?.clients ?? 0,
         pendingFxCount: pending,
-        pendingRateCount: pending,
-        pendingRates: pending,
-        pendingCount: pending,
-        pending: pending,
-        hasPendingFx: pending > 0,
-        pendingFx: pending > 0,
       });
     }
   }
@@ -656,12 +614,6 @@ export async function getWorkspaceDrilldownRows(params: {
       subscriptionCount: Number(agg.counts?.distinct_subscriptions ?? 0),
       clientCount: Number(agg.counts?.distinct_clients ?? 0),
       pendingFxCount: pendingFx,
-      pendingRateCount: pendingFx,
-      pendingRates: pendingFx,
-      pendingCount: pendingFx,
-      pending: pendingFx,
-      hasPendingFx: pendingFx > 0,
-      pendingFx: pendingFx > 0,
     },
   };
 }
