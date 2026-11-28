@@ -32,7 +32,7 @@ An authorized Trainer sees the workspace check-in queue and completed weekly his
 2. **Given** an authorized Trainer and a client in their workspace, **When** they open weekly history created under another Trainer, **Then** all authorized historical forms and follow-up actors/times are visible.
 3. **Given** two Trainers submit follow-up confirmations concurrently, **When** both requests complete, **Then** one logical follow-up is recorded and the final status/history is consistent.
 4. **Given** a follow-up is Late or Followed Up, **When** the PO disputes its accuracy and/or its -0.5 event with a controlled reason code, **Then** its status becomes Disputed, Late/Followed Up history and the original -0.5 event remain immutable, and at most one active dispute exists.
-5. **Given** a follow-up dispute is open, **When** the PO resolves it as `valid`, `falseFollowUp` or `additionalPenalty`, **Then** the status resolves from immutable history, the outcome maps to an explicit append-only ledger action, the original -0.5 stays posted, resolution is final, and the 30-day F26 purge clock restarts for tied client records.
+5. **Given** a follow-up dispute is open, **When** the PO resolves it as `valid`, `falseFollowUp` or `additionalPenalty`, **Then** the status resolves from immutable history, the outcome maps to an explicit append-only ledger action (valid: +0.5 reversal of the follow-up penalty; falseFollowUp: the -0.5 penalty stands; additionalPenalty: an extra deduction whose amount the PO enters manually per dispute), the original -0.5 stays posted, resolution is final, and the 30-day F26 purge clock restarts for tied client records.
 
 ### US3 — PO manages payroll and monthly quality (P2)
 
@@ -131,7 +131,7 @@ The PO reviews rolling 90-day strikes at thresholds 3/6/9, handles departure, im
 - **Monthly quality record**: Trainer transformation counts/points and feedback counts/weights with month, author, revision history.
 - **Sales link attribution/acquisition**: F10 link issuer, approval and first-payment qualification, one-point ledger event and refund reversal.
 - **Strike event**: immutable, one per client and initial subscription when persisted F15 D-03 passes without the initial workout/nutrition plan pair; stores workspace, Trainer-at-breach, `breach_at`, and an opaque source key only (no client FK or PII). PO corrections append separately; 90-day counts and 3/6/9 review flags are PO-only.
-- **Follow-up dispute record**: PO-only record tying one active dispute to one follow-up (its accuracy and/or its -0.5 event); stores PO actor, entry timestamp, controlled reason code (code list/labels PENDING PO copy approval), resolution outcome (`valid`/`falseFollowUp`/`additionalPenalty`), resolution timestamp and opaque audit reference; no client PII. At most one active dispute per follow-up; resolution is final and restarts the 30-day F26 purge clock. Resolution outcomes map to explicit append-only ledger actions; the original -0.5 remains immutable.
+- **Follow-up dispute record**: PO-only record tying one active dispute to one follow-up (its accuracy and/or its -0.5 event); stores PO actor, entry timestamp, controlled reason code (code list/labels approved under S73-PO-8; see copy-approved-cb02-cb04-cb05.md section "S73-PO-8 — follow-up dispute reason codes"), resolution outcome (`valid`/`falseFollowUp`/`additionalPenalty`), resolution timestamp and opaque audit reference; no client PII. At most one active dispute per follow-up; resolution is final and restarts the 30-day F26 purge clock. Resolution outcomes map to explicit append-only ledger actions (valid: +0.5 reversal of the follow-up penalty; falseFollowUp: the -0.5 penalty stands; additionalPenalty: an extra deduction whose amount the PO enters manually per dispute; S74-PO-1); the original -0.5 remains immutable.
 
 ## Success Criteria
 
@@ -176,12 +176,12 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s73-po/s73-po-6.verbatim.txt` ("all re
 - PDN-02 (dispute scope): **Recommended — follow-up accuracy and its -0.5 event only:** narrowest object already named by FR-004/FR-018. Consequence: minimal schema and retention linkage; report/payroll corrections stay on existing paths.
 - PDN-03 (transition graph): **Recommended — `Late`/`Followed Up` -> `Disputed` -> resolved; resolved display derives from immutable history.** Consequence: preserves existing statuses/timestamps and avoids a new terminal status; needs explicit resolution metadata.
 - PDN-04 (the -0.5 while/after dispute): **Recommended — keep the original -0.5 posted and immutable; any financial change is a separate PO append-only correction.** Consequence: aligns with FR-003/FR-006 and the "do not erase posting" rule; totals change only through attributed corrections.
-- PDN-05 (resolution outcomes): **Recommended — PO chooses `valid`, `falseFollowUp`, or `additionalPenalty`, each mapped to an explicit ledger action.** Consequence: matches the existing copy inventory; exact amounts/actions still need approval and tests.
+- PDN-05 (resolution outcomes): **Recommended — PO chooses `valid`, `falseFollowUp`, or `additionalPenalty`, each mapped to an explicit ledger action.** Resolved under S74-PO-1 (Option A): `valid` -> +0.5 reversal of the follow-up penalty; `falseFollowUp` -> the -0.5 penalty stands; `additionalPenalty` -> an extra deduction whose amount the PO enters manually per dispute (no fixed amount). All as append-only ledger entries.
 - PDN-06 (PO report dispute as separate case): **Recommended — no separate case; "dispute" uses the existing append-only correction/reattribution path.** Consequence: avoids duplicate workflow and matches defined closed-month behavior.
 - PDN-07 (reason/evidence): **Recommended — required controlled reason code; no client PII in retained dispute data.** Consequence: consistent audit/filtering; the code list and EN/AR labels are approved under S73-PO-8 (`follow_up_not_recorded`, `recorded_time_incorrect`, `client_unreachable`, `wrong_trainer_attributed`, `system_or_technical_issue`; see `specs/027-workforce-management/copy-approved-cb02-cb04-cb05.md` section "S73-PO-8 — follow-up dispute reason codes").
 - PDN-08 (cardinality/reopen/purge clock): **Recommended — one active dispute per follow-up; resolution is final; resolution restarts the 30-day clock.** Consequence: deterministic hold and idempotency; later issues require a new follow-up/correction path.
 
-Applied to: FR-004, FR-006, FR-018, FR-020, FR-029; new follow-up dispute record entity; T036-T038. No open product MCQs remain; PDN-07 reason-code code list and EN/AR labels approved under S73-PO-8.
+Applied to: FR-004, FR-006, FR-018, FR-020, FR-029; new follow-up dispute record entity; T036-T038. PDN-07 reason-code code list and EN/AR labels approved under S73-PO-8; PDN-09 outcome ledger mapping resolved under S74-PO-1.
 
 ### Clarification session 2026-11-28 - S73-PO-8 (PDN-07 reason-code copy approval)
 
@@ -190,3 +190,16 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s73-po/s73-po-8.verbatim.txt` ("Approv
 - PDN-07 (reason/evidence) code list and EN/AR labels: APPROVED under S73-PO-8 — five controlled reason codes: `follow_up_not_recorded`, `recorded_time_incorrect`, `client_unreachable`, `wrong_trainer_attributed`, `system_or_technical_issue`. Arabic labels per PO edits (rows 1, 3, 4) with rows 2 and 5 unchanged. No client PII in retained dispute data. Consequence: T038 reason-code copy batch is satisfied by S73-PO-8; reason-code validation/UI may proceed.
 
 Applied to: FR-004, FR-020, FR-029; T038 (reason-code copy batch); CB-05 dispute keys plus S73-PO-8 reason-code copy.
+
+### Clarification session 2026-11-28 - S74-PO-1 (PDN-09 resolution outcome ledger mapping)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s74-po/s74-po-1.verbatim.txt` ("* PDN-09: A — additional penalty amount manually entered by PO per dispute"; cited as S74-PO-1, never rewritten).
+
+- PDN-09 (dispute resolution outcome ledger mapping): Option A approved by S74-PO-1:
+  - `valid`: +0.5 reversal of the follow-up penalty, as an append-only ledger entry.
+  - `falseFollowUp`: the -0.5 penalty stands (no additional ledger adjustment).
+  - `additionalPenalty`: an extra deduction whose amount the PO enters manually per dispute (no fixed amount), as an append-only ledger entry.
+  All as append-only ledger entries.
+  Bounds and validation rules for the PO-entered amount are not decided by S74-PO-1; tracked as open PO-DECISION-NEEDED in the lane report while leaving the spec text neutral.
+
+Applied to: FR-004, FR-006, FR-018, FR-020; follow-up dispute record entity; T036-T037.

@@ -70,7 +70,19 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s73-po/s73-po-6.verbatim.txt` ("all re
 
 Applied to: FR-004, FR-006, FR-018, FR-020, FR-029; follow-up dispute record entity; T036-T038.
 
+## S74-PO-1 - Follow-up dispute outcome ledger mapping (PDN-09) - RESOLVED (2026-11-28)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s74-po/s74-po-1.verbatim.txt` ("* PDN-09: A — additional penalty amount manually entered by PO per dispute"; cited as S74-PO-1).
+
+- **PDN-09** (outcome-to-ledger action mapping): RESOLVED by S74-PO-1 Option A:
+  - `valid`: +0.5 reversal of the follow-up penalty, recorded as an append-only ledger entry.
+  - `falseFollowUp`: the -0.5 penalty stands (penalty unchanged).
+  - `additionalPenalty`: an extra deduction whose amount the PO enters manually per dispute (no fixed amount), recorded as an append-only ledger entry.
+  All as append-only ledger entries.
+
+Applied to: FR-004, FR-006, FR-018, FR-020; follow-up dispute record entity; T036-T037.
+
 ## Decision status (updated 2026-11-28)
 
-- Open product MCQs: 0.
-- PENDING-PO requirements: none. PDN-07 reason-code code list and EN/AR labels approved under S73-PO-8.
+- Open product MCQs: 1 (bounds and validation rules for PO-entered additionalPenalty amount; tracked as PO-DECISION-NEEDED in lane report).
+- PENDING-PO requirements: none. PDN-07 reason-code code list and EN/AR labels approved under S73-PO-8; PDN-09 outcome-to-ledger action mapping resolved under S74-PO-1.

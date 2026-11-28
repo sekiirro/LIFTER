@@ -11,6 +11,11 @@ const script = join(
   'scripts/media/optimize-body-fat-assets.mjs',
 );
 const tempDirs: string[] = [];
+// Every case launches FFmpeg or the generator; allow for Windows process
+// startup and full-suite worker contention without changing any assertions.
+const PROCESS_TEST_TIMEOUT_MS = 30_000;
+const test = (name: string, run: () => Promise<void>) =>
+  it(name, run, PROCESS_TEST_TIMEOUT_MS);
 
 afterEach(async () => {
   await Promise.all(
@@ -61,7 +66,7 @@ function generate(args: string[]) {
 }
 
 describe('body-fat derivative generator', () => {
-  it('rejects empty and repeated format names', async () => {
+  test('rejects empty and repeated format names', async () => {
     const item = await fixture();
     for (const formats of [',', 'webp,webp']) {
       const result = generate([
@@ -80,7 +85,7 @@ describe('body-fat derivative generator', () => {
     }
   });
 
-  it('requires an explicit source root instead of a machine-local default', async () => {
+  test('requires an explicit source root instead of a machine-local default', async () => {
     const item = await fixture();
     const result = spawnSync(
       process.execPath,
@@ -101,7 +106,7 @@ describe('body-fat derivative generator', () => {
     expect(result.stderr).toContain('--source-root');
   });
 
-  it('emits the same bytes on repeated runs and reports output size against the budget', async () => {
+  test('emits the same bytes on repeated runs and reports output size against the budget', async () => {
     const item = await fixture();
     const common = [
       '--source-root',
@@ -147,7 +152,7 @@ describe('body-fat derivative generator', () => {
     ).toBe(true);
   });
 
-  it('caps derivative width and writes the declared WebP and AVIF formats', async () => {
+  test('caps derivative width and writes the declared WebP and AVIF formats', async () => {
     const item = await fixture();
     const result = generate([
       '--source-root',
@@ -198,7 +203,7 @@ describe('body-fat derivative generator', () => {
     }
   });
 
-  it('rejects a source whose bytes do not match the provenance SHA-256', async () => {
+  test('rejects a source whose bytes do not match the provenance SHA-256', async () => {
     const item = await fixture();
     const changedImage = spawnSync(
       'ffmpeg',
@@ -237,7 +242,7 @@ describe('body-fat derivative generator', () => {
     expect(`${result.stdout}${result.stderr}`).toContain('SHA-256');
   });
 
-  it('refuses to place generated files inside the read-only source tree', async () => {
+  test('refuses to place generated files inside the read-only source tree', async () => {
     const item = await fixture();
     const outputRoot = join(item.sourceRoot, 'generated');
     const result = generate([

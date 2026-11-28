@@ -62,6 +62,11 @@ export function PlatformOwnerHeader({
                   {messages['workspaces.title']}
                 </Link>
               </li>
+              <li>
+                <Link href="/workforce/quality" onClick={() => setOpen(false)}>
+                  {messages['workforce.quality.title']}
+                </Link>
+              </li>
             </ul>
           )}
         </nav>

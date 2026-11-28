@@ -68,6 +68,20 @@ function cairoDateAtMilliseconds(milliseconds: number): CairoDate {
 }
 
 /** Returns the Africa/Cairo calendar date containing an instant. */
+export function cairoDate(
+  value: string | Date,
+  locale: 'ar' | 'en' = 'en',
+): string {
+  try {
+    return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en', {
+      timeZone: CAIRO_TIME_ZONE,
+      dateStyle: 'medium',
+    }).format(typeof value === 'string' ? new Date(value) : value);
+  } catch {
+    return typeof value === 'string' ? value : String(value);
+  }
+}
+
 export function cairoDateAt(instant: Date | string): CairoDate {
   const milliseconds =
     instant instanceof Date ? instant.getTime() : Date.parse(instant);

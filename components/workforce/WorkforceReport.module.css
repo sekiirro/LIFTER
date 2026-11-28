@@ -68,6 +68,7 @@
 
 .negativeHint {
   display: block;
+  white-space: normal;
   font-size: 0.75rem;
   color: var(--color-text-muted);
   margin-block-start: var(--space-1);
@@ -186,6 +187,7 @@
   color: var(--color-text);
   border-block-end: 1px solid var(--color-border);
   vertical-align: middle;
+  overflow-wrap: break-word;
 }
 
 .table tbody tr:last-child td {
@@ -212,10 +214,80 @@
 }
 
 .originalMonthBadge {
-  display: inline-block;
+  display: block;
   margin-block-start: var(--space-1);
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+.pointActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.rowAction {
+  font-size: var(--text-sm);
+}
+
+.pointForm {
+  display: grid;
+  gap: var(--space-4);
+  margin-block-start: var(--space-4);
+}
+
+.pointField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.pointField label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pointField input,
+.pointField select,
+.pointField textarea {
+  inline-size: 100%;
+  min-block-size: var(--touch-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-button);
+  background: var(--color-card);
+  color: var(--color-text);
+  font-size: var(--text-base);
+}
+
+.pointField textarea {
+  min-block-size: calc(var(--touch-min) * 3);
+  line-height: var(--line-height-body);
+  resize: vertical;
+}
+
+.pointField input:disabled,
+.pointField select:disabled,
+.pointField textarea:disabled {
+  color: var(--color-text-disabled);
+  background: var(--color-bg);
+}
+
+.pointField [aria-invalid='true'] {
+  border-color: var(--color-error-fg);
+}
+
+.pointHint,
+.pointError {
+  font-size: var(--text-sm);
+}
+
+.pointHint {
+  color: var(--color-text-muted);
+}
+
+.pointError {
+  color: var(--color-error-fg);
 }
 
 .totalsGrid {

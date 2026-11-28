@@ -284,6 +284,7 @@ export default async function ClientDirectoryPage({
               )}
               {row.subscriptionStatus &&
                 row.subscriptionStatus !== 'expiring' &&
+                row.expiryBucket !== 'expired' &&
                 (() => {
                   const key = staffSubscriptionStatusLabelKey({
                     status: row.subscriptionStatus as Exclude<

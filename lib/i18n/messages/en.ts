@@ -1584,6 +1584,27 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.report.netPointsHint':
     'Refund reversals appear as entries in the ledger.',
   'workforce.report.pointsNotSalary': 'Points are separate from salary.',
+  'workforce.report.points.add': 'Add points',
+  'workforce.report.points.deduct': 'Deduct points',
+  'workforce.report.points.correct': 'Correct points',
+  'workforce.report.points.reattribute': 'Reattribute points',
+  'workforce.report.points.reasonRequired': 'A reason is required.',
+  'workforce.report.points.reasonHint':
+    'Manual point edits are PO-only and recorded with a reason. They never change salary.',
+  'workforce.report.points.confirmTitle': 'Confirm point change?',
+  'workforce.report.points.confirmBody':
+    'This records a manual, PO-only point change with your reason. It does not change salary.',
+  'workforce.report.points.saved': 'Point change recorded.',
+  'workforce.report.points.error':
+    'Could not record the point change. Try again.',
+  'workforce.report.points.stale':
+    'A newer revision exists. Reload before saving.',
+  'workforce.report.refund.selectStaff': 'Select workspace Trainers or Sales',
+  'workforce.report.strikes.title': 'Strike review',
+  'workforce.report.strikes.window': 'Rolling 90 days',
+  'workforce.report.strikes.threshold': 'Review at {count} strikes',
+  'workforce.report.strikes.reviewOnly':
+    'Each late plan delivery counts as one strike, tracked separately from points. For your review only; nothing happens automatically.',
   'workforce.report.negativeTotal': 'Negative total',
   'workforce.report.negativeHint':
     'Negative totals are valid. They do not change salary.',
@@ -1597,6 +1618,37 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.report.ledger.category.refundReversal': 'Refund reversal',
   'workforce.report.ledger.column.points': 'Points',
   'workforce.report.ledger.column.reason': 'Reason',
+  'workforce.strike.correction.action': 'Correct strike',
+  'workforce.strike.correction.void': 'Void strike',
+  'workforce.strike.correction.reinstate': 'Reinstate strike',
+  'workforce.strike.correction.reattribute': 'Reattribute strike',
+  'workforce.strike.correction.pointsUnaffected':
+    'Corrections never change points.',
+  'workforce.strike.correction.effectiveHint':
+    'The latest correction is the one that counts.',
+  'workforce.strike.correction.history': 'Correction history',
+  'workforce.strike.correction.history.empty': 'No corrections recorded.',
+  'workforce.strike.correction.history.column.action': 'Action',
+  'workforce.strike.correction.history.column.date': 'Recorded at',
+  'workforce.strike.correction.confirmTitle': 'Confirm strike correction?',
+  'workforce.strike.correction.success': 'Strike correction recorded.',
+  'workforce.strike.correction.duplicate':
+    'This correction was already recorded.',
+  'workforce.strike.correction.error':
+    'Could not record the correction. Try again.',
+  'workforce.strike.correction.denied':
+    'Only the Platform Owner can correct strikes.',
+  'workforce.strike.correction.trainerHint':
+    'Choose another Trainer in this workspace who had access at the time.',
+  'workforce.strike.correction.reason.client_caused_delay':
+    'Delay caused by the client',
+  'workforce.strike.correction.reason.system_issue':
+    'System or technical issue',
+  'workforce.strike.correction.reason.wrong_trainer':
+    'Strike recorded for the wrong Trainer',
+  'workforce.strike.correction.reason.duplicate': 'Duplicate strike',
+  'workforce.strike.correction.reason.po_exception':
+    'Approved exception by the Platform Owner',
   'workforce.report.ledger.column.actor': 'Recorded by',
   'workforce.report.ledger.column.effectiveMonth': 'Effective month',
   'workforce.report.ledger.originalMonth': 'Original month: {month}',
@@ -1643,6 +1695,31 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.reminder.body':
     "It is time to enter this month's service quality. Open LIFTER to record it.",
   'workforce.reminder.cta': 'Open review',
+  // S73-R38 / CB-05-D + S73-PO-5: monthly quality UI (contiguous merge block).
+  'workforce.quality.title': 'Monthly quality',
+  'workforce.quality.category.transformation': 'Transformation',
+  'workforce.quality.category.feedback': 'Feedback',
+  'workforce.quality.count': 'Count',
+  'workforce.quality.weight': 'Points per item',
+  'workforce.quality.positiveCount': 'Positive feedback count',
+  'workforce.quality.negativeCount': 'Negative feedback count',
+  'workforce.quality.positiveWeight': 'Points per positive item',
+  'workforce.quality.negativeWeight': 'Points per negative item',
+  'workforce.quality.defaultHint':
+    'Defaults: +1 for positive feedback, -1 for negative. Editable per Trainer.',
+  'workforce.quality.weight.decimalError': 'Use at most two decimal places.',
+  'workforce.quality.stale': 'A newer revision exists. Reload before saving.',
+  'workforce.quality.saved': 'Quality entry saved.',
+  'workforce.quality.saveError': 'Could not save the quality entry. Try again.',
+  'workforce.quality.revision.history': 'Revision history',
+  'workforce.quality.revision.history.empty': 'No earlier revisions.',
+  'workforce.quality.revision.history.column.recordedAt': 'Recorded at',
+  'workforce.quality.revision.effective': 'Counted',
+  'workforce.quality.revision.earlier': 'Earlier revision',
+  'workforce.quality.revision.latestNote': 'Only the latest revision counts.',
+  'workforce.quality.zeroConfirmTitle': 'Save a zero count?',
+  'workforce.quality.zeroConfirmBody':
+    'A zero count replaces the value that counts for this month.',
   'workforce.salary.title': 'Basic salary',
   'workforce.salary.market': 'Market',
   'workforce.salary.currencyHint':
