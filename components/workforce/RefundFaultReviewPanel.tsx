@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Messages } from '../../lib/i18n';
+import { formatCairoDateTime } from '../../lib/i18n/format';
 import type { StaffTotal } from '../../lib/workforce/report-types';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
@@ -319,7 +320,9 @@ export function RefundFaultReviewPanel({
                   </fieldset>
                 )}
                 <p className={styles.opened}>
-                  <Bidi dir="ltr">{review.opened_at}</Bidi>
+                  <Bidi dir="auto">
+                    {formatCairoDateTime(review.opened_at, locale)}
+                  </Bidi>
                 </p>
                 <Button
                   variant="primary"

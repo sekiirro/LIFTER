@@ -10,7 +10,7 @@ import {
 import type { Locale } from '../../lib/design/preferences';
 import type { Messages } from '../../lib/i18n';
 import { localizeUiDigits } from '../../lib/i18n/format-digits';
-import { numberingLocale } from '../../lib/i18n/format';
+import { formatCairoDateTime } from '../../lib/i18n/format';
 import {
   calculateQualityPoints,
   formatExactDecimal,
@@ -59,20 +59,6 @@ type Draft = Omit<RecordQualityInput, 'idempotencyKey'>;
 type ErrorKind = 'save' | 'validation' | 'stale' | 'closed' | 'denied';
 const WEIGHT = /^-?\d+(\.\d{1,2})?$/;
 const MAX_COUNT = 2_147_483_647;
-
-function formatRecordedAt(value: string, locale: Locale) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat(numberingLocale(locale), {
-    timeZone: 'Africa/Cairo',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date);
-}
 
 export function MonthlyQualityView({
   locale,
@@ -865,7 +851,7 @@ export function MonthlyQualityView({
                           <td>{actorRef(row.created_by)}</td>
                           <td>
                             <Bidi dir="auto">
-                              {formatRecordedAt(row.created_at, locale)}
+                              {formatCairoDateTime(row.created_at, locale)}
                             </Bidi>
                           </td>
                         </tr>
@@ -915,7 +901,7 @@ export function MonthlyQualityView({
                         </dt>
                         <dd>
                           <Bidi dir="auto">
-                            {formatRecordedAt(row.created_at, locale)}
+                            {formatCairoDateTime(row.created_at, locale)}
                           </Bidi>
                         </dd>
                       </dl>
