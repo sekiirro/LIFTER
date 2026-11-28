@@ -414,4 +414,69 @@ describe('P7 T013 PO workforce report RPC (p7_workforce_report)', () => {
     ).find((t) => t.staff_user_id === context.trainerA.userId);
     expect(trainerRow?.points).toBe('1.00');
   });
+
+  it('reports sales acquisition refunds as refundReversal without changing net points (CUMREV-027-04)', async () => {
+    const context = await clientContext();
+    const [period] = await db`
+      select date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date::text as month`;
+    const month = period!.month as string;
+
+    const before = await context.po.client.rpc('p7_workforce_report', {
+      p_workspace_id: context.wsA.id,
+      p_month: month,
+    });
+    expect(before.error).toBeNull();
+    const beforePoints = (
+      before.data.totals as Array<{
+        staff_user_id: string;
+        points: string;
+      }>
+    ).find((row) => row.staff_user_id === context.salesA.userId)?.points;
+    expect(beforePoints).toBeDefined();
+
+    const sourceKey = randomUUID();
+    await db`
+      insert into public.p7_adjustment_entries(workspace_id, staff_user_id, points,
+        effective_month, source_key, source_hash, reason_code)
+      values (${context.wsA.id}, ${context.salesA.userId}, -1.00,
+        ${month}, ${sourceKey}, ${`hash-sales-refund-${sourceKey}`}, 'sales_acquisition_refund')
+      on conflict (workspace_id, source_key) do nothing`;
+
+    const after = await context.po.client.rpc('p7_workforce_report', {
+      p_workspace_id: context.wsA.id,
+      p_month: month,
+    });
+    expect(after.error).toBeNull();
+    const afterPoints = (
+      after.data.totals as Array<{
+        staff_user_id: string;
+        points: string;
+      }>
+    ).find((row) => row.staff_user_id === context.salesA.userId)?.points;
+    // Recategorising a ledger row must not change money math.
+    expect(afterPoints).toBe((Number(beforePoints) - 1).toFixed(2));
+
+    const ledger = after.data.ledger as Array<{
+      id: string;
+      staff_user_id: string;
+      category: string;
+      points: string;
+      reason_code: string | null;
+    }>;
+    const reversal = ledger.find(
+      (row) =>
+        row.staff_user_id === context.salesA.userId &&
+        row.reason_code === 'sales_acquisition_refund' &&
+        row.points === '-1.00',
+    );
+    expect(reversal).toBeDefined();
+    expect(reversal?.category).toBe('refundReversal');
+    expect(
+      ledger.filter(
+        (row) =>
+          row.reason_code === 'sales_acquisition_refund' &&
+          row.category === 'poAdjustment',
+      ),
+    ).toEqual([]);
+  });
 });
