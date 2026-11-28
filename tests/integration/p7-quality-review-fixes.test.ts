@@ -747,4 +747,115 @@ describe('PR #334 review-round-2 fixes', () => {
     );
     expect(anonNotices).toBeNull();
   });
+
+  describe('CUMREV-027 quality fixes', () => {
+    it('CUMREV-027-02: server functions exact RPC params save then read back against Stack B', async () => {
+      const trainer = await createStaff('trainer', 'quality-cumrev-02');
+      checked(
+        await admin().from('workspace_memberships').insert({
+          workspace_id: f.wsA.id,
+          user_id: trainer.userId,
+          granted_by: f.po.userId,
+        }),
+      );
+      const month = '2026-11';
+      // Server function quality-server.ts constructs exact RPC params with 'YYYY-MM':
+      const saveParams = {
+        p_workspace_id: f.wsA.id,
+        p_trainer_id: trainer.userId,
+        p_month: month,
+        p_category: 'feedback',
+        p_positive_count: 2,
+        p_negative_count: 1,
+        p_positive_weight: null,
+        p_negative_weight: null,
+        p_idempotency_key: `quality-rpc-param-${randomUUID()}`,
+        p_expected_revision: 0,
+      };
+      const save = await f.po.client.rpc('record_monthly_quality', saveParams);
+      expect(save.error).toBeNull();
+      expect(save.data).toMatchObject({
+        month,
+        positive_count: 2,
+      });
+
+      const readParams = {
+        p_workspace_id: f.wsA.id,
+        p_month: month,
+        p_trainer_id: null,
+        p_category: null,
+      };
+      const [effective, revisions] = await Promise.all([
+        f.po.client.rpc('get_monthly_quality_effective', readParams),
+        f.po.client.rpc('get_monthly_quality_revisions', readParams),
+      ]);
+      expect(effective.error).toBeNull();
+      expect(revisions.error).toBeNull();
+      expect(effective.data).toHaveLength(1);
+      expect(revisions.data).toHaveLength(1);
+    });
+
+    it('CUMREV-027-03: record_monthly_quality refuses writes for finalized months', async () => {
+      const trainer = await createStaff('trainer', 'quality-cumrev-03');
+      checked(
+        await admin().from('workspace_memberships').insert({
+          workspace_id: f.wsA.id,
+          user_id: trainer.userId,
+          granted_by: f.po.userId,
+        }),
+      );
+      const closedMonth = '2026-03';
+      const openMonth = '2026-11';
+
+      // 1. Finalize month in p7_month_snapshots
+      const finalized = await f.po.client.rpc('p7_finalize_month', {
+        p_workspace_id: f.wsA.id,
+        p_month: `${closedMonth}-01`,
+      });
+      expect(finalized.error).toBeNull();
+      expect(finalized.data).toMatchObject({ status: 'finalized' });
+
+      // 2. Try to record quality for the finalized month -> must be refused
+      const closedWrite = await f.po.client.rpc('record_monthly_quality', {
+        p_workspace_id: f.wsA.id,
+        p_trainer_id: trainer.userId,
+        p_month: closedMonth,
+        p_category: 'feedback',
+        p_positive_count: 3,
+        p_negative_count: 1,
+        p_positive_weight: null,
+        p_negative_weight: null,
+        p_idempotency_key: `finalized-fence-test-${randomUUID()}`,
+        p_expected_revision: 0,
+      });
+      expect(closedWrite.error).not.toBeNull();
+      expect(closedWrite.error?.code).toBe('23514');
+
+      // Verify no revision row was inserted for the finalized month
+      const [closedRows] = await db`
+        select count(*)::int as count from public.p7_monthly_quality_revisions
+        where workspace_id = ${f.wsA.id}::uuid
+          and trainer_id = ${trainer.userId}::uuid
+          and month = ${closedMonth}
+      `;
+      expect(closedRows?.count).toBe(0);
+
+      // 3. Open month must still be accepted
+      const openKey = `open-fence-test-${randomUUID()}`;
+      const openWrite = await f.po.client.rpc('record_monthly_quality', {
+        p_workspace_id: f.wsA.id,
+        p_trainer_id: trainer.userId,
+        p_month: openMonth,
+        p_category: 'feedback',
+        p_positive_count: 1,
+        p_negative_count: 0,
+        p_positive_weight: null,
+        p_negative_weight: null,
+        p_idempotency_key: openKey,
+        p_expected_revision: 0,
+      });
+      expect(openWrite.error).toBeNull();
+      expect(openWrite.data).toMatchObject({ month: openMonth });
+    });
+  });
 });
