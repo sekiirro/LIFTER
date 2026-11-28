@@ -83,3 +83,71 @@ describe('authorized Forms client adapter submit autosave', () => {
     });
   });
 });
+
+describe('authorized Forms client adapter saveDraft status mapping (S74-R4)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  async function saveDraftWith(fetchMock: ReturnType<typeof vi.fn>) {
+    vi.stubGlobal('fetch', fetchMock);
+    return createAuthorizedFormsClientAdapter().saveDraft({
+      assignmentId: 'assignment-1',
+      expectedRevision: 6,
+      answers: { question: 'answer' },
+      intentKey: 'intent-key',
+    });
+  }
+
+  it("maps 400 and 422 to 'error'", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(400, { status: 'error' }))
+      .mockResolvedValueOnce(response(422, { status: 'error' }));
+
+    expect(await saveDraftWith(fetchMock)).toEqual({ status: 'error' });
+    expect(await saveDraftWith(fetchMock)).toEqual({ status: 'error' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      '/api/forms/assignments/assignment-1/draft',
+    );
+  });
+
+  it("maps 408, 429 and 500 to 'retryable'", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(408, { status: 'error' }))
+      .mockResolvedValueOnce(response(429, { status: 'error' }))
+      .mockResolvedValueOnce(response(500, { status: 'error' }));
+
+    expect(await saveDraftWith(fetchMock)).toEqual({ status: 'retryable' });
+    expect(await saveDraftWith(fetchMock)).toEqual({ status: 'retryable' });
+    expect(await saveDraftWith(fetchMock)).toEqual({ status: 'retryable' });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("maps a network failure (no response) to 'retryable'", async () => {
+    const fetchMock = vi.fn().mockRejectedValueOnce(new Error('network down'));
+
+    expect(await saveDraftWith(fetchMock)).toEqual({ status: 'retryable' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves submit's mapping unchanged: a 408 draft failure stays 'error'", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(408, { status: 'error' }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('crypto', { randomUUID: () => 'intent-key' });
+
+    const result = await createAuthorizedFormsClientAdapter().submit({
+      assignmentId: 'assignment-1',
+      expectedRevision: 6,
+      answers: { question: 'unaccepted answer' },
+    });
+
+    expect(result).toEqual({ status: 'error' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      '/api/forms/assignments/assignment-1/draft',
+    );
+  });
+});

@@ -9,6 +9,7 @@ import {
   type LabeledQuestion,
 } from '../../components/forms/QuestionFlow';
 import { createMockFormsClientAdapter } from '../../lib/forms/mock-client-adapter';
+import { createAuthorizedFormsClientAdapter } from '../../lib/forms/authorized-client-adapter';
 import { getMessages } from '../../lib/i18n';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -352,5 +353,37 @@ describe('QuestionFlow autosave retry + history refresh (S54-58-CR-007/008)', ()
     const latest = versionItems?.[versionItems.length - 1];
     expect(latest?.textContent).toContain('Version 6');
     expect(latest?.textContent).toContain('Build muscle (server)');
+  });
+
+  it('(b) S74-R4: a 408 save failure through the real adapter keeps retrying per the current policy', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockImplementation(async () => ({
+      status: 408,
+      json: async () => ({ status: 'error' }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('crypto', { randomUUID: () => 'intent-key' });
+
+    await renderFlow({ adapter: createAuthorizedFormsClientAdapter() });
+    await typeAnswer('Lose fat');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_500);
+    });
+    const draftPosts = () =>
+      fetchMock.mock.calls.filter(
+        ([url, init]) =>
+          url === '/api/forms/assignments/test-assignment/draft' &&
+          (init as RequestInit | undefined)?.method === 'POST',
+      ).length;
+    expect(draftPosts()).toBe(1);
+
+    // Retry loop with backoff keeps re-sending: +2000ms, +4000ms, +8000ms.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(draftPosts()).toBe(4);
+
+    vi.unstubAllGlobals();
   });
 });
