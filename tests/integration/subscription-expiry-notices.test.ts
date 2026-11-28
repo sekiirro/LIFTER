@@ -127,6 +127,45 @@ describe('Spec 028 F23 expiry evaluator', () => {
     expect(revision!.source_revision).toBe(currentEnd!.day);
   });
 
+  it.each([
+    { delay: '1 minute', minutes: 1 },
+    { delay: '2 hours', minutes: 120 },
+  ])(
+    'keeps the standard staff T-3 kind when a normally eligible subscription is evaluated $delay late',
+    async ({ minutes }) => {
+      const subject = await p.makeClient({
+        activate: true,
+        label: `late standard staff ${minutes}`,
+      });
+      const [core] = await p.db`
+        select app_private.f22_subscription_core(${p.fixture.wsA.id}::uuid,
+          ${subject.clientId}::uuid) as value`;
+      const endDay = (core!.value as { effective_end_exclusive: string })
+        .effective_end_exclusive;
+      const [boundary] = await p.db`
+        select app_private.f23_cairo_date_start(${endDay}::date) as value`;
+      const sampledAt = new Date(
+        (boundary!.value as Date).getTime() -
+          72 * 60 * 60 * 1000 +
+          minutes * 60 * 1000,
+      );
+      await p.db`select app_private.f23_subscription_expiry_notices_run(
+        ${sampledAt.toISOString()}::timestamptz, 250)`;
+
+      const [stored] = await p.db`
+        select count(*)::integer as count,
+          count(*) filter (where notice_kind = 'subscription_expiring_t3')::integer as standard,
+          count(*) filter (where notice_kind = 'subscription_expiring_t3_short_lead')::integer as short_lead
+        from app_private.staff_inbox_notices
+        where workspace_id = ${p.fixture.wsA.id}::uuid
+          and source_key = ${subject.subscriptionId}::uuid
+          and source_revision = ${endDay} and source_stage = 't3'`;
+      expect(Number(stored!.count)).toBeGreaterThan(0);
+      expect(Number(stored!.standard)).toBe(Number(stored!.count));
+      expect(Number(stored!.short_lead)).toBe(0);
+    },
+  );
+
   it('accepts expiring and expired filters through the existing scoped directory RPC', async () => {
     for (const status of ['expiring', 'expired']) {
       const result = await p.fixture.trainerA.client.rpc(
@@ -463,15 +502,26 @@ describe('Spec 028 F23 expiry evaluator', () => {
       activate: true,
       label: 'staff expiry hydration',
     });
+    const [target] = await p.db`
+      select ((clock_timestamp() at time zone 'Africa/Cairo')::date + 2)::date as end_day`;
+    const shortLeadEndDay = target!.end_day as string;
     await p.db.begin(async (tx) => {
       await tx`set local session_replication_role = replica`;
       await tx`update public.subscription_activations a
         set activated_at = app_private.f23_cairo_date_start(
-          (clock_timestamp() at time zone 'Africa/Cairo')::date + 2 - s.duration_days)
-        from public.subscriptions s
-        where a.workspace_id = s.workspace_id and a.subscription_id = s.id
-          and s.workspace_id = ${p.fixture.wsA.id}::uuid
-          and s.id = ${subject.subscriptionId}::uuid`;
+          ${shortLeadEndDay}::date - 2)
+        where a.workspace_id = ${p.fixture.wsA.id}::uuid
+          and a.subscription_id = ${subject.subscriptionId}::uuid`;
+      await tx`insert into public.subscription_manual_date_adjustments(
+        workspace_id, client_id, subscription_id,
+        new_service_start_date, new_service_end_exclusive,
+        request_key, actor_user_id
+      ) values (
+        ${p.fixture.wsA.id}::uuid, ${subject.clientId}::uuid,
+        ${subject.subscriptionId}::uuid,
+        ${shortLeadEndDay}::date - 2, ${shortLeadEndDay}::date,
+        ${randomUUID()}::uuid, ${p.fixture.po.userId}::uuid
+      )`;
       await tx`set local session_replication_role = origin`;
     });
     const [core] = await p.db`

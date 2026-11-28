@@ -216,6 +216,7 @@ declare
   projection jsonb;
   end_day date;
   expiry_at timestamptz;
+  first_eligible_at timestamptz;
   stage_kind text;
   client_kind text;
   client_stage text;
@@ -307,6 +308,16 @@ begin
     for update;
     if not found then continue; end if;
 
+    -- F13 starts the initial term on the activation's Cairo date. Use that
+    -- first-existing instant, not this scan's sample, to identify short lead.
+    select app_private.f23_cairo_date_start(
+      (a.activated_at at time zone 'Africa/Cairo')::date)
+    into first_eligible_at
+    from public.subscription_activations a
+    where a.workspace_id = candidate.workspace_id
+      and app_private.f19_resolve_subscription_id(
+        a.workspace_id, a.subscription_id) = canonical_subscription_id;
+
     -- Re-sample and re-project after both lifecycle locks have been acquired.
     sampled := case when p_now is null then clock_timestamp() else p_now end;
     today_cairo := (sampled at time zone 'Africa/Cairo')::date;
@@ -318,7 +329,7 @@ begin
     stage_kind := null;
     if projection->>'status' in ('future', 'active', 'frozen')
       and sampled < expiry_at and sampled >= expiry_at - interval '72 hours' then
-      stage_kind := case when sampled > expiry_at - interval '72 hours'
+      stage_kind := case when first_eligible_at > expiry_at - interval '72 hours'
         then 'subscription_expiring_t3_short_lead' else 'subscription_expiring_t3' end;
     elsif projection->>'status' = 'expired' and sampled >= expiry_at then
       stage_kind := 'subscription_expired';
@@ -373,7 +384,7 @@ begin
           and n.source_key = canonical_subscription_id and n.source_revision = end_day::text
           and n.source_stage = 't3') then
         client_stage := 't3';
-        client_kind := case when sampled > expiry_at - interval '72 hours'
+        client_kind := case when first_eligible_at > expiry_at - interval '72 hours'
           then 'subscription_expiring_t3_short_lead' else 'subscription_expiring_t3' end;
         notice_id := app_private.f22_enqueue_client_notice(
           candidate.workspace_id, candidate.client_id, client_kind, canonical_subscription_id,

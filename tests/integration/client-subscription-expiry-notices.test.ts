@@ -19,16 +19,64 @@ beforeAll(async () => {
 });
 afterAll(async () => p?.close());
 
-async function moveExpiryToDays(subject: PortalClient, remainingDays: number) {
+async function moveActivationToDays(
+  subject: PortalClient,
+  remainingDays: number,
+) {
+  const [target] = await p.db`
+    select ((clock_timestamp() at time zone 'Africa/Cairo')::date + ${remainingDays}::integer)::date as end_day`;
+  const endDay = target!.end_day as string;
   await p.db.begin(async (tx) => {
     await tx`set local session_replication_role = replica`;
     await tx`update public.subscription_activations a
       set activated_at = app_private.f23_cairo_date_start(
-        (clock_timestamp() at time zone 'Africa/Cairo')::date + ${remainingDays}::integer - s.duration_days)
-      from public.subscriptions s
-      where a.workspace_id = s.workspace_id and a.subscription_id = s.id
-        and s.workspace_id = ${p.fixture.wsA.id}::uuid
-        and s.id = ${subject.subscriptionId}::uuid`;
+        ${endDay}::date - ${remainingDays}::integer)
+      where a.workspace_id = ${p.fixture.wsA.id}::uuid
+        and a.subscription_id = ${subject.subscriptionId}::uuid`;
+    await tx`insert into public.subscription_manual_date_adjustments(
+      workspace_id, client_id, subscription_id,
+      new_service_start_date, new_service_end_exclusive,
+      request_key, actor_user_id
+    ) values (
+      ${p.fixture.wsA.id}::uuid, ${subject.clientId}::uuid,
+      ${subject.subscriptionId}::uuid,
+      ${endDay}::date - ${remainingDays}::integer, ${endDay}::date,
+      ${randomUUID()}::uuid, ${p.fixture.po.userId}::uuid
+    )`;
+    await tx`set local session_replication_role = origin`;
+  });
+}
+
+const moveActivationToTwoDays = (subject: PortalClient) =>
+  moveActivationToDays(subject, 2);
+
+async function moveExpiryToDays(subject: PortalClient, remainingDays: number) {
+  const [target] = await p.db`
+    select s.duration_days,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date + ${remainingDays}::integer)::date as end_day
+    from public.subscriptions s
+    where s.workspace_id = ${p.fixture.wsA.id}::uuid
+      and s.id = ${subject.subscriptionId}::uuid`;
+  const durationDays = Number(target!.duration_days);
+  const endDay = target!.end_day as string;
+  await p.db.begin(async (tx) => {
+    await tx`set local session_replication_role = replica`;
+    // Keep first eligibility before T-3; move only F13's effective dates.
+    await tx`update public.subscription_activations a
+      set activated_at = least(a.activated_at, app_private.f23_cairo_date_start(
+        ${endDay}::date - ${durationDays}::integer - 4))
+      where a.workspace_id = ${p.fixture.wsA.id}::uuid
+        and a.subscription_id = ${subject.subscriptionId}::uuid`;
+    await tx`insert into public.subscription_manual_date_adjustments(
+      workspace_id, client_id, subscription_id,
+      new_service_start_date, new_service_end_exclusive,
+      request_key, actor_user_id
+    ) values (
+      ${p.fixture.wsA.id}::uuid, ${subject.clientId}::uuid,
+      ${subject.subscriptionId}::uuid,
+      ${endDay}::date - ${durationDays}::integer, ${endDay}::date,
+      ${randomUUID()}::uuid, ${p.fixture.po.userId}::uuid
+    )`;
     await tx`set local session_replication_role = origin`;
   });
 }
@@ -157,12 +205,45 @@ describe('Spec 028 FR-001 client expiry notices through the existing F22 inbox',
     expect(Number(rows!.revisions)).toBe(2);
   });
 
+  it.each([
+    { delay: '1 minute', minutes: 1 },
+    { delay: '2 hours', minutes: 120 },
+  ])(
+    'keeps the standard client T-3 kind when a normally eligible subscription is evaluated $delay late',
+    async ({ minutes }) => {
+      const subject = await p.makeClient({
+        activate: true,
+        label: `late standard client ${minutes}`,
+      });
+      const expiry = await expiryAt(subject);
+      await evaluate(
+        new Date(expiry.getTime() - 72 * 60 * 60 * 1000 + minutes * 60 * 1000),
+      );
+
+      const [stored] = await p.db`
+        select count(*)::integer as count,
+          count(*) filter (where notice_kind = 'subscription_expiring_t3')::integer as standard,
+          count(*) filter (where notice_kind = 'subscription_expiring_t3_short_lead')::integer as short_lead
+        from app_private.client_inbox_notices
+        where workspace_id = ${p.fixture.wsA.id}::uuid
+          and client_id = ${subject.clientId}::uuid
+          and source_key = ${subject.subscriptionId}::uuid
+          and source_stage = 't3'`;
+      expect(Number(stored!.count)).toBe(1);
+      expect(Number(stored!.standard)).toBe(1);
+      expect(Number(stored!.short_lead)).toBe(0);
+      const own = kinds(await readAs(subject));
+      expect(own).toContain('subscription_expiring_t3');
+      expect(own).not.toContain('subscription_expiring_t3_short_lead');
+    },
+  );
+
   it('catches up T-3 once when first eligible under 72 hours and sends T-1 only at its instant', async () => {
     const late = await p.makeClient({
       activate: true,
       label: 'expiry short lead',
     });
-    await moveExpiryToTwoDays(late);
+    await moveActivationToTwoDays(late);
     const expiry = await expiryAt(late);
 
     await evaluate(new Date(expiry.getTime() - 48 * 60 * 60 * 1000));
