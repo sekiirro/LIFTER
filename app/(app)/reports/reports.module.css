@@ -290,3 +290,9 @@
   margin: 0;
   color: var(--color-text-muted);
 }
+.pager {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-block-start: var(--space-2);
+}

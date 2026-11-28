@@ -2856,6 +2856,7 @@ describe('P7 T020 Sales funnel RPC catalog', () => {
   it('is a hardened authenticated RPC with a leading platform-owner guard', async () => {
     const [funnel] = await db`select p.prosecdef, p.proconfig,
         pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        pg_catalog.pg_get_function_result(p.oid) as result_shape,
         has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
         has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
         has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role,
@@ -2869,6 +2870,16 @@ describe('P7 T020 Sales funnel RPC catalog', () => {
       service_role: false,
     });
     expect(funnel?.proconfig).toContain('search_path=""');
+    expect(funnel?.result_shape).toContain('first_payment_count bigint');
+    expect(funnel?.result_shape).toContain('acquisition_points text');
+    expect(funnel?.result_shape).toContain('refund_reversal_points text');
+    expect(funnel?.result_shape).toContain('point_deduction_count bigint');
+    expect(funnel?.result_shape).toContain('point_deduction_points text');
+    expect(funnel?.result_shape).toContain('po_adjustment_count bigint');
+    expect(funnel?.result_shape).toContain('po_adjustment_points text');
+    expect(funnel?.definition).toContain('a.reason is null');
+    expect(funnel?.definition).toContain('a.reason is not null');
+    expect(funnel?.definition).toContain('sales_acquisition_refund');
     expect(
       funnel?.definition.indexOf('app_private.is_platform_owner'),
     ).toBeLessThan(

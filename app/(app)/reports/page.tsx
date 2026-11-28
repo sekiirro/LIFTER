@@ -27,6 +27,9 @@ type Search = {
   month?: string | string[];
   breakdown?: string | string[];
   drilldown?: string | string[];
+  cursor_recorded_at?: string | string[];
+  cursor_event_id?: string | string[];
+  cursor_history?: string | string[];
 };
 
 function cairoMonth() {
@@ -219,9 +222,37 @@ export default async function ReportsPage({
     if (!workspaces.some((w) => w.id === drilldownId)) {
       return denied(locale, m['reports.denied']);
     }
+    const cursorRecordedAt =
+      typeof params.cursor_recorded_at === 'string'
+        ? params.cursor_recorded_at
+        : null;
+    const cursorEventId =
+      typeof params.cursor_event_id === 'string'
+        ? params.cursor_event_id
+        : null;
+    const cursor =
+      cursorRecordedAt && cursorEventId
+        ? { recorded_at: cursorRecordedAt, event_id: cursorEventId }
+        : null;
+
+    let cursorHistory: ({ recorded_at: string; event_id: string } | null)[] =
+      [];
+    if (
+      typeof params.cursor_history === 'string' &&
+      params.cursor_history.length > 0
+    ) {
+      try {
+        const parsed = JSON.parse(params.cursor_history);
+        if (Array.isArray(parsed)) cursorHistory = parsed;
+      } catch {
+        cursorHistory = [];
+      }
+    }
+
     const drillResult = await getWorkspaceDrilldownRows({
       workspaceId: drilldownId,
       monthStart: `${month}-01`,
+      cursor,
     });
     if (drillResult.status === 'ok') {
       drilldownData = {
@@ -230,6 +261,10 @@ export default async function ReportsPage({
         workspaceName: drillResult.workspaceName,
         rows: drillResult.rows,
         totals: drillResult.totals,
+        hasMore: drillResult.hasMore,
+        nextCursor: drillResult.nextCursor,
+        currentCursor: cursor,
+        cursorHistory,
       };
     } else if (drillResult.status === 'unavailable') {
       drilldownData = {
@@ -243,6 +278,10 @@ export default async function ReportsPage({
           subscriptionCount: 0,
           clientCount: 0,
         },
+        hasMore: false,
+        nextCursor: null,
+        currentCursor: null,
+        cursorHistory: [],
       };
     }
   }
