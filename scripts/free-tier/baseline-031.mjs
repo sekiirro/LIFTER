@@ -24,6 +24,14 @@ import { assertLocalStackTarget, selectStack } from '../local-stack.mjs';
 const roundUp = (value, step, floor) =>
   Math.max(floor, Math.ceil(value / step) * step);
 
+export function pilotVolumeReport(volumes) {
+  return {
+    inputs: volumes.inputs,
+    derivedVolumes: volumes.derivedVolumes,
+    unverified: volumes.unverified,
+  };
+}
+
 function sessionClientOptions() {
   return {
     auth: {
@@ -99,6 +107,30 @@ async function createSyntheticSessions() {
   const admin = createClient(apiUrl, serviceRoleKey, sessionClientOptions());
   const cookiesByRole = {};
   const userIds = [];
+  let workspaceId;
+  const cleanup = async () => {
+    let failed = false;
+    if (workspaceId) {
+      const workspace = await admin
+        .from('workspaces')
+        .delete()
+        .eq('id', workspaceId);
+      failed ||= Boolean(workspace.error);
+    }
+    if (userIds[0]) {
+      const profile = await admin
+        .from('staff_profiles')
+        .delete()
+        .eq('user_id', userIds[0]);
+      failed ||= Boolean(profile.error);
+    }
+    for (const userId of userIds) {
+      const deleted = await admin.auth.admin.deleteUser(userId);
+      failed ||= Boolean(deleted.error);
+    }
+    if (failed)
+      throw new Error('Could not fully clean up synthetic baseline fixtures');
+  };
   try {
     for (const role of ['po', 'client']) {
       const session = await createSyntheticSession(
@@ -110,30 +142,36 @@ async function createSyntheticSessions() {
       cookiesByRole[role] = session.cookie;
       userIds.push(session.userId);
     }
+    const workspace = await admin
+      .from('workspaces')
+      .insert({
+        name: 'Synthetic baseline workspace',
+        slug: `s72-baseline-${randomUUID()}`,
+        created_by: userIds[0],
+      })
+      .select('id')
+      .single();
+    if (workspace.error || !workspace.data?.id)
+      throw new Error('Could not seed synthetic baseline workspace');
+    workspaceId = workspace.data.id;
   } catch (error) {
-    for (const userId of userIds)
-      await admin.auth.admin.deleteUser(userId).catch(() => {});
+    await cleanup().catch(() => {});
     throw error;
   }
   return {
     cookiesByRole,
-    cleanup: async () => {
-      for (const userId of userIds)
-        await admin.auth.admin.deleteUser(userId).catch(() => {});
-    },
+    fixture: { actorId: userIds[0], workspaceId },
+    cleanup,
   };
 }
 
-async function dbClasses(connectionString, requests, concurrency) {
-  if (!connectionString) return null;
+async function dbClasses(connectionString, requests, concurrency, fixture) {
+  if (!connectionString)
+    throw new Error('Safe local stack DB_URL is required for DB query classes');
+  if (!fixture?.actorId || !fixture?.workspaceId)
+    throw new Error('Synthetic baseline workspace fixture is incomplete');
   const sql = postgres(connectionString, { max: 8, connect_timeout: 10 });
   try {
-    const [actor] =
-      await sql`select user_id from public.staff_profiles where role='platform_owner' limit 1`;
-    const [workspace] =
-      await sql`select id from public.workspaces order by name limit 1`;
-    if (!actor?.user_id || !workspace?.id)
-      throw new Error('Synthetic pilot fixture missing (role/workspace)');
     const classes = {
       directory_page_1: [null, 50, 0, null],
       directory_page_6: [null, 50, 250, null],
@@ -147,9 +185,9 @@ async function dbClasses(connectionString, requests, concurrency) {
       const call = async () =>
         sql.begin(async (tx) => {
           await tx`select set_config('role','authenticated',true)`;
-          await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: actor.user_id, role: 'authenticated' })},true)`;
+          await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.actorId, role: 'authenticated' })},true)`;
           const rows =
-            await tx`select jsonb_agg(t) as payload from public.staff_client_directory(${workspace.id}::uuid,${search}::text,${approval}::text,null::text,${limit},${offset},null::text) t`;
+            await tx`select jsonb_agg(t) as payload from public.staff_client_directory(${fixture.workspaceId}::uuid,${search}::text,${approval}::text,null::text,${limit},${offset},null::text) t`;
           return {
             bytes: Buffer.byteLength(
               rows[0]?.payload === null
@@ -243,6 +281,7 @@ export async function baseline(args, options = {}) {
     : await createSyntheticSessions();
   const cookiesByRole = options.cookiesByRole ?? fixture.cookiesByRole;
   try {
+    const volumes = projectPilotVolumes();
     const sampledRoutes = await probe(
       matrix.base_url,
       matrix.routes,
@@ -270,9 +309,7 @@ export async function baseline(args, options = {}) {
         harness: 'scripts/free-tier/baseline-031.mjs (orchestration only)',
       },
       pilot_volumes: {
-        inputs: volumes.inputs,
-        derivedVolumes: volumes.derivedVolumes,
-        unverified: volumes.unverified,
+        ...pilotVolumeReport(volumes),
       },
       route_matrix: args.routes,
       requests_per_route: n,
@@ -284,20 +321,17 @@ export async function baseline(args, options = {}) {
       })),
     };
     assertAllHttpSamplesAre200(baseReport);
-    const volumes = projectPilotVolumes();
     const httpReport = baseReport.http_routes.map((row) => ({
       ...row,
       proposed_p95_budget_ms: roundUp(row.p95_ms * 2, 50, 200),
       proposed_error_budget_pct: 1,
     }));
     const dbUrl = process.env.DB_URL ?? process.env.SUPABASE_DB_URL;
-    const measured = await dbClasses(dbUrl, n, concurrency);
+    const measured = await dbClasses(dbUrl, n, concurrency, fixture?.fixture);
     return {
       ...baseReport,
       pilot_volumes: {
-        inputs: volumes.inputs,
-        derivedVolumes: volumes.derivedVolumes,
-        unverified: volumes.unverified,
+        ...pilotVolumeReport(volumes),
       },
       http_routes: httpReport,
       db_query_classes: measured,
@@ -346,6 +380,16 @@ async function main() {
         max_ms: r.max_ms,
         statuses: JSON.stringify(r.statuses),
         proposed: r.proposed_p95_budget_ms,
+      })),
+    );
+    console.table(
+      report.db_query_classes.map((row) => ({
+        query_class: row.query_class,
+        requests: row.requests,
+        errors: row.errors,
+        p50_ms: row.p50_ms,
+        p95_ms: row.p95_ms,
+        max_ms: row.max_ms,
       })),
     );
     await output(report, args.json);

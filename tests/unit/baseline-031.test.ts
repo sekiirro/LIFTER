@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { pilotVolumeReport } from '../../scripts/free-tier/baseline-031.mjs';
+import { projectPilotVolumes } from '../../scripts/free-tier/lib/pilot-volumes.mjs';
 import {
   assertAllHttpSamplesAre200,
   cookieHeaderForRoute,
@@ -7,6 +9,20 @@ import {
 } from '../../scripts/free-tier/lib/authenticated-http.mjs';
 
 describe('031 authenticated HTTP baseline helpers', () => {
+  it('projects pilot volumes before building the baseline report', () => {
+    const volumes = projectPilotVolumes();
+
+    expect(pilotVolumeReport(volumes)).toEqual({
+      inputs: volumes.inputs,
+      derivedVolumes: volumes.derivedVolumes,
+      unverified: volumes.unverified,
+    });
+    expect(pilotVolumeReport(volumes).derivedVolumes).toMatchObject({
+      workspaces: 2,
+      clients: 300,
+    });
+  });
+
   it('sends the PO session to staff routes and the client session to welcome', () => {
     const cookies = {
       po: 'sb-local-auth-token=synthetic-po-session',
