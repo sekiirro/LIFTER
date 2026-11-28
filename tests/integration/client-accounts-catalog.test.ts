@@ -328,7 +328,6 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           'reattribute_workforce_plan_delay',
           'p7_list_open_refund_fault_reviews',
           'p7_resolve_refund_fault_review',
-          'get_workforce_strike_correction_history',
         ].includes(fn.proname)
       ) {
         await tx.savepoint(async (inner) => {
