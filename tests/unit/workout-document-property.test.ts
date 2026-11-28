@@ -7,6 +7,10 @@ import {
 } from '../../lib/workout-planner/document';
 import { duplicateItem } from '../../lib/workout-planner/id-remap';
 
+// This CPU-heavy proof performs 1,000 generated operations, each cloning and
+// serialising a document. Under Windows full-suite worker fan-out it has been
+// observed at 19.8-29.7s, beyond its old 20s budget. Widen only the time
+// budget; every corruption assertion stays unchanged.
 const uuid = (value: number) =>
   `00000000-0000-4000-8000-${value.toString().padStart(12, '0')}`;
 
@@ -261,5 +265,5 @@ describe('F17 schema-v1 document property operations (T048)', () => {
       addRest: 200,
       moveRest: 200,
     });
-  }, 20_000);
+  }, 60_000);
 });

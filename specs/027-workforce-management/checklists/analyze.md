@@ -1,3 +1,7 @@
+## S74 union status revalidation — 2026-11-28 10:02 UTC
+
+Merged current `origin/main` `6f8e21bc49555b073e598ccb45e2841542426398` after PRs #404, #405, #406 and #409 landed. Union-merged the verified T022/T023 task ticks and traceability evidence from PR #373 while retaining this lane's T024/T039/T025 decisions and S74-PO-2 traceability. No S74 FR, SC, plan or copy semantics changed. **0 open CRITICAL / 0 open HIGH.** S74-COPY-01 remains the single pending exact-copy approval; all behavior MCQs remain answered.
+
 # S74-PO-2 Sales Projection/Funnel Re-Analyze — 2026-11-28 09:24 UTC
 
 **Scope reviewed after the spec, plan, tasks, read contract, copy record and traceability edits.** This full Analyze supersedes earlier date-only status checks for this change.

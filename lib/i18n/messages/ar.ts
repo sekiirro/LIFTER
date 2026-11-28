@@ -1703,6 +1703,8 @@ export const ar = {
   'workforce.payroll.employee': 'الموظف',
   'staff.notifications.title': 'الإشعارات',
   'staff.notifications.bellLabel': 'افتح الإشعارات',
+  'staff.notifications.bellLabelWithCount':
+    'افتح الإشعارات ({count} إشعار مش مقروء)',
   'staff.notifications.loading': 'جارٍ التحميل',
   'staff.notifications.empty': 'مفيش إشعارات جديدة.',
   'staff.notifications.error': 'تعذّر تحميل البيانات',
@@ -1718,6 +1720,9 @@ export const ar = {
   'staff.clientDirectory.expiring.empty': 'مفيش عملاء مطابقين للفلتر ده',
   'staff.clientDirectory.expiring.loadError':
     'مقدرناش نحمل القائمة. حاول تاني.',
+  'staff.clientDirectory.previousPage': 'الصفحة السابقة',
+  'staff.clientDirectory.nextPage': 'الصفحة التالية',
+  'staff.clientDirectory.paginationLabel': 'صفحات العملاء',
   'workforce.finalize.title': 'اعتماد الشهر',
   'workforce.finalize.selectMonth': 'اختار شهر خلص (بتوقيت القاهرة)',
   'workforce.finalize.closedHint': 'الشهر اللي خلص بس هو اللي يتعتمد.',

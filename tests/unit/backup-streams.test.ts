@@ -23,12 +23,17 @@ import {
 const roots: string[] = [];
 it('times out a sleeping Node process and terminates it', async () => {
   const pids: number[] = [];
+  // On Windows, spawning Node can take longer than the old 2s budget while the
+  // full unit suite saturates CPU. If the timer fires before the child prints
+  // its PID, the PID assertion fails even though the timeout path works. Give
+  // startup room (assertions and the TIMEOUT proof are unchanged), and allow
+  // time for taskkill teardown inside the per-test budget.
   await expect(
     run(
       process.execPath,
       ['-e', 'console.log(process.pid); setTimeout(()=>{},60000)'],
       {
-        timeoutMs: 2000,
+        timeoutMs: 10_000,
         output: async (stream) => {
           // Timeout teardown destroys stdout before the async iterator closes.
           // Record each complete PID line as it arrives instead of waiting for EOF.
@@ -52,7 +57,7 @@ it('times out a sleeping Node process and terminates it', async () => {
   ).rejects.toMatchObject({ code: 'TIMEOUT' });
   expect(pids).toHaveLength(1);
   for (const pid of pids) expect(() => process.kill(pid, 0)).toThrow();
-}, 14000);
+}, 30_000);
 
 it.each(['SIGINT', 'SIGTERM'])(
   'awaits tree termination before rejecting with INTERRUPTED on %s',

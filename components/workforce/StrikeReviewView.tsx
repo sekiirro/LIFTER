@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Messages } from '../../lib/i18n';
+import { numberingLocale } from '../../lib/i18n/format';
 import type {
   StrikeOperation,
   StrikeReasonCode,
@@ -180,16 +181,22 @@ export function StrikeReviewView({
                 </h2>
                 <span
                   className={styles.count}
-                  aria-label={`${m['workforce.report.strikes.title']} ${trainer.count}${trainer.reviewThreshold ? ` ${m['workforce.report.strikes.threshold'].replace('{count}', String(trainer.reviewThreshold))}` : ''}`}
+                  aria-label={`${m['workforce.report.strikes.title']} ${new Intl.NumberFormat(numberingLocale(locale)).format(trainer.count)}${trainer.reviewThreshold ? ` ${m['workforce.report.strikes.threshold'].replace('{count}', new Intl.NumberFormat(numberingLocale(locale)).format(trainer.reviewThreshold))}` : ''}`}
                 >
-                  <Bidi dir="ltr">{trainer.count}</Bidi>
+                  <Bidi dir="ltr">
+                    {new Intl.NumberFormat(numberingLocale(locale)).format(
+                      trainer.count,
+                    )}
+                  </Bidi>
                 </span>
               </header>
               {trainer.reviewThreshold > 0 && (
                 <p className={styles.pointsNote}>
                   {m['workforce.report.strikes.threshold'].replace(
                     '{count}',
-                    String(trainer.reviewThreshold),
+                    new Intl.NumberFormat(numberingLocale(locale)).format(
+                      trainer.reviewThreshold,
+                    ),
                   )}
                 </p>
               )}
