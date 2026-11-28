@@ -23,6 +23,21 @@ describe('P7 T013 PO workforce report RPC (p7_workforce_report)', () => {
     expect(proc!.proconfig).toContain('search_path=""');
   });
 
+  it('orders each JSON aggregate by its source CTE order', async () => {
+    const [proc] = await db`
+      select pg_catalog.pg_get_functiondef(
+        'public.p7_workforce_report(uuid,date)'::regprocedure
+      ) as definition`;
+    const definition = proc!.definition as string;
+
+    expect(
+      definition.match(
+        /^\s+order by ss\.role, ss\.display_name nulls last, ss\.staff_user_id$/gm,
+      ),
+    ).toHaveLength(3);
+    expect(definition).toContain('order by li.recorded_at desc, li.id desc');
+  });
+
   it('denies non-PO roles (trainer, sales, WO) and foreign/nonexistent workspaces with 42501 not_permitted', async () => {
     const context = await clientContext();
     const [period] = await db`
