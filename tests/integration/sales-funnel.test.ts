@@ -1,19 +1,46 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
+import { pending } from './client-accounts-fixture';
 import {
   call,
   clientContext,
-  registered,
   request,
   sql,
+  type Target,
 } from './registration-approval-operations-fixture';
+import {
+  checked,
+  issue,
+  registrationFixture,
+} from './registration-links-fixture';
 import { admin, createStaff } from './harness';
 
 const db = sql();
 afterAll(() => db.end());
 
-it('T020 reports distinct Sales funnel milestones in their Cairo event month', async () => {
-  const f = await clientContext();
-  const target = await registered(f, null, undefined, f.salesA.client);
+async function funnelTarget(
+  f: Awaited<ReturnType<typeof registrationFixture>>,
+  issuer = f.salesA.client,
+): Promise<Target> {
+  const link = checked(await issue(f, issuer)) as string;
+  return db.begin(async (tx) => {
+    const client = await pending(
+      tx,
+      { ...f, link },
+      { registration_link_id: link },
+    );
+    return {
+      id: client.id as string,
+      userId: client.auth_user_id as string,
+      link,
+      rows: null,
+    };
+  });
+}
+
+it('T020/T039 reports Sales funnel milestones and P7 facts by Cairo event month', async () => {
+  const f = await registrationFixture();
+  const target = await funnelTarget(f);
   const secondSales = await createStaff('sales', 'p7-funnel-sales');
   const membership = await admin().from('workspace_memberships').insert({
     workspace_id: f.wsA.id,
@@ -21,11 +48,39 @@ it('T020 reports distinct Sales funnel milestones in their Cairo event month', a
     granted_by: f.po.userId,
   });
   expect(membership.error).toBeNull();
-  const secondTarget = await registered(f, null, undefined, secondSales.client);
-  for (const current of [target, secondTarget]) {
-    const approval = request(f, current);
+  const secondTarget = await funnelTarget(f, secondSales.client);
+  for (const [index, current] of [target, secondTarget].entries()) {
+    const approval = request({ ...f, link: current.link }, current);
+    const result = await call(f.po.client, 'approve', approval);
+    expect(result.status).toBe('ok');
     expect((await call(f.po.client, 'approve', approval)).status).toBe('ok');
-    expect((await call(f.po.client, 'approve', approval)).status).toBe('ok');
+    if (index === 0) {
+      const subscriptionId = result.receipt?.subscription_id as string;
+      const refund = await f.po.client.rpc('record_refund', {
+        request: {
+          workspace_id: f.wsA.id,
+          client_id: current.id,
+          purchase_id: subscriptionId,
+          request_key: randomUUID(),
+          amount_minor: '1',
+          external_confirmation: true,
+        },
+      });
+      expect(refund.error).toBeNull();
+      expect(refund.data).toMatchObject({ status: 'ok' });
+      const repeatedRefund = await f.po.client.rpc('record_refund', {
+        request: {
+          workspace_id: f.wsA.id,
+          client_id: current.id,
+          purchase_id: subscriptionId,
+          request_key: randomUUID(),
+          amount_minor: '1',
+          external_confirmation: true,
+        },
+      });
+      expect(repeatedRefund.error).toBeNull();
+      expect(repeatedRefund.data).toMatchObject({ status: 'ok' });
+    }
   }
 
   const [period] = await db`
@@ -47,22 +102,36 @@ it('T020 reports distinct Sales funnel milestones in their Cairo event month', a
       link_count: 1,
       registration_count: 1,
       approval_count: 1,
+      first_payment_count: 1,
+      acquisition_point_count: 1,
+      acquisition_points: '1.00',
+      refund_reversal_count: salesUserId === f.salesA.userId ? 1 : 0,
+      refund_reversal_points:
+        salesUserId === f.salesA.userId ? '-1.00' : '0.00',
     });
   }
   expect(JSON.stringify(data)).not.toMatch(/client|email|phone|name|token/i);
 });
 
-it('T020 assigns link, registration, and approval to separate Cairo months', async () => {
-  const f = await clientContext();
-  const target = await registered(f, null, undefined, f.salesA.client);
-  expect((await call(f.po.client, 'approve', request(f, target))).status).toBe(
-    'ok',
-  );
+it('T020/T039 assigns funnel events and facts to their Cairo months', async () => {
+  const f = await registrationFixture();
+  const target = await funnelTarget(f);
+  expect(
+    (
+      await call(
+        f.po.client,
+        'approve',
+        request({ ...f, link: target.link }, target),
+      )
+    ).status,
+  ).toBe('ok');
 
   await db.begin(async (tx) => {
     await tx`alter table public.registration_links disable trigger user`;
     await tx`alter table public.clients disable trigger user`;
     await tx`alter table app_private.registration_approval_events disable trigger user`;
+    await tx`alter table public.payment_events disable trigger user`;
+    await tx`alter table public.p7_earned_points disable trigger p7_earned_points_immutable`;
     await tx`
       update public.registration_links
       set created_at='2026-10-31 20:30:00+00',
@@ -75,15 +144,28 @@ it('T020 assigns link, registration, and approval to separate Cairo months', asy
       update app_private.registration_approval_events
       set approved_at='2026-11-30 22:30:00+00'
       where workspace_id=${f.wsA.id} and client_id=${target.id}`;
+    await tx`
+      update public.payment_events e set recorded_at='2026-11-30 22:30:00+00'
+      from public.subscriptions s
+      where s.workspace_id=e.workspace_id and s.id=e.subscription_id
+        and s.client_id=${target.id} and e.kind='collection' and e.installment_seq=1`;
+    await tx`
+      update public.p7_earned_points e
+      set effective_month='2027-01-01', original_month='2026-12-01',
+        trigger_at='2026-11-30 22:30:00+00'
+      where e.workspace_id=${f.wsA.id} and e.staff_user_id=${f.salesA.userId}`;
     await tx`alter table public.registration_links enable trigger user`;
     await tx`alter table public.clients enable trigger user`;
     await tx`alter table app_private.registration_approval_events enable trigger user`;
+    await tx`alter table public.payment_events enable trigger user`;
+    await tx`alter table public.p7_earned_points enable trigger p7_earned_points_immutable`;
   });
 
   const expected = [
     ['2026-10-01', 1, 0, 0],
     ['2026-11-01', 0, 1, 0],
     ['2026-12-01', 0, 0, 1],
+    ['2027-01-01', 0, 0, 0],
   ] as const;
   for (const [month, links, registrations, approvals] of expected) {
     const { data, error } = await f.po.client.rpc('get_sales_funnel', {
@@ -91,6 +173,10 @@ it('T020 assigns link, registration, and approval to separate Cairo months', asy
       p_month: month,
     });
     expect(error).toBeNull();
+    if (month === '2027-01-01') {
+      expect(data).toEqual([]);
+      continue;
+    }
     expect(data).toEqual([
       {
         month,
@@ -98,23 +184,32 @@ it('T020 assigns link, registration, and approval to separate Cairo months', asy
         link_count: links,
         registration_count: registrations,
         approval_count: approvals,
+        first_payment_count: month === '2026-12-01' ? 1 : 0,
+        acquisition_point_count: month === '2026-12-01' ? 1 : 0,
+        acquisition_points: month === '2026-12-01' ? '1.00' : '0.00',
+        refund_reversal_count: 0,
+        refund_reversal_points: '0.00',
       },
     ]);
   }
 });
 
-it('T020 denies Sales, WO, and Trainer before workspace resolution', async () => {
+it('T020/T039 denies Sales, WO, Trainer, and anon without workspace disclosure', async () => {
   const f = await clientContext();
   const unknownWorkspace = '00000000-0000-0000-0000-000000000001';
 
-  for (const actor of [f.salesA, f.woA, f.trainerA]) {
-    for (const workspaceId of [f.wsA.id, unknownWorkspace]) {
+  for (const actor of [f.salesA, f.woA, f.trainerA, f.actors.anon]) {
+    const messages: string[] = [];
+    for (const workspaceId of [f.wsA.id, f.wsB.id, unknownWorkspace]) {
       const { data, error } = await actor.client.rpc('get_sales_funnel', {
         workspace_id: workspaceId,
         p_month: '2026-11-01',
       });
       expect(data).toBeNull();
-      expect(error).toMatchObject({ code: '42501', message: 'not_permitted' });
+      expect(error?.code).toBe('42501');
+      expect(error?.message).not.toContain(workspaceId);
+      messages.push(error?.message ?? '');
     }
+    expect(new Set(messages).size).toBe(1);
   }
 });
