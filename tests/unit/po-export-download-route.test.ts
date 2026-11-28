@@ -93,6 +93,28 @@ describe('PO export HTTP download route', () => {
     expect(m.download).not.toHaveBeenCalled();
   });
 
+  it('records the failure outcome when storage delivery fails (NB-030-04)', async () => {
+    m.download.mockImplementationOnce(async () => {
+      m.events.push('storage.download');
+      return {
+        data: null,
+        error: { message: 'storage temporarily unavailable' },
+      };
+    });
+    const failed = await GET(request(), context);
+    expect(failed.status).toBe(503);
+    expect(await failed.text()).toBe('');
+    expect(m.events).toEqual([
+      'read_po_client_export_status',
+      'record_po_export_retrieval',
+      'storage.download',
+      'record_po_export_retrieval_failure',
+    ]);
+    expect(m.rpc).toHaveBeenCalledWith('record_po_export_retrieval_failure', {
+      p_job_id: jobId,
+    });
+  });
+
   it('does not download expired jobs', async () => {
     m.rpc.mockResolvedValue({ data: { status: 'expired' }, error: null });
     const expired = await GET(request(), context);
