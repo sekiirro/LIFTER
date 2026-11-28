@@ -157,12 +157,14 @@ function ExportSectionBody({
   const [jobId, setJobId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const inFlightRef = useRef(false);
+  const transportRetryKeyRef = useRef<string | null>(null);
 
   const onScopeKindChange = (kind: 'all' | 'workspace') => {
     if (kind !== scopeKind) {
       setScopeKind(kind);
       setStatus('idle');
       setJobId(null);
+      transportRetryKeyRef.current = null;
     }
   };
 
@@ -171,17 +173,20 @@ function ExportSectionBody({
       setWorkspaceId(id);
       setStatus('idle');
       setJobId(null);
+      transportRetryKeyRef.current = null;
     }
   };
 
   const submit = useCallback(async () => {
     // A request already in flight owns its key: the guard makes a double-click
-    // a no-op, so it never issues a second request with a different key. Once
-    // the request has settled, its key is consumed (enqueue_job is ON CONFLICT
-    // DO NOTHING), so a retry after failed/error/expired is a NEW user intent
-    // and must get a new key to create a new job/archive (S71-R29 / CR-030-03).
+    // a no-op, so it never issues a second request with a different key.
+    // A transport failure (rejection or client-side 'error' with no jobId) may
+    // still have enqueued a job server-side, so its key is kept for the retry.
+    // Terminal server states (failed/expired) are a new intent with a new key
+    // and a new archive (S71-R29 / CR-030-03); S74-412-01.
     if (inFlightRef.current || pending) return;
-    const key = generateExportIdempotencyKey();
+    const key = transportRetryKeyRef.current ?? generateExportIdempotencyKey();
+    transportRetryKeyRef.current = null;
     inFlightRef.current = true;
     setPending(true);
 
@@ -194,8 +199,11 @@ function ExportSectionBody({
       const result = await requestClientExport(scope, key);
       setStatus(result.status);
       setJobId(result.jobId);
+      if (result.status === 'error' && !result.jobId)
+        transportRetryKeyRef.current = key;
     } catch {
       setStatus('error');
+      transportRetryKeyRef.current = key;
     } finally {
       inFlightRef.current = false;
       setPending(false);
