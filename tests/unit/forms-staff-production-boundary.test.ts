@@ -80,9 +80,23 @@ describe('production staff Forms route boundary', () => {
       staffConsole.indexOf('async function retire()'),
     );
 
-    expect(publishAction.indexOf('acceptResult(saved,')).toBeLessThan(
-      publishAction.indexOf('adapter.publish('),
+    // The failed-save branch must report the failure and return before publish;
+    // only the success path may accept the saved draft and then publish it.
+    // Searching from the failed-save return proves this is the success-path
+    // acceptResult, not the earlier failed-save call that the old assertion
+    // could match.
+    const failureGuard = publishAction.indexOf("if (saved.status !== 'ok')");
+    const failureReturn = publishAction.indexOf('return;', failureGuard);
+    const successAccept = publishAction.indexOf(
+      'acceptResult(saved,',
+      failureReturn,
     );
+    const publishCall = publishAction.indexOf('adapter.publish(');
+
+    expect(failureGuard).toBeGreaterThan(-1);
+    expect(failureReturn).toBeGreaterThan(failureGuard);
+    expect(successAccept).toBeGreaterThan(failureReturn);
+    expect(publishCall).toBeGreaterThan(successAccept);
   });
 
   it('preserves the active draft when changing the default form', () => {
