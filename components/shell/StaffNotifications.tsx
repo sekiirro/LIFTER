@@ -178,8 +178,12 @@ export function StaffNotifications({
   const [notifications, setNotifications] = useState<
     UnifiedStaffNotification[]
   >(initialNotifications ?? []);
+  const [focusNonce, setFocusNonce] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const pendingFocusRef = useRef<{ id: string; index: number } | null>(null);
 
   const fetchHandler = onFetch ?? defaultFetch;
   const markReadHandler = onMarkRead ?? defaultMarkRead;
@@ -248,23 +252,78 @@ export function StaffNotifications({
     };
   }, [open]);
 
-  const handleMarkRead = async (item: UnifiedStaffNotification) => {
+  const handleMarkRead = async (
+    item: UnifiedStaffNotification,
+    index: number,
+  ) => {
+    pendingFocusRef.current = { id: item.id, index };
     try {
       await markReadHandler(item.type, item.id);
+    } finally {
       await loadNotifications();
-    } catch {
-      await loadNotifications();
+      setFocusNonce((n) => n + 1);
     }
   };
 
-  const handleDismiss = async (item: UnifiedStaffNotification) => {
+  const handleDismiss = async (
+    item: UnifiedStaffNotification,
+    index: number,
+  ) => {
+    pendingFocusRef.current = { id: item.id, index };
     try {
       await dismissHandler(item.type, item.id);
+    } finally {
       await loadNotifications();
-    } catch {
-      await loadNotifications();
+      setFocusNonce((n) => n + 1);
     }
   };
+
+  // Move focus after mark-read / dismiss action completes (F-06)
+  useEffect(() => {
+    if (!pendingFocusRef.current) return;
+    const { index } = pendingFocusRef.current;
+    pendingFocusRef.current = null;
+
+    const listElement = listRef.current;
+    if (!listElement) {
+      headingRef.current?.focus();
+      return;
+    }
+
+    const items = Array.from(listElement.querySelectorAll<HTMLLIElement>('li'));
+    if (items.length === 0) {
+      headingRef.current?.focus();
+      return;
+    }
+
+    // 1. Next item's first action: start from `index` and scan forward
+    let targetButton: HTMLButtonElement | null = null;
+    for (let i = index; i < items.length; i++) {
+      const btn = items[i]?.querySelector<HTMLButtonElement>('button');
+      if (btn) {
+        targetButton = btn;
+        break;
+      }
+    }
+
+    // 2. Else previous item: scan backward from `index - 1`
+    if (!targetButton) {
+      for (let i = Math.min(index - 1, items.length - 1); i >= 0; i--) {
+        const btn = items[i]?.querySelector<HTMLButtonElement>('button');
+        if (btn) {
+          targetButton = btn;
+          break;
+        }
+      }
+    }
+
+    // 3. Else panel heading (tabIndex=-1); never to document.body
+    if (targetButton) {
+      targetButton.focus();
+    } else {
+      headingRef.current?.focus();
+    }
+  }, [notifications, focusNonce]);
 
   const unreadCount = notifications.filter((n) => n.readAt === null).length;
 
@@ -329,11 +388,12 @@ export function StaffNotifications({
 
     return (
       <ul
+        ref={listRef}
         className={styles.list}
         data-testid="staff-notifications-list"
         role="list"
       >
-        {visibleItems.map(({ item, text }) => {
+        {visibleItems.map(({ item, text }, index) => {
           const isUnread = item.readAt === null;
           return (
             <li
@@ -355,7 +415,7 @@ export function StaffNotifications({
                       type="button"
                       variant="secondary"
                       className={styles.markReadButton}
-                      onClick={() => handleMarkRead(item)}
+                      onClick={() => handleMarkRead(item, index)}
                       data-testid={`mark-read-${item.id}`}
                     >
                       {messages['staff.notifications.markRead']}
@@ -366,7 +426,7 @@ export function StaffNotifications({
                       type="button"
                       variant="secondary"
                       className={styles.dismissButton}
-                      onClick={() => handleDismiss(item)}
+                      onClick={() => handleDismiss(item, index)}
                       data-testid={`dismiss-${item.id}`}
                     >
                       {messages['toast.dismiss']}
@@ -426,9 +486,27 @@ export function StaffNotifications({
           aria-modal="false"
         >
           <header className={styles.panelHeader}>
-            <h2 id="staff-notifications-title" className={styles.panelTitle}>
+            <h2
+              id="staff-notifications-title"
+              ref={headingRef}
+              className={styles.panelTitle}
+              tabIndex={-1}
+            >
               {messages['staff.notifications.title']}
             </h2>
+            <Button
+              type="button"
+              variant="secondary"
+              className={styles.closeButton}
+              aria-label={messages['auth.close']}
+              onClick={() => {
+                setOpen(false);
+                triggerRef.current?.focus();
+              }}
+              data-testid="staff-notifications-close"
+            >
+              <Icon name="x" />
+            </Button>
           </header>
           <div className={styles.panelBody}>{renderContent()}</div>
         </div>

@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
   collections: vi.fn(),
   commissions: vi.fn(),
   installments: vi.fn(),
+  platformReport: vi.fn(),
+  drilldownRows: vi.fn(),
   push: vi.fn(),
   from: vi.fn(),
 }));
@@ -28,6 +30,8 @@ vi.mock('../../lib/packages/reporting', () => ({
   getPackageMonthlyCollections: mocks.collections,
   getPackageCommissionReport: mocks.commissions,
   getPackageInstallmentReport: mocks.installments,
+  getPlatformAggregateReport: mocks.platformReport,
+  getWorkspaceDrilldownRows: mocks.drilldownRows,
 }));
 vi.mock('next/headers', () => ({ cookies: mocks.cookies }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mocks.push }) }));
@@ -130,6 +134,29 @@ beforeEach(() => {
   });
   mocks.commissions.mockResolvedValue({ status: 'ok', commissions: [] });
   mocks.installments.mockResolvedValue({ status: 'ok', installments: [] });
+  mocks.platformReport.mockResolvedValue({
+    status: 'ok',
+    period: '2026-11',
+    breakdown: 'month',
+    totals: {
+      revenueConvertedEgpMinor: '0',
+      subscriptionCount: 0,
+      clientCount: 0,
+    },
+    workspaceAggregates: [],
+    breakdowns: [],
+  });
+  mocks.drilldownRows.mockResolvedValue({
+    status: 'ok',
+    workspaceId: own,
+    workspaceName: 'Own workspace',
+    rows: [],
+    totals: {
+      revenueConvertedEgpMinor: '0',
+      subscriptionCount: 0,
+      clientCount: 0,
+    },
+  });
 });
 
 describe('ReportsView', () => {

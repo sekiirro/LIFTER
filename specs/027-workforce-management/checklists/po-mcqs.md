@@ -65,12 +65,12 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s73-po/s73-po-6.verbatim.txt` ("all re
 - **PDN-04** (the -0.5 while/after dispute): RESOLVED by S73-PO-6 — original -0.5 stays posted and immutable; any financial change is a separate PO append-only correction.
 - **PDN-05** (resolution outcomes): RESOLVED by S73-PO-6 — PO chooses `valid`, `falseFollowUp` or `additionalPenalty`, each mapped to an explicit ledger action.
 - **PDN-06** (PO report dispute as separate case): RESOLVED by S73-PO-6 — no separate case; "dispute" uses the existing append-only correction/reattribution path.
-- **PDN-07** (reason/evidence): RESOLVED in principle by S73-PO-6 — required controlled reason code, no client PII in retained dispute data. **OPEN (PO-DECISION-NEEDED):** the code list and its EN/AR labels remain PENDING PO copy approval; no codes are invented.
+- **PDN-07** (reason/evidence): RESOLVED by S73-PO-8 — required controlled reason code, no client PII in retained dispute data. Code list and EN/AR labels approved; see `specs/027-workforce-management/copy-approved-cb02-cb04-cb05.md` section "S73-PO-8 — follow-up dispute reason codes".
 - **PDN-08** (cardinality/reopen/purge clock): RESOLVED by S73-PO-6 — one active dispute per follow-up; resolution is final; resolution restarts the 30-day clock.
 
 Applied to: FR-004, FR-006, FR-018, FR-020, FR-029; follow-up dispute record entity; T036-T038.
 
 ## Decision status (updated 2026-11-28)
 
-- Open product MCQs: 0 for actor/scope/transition/financial semantics. PDN-07 reason-code code list and EN/AR labels remain PENDING PO copy approval (PO-DECISION-NEEDED); no codes invented.
-- PENDING-PO requirements: PDN-07 reason-code code list + EN/AR labels.
+- Open product MCQs: 0.
+- PENDING-PO requirements: none. PDN-07 reason-code code list and EN/AR labels approved under S73-PO-8.

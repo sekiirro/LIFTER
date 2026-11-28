@@ -1,5 +1,9 @@
 # Analyze Checklist: PO aggregate reporting drill-down
 
+## S73 date-only status revalidation — 2026-11-28 UTC
+
+Revalidated after the slice-2 status-only task ticks evidenced by PR #366 MERGED `aec7ac6beebc8970626f9174bf01d0fc65bbda3f`: task ticks only; no requirement text changed (S54 R6). FR/SC requirement text, plan and approved copy are unchanged, so no full Analyze rerun is required for this status-only update. **0 open CRITICAL, 0 open HIGH.**
+
 **Created**: 2026-11-27 00:27 UTC
 **Analyze run**: 2026-11-27 09:37 UTC; in-session cross-artifact review using the repository's Analyze checklist structure.
 **Spec/plan/tasks last changed**: 2026-11-27 00:27 UTC

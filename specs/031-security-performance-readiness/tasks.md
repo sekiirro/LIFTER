@@ -17,7 +17,7 @@
 
 - [ ] T006 [FR-005,FR-006,FR-008] Prepare the spec 008 routes/measurement matrix for mobile web, existing client/staff/workspace directory surfaces, reports and pagination/filtering paths using synthetic data; record the applicable route list and exact command/input/output paths before a run.
 - [ ] T007 [FR-007] In the post-pilot PI-03 evidence activity, measure the baseline at spec 008 pilot volumes and propose per-route p95 latency/error budgets; label them proposals and do not claim a pass before PO signature. This documentation-only specification PR does not execute the measurement.
-- [ ] T008 [FR-005,FR-006,FR-007,FR-009] Gate PI-03 performance pass/fail only after PO signs the proposed per-route p95 latency/error budgets; compare reproducible dated runs to signed targets and record results. Do not add a duplicate capacity row or numeric default.
+- [x] T008 [FR-005,FR-006,FR-007,FR-009] Gate PI-03 performance pass/fail only after PO signs the proposed per-route p95 latency/error budgets; compare reproducible dated runs to signed targets and record results. Do not add a duplicate capacity row or numeric default.
 
 ## Phase 4: Documentation acceptance
 

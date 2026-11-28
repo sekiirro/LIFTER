@@ -77,7 +77,7 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - Success criteria: retained and mapped to FR acceptance tasks; no unassigned criterion.
 - Sol critique findings resolved in artifacts: 24/24.
 - Constitution CRITICAL records: 2 (C1/C2, resolved by pending amendment PR). Other open CRITICAL: 0. Open HIGH: 0.
-- PENDING-PO: PDN-07 reason-code code list + EN/AR labels (PO-DECISION-NEEDED). Other open MCQs: 0.
+- PENDING-PO: none. PDN-07 reason-code code list + EN/AR labels approved under S73-PO-8. Other open MCQs: 0.
 - Implementation tasks checked: 0; implementation tests executed in this docs lane: 0.
 
 ## Analyze result
@@ -114,22 +114,22 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 
 ### Scope checks
 
-- FR-004 now defines PO-only enter/resolve of follow-up `Disputed`, scope = follow-up accuracy and its -0.5 event only, transitions `Late`/`Followed Up` -> `Disputed` -> resolved with resolved display derived from immutable history, original -0.5 stays posted with any change a separate PO append-only correction, resolution outcomes `valid`/`falseFollowUp`/`additionalPenalty` mapped to explicit ledger actions, PO report "dispute" = existing correction path (no separate case), required controlled reason code (code list/labels PENDING PO copy approval, PO-DECISION-NEEDED, no invented codes), one active dispute per follow-up, final resolution, resolution restarts the 30-day purge clock.
+- FR-004 now defines PO-only enter/resolve of follow-up `Disputed`, scope = follow-up accuracy and its -0.5 event only, transitions `Late`/`Followed Up` -> `Disputed` -> resolved with resolved display derived from immutable history, original -0.5 stays posted with any change a separate PO append-only correction, resolution outcomes `valid`/`falseFollowUp`/`additionalPenalty` mapped to explicit ledger actions, PO report "dispute" = existing correction path (no separate case), required controlled reason code (code list/labels approved under S73-PO-8, no invented codes), one active dispute per follow-up, final resolution, resolution restarts the 30-day purge clock.
 - FR-006, FR-018, FR-020, FR-029 amended consistently; new follow-up dispute record entity added; T036 (model/RPCs RED/GREEN/mutation), T037 (CB-05 dispute UI), T038 (reason-code copy batch, blocked on PO) added and tagged with FRs.
 - traceability.md updated for T036-T038 as Planned; no test evidence claimed.
-- No new CRITICAL findings. C1/C2 remain external Constitution-governance dependencies. PDN-07 reason-code code list/labels remain a PO decision (PO-DECISION-NEEDED), not a CRITICAL/HIGH finding.
+- No new CRITICAL findings. C1/C2 remain external Constitution-governance dependencies. PDN-07 reason-code code list/labels approved under S73-PO-8 (no longer a PO decision).
 
 ### PO decision register (updated)
 
 - P7-MCQ-01..05, SOL-08/09/20, P7-MCQ-03/04/05 remain ANSWERED/RESOLVED.
 - PDN-01..PDN-06 and PDN-08 RESOLVED by S73-PO-6.
-- PDN-07 RESOLVED in principle by S73-PO-6; reason-code code list and EN/AR labels PENDING PO copy approval (PO-DECISION-NEEDED).
+- PDN-07 RESOLVED by S73-PO-8; reason-code code list and EN/AR labels approved (see copy-approved-cb02-cb04-cb05.md section "S73-PO-8 — follow-up dispute reason codes").
 
 ### Metrics (updated)
 
 - Functional requirements: 29 (unchanged; FR-004/006/018/020/029 amended, no new FR).
 - Task/acceptance mapping: 29/29 FRs; T036-T038 added for dispute follow-up.
 - Open CRITICAL: 0. Open HIGH: 0.
-- PENDING-PO: PDN-07 reason-code code list + EN/AR labels.
+- PENDING-PO: none.
 
 **Analyze result**: PASS. 0 open CRITICAL/HIGH findings. Requirement text change re-analyzed per S54 R6.
