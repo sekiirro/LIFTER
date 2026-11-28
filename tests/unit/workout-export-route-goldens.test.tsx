@@ -193,6 +193,12 @@ async function printBody(locale: 'en' | 'ar') {
   return response.json();
 }
 
+async function printBodyFor(revision: string, locale: 'en' | 'ar') {
+  const response = await printRoute(routeRequest(revision, locale));
+  expect(response.status).toBe(200);
+  return response.json();
+}
+
 async function promptBody(locale: 'en' | 'ar') {
   const response = await copyPromptRoute(routeRequest(REVISION_N_ID, locale));
   expect(response.status).toBe(200);
@@ -331,6 +337,27 @@ describe('F17 route export goldens (T041 remaining)', () => {
         expect(text).not.toContain('Day 1 - Push Hypertrophy');
       }
     }
+  });
+
+  it('each query chain resolves its own revision id, not the first call’s (S63-R9)', async () => {
+    const first = await printBodyFor(REVISION_N_ID, 'en');
+    expect(first.payload.planIdentity).toBe('1');
+    expect(first.payload.documentNotes).toBe(REVISION_N_DOCUMENT.notes);
+
+    const second = await printBodyFor(REVISION_N_PLUS_1_ID, 'en');
+    expect(second.payload.planIdentity).toBe('2');
+    expect(second.payload.documentNotes).toBe(REVISION_N_PLUS_1_DOCUMENT.notes);
+    const secondText = JSON.stringify(second);
+    expect(secondText).toContain('Day 1 - Push Hypertrophy');
+    expect(secondText).not.toContain('Bench Press');
+    expect(secondText).not.toContain('Day 1 - Upper Power');
+
+    // Per-call filters: the second chain recorded only its own filters —
+    // a stale first-call id must not leak into the second lookup.
+    expect(m.filters).toEqual([
+      ['id', REVISION_N_PLUS_1_ID],
+      ['plan_kind', 'workout'],
+    ]);
   });
 
   it('copy-prompt route returns the exact English prompt golden after one {{PLAN_CONTENT}} substitution', async () => {
