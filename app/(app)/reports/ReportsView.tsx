@@ -89,6 +89,7 @@ export type PlatformData = {
     revenueConvertedEgpMinor: string;
     subscriptionCount: number;
     clientCount: number;
+    pendingFxCount?: number;
   };
   workspaceAggregates: {
     workspaceId: string;
@@ -96,6 +97,7 @@ export type PlatformData = {
     revenueConvertedEgpMinor: string;
     subscriptionCount: number;
     clientCount: number;
+    pendingFxCount?: number;
   }[];
   breakdowns: {
     key: string;
@@ -104,6 +106,7 @@ export type PlatformData = {
     revenueConvertedEgpMinor: string;
     subscriptionCount: number;
     clientCount: number;
+    pendingFxCount?: number;
   }[];
 };
 
@@ -116,6 +119,7 @@ export type DrilldownData = {
     revenueConvertedEgpMinor: string;
     subscriptionCount: number;
     clientCount: number;
+    pendingFxCount?: number;
   };
 };
 
@@ -223,6 +227,29 @@ function exactConvertedAmount(value: string, locale: 'ar' | 'en') {
       .formatToParts(1.1)
       .find((part) => part.type === 'decimal')?.value ?? '.';
   return `${negative ? '−' : ''}${integer}${decimal}${digits(majorFraction)} EGP`;
+}
+
+function AmountOrPending({
+  amountMinor,
+  pendingFxCount,
+  locale,
+  pendingLabel,
+}: {
+  amountMinor: string | null | undefined;
+  pendingFxCount?: number;
+  locale: 'ar' | 'en';
+  pendingLabel: string;
+}) {
+  const pending = pendingFxCount ?? 0;
+  if (pending > 0 && (amountMinor === '0' || amountMinor == null)) {
+    return <span className={styles.pending}>{pendingLabel}</span>;
+  }
+  return (
+    <>
+      {exactConvertedAmount(amountMinor ?? '0', locale)}
+      {pending > 0 && <span className={styles.pending}> {pendingLabel}</span>}
+    </>
+  );
 }
 
 function nextMonth(month: string, offset: number) {
@@ -499,10 +526,12 @@ export function ReportsView({
               <footer className={styles.total}>
                 <strong>{m['reports.totalConvertedEgp']}</strong>
                 <span>
-                  {exactConvertedAmount(
-                    drilldownData.totals.revenueConvertedEgpMinor,
-                    locale,
-                  )}
+                  <AmountOrPending
+                    amountMinor={drilldownData.totals.revenueConvertedEgpMinor}
+                    pendingFxCount={drilldownData.totals.pendingFxCount}
+                    locale={locale}
+                    pendingLabel={m['reports.statusPendingRate']}
+                  />
                 </span>
               </footer>
             </>
@@ -540,10 +569,12 @@ export function ReportsView({
                     {m['reports.metric.revenue']}
                   </span>
                   <span className={styles.metricValue}>
-                    {exactConvertedAmount(
-                      platformData.totals.revenueConvertedEgpMinor,
-                      locale,
-                    )}
+                    <AmountOrPending
+                      amountMinor={platformData.totals.revenueConvertedEgpMinor}
+                      pendingFxCount={platformData.totals.pendingFxCount}
+                      locale={locale}
+                      pendingLabel={m['reports.statusPendingRate']}
+                    />
                   </span>
                   <span className={styles.metricSub}>
                     {m['reports.totalConvertedEgp']}
@@ -594,10 +625,12 @@ export function ReportsView({
                         <dd>{item.label}</dd>
                         <dt>{m['reports.metric.revenue']}</dt>
                         <dd>
-                          {exactConvertedAmount(
-                            item.revenueConvertedEgpMinor,
-                            locale,
-                          )}
+                          <AmountOrPending
+                            amountMinor={item.revenueConvertedEgpMinor}
+                            pendingFxCount={item.pendingFxCount}
+                            locale={locale}
+                            pendingLabel={m['reports.statusPendingRate']}
+                          />
                         </dd>
                         <dt>{m['reports.metric.subscriptions']}</dt>
                         <dd>
@@ -630,10 +663,12 @@ export function ReportsView({
                         </dd>
                         <dt>{m['reports.metric.revenue']}</dt>
                         <dd>
-                          {exactConvertedAmount(
-                            ws.revenueConvertedEgpMinor,
-                            locale,
-                          )}
+                          <AmountOrPending
+                            amountMinor={ws.revenueConvertedEgpMinor}
+                            pendingFxCount={ws.pendingFxCount}
+                            locale={locale}
+                            pendingLabel={m['reports.statusPendingRate']}
+                          />
                         </dd>
                         <dt>{m['reports.metric.subscriptions']}</dt>
                         <dd>

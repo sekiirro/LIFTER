@@ -11,6 +11,7 @@ import {
   ReportsView,
   kindLabel,
   type DrilldownData,
+  type PlatformData,
   type ReportsData,
 } from '../../app/(app)/reports/ReportsView';
 import { getMessages } from '../../lib/i18n';
@@ -37,6 +38,17 @@ const pkgId = '00000000-0000-0000-0000-000000000002';
 
 const workspacesData = [{ id: wsId, name: 'Alpha Fitness' }];
 const packagesData = [{ id: pkgId, market: 'Egypt', type: 'Promotional' }];
+
+const emptyReportsData: ReportsData = {
+  collections: {
+    status: 'ok',
+    rows: [],
+    totalConvertedEgpMinor: '0',
+    pendingEventIds: [],
+  },
+  commissions: { status: 'ok', rows: [] },
+  installments: { status: 'ok', rows: [] },
+};
 
 function queryBuilder(table: string) {
   const q: Record<string, unknown> = {};
@@ -286,6 +298,7 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
           revenueConvertedEgpMinor: '2000000',
           subscriptionCount: 50,
           clientCount: 45,
+          pendingFxCount: 0,
         });
         expect(res.breakdowns).toHaveLength(1);
         expect(res.breakdowns[0]).toEqual({
@@ -294,6 +307,7 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
           revenueConvertedEgpMinor: '2000000',
           subscriptionCount: 50,
           clientCount: 45,
+          pendingFxCount: 0,
         });
       }
     });
@@ -326,6 +340,7 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
           revenueConvertedEgpMinor: '2000000',
           subscriptionCount: 50,
           clientCount: 45,
+          pendingFxCount: 0,
         });
       }
     });
@@ -622,17 +637,6 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
       ],
     };
 
-    const emptyReportsData: ReportsData = {
-      collections: {
-        status: 'ok',
-        rows: [],
-        totalConvertedEgpMinor: '0',
-        pendingEventIds: [],
-      },
-      commissions: { status: 'ok', rows: [] },
-      installments: { status: 'ok', rows: [] },
-    };
-
     it('renders each row kind with its approved label in English (no raw tokens)', () => {
       const messages = getMessages('en');
       const html = renderToStaticMarkup(
@@ -723,6 +727,626 @@ describe('B1 & B2 RPC fixes: po_reporting_aggregate & po_reporting_source_rows',
       expect(kindLabel('client_count', ar)).toBe('العملاء');
       expect(kindLabel('subscription_count', ar)).toBe('الاشتراكات');
       expect(kindLabel('unknown', ar)).toBe('—');
+    });
+  });
+
+  describe('CR-029-06: No silent totals fallback on aggregate error or not_permitted', () => {
+    it('returns unavailable when po_reporting_aggregate raises an error, even if source rows succeed (no recomputed total)', async () => {
+      mocks.rpc
+        .mockResolvedValueOnce({
+          data: sampleBackendSourceRows,
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: null,
+          error: { code: '42883', message: 'aggregate error' },
+        });
+
+      const res = await getWorkspaceDrilldownRows({
+        workspaceId: wsId,
+        monthStart: '2026-11-01',
+      });
+
+      expect(res).toEqual({ status: 'unavailable' });
+      // Crucial: no legacy collections/commissions queries called and no recomputed totals returned
+      expect(mocks.from).not.toHaveBeenCalledWith('collections');
+      expect(mocks.from).not.toHaveBeenCalledWith('commissions');
+    });
+
+    it('returns unavailable when po_reporting_aggregate returns non-ok status for drilldown rows', async () => {
+      mocks.rpc
+        .mockResolvedValueOnce({
+          data: sampleBackendSourceRows,
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: { status: 'error' },
+          error: null,
+        });
+
+      const res = await getWorkspaceDrilldownRows({
+        workspaceId: wsId,
+        monthStart: '2026-11-01',
+      });
+
+      expect(res).toEqual({ status: 'unavailable' });
+      expect(mocks.from).not.toHaveBeenCalledWith('collections');
+      expect(mocks.from).not.toHaveBeenCalledWith('commissions');
+    });
+
+    it('returns not_permitted when po_reporting_aggregate raises 42501 for drilldown rows', async () => {
+      mocks.rpc
+        .mockResolvedValueOnce({
+          data: sampleBackendSourceRows,
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: null,
+          error: { code: '42501', message: 'not_permitted' },
+        });
+
+      const res = await getWorkspaceDrilldownRows({
+        workspaceId: wsId,
+        monthStart: '2026-11-01',
+      });
+
+      expect(res).toEqual({ status: 'not_permitted' });
+    });
+
+    it('returns not_permitted when po_reporting_aggregate returns status not_permitted for drilldown rows', async () => {
+      mocks.rpc
+        .mockResolvedValueOnce({
+          data: sampleBackendSourceRows,
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: { status: 'not_permitted' },
+          error: null,
+        });
+
+      const res = await getWorkspaceDrilldownRows({
+        workspaceId: wsId,
+        monthStart: '2026-11-01',
+      });
+
+      expect(res).toEqual({ status: 'not_permitted' });
+    });
+
+    it('returns not_permitted when backend aggregate returns status not_permitted for platform read', async () => {
+      mocks.rpc.mockResolvedValueOnce({
+        data: { status: 'not_permitted' },
+        error: null,
+      });
+
+      const res = await getPlatformAggregateReport({
+        monthStart: '2026-11-01',
+        breakdown: 'month',
+      });
+
+      expect(res).toEqual({ status: 'not_permitted' });
+    });
+
+    it('returns unavailable when backend aggregate returns non-ok status for platform read', async () => {
+      mocks.rpc.mockResolvedValueOnce({
+        data: { status: 'internal_error' },
+        error: null,
+      });
+
+      const res = await getPlatformAggregateReport({
+        monthStart: '2026-11-01',
+        breakdown: 'month',
+      });
+
+      expect(res).toEqual({ status: 'unavailable' });
+      expect(mocks.from).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('CR-029-07: Pending exchange rate indicators in UI across totals and breakdowns', () => {
+    it('platform totals: USD-only with converted_egp_minor null/0 and pendingFxCount>0 shows pending indicator and NOT 0.00 EGP', () => {
+      const messages = getMessages('en');
+      const platformData: PlatformData = {
+        status: 'ok',
+        period: '2026-11',
+        breakdown: 'month',
+        totals: {
+          revenueConvertedEgpMinor: '0',
+          subscriptionCount: 10,
+          clientCount: 8,
+          pendingFxCount: 3,
+        },
+        workspaceAggregates: [
+          {
+            workspaceId: wsId,
+            workspaceName: 'Alpha Fitness',
+            revenueConvertedEgpMinor: '1000000',
+            subscriptionCount: 10,
+            clientCount: 8,
+            pendingFxCount: 0,
+          },
+        ],
+        breakdowns: [
+          {
+            key: '2026-11',
+            label: '2026-11',
+            revenueConvertedEgpMinor: '1000000',
+            subscriptionCount: 10,
+            clientCount: 8,
+            pendingFxCount: 0,
+          },
+        ],
+      };
+
+      const html = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'en',
+          month: '2026-11',
+          workspaceId: 'all',
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          platformData,
+        }),
+      );
+
+      const section = html.slice(
+        html.indexOf('id="platform-title"'),
+        html.indexOf('id="collections-title"'),
+      );
+      expect(section).toContain(messages['reports.statusPendingRate']);
+      expect(section).not.toMatch(/(^|[^\d])0\.00 EGP/);
+    });
+
+    it('platform totals: mixed EGP + pending USD shows EGP amount plus the pending indicator', () => {
+      const messages = getMessages('en');
+      const platformData: PlatformData = {
+        status: 'ok',
+        period: '2026-11',
+        breakdown: 'month',
+        totals: {
+          revenueConvertedEgpMinor: '5000000', // 50,000.00 EGP
+          subscriptionCount: 20,
+          clientCount: 18,
+          pendingFxCount: 2,
+        },
+        workspaceAggregates: [
+          {
+            workspaceId: wsId,
+            workspaceName: 'Alpha Fitness',
+            revenueConvertedEgpMinor: '5000000',
+            subscriptionCount: 20,
+            clientCount: 18,
+            pendingFxCount: 0,
+          },
+        ],
+        breakdowns: [
+          {
+            key: '2026-11',
+            label: '2026-11',
+            revenueConvertedEgpMinor: '5000000',
+            subscriptionCount: 20,
+            clientCount: 18,
+            pendingFxCount: 0,
+          },
+        ],
+      };
+
+      const html = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'en',
+          month: '2026-11',
+          workspaceId: 'all',
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          platformData,
+        }),
+      );
+
+      const section = html.slice(
+        html.indexOf('id="platform-title"'),
+        html.indexOf('id="collections-title"'),
+      );
+      expect(section).toContain('50,000.00 EGP');
+      expect(section).toContain(messages['reports.statusPendingRate']);
+    });
+
+    it('workspace aggregates: USD-only with pendingFxCount>0 shows pending indicator and NOT 0.00 EGP', () => {
+      const messages = getMessages('en');
+      const platformData: PlatformData = {
+        status: 'ok',
+        period: '2026-11',
+        breakdown: 'month',
+        totals: {
+          revenueConvertedEgpMinor: '1000000',
+          subscriptionCount: 10,
+          clientCount: 8,
+          pendingFxCount: 0,
+        },
+        workspaceAggregates: [
+          {
+            workspaceId: wsId,
+            workspaceName: 'Alpha Fitness',
+            revenueConvertedEgpMinor: '0',
+            subscriptionCount: 10,
+            clientCount: 8,
+            pendingFxCount: 2,
+          },
+        ],
+        breakdowns: [
+          {
+            key: '2026-11',
+            label: '2026-11',
+            revenueConvertedEgpMinor: '1000000',
+            subscriptionCount: 10,
+            clientCount: 8,
+            pendingFxCount: 0,
+          },
+        ],
+      };
+
+      const html = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'en',
+          month: '2026-11',
+          workspaceId: 'all',
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          platformData,
+        }),
+      );
+
+      const section = html.slice(
+        html.indexOf('id="platform-title"'),
+        html.indexOf('id="collections-title"'),
+      );
+      expect(section).toContain(messages['reports.statusPendingRate']);
+      expect(section).not.toMatch(/(^|[^\d])0\.00 EGP/);
+    });
+
+    it('workspace aggregates: mixed EGP + pending USD shows EGP amount plus the pending indicator', () => {
+      const messages = getMessages('en');
+      const platformData: PlatformData = {
+        status: 'ok',
+        period: '2026-11',
+        breakdown: 'month',
+        totals: {
+          revenueConvertedEgpMinor: '1200000',
+          subscriptionCount: 10,
+          clientCount: 8,
+          pendingFxCount: 0,
+        },
+        workspaceAggregates: [
+          {
+            workspaceId: wsId,
+            workspaceName: 'Alpha Fitness',
+            revenueConvertedEgpMinor: '1200000', // 12,000.00 EGP
+            subscriptionCount: 10,
+            clientCount: 8,
+            pendingFxCount: 1,
+          },
+        ],
+        breakdowns: [
+          {
+            key: '2026-11',
+            label: '2026-11',
+            revenueConvertedEgpMinor: '1200000',
+            subscriptionCount: 10,
+            clientCount: 8,
+            pendingFxCount: 0,
+          },
+        ],
+      };
+
+      const html = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'en',
+          month: '2026-11',
+          workspaceId: 'all',
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          platformData,
+        }),
+      );
+
+      const section = html.slice(
+        html.indexOf('id="platform-title"'),
+        html.indexOf('id="collections-title"'),
+      );
+      expect(section).toContain('12,000.00 EGP');
+      expect(section).toContain(messages['reports.statusPendingRate']);
+    });
+
+    it('month breakdown: covers USD-only (pending indicator, not 0.00 EGP) and mixed EGP + pending USD', () => {
+      const messages = getMessages('en');
+      const platformData: PlatformData = {
+        status: 'ok',
+        period: '2026-11',
+        breakdown: 'month',
+        totals: {
+          revenueConvertedEgpMinor: '2500000',
+          subscriptionCount: 15,
+          clientCount: 12,
+          pendingFxCount: 0,
+        },
+        workspaceAggregates: [
+          {
+            workspaceId: wsId,
+            workspaceName: 'Alpha Fitness',
+            revenueConvertedEgpMinor: '2500000',
+            subscriptionCount: 15,
+            clientCount: 12,
+            pendingFxCount: 0,
+          },
+        ],
+        breakdowns: [
+          {
+            key: '2026-10',
+            label: '2026-10',
+            revenueConvertedEgpMinor: '0',
+            subscriptionCount: 5,
+            clientCount: 4,
+            pendingFxCount: 1, // USD-only month
+          },
+          {
+            key: '2026-11',
+            label: '2026-11',
+            revenueConvertedEgpMinor: '2500000', // 25,000.00 EGP
+            subscriptionCount: 10,
+            clientCount: 8,
+            pendingFxCount: 1, // mixed
+          },
+        ],
+      };
+
+      const html = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'en',
+          month: '2026-11',
+          workspaceId: 'all',
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          platformData,
+          breakdown: 'month',
+        }),
+      );
+
+      const section = html.slice(
+        html.indexOf('id="platform-title"'),
+        html.indexOf('id="collections-title"'),
+      );
+      // Verify mixed month has both amount and pending
+      expect(section).toContain('25,000.00 EGP');
+      expect(section).toContain(messages['reports.statusPendingRate']);
+      // Verify USD-only month does NOT show "0.00 EGP"
+      expect(section).not.toMatch(/(^|[^\d])0\.00 EGP/);
+    });
+
+    it('package breakdown: covers USD-only (pending indicator, not 0.00 EGP) and mixed EGP + pending USD', () => {
+      const messages = getMessages('en');
+      const pkgId2 = '00000000-0000-0000-0000-000000000003';
+      const platformData: PlatformData = {
+        status: 'ok',
+        period: '2026-11',
+        breakdown: 'package',
+        totals: {
+          revenueConvertedEgpMinor: '3500000',
+          subscriptionCount: 20,
+          clientCount: 15,
+          pendingFxCount: 0,
+        },
+        workspaceAggregates: [
+          {
+            workspaceId: wsId,
+            workspaceName: 'Alpha Fitness',
+            revenueConvertedEgpMinor: '3500000',
+            subscriptionCount: 20,
+            clientCount: 15,
+            pendingFxCount: 0,
+          },
+        ],
+        breakdowns: [
+          {
+            key: pkgId,
+            label: 'Egypt · Promotional',
+            package: packagesData[0],
+            revenueConvertedEgpMinor: '0',
+            subscriptionCount: 8,
+            clientCount: 6,
+            pendingFxCount: 2, // USD-only package
+          },
+          {
+            key: pkgId2,
+            label: 'International · Standard',
+            package: { id: pkgId2, market: 'International', type: 'Standard' },
+            revenueConvertedEgpMinor: '3500000', // 35,000.00 EGP
+            subscriptionCount: 12,
+            clientCount: 9,
+            pendingFxCount: 1, // mixed
+          },
+        ],
+      };
+
+      const html = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'en',
+          month: '2026-11',
+          workspaceId: 'all',
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          platformData,
+          breakdown: 'package',
+        }),
+      );
+
+      const section = html.slice(
+        html.indexOf('id="platform-title"'),
+        html.indexOf('id="collections-title"'),
+      );
+
+      // Verify mixed package has both amount and pending
+      expect(section).toContain('35,000.00 EGP');
+      expect(section).toContain(messages['reports.statusPendingRate']);
+      // Verify USD-only package does NOT show "0.00 EGP"
+      expect(section).not.toMatch(/(^|[^\d])0\.00 EGP/);
+    });
+
+    it('workspace drilldown totals: covers USD-only and mixed EGP + pending USD', () => {
+      const messages = getMessages('en');
+      const sampleRow = {
+        id: 'row-1',
+        recordedAt: '2026-11-10T12:00:00Z',
+        package: packagesData[0]!,
+        clientName: 'Ahmed Mostafa',
+        kind: 'collection' as const,
+        status: 'completed',
+        amountMinor: '1000',
+        currency: 'USD',
+        convertedEgpExact: null,
+      };
+
+      // 1) USD-only drilldown total
+      const usdOnlyDrilldown: DrilldownData = {
+        status: 'ok',
+        workspaceId: wsId,
+        workspaceName: 'Alpha Fitness',
+        totals: {
+          revenueConvertedEgpMinor: '0',
+          subscriptionCount: 5,
+          clientCount: 4,
+          pendingFxCount: 2,
+        },
+        rows: [sampleRow],
+      };
+
+      const htmlUsdOnly = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'en',
+          month: '2026-11',
+          workspaceId: wsId,
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          drilldownData: usdOnlyDrilldown,
+        }),
+      );
+
+      const sectionUsdOnly = htmlUsdOnly.slice(
+        0,
+        htmlUsdOnly.indexOf('id="collections-title"'),
+      );
+      expect(sectionUsdOnly).toContain(messages['reports.statusPendingRate']);
+      expect(sectionUsdOnly).not.toMatch(/(^|[^\d])0\.00 EGP/);
+
+      // 2) Mixed drilldown total
+      const mixedDrilldown: DrilldownData = {
+        status: 'ok',
+        workspaceId: wsId,
+        workspaceName: 'Alpha Fitness',
+        totals: {
+          revenueConvertedEgpMinor: '10000000', // 100,000.00 EGP
+          subscriptionCount: 10,
+          clientCount: 8,
+          pendingFxCount: 1,
+        },
+        rows: [sampleRow],
+      };
+
+      const htmlMixed = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'en',
+          month: '2026-11',
+          workspaceId: wsId,
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          drilldownData: mixedDrilldown,
+        }),
+      );
+
+      const sectionMixed = htmlMixed.slice(
+        0,
+        htmlMixed.indexOf('id="collections-title"'),
+      );
+      expect(sectionMixed).toContain('100,000.00 EGP');
+      expect(sectionMixed).toContain(messages['reports.statusPendingRate']);
+    });
+
+    it('Egyptian Arabic (ar): renders Arabic pending message and Arabic numerals without ٠٫٠٠ EGP on USD-only', () => {
+      const messages = getMessages('ar');
+      const platformData: PlatformData = {
+        status: 'ok',
+        period: '2026-11',
+        breakdown: 'month',
+        totals: {
+          revenueConvertedEgpMinor: '0',
+          subscriptionCount: 5,
+          clientCount: 4,
+          pendingFxCount: 1,
+        },
+        workspaceAggregates: [
+          {
+            workspaceId: wsId,
+            workspaceName: 'Alpha Fitness',
+            revenueConvertedEgpMinor: '1500000', // 15,000.00 EGP
+            subscriptionCount: 5,
+            clientCount: 4,
+            pendingFxCount: 1,
+          },
+        ],
+        breakdowns: [
+          {
+            key: '2026-11',
+            label: '2026-11',
+            revenueConvertedEgpMinor: '1500000',
+            subscriptionCount: 5,
+            clientCount: 4,
+            pendingFxCount: 1,
+          },
+        ],
+      };
+
+      const html = renderToStaticMarkup(
+        createElement(ReportsView, {
+          locale: 'ar',
+          month: '2026-11',
+          workspaceId: 'all',
+          workspaces: workspacesData,
+          data: emptyReportsData,
+          totalConvertedEgp: null,
+          messages,
+          role: 'platform_owner',
+          platformData,
+        }),
+      );
+
+      const section = html.slice(
+        html.indexOf('id="platform-title"'),
+        html.indexOf('id="collections-title"'),
+      );
+      expect(section).toContain(messages['reports.statusPendingRate']);
+      expect(section).not.toMatch(/(^|[^\u0660-\u0669])٠٫٠٠ EGP/);
+      expect(section).toContain('١٥٬٠٠٠٫٠٠ EGP');
     });
   });
 });
