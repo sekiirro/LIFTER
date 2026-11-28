@@ -124,4 +124,4 @@ CRITICAL 0; HIGH 0. Merge of main, no PR content change.
 
 **2026-11-17 date update:** T032 task status and traceability evidence were synchronized after the cross-domain consumer integration test. No requirement, acceptance, contract or plan design text changed; CRITICAL/HIGH findings remain 0.
 
-**2026-11-28 re-check:** Duplicate FR-024 row removed — re-check confirms the duplicate was already merged (f6397191) and a single FR-024 row remains with the full evidence text; PR #427 changed nothing for FR-024. No requirement change; 0 CRITICAL/HIGH.
+**2026-11-28 re-check:** Duplicate bilingual/accessible-UI requirement row removed — re-check confirms the duplicate was already merged (f6397191, spec 017 traceability) and a single row remains with the full evidence text; PR #427 changed nothing for it. No requirement change; 0 CRITICAL/HIGH.
