@@ -197,6 +197,56 @@ describe('P7 T013 PO workforce report RPC (p7_workforce_report)', () => {
     expect(trainerAdj?.reason_code).toBe('p7-test-adjustment');
   });
 
+  it('returns written PO reason, actor, operation, and immutable lineage in the PO ledger projection', async () => {
+    const context = await clientContext();
+    const [period] = await db`
+      select date_trunc('month', statement_timestamp() at time zone 'Africa/Cairo')::date::text as month`;
+    const month = period!.month as string;
+    const awardKey = randomUUID();
+    const correctionKey = randomUUID();
+    const [award] = await db`
+      insert into public.p7_earned_points(workspace_id, staff_user_id, points,
+        effective_month, trigger_at, rule_version, source_key, source_hash)
+      values (${context.wsA.id}, ${context.trainerA.userId}, 1.00,
+        ${month}, statement_timestamp(), 'p7-projection-test', ${awardKey}, 'projection-award')
+      returning id`;
+    const originalEntryId = award!.id as string;
+    await db`
+      insert into public.p7_adjustment_entries(workspace_id, staff_user_id, points,
+        effective_month, source_key, source_hash, reason, actor_user_id,
+        operation, original_entry_id, original_entry_kind)
+      values (${context.wsA.id}, ${context.trainerA.userId}, 0.25,
+        ${month}, ${correctionKey}, 'projection-correction', 'Reviewed and corrected',
+        ${context.po.userId}, 'correct', ${originalEntryId}, 'earned')`;
+    const [actorProfile] = await db`
+      select display_name from public.staff_profiles where user_id = ${context.po.userId}`;
+
+    const res = await context.po.client.rpc('p7_workforce_report', {
+      p_workspace_id: context.wsA.id,
+      p_month: month,
+    });
+    expect(res.error).toBeNull();
+    const correction = (res.data.ledger as Array<Record<string, unknown>>).find(
+      (entry) => entry.reason === 'Reviewed and corrected',
+    );
+    expect(correction).toMatchObject({
+      actor: actorProfile?.display_name ?? null,
+      actor_user_id: context.po.userId,
+      operation: 'correct',
+      original_entry_id: originalEntryId,
+      original_entry_kind: 'earned',
+    });
+    expect(correction?.reason_code).toBeNull();
+
+    const auditRows = await db`
+      select details from public.audit_events
+      where workspace_id = ${context.wsA.id}
+        and target_table = 'p7_adjustment_entries'
+        and target_id in (
+          select id from public.p7_adjustment_entries where source_key = ${correctionKey}
+        )`;
+    expect(auditRows).toEqual([]);
+  });
   it('reflects frozen snapshot totals and closed month state after finalization', async () => {
     const context = await clientContext();
     const [period] = await db`
