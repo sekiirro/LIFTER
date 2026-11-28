@@ -750,3 +750,48 @@ it('T008 reports partial and full upgrade-backed refunds once with source curren
     });
   }
 });
+
+it('T007 rounds a negative half-minor converted total away from zero', async () => {
+  const tieEventId = randomUUID();
+  const reversalId = randomUUID();
+  const tieInstallmentId = randomUUID();
+  await db.begin(async (tx) => {
+    await tx`set local session_replication_role = replica`;
+    await tx`
+      insert into public.subscription_installments(id,workspace_id,subscription_id,seq,amount_minor,currency,issued_day_offset,source_kind)
+      values(${tieInstallmentId},${f.wsA.id},${subscriptionId},4,1,'USD',90,'issued_schedule')`;
+    await tx`
+      insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,kind,
+        amount_minor,currency,commission_minor,collected_on,effective_on,recorded_at,recorded_by,operation_id)
+      values(${tieEventId},${f.wsA.id},${subscriptionId},${tieInstallmentId},4,1,'collection',1,'USD',1,
+        '2027-01-31','2027-01-31','2027-01-31T12:00:00Z',
+        ${f.po.userId},${randomUUID()})`;
+    await tx`
+      insert into public.payment_events(id,workspace_id,subscription_id,obligation_id,installment_seq,revision,
+        previous_event_id,kind,reverses_event_id,amount_minor,currency,commission_minor,collected_on,effective_on,recorded_at,recorded_by,operation_id)
+      values(${reversalId},${f.wsA.id},${subscriptionId},${tieInstallmentId},4,2,${tieEventId},'correction_reversal',
+        ${tieEventId},-1,'USD',-1,null,'2027-02-01','2027-02-01T12:00:00Z',${f.po.userId},${randomUUID()})`;
+  });
+  const fx = await admin().rpc('save_package_reporting_fx_snapshot', {
+    p_workspace_id: f.wsA.id,
+    p_payment_event_id: reversalId,
+    p_status: 'ready',
+    p_provider_key: 'CBE',
+    p_rate: '30.5',
+    p_publication_date: '2027-01-28',
+  });
+  expect(fx.error).toBeNull();
+  expect(fx.data?.status).toBe('ready');
+
+  const result = await f.po.client.rpc('po_reporting_aggregate', {
+    p_workspace_id: f.wsA.id,
+    p_month_start: '2027-02-01',
+    p_package_id: f.p.offer.package_id,
+  });
+  expect(result.error).toBeNull();
+  const usd = result.data.currency_totals.find(
+    (row: { currency: string }) => row.currency === 'USD',
+  );
+  expect(usd.converted_egp_exact).toBe('-30.5');
+  expect(usd.converted_egp_minor).toBe('-31');
+});
