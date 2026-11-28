@@ -127,3 +127,10 @@ export function createHandlers(
     },
   };
 }
+
+/** The existing every-minute Worker schedule invokes this bounded DB evaluator. */
+export function createSubscriptionExpiryHandler(rpc: Rpc): () => Promise<void> {
+  return async () => {
+    await rpc('run_subscription_expiry_notices', {});
+  };
+}

@@ -66,8 +66,51 @@ async function underGuardMutant<T>(probe: (tx: TransactionSql) => Promise<T>) {
   return observed;
 }
 
-describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
-  'F26 dry-run and apply evidence (Stack E only)',
+async function assertNoticeGuardMutationIsKilled(
+  tx: TransactionSql,
+  kind: 'client' | 'staff',
+  noticeId: string,
+) {
+  const identity =
+    kind === 'client'
+      ? 'app_private.f22_guard_client_notice()'
+      : 'app_private.f23_guard_staff_notice()';
+  const [original] = await tx`
+    select pg_catalog.pg_get_functiondef(${identity}::regprocedure) as definition`;
+  const definition = original!.definition as string;
+  const control =
+    "app_private.retention_purge_context_allows(tg_relid, 'DELETE')";
+  const mutant = definition.replace(control, 'false');
+  expect(mutant).not.toBe(definition);
+  await tx.unsafe(mutant);
+
+  const runId = randomUUID();
+  const error = await tx
+    .savepoint(async (sp) => {
+      await sp`
+        insert into app_private.retention_purge_runs(run_id,request_fingerprint,status)
+        values (${runId}::uuid,${'a'.repeat(64)},'running')`;
+      await sp`select set_config('app_private.retention_purge_run_id',${runId},true)`;
+      if (kind === 'client')
+        await sp`delete from app_private.client_inbox_notices where id=${noticeId}::uuid`;
+      else
+        await sp`delete from app_private.staff_inbox_notices where id=${noticeId}::uuid`;
+      return null;
+    })
+    .then(
+      () => null,
+      (caught) => caught,
+    );
+  expect(error).toMatchObject({
+    code: '23514',
+    message:
+      kind === 'client' ? 'client_notice_immutable' : 'staff_notice_immutable',
+  });
+  await tx.unsafe(definition);
+}
+
+describe.runIf(['b', 'e'].includes(process.env.LIFTER_SUPABASE_STACK ?? ''))(
+  'F26 dry-run and apply evidence',
   () => {
     it('denies a non-run ledger delete and kills removal of the allowlist check', async () => {
       const f = await clientContext();
@@ -308,6 +351,32 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
             select count(*)::integer as audit_rows from public.audit_events
               where target_table='clients' and target_id=${ids.client}::uuid
           `;
+            const expiryRevision = new Date().toISOString().slice(0, 10);
+            const [clientNotice] = await tx`
+              insert into app_private.client_inbox_notices(
+                workspace_id,client_id,notice_kind,source_key,source_revision,source_stage
+              ) values (
+                ${f.wsA.id}::uuid,${ids.client}::uuid,'subscription_expired',
+                ${ids.subscription}::uuid,${expiryRevision},'expiry'
+              ) returning id`;
+            const [staffNotice] = await tx`
+              insert into app_private.staff_inbox_notices(
+                workspace_id,recipient_user_id,notice_kind,source_key,source_revision,
+                client_id,source_stage
+              ) values (
+                ${f.wsA.id}::uuid,${f.po.userId}::uuid,'subscription_expired',
+                ${ids.subscription}::uuid,${expiryRevision},${ids.client}::uuid,'expiry'
+              ) returning id`;
+            await assertNoticeGuardMutationIsKilled(
+              tx,
+              'client',
+              clientNotice!.id as string,
+            );
+            await assertNoticeGuardMutationIsKilled(
+              tx,
+              'staff',
+              staffNotice!.id as string,
+            );
 
             const dryRunId = randomUUID();
             step = 'dry-run';
@@ -346,6 +415,8 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
               (select count(*)::integer from public.subscriptions where workspace_id=${f.wsA.id} and id=${ids.subscription}::uuid) as subscriptions,
               (select count(*)::integer from app_private.registration_operations where workspace_id=${f.wsA.id} and id=${ids.operation}::uuid) as operations,
               (select count(*)::integer from public.refund_operations where id=${refundId}::uuid and client_id is not null) as identified_refunds,
+              (select count(*)::integer from app_private.client_inbox_notices where id=${clientNotice!.id}::uuid) as client_notices,
+              (select count(*)::integer from app_private.staff_inbox_notices where id=${staffNotice!.id}::uuid) as staff_notices,
               (select count(*)::integer from app_private.retention_purge_runs where run_id=${runId}) as run_rows
           `;
             expect(afterApply).toEqual({
@@ -353,6 +424,8 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'e')(
               subscriptions: 0,
               operations: 0,
               identified_refunds: 0,
+              client_notices: 0,
+              staff_notices: 0,
               run_rows: 1,
             });
             const [runEvidence] = await tx`

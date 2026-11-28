@@ -396,6 +396,7 @@ describe('cron edge wiring', () => {
         ([input]) => new URL(String(input)).pathname,
       );
       expect(paths).toContain('/rest/v1/rpc/jobs_claim');
+      expect(paths).toContain('/rest/v1/rpc/run_subscription_expiry_notices');
       expect(paths).toContain('/rest/v1/rpc/branding_gc_claim');
       expect(paths).toContain(
         '/rest/v1/rpc/alert_expired_refund_auth_lockouts',

@@ -58,6 +58,7 @@ const signupPrivate = [
 const f23Private = [
   'f23_adherence_question_valid',
   'f23_adherence_value',
+  'f23_cairo_date_start',
   'f23_checkin_definition_valid',
   'f23_checkin_due_index',
   'f23_client_checkin_anchor',
@@ -68,6 +69,7 @@ const f23Private = [
   'f23_measurement_question',
   'f23_measurement_value_fits',
   'f23_store_checkin_adherence',
+  'f23_subscription_expiry_notices_run',
   'f23_unit_text',
   'f23_checkin_reminders_run',
   'f23_guard_staff_notice',
@@ -2098,6 +2100,9 @@ describe('registration security catalog', () => {
       'public.client_plan_projection()',
       'public.client_overdue_status()',
       'public.staff_client_directory(uuid,text,text,text,integer,integer,text)',
+      'public.run_subscription_expiry_notices()',
+      'app_private.f23_cairo_date_start(date)',
+      'app_private.f23_subscription_expiry_notices_run(timestamptz,integer)',
       'public.client_portal_workout_plan(uuid,integer)',
       'public.record_nutrition_export_audit(uuid,uuid,uuid,text,text)',
       'public.record_workout_export_audit(uuid,uuid,uuid,text,text,text)',
@@ -2139,23 +2144,26 @@ describe('registration security catalog', () => {
         const [g] =
           await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
         const expectedAllowed =
-          name ===
-          'app_private.f15_alert_trainer_assignment_visible(uuid,uuid,uuid)'
-            ? role === 'authenticated'
-            : name.startsWith('public.') &&
-              ((role === 'authenticated' &&
-                !name.includes('prepare_f15_telegram_delivery') &&
-                !name.includes('claim_f15_telegram_delivery') &&
-                !name.includes('claim_f15_form_alert_jobs') &&
-                !name.includes('consume_f15_telegram_start') &&
-                !name.includes('finish_f15_telegram_delivery')) ||
-                (role === 'anon' && name.includes('registration_link_open')) ||
-                (role === 'service_role' &&
-                  (name.includes('prepare_f15_telegram_delivery') ||
-                    name.includes('claim_f15_telegram_delivery') ||
-                    name.includes('claim_f15_form_alert_jobs') ||
-                    name.includes('consume_f15_telegram_start') ||
-                    name.includes('finish_f15_telegram_delivery'))));
+          name === 'public.run_subscription_expiry_notices()'
+            ? role === 'service_role'
+            : name ===
+                'app_private.f15_alert_trainer_assignment_visible(uuid,uuid,uuid)'
+              ? role === 'authenticated'
+              : name.startsWith('public.') &&
+                ((role === 'authenticated' &&
+                  !name.includes('prepare_f15_telegram_delivery') &&
+                  !name.includes('claim_f15_telegram_delivery') &&
+                  !name.includes('claim_f15_form_alert_jobs') &&
+                  !name.includes('consume_f15_telegram_start') &&
+                  !name.includes('finish_f15_telegram_delivery')) ||
+                  (role === 'anon' &&
+                    name.includes('registration_link_open')) ||
+                  (role === 'service_role' &&
+                    (name.includes('prepare_f15_telegram_delivery') ||
+                      name.includes('claim_f15_telegram_delivery') ||
+                      name.includes('claim_f15_form_alert_jobs') ||
+                      name.includes('consume_f15_telegram_start') ||
+                      name.includes('finish_f15_telegram_delivery'))));
         expect(g!.allowed, `${role} ${name}`).toBe(expectedAllowed);
       }
     }

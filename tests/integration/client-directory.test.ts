@@ -65,6 +65,7 @@ describe('F22 staff directory search (T031)', () => {
       approval_state: 'approved',
       subscription_status: 'active',
       refund_scope: null,
+      expiry_bucket: null,
       plans_waiting_for_delivery: 0,
       pending_food_replacements: 0,
       new_check_ins: 0,

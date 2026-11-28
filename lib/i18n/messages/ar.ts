@@ -1468,6 +1468,15 @@ export const ar = {
     'خطة أكلك جاهزة، واشتراكك اتفعّل.',
   'client.portal.inbox.markRead': 'اعتبره مقروء',
   'client.portal.inbox.empty': 'مفيش إشعارات جديدة.',
+  'client.portal.inbox.notice.expiryT3.title': 'اشتراكك هينتهي كمان ٣ أيام',
+  'client.portal.inbox.notice.expiryT3ShortLead.title': 'اشتراكك قرب ينتهي',
+  'client.portal.inbox.notice.expiryT3.body':
+    'اشتراكك هينتهي يوم {expiryDate}.',
+  'client.portal.inbox.notice.expiryT1.title': 'اشتراكك هينتهي بكرة',
+  'client.portal.inbox.notice.expiryT1.body':
+    'اشتراكك هينتهي يوم {expiryDate}.',
+  'client.portal.inbox.notice.expired.title': 'اشتراكك انتهى',
+  'client.portal.inbox.notice.expired.body': 'اشتراكك انتهى يوم {expiryDate}.',
   'staff.clientDirectory.title': 'العملاء',
   'staff.clientDirectory.search': 'دوّر على عميل',
   'staff.clientDirectory.filters': 'فلترة',

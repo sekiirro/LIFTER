@@ -7,16 +7,19 @@ vi.mock('../../lib/supabase/server', () => ({
 }));
 const actorMock = vi.hoisted(() => ({ getActor: vi.fn() }));
 vi.mock('../../lib/auth/actor', () => actorMock);
-const noticesMock = vi.hoisted(() => ({ markRead: vi.fn() }));
+const noticesMock = vi.hoisted(() => ({ markRead: vi.fn(), dismiss: vi.fn() }));
 
 import {
   CLIENT_NOTICE_KINDS,
   NOTICE_MESSAGE,
   projectClientNotices,
+  projectDismissNoticeResult,
   projectMarkNoticeResult,
   renderableNotices,
+  shouldShowClientNotices,
 } from '../../lib/client-access/notices-projection';
 import {
+  dismissClientNotice,
   loadClientNotices,
   markClientNotice,
 } from '../../lib/client-access/notices';
@@ -30,6 +33,8 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   notice_kind: 'workout_delivered',
   created_at: '2026-11-14T08:00:00Z',
   read_at: null,
+  expiry_date: null,
+  dismissed_at: null,
   ...overrides,
 });
 
@@ -51,12 +56,16 @@ describe('F22 client notice projection (T019; FR-009)', () => {
           kind: 'workout_delivered',
           createdAt: '2026-11-14T08:00:00Z',
           readAt: null,
+          expiryDate: null,
+          dismissedAt: null,
         },
         {
           noticeId: noticeB,
           kind: 'workout_delivered',
           createdAt: '2026-11-14T08:00:00Z',
           readAt: '2026-11-14T09:00:00Z',
+          expiryDate: null,
+          dismissedAt: null,
         },
       ],
     });
@@ -143,6 +152,127 @@ describe('F22 client notice projection (T019; FR-009)', () => {
     }
   });
 
+  it('projects approved expiry stages with a date-only expiry and dismiss state', () => {
+    const projected = projectClientNotices({
+      status: 'ok',
+      notices: [
+        row({
+          notice_kind: 'subscription_expiring_t3',
+          expiry_date: '2026-12-01',
+        }),
+        row({
+          notice_id: noticeB,
+          notice_kind: 'subscription_expiring_t1',
+          expiry_date: '2026-12-01',
+          dismissed_at: '2026-11-27T18:00:00Z',
+        }),
+        row({
+          notice_id: '33333333-3333-4333-8333-333333333333',
+          notice_kind: 'subscription_expired',
+          expiry_date: '2026-12-01',
+        }),
+      ],
+    });
+    expect(projected).toMatchObject({
+      status: 'ok',
+      notices: [
+        {
+          kind: 'subscription_expiring_t3',
+          expiryDate: '2026-12-01',
+          dismissedAt: null,
+        },
+        {
+          kind: 'subscription_expiring_t1',
+          expiryDate: '2026-12-01',
+          dismissedAt: '2026-11-27T18:00:00Z',
+        },
+        { kind: 'subscription_expired', expiryDate: '2026-12-01' },
+      ],
+    });
+    expect(CLIENT_NOTICE_KINDS).toContain(
+      'subscription_expiring_t3_short_lead',
+    );
+    expect(NOTICE_MESSAGE).toMatchObject({
+      subscription_expiring_t3: 'client.portal.inbox.notice.expiryT3.title',
+      subscription_expiring_t1: 'client.portal.inbox.notice.expiryT1.title',
+      subscription_expired: 'client.portal.inbox.notice.expired.title',
+    });
+    expect(getMessages('en')).toMatchObject({
+      'client.portal.inbox.notice.expiryT3.title':
+        'Subscription expires in 3 days',
+      'client.portal.inbox.notice.expiryT3.body':
+        'Your subscription ends on {expiryDate}.',
+      'client.portal.inbox.notice.expiryT1.title':
+        'Subscription expires tomorrow',
+      'client.portal.inbox.notice.expiryT1.body':
+        'Your subscription ends on {expiryDate}.',
+      'client.portal.inbox.notice.expired.title': 'Subscription expired',
+      'client.portal.inbox.notice.expired.body':
+        'Your subscription ended on {expiryDate}.',
+    });
+    expect(getMessages('ar')).toMatchObject({
+      'client.portal.inbox.notice.expiryT3.title': 'اشتراكك هينتهي كمان ٣ أيام',
+      'client.portal.inbox.notice.expiryT3.body':
+        'اشتراكك هينتهي يوم {expiryDate}.',
+      'client.portal.inbox.notice.expiryT1.title': 'اشتراكك هينتهي بكرة',
+      'client.portal.inbox.notice.expiryT1.body':
+        'اشتراكك هينتهي يوم {expiryDate}.',
+      'client.portal.inbox.notice.expired.title': 'اشتراكك انتهى',
+      'client.portal.inbox.notice.expired.body':
+        'اشتراكك انتهى يوم {expiryDate}.',
+    });
+    expect(
+      renderableNotices(
+        (
+          projected as {
+            status: 'ok';
+            notices: Parameters<typeof renderableNotices>[0];
+          }
+        ).notices,
+      )[0],
+    ).toMatchObject({
+      bodyMessage: 'client.portal.inbox.notice.expiryT3.body',
+      expiryDate: '2026-12-01',
+    });
+  });
+
+  it('uses the approved short-lead expiry title in English and Arabic', () => {
+    const parsed = projectClientNotices({
+      status: 'ok',
+      notices: [
+        row({
+          notice_kind: 'subscription_expiring_t3_short_lead',
+          expiry_date: '2026-12-01',
+        }),
+      ],
+    });
+    if (parsed.status !== 'ok') throw new Error('expected ok');
+    const [notice] = renderableNotices(parsed.notices);
+
+    expect(notice).toMatchObject({
+      message: 'client.portal.inbox.notice.expiryT3ShortLead.title',
+      bodyMessage: 'client.portal.inbox.notice.expiryT3.body',
+      expiryDate: '2026-12-01',
+    });
+    expect(getMessages('en')).toMatchObject({
+      'client.portal.inbox.notice.expiryT3ShortLead.title':
+        'Subscription expires soon',
+      'client.portal.inbox.notice.expiryT3.body':
+        'Your subscription ends on {expiryDate}.',
+    });
+    expect(getMessages('ar')).toMatchObject({
+      'client.portal.inbox.notice.expiryT3ShortLead.title': 'اشتراكك قرب ينتهي',
+      'client.portal.inbox.notice.expiryT3.body':
+        'اشتراكك هينتهي يوم {expiryDate}.',
+    });
+  });
+
+  it('keeps expiry notices visible for restricted overviews only', () => {
+    expect(shouldShowClientNotices('ok')).toBe(true);
+    expect(shouldShowClientNotices('restricted')).toBe(true);
+    expect(shouldShowClientNotices('denied')).toBe(false);
+  });
+
   it('accepts only read / not_found from mark-read', () => {
     expect(projectMarkNoticeResult({ status: 'read' })).toEqual({
       status: 'read',
@@ -195,12 +325,30 @@ describe('F22 client notice RPC adapters (T019)', () => {
       p_notice_id: noticeA,
     });
   });
+
+  it('sends only the notice id to the recipient-owned dismiss RPC', async () => {
+    const rpc = vi.fn(async () => ({
+      data: { status: 'dismissed' },
+      error: null,
+    }));
+    await expect(dismissClientNotice({ rpc }, noticeA)).resolves.toEqual({
+      status: 'dismissed',
+    });
+    expect(rpc).toHaveBeenCalledWith('dismiss_client_notice', {
+      p_notice_id: noticeA,
+    });
+    expect(projectDismissNoticeResult({ status: 'not_found' })).toEqual({
+      status: 'not_found',
+    });
+  });
 });
 
 describe('F22 mark-read server action recipient wall (T019)', () => {
   beforeEach(() => {
+    vi.resetModules();
     actorMock.getActor.mockReset();
     noticesMock.markRead.mockReset();
+    noticesMock.dismiss.mockReset();
   });
 
   it('denies staff and anonymous callers before any database call', async () => {
@@ -228,5 +376,33 @@ describe('F22 mark-read server action recipient wall (T019)', () => {
       status: 'read',
     });
     expect(noticesMock.markRead).toHaveBeenCalledWith(noticeA);
+  });
+
+  it('denies non-client callers before invoking the dismiss adapter', async () => {
+    vi.doMock('../../lib/client-access/notices', () => ({
+      markClientNoticeRead: noticesMock.markRead,
+      dismissClientNoticeForCurrentActor: noticesMock.dismiss,
+    }));
+    const { dismissClientNoticeAction } =
+      await import('../../app/(client)/plans/actions');
+    const form = new FormData();
+    form.set('noticeId', noticeA);
+    for (const actor of [
+      null,
+      { userId: 'staff', role: 'trainer' },
+      { userId: 'po', role: 'platform_owner' },
+    ]) {
+      actorMock.getActor.mockResolvedValueOnce(actor);
+      await expect(dismissClientNoticeAction(form)).resolves.toEqual({
+        status: 'denied',
+      });
+    }
+    expect(noticesMock.dismiss).not.toHaveBeenCalled();
+    actorMock.getActor.mockResolvedValueOnce({ userId: 'client', role: null });
+    noticesMock.dismiss.mockResolvedValueOnce({ status: 'dismissed' });
+    await expect(dismissClientNoticeAction(form)).resolves.toEqual({
+      status: 'dismissed',
+    });
+    expect(noticesMock.dismiss).toHaveBeenCalledWith(noticeA);
   });
 });
