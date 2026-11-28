@@ -14,7 +14,7 @@ Add a PO-only export section to the existing Reports screen to deliver one async
 **Testing**: Planned RED-first PO-only, direct endpoint/RPC, scope and artifact authorization tests; not run here.
 **Target Platform**: Existing LIFTER app and Supabase; no production data use.
 **Project Type**: Web application and authorized export data path.
-**Performance Goals**: Stream source rows in keyset pages of at most 500 rows; measure bounded memory at the illustrative spec 008 pilot volumes.
+**Performance Goals**: Read source rows via one definer RPC (`po_export_snapshot`) returning one MVCC-consistent bounded rowset in a single statement (limit 10001), failing closed with no artifact if exceeding 10,000 rows with no cross-transaction paging (architect technical decision S72-R37/S71-R34); measure bounded memory at the illustrative spec 008 pilot volumes.
 **Constraints**: PO only; audit sensitive export action; do not log client/health fields; export only the PO-approved manifest.
 **Scale/Scope**: Comprehensive client data, explicit workspace/platform scope selected by PO.
 
