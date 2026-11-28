@@ -82,7 +82,15 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s74-po/s74-po-1.verbatim.txt` ("* PDN-
 
 Applied to: FR-004, FR-006, FR-018, FR-020; follow-up dispute record entity; T036-T037.
 
+## S74-PO-4 - Follow-up additional penalty amount (PDN-10) - RESOLVED (2026-11-28)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s74-po/s74-po-4.verbatim.txt` ("PDN-10 A"; architect mapping S74-R55).
+
+- **PDN-10** (additionalPenalty amount): RESOLVED by S74-PO-4 Option A. The PO enters a positive amount per dispute with exactly 2 decimal places, maximum 99,999,999.99, using the same validation as T013 manual deductions in `supabase/migrations/20261227030000_p7_manual_point_adjustments.sql`; it is stored as an append-only negative ledger entry.
+
+Applied to: FR-004, FR-006, FR-018, FR-020; T036.
+
 ## Decision status (updated 2026-11-28)
 
-- Open product MCQs: 1 (bounds and validation rules for PO-entered additionalPenalty amount; tracked as PO-DECISION-NEEDED in lane report).
-- PENDING-PO requirements: none. PDN-07 reason-code code list and EN/AR labels approved under S73-PO-8; PDN-09 outcome-to-ledger action mapping resolved under S74-PO-1.
+- Open product MCQs: 0.
+- PENDING-PO requirements: none. PDN-07 reason-code code list and EN/AR labels approved under S73-PO-8; PDN-09 outcome-to-ledger action mapping resolved under S74-PO-1; PDN-10 additionalPenalty amount resolved under S74-PO-4.

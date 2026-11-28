@@ -170,7 +170,7 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - FR-006, FR-018, FR-020, FR-029 amended consistently; follow-up dispute record entity updated (stale "PENDING PO copy approval" removed); T036 (model/RPCs RED/GREEN/mutation), T037 (CB-05 dispute UI), T038 (reason-code copy batch, satisfied by S73-PO-8) added and tagged with FRs.
 - traceability.md updated for T036-T038; all origin/main merged task evidence and ticks preserved.
 - No new CRITICAL findings. C1/C2 remain external Constitution-governance dependencies. PDN-07 reason codes approved under S73-PO-8; PDN-09 outcome ledger mapping approved under S74-PO-1.
-- Further gap on bounds/validation of the PO-entered additional penalty amount is not decided by S74-PO-1; tracked as open PO-DECISION-NEEDED in the lane report while leaving the spec text neutral.
+- PDN-10 additionalPenalty amount is resolved by S74-PO-4: positive PO-entered amount per dispute, exactly 2 decimal places, maximum 99,999,999.99, validated like T013 manual deductions and stored as an append-only negative ledger entry.
 
 ### PO decision register (updated)
 
@@ -178,12 +178,23 @@ Each mapped task includes acceptance evidence and remains unchecked until implem
 - PDN-01..PDN-06 and PDN-08 RESOLVED by S73-PO-6.
 - PDN-07 RESOLVED by S73-PO-8; reason-code code list and EN/AR labels approved (see copy-approved-cb02-cb04-cb05.md section "S73-PO-8 — follow-up dispute reason codes").
 - PDN-09 RESOLVED by S74-PO-1 Option A (outcome-to-ledger action mapping recorded).
+- PDN-10 RESOLVED by S74-PO-4 Option A (PO-entered amount validation and negative ledger entry recorded).
 
 ### Metrics (updated)
 
 - Functional requirements: 29 (unchanged; FR-004/006/018/020/029 amended, no new FR).
 - Task/acceptance mapping: 29/29 FRs; T036-T038 added for dispute follow-up.
 - Open CRITICAL: 0. Open HIGH: 0.
-- PENDING-PO requirements: none. (Open product MCQ: bounds/validation of PO-entered additional penalty amount tracked as PO-DECISION-NEEDED).
+- PENDING-PO requirements: none. Open product MCQs: 0.
+
+**Analyze result**: PASS. 0 open CRITICAL/HIGH findings. Requirement text change re-analyzed per S54 R6.
+
+## S74-PO-4 (PDN-10) re-analysis
+
+**Re-analyzed**: 2026-11-28 UTC, after PDN-10 requirements were clarified in FR-004, FR-006, the acceptance scenario, T036 and the clarification register (S54 R6). Requirement authority: S74-PO-4 (runs/s74-po/s74-po-4.verbatim.txt, "PDN-10 A"; architect mapping S74-R55).
+
+- The PO-entered amount is positive, has exactly 2 decimal places, is at most 99,999,999.99, follows the T013 manual deduction validation in `supabase/migrations/20261227030000_p7_manual_point_adjustments.sql`, and is persisted as an append-only negative ledger entry. `valid` appends +0.5; `falseFollowUp` makes no ledger change; the original -0.5 remains immutable.
+- Spec FRs, acceptance scenario, T036, and the PO-decision register agree. T036 remains an implementation task; no implementation or test completion is claimed by this Analyze.
+- No open CRITICAL or HIGH findings. PENDING-PO requirements: none; open product MCQs: 0.
 
 **Analyze result**: PASS. 0 open CRITICAL/HIGH findings. Requirement text change re-analyzed per S54 R6.
