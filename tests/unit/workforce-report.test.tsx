@@ -85,6 +85,10 @@ const sampleReport: WorkforceReportData = {
       actor: null,
       recorded_at: '2026-11-05T12:00:00Z',
       reason_code: 'p7-activation-v1',
+      reason: null,
+      operation: null,
+      original_entry_id: null,
+      original_entry_kind: null,
     },
     {
       id: 'entry-2',
@@ -98,6 +102,10 @@ const sampleReport: WorkforceReportData = {
       actor: null,
       recorded_at: '2026-11-06T14:30:00Z',
       reason_code: 'late-correction',
+      reason: null,
+      operation: null,
+      original_entry_id: null,
+      original_entry_kind: null,
     },
     {
       id: 'entry-3',
@@ -111,6 +119,10 @@ const sampleReport: WorkforceReportData = {
       actor: null,
       recorded_at: '2026-11-07T10:00:00Z',
       reason_code: 'refund_reversal',
+      reason: null,
+      operation: null,
+      original_entry_id: null,
+      original_entry_kind: null,
     },
   ],
 };

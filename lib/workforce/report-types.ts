@@ -16,6 +16,8 @@ export type LedgerCategory =
   | 'checkinDelay'
   | 'transformationFeedback';
 
+export type LedgerOperation = 'add' | 'deduct' | 'correct' | 'reattribute';
+
 export type LedgerEntry = {
   id: string;
   staff_user_id: string;
@@ -28,6 +30,10 @@ export type LedgerEntry = {
   actor: string | null;
   recorded_at: string;
   reason_code: string | null;
+  reason: string | null;
+  operation: LedgerOperation | null;
+  original_entry_id: string | null;
+  original_entry_kind: 'earned' | 'adjustment' | null;
 };
 
 export type MonthSnapshot = {

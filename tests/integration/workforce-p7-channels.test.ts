@@ -102,6 +102,8 @@ describe('T032 P7 Confidentiality Channels & Audit Protection', () => {
       'public.p7_post_monetary_payroll_input(uuid,date,text,bigint,text,uuid,uuid,uuid)',
       'public.p7_create_payroll_snapshot(uuid,date,uuid)',
       'public.p7_approve_external_payroll(uuid,date,uuid,integer,bigint,text,uuid)',
+      'public.p7_post_point_adjustment(uuid,uuid,text,text,date,text,uuid,text,uuid)',
+      'public.p7_reattribute_point_entry(uuid,text,uuid,uuid,text,uuid)',
     ];
 
     for (const rpc of publicRpcs) {

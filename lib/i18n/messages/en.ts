@@ -1584,6 +1584,27 @@ export const en: Record<keyof typeof ar, string> = {
   'workforce.report.netPointsHint':
     'Refund reversals appear as entries in the ledger.',
   'workforce.report.pointsNotSalary': 'Points are separate from salary.',
+  'workforce.report.points.add': 'Add points',
+  'workforce.report.points.deduct': 'Deduct points',
+  'workforce.report.points.correct': 'Correct points',
+  'workforce.report.points.reattribute': 'Reattribute points',
+  'workforce.report.points.reasonRequired': 'A reason is required.',
+  'workforce.report.points.reasonHint':
+    'Manual point edits are PO-only and recorded with a reason. They never change salary.',
+  'workforce.report.points.confirmTitle': 'Confirm point change?',
+  'workforce.report.points.confirmBody':
+    'This records a manual, PO-only point change with your reason. It does not change salary.',
+  'workforce.report.points.saved': 'Point change recorded.',
+  'workforce.report.points.error':
+    'Could not record the point change. Try again.',
+  'workforce.report.points.stale':
+    'A newer revision exists. Reload before saving.',
+  'workforce.report.refund.selectStaff': 'Select workspace Trainers or Sales',
+  'workforce.report.strikes.title': 'Strike review',
+  'workforce.report.strikes.window': 'Rolling 90 days',
+  'workforce.report.strikes.threshold': 'Review at {count} strikes',
+  'workforce.report.strikes.reviewOnly':
+    'Each late plan delivery counts as one strike, tracked separately from points. For your review only; nothing happens automatically.',
   'workforce.report.negativeTotal': 'Negative total',
   'workforce.report.negativeHint':
     'Negative totals are valid. They do not change salary.',
@@ -1601,13 +1622,43 @@ export const en: Record<keyof typeof ar, string> = {
     'Was this full refund caused by staff fault? This is asked once per full refund only.',
   'workforce.report.refund.faultYes': 'Yes',
   'workforce.report.refund.faultNo': 'No',
-  'workforce.report.refund.selectStaff': 'Select workspace Trainers or Sales',
   'workforce.report.refund.individualDeductions': 'Individual point deductions',
   'workforce.report.refund.saved': 'Refund review recorded.',
   'workforce.report.refund.duplicate':
     'This refund review was already recorded.',
   'workforce.report.refund.emptyQueue': 'No refund reviews are waiting.',
   'workforce.report.ledger.column.reason': 'Reason',
+  'workforce.strike.correction.action': 'Correct strike',
+  'workforce.strike.correction.void': 'Void strike',
+  'workforce.strike.correction.reinstate': 'Reinstate strike',
+  'workforce.strike.correction.reattribute': 'Reattribute strike',
+  'workforce.strike.correction.pointsUnaffected':
+    'Corrections never change points.',
+  'workforce.strike.correction.effectiveHint':
+    'The latest correction is the one that counts.',
+  'workforce.strike.correction.history': 'Correction history',
+  'workforce.strike.correction.history.empty': 'No corrections recorded.',
+  'workforce.strike.correction.history.column.action': 'Action',
+  'workforce.strike.correction.history.column.date': 'Recorded at',
+  'workforce.strike.correction.confirmTitle': 'Confirm strike correction?',
+  'workforce.strike.correction.success': 'Strike correction recorded.',
+  'workforce.strike.correction.duplicate':
+    'This correction was already recorded.',
+  'workforce.strike.correction.error':
+    'Could not record the correction. Try again.',
+  'workforce.strike.correction.denied':
+    'Only the Platform Owner can correct strikes.',
+  'workforce.strike.correction.trainerHint':
+    'Choose another Trainer in this workspace who had access at the time.',
+  'workforce.strike.correction.reason.client_caused_delay':
+    'Delay caused by the client',
+  'workforce.strike.correction.reason.system_issue':
+    'System or technical issue',
+  'workforce.strike.correction.reason.wrong_trainer':
+    'Strike recorded for the wrong Trainer',
+  'workforce.strike.correction.reason.duplicate': 'Duplicate strike',
+  'workforce.strike.correction.reason.po_exception':
+    'Approved exception by the Platform Owner',
   'workforce.report.ledger.column.actor': 'Recorded by',
   'workforce.report.ledger.column.effectiveMonth': 'Effective month',
   'workforce.report.ledger.originalMonth': 'Original month: {month}',

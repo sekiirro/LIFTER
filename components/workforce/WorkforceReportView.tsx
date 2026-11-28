@@ -10,10 +10,22 @@ import { shiftMonth } from '../../lib/workforce/report';
 import type {
   WorkforceReportData,
   StaffRole,
+  StaffTotal,
   LedgerCategory,
+  LedgerEntry,
 } from '../../lib/workforce/report-types';
+import type {
+  PostPointAdjustmentAction,
+  ReattributePointAction,
+} from '../../lib/workforce/manual-points';
+import { PointActionDialog } from './PointActionDialog';
 import styles from './WorkforceReport.module.css';
 import { RefundFaultReviewPanel } from './RefundFaultReviewPanel';
+
+type PointDialogState =
+  | { operation: 'add' | 'deduct'; staff: StaffTotal }
+  | { operation: 'correct'; staff: StaffTotal; entry: LedgerEntry }
+  | { operation: 'reattribute'; entry: LedgerEntry };
 
 export type WorkforceReportViewProps = {
   report: WorkforceReportData | null;
@@ -23,6 +35,8 @@ export type WorkforceReportViewProps = {
   currentMonth: string; // "YYYY-MM"
   onMonthChange?: (month: string) => void;
   onRetry?: () => void;
+  postPointAdjustment?: PostPointAdjustmentAction;
+  reattributePointEntry?: ReattributePointAction;
 };
 
 export function WorkforceReportView({
@@ -33,8 +47,12 @@ export function WorkforceReportView({
   currentMonth,
   onMonthChange,
   onRetry,
+  postPointAdjustment,
+  reattributePointEntry,
 }: WorkforceReportViewProps) {
   const [roleFilter, setRoleFilter] = useState<'all' | StaffRole>('all');
+  const [pointDialog, setPointDialog] = useState<PointDialogState | null>(null);
+  const [pointFeedback, setPointFeedback] = useState<'success' | null>(null);
 
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
 
@@ -57,9 +75,43 @@ export function WorkforceReportView({
     }
   };
 
+  const operationLabel = (operation: NonNullable<LedgerEntry['operation']>) => {
+    switch (operation) {
+      case 'add':
+        return m['workforce.report.points.add'];
+      case 'deduct':
+        return m['workforce.report.points.deduct'];
+      case 'correct':
+        return m['workforce.report.points.correct'];
+      case 'reattribute':
+        return m['workforce.report.points.reattribute'];
+    }
+  };
+
   const trainers = report?.trainers ?? [];
   const sales = report?.sales ?? [];
   const ledger = report?.ledger ?? [];
+  const staffOptions = report?.totals ?? [...trainers, ...sales];
+
+  function staffForEntry(entry: LedgerEntry): StaffTotal {
+    return (
+      staffOptions.find(
+        (staff) => staff.staff_user_id === entry.staff_user_id,
+      ) ?? {
+        staff_user_id: entry.staff_user_id,
+        role: entry.staff_role,
+        display_name: entry.staff_name,
+        points: entry.points,
+        is_negative: entry.points.startsWith('-'),
+      }
+    );
+  }
+
+  function targetsForEntry(entry: LedgerEntry): StaffTotal[] {
+    return staffOptions.filter(
+      (staff) => staff.staff_user_id !== entry.staff_user_id,
+    );
+  }
 
   const filteredTrainers = roleFilter === 'sales' ? [] : trainers;
   const filteredSales = roleFilter === 'trainer' ? [] : sales;
@@ -161,6 +213,13 @@ export function WorkforceReportView({
         </div>
       </nav>
 
+      {pointFeedback === 'success' && (
+        <Alert
+          tone="success"
+          title={m['workforce.report.points.saved']}
+          data-testid="points-success"
+        />
+      )}
       {report && (
         <RefundFaultReviewPanel
           workspaceId={report.workspace_id}
@@ -256,10 +315,48 @@ export function WorkforceReportView({
                       <tbody>
                         {filteredTrainers.map((staff) => (
                           <tr key={staff.staff_user_id}>
-                            <td>
+                            <td id={`staff-total-${staff.staff_user_id}`}>
                               {staff.display_name || (
                                 <Bidi dir="ltr">{staff.staff_user_id}</Bidi>
                               )}
+                              <div className={styles.pointActions}>
+                                <Button
+                                  variant="secondary"
+                                  className={styles.rowAction}
+                                  aria-describedby={`staff-total-${staff.staff_user_id}`}
+                                  data-testid={`points-add-${staff.staff_user_id}`}
+                                  disabled={
+                                    !postPointAdjustment || pointDialog !== null
+                                  }
+                                  onClick={() => {
+                                    setPointFeedback(null);
+                                    setPointDialog({
+                                      operation: 'add',
+                                      staff,
+                                    });
+                                  }}
+                                >
+                                  {m['workforce.report.points.add']}
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  className={styles.rowAction}
+                                  aria-describedby={`staff-total-${staff.staff_user_id}`}
+                                  data-testid={`points-deduct-${staff.staff_user_id}`}
+                                  disabled={
+                                    !postPointAdjustment || pointDialog !== null
+                                  }
+                                  onClick={() => {
+                                    setPointFeedback(null);
+                                    setPointDialog({
+                                      operation: 'deduct',
+                                      staff,
+                                    });
+                                  }}
+                                >
+                                  {m['workforce.report.points.deduct']}
+                                </Button>
+                              </div>
                             </td>
                             <td className={styles.numericCell}>
                               <span
@@ -321,10 +418,48 @@ export function WorkforceReportView({
                       <tbody>
                         {filteredSales.map((staff) => (
                           <tr key={staff.staff_user_id}>
-                            <td>
+                            <td id={`staff-total-${staff.staff_user_id}`}>
                               {staff.display_name || (
                                 <Bidi dir="ltr">{staff.staff_user_id}</Bidi>
                               )}
+                              <div className={styles.pointActions}>
+                                <Button
+                                  variant="secondary"
+                                  className={styles.rowAction}
+                                  aria-describedby={`staff-total-${staff.staff_user_id}`}
+                                  data-testid={`points-add-${staff.staff_user_id}`}
+                                  disabled={
+                                    !postPointAdjustment || pointDialog !== null
+                                  }
+                                  onClick={() => {
+                                    setPointFeedback(null);
+                                    setPointDialog({
+                                      operation: 'add',
+                                      staff,
+                                    });
+                                  }}
+                                >
+                                  {m['workforce.report.points.add']}
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  className={styles.rowAction}
+                                  aria-describedby={`staff-total-${staff.staff_user_id}`}
+                                  data-testid={`points-deduct-${staff.staff_user_id}`}
+                                  disabled={
+                                    !postPointAdjustment || pointDialog !== null
+                                  }
+                                  onClick={() => {
+                                    setPointFeedback(null);
+                                    setPointDialog({
+                                      operation: 'deduct',
+                                      staff,
+                                    });
+                                  }}
+                                >
+                                  {m['workforce.report.points.deduct']}
+                                </Button>
+                              </div>
                             </td>
                             <td className={styles.numericCell}>
                               <span
@@ -371,7 +506,11 @@ export function WorkforceReportView({
             {filteredLedger.length === 0 ? (
               <p className={styles.metaText}>{m['workforce.report.empty']}</p>
             ) : (
-              <div className={styles.tableWrapper}>
+              <div
+                className={styles.tableWrapper}
+                tabIndex={0}
+                aria-label={m['workforce.report.ledger.title']}
+              >
                 <table className={styles.table}>
                   <thead>
                     <tr>
@@ -411,19 +550,84 @@ export function WorkforceReportView({
                             >
                               <Bidi dir="ltr">{entry.points}</Bidi>
                             </span>
+                            <div className={styles.pointActions}>
+                              <Button
+                                variant="secondary"
+                                className={styles.rowAction}
+                                aria-describedby={`ledger-staff-${entry.id}`}
+                                data-testid={`points-correct-${entry.id}`}
+                                disabled={
+                                  !postPointAdjustment || pointDialog !== null
+                                }
+                                onClick={() => {
+                                  setPointFeedback(null);
+                                  setPointDialog({
+                                    operation: 'correct',
+                                    staff: staffForEntry(entry),
+                                    entry,
+                                  });
+                                }}
+                              >
+                                {m['workforce.report.points.correct']}
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                className={styles.rowAction}
+                                aria-describedby={`ledger-staff-${entry.id}`}
+                                data-testid={`points-reattribute-${entry.id}`}
+                                disabled={
+                                  !reattributePointEntry ||
+                                  pointDialog !== null ||
+                                  targetsForEntry(entry).length === 0
+                                }
+                                onClick={() => {
+                                  setPointFeedback(null);
+                                  setPointDialog({
+                                    operation: 'reattribute',
+                                    entry,
+                                  });
+                                }}
+                              >
+                                {m['workforce.report.points.reattribute']}
+                              </Button>
+                            </div>
                           </td>
                           <td>{categoryLabel(entry.category)}</td>
-                          <td>
+                          <td id={`ledger-staff-${entry.id}`}>
                             {entry.staff_name || (
                               <Bidi dir="ltr">{entry.staff_user_id}</Bidi>
                             )}
                           </td>
                           <td className={styles.metaText}>
-                            {entry.reason_code ? (
+                            {entry.reason ? (
+                              <Bidi dir="auto">{entry.reason}</Bidi>
+                            ) : entry.reason_code ? (
                               <Bidi dir="ltr">{entry.reason_code}</Bidi>
                             ) : (
                               '—'
                             )}
+                            {entry.operation && (
+                              <div>
+                                <Bidi dir="auto">
+                                  {operationLabel(entry.operation)}
+                                </Bidi>
+                              </div>
+                            )}
+                            {entry.original_entry_id &&
+                              entry.original_entry_kind && (
+                                <div>
+                                  <Bidi dir="auto">
+                                    {categoryLabel(
+                                      entry.original_entry_kind === 'earned'
+                                        ? 'earned'
+                                        : 'poAdjustment',
+                                    )}
+                                  </Bidi>{' '}
+                                  <Bidi dir="ltr">
+                                    {entry.original_entry_id}
+                                  </Bidi>
+                                </div>
+                              )}
                           </td>
                           <td className={styles.metaText}>
                             {entry.actor ? (
@@ -436,12 +640,14 @@ export function WorkforceReportView({
                             <Bidi dir="ltr">{entry.effective_month}</Bidi>
                             {showOriginalMonth && (
                               <span className={styles.originalMonthBadge}>
-                                {m[
-                                  'workforce.report.ledger.originalMonth'
-                                ].replace(
-                                  '{month}',
-                                  entry.original_month ?? '',
-                                )}
+                                <Bidi dir="auto">
+                                  {m[
+                                    'workforce.report.ledger.originalMonth'
+                                  ].replace(
+                                    '{month}',
+                                    entry.original_month ?? '',
+                                  )}
+                                </Bidi>
                               </span>
                             )}
                           </td>
@@ -454,6 +660,29 @@ export function WorkforceReportView({
             )}
           </section>
         </>
+      )}
+
+      {pointDialog && report && (
+        <PointActionDialog
+          operation={pointDialog.operation}
+          staff={'staff' in pointDialog ? pointDialog.staff : null}
+          entry={'entry' in pointDialog ? pointDialog.entry : null}
+          targets={
+            pointDialog.operation === 'reattribute'
+              ? targetsForEntry(pointDialog.entry)
+              : []
+          }
+          workspaceId={report.workspace_id}
+          currentMonth={currentMonth}
+          messages={m}
+          postAction={postPointAdjustment}
+          reattributeAction={reattributePointEntry}
+          onClose={() => setPointDialog(null)}
+          onSuccess={() => {
+            setPointDialog(null);
+            setPointFeedback('success');
+          }}
+        />
       )}
     </main>
   );
