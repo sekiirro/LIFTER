@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   buildPlan,
@@ -186,5 +187,23 @@ describe('ci-local dirty spec tree guard', () => {
     expect(dirtySpecTree([])).toBe(false);
     expect(dirtySpecTree('')).toBe(false);
     expect(dirtySpecTree([''])).toBe(false);
+  });
+});
+
+describe('ci-local dependency pins', () => {
+  it('pins nodemailer exactly to the lockfile version (S68-R12)', () => {
+    const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+      dependencies: Record<string, string>;
+    };
+    const lock = JSON.parse(readFileSync('package-lock.json', 'utf8')) as {
+      packages: Record<
+        string,
+        { version?: string; dependencies?: Record<string, string> }
+      >;
+    };
+    const installed = lock.packages['node_modules/nodemailer']?.version;
+    expect(installed).toBeDefined();
+    expect(packageJson.dependencies.nodemailer).toBe(installed);
+    expect(lock.packages['']?.dependencies?.nodemailer).toBe(installed);
   });
 });
