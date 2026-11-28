@@ -485,6 +485,7 @@ export async function pendingHttpAccess(
             'reattribute_workforce_plan_delay',
             'p7_list_open_refund_fault_reviews',
             'p7_resolve_refund_fault_review',
+            'get_workforce_strike_correction_history',
           ].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
