@@ -2384,6 +2384,26 @@ describe('catalog workspace library read catalog', () => {
   });
 });
 
+describe('PO export retrieval failure RPC catalog', () => {
+  it('restricts failed retrieval auditing to service_role', async () => {
+    const [fn] = await db`select p.prosecdef, p.proconfig,
+        pg_catalog.pg_get_userbyid(p.proowner) as owner,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role
+      from pg_catalog.pg_proc p
+      where p.oid = 'public.record_po_export_retrieval_failure(uuid)'::regprocedure`;
+    expect(fn).toMatchObject({
+      prosecdef: true,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: true,
+    });
+    expect(fn?.proconfig).toContain('search_path=""');
+  });
+});
+
 describe('F19 T021 activation catalog', () => {
   it('forces RLS, grants no direct access, and installs the append-only guards', async () => {
     const [table] = await db`select relrowsecurity, relforcerowsecurity
