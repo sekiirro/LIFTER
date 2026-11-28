@@ -47,9 +47,9 @@ Approved as CB-P8-04 under S71-PO-13 / S71-R37 / S72-PO-7 (frozen source `C:/Use
 
 S74-PO-1 approved F-05/F-11 as A+; S74-R23 maps that approval to these four shipped keys, byte-exact in #406 (merged as `28ce60b7`). English and Egyptian Arabic below are copied from `lib/i18n/messages/en.ts` and `ar.ts` on `origin/main`.
 
-| Key                                                | State    | English (APPROVED)                 | Egyptian Arabic (APPROVED)            | Source                    |
-| -------------------------------------------------- | -------- | ---------------------------------- | ------------------------------------- | ------------------------- |
-| `staff.notifications.bellLabelWithCount`           | APPROVED | Open notifications ({count} unread) | افتح الإشعارات ({count} إشعار مش مقروء) | S74-PO-1 / S74-R23 / #406 |
-| `staff.clientDirectory.previousPage`               | APPROVED | Previous page                      | الصفحة السابقة                        | S74-PO-1 / S74-R23 / #406 |
-| `staff.clientDirectory.nextPage`                   | APPROVED | Next page                          | الصفحة التالية                        | S74-PO-1 / S74-R23 / #406 |
-| `staff.clientDirectory.paginationLabel`            | APPROVED | Clients pagination                 | صفحات العملاء                         | S74-PO-1 / S74-R23 / #406 |
+| Key                                      | State    | English (APPROVED)                  | Egyptian Arabic (APPROVED)              | Source                    |
+| ---------------------------------------- | -------- | ----------------------------------- | --------------------------------------- | ------------------------- |
+| `staff.notifications.bellLabelWithCount` | APPROVED | Open notifications ({count} unread) | افتح الإشعارات ({count} إشعار مش مقروء) | S74-PO-1 / S74-R23 / #406 |
+| `staff.clientDirectory.previousPage`     | APPROVED | Previous page                       | الصفحة السابقة                          | S74-PO-1 / S74-R23 / #406 |
+| `staff.clientDirectory.nextPage`         | APPROVED | Next page                           | الصفحة التالية                          | S74-PO-1 / S74-R23 / #406 |
+| `staff.clientDirectory.paginationLabel`  | APPROVED | Clients pagination                  | صفحات العملاء                           | S74-PO-1 / S74-R23 / #406 |
