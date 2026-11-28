@@ -13,9 +13,13 @@ export function isUuid(value: unknown): value is string {
   );
 }
 
+export function trimClientNoteBody(value: string): string {
+  return value.replace(leadingTrailingWhitespace, '');
+}
+
 export function normalizeClientNoteBody(value: unknown): string | null {
   if (typeof value !== 'string' || value.includes('\u0000')) return null;
-  const body = value.replace(leadingTrailingWhitespace, '');
+  const body = trimClientNoteBody(value);
   const length = Array.from(body).length;
   return length >= 1 && length <= 5000 ? body : null;
 }

@@ -99,7 +99,7 @@ export async function getMonthlyQuality(
   if (!client) return { status: 'error' };
   const params = {
     p_workspace_id: workspaceId,
-    p_month: `${month}-01`,
+    p_month: month,
     p_trainer_id: null,
     p_category: null,
   };
@@ -195,7 +195,7 @@ export async function recordMonthlyQuality(
   const { data, error } = await client.rpc('record_monthly_quality', {
     p_workspace_id: input.workspaceId,
     p_trainer_id: input.trainerId,
-    p_month: `${input.month}-01`,
+    p_month: input.month,
     p_category: input.category,
     p_positive_count: input.positiveCount,
     p_negative_count: input.negativeCount,
