@@ -5,18 +5,18 @@
 
 ## 1. Run identity and environment
 
-| Field                                  | Value                                                                                                                                                                                        |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run (UTC)                              | 2026-11-28T01:14:15.646Z (measured in lane `s73-hungerg-measure031`)                                                                                                                         |
-| Commit / harness head                  | `ca2fbd15d39269f238885111042c6d747ef18ea7` (PR #379; merged to main in commit `35faee5d`)                                                                                                   |
-| Machine target                         | Local non-production Stack B (`lifter-stack-b`), loopback `127.0.0.1:3000`                                                                                                                   |
-| Server mode                            | `next-start-production` (`next build` on Next.js 16.4.6; `next start --hostname 127.0.0.1 --port 3000`)                                                                                     |
-| Hosted target                          | **Not used locally** — deferred to pre-launch checklist on lifter-prod per S73-PO-4 (PI-04)                                                                                                    |
-| Data                                   | Synthetic only; no real client records, no secrets                                                                                                                                           |
-| CPU p50/p95/max                        | **Not available locally** (platform request logs only); pending hosted pre-launch re-measurement                                                                                             |
-| Tooling                                | spec 008 `http-probe.mjs`, `lib/stats.mjs`, `lib/pilot-volumes.mjs` orchestrated by committed `scripts/free-tier/baseline-031.mjs`                                                           |
-| Raw output                             | [perf-baseline-2026-11-28.json](perf-baseline-2026-11-28.json)                                                                                                                               |
-| Route matrix                           | [perf-route-matrix.json](perf-route-matrix.json)                                                                                                                                             |
+| Field                 | Value                                                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Run (UTC)             | 2026-11-28T01:14:15.646Z (measured in lane `s73-hungerg-measure031`)                                                               |
+| Commit / harness head | `ca2fbd15d39269f238885111042c6d747ef18ea7` (PR #379; merged to main in commit `35faee5d`)                                          |
+| Machine target        | Local non-production Stack B (`lifter-stack-b`), loopback `127.0.0.1:3000`                                                         |
+| Server mode           | `next-start-production` (`next build` on Next.js 16.4.6; `next start --hostname 127.0.0.1 --port 3000`)                            |
+| Hosted target         | **Not used locally** — deferred to pre-launch checklist on lifter-prod per S73-PO-4 (PI-04)                                        |
+| Data                  | Synthetic only; no real client records, no secrets                                                                                 |
+| CPU p50/p95/max       | **Not available locally** (platform request logs only); pending hosted pre-launch re-measurement                                   |
+| Tooling               | spec 008 `http-probe.mjs`, `lib/stats.mjs`, `lib/pilot-volumes.mjs` orchestrated by committed `scripts/free-tier/baseline-031.mjs` |
+| Raw output            | [perf-baseline-2026-11-28.json](perf-baseline-2026-11-28.json)                                                                     |
+| Route matrix          | [perf-route-matrix.json](perf-route-matrix.json)                                                                                   |
 
 ## 2. Pilot volumes (spec 008 / S31-PO-4 inputs, preserved without duplication)
 
@@ -26,17 +26,17 @@ Inputs: 2 workspaces; 150 clients/workspace; 2 staff/workspace; 2 plans/client; 
 
 Measured table from `s73-hungerg-measure031/report.md` compared against signed budgets:
 
-| Route | Statuses | p95 (ms) | Signed p95 budget (ms) | Signed error budget | Status |
-|---|---:|---:|---:|---:|:---:|
-| `/api/health` | 200 × 20 | 16.75 | 200 | ≤1% | PASS |
-| `/login` | 200 × 20 | 34.77 | 200 | ≤1% | PASS |
-| `/auth/recovery` | 200 × 20 | 35.06 | 200 | ≤1% | PASS |
-| `/clients` | 200 × 20 | 98.61 | 200 | ≤1% | PASS |
-| `/clients?page=1&pageSize=50` | 200 × 20 | 63.96 | 200 | ≤1% | PASS |
-| `/clients?query=Pilot` | 200 × 20 | 62.59 | 200 | ≤1% | PASS |
-| `/workspaces` | 200 × 20 | 56.62 | 200 | ≤1% | PASS |
-| `/reports` | 200 × 20 | 67.15 | 200 | ≤1% | PASS |
-| `/welcome` | 200 × 20 | 33.29 | 200 | ≤1% | PASS |
+| Route                         | Statuses | p95 (ms) | Signed p95 budget (ms) | Signed error budget | Status |
+| ----------------------------- | -------: | -------: | ---------------------: | ------------------: | :----: |
+| `/api/health`                 | 200 × 20 |    16.75 |                    200 |                 ≤1% |  PASS  |
+| `/login`                      | 200 × 20 |    34.77 |                    200 |                 ≤1% |  PASS  |
+| `/auth/recovery`              | 200 × 20 |    35.06 |                    200 |                 ≤1% |  PASS  |
+| `/clients`                    | 200 × 20 |    98.61 |                    200 |                 ≤1% |  PASS  |
+| `/clients?page=1&pageSize=50` | 200 × 20 |    63.96 |                    200 |                 ≤1% |  PASS  |
+| `/clients?query=Pilot`        | 200 × 20 |    62.59 |                    200 |                 ≤1% |  PASS  |
+| `/workspaces`                 | 200 × 20 |    56.62 |                    200 |                 ≤1% |  PASS  |
+| `/reports`                    | 200 × 20 |    67.15 |                    200 |                 ≤1% |  PASS  |
+| `/welcome`                    | 200 × 20 |    33.29 |                    200 |                 ≤1% |  PASS  |
 
 Matrix: 20 samples per route, concurrency 2. All 180 HTTP samples returned 200. Staff routes used a synthetic PO SSR cookie; `/welcome` used a synthetic client SSR cookie; public matrix routes were probed public. All 9 routes meet the signed p95 budget (200 ms) and error budget (≤1%).
 
@@ -44,12 +44,12 @@ Matrix: 20 samples per route, concurrency 2. All 180 HTTP samples returned 200. 
 
 Measured table from `s73-hungerg-measure031/report.md` compared against signed budgets:
 
-| Query class | Requests | Errors | p95 (ms) | Signed p95 budget (ms) | Signed error budget | Status |
-|---|---:|---:|---:|---:|---:|:---:|
-| `directory_page_1` | 20 | 0 | 4.73 | 100 | ≤0.5% | PASS |
-| `directory_page_6` | 20 | 0 | 4.18 | 100 | ≤0.5% | PASS |
-| `directory_search_filter` | 20 | 0 | 4.85 | 100 | ≤0.5% | PASS |
-| `directory_approval_filter` | 20 | 0 | 3.77 | 100 | ≤0.5% | PASS |
+| Query class                 | Requests | Errors | p95 (ms) | Signed p95 budget (ms) | Signed error budget | Status |
+| --------------------------- | -------: | -----: | -------: | ---------------------: | ------------------: | :----: |
+| `directory_page_1`          |       20 |      0 |     4.73 |                    100 |               ≤0.5% |  PASS  |
+| `directory_page_6`          |       20 |      0 |     4.18 |                    100 |               ≤0.5% |  PASS  |
+| `directory_search_filter`   |       20 |      0 |     4.85 |                    100 |               ≤0.5% |  PASS  |
+| `directory_approval_filter` |       20 |      0 |     3.77 |                    100 |               ≤0.5% |  PASS  |
 
 All 4 query classes meet the signed p95 budget (100 ms) and error budget (≤0.5%).
 

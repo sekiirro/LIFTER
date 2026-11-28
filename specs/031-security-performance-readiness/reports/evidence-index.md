@@ -16,12 +16,12 @@ Single index for the sanitized artifacts produced or planned under PT-01 and PI-
 
 ## Planned after the pilot (not produced by slice 1)
 
-| Artifact                                    | Gate          | Owner                  | Status                                                     |
-| ------------------------------------------- | ------------- | ---------------------- | ---------------------------------------------------------- |
-| Versioned rules of engagement (PO-approved) | PT-01         | PO + platform/security | Pending — vendor/timing after pilot (S71-PO-7)             |
-| Sanitized external report                   | PT-01         | assessor               | Pending — Open                                             |
-| Findings/remediation/retest register        | PT-01         | platform/security      | Pending — Open                                             |
-| Hosted measured run with CPU p50/p95/max    | PI-03 (PI-04) | PO + platform          | Pending approval — no production target used here          |
+| Artifact                                    | Gate          | Owner                  | Status                                                                                   |
+| ------------------------------------------- | ------------- | ---------------------- | ---------------------------------------------------------------------------------------- |
+| Versioned rules of engagement (PO-approved) | PT-01         | PO + platform/security | Pending — vendor/timing after pilot (S71-PO-7)                                           |
+| Sanitized external report                   | PT-01         | assessor               | Pending — Open                                                                           |
+| Findings/remediation/retest register        | PT-01         | platform/security      | Pending — Open                                                                           |
+| Hosted measured run with CPU p50/p95/max    | PI-03 (PI-04) | PO + platform          | Pending approval — no production target used here                                        |
 | PO signature on proposed per-route budgets  | PI-03         | PO                     | Signed per S73-PO-4; lifter-prod re-measurement deferred to pre-launch checklist (PI-04) |
 
 ## Sanitization rule
