@@ -29,13 +29,16 @@ Existing F15 form-alert stage strings remain unchanged: `forms.staffStatus.clien
 | `staff.clientDirectory.expiring.empty`             | Empty            | No clients match this filter           | مفيش عملاء مطابقين للفلتر ده     | New          |
 | `staff.clientDirectory.expiring.loadError`         | Load error       | We couldn't load this list. Try again. | مقدرناش نحمل القائمة. حاول تاني. | New          |
 
-## Client inbox copy (PROPOSED)
+## Client inbox copy (APPROVED — CB-P8-04, S71-PO-13 / S71-R37 / S72-PO-7)
 
-These strings were not included in CB-P8-01 screens 1 or 2 and remain subject to per-screen PO approval before implementation.
+Approved as CB-P8-04 under S71-PO-13 / S71-R37 / S72-PO-7 (frozen source `C:/Users/NEW LAP/.lifter/runs/s71-hy4-p8copy4/cb-p8-04.approved.md`); shipped as keys `client.portal.inbox.notice.expiryT3` / `expiryT1` / `expired` (`.title` + `.body`) in `lib/i18n/messages/en.ts` and `ar.ts`. EN/AR text below is byte-exact to those shipped keys (verified against the frozen file; no difference). Short-lead T-3 (`client.portal.inbox.notice.expiryT3ShortLead.title`) is outside this batch and unchanged.
 
-| Surface       | State          | English (PROPOSED)                  | Egyptian Arabic (PROPOSED) |
-| ------------- | -------------- | ----------------------------------- | -------------------------- |
-| Client notice | T-3            | Your subscription expires in 3 days | اشتراكك هينتهي كمان ٣ أيام |
-| Client notice | Short-lead T-3 | Your subscription expires soon      | اشتراكك قرب ينتهي          |
-| Client notice | T-1            | Your subscription expires tomorrow  | اشتراكك هينتهي بكرة        |
-| Client notice | Expired        | Your subscription has expired       | اشتراكك انتهى              |
+| Key                                                  | State          | English (APPROVED)                       | Egyptian Arabic (APPROVED)       |
+| ---------------------------------------------------- | -------------- | ---------------------------------------- | -------------------------------- |
+| `client.portal.inbox.notice.expiryT3.title`          | T-3            | Subscription expires in 3 days           | اشتراكك هينتهي كمان ٣ أيام       |
+| `client.portal.inbox.notice.expiryT3.body`           | T-3            | Your subscription ends on {expiryDate}.  | اشتراكك هينتهي يوم {expiryDate}. |
+| `client.portal.inbox.notice.expiryT3ShortLead.title` | Short-lead T-3 | Subscription expires soon                | اشتراكك قرب ينتهي                |
+| `client.portal.inbox.notice.expiryT1.title`          | T-1            | Subscription expires tomorrow            | اشتراكك هينتهي بكرة              |
+| `client.portal.inbox.notice.expiryT1.body`           | T-1            | Your subscription ends on {expiryDate}.  | اشتراكك هينتهي يوم {expiryDate}. |
+| `client.portal.inbox.notice.expired.title`           | Expired        | Subscription expired                     | اشتراكك انتهى                    |
+| `client.portal.inbox.notice.expired.body`            | Expired        | Your subscription ended on {expiryDate}. | اشتراكك انتهى يوم {expiryDate}.  |
