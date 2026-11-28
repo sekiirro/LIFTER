@@ -72,3 +72,57 @@ describe('package reporting app authorization wall', () => {
     expect(mocks.rpc).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('package reporting RPC error path (S66-R3 #273 N1)', () => {
+  it('commission report returns null when the RPC errors, even with data present', async () => {
+    mocks.actor.mockResolvedValue(actor('platform_owner'));
+    mocks.session.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.rpc.mockResolvedValue({
+      data: {
+        status: 'ok',
+        month: '2026-12',
+        commissions: [
+          {
+            package_id: '00000000-0000-0000-0000-000000000009',
+            original_commission_by_currency: { EGP: '100' },
+            converted_egp_exact: '100',
+            converted_egp_minor: '10000',
+            pending_event_count: 0,
+          },
+        ],
+      },
+      error: { code: 'PGRST301', message: 'boom' },
+    });
+    await expect(
+      getPackageCommissionReport(wsA, '2026-12-01'),
+    ).resolves.toBeNull();
+  });
+
+  it('installment report returns null when the RPC errors, even with data present', async () => {
+    mocks.actor.mockResolvedValue(actor('platform_owner'));
+    mocks.session.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.rpc.mockResolvedValue({
+      data: {
+        status: 'ok',
+        installments: [
+          {
+            client_id: '00000000-0000-0000-0000-000000000003',
+            client_name: 'Test Client',
+            subscription_id: '00000000-0000-0000-0000-000000000004',
+            package_id: '00000000-0000-0000-0000-000000000009',
+            installment_id: '00000000-0000-0000-0000-000000000005',
+            seq: 1,
+            due_on: '2026-12-01',
+            amount_minor: '10000',
+            currency: 'EGP',
+            paid_minor: '0',
+            remaining_minor: '10000',
+            is_installment_client: true,
+          },
+        ],
+      },
+      error: { code: 'PGRST301', message: 'boom' },
+    });
+    await expect(getPackageInstallmentReport(wsA)).resolves.toBeNull();
+  });
+});
