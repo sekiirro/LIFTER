@@ -2497,6 +2497,90 @@ describe('P7 earned ledger and monthly close catalog', () => {
         where table_schema='public' and table_name='p7_adjustment_entries' and column_name='client_id') as present`;
     expect(adjustmentClientId?.present).toBe(false);
   });
+
+  it('catalogs manual point reason, actor and immutable lineage columns', async () => {
+    const columns = await db`
+      select column_name,data_type,is_nullable
+      from information_schema.columns
+      where table_schema='public' and table_name='p7_adjustment_entries'
+        and column_name in ('reason_code','reason','actor_user_id','operation',
+          'idempotency_key','original_entry_id','original_entry_kind')
+      order by column_name`;
+    expect(columns).toEqual([
+      { column_name: 'actor_user_id', data_type: 'uuid', is_nullable: 'YES' },
+      { column_name: 'idempotency_key', data_type: 'uuid', is_nullable: 'YES' },
+      { column_name: 'operation', data_type: 'text', is_nullable: 'YES' },
+      {
+        column_name: 'original_entry_id',
+        data_type: 'uuid',
+        is_nullable: 'YES',
+      },
+      {
+        column_name: 'original_entry_kind',
+        data_type: 'text',
+        is_nullable: 'YES',
+      },
+      { column_name: 'reason', data_type: 'text', is_nullable: 'YES' },
+      { column_name: 'reason_code', data_type: 'text', is_nullable: 'YES' },
+    ]);
+    const constraints = await db`
+      select conname,pg_get_constraintdef(oid) as definition
+      from pg_constraint
+      where conrelid='public.p7_adjustment_entries'::regclass
+        and conname in ('p7_adjustment_entries_reason_check',
+          'p7_adjustment_entries_reason_presence_check',
+          'p7_adjustment_entries_operation_check',
+          'p7_adjustment_entries_original_entry_kind_check',
+          'p7_adjustment_entries_manual_lineage_check',
+          'p7_adjustment_entries_manual_actor_check')
+      order by conname`;
+    expect(constraints).toHaveLength(6);
+    const [idempotencyIndex] = await db`select exists (
+      select 1 from pg_indexes where schemaname='public'
+        and tablename='p7_adjustment_entries'
+        and indexname='p7_adjustment_entries_manual_idempotency_idx'
+        and indexdef like '%UNIQUE% (workspace_id, idempotency_key)%'
+    ) as present`;
+    expect(idempotencyIndex?.present).toBe(true);
+    const reasonDefinition = constraints.find((row) =>
+      row.conname.endsWith('reason_check'),
+    )?.definition;
+    expect(reasonDefinition).toContain('length(reason) >= 1');
+    expect(reasonDefinition).toContain('length(reason) <= 500');
+    expect(
+      constraints.find((row) => row.conname.endsWith('operation_check'))
+        ?.definition,
+    ).toContain("'reattribute'");
+    const [actorFk] = await db`
+      select confrelid::regclass::text as target
+      from pg_constraint
+      where conrelid='public.p7_adjustment_entries'::regclass and contype='f'
+        and conkey=ARRAY[(select attnum from pg_attribute
+          where attrelid='public.p7_adjustment_entries'::regclass and attname='actor_user_id')]::smallint[]`;
+    expect(actorFk?.target).toBe('auth.users');
+  });
+
+  it('hardens the two PO manual point RPCs', async () => {
+    for (const signature of [
+      'public.p7_post_point_adjustment(uuid,uuid,text,text,date,text,uuid,text,uuid)',
+      'public.p7_reattribute_point_entry(uuid,text,uuid,uuid,text,uuid)',
+    ]) {
+      const [fn] = await db`
+        select p.prosecdef,p.proconfig,pg_catalog.pg_get_userbyid(p.proowner) as owner,
+          has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated,
+          has_function_privilege('anon',p.oid,'EXECUTE') as anon,
+          has_function_privilege('service_role',p.oid,'EXECUTE') as service_role
+        from pg_proc p where p.oid=${signature}::regprocedure`;
+      expect(fn, signature).toMatchObject({
+        prosecdef: true,
+        owner: 'postgres',
+        authenticated: true,
+        anon: false,
+        service_role: false,
+      });
+      expect(fn?.proconfig).toContain('search_path=""');
+    }
+  });
 });
 
 describe('P7 T022/T023 Sales refund security catalog', () => {
