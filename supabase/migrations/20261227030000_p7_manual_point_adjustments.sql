@@ -71,7 +71,7 @@ declare
 begin
   if actor is null or not app_private.is_platform_owner()
     or not app_private.has_workspace_access(p_workspace_id,null) then
-    return jsonb_build_object('status','not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   if written_reason = '' then
     return jsonb_build_object('status','reason_required',
@@ -113,7 +113,7 @@ begin
     'p7-point-key:' || p_idempotency_key::text,0));
   if auth.uid() is distinct from actor or not app_private.is_platform_owner()
     or not app_private.has_workspace_access(p_workspace_id,null) then
-    return jsonb_build_object('status','not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   select * into prior from public.p7_adjustment_entries
   where workspace_id=p_workspace_id and idempotency_key=p_idempotency_key;
@@ -151,7 +151,7 @@ begin
   perform app_private.p7_lock_period(p_workspace_id,target_period);
   if auth.uid() is distinct from actor or not app_private.is_platform_owner()
     or not app_private.has_workspace_access(p_workspace_id,null) then
-    return jsonb_build_object('status','not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   if not exists (
     select 1 from public.staff_profiles sp
@@ -170,7 +170,7 @@ begin
   returning id,effective_month,original_month into entry_id,routed_month,routed_original;
   if auth.uid() is distinct from actor or not app_private.is_platform_owner()
     or not app_private.has_workspace_access(p_workspace_id,null) then
-    return jsonb_build_object('status','not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   insert into public.audit_events(actor_user_id,action,target_table,target_id,workspace_id,details)
   values(actor,'workforce.point_adjustment_recorded','p7_adjustment_entries',entry_id,
@@ -215,7 +215,7 @@ declare
 begin
   if actor is null or not app_private.is_platform_owner()
     or not app_private.has_workspace_access(p_workspace_id,null) then
-    return jsonb_build_object('status','not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   if written_reason = '' then
     return jsonb_build_object('status','reason_required',
@@ -253,7 +253,7 @@ begin
     'p7-point-key:' || p_idempotency_key::text,0));
   if auth.uid() is distinct from actor or not app_private.is_platform_owner()
     or not app_private.has_workspace_access(p_workspace_id,null) then
-    return jsonb_build_object('status','not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   select * into prior from public.p7_adjustment_entries
   where workspace_id=p_workspace_id and idempotency_key=p_idempotency_key;
@@ -288,7 +288,7 @@ begin
   perform app_private.p7_lock_period(p_workspace_id,original_period);
   if auth.uid() is distinct from actor or not app_private.is_platform_owner()
     or not app_private.has_workspace_access(p_workspace_id,null) then
-    return jsonb_build_object('status','not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   if not exists (
     select 1 from public.staff_profiles sp
@@ -315,7 +315,7 @@ begin
   returning id into replacement_id;
   if auth.uid() is distinct from actor or not app_private.is_platform_owner()
     or not app_private.has_workspace_access(p_workspace_id,null) then
-    return jsonb_build_object('status','not_permitted');
+    raise exception 'not_permitted' using errcode = '42501';
   end if;
   insert into public.audit_events(actor_user_id,action,target_table,target_id,workspace_id,details)
   values(actor,'workforce.points_reattributed','p7_adjustment_entries',reversal_id,

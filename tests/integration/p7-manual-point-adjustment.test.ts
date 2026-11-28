@@ -253,11 +253,12 @@ describe('P7 T013 PO manual point changes', () => {
       fixture.actors.client.client,
       fixture.actors.anon.client,
     ];
-    for (const client of denied) {
+    for (const [index, client] of denied.entries()) {
       const result = await client.rpc('p7_post_point_adjustment', args);
       expect(result.data?.status ?? result.error?.message).toMatch(
         /not_permitted|permission denied/i,
       );
+      if (index < denied.length - 1) expect(result.error?.code).toBe('42501');
     }
     expect(await rowsFor(args.p_idempotency_key as string)).toHaveLength(0);
 
