@@ -69,6 +69,10 @@ const report: WorkforceReportData = {
       actor: null,
       recorded_at: '2026-11-05T12:00:00Z',
       reason_code: 'p7-activation-v1',
+      reason: null,
+      operation: null,
+      original_entry_id: null,
+      original_entry_kind: null,
     },
   ],
 };
@@ -272,6 +276,43 @@ describe('T013 PO manual points UI', () => {
       }
       expect(html).not.toContain('Correct strike');
       expect(html).not.toContain('صحّح تأخير الخطة');
+    },
+  );
+
+  it.each([
+    ['en', 'Correct points', 'Earned'],
+    ['ar', 'صحّح النقاط', 'المكتسبة'],
+  ] as const)(
+    'renders manual reason and approved lineage labels in %s',
+    (locale, operationLabel, originalKindLabel) => {
+      const manualEntry = {
+        ...report.ledger[0]!,
+        id: '44444444-4444-4000-8000-444444444444',
+        reason_code: 'manual_adjustment',
+        reason: 'تم تصحيح النقاط بعد مراجعة السجل',
+        actor: 'Nour Ahmed',
+        operation: 'correct',
+        original_entry_id: '55555555-5555-4000-8000-555555555555',
+        original_entry_kind: 'earned',
+      } as unknown as WorkforceReportData['ledger'][number];
+      const html = renderToStaticMarkup(
+        createElement(WorkforceReportView, {
+          report: { ...report, ledger: [...report.ledger, manualEntry] },
+          status: 'ok',
+          locale,
+          messages: getMessages(locale),
+          currentMonth: '2026-11',
+        }),
+      );
+
+      expect(html).toContain(
+        '<bdi dir="auto">تم تصحيح النقاط بعد مراجعة السجل</bdi>',
+      );
+      expect(html).toContain(operationLabel);
+      expect(html).toContain(originalKindLabel);
+      expect(html).toContain('55555555-5555-4000-8000-555555555555');
+      expect(html).toContain('Nour Ahmed');
+      expect(html).toContain('<bdi dir="ltr">p7-activation-v1</bdi>');
     },
   );
 
