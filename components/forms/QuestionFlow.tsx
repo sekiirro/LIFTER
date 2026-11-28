@@ -190,6 +190,11 @@ export function QuestionFlow({
   const inFlight = useRef(false);
   const pending = useRef(false);
   const conflicted = useRef(initialState === 'conflict');
+  // CR-007: a save that failed with a permanent client error ('error'
+  // status) must not be re-sent automatically. The flag is cleared when
+  // the user changes an answer, when a save succeeds, or when the user
+  // presses the explicit retry/save control (persist(true)).
+  const permanentSaveErrorRef = useRef(false);
   const wakeRetry = useRef<(() => void) | undefined>(undefined);
   const intentKey = useRef<string | undefined>(undefined);
   const revisionRef = useRef(revision);
@@ -278,6 +283,9 @@ export function QuestionFlow({
     dirtyRef.current = true;
     setDirty(true);
     setSaveError(false);
+    // The payload changed, so a previously permanent save error no longer
+    // blocks autosave: the next automatic save sends the new answers.
+    permanentSaveErrorRef.current = false;
     if (shouldAutoAdvanceAfterAnswer(current?.type)) {
       const nextProgression = evaluateProgression({
         questions: runtimeQuestions,
@@ -348,6 +356,10 @@ export function QuestionFlow({
 
   async function persist(force = false) {
     if (conflicted.current) return false;
+    // CR-007: after a permanent client error, do not re-send the same
+    // payload automatically. Only an explicit retry (force) may try again;
+    // an answer change clears the flag in updateAnswer.
+    if (permanentSaveErrorRef.current && !force) return false;
     if (inFlight.current) {
       if (wakeRetry.current) wakeRetry.current();
       return false;
@@ -403,6 +415,7 @@ export function QuestionFlow({
         }
         if (result.status === 'saved') {
           setSaveError(false);
+          permanentSaveErrorRef.current = false;
           const nextRevision = result.revision ?? revisionRef.current + 1;
           revisionRef.current = nextRevision;
           setRevision(nextRevision);
@@ -423,13 +436,19 @@ export function QuestionFlow({
         if (result.status === 'error') {
           setSaveError(true);
           setState('save-error');
-          if (
+          const changedDuringSave =
             JSON.stringify(snapshot) !==
             JSON.stringify(
               applicableClientAnswers(runtimeQuestions, latestAnswers.current),
-            )
-          ) {
+            );
+          if (changedDuringSave) {
+            // The user already changed an answer: the pending retry in the
+            // finally block must send the new payload, so do not block it.
             intentKey.current = crypto.randomUUID();
+          } else {
+            // Permanent client error for the current payload: keep the
+            // save-error state and stop automatic re-sends of it.
+            permanentSaveErrorRef.current = true;
           }
           return false;
         }
@@ -498,6 +517,41 @@ export function QuestionFlow({
       window.removeEventListener('beforeunload', beforeunload);
     };
   }, [dirty, saving, saveError]);
+
+  /**
+   * CR-008: after a successful submission or correction, re-fetch the
+   * submitted record with the existing loader and rebuild the
+   * just-appended history entry from the server's authoritative answers
+   * and revision. Silent and best-effort: when the loader is absent or
+   * the fetch fails, the locally appended entry stays as-is and no error
+   * state is shown for the (already successful) submission.
+   */
+  async function refreshSubmittedHistory(entryVersion: number) {
+    const loader = adapter.reloadSubmitted;
+    if (!loader) return;
+    try {
+      const result = await loader({ assignmentId });
+      if (result.status !== 'loaded' || result.revision === undefined) return;
+      const serverRevision = result.revision;
+      const serverAnswers = applicableClientAnswers(
+        runtimeQuestions,
+        result.answers ?? {},
+      );
+      setLocalHistory((prev) =>
+        prev.map((entry) =>
+          entry.version === entryVersion
+            ? {
+                ...entry,
+                version: serverRevision,
+                answers: serverAnswers,
+              }
+            : entry,
+        ),
+      );
+    } catch {
+      // Keep the locally appended entry.
+    }
+  }
 
   async function reloadLatestDraft() {
     setState('loading');
@@ -604,6 +658,10 @@ export function QuestionFlow({
           },
         ]);
         setState('submitted');
+        // CR-008: refresh the just-appended history entry from the server
+        // so the displayed history shows the authoritative answers and
+        // revision instead of the client-side guess, without a reload.
+        await refreshSubmittedHistory(nextRev);
       } else
         setState(result.status === 'conflict' ? 'conflict' : 'submit-error');
     } catch {
