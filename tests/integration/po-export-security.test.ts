@@ -618,6 +618,50 @@ describe('PO export authorization RED (T001-T003)', () => {
     await svc.storage.from('po-export-artifacts').remove([objectPath]);
   });
 
+  it('NULL expires_at fails closed on retrieval: expired status and no retrieval audit (CR-030-01)', async () => {
+    const id = randomUUID();
+    const objectPath = `${id}/archive.csv`;
+    await db`
+      insert into public.jobs(id,kind,workspace_id,payload,idempotency_key,status,finished_at)
+      values(${id},'po.export',${f.wsA.id},${db.json({
+        actor_user_id: f.po.userId,
+        scope_workspace_id: f.wsA.id,
+        artifact_path: objectPath,
+        manifest_version: '030-v1',
+        generated_at: new Date(Date.now() - 16 * 60_000).toISOString(),
+        // expires_at deliberately omitted (NULL): a repaired/partial done job.
+      })},${`po-export-null-expiry-${id}`},'done',now())
+    `;
+    const upload = await svc.storage
+      .from('po-export-artifacts')
+      .upload(
+        objectPath,
+        new Blob(['id\r\nnull-expiry\r\n'], { type: 'text/csv' }),
+      );
+    expect(upload.error).toBeNull();
+
+    // The UI already treats a NULL expiry as expired.
+    const status = await f.po.client.rpc('read_po_client_export_status', {
+      p_job_id: id,
+    });
+    expect(status.error).toBeNull();
+    expect(status.data).toEqual({ status: 'expired' });
+
+    // Direct retrieval must not hand out the private artifact path.
+    const retrieval = await f.po.client.rpc('record_po_export_retrieval', {
+      p_job_id: id,
+    });
+    expect(retrieval.data).toBeNull();
+    expect(retrieval.error?.code).toBe('42501');
+
+    const audit = await db`
+      select count(*)::int as n from public.audit_events
+      where target_id=${id} and action='po_export.retrieved'
+    `;
+    expect(audit[0]?.n).toBe(0);
+    await svc.storage.from('po-export-artifacts').remove([objectPath]);
+  });
+
   it('direct-storage denial test kills a permissive RLS policy mutant (mutation)', async () => {
     const objectPath = `mutation/${randomUUID()}.csv`;
     const upload = await svc.storage
